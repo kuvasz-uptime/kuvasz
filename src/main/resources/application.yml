@@ -15,8 +15,6 @@ micronaut:
         access: isAuthenticated()
     basic-auth:
       enabled: true
-      user: ${BASIC_AUTH_USER}
-      password: ${BASIC_AUTH_PASSWORD}
   router:
     versioning:
       enabled: true
@@ -32,6 +30,7 @@ micronaut:
 datasources:
   default:
     url: ${DATABASE_JDBC_URL}
+    schema: ${DATABASE_SCHEMA}
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
     driverClassName: 'org.postgresql.Driver'
@@ -43,3 +42,7 @@ flyway:
 ---
 jackson:
   bean-introspection-module: true
+---
+basic-auth-config:
+  user: ${BASIC_AUTH_USER}
+  password: ${BASIC_AUTH_PASSWORD}

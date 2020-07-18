@@ -1,12 +1,11 @@
 ---
-micronaut:
-  security:
-    basic-auth:
-      user: dev
-      password: pass
----
 datasources:
   default:
     url: 'jdbc:postgresql://localhost:5432/postgres'
+    schema: 'public'
     username: 'postgres'
     password: 'pass'
+---
+basic-auth-config:
+  user: user
+  password: pass
