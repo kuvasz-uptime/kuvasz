@@ -1,0 +1,6 @@
+applicationType: default
+defaultPackage: com.akobor.kuvasz
+testFramework: kotlintest
+sourceLanguage: kotlin
+buildTool: gradle
+features: [annotation-api, app-name, docker, file-watch, flyway, graalvm, gradle, http-client, jackson-xml, jdbc-hikari, jib, jooq, kotlin, kotlin-application, kotlin-extension-functions, kotlintest, logback, netty-server, openapi, postgres, properties, readme, security, security-annotations]

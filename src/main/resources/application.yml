@@ -1,0 +1,45 @@
+---
+micronaut:
+  application:
+    name: kuvasz
+  security:
+    enabled: true
+    intercept-url-map:
+      - pattern: /health
+        access: isAnonymous()
+      - pattern: /swagger-ui/**
+        access: isAnonymous()
+      - pattern: /swagger/**
+        access: isAnonymous()
+      - pattern: /**
+        access: isAuthenticated()
+    basic-auth:
+      enabled: true
+      user: ${BASIC_AUTH_USER}
+      password: ${BASIC_AUTH_PASSWORD}
+  router:
+    versioning:
+      enabled: true
+      default-version: 1
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
+      swagger-ui:
+        paths: classpath:META-INF/swagger/views/swagger-ui
+        mapping: /swagger-ui/**
+---
+datasources:
+  default:
+    url: ${DATABASE_JDBC_URL}
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+    driverClassName: 'org.postgresql.Driver'
+---
+flyway:
+  datasources:
+    default:
+      locations: classpath:database/migrations
+---
+jackson:
+  bean-introspection-module: true
