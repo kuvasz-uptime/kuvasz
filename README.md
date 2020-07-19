@@ -1,4 +1,5 @@
 ![CI](https://github.com/adamkobor/kuvasz/workflows/CI/badge.svg?branch=master)
+[![codecov](https://codecov.io/gh/adamkobor/kuvasz/branch/master/graph/badge.svg)](https://codecov.io/gh/adamkobor/kuvasz)
 
 # Kuvasz
 
