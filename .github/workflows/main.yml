@@ -23,7 +23,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: Run Gradle check
-      run: ./gradlew check --debug
+      run: ./gradlew check
     - name: Build shadowJar
       run: ./gradlew shadowJar
 
