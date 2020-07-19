@@ -27,7 +27,7 @@ jobs:
     - name: Codecov
       uses: codecov/codecov-action@v1.0.11
       with:
-        token: $CODECOV_UPLOAD_TOKEN
+        token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
         # Path to coverage file to upload
         file: # optional
         # Comma-separated list of files to upload
