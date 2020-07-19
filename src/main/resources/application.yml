@@ -30,7 +30,6 @@ micronaut:
 datasources:
   default:
     url: ${DATABASE_JDBC_URL}
-    schema: ${DATABASE_SCHEMA}
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
     driverClassName: 'org.postgresql.Driver'
@@ -38,7 +37,7 @@ datasources:
 flyway:
   datasources:
     default:
-      locations: classpath:database/migrations
+      enabled: true
 ---
 jackson:
   bean-introspection-module: true
