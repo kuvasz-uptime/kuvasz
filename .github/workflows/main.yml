@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Run Gradle check
-      run: ./gradlew check
+      run: ./gradlew check --debug
     - name: Build shadowJar
       run: ./gradlew shadowJar
-      
+
