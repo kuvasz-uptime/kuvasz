@@ -20,9 +20,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: Set up JDK 1.11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.11
     - name: Run Gradle check
       run: ./gradlew check --debug
     - name: Build shadowJar
