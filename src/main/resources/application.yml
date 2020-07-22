@@ -3,7 +3,16 @@ micronaut:
   application:
     name: kuvasz
   security:
-    enabled: true
+    authentication: bearer
+    token:
+      jwt:
+        signatures:
+          secret:
+            generator:
+              secret: ${JWT_SIGNATURE_SECRET}
+        generator:
+          refresh-token:
+            enabled: false
     intercept-url-map:
       - pattern: /health
         access: isAnonymous()
@@ -42,6 +51,6 @@ flyway:
 jackson:
   bean-introspection-module: true
 ---
-basic-auth-config:
-  user: ${BASIC_AUTH_USER}
-  password: ${BASIC_AUTH_PASSWORD}
+admin-auth-config:
+  user: ${ADMIN_USER}
+  password: ${ADMIN_PASSWORD}

@@ -1,11 +1,10 @@
 package com.akobor.kuvasz.utils
 
 import io.micronaut.context.ApplicationContext
-import io.micronaut.http.MutableHttpRequest
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.runtime.server.EmbeddedServer
+import io.micronaut.security.authentication.UsernamePasswordCredentials
 import org.flywaydb.core.Flyway
-import java.util.Base64
 
 fun startTestApplication(): EmbeddedServer =
     ApplicationContext
@@ -26,8 +25,8 @@ fun EmbeddedServer.resetDatabase() =
         flyway.migrate()
     }
 
-fun <T : Any> MutableHttpRequest<T>.addAuthenticationHeader(withValidCredentials: Boolean): MutableHttpRequest<T> {
-    val credentials = if (withValidCredentials) "test-user:test-pass" else "bad-user:bad-pass"
-    val encodedCredentials = Base64.getEncoder().encodeToString(credentials.toByteArray())
-    return this.header("Authorization", "Basic $encodedCredentials")
-}
+fun generateCredentials(valid: Boolean) =
+    UsernamePasswordCredentials(
+        "test-user",
+        if (valid) "test-pass" else "bad-pass"
+    )
