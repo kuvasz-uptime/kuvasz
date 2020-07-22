@@ -16,15 +16,15 @@ import org.reactivestreams.Publisher
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@ConfigurationProperties("basic-auth-config")
+@ConfigurationProperties("admin-auth-config")
 @Introspected
-class BasicAuthConfig {
+class AdminAuthConfig {
     var user: String? = null
     var password: String? = null
 }
 
 @Singleton
-class BasicAuthProvider @Inject constructor(private val authConfig: BasicAuthConfig) : AuthenticationProvider {
+class AdminAuthProvider @Inject constructor(private val authConfig: AdminAuthConfig) : AuthenticationProvider {
 
     override fun authenticate(
         httpRequest: HttpRequest<*>?,

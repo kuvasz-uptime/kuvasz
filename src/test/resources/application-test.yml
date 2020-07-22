@@ -1,4 +1,13 @@
 ---
+micronaut:
+  security:
+    token:
+      jwt:
+        signatures:
+          secret:
+            generator:
+              secret: testSecretItsVeryVerySecretSecret
+---
 datasources:
   default:
     url: 'jdbc:h2:mem:testDb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL'
@@ -6,6 +15,6 @@ datasources:
     password: ''
     driverClassName: 'org.h2.Driver'
 ---
-basic-auth-config:
+admin-auth-config:
   user: test-user
   password: test-pass

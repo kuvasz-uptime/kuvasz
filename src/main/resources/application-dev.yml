@@ -1,10 +1,19 @@
 ---
+micronaut:
+  security:
+    token:
+      jwt:
+        signatures:
+          secret:
+            generator:
+              secret: devSecretItsVeryVerySecretSecret
+---
 datasources:
   default:
     url: 'jdbc:postgresql://localhost:5432/postgres'
     username: 'postgres'
     password: 'pass'
 ---
-basic-auth-config:
+admin-auth-config:
   user: user
   password: pass
