@@ -15,6 +15,6 @@ datasources:
     password: ''
     driverClassName: 'org.h2.Driver'
 ---
-admin-auth-config:
+app-config:
   user: test-user
   password: test-pass

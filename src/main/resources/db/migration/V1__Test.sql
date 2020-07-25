@@ -1,1 +1,0 @@
-CREATE TABLE public.test (id BIGINT PRIMARY KEY);
