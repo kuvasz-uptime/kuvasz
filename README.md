@@ -1,5 +1,5 @@
-![CI](https://github.com/adamkobor/kuvasz/workflows/CI/badge.svg?branch=master)
-[![codecov](https://codecov.io/gh/adamkobor/kuvasz/branch/master/graph/badge.svg)](https://codecov.io/gh/adamkobor/kuvasz)
+![CI](https://github.com/kuvasz-uptime/kuvasz/workflows/CI/badge.svg?branch=master)
+[![codecov](https://codecov.io/gh/kuvasz-uptime/kuvasz/branch/master/graph/badge.svg)](https://codecov.io/gh/kuvasz-uptime/kuvasz)
 
 # Disclaimer
 
