@@ -14,6 +14,6 @@ datasources:
     username: 'postgres'
     password: 'pass'
 ---
-admin-auth-config:
+app-config:
   user: user
   password: pass

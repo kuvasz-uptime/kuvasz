@@ -60,6 +60,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.9.3")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.3")
     testRuntimeOnly("com.h2database:h2")
+    jooqRuntime 'org.postgresql:postgresql:42.2.14'
 }
 
 test.classpath += configurations.developmentOnly
@@ -141,3 +142,46 @@ tasks.withType(JavaExec) {
 }
 
 jib.to.image = 'gcr.io/kuvasz/jib-image'
+
+jooq {
+    generateSchemaSourceOnCompilation = false
+    primary(sourceSets.main) {
+        jdbc {
+            url = "jdbc:postgresql://localhost:5432/postgres"
+            username = "postgres"
+            password = "pass"
+            driver = "org.postgresql.Driver"
+        }
+        generator {
+            target {
+                directory = "src/jooq/java"
+                packageName = "com.akobor.kuvasz"
+            }
+            generate {
+                validationAnnotations = true
+                jpaAnnotations = true
+                daos = true
+                pojosEqualsAndHashCode = true
+                fluentSetters = true
+            }
+            database {
+                inputSchema = "public"
+                outputSchemaToDefault = true
+                excludes = "flyway_schema_history"
+            }
+            strategy {
+                name = null
+                matchers {
+                    tables {
+                        table {
+                            pojoClass {
+                                transform = 'PASCAL'
+                                expression = "\$0_Pojo"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
