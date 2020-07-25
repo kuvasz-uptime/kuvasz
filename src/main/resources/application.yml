@@ -50,6 +50,8 @@ flyway:
 ---
 jackson:
   bean-introspection-module: true
+  serialization-inclusion: always
+  date-format: "yyyy-MM-dd'T'HH:mm:ssZ"
 ---
 admin-auth-config:
   user: ${ADMIN_USER}
