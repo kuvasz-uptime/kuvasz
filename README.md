@@ -1,5 +1,6 @@
 ![CI](https://github.com/kuvasz-uptime/kuvasz/workflows/CI/badge.svg?branch=master)
 [![codecov](https://codecov.io/gh/kuvasz-uptime/kuvasz/branch/master/graph/badge.svg)](https://codecov.io/gh/kuvasz-uptime/kuvasz)
+[![CodeFactor](https://www.codefactor.io/repository/github/kuvasz-uptime/kuvasz/badge)](https://www.codefactor.io/repository/github/kuvasz-uptime/kuvasz)
 
 # Disclaimer
 

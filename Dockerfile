@@ -6,8 +6,8 @@ WORKDIR /home/app/kuvasz
 
 RUN native-image --no-server -cp build/libs/kuvasz-*-all.jar
 
-FROM frolvlad/alpine-glibc
-RUN apk update && apk add libstdc++
+FROM frolvlad/alpine-glibc:latest
+RUN apk --no-cache add libstdc++
 EXPOSE 8080
 COPY --from=graalvm /home/app/kuvasz/kuvasz /app/kuvasz
 ENTRYPOINT ["/app/kuvasz"]
