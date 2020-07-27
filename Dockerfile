@@ -10,4 +10,4 @@ FROM frolvlad/alpine-glibc:latest
 RUN apk --no-cache add libstdc++
 EXPOSE 8080
 COPY --from=graalvm /home/app/kuvasz/kuvasz /app/kuvasz
-ENTRYPOINT ["/app/kuvasz"]
+ENTRYPOINT ["/app/kuvasz", "-Xmx64m", "-Dio.netty.allocator.maxOrder=8"]

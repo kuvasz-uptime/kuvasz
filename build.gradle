@@ -130,7 +130,7 @@ kapt {
 
 tasks.withType(JavaExec) {
     classpath += configurations.developmentOnly
-    jvmArgs('-XX:TieredStopAtLevel=1', '-Dcom.sun.management.jmxremote', '-Dlogback.configurationFile=logback-dev.xml')
+    jvmArgs('-XX:TieredStopAtLevel=1', '-Dcom.sun.management.jmxremote', '-Xmx64M', '-Dlogback.configurationFile=logback-dev.xml')
     systemProperty("micronaut.environments", "dev")
     if (gradle.startParameter.continuous) {
         systemProperties(
