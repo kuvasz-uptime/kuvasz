@@ -42,6 +42,7 @@ datasources:
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
     driverClassName: 'org.postgresql.Driver'
+    schema: 'kuvasz'
 ---
 flyway:
   datasources:

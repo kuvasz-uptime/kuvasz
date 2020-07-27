@@ -59,7 +59,7 @@ dependencies {
     testImplementation("io.micronaut.test:micronaut-test-kotest")
     testImplementation("io.mockk:mockk:1.9.3")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.3")
-    testRuntimeOnly("com.h2database:h2")
+    testImplementation("org.testcontainers:postgresql:1.14.3")
     jooqRuntime 'org.postgresql:postgresql:42.2.14'
 }
 
@@ -165,7 +165,7 @@ jooq {
                 fluentSetters = true
             }
             database {
-                inputSchema = "public"
+                inputSchema = "kuvasz"
                 outputSchemaToDefault = true
                 excludes = "flyway_schema_history"
             }

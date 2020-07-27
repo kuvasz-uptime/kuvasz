@@ -8,13 +8,6 @@ micronaut:
             generator:
               secret: testSecretItsVeryVerySecretSecret
 ---
-datasources:
-  default:
-    url: 'jdbc:h2:mem:testDb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL'
-    username: 'sa'
-    password: ''
-    driverClassName: 'org.h2.Driver'
----
 app-config:
   user: test-user
   password: test-pass

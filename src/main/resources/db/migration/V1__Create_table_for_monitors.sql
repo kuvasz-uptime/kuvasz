@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS kuvasz;
+
 CREATE TABLE monitor
 (
     id                    SERIAL PRIMARY KEY,
