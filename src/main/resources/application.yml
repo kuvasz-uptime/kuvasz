@@ -21,7 +21,8 @@ micronaut:
       - pattern: /swagger/**
         access: isAnonymous()
       - pattern: /**
-        access: isAuthenticated()
+        access:
+          - ROLE_ADMIN
     basic-auth:
       enabled: true
   router:
