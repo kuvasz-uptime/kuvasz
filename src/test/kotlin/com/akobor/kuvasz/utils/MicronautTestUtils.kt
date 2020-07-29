@@ -6,10 +6,13 @@ import io.micronaut.runtime.server.EmbeddedServer
 import io.micronaut.security.authentication.UsernamePasswordCredentials
 import org.flywaydb.core.Flyway
 
-fun startTestApplication(): EmbeddedServer =
+fun startTestApplication(mocks: List<Any> = emptyList()): EmbeddedServer =
     ApplicationContext
         .build()
         .build()
+        .apply {
+            mocks.forEach { mockBean -> registerSingleton(mockBean) }
+        }
         .start()
         .getBean(EmbeddedServer::class.java)
         .start()

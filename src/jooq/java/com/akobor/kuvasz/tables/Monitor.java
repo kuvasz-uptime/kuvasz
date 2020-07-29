@@ -33,7 +33,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Monitor extends TableImpl<MonitorRecord> {
 
-    private static final long serialVersionUID = -1938101948;
+    private static final long serialVersionUID = -1852813365;
 
     /**
      * The reference instance of <code>monitor</code>
@@ -51,7 +51,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
     /**
      * The column <code>monitor.id</code>.
      */
-    public final TableField<MonitorRecord, Integer> ID = createField(DSL.name("id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaultValue(org.jooq.impl.DSL.field("nextval('monitor_id_seq'::regclass)", org.jooq.impl.SQLDataType.INTEGER)), this, "");
+    public final TableField<MonitorRecord, Integer> ID = createField(DSL.name("id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaultValue(org.jooq.impl.DSL.field("nextval('kuvasz.monitor_id_seq'::regclass)", org.jooq.impl.SQLDataType.INTEGER)), this, "");
 
     /**
      * The column <code>monitor.name</code>. Monitor's name
@@ -76,7 +76,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
     /**
      * The column <code>monitor.created_at</code>.
      */
-    public final TableField<MonitorRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false), this, "");
+    public final TableField<MonitorRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false).defaultValue(org.jooq.impl.DSL.field("now()", org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
     /**
      * The column <code>monitor.updated_at</code>.

@@ -7,7 +7,7 @@ CREATE TABLE monitor
     url                   TEXT                     NOT NULL,
     uptime_check_interval INTEGER                  NOT NULL,
     enabled               BOOLEAN                  NOT NULL DEFAULT TRUE,
-    created_at            TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at            TIMESTAMP WITH TIME ZONE NOT NULL default now(),
     updated_at            TIMESTAMP WITH TIME ZONE
 );
 

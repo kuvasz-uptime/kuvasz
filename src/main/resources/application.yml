@@ -36,6 +36,9 @@ micronaut:
       swagger-ui:
         paths: classpath:META-INF/swagger/views/swagger-ui
         mapping: /swagger-ui/**
+  http:
+    client:
+      follow-redirects: false
 ---
 datasources:
   default:

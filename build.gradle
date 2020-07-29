@@ -32,6 +32,7 @@ dependencies {
     kapt("io.micronaut.security:micronaut-security-annotations")
     compileOnly(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
+    implementation("io.arrow-kt:arrow-core-data:0.10.5")
     implementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     implementation("io.micronaut:micronaut-inject")
     implementation("io.micronaut:micronaut-validation")
@@ -95,7 +96,9 @@ build {
 
 // use JUnit 5 platform
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        systemProperties("micronaut.environments": "test")
+    }
     finalizedBy("jacocoTestReport")
 }
 
@@ -134,9 +137,9 @@ tasks.withType(JavaExec) {
     systemProperty("micronaut.environments", "dev")
     if (gradle.startParameter.continuous) {
         systemProperties(
-            'micronaut.io.watch.restart':'true',
-            'micronaut.io.watch.enabled':'true',
-            "micronaut.io.watch.paths":"src/main"
+                'micronaut.io.watch.restart': 'true',
+                'micronaut.io.watch.enabled': 'true',
+                "micronaut.io.watch.paths": "src/main"
         )
     }
 }

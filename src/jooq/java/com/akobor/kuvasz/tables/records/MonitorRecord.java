@@ -35,7 +35,7 @@ import org.jooq.impl.UpdatableRecordImpl;
 })
 public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record7<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime> {
 
-    private static final long serialVersionUID = -1541545194;
+    private static final long serialVersionUID = 1371821158;
 
     /**
      * Setter for <code>monitor.id</code>.
@@ -135,7 +135,6 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
      * Getter for <code>monitor.created_at</code>.
      */
     @Column(name = "created_at", nullable = false)
-    @NotNull
     public OffsetDateTime getCreatedAt() {
         return (OffsetDateTime) get(5);
     }

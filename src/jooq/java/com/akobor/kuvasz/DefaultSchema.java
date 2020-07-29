@@ -4,7 +4,9 @@
 package com.akobor.kuvasz;
 
 
+import com.akobor.kuvasz.tables.LatencyLog;
 import com.akobor.kuvasz.tables.Monitor;
+import com.akobor.kuvasz.tables.UptimeEvent;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +23,7 @@ import org.jooq.impl.SchemaImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class DefaultSchema extends SchemaImpl {
 
-    private static final long serialVersionUID = 1796803012;
+    private static final long serialVersionUID = 255525230;
 
     /**
      * The reference instance of <code>DEFAULT_SCHEMA</code>
@@ -29,9 +31,19 @@ public class DefaultSchema extends SchemaImpl {
     public static final DefaultSchema DEFAULT_SCHEMA = new DefaultSchema();
 
     /**
+     * The table <code>latency_log</code>.
+     */
+    public final LatencyLog LATENCY_LOG = LatencyLog.LATENCY_LOG;
+
+    /**
      * The table <code>monitor</code>.
      */
     public final Monitor MONITOR = Monitor.MONITOR;
+
+    /**
+     * The table <code>uptime_event</code>.
+     */
+    public final UptimeEvent UPTIME_EVENT = UptimeEvent.UPTIME_EVENT;
 
     /**
      * No further instances allowed
@@ -49,12 +61,16 @@ public class DefaultSchema extends SchemaImpl {
     @Override
     public final List<Sequence<?>> getSequences() {
         return Arrays.<Sequence<?>>asList(
-            Sequences.MONITOR_ID_SEQ);
+            Sequences.LATENCY_LOG_ID_SEQ,
+            Sequences.MONITOR_ID_SEQ,
+            Sequences.UPTIME_EVENT_ID_SEQ);
     }
 
     @Override
     public final List<Table<?>> getTables() {
         return Arrays.<Table<?>>asList(
-            Monitor.MONITOR);
+            LatencyLog.LATENCY_LOG,
+            Monitor.MONITOR,
+            UptimeEvent.UPTIME_EVENT);
     }
 }

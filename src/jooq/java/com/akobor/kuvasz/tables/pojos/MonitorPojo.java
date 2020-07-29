@@ -28,7 +28,7 @@ import javax.validation.constraints.Size;
 })
 public class MonitorPojo implements Serializable {
 
-    private static final long serialVersionUID = 584523461;
+    private static final long serialVersionUID = 763841695;
 
     private Integer        id;
     private String         name;
@@ -125,7 +125,6 @@ public class MonitorPojo implements Serializable {
     }
 
     @Column(name = "created_at", nullable = false)
-    @NotNull
     public OffsetDateTime getCreatedAt() {
         return this.createdAt;
     }
