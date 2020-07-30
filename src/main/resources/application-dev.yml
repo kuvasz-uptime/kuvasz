@@ -17,3 +17,5 @@ datasources:
 app-config:
   user: user
   password: pass
+  http-communication-logging:
+    enabled: true

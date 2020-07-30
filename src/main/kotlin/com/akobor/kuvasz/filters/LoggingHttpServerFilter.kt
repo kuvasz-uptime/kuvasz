@@ -1,6 +1,7 @@
 package com.akobor.kuvasz.filters
 
 import com.akobor.kuvasz.services.HttpLoggingService
+import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MutableHttpResponse
 import io.micronaut.http.annotation.Filter
@@ -12,6 +13,7 @@ import org.reactivestreams.Publisher
 import javax.inject.Inject
 
 @Filter("/**")
+@Requires(property="app-config.http-communication-logging.enabled", value="true")
 class LoggingHttpServerFilter
 @Inject constructor(private val service: HttpLoggingService) : HttpServerFilter, FilterOrderProvider {
 

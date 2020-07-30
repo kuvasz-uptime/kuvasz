@@ -66,3 +66,5 @@ jooq:
 app-config:
   user: ${ADMIN_USER}
   password: ${ADMIN_PASSWORD}
+  http-communication-logging:
+    enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}

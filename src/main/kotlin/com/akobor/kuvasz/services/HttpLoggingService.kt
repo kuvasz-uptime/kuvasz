@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import io.micronaut.context.annotation.Requires
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
@@ -25,6 +26,7 @@ data class HttpMessageLog(
 )
 
 @Singleton
+@Requires(property="app-config.http-communication-logging.enabled", value="true")
 class HttpLoggingService {
 
     companion object {
@@ -33,7 +35,7 @@ class HttpLoggingService {
             setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         }
 
-        private val logger = LoggerFactory.getLogger("CommunicationLogger")
+        private val logger = LoggerFactory.getLogger("HttpCommunicationLogger")
     }
 
     fun log(request: HttpRequest<*>) {
