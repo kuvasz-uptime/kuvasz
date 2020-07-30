@@ -10,8 +10,8 @@
         </encoder>
     </appender>
 
-    <logger name="org.jooq.Constants" level="WARN"/>
-    <logger name="HttpCommunicationLogger" level="${communicationLogLevel}"/>
+    <logger name="org.jooq" level="ERROR"/>
+    <logger name="com.akobor.kuvasz.services.HttpCommunicationLogger" level="${communicationLogLevel}"/>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>

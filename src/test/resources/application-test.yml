@@ -11,3 +11,5 @@ micronaut:
 app-config:
   user: test-user
   password: test-pass
+  http-communication-logging:
+    enabled: true

@@ -68,3 +68,5 @@ app-config:
   password: ${ADMIN_PASSWORD}
   http-communication-logging:
     enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}
+  log-event-handler:
+    enabled: ${ENABLE_LOG_EVENT_HANDLER:`true`}

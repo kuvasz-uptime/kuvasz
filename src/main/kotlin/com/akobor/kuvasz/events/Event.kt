@@ -46,13 +46,30 @@ fun UptimeMonitorEvent.toUptimeStatus(): UptimeStatus =
         is MonitorDownEvent -> UptimeStatus.DOWN
     }
 
+fun UptimeMonitorEvent.uptimeStatusEquals(previousEvent: UptimeEventPojo) =
+    toUptimeStatus() == previousEvent.status
+
+fun UptimeMonitorEvent.uptimeStatusNotEquals(previousEvent: UptimeEventPojo) =
+    !uptimeStatusEquals(previousEvent)
+
 @ExperimentalTime
 fun UptimeMonitorEvent.getEndedEventDuration(): Option<Duration> =
     previousEvent.flatMap { previousEvent ->
         Option.fromNullable(
-            if (toUptimeStatus() != previousEvent.status) {
+            if (uptimeStatusNotEquals(previousEvent)) {
                 val diff = dispatchedAt.toEpochSecond() - previousEvent.startedAt.toEpochSecond()
                 diff.toDuration(DurationUnit.SECONDS)
             } else null
         )
     }
+
+fun UptimeMonitorEvent.continueWhenStateChanges(toRun: () -> Unit) {
+    return previousEvent.fold(
+        { toRun() },
+        { previousEvent ->
+            if (uptimeStatusNotEquals(previousEvent)) {
+                toRun()
+            }
+        }
+    )
+}

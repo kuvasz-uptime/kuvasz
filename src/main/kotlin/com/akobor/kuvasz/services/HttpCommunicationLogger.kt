@@ -26,8 +26,8 @@ data class HttpMessageLog(
 )
 
 @Singleton
-@Requires(property="app-config.http-communication-logging.enabled", value="true")
-class HttpLoggingService {
+@Requires(property = "app-config.http-communication-logging.enabled", value = "true")
+class HttpCommunicationLogger {
 
     companion object {
         private val objectMapper = ObjectMapper().apply {
@@ -35,7 +35,7 @@ class HttpLoggingService {
             setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         }
 
-        private val logger = LoggerFactory.getLogger("HttpCommunicationLogger")
+        private val logger = LoggerFactory.getLogger(HttpCommunicationLogger::class.java)
     }
 
     fun log(request: HttpRequest<*>) {

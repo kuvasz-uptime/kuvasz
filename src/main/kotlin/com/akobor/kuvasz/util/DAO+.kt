@@ -1,4 +1,5 @@
 @file:Suppress("RedundantLambdaArrow")
+
 package com.akobor.kuvasz.util
 
 import org.jooq.Configuration

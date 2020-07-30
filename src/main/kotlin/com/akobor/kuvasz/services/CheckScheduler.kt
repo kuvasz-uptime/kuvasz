@@ -1,13 +1,14 @@
 package com.akobor.kuvasz.services
 
+import arrow.core.Either
 import com.akobor.kuvasz.repositories.MonitorRepository
 import com.akobor.kuvasz.tables.pojos.MonitorPojo
+import com.akobor.kuvasz.util.catchBlocking
 import com.akobor.kuvasz.util.toDurationOfSeconds
 import io.micronaut.context.annotation.Context
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import org.slf4j.LoggerFactory
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledFuture
 import javax.annotation.PostConstruct
 import javax.inject.Inject
@@ -33,24 +34,27 @@ class CheckScheduler @Inject constructor(
     fun initialize() {
         monitorRepository.fetchByEnabled(true)
             .forEach { monitor ->
-                val scheduledUptimeCheck = scheduleUptimeCheck(monitor)
-                if (scheduledUptimeCheck != null) {
-                    scheduledChecks[monitor.id] = scheduledUptimeCheck
-                }
+                scheduleUptimeCheck(monitor).fold(
+                    { e ->
+                        logger.error(
+                            "Uptime check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${e.message}"
+                        )
+                    },
+                    { scheduledUptimeCheck ->
+                        scheduledChecks[monitor.id] = scheduledUptimeCheck
+                        logger.info(
+                            "Uptime check for \"${monitor.name}\" (${monitor.url}) has been set up successfully"
+                        )
+                    }
+                )
             }
     }
 
-    private fun scheduleUptimeCheck(monitorPojo: MonitorPojo): ScheduledFuture<*>? {
-        return try {
-            val period = monitorPojo.uptimeCheckInterval.toDurationOfSeconds()
-            val task = taskScheduler.scheduleAtFixedRate(period, period) {
-                uptimeChecker.check(monitorPojo)
+    private fun scheduleUptimeCheck(monitor: MonitorPojo): Either<Throwable, ScheduledFuture<*>> =
+        Either.catchBlocking {
+            val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
+            taskScheduler.scheduleAtFixedRate(period, period) {
+                uptimeChecker.check(monitor)
             }
-            logger.info("Uptime check for \"${monitorPojo.name}\" (${monitorPojo.url}) has been set up successfully")
-            task
-        } catch (e: RejectedExecutionException) {
-            logger.error("Uptime check for \"${monitorPojo.name}\" (${monitorPojo.url}) cannot be set up: ${e.message}")
-            null
         }
-    }
 }

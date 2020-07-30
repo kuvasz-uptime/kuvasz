@@ -5,37 +5,28 @@ import com.akobor.kuvasz.events.MonitorUpEvent
 import com.akobor.kuvasz.events.RedirectEvent
 import com.akobor.kuvasz.events.getEndedEventDuration
 import com.akobor.kuvasz.services.EventDispatcher
+import com.akobor.kuvasz.util.toDurationString
 import io.micronaut.context.annotation.Context
+import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 @Context
-class LogEventHandler @Inject constructor(private val eventDispatcher: EventDispatcher) : EventHandler {
+@Requires(property = "app-config.log-event-handler.enabled", value = "true")
+class LogEventHandler @Inject constructor(eventDispatcher: EventDispatcher) : EventHandler {
     companion object {
         private val logger = LoggerFactory.getLogger(LogEventHandler::class.java)
     }
 
     init {
-        subscribeToMonitorUpEvents()
-        subscribeToMonitorDownEvents()
-        subscribeToRedirectEvents()
-    }
-
-    private fun subscribeToMonitorUpEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.info(event.toLogMessage())
         }
-    }
-
-    private fun subscribeToMonitorDownEvents() {
         eventDispatcher.subscribeToMonitorDownEvents { event ->
             logger.error(event.toLogMessage())
         }
-    }
-
-    private fun subscribeToRedirectEvents() {
         eventDispatcher.subscribeToRedirectEvents { event ->
             logger.warn(event.toLogMessage())
         }
@@ -43,27 +34,17 @@ class LogEventHandler @Inject constructor(private val eventDispatcher: EventDisp
 
     private fun MonitorUpEvent.toLogMessage(): String {
         val message = "\"${monitor.name}\" (${monitor.url}) is UP (${status.code}). Latency was: ${latency}ms."
-        // TODO refactor this
-        return getEndedEventDuration().fold(
+        return getEndedEventDuration().toDurationString().fold(
             { message },
-            { duration ->
-                duration.toComponents { _, hours, minutes, seconds, _ ->
-                    "$message Was down for $hours hour(s), $minutes minute(s), $seconds second(s)."
-                }
-            }
+            { "$message Was down for $it." }
         )
     }
 
     private fun MonitorDownEvent.toLogMessage(): String {
-        val message = "\"${monitor.name}\" (${monitor.url}) is DOWN. Reason: ${error.message}"
-        // TODO refactor this
-        return getEndedEventDuration().fold(
+        val message = "\"${monitor.name}\" (${monitor.url}) is DOWN. Reason: ${error.message}."
+        return getEndedEventDuration().toDurationString().fold(
             { message },
-            { duration ->
-                duration.toComponents { _, hours, minutes, seconds, _ ->
-                    "$message Was up for $hours hour(s), $minutes minute(s), $seconds second(s)."
-                }
-            }
+            { "$message Was up for $it." }
         )
     }
 
