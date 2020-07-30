@@ -10,7 +10,7 @@ plugins {
     id "nu.studer.jooq" version "${jooqPluginVersion}"
 }
 
-version "0.1"
+version "0.0.1"
 group "com.akobor.kuvasz"
 
 repositories {
@@ -145,7 +145,7 @@ tasks.withType(JavaExec) {
     }
 }
 
-jib.to.image = 'gcr.io/kuvasz/jib-image'
+jib.to.image = "kuvaszmonitoring/kuvasz:${version}"
 
 jooq {
     generateSchemaSourceOnCompilation = false
