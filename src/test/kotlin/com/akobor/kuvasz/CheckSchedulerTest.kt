@@ -35,6 +35,22 @@ class CheckSchedulerTest : DatabaseBehaviorSpec() {
                 }
             }
 
+            `when`("there is an enabled but unschedulable monitor in the database and initialize has been called") {
+                val monitor = MonitorPojo()
+                    .setId(88888)
+                    .setName("testMonitor")
+                    .setUptimeCheckInterval(0)
+                    .setUrl("http://irrelevant.com")
+                    .setEnabled(true)
+                monitorRepository.insert(monitor)
+
+                checkScheduler.initialize()
+
+                then("it should not schedule the check for it") {
+                    checkScheduler.getScheduledChecks().any { it.monitorId == monitor.id } shouldBe false
+                }
+            }
+
             `when`("there is a disabled monitor in the database and initialize has been called") {
                 val monitor = MonitorPojo()
                     .setId(11111)
