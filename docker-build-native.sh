@@ -5,9 +5,8 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 
 while getopts 'v:' OPTION; do
   case "$OPTION" in
-    v)
-      VERSION=$OPTARG
-      ;;
+    v) VERSION=$OPTARG ;;
+    *) exit 1 ;;
   esac
 done
 
