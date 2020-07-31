@@ -18,6 +18,7 @@ import javax.inject.Named
 
 @Context
 class CheckScheduler @Inject constructor(
+    @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,
     private val uptimeChecker: UptimeChecker
 ) {
@@ -26,32 +27,32 @@ class CheckScheduler @Inject constructor(
         private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
     }
 
-    @Inject
-    @Named(TaskExecutors.SCHEDULED)
-    lateinit var taskScheduler: TaskScheduler
-
     private val scheduledChecks: MutableList<ScheduledCheck> = mutableListOf()
 
     @PostConstruct
     fun initialize() {
         monitorRepository.fetchByEnabled(true)
-            .forEach { monitor ->
-                scheduleUptimeCheck(monitor).fold(
-                    { e ->
-                        logger.error(
-                            "Uptime check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${e.message}"
-                        )
-                    },
-                    { scheduledTask ->
-                        scheduledChecks.add(
-                            ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledTask)
-                        )
-                        logger.info(
-                            "Uptime check for \"${monitor.name}\" (${monitor.url}) has been set up successfully"
-                        )
-                    }
+            .forEach { createChecksForMonitor(it) }
+    }
+
+    fun getScheduledChecks() = scheduledChecks
+
+    fun createChecksForMonitor(monitor: MonitorPojo) {
+        scheduleUptimeCheck(monitor).fold(
+            { e ->
+                logger.error(
+                    "Uptime check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${e.message}"
+                )
+            },
+            { scheduledTask ->
+                scheduledChecks.add(
+                    ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledTask)
+                )
+                logger.info(
+                    "Uptime check for \"${monitor.name}\" (${monitor.url}) has been set up successfully"
                 )
             }
+        )
     }
 
     private fun scheduleUptimeCheck(monitor: MonitorPojo): Either<Throwable, ScheduledFuture<*>> =
