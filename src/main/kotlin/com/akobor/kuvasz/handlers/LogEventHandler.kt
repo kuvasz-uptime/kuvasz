@@ -10,9 +10,7 @@ import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
-import kotlin.time.ExperimentalTime
 
-@ExperimentalTime
 @Context
 @Requires(property = "app-config.log-event-handler.enabled", value = "true")
 class LogEventHandler @Inject constructor(eventDispatcher: EventDispatcher) : EventHandler {

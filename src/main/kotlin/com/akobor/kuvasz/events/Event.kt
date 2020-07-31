@@ -9,7 +9,6 @@ import io.micronaut.http.HttpStatus
 import java.net.URI
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
-import kotlin.time.ExperimentalTime
 import kotlin.time.toDuration
 
 sealed class Event {
@@ -52,7 +51,6 @@ fun UptimeMonitorEvent.uptimeStatusEquals(previousEvent: UptimeEventPojo) =
 fun UptimeMonitorEvent.uptimeStatusNotEquals(previousEvent: UptimeEventPojo) =
     !uptimeStatusEquals(previousEvent)
 
-@ExperimentalTime
 fun UptimeMonitorEvent.getEndedEventDuration(): Option<Duration> =
     previousEvent.flatMap { previousEvent ->
         Option.fromNullable(

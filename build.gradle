@@ -115,6 +115,7 @@ compileKotlin {
         jvmTarget = '11'
         //Will retain parameter names for Java reflection
         javaParameters = true
+        freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
 }
 compileTestKotlin {
