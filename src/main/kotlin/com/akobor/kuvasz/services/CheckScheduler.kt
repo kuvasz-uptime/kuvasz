@@ -1,6 +1,8 @@
 package com.akobor.kuvasz.services
 
 import arrow.core.Either
+import com.akobor.kuvasz.models.CheckType
+import com.akobor.kuvasz.models.ScheduledCheck
 import com.akobor.kuvasz.repositories.MonitorRepository
 import com.akobor.kuvasz.tables.pojos.MonitorPojo
 import com.akobor.kuvasz.util.catchBlocking
@@ -28,7 +30,7 @@ class CheckScheduler @Inject constructor(
     @Named(TaskExecutors.SCHEDULED)
     lateinit var taskScheduler: TaskScheduler
 
-    private val scheduledChecks: MutableMap<Int, ScheduledFuture<*>> = mutableMapOf()
+    private val scheduledChecks: MutableList<ScheduledCheck> = mutableListOf()
 
     @PostConstruct
     fun initialize() {
@@ -40,8 +42,10 @@ class CheckScheduler @Inject constructor(
                             "Uptime check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${e.message}"
                         )
                     },
-                    { scheduledUptimeCheck ->
-                        scheduledChecks[monitor.id] = scheduledUptimeCheck
+                    { scheduledTask ->
+                        scheduledChecks.add(
+                            ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledTask)
+                        )
                         logger.info(
                             "Uptime check for \"${monitor.name}\" (${monitor.url}) has been set up successfully"
                         )
