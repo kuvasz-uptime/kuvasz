@@ -1,2 +1,18 @@
 #!/bin/sh
-docker build . -t kuvaszmonitoring/kuvasz:0.0.1-native
+VERSION=""
+TAG=""
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
+while getopts 'v:' OPTION; do
+  case "$OPTION" in
+    v)
+      VERSION=$OPTARG
+      ;;
+  esac
+done
+
+TAG="${VERSION}-native"
+
+echo "Building docker image with tag: ${TAG}..."
+docker build . -t kuvaszmonitoring/kuvasz:${TAG} --build-arg VERSION=${VERSION}
+echo "Building docker image with tag: ${TAG}...OK"

@@ -8,9 +8,10 @@ plugins {
     id "io.gitlab.arturbosch.detekt" version "${detektVersion}"
     id "jacoco"
     id "nu.studer.jooq" version "${jooqPluginVersion}"
+    id "com.palantir.git-version" version "${palantirGitVersion}"
 }
 
-version "0.0.1"
+version gitVersion()
 group "com.akobor.kuvasz"
 
 repositories {
@@ -147,6 +148,25 @@ tasks.withType(JavaExec) {
 }
 
 jib.to.image = "kuvaszmonitoring/kuvasz:${version}"
+
+task buildNativeImage(type: Exec) {
+    dependsOn("shadowJar")
+    workingDir projectDir
+    commandLine "sh", "./docker-build-native.sh", "-v${version}"
+}
+
+task pushNativeImage(type: Exec) {
+    workingDir projectDir
+    commandLine "sh", "./docker-push-native.sh", "-t${version}-native"
+}
+
+task releaseDockerImages() {
+    dependsOn("jib")
+    dependsOn("buildNativeImage")
+    dependsOn("pushNativeImage")
+    tasks.findByName("buildNativeImage").mustRunAfter "jib"
+    tasks.findByName("pushNativeImage").mustRunAfter "buildNativeImage"
+}
 
 jooq {
     generateSchemaSourceOnCompilation = false
