@@ -1,7 +1,7 @@
-package com.akobor.kuvasz
+package com.akobor.kuvasz.services
 
+import com.akobor.kuvasz.DatabaseBehaviorSpec
 import com.akobor.kuvasz.repositories.MonitorRepository
-import com.akobor.kuvasz.services.CheckScheduler
 import com.akobor.kuvasz.tables.pojos.MonitorPojo
 import com.akobor.kuvasz.utils.getBean
 import com.akobor.kuvasz.utils.startTestApplication

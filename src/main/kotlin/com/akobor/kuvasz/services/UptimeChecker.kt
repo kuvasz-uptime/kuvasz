@@ -1,14 +1,14 @@
 package com.akobor.kuvasz.services
 
-import arrow.core.Option
 import com.akobor.kuvasz.events.MonitorDownEvent
 import com.akobor.kuvasz.events.MonitorUpEvent
 import com.akobor.kuvasz.events.RedirectEvent
 import com.akobor.kuvasz.repositories.UptimeEventRepository
 import com.akobor.kuvasz.tables.pojos.MonitorPojo
-import com.akobor.kuvasz.tables.pojos.UptimeEventPojo
+import com.akobor.kuvasz.util.RawHttpResponse
 import com.akobor.kuvasz.util.getRedirectionUri
 import com.akobor.kuvasz.util.isSuccess
+import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -23,20 +23,12 @@ class UptimeChecker @Inject constructor(
     private val uptimeEventRepository: UptimeEventRepository
 ) {
 
-    fun check(monitor: MonitorPojo) {
+    fun check(monitor: MonitorPojo, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
-        sendHttpRequest(uri = URI(monitor.url), monitor = monitor, previousEvent = previousEvent)
-    }
+        var start = 0L
 
-    private fun sendHttpRequest(uri: URI, monitor: MonitorPojo, previousEvent: Option<UptimeEventPojo>) {
-        // TODO revise headers
-        val request = HttpRequest.GET<Any>(uri)
-            .header("Accept", "*/*")
-            .header("Accept-Encoding", "gzip, deflate, br")
-            .header("Cache-Control", "no-cache")
-        val start = System.currentTimeMillis()
-
-        httpClient.exchange(request)
+        sendHttpRequest(uri = uriOverride ?: URI(monitor.url))
+            .doOnSubscribe { start = System.currentTimeMillis() }
             .subscribe(
                 { response ->
                     if (response.isSuccess()) {
@@ -68,7 +60,7 @@ class UptimeChecker @Inject constructor(
                                         redirectLocation = redirectionUri
                                     )
                                 )
-                                sendHttpRequest(redirectionUri, monitor, previousEvent)
+                                check(monitor, redirectionUri)
                             }
                         )
                     }
@@ -84,5 +76,15 @@ class UptimeChecker @Inject constructor(
                     )
                 }
             )
+    }
+
+    private fun sendHttpRequest(uri: URI): RawHttpResponse {
+        // TODO revise headers
+        val request = HttpRequest.GET<Any>(uri)
+            .header(HttpHeaders.ACCEPT, "*/*")
+            .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
+            .header(HttpHeaders.CACHE_CONTROL, "no-cache")
+
+        return httpClient.exchange(request)
     }
 }

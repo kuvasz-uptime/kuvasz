@@ -4,6 +4,7 @@ import com.akobor.kuvasz.events.Event
 import com.akobor.kuvasz.events.MonitorDownEvent
 import com.akobor.kuvasz.events.MonitorUpEvent
 import com.akobor.kuvasz.events.RedirectEvent
+import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import javax.inject.Singleton
@@ -30,4 +31,13 @@ class EventDispatcher {
 
     fun subscribeToRedirectEvents(consumer: (RedirectEvent) -> Unit): Disposable =
         redirectEvents.subscribe(consumer)
+
+    fun subscribeToMonitorUpEvents(observer: Observer<MonitorUpEvent>) =
+        monitorUpEvents.subscribe(observer)
+
+    fun subscribeToMonitorDownEvents(observer: Observer<MonitorDownEvent>) =
+        monitorDownEvents.subscribe(observer)
+
+    fun subscribeToRedirectEvents(observer: Observer<RedirectEvent>) =
+        redirectEvents.subscribe(observer)
 }

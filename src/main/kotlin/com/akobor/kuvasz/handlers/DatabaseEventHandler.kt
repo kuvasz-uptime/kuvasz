@@ -7,12 +7,14 @@ import com.akobor.kuvasz.repositories.UptimeEventRepository
 import com.akobor.kuvasz.services.EventDispatcher
 import com.akobor.kuvasz.util.transaction
 import io.micronaut.context.annotation.Context
+import io.micronaut.scheduling.TaskExecutors
+import io.micronaut.scheduling.annotation.ExecuteOn
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
 @Context
 class DatabaseEventHandler @Inject constructor(
-    eventDispatcher: EventDispatcher,
+    private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository
 ) : EventHandler {
@@ -21,6 +23,11 @@ class DatabaseEventHandler @Inject constructor(
     }
 
     init {
+        subscribeToEvents()
+    }
+
+    @ExecuteOn(TaskExecutors.IO)
+    private fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
             latencyLogRepository.insertLatencyForMonitor(event.monitor.id, event.latency)

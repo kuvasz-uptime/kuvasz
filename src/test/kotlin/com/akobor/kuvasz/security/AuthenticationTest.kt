@@ -1,4 +1,4 @@
-package com.akobor.kuvasz
+package com.akobor.kuvasz.security
 
 import com.akobor.kuvasz.utils.generateCredentials
 import com.nimbusds.jwt.JWTParser
