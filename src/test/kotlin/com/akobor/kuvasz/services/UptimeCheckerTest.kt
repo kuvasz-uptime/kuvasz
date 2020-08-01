@@ -9,6 +9,7 @@ import com.akobor.kuvasz.repositories.MonitorRepository
 import com.akobor.kuvasz.util.toUri
 import com.akobor.kuvasz.utils.getBean
 import com.akobor.kuvasz.utils.startTestApplication
+import com.akobor.kuvasz.utils.toSubscriber
 import io.kotest.core.spec.autoClose
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
@@ -20,7 +21,7 @@ import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.spyk
 import io.reactivex.Flowable.fromArray
-import io.reactivex.observers.TestObserver
+import io.reactivex.subscribers.TestSubscriber
 import java.net.URI
 
 class UptimeCheckerTest : DatabaseBehaviorSpec() {
@@ -33,16 +34,16 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
         given("the UptimeChecker service") {
             `when`("it checks a monitor that is UP") {
                 val monitor = createMonitor(monitorRepository)
-                val observer = TestObserver<MonitorUpEvent>()
-                eventDispatcher.subscribeToMonitorUpEvents(observer)
+                val subscriber = TestSubscriber<MonitorUpEvent>()
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
                 mockHttpResponse(uptimeChecker, HttpStatus.OK)
 
                 uptimeChecker.check(monitor)
 
                 then("it should dispatch a MonitorUpEvent") {
-                    val expectedEvent = observer.values().first()
+                    val expectedEvent = subscriber.values().first()
 
-                    observer.valueCount() shouldBe 1
+                    subscriber.valueCount() shouldBe 1
                     expectedEvent.status shouldBe HttpStatus.OK
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
@@ -50,16 +51,16 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
 
             `when`("it checks a monitor that is DOWN") {
                 val monitor = createMonitor(monitorRepository)
-                val observer = TestObserver<MonitorDownEvent>()
-                eventDispatcher.subscribeToMonitorDownEvents(observer)
+                val subscriber = TestSubscriber<MonitorDownEvent>()
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(subscriber) }
                 mockHttpResponse(uptimeChecker, HttpStatus.INTERNAL_SERVER_ERROR)
 
                 uptimeChecker.check(monitor)
 
                 then("it should dispatch a MonitorDownEvent") {
-                    val expectedEvent = observer.values().first()
+                    val expectedEvent = subscriber.values().first()
 
-                    observer.valueCount() shouldBe 1
+                    subscriber.valueCount() shouldBe 1
                     expectedEvent.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
@@ -67,16 +68,16 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
 
             `when`("it checks a monitor that is redirected without a Location header") {
                 val monitor = createMonitor(monitorRepository)
-                val observer = TestObserver<MonitorDownEvent>()
-                eventDispatcher.subscribeToMonitorDownEvents(observer)
+                val subscriber = TestSubscriber<MonitorDownEvent>()
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(subscriber) }
                 mockHttpResponse(uptimeChecker, HttpStatus.PERMANENT_REDIRECT)
 
                 uptimeChecker.check(monitor)
 
                 then("it should dispatch a MonitorDownEvent") {
-                    val expectedEvent = observer.values().first()
+                    val expectedEvent = subscriber.values().first()
 
-                    observer.valueCount() shouldBe 1
+                    subscriber.valueCount() shouldBe 1
                     expectedEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
@@ -84,27 +85,27 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
 
             `when`("it checks a monitor that is redirected with a Location header, but it's DOWN") {
                 val monitor = createMonitor(monitorRepository)
-                val redirectObserver = TestObserver<RedirectEvent>()
-                val monitorDownObserver = TestObserver<MonitorDownEvent>()
+                val redirectSubscriber = TestSubscriber<RedirectEvent>()
+                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
                 val redirectLocation = "http://redirected-bad.loc"
                 val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
 
-                eventDispatcher.subscribeToRedirectEvents(redirectObserver)
-                eventDispatcher.subscribeToMonitorDownEvents(monitorDownObserver)
+                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
                 mockHttpResponse(uptimeChecker, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
                 mockHttpResponse(uptimeChecker, HttpStatus.INTERNAL_SERVER_ERROR, redirectLocation.toUri())
 
                 uptimeChecker.check(monitor)
 
                 then("it should dispatch a RedirectEvent and then a MonitorDownEvent") {
-                    val expectedRedirectEvent = redirectObserver.values().first()
-                    val expectedDownEvent = monitorDownObserver.values().first()
+                    val expectedRedirectEvent = redirectSubscriber.values().first()
+                    val expectedDownEvent = monitorDownSubscriber.values().first()
 
-                    redirectObserver.valueCount() shouldBe 1
+                    redirectSubscriber.valueCount() shouldBe 1
                     expectedRedirectEvent.redirectLocation shouldBe redirectLocation.toUri()
                     expectedRedirectEvent.monitor.id shouldBe monitor.id
 
-                    monitorDownObserver.valueCount() shouldBe 1
+                    monitorDownSubscriber.valueCount() shouldBe 1
                     expectedDownEvent.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
                     expectedDownEvent.monitor.id shouldBe monitor.id
                 }
@@ -112,27 +113,27 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
 
             `when`("it checks a monitor that is redirected with a Location header, but it's UP") {
                 val monitor = createMonitor(monitorRepository)
-                val redirectObserver = TestObserver<RedirectEvent>()
-                val monitorUpObserver = TestObserver<MonitorUpEvent>()
+                val redirectSubscriber = TestSubscriber<RedirectEvent>()
+                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
                 val redirectLocation = "http://redirected-good.loc"
                 val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
 
-                eventDispatcher.subscribeToRedirectEvents(redirectObserver)
-                eventDispatcher.subscribeToMonitorUpEvents(monitorUpObserver)
+                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
                 mockHttpResponse(uptimeChecker, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
                 mockHttpResponse(uptimeChecker, HttpStatus.OK, redirectLocation.toUri())
 
                 uptimeChecker.check(monitor)
 
                 then("it should dispatch a RedirectEvent and then a MonitorUpEvent") {
-                    val expectedRedirectEvent = redirectObserver.values().first()
-                    val expectedUpEvent = monitorUpObserver.values().first()
+                    val expectedRedirectEvent = redirectSubscriber.values().first()
+                    val expectedUpEvent = monitorUpSubscriber.values().first()
 
-                    redirectObserver.valueCount() shouldBe 1
+                    redirectSubscriber.valueCount() shouldBe 1
                     expectedRedirectEvent.redirectLocation shouldBe redirectLocation.toUri()
                     expectedRedirectEvent.monitor.id shouldBe monitor.id
 
-                    monitorUpObserver.valueCount() shouldBe 1
+                    monitorUpSubscriber.valueCount() shouldBe 1
                     expectedUpEvent.status shouldBe HttpStatus.OK
                     expectedUpEvent.monitor.id shouldBe monitor.id
                 }
