@@ -1,17 +1,21 @@
 <configuration>
-    <variable name="communicationLogLevel" value="${COMMUNICATION_LOG_LEVEL:-DEBUG}" />
+    <variable name="communicationLogLevel" value="${HTTP_COMMUNICATION_LOG_LEVEL:-DEBUG}"/>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
-            <pattern>%cyan(%d{HH:mm:ss.SSS}) %gray([%thread]) %highlight(%-5level) %magenta(%logger{36}) - %msg%n</pattern>
+            <pattern>
+                %cyan(%d{HH:mm:ss.SSS}) %gray([%thread]) %highlight(%-5level) %magenta(%logger{36}) - %msg%n
+            </pattern>
         </encoder>
     </appender>
 
-    <logger name="CommunicationLogger" level="${communicationLogLevel}" />
+    <logger name="com.akobor.kuvasz.services.HttpCommunicationLogger" level="${communicationLogLevel}"/>
+    <logger name="org.jooq.Constants" level="WARN"/>
+    <logger name="org.jooq" level="DEBUG"/>
 
     <root level="info">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

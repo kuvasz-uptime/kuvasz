@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.info.Info
 @OpenAPIDefinition(
     info = Info(
         title = "kuvasz",
-        version = "0.0"
+        version = "latest"
     )
 )
 @Suppress("SpreadOperator")

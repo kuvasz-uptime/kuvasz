@@ -21,7 +21,8 @@ micronaut:
       - pattern: /swagger/**
         access: isAnonymous()
       - pattern: /**
-        access: isAuthenticated()
+        access:
+          - ROLE_ADMIN
     basic-auth:
       enabled: true
   router:
@@ -35,6 +36,9 @@ micronaut:
       swagger-ui:
         paths: classpath:META-INF/swagger/views/swagger-ui
         mapping: /swagger-ui/**
+  http:
+    client:
+      follow-redirects: false
 ---
 datasources:
   default:
@@ -42,6 +46,7 @@ datasources:
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
     driverClassName: 'org.postgresql.Driver'
+    schema: 'kuvasz'
 ---
 flyway:
   datasources:
@@ -61,3 +66,7 @@ jooq:
 app-config:
   user: ${ADMIN_USER}
   password: ${ADMIN_PASSWORD}
+  http-communication-logging:
+    enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}
+  log-event-handler:
+    enabled: ${ENABLE_LOG_EVENT_HANDLER:`true`}

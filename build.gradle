@@ -3,14 +3,15 @@ plugins {
     id "org.jetbrains.kotlin.kapt" version "${kotlinVersion}"
     id "org.jetbrains.kotlin.plugin.allopen" version "${kotlinVersion}"
     id "application"
-    id "com.google.cloud.tools.jib" version "2.4.0"
-    id "com.github.johnrengelman.shadow" version "6.0.0"
+    id "com.google.cloud.tools.jib" version "${jibVersion}"
+    id "com.github.johnrengelman.shadow" version "${shadowVersion}"
     id "io.gitlab.arturbosch.detekt" version "${detektVersion}"
     id "jacoco"
     id "nu.studer.jooq" version "${jooqPluginVersion}"
+    id "com.palantir.git-version" version "${palantirGitVersion}"
 }
 
-version "0.1"
+version gitVersion()
 group "com.akobor.kuvasz"
 
 repositories {
@@ -32,6 +33,8 @@ dependencies {
     kapt("io.micronaut.security:micronaut-security-annotations")
     compileOnly(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
+    implementation("io.arrow-kt:arrow-core-data:${arrowDataVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     implementation("io.micronaut:micronaut-inject")
     implementation("io.micronaut:micronaut-validation")
@@ -52,15 +55,19 @@ dependencies {
     implementation "nu.studer:gradle-jooq-plugin:$jooqPluginVersion"
     detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
     runtimeOnly("ch.qos.logback:logback-classic")
-    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("ch.qos.logback.contrib:logback-json-classic:${logbackJsonVersion}")
+    runtimeOnly("ch.qos.logback.contrib:logback-jackson:${logbackJsonVersion}")
+    runtimeOnly("net.logstash.logback:logstash-logback-encoder:${logstashEncoderVersion}")
+    runtimeOnly("org.codehaus.janino:janino:${janinoVersion}")
+    runtimeOnly("org.postgresql:postgresql:${postgresVersion}")
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
     testImplementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     testImplementation("io.micronaut.test:micronaut-test-kotest")
-    testImplementation("io.mockk:mockk:1.10.0")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.3")
-    testRuntimeOnly("com.h2database:h2")
-    jooqRuntime 'org.postgresql:postgresql:42.2.14'
+    testImplementation("io.kotest:kotest-runner-junit5-jvm")
+    testImplementation("io.mockk:mockk:${mockkVersion}")
+    testImplementation("org.testcontainers:postgresql:${testContainersVersion}")
+    jooqRuntime("org.postgresql:postgresql:${postgresVersion}")
 }
 
 test.classpath += configurations.developmentOnly
@@ -95,7 +102,9 @@ build {
 
 // use JUnit 5 platform
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        systemProperties("micronaut.environments": "test")
+    }
     finalizedBy("jacocoTestReport")
 }
 
@@ -111,12 +120,14 @@ compileKotlin {
         jvmTarget = '11'
         //Will retain parameter names for Java reflection
         javaParameters = true
+        freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
 }
 compileTestKotlin {
     kotlinOptions {
         jvmTarget = '11'
         javaParameters = true
+        freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
 }
 kapt {
@@ -130,18 +141,37 @@ kapt {
 
 tasks.withType(JavaExec) {
     classpath += configurations.developmentOnly
-    jvmArgs('-XX:TieredStopAtLevel=1', '-Dcom.sun.management.jmxremote', '-Dlogback.configurationFile=logback-dev.xml')
+    jvmArgs('-XX:TieredStopAtLevel=1', '-Dcom.sun.management.jmxremote', '-Xmx64M', '-Dlogback.configurationFile=logback-dev.xml')
     systemProperty("micronaut.environments", "dev")
     if (gradle.startParameter.continuous) {
         systemProperties(
-            'micronaut.io.watch.restart':'true',
-            'micronaut.io.watch.enabled':'true',
-            "micronaut.io.watch.paths":"src/main"
+                'micronaut.io.watch.restart': 'true',
+                'micronaut.io.watch.enabled': 'true',
+                "micronaut.io.watch.paths": "src/main"
         )
     }
 }
 
-jib.to.image = 'gcr.io/kuvasz/jib-image'
+jib.to.image = "kuvaszmonitoring/kuvasz:${version}"
+
+task buildNativeImage(type: Exec) {
+    dependsOn("shadowJar")
+    workingDir projectDir
+    commandLine "sh", "./docker-build-native.sh", "-v${version}"
+}
+
+task pushNativeImage(type: Exec) {
+    workingDir projectDir
+    commandLine "sh", "./docker-push-native.sh", "-t${version}-native"
+}
+
+task releaseDockerImages() {
+    dependsOn("jib")
+    dependsOn("buildNativeImage")
+    dependsOn("pushNativeImage")
+    tasks.findByName("buildNativeImage").mustRunAfter "jib"
+    tasks.findByName("pushNativeImage").mustRunAfter "buildNativeImage"
+}
 
 jooq {
     generateSchemaSourceOnCompilation = false
@@ -165,7 +195,7 @@ jooq {
                 fluentSetters = true
             }
             database {
-                inputSchema = "public"
+                inputSchema = "kuvasz"
                 outputSchemaToDefault = true
                 excludes = "flyway_schema_history"
             }

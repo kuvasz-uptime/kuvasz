@@ -15,7 +15,17 @@ import org.jooq.impl.Internal;
 public class Sequences {
 
     /**
+     * The sequence <code>latency_log_id_seq</code>
+     */
+    public static final Sequence<Integer> LATENCY_LOG_ID_SEQ = Internal.createSequence("latency_log_id_seq", DefaultSchema.DEFAULT_SCHEMA, org.jooq.impl.SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>monitor_id_seq</code>
      */
     public static final Sequence<Integer> MONITOR_ID_SEQ = Internal.createSequence("monitor_id_seq", DefaultSchema.DEFAULT_SCHEMA, org.jooq.impl.SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+
+    /**
+     * The sequence <code>uptime_event_id_seq</code>
+     */
+    public static final Sequence<Integer> UPTIME_EVENT_ID_SEQ = Internal.createSequence("uptime_event_id_seq", DefaultSchema.DEFAULT_SCHEMA, org.jooq.impl.SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
 }

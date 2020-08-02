@@ -26,7 +26,12 @@ class AdminAuthProvider @Inject constructor(private val appConfig: AppConfig) : 
             if (authenticationRequest.identity == appConfig.user &&
                 authenticationRequest.secret == appConfig.password
             ) {
-                emitter.onNext(UserDetails(authenticationRequest.identity as String, ArrayList()))
+                val userDetails =
+                    UserDetails(
+                        authenticationRequest.identity as String,
+                        listOf(Role.ADMIN.alias)
+                    )
+                emitter.onNext(userDetails)
                 emitter.onComplete()
             } else {
                 emitter.onError(AuthenticationException(AuthenticationFailed()))
