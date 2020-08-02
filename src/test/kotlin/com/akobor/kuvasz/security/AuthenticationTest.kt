@@ -1,5 +1,6 @@
 package com.akobor.kuvasz.security
 
+import com.akobor.kuvasz.config.AppConfig
 import com.akobor.kuvasz.mocks.generateCredentials
 import com.nimbusds.jwt.JWTParser
 import com.nimbusds.jwt.SignedJWT
@@ -16,7 +17,10 @@ import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
 import io.micronaut.test.annotation.MicronautTest
 
 @MicronautTest
-class AuthenticationTest(@Client("/") private val client: RxHttpClient) : BehaviorSpec() {
+class AuthenticationTest(
+    @Client("/") private val client: RxHttpClient,
+    private val appConfig: AppConfig
+) : BehaviorSpec() {
     init {
         given("a public endpoint") {
 
@@ -30,7 +34,7 @@ class AuthenticationTest(@Client("/") private val client: RxHttpClient) : Behavi
         given("the login endpoint") {
 
             `when`("the user provides the right credentials") {
-                val credentials = generateCredentials(valid = true)
+                val credentials = generateCredentials(appConfig, valid = true)
                 val request = HttpRequest.POST("/login", credentials)
                 val response = client.toBlocking().exchange(request, BearerAccessRefreshToken::class.java)
                 val token = response.body()!!
@@ -44,7 +48,7 @@ class AuthenticationTest(@Client("/") private val client: RxHttpClient) : Behavi
             }
 
             `when`("a user provides bad credentials") {
-                val credentials = generateCredentials(valid = false)
+                val credentials = generateCredentials(appConfig, valid = false)
                 val request = HttpRequest.POST("/login", credentials)
                 val exception = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange(request, BearerAccessRefreshToken::class.java)
@@ -66,7 +70,7 @@ class AuthenticationTest(@Client("/") private val client: RxHttpClient) : Behavi
             }
 
             `when`("a user provides the right credentials") {
-                val credentials = generateCredentials(valid = true)
+                val credentials = generateCredentials(appConfig, valid = true)
                 val loginRequest = HttpRequest.POST("/login", credentials)
                 val loginResponse = client.toBlocking().exchange(loginRequest, BearerAccessRefreshToken::class.java)
                 val token = loginResponse.body()!!

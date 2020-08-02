@@ -1,4 +1,4 @@
-package com.akobor.kuvasz.utils
+package com.akobor.kuvasz.testutils
 
 import com.akobor.kuvasz.events.Event
 import io.reactivex.subscribers.TestSubscriber

@@ -1,13 +1,13 @@
 package com.akobor.kuvasz.services
 
 import com.akobor.kuvasz.DatabaseBehaviorSpec
-import com.akobor.kuvasz.mocks.createMonitor
 import com.akobor.kuvasz.events.MonitorDownEvent
 import com.akobor.kuvasz.events.MonitorUpEvent
 import com.akobor.kuvasz.events.RedirectEvent
+import com.akobor.kuvasz.mocks.createMonitor
 import com.akobor.kuvasz.repositories.MonitorRepository
 import com.akobor.kuvasz.util.toUri
-import com.akobor.kuvasz.utils.toSubscriber
+import com.akobor.kuvasz.testutils.toSubscriber
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.shouldBe
@@ -50,18 +50,15 @@ class UptimeCheckerTest(
             }
 
             `when`("it checks a monitor that is DOWN") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(monitorRepository, url = "http://this-should-not.exist")
                 val subscriber = TestSubscriber<MonitorDownEvent>()
                 eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(subscriber) }
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.INTERNAL_SERVER_ERROR)
-
-                uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorDownEvent") {
-                    val expectedEvent = subscriber.values().first()
+                    uptimeCheckerSpy.check(monitor)
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
 
                     subscriber.valueCount() shouldBe 1
-                    expectedEvent.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
             }

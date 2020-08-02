@@ -1,6 +1,6 @@
 package io.micronaut.test.kotest
 
-import com.akobor.kuvasz.utils.TestDbContainer
+import com.akobor.kuvasz.testutils.TestDbContainer
 import io.kotest.core.config.AbstractProjectConfig
 import io.micronaut.test.extensions.kotest.MicronautKotestExtension
 

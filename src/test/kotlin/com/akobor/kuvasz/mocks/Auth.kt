@@ -1,9 +1,10 @@
 package com.akobor.kuvasz.mocks
 
+import com.akobor.kuvasz.config.AppConfig
 import io.micronaut.security.authentication.UsernamePasswordCredentials
 
-fun generateCredentials(valid: Boolean) =
+fun generateCredentials(appConfig: AppConfig, valid: Boolean) =
     UsernamePasswordCredentials(
-        "test-user",
-        if (valid) "test-pass" else "bad-pass"
+        appConfig.user,
+        if (valid) appConfig.password else "bad-pass"
     )

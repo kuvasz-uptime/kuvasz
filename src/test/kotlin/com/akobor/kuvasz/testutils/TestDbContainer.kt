@@ -1,4 +1,4 @@
-package com.akobor.kuvasz.utils
+package com.akobor.kuvasz.testutils
 
 import org.testcontainers.containers.PostgreSQLContainer
 

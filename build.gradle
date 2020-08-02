@@ -127,6 +127,7 @@ compileTestKotlin {
     kotlinOptions {
         jvmTarget = '11'
         javaParameters = true
+        freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
 }
 kapt {
