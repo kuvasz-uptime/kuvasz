@@ -3,18 +3,16 @@ package com.akobor.kuvasz.services
 import com.akobor.kuvasz.DatabaseBehaviorSpec
 import com.akobor.kuvasz.repositories.MonitorRepository
 import com.akobor.kuvasz.tables.pojos.MonitorPojo
-import com.akobor.kuvasz.utils.getBean
-import com.akobor.kuvasz.utils.startTestApplication
-import io.kotest.core.spec.autoClose
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.micronaut.test.annotation.MicronautTest
 
-class CheckSchedulerTest : DatabaseBehaviorSpec() {
+@MicronautTest
+class CheckSchedulerTest(
+    private val checkScheduler: CheckScheduler,
+    private val monitorRepository: MonitorRepository
+) : DatabaseBehaviorSpec() {
     init {
-        service = autoClose(startTestApplication())
-        val checkScheduler = service.getBean<CheckScheduler>()
-        val monitorRepository = service.getBean<MonitorRepository>()
-
         given("the CheckScheduler service") {
             `when`("there is an enabled monitor in the database and initialize has been called") {
                 val monitor = MonitorPojo()

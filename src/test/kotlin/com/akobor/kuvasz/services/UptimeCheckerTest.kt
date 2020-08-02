@@ -1,22 +1,20 @@
 package com.akobor.kuvasz.services
 
 import com.akobor.kuvasz.DatabaseBehaviorSpec
-import com.akobor.kuvasz.createMonitor
+import com.akobor.kuvasz.mocks.createMonitor
 import com.akobor.kuvasz.events.MonitorDownEvent
 import com.akobor.kuvasz.events.MonitorUpEvent
 import com.akobor.kuvasz.events.RedirectEvent
 import com.akobor.kuvasz.repositories.MonitorRepository
 import com.akobor.kuvasz.util.toUri
-import com.akobor.kuvasz.utils.getBean
-import com.akobor.kuvasz.utils.startTestApplication
 import com.akobor.kuvasz.utils.toSubscriber
-import io.kotest.core.spec.autoClose
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.simple.SimpleHttpResponseFactory
+import io.micronaut.test.annotation.MicronautTest
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.spyk
@@ -24,21 +22,23 @@ import io.reactivex.Flowable.fromArray
 import io.reactivex.subscribers.TestSubscriber
 import java.net.URI
 
-class UptimeCheckerTest : DatabaseBehaviorSpec() {
+@MicronautTest
+class UptimeCheckerTest(
+    uptimeChecker: UptimeChecker,
+    private val monitorRepository: MonitorRepository,
+    private val eventDispatcher: EventDispatcher
+) : DatabaseBehaviorSpec() {
     init {
-        service = autoClose(startTestApplication())
-        val uptimeChecker = spyk(service.getBean<UptimeChecker>(), recordPrivateCalls = true)
-        val eventDispatcher = service.getBean<EventDispatcher>()
-        val monitorRepository = service.getBean<MonitorRepository>()
+        val uptimeCheckerSpy = spyk(uptimeChecker, recordPrivateCalls = true)
 
         given("the UptimeChecker service") {
             `when`("it checks a monitor that is UP") {
                 val monitor = createMonitor(monitorRepository)
                 val subscriber = TestSubscriber<MonitorUpEvent>()
                 eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
-                mockHttpResponse(uptimeChecker, HttpStatus.OK)
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
 
-                uptimeChecker.check(monitor)
+                uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorUpEvent") {
                     val expectedEvent = subscriber.values().first()
@@ -53,9 +53,9 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
                 val monitor = createMonitor(monitorRepository)
                 val subscriber = TestSubscriber<MonitorDownEvent>()
                 eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(subscriber) }
-                mockHttpResponse(uptimeChecker, HttpStatus.INTERNAL_SERVER_ERROR)
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.INTERNAL_SERVER_ERROR)
 
-                uptimeChecker.check(monitor)
+                uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorDownEvent") {
                     val expectedEvent = subscriber.values().first()
@@ -70,9 +70,9 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
                 val monitor = createMonitor(monitorRepository)
                 val subscriber = TestSubscriber<MonitorDownEvent>()
                 eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(subscriber) }
-                mockHttpResponse(uptimeChecker, HttpStatus.PERMANENT_REDIRECT)
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT)
 
-                uptimeChecker.check(monitor)
+                uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorDownEvent") {
                     val expectedEvent = subscriber.values().first()
@@ -92,10 +92,10 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
 
                 eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
                 eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
-                mockHttpResponse(uptimeChecker, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
-                mockHttpResponse(uptimeChecker, HttpStatus.INTERNAL_SERVER_ERROR, redirectLocation.toUri())
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.INTERNAL_SERVER_ERROR, redirectLocation.toUri())
 
-                uptimeChecker.check(monitor)
+                uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a RedirectEvent and then a MonitorDownEvent") {
                     val expectedRedirectEvent = redirectSubscriber.values().first()
@@ -120,10 +120,10 @@ class UptimeCheckerTest : DatabaseBehaviorSpec() {
 
                 eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
                 eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
-                mockHttpResponse(uptimeChecker, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
-                mockHttpResponse(uptimeChecker, HttpStatus.OK, redirectLocation.toUri())
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK, redirectLocation.toUri())
 
-                uptimeChecker.check(monitor)
+                uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a RedirectEvent and then a MonitorUpEvent") {
                     val expectedRedirectEvent = redirectSubscriber.values().first()

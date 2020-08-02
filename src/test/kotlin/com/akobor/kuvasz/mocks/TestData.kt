@@ -1,4 +1,4 @@
-package com.akobor.kuvasz
+package com.akobor.kuvasz.mocks
 
 import com.akobor.kuvasz.repositories.MonitorRepository
 import com.akobor.kuvasz.tables.pojos.MonitorPojo

@@ -1,4 +1,4 @@
-package com.akobor.kuvasz
+package com.akobor.kuvasz.utils
 
 import org.testcontainers.containers.PostgreSQLContainer
 
@@ -7,8 +7,9 @@ class TestDbContainer : PostgreSQLContainer<TestDbContainer>() {
         lateinit var instance: TestDbContainer
 
         fun start() {
-            if (!::instance.isInitialized) {
-                instance = TestDbContainer()
+            if (!Companion::instance.isInitialized) {
+                instance =
+                    TestDbContainer()
                 instance.dockerImageName = "postgres:12"
                 instance.start()
 

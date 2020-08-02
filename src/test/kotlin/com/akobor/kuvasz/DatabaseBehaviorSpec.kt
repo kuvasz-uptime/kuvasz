@@ -1,15 +1,18 @@
 package com.akobor.kuvasz
 
-import com.akobor.kuvasz.utils.resetDatabase
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.micronaut.runtime.server.EmbeddedServer
+import org.flywaydb.core.Flyway
+import javax.inject.Inject
 
-open class DatabaseBehaviorSpec : BehaviorSpec(){
-    lateinit var service: EmbeddedServer
+abstract class DatabaseBehaviorSpec : BehaviorSpec() {
+
+    @Inject
+    lateinit var flyway: Flyway
 
     override fun afterTest(testCase: TestCase, result: TestResult) {
-        service.resetDatabase()
+        flyway.clean()
+        flyway.migrate()
     }
 }

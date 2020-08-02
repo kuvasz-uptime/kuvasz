@@ -1,6 +1,6 @@
 package com.akobor.kuvasz.security
 
-import com.akobor.kuvasz.utils.generateCredentials
+import com.akobor.kuvasz.mocks.generateCredentials
 import com.nimbusds.jwt.JWTParser
 import com.nimbusds.jwt.SignedJWT
 import io.kotest.assertions.throwables.shouldThrow
