@@ -12,7 +12,7 @@ plugins {
 }
 
 version gitVersion()
-group "com.akobor.kuvasz"
+group "com.kuvaszuptime.kuvasz"
 
 repositories {
     mavenCentral()
@@ -72,7 +72,7 @@ dependencies {
 
 test.classpath += configurations.developmentOnly
 
-mainClassName = "com.akobor.kuvasz.Application"
+mainClassName = "com.kuvaszuptime.kuvasz.Application"
 
 shadowJar {
     mergeServiceFiles()
@@ -91,7 +91,7 @@ jacocoTestReport {
     }
     classDirectories.setFrom(
             fileTree("build/classes/kotlin/main") {
-                exclude("com/akobor/kuvasz/Application.class")
+                exclude("com/kuvaszuptime/kuvasz/Application.class")
             }
     )
 }
@@ -133,8 +133,8 @@ compileTestKotlin {
 kapt {
     arguments {
         arg("micronaut.processing.incremental", true)
-        arg("micronaut.processing.annotations", "com.akobor.kuvasz.*")
-        arg("micronaut.processing.group", "com.akobor.kuvasz")
+        arg("micronaut.processing.annotations", "com.kuvaszuptime.kuvasz.*")
+        arg("micronaut.processing.group", "com.kuvaszuptime.kuvasz")
         arg("micronaut.processing.module", "kuvasz")
     }
 }
@@ -185,7 +185,7 @@ jooq {
         generator {
             target {
                 directory = "src/jooq/java"
-                packageName = "com.akobor.kuvasz"
+                packageName = "com.kuvaszuptime.kuvasz"
             }
             generate {
                 validationAnnotations = true

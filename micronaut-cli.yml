@@ -1,5 +1,5 @@
 applicationType: default
-defaultPackage: com.akobor.kuvasz
+defaultPackage: com.kuvaszuptime.kuvasz
 testFramework: kotlintest
 sourceLanguage: kotlin
 buildTool: gradle
