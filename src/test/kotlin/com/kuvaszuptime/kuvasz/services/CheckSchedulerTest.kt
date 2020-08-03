@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -22,7 +23,8 @@ class CheckSchedulerTest(
                 then("it should schedule the check for it") {
                     val expectedCheck = checkScheduler.getScheduledChecks().find { it.monitorId == monitor.id }
                     expectedCheck shouldNotBe null
-                    expectedCheck!!.task.isCancelled shouldBe false
+                    expectedCheck!!.checkType shouldBe CheckType.UPTIME
+                    expectedCheck.task.isCancelled shouldBe false
                     expectedCheck.task.isDone shouldBe false
                 }
             }
