@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.util.toNullable
-import com.kuvaszuptime.kuvasz.util.unnest
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.kuvaszuptime.kuvasz.util.toNullable
+import com.kuvaszuptime.kuvasz.util.unnest
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.io.buffer.ByteBuffer
@@ -62,8 +62,8 @@ class HttpCommunicationLogger {
     }
 
     private fun HttpRequest<*>.toLog(
-        withHeaders: Boolean = false,
-        withBody: Boolean = false
+        withHeaders: Boolean,
+        withBody: Boolean
     ): HttpMessageLog =
         HttpMessageLog(
             method = method.name,
@@ -74,8 +74,8 @@ class HttpCommunicationLogger {
 
     private fun HttpResponse<*>.toLog(
         request: HttpRequest<*>,
-        withHeaders: Boolean = false,
-        withBody: Boolean = false
+        withHeaders: Boolean,
+        withBody: Boolean
     ): HttpMessageLog =
         HttpMessageLog(
             status = status.code,
