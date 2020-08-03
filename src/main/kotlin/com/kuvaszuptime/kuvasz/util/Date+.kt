@@ -12,3 +12,5 @@ fun Option<Duration>.toDurationString(): Option<String> = map { duration ->
         "$days day(s), $hours hour(s), $minutes minute(s), $seconds second(s)"
     }
 }
+
+fun Int.toDurationOfSeconds(): java.time.Duration = java.time.Duration.ofSeconds(toLong())
