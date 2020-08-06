@@ -6,7 +6,7 @@ import io.kotest.core.test.TestResult
 import org.flywaydb.core.Flyway
 import javax.inject.Inject
 
-abstract class DatabaseBehaviorSpec : BehaviorSpec() {
+abstract class DatabaseBehaviorSpec(body: BehaviorSpec.() -> Unit = {}) : BehaviorSpec(body) {
 
     @Inject
     lateinit var flyway: Flyway

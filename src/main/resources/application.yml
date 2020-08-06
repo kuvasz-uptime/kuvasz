@@ -23,8 +23,6 @@ micronaut:
       - pattern: /**
         access:
           - ROLE_ADMIN
-    basic-auth:
-      enabled: true
   router:
     versioning:
       enabled: true
