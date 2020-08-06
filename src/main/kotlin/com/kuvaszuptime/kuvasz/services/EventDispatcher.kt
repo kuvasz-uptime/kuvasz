@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.events.Event
-import com.kuvaszuptime.kuvasz.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.Event
+import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.RedirectEvent
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import javax.inject.Singleton

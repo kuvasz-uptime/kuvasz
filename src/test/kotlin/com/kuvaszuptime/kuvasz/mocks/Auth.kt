@@ -1,10 +1,10 @@
 package com.kuvaszuptime.kuvasz.mocks
 
-import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import io.micronaut.security.authentication.UsernamePasswordCredentials
 
-fun generateCredentials(appConfig: AppConfig, valid: Boolean) =
+fun generateCredentials(authConfig: AdminAuthConfig, valid: Boolean) =
     UsernamePasswordCredentials(
-        appConfig.user,
-        if (valid) appConfig.password else "bad-pass"
+        authConfig.username,
+        if (valid) authConfig.password else "bad-pass"
     )

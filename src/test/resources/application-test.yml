@@ -9,7 +9,8 @@ micronaut:
               secret: testSecretItsVeryVerySecretSecret
 ---
 app-config:
-  user: test-user
-  password: test-pass
   http-communication-logging:
     enabled: true
+admin-auth:
+  username: test-user
+  password: test-pass-test-pass-test-pass

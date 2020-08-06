@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.events
+package com.kuvaszuptime.kuvasz.models
 
 import arrow.core.Option
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus

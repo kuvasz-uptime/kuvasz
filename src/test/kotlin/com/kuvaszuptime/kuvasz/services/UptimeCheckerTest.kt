@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.RedirectEvent
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.util.toUri

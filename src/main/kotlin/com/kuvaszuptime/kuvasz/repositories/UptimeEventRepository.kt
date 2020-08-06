@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.toOption
-import com.kuvaszuptime.kuvasz.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.events.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.events.toUptimeStatus
+import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.toUptimeStatus
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.UptimeEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo

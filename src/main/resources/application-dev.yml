@@ -15,7 +15,8 @@ datasources:
     password: 'pass'
 ---
 app-config:
-  user: user
-  password: pass
   http-communication-logging:
     enabled: true
+admin-auth:
+  username: user
+  password: pass3j4hkhk23hk23k232hk3h232

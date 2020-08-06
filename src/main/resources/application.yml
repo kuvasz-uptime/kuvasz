@@ -64,9 +64,10 @@ jooq:
       sql-dialect: POSTGRES
 ---
 app-config:
-  user: ${ADMIN_USER}
-  password: ${ADMIN_PASSWORD}
   http-communication-logging:
     enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}
   log-event-handler:
     enabled: ${ENABLE_LOG_EVENT_HANDLER:`true`}
+admin-auth:
+  username: ${ADMIN_USER}
+  password: ${ADMIN_PASSWORD}

@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz.handlers
 import arrow.core.Option
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
