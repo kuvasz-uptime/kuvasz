@@ -20,7 +20,7 @@ class UsernamePasswordValidatorFactory {
         return ConstraintValidator { adminAuthConfig, _, _ ->
             if (adminAuthConfig != null) {
                 adminAuthConfig.username!!.toLowerCase() != adminAuthConfig.password!!.toLowerCase()
-            } else true
+            } else false
         }
     }
 }
