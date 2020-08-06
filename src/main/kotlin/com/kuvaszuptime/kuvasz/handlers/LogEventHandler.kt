@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.events.RedirectEvent
-import com.kuvaszuptime.kuvasz.events.getEndedEventDuration
+import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.getEndedEventDuration
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.micronaut.context.annotation.Context

@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.events.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.events.uptimeStatusNotEquals
+import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.uptimeStatusNotEquals
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
