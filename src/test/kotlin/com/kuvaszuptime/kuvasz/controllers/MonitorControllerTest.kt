@@ -35,8 +35,8 @@ class MonitorControllerTest(
         }
 
         `when`("enabledOnly parameter is set to true") {
-            createMonitor(monitorRepository, enabled = false)
-            val enabledMonitor = createMonitor(monitorRepository, id = 11111)
+            createMonitor(monitorRepository, enabled = false, monitorName = "name1")
+            val enabledMonitor = createMonitor(monitorRepository, id = 11111, monitorName = "name2")
             val response = monitorClient.getMonitors(enabledOnly = true)
             then("it should not return disabled monitor") {
                 response.size shouldBe 1

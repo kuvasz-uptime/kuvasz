@@ -30,7 +30,7 @@ import javax.validation.constraints.NotNull;
 })
 public class LatencyLogPojo implements Serializable {
 
-    private static final long serialVersionUID = -204244894;
+    private static final long serialVersionUID = -213764250;
 
     private Integer        id;
     private Integer        monitorId;

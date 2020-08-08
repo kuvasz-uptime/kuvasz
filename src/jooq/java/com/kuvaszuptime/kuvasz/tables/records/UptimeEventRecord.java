@@ -40,7 +40,7 @@ import org.jooq.impl.UpdatableRecordImpl;
 })
 public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> implements Record6<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime> {
 
-    private static final long serialVersionUID = 629056969;
+    private static final long serialVersionUID = 187938053;
 
     /**
      * Setter for <code>uptime_event.id</code>.

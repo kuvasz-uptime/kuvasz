@@ -1,13 +1,21 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import arrow.core.Either
 import arrow.core.Option
 import arrow.core.toOption
-import com.kuvaszuptime.kuvasz.models.MonitorDetails
+import com.kuvaszuptime.kuvasz.models.DuplicationError
+import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedError
+import com.kuvaszuptime.kuvasz.models.PersistenceError
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.MonitorDao
+import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import org.jooq.Configuration
+import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +25,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
 
     private val dsl = jooqConfig.dsl()
 
-    fun getMonitorDetails(monitorId: Int): Option<MonitorDetails> =
+    fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> =
         getMonitorDetailsSelect()
             .where(MONITOR.ID.eq(monitorId))
             .groupBy(
@@ -26,10 +34,10 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 UPTIME_EVENT.STARTED_AT,
                 UPTIME_EVENT.ERROR
             )
-            .fetchOneInto(MonitorDetails::class.java)
+            .fetchOneInto(MonitorDetailsDto::class.java)
             .toOption()
 
-    fun getMonitorDetails(enabledOnly: Boolean): List<MonitorDetails> =
+    fun getMonitorDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         getMonitorDetailsSelect()
             .apply {
                 if (enabledOnly) {
@@ -42,7 +50,40 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 UPTIME_EVENT.STARTED_AT,
                 UPTIME_EVENT.ERROR
             )
-            .fetchInto(MonitorDetails::class.java)
+            .fetchInto(MonitorDetailsDto::class.java)
+
+    fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
+        try {
+            Either.right(
+                dsl
+                    .insertInto(MONITOR)
+                    .set(dsl.newRecord(MONITOR, monitorPojo))
+                    .returning(MONITOR.asterisk())
+                    .fetchOne()
+                    .into(MonitorPojo::class.java)
+            )
+        } catch (e: DataAccessException) {
+            e.handle()
+        }
+
+    fun returningUpdate(updatedPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
+        try {
+            Either.right(
+                dsl
+                    .update(MONITOR)
+                    .set(MONITOR.NAME, updatedPojo.name)
+                    .set(MONITOR.URL, updatedPojo.url)
+                    .set(MONITOR.UPTIME_CHECK_INTERVAL, updatedPojo.uptimeCheckInterval)
+                    .set(MONITOR.ENABLED, updatedPojo.enabled)
+                    .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
+                    .where(MONITOR.ID.eq(updatedPojo.id))
+                    .returning(MONITOR.asterisk())
+                    .fetchOne()
+                    .into(MonitorPojo::class.java)
+            )
+        } catch (e: DataAccessException) {
+            e.handle()
+        }
 
     private fun getMonitorDetailsSelect() =
         dsl
@@ -62,4 +103,13 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
             .from(MONITOR)
             .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
             .leftJoin(LATENCY_LOG).on(MONITOR.ID.eq(LATENCY_LOG.MONITOR_ID))
+
+    private fun DataAccessException.handle(): Either<PersistenceError, Nothing> {
+        val persistenceError = toPersistenceError()
+        return Either.left(
+            if (persistenceError is DuplicationError) {
+                MonitorDuplicatedError()
+            } else persistenceError
+        )
+    }
 }

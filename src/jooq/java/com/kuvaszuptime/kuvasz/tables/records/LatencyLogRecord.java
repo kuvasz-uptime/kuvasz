@@ -37,7 +37,7 @@ import org.jooq.impl.UpdatableRecordImpl;
 })
 public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> implements Record4<Integer, Integer, Integer, OffsetDateTime> {
 
-    private static final long serialVersionUID = 481973074;
+    private static final long serialVersionUID = 1412652498;
 
     /**
      * Setter for <code>latency_log.id</code>.

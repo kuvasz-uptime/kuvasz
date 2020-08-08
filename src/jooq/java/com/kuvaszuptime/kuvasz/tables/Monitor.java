@@ -33,7 +33,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Monitor extends TableImpl<MonitorRecord> {
 
-    private static final long serialVersionUID = -1852813365;
+    private static final long serialVersionUID = -1808562877;
 
     /**
      * The reference instance of <code>monitor</code>
@@ -133,7 +133,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
 
     @Override
     public List<UniqueKey<MonitorRecord>> getKeys() {
-        return Arrays.<UniqueKey<MonitorRecord>>asList(Keys.MONITOR_PKEY);
+        return Arrays.<UniqueKey<MonitorRecord>>asList(Keys.MONITOR_PKEY, Keys.UNIQUE_MONITOR_NAME);
     }
 
     @Override

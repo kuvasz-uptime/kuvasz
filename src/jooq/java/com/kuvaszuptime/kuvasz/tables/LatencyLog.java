@@ -35,7 +35,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class LatencyLog extends TableImpl<LatencyLogRecord> {
 
-    private static final long serialVersionUID = 2080318128;
+    private static final long serialVersionUID = 2052986796;
 
     /**
      * The reference instance of <code>latency_log</code>

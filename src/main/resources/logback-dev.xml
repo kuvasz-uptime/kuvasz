@@ -13,9 +13,9 @@
 
     <logger name="com.kuvaszuptime.kuvasz.services.HttpCommunicationLogger" level="${communicationLogLevel}"/>
     <logger name="org.jooq.Constants" level="WARN"/>
-    <logger name="org.jooq" level="DEBUG"/>
+    <logger name="org.jooq" level="INFO"/>
 
-    <root level="info">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

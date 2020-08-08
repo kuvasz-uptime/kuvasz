@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models
+package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import io.micronaut.core.annotation.Introspected
@@ -6,7 +6,7 @@ import java.net.URI
 import java.time.OffsetDateTime
 
 @Introspected
-data class MonitorDetails(
+data class MonitorDetailsDto(
     val id: Int,
     val name: String,
     val url: URI,

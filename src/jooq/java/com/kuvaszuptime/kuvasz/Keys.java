@@ -19,7 +19,7 @@ import org.jooq.impl.Internal;
 
 
 /**
- * A class modelling foreign key relationships and constraints of tables of
+ * A class modelling foreign key relationships and constraints of tables of 
  * the <code></code> schema.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
@@ -39,6 +39,7 @@ public class Keys {
 
     public static final UniqueKey<LatencyLogRecord> LATENCY_LOG_PKEY = UniqueKeys0.LATENCY_LOG_PKEY;
     public static final UniqueKey<MonitorRecord> MONITOR_PKEY = UniqueKeys0.MONITOR_PKEY;
+    public static final UniqueKey<MonitorRecord> UNIQUE_MONITOR_NAME = UniqueKeys0.UNIQUE_MONITOR_NAME;
     public static final UniqueKey<UptimeEventRecord> UPTIME_EVENT_PKEY = UniqueKeys0.UPTIME_EVENT_PKEY;
     public static final UniqueKey<UptimeEventRecord> UPTIME_EVENT_KEY = UniqueKeys0.UPTIME_EVENT_KEY;
 
@@ -62,6 +63,7 @@ public class Keys {
     private static class UniqueKeys0 {
         public static final UniqueKey<LatencyLogRecord> LATENCY_LOG_PKEY = Internal.createUniqueKey(LatencyLog.LATENCY_LOG, "latency_log_pkey", new TableField[] { LatencyLog.LATENCY_LOG.ID }, true);
         public static final UniqueKey<MonitorRecord> MONITOR_PKEY = Internal.createUniqueKey(Monitor.MONITOR, "monitor_pkey", new TableField[] { Monitor.MONITOR.ID }, true);
+        public static final UniqueKey<MonitorRecord> UNIQUE_MONITOR_NAME = Internal.createUniqueKey(Monitor.MONITOR, "unique_monitor_name", new TableField[] { Monitor.MONITOR.NAME }, true);
         public static final UniqueKey<UptimeEventRecord> UPTIME_EVENT_PKEY = Internal.createUniqueKey(UptimeEvent.UPTIME_EVENT, "uptime_event_pkey", new TableField[] { UptimeEvent.UPTIME_EVENT.ID }, true);
         public static final UniqueKey<UptimeEventRecord> UPTIME_EVENT_KEY = Internal.createUniqueKey(UptimeEvent.UPTIME_EVENT, "uptime_event_key", new TableField[] { UptimeEvent.UPTIME_EVENT.MONITOR_ID, UptimeEvent.UPTIME_EVENT.STATUS, UptimeEvent.UPTIME_EVENT.ENDED_AT }, true);
     }

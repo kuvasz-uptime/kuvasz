@@ -76,6 +76,13 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
+     * Fetch a unique record that has <code>name = value</code>
+     */
+    public MonitorPojo fetchOneByName(String value) {
+        return fetchOne(Monitor.MONITOR.NAME, value);
+    }
+
+    /**
      * Fetch records that have <code>url BETWEEN lowerInclusive AND upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfUrl(String lowerInclusive, String upperInclusive) {

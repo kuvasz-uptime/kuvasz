@@ -23,7 +23,7 @@ import org.jooq.impl.SchemaImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class DefaultSchema extends SchemaImpl {
 
-    private static final long serialVersionUID = 255525230;
+    private static final long serialVersionUID = 63509414;
 
     /**
      * The reference instance of <code>DEFAULT_SCHEMA</code>
