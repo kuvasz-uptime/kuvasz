@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.config
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
@@ -22,7 +22,7 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception = shouldThrow<BeanInstantiationException> {
                     ApplicationContext.run(properties)
                 }
-                exceptionToMessage(exception).contains("password - size must be between 12") shouldBe true
+                exceptionToMessage(exception) shouldContain "password - size must be between 12"
             }
         }
 
@@ -38,8 +38,8 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception = shouldThrow<BeanInstantiationException> {
                     ApplicationContext.run(properties)
                 }
-                exceptionToMessage(exception).contains("username - must not be blank") shouldBe true
-                exceptionToMessage(exception).contains("password - must not be blank") shouldBe true
+                exceptionToMessage(exception) shouldContain "username - must not be blank"
+                exceptionToMessage(exception) shouldContain "password - must not be blank"
             }
         }
     }

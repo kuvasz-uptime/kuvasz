@@ -10,6 +10,8 @@ import com.kuvaszuptime.kuvasz.testutils.toSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
@@ -84,7 +86,7 @@ class UptimeCheckerTest(
                     monitorUpSubscriber.valueCount() shouldBe 1
                     expectedDownEvent.monitor.id shouldBe monitor.id
                     expectedUpEvent.monitor.id shouldBe monitor.id
-                    (expectedDownEvent.dispatchedAt < expectedUpEvent.dispatchedAt) shouldBe true
+                    expectedDownEvent.dispatchedAt shouldBeLessThan expectedUpEvent.dispatchedAt
                 }
             }
 
@@ -109,7 +111,7 @@ class UptimeCheckerTest(
                     monitorUpSubscriber.valueCount() shouldBe 1
                     expectedDownEvent.monitor.id shouldBe monitor.id
                     expectedUpEvent.monitor.id shouldBe monitor.id
-                    (expectedDownEvent.dispatchedAt > expectedUpEvent.dispatchedAt) shouldBe true
+                    expectedDownEvent.dispatchedAt shouldBeGreaterThan expectedUpEvent.dispatchedAt
                 }
             }
 

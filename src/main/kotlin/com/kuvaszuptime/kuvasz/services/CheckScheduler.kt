@@ -66,6 +66,13 @@ class CheckScheduler @Inject constructor(
         logger.info("Uptime check for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
     }
 
+    fun removeAllChecks() {
+        scheduledChecks.forEach { check ->
+            check.task.cancel(false)
+        }
+        scheduledChecks.clear()
+    }
+
     fun updateChecksForMonitor(
         existingMonitor: MonitorPojo,
         updatedMonitor: MonitorPojo

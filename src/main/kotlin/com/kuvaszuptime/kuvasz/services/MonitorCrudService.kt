@@ -22,27 +22,19 @@ class MonitorCrudService @Inject constructor(
     fun getMonitorDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         monitorRepository.getMonitorDetails(enabledOnly)
 
-    fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorPojo {
-        val monitorPojo =
-            MonitorPojo()
-                .setName(monitorCreateDto.name)
-                .setUrl(monitorCreateDto.url)
-                .setEnabled(monitorCreateDto.enabled)
-                .setUptimeCheckInterval(monitorCreateDto.uptimeCheckInterval)
-
-        return monitorRepository.returningInsert(monitorPojo).fold(
+    fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorPojo =
+        monitorRepository.returningInsert(monitorCreateDto.toMonitorPojo()).fold(
             { persistenceError -> throw persistenceError },
             { insertedMonitor ->
-                checkScheduler.createChecksForMonitor(insertedMonitor).fold(
-                    { schedulingError ->
+                if (insertedMonitor.enabled) {
+                    checkScheduler.createChecksForMonitor(insertedMonitor).mapLeft { schedulingError ->
                         monitorRepository.deleteById(insertedMonitor.id)
                         throw schedulingError
-                    },
-                    { insertedMonitor }
-                )
+                    }
+                }
+                insertedMonitor
             }
         )
-    }
 
     fun deleteMonitorById(monitorId: Int) = monitorRepository.findById(monitorId).toOption().fold(
         { throw MonitorNotFoundError(monitorId) },

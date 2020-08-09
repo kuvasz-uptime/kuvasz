@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import io.kotest.inspectors.forNone
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.micronaut.test.annotation.MicronautTest
@@ -34,7 +35,7 @@ class CheckSchedulerTest(
             checkScheduler.initialize()
 
             then("it should not schedule the check for it") {
-                checkScheduler.getScheduledChecks().any { it.monitorId == monitor.id } shouldBe false
+                checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe monitor.id }
             }
         }
 
@@ -44,7 +45,7 @@ class CheckSchedulerTest(
             checkScheduler.initialize()
 
             then("it should not schedule the check for it") {
-                checkScheduler.getScheduledChecks().any { it.monitorId == monitor.id } shouldBe false
+                checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe monitor.id }
             }
         }
     }
