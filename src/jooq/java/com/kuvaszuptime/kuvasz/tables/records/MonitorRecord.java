@@ -31,11 +31,12 @@ import org.jooq.impl.UpdatableRecordImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
 @Table(name = "monitor", uniqueConstraints = {
-    @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"})
+    @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"}),
+    @UniqueConstraint(name = "unique_monitor_name", columnNames = {"name"})
 })
 public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record7<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime> {
 
-    private static final long serialVersionUID = 1371821158;
+    private static final long serialVersionUID = 1383018433;
 
     /**
      * Setter for <code>monitor.id</code>.

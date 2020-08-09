@@ -24,11 +24,12 @@ import javax.validation.constraints.Size;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
 @Table(name = "monitor", uniqueConstraints = {
-    @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"})
+    @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"}),
+    @UniqueConstraint(name = "unique_monitor_name", columnNames = {"name"})
 })
 public class MonitorPojo implements Serializable {
 
-    private static final long serialVersionUID = 763841695;
+    private static final long serialVersionUID = -1292240686;
 
     private Integer        id;
     private String         name;

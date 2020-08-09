@@ -36,7 +36,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class UptimeEvent extends TableImpl<UptimeEventRecord> {
 
-    private static final long serialVersionUID = -2004053888;
+    private static final long serialVersionUID = 497612164;
 
     /**
      * The reference instance of <code>uptime_event</code>

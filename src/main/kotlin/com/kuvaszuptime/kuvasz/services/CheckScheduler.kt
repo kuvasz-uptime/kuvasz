@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import arrow.core.Either
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.ScheduledCheck
+import com.kuvaszuptime.kuvasz.models.SchedulingError
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.util.catchBlocking
@@ -37,22 +38,47 @@ class CheckScheduler @Inject constructor(
 
     fun getScheduledChecks() = scheduledChecks
 
-    fun createChecksForMonitor(monitor: MonitorPojo) {
-        scheduleUptimeCheck(monitor).fold(
+    fun createChecksForMonitor(monitor: MonitorPojo): Either<SchedulingError, ScheduledCheck> =
+        scheduleUptimeCheck(monitor).bimap(
             { e ->
                 logger.error(
                     "Uptime check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${e.message}"
                 )
+                SchedulingError(e.message)
             },
             { scheduledTask ->
-                scheduledChecks.add(
+                val scheduledCheck =
                     ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledTask)
-                )
-                logger.info(
-                    "Uptime check for \"${monitor.name}\" (${monitor.url}) has been set up successfully"
-                )
+                scheduledChecks.add(scheduledCheck)
+                logger.info("Uptime check for \"${monitor.name}\" (${monitor.url}) has been set up successfully")
+
+                scheduledCheck
             }
         )
+
+    fun removeChecksOfMonitor(monitor: MonitorPojo) {
+        scheduledChecks.forEach { check ->
+            if (check.monitorId == monitor.id) {
+                check.task.cancel(false)
+            }
+        }
+        scheduledChecks.removeAll { it.monitorId == monitor.id }
+        logger.info("Uptime check for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
+    }
+
+    fun removeAllChecks() {
+        scheduledChecks.forEach { check ->
+            check.task.cancel(false)
+        }
+        scheduledChecks.clear()
+    }
+
+    fun updateChecksForMonitor(
+        existingMonitor: MonitorPojo,
+        updatedMonitor: MonitorPojo
+    ): Either<SchedulingError, ScheduledCheck> {
+        removeChecksOfMonitor(existingMonitor)
+        return createChecksForMonitor(updatedMonitor)
     }
 
     private fun scheduleUptimeCheck(monitor: MonitorPojo): Either<Throwable, ScheduledFuture<*>> =

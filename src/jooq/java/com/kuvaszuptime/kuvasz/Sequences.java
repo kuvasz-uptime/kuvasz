@@ -9,7 +9,7 @@ import org.jooq.impl.Internal;
 
 
 /**
- * Convenience access to all sequences in
+ * Convenience access to all sequences in 
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Sequences {

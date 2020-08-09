@@ -1,15 +1,17 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.RedirectEvent
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.util.toUri
 import com.kuvaszuptime.kuvasz.testutils.toSubscriber
+import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
@@ -60,6 +62,56 @@ class UptimeCheckerTest(
 
                     subscriber.valueCount() shouldBe 1
                     expectedEvent.monitor.id shouldBe monitor.id
+                }
+            }
+
+            `when`("it checks a monitor that is DOWN but then it's UP again") {
+                val monitor = createMonitor(monitorRepository)
+                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
+                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
+
+                then("it should dispatch a MonitorDownEvent") {
+                    uptimeCheckerSpy.check(monitor)
+                    clearAllMocks()
+                    mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
+                    uptimeCheckerSpy.check(monitor)
+
+                    val expectedDownEvent = monitorDownSubscriber.values().first()
+                    val expectedUpEvent = monitorUpSubscriber.values().first()
+
+                    monitorDownSubscriber.valueCount() shouldBe 1
+                    monitorUpSubscriber.valueCount() shouldBe 1
+                    expectedDownEvent.monitor.id shouldBe monitor.id
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+                    expectedDownEvent.dispatchedAt shouldBeLessThan expectedUpEvent.dispatchedAt
+                }
+            }
+
+            `when`("it checks a monitor that is UP but then it's DOWN again") {
+                val monitor = createMonitor(monitorRepository)
+                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
+                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
+
+                then("it should dispatch a MonitorDownEvent") {
+                    uptimeCheckerSpy.check(monitor)
+                    clearAllMocks()
+                    mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
+                    uptimeCheckerSpy.check(monitor)
+
+                    val expectedDownEvent = monitorDownSubscriber.values().first()
+                    val expectedUpEvent = monitorUpSubscriber.values().first()
+
+                    monitorDownSubscriber.valueCount() shouldBe 1
+                    monitorUpSubscriber.valueCount() shouldBe 1
+                    expectedDownEvent.monitor.id shouldBe monitor.id
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+                    expectedDownEvent.dispatchedAt shouldBeGreaterThan expectedUpEvent.dispatchedAt
                 }
             }
 

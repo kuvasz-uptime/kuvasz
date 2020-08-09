@@ -1,11 +1,28 @@
-SET SCHEMA 'kuvasz';
+CREATE SCHEMA IF NOT EXISTS kuvasz;
+
+CREATE TABLE monitor
+(
+    id                    SERIAL PRIMARY KEY,
+    name                  VARCHAR(255)             NOT NULL,
+    url                   TEXT                     NOT NULL,
+    uptime_check_interval INTEGER                  NOT NULL,
+    enabled               BOOLEAN                  NOT NULL DEFAULT TRUE,
+    created_at            TIMESTAMP WITH TIME ZONE NOT NULL default now(),
+    updated_at            TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT "unique_monitor_name" UNIQUE ("name")
+);
+
+COMMENT ON COLUMN monitor.name IS 'Monitor''s name';
+COMMENT ON COLUMN monitor.url IS 'URL to check';
+COMMENT ON COLUMN monitor.uptime_check_interval IS 'Uptime checking interval in seconds';
+COMMENT ON COLUMN monitor.enabled IS 'Flag to toggle the monitor';
 
 CREATE TYPE uptime_status AS ENUM ('UP', 'DOWN');
 
 CREATE TABLE uptime_event
 (
     id         SERIAL PRIMARY KEY,
-    monitor_id INTEGER                  NOT NULL REFERENCES monitor (id),
+    monitor_id INTEGER                  NOT NULL REFERENCES monitor (id) ON DELETE CASCADE,
     status     uptime_status            NOT NULL,
     error      TEXT,
     started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -23,7 +40,7 @@ CREATE INDEX IF NOT EXISTS "uptime_event_ended_at_idx" ON "uptime_event" USING b
 CREATE TABLE latency_log
 (
     id         SERIAL PRIMARY KEY,
-    monitor_id INTEGER                  NOT NULL REFERENCES monitor (id),
+    monitor_id INTEGER                  NOT NULL REFERENCES monitor (id) ON DELETE CASCADE,
     latency    INTEGER                  NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

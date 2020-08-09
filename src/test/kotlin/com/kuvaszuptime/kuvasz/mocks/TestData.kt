@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.mocks
 
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 
 fun createMonitor(
     repository: MonitorRepository,
@@ -17,6 +18,7 @@ fun createMonitor(
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setUrl(url)
         .setEnabled(enabled)
+        .setCreatedAt(getCurrentTimestamp())
     repository.insert(monitor)
     return monitor
 }

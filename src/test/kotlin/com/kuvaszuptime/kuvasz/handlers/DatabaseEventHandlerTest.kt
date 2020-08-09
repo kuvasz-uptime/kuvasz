@@ -3,9 +3,9 @@ package com.kuvaszuptime.kuvasz.handlers
 import arrow.core.Option
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.annotation.MicronautTest
@@ -118,7 +119,7 @@ class DatabaseEventHandlerTest(
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
                     expectedUptimeRecord.endedAt shouldBe null
-                    latencyRecords.size shouldBe 2
+                    latencyRecords shouldHaveSize 2
                     latencyRecords[0].latency shouldBe firstEvent.latency
                     latencyRecords[1].latency shouldBe secondEvent.latency
                 }

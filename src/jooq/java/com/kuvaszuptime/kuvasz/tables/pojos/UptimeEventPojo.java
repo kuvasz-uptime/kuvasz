@@ -34,7 +34,7 @@ import javax.validation.constraints.NotNull;
 })
 public class UptimeEventPojo implements Serializable {
 
-    private static final long serialVersionUID = -530417720;
+    private static final long serialVersionUID = -692998392;
 
     private Integer        id;
     private Integer        monitorId;
