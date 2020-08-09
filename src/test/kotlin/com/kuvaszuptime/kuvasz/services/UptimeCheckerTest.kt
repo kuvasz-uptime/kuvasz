@@ -63,6 +63,56 @@ class UptimeCheckerTest(
                 }
             }
 
+            `when`("it checks a monitor that is DOWN but then it's UP again") {
+                val monitor = createMonitor(monitorRepository)
+                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
+                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
+
+                then("it should dispatch a MonitorDownEvent") {
+                    uptimeCheckerSpy.check(monitor)
+                    clearAllMocks()
+                    mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
+                    uptimeCheckerSpy.check(monitor)
+
+                    val expectedDownEvent = monitorDownSubscriber.values().first()
+                    val expectedUpEvent = monitorUpSubscriber.values().first()
+
+                    monitorDownSubscriber.valueCount() shouldBe 1
+                    monitorUpSubscriber.valueCount() shouldBe 1
+                    expectedDownEvent.monitor.id shouldBe monitor.id
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+                    (expectedDownEvent.dispatchedAt < expectedUpEvent.dispatchedAt) shouldBe true
+                }
+            }
+
+            `when`("it checks a monitor that is UP but then it's DOWN again") {
+                val monitor = createMonitor(monitorRepository)
+                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
+                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
+
+                then("it should dispatch a MonitorDownEvent") {
+                    uptimeCheckerSpy.check(monitor)
+                    clearAllMocks()
+                    mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
+                    uptimeCheckerSpy.check(monitor)
+
+                    val expectedDownEvent = monitorDownSubscriber.values().first()
+                    val expectedUpEvent = monitorUpSubscriber.values().first()
+
+                    monitorDownSubscriber.valueCount() shouldBe 1
+                    monitorUpSubscriber.valueCount() shouldBe 1
+                    expectedDownEvent.monitor.id shouldBe monitor.id
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+                    (expectedDownEvent.dispatchedAt > expectedUpEvent.dispatchedAt) shouldBe true
+                }
+            }
+
             `when`("it checks a monitor that is redirected without a Location header") {
                 val monitor = createMonitor(monitorRepository)
                 val subscriber = TestSubscriber<MonitorDownEvent>()
