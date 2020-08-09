@@ -2,24 +2,27 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.mocks.generateCredentials
-import com.kuvaszuptime.kuvasz.testutils.getBean
-import com.kuvaszuptime.kuvasz.testutils.getLowLevelClient
-import com.kuvaszuptime.kuvasz.testutils.startTestApplication
 import com.nimbusds.jwt.JWTParser
 import com.nimbusds.jwt.SignedJWT
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.RxHttpClient
+import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
+import io.micronaut.test.annotation.MicronautTest
 
-class AuthenticationTest : BehaviorSpec({
-    val service = startTestApplication(withRealAuth = true)
-    val client = service.getLowLevelClient()
-    val authConfig = service.getBean<AdminAuthConfig>()
+@MicronautTest
+@Property(name = "micronaut.security.enabled", value = "true")
+class AuthenticationTest(
+    @Client("/") private val client: RxHttpClient,
+    private val authConfig: AdminAuthConfig
+) : BehaviorSpec({
 
     given("a public endpoint") {
 
