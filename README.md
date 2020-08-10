@@ -13,3 +13,5 @@ This project is under active development, you have to wait for the first RC if y
 # Kuvasz
 
 Kuvasz [pronounce as 'koovas'] is an open-source uptime and SSL monitoring service, built in Kotlin on top of the awesome Micronaut framework
+
+[OpenAPI specs](https://kuvasz-uptime.github.io/kuvasz/api-doc/)
