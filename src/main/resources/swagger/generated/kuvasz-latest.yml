@@ -1,0 +1,403 @@
+openapi: 3.0.1
+info:
+  title: kuvasz
+  description: "Kuvasz [pronounce as 'koovas'] is an open-source, headless uptime\
+    \ and SSL monitoring service, built in Kotlin on top of the awesome Micronaut\
+    \ framework"
+  contact:
+    url: https://github.com/kuvasz-uptime/kuvasz
+  version: latest
+tags:
+- name: Security operations
+- name: Management operations
+- name: Monitor operations
+paths:
+  /login:
+    post:
+      tags:
+      - Security operations
+      summary: Login endpoint
+      description: After a successful login it returns a valid access token that you
+        should use in your authenticated request
+      operationId: login
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNamePasswordCredentials'
+        required: true
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BearerAccessRefreshToken'
+        "401":
+          description: Unauthorized
+  /health:
+    get:
+      tags:
+      - Management operations
+      summary: Health endpoint
+      description: Returns the current status of the application
+      operationId: health
+      parameters: []
+      responses:
+        "200":
+          description: Service is UP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResult'
+        "503":
+          description: Service is DOWN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResult'
+  /monitor/details:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns all monitors with their details
+      operationId: getMonitorsWithDetails
+      parameters:
+      - name: enabledOnly
+        in: query
+        required: false
+        schema:
+          type: boolean
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonitorDetailsDto'
+      security:
+      - bearerAuth: []
+  /monitor/{monitorId}/details:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns a monitor's details
+      operationId: getMonitorDetails
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitorDetailsDto'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceError'
+      security:
+      - bearerAuth: []
+  /monitor:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns all monitors
+      operationId: getMonitors
+      parameters:
+      - name: enabledOnly
+        in: query
+        required: false
+        schema:
+          type: boolean
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonitorPojo'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Monitor operations
+      summary: Creates a monitor
+      operationId: createMonitor
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitorCreateDto'
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitorPojo'
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceError'
+      security:
+      - bearerAuth: []
+  /monitor/{monitorId}:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns a monitor
+      operationId: getMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitorPojo'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceError'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Monitor operations
+      summary: Deletes a monitor by ID
+      operationId: deleteMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceError'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Monitor operations
+      summary: Updates a monitor by ID
+      operationId: updateMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitorUpdateDto'
+        required: true
+      responses:
+        "200":
+          description: Successful update
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceError'
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceError'
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    UserNamePasswordCredentials:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    BearerAccessRefreshToken:
+      type: object
+      properties:
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            example: ROLE_ADMIN
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: number
+          format: int32
+          example: 3600
+    HealthResult:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - UNKNOWN
+    MonitorDetailsDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        uptimeCheckInterval:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeStatus:
+          $ref: '#/components/schemas/UptimeStatus'
+        uptimeStatusStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          nullable: true
+        averageLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+    UptimeStatus:
+      type: string
+      enum:
+      - UP
+      - DOWN
+    ServiceError:
+      type: object
+      properties:
+        message:
+          type: string
+          nullable: true
+    MonitorPojo:
+      required:
+      - name
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          maxLength: 255
+          type: string
+        url:
+          type: string
+        uptimeCheckInterval:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    MonitorCreateDto:
+      required:
+      - name
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+        url:
+          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+          type: string
+        uptimeCheckInterval:
+          minimum: 60
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+          nullable: true
+    MonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        url:
+          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+          type: string
+          nullable: true
+        uptimeCheckInterval:
+          minimum: 60
+          type: integer
+          format: int32
+          nullable: true
+        enabled:
+          type: boolean
+          nullable: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
