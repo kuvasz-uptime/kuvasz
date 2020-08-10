@@ -177,7 +177,7 @@ task releaseDockerImages() {
 task updateApiDoc(type: Copy) {
     dependsOn("kaptKotlin")
     from "$buildDir/tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml"
-    into "$projectDir/docs/swagger-ui"
+    into "$projectDir/docs/api-doc"
 }
 
 check.dependsOn("updateApiDoc")
