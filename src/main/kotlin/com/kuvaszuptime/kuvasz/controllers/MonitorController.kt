@@ -17,11 +17,13 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import javax.inject.Inject
 
 @Controller("/monitor", produces = [MediaType.APPLICATION_JSON])
 @Tag(name = "Monitor operations")
+@SecurityRequirement(name = "bearerAuth")
 class MonitorController @Inject constructor(
     private val monitorCrudService: MonitorCrudService
 ) : MonitorOperations {

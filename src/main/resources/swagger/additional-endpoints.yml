@@ -1,0 +1,88 @@
+openapi: 3.0.1
+info:
+  title: kuvasz
+  version: latest
+paths:
+  /login:
+    post:
+      tags:
+        - Security operations
+      summary: Login endpoint
+      description: After a successful login it returns a valid access token that you should use in your authenticated request
+      operationId: login
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNamePasswordCredentials'
+        required: true
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BearerAccessRefreshToken'
+        "401":
+          description: Unauthorized
+  /health:
+    get:
+      tags:
+        - Management operations
+      summary: Health endpoint
+      description: Returns the current status of the application
+      operationId: health
+      parameters: []
+      responses:
+        "200":
+          description: Service is UP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResult'
+        "503":
+          description: Service is DOWN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResult'
+components:
+  schemas:
+    UserNamePasswordCredentials:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    BearerAccessRefreshToken:
+      type: object
+      properties:
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            example: "ROLE_ADMIN"
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in:
+          type: number
+          format: int32
+          example: 3600
+    HealthResult:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - UP
+            - DOWN
+            - UNKNOWN
