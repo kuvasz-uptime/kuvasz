@@ -27,12 +27,26 @@ interface MonitorOperations {
         @QueryValue
         @Parameter(required = false)
         enabledOnly: Boolean?
+    ): List<MonitorPojo>
+
+    @Operation(summary = "Returns a monitor")
+    @Get("/{monitorId}")
+    @ExecuteOn(TaskExecutors.IO)
+    fun getMonitor(monitorId: Int): MonitorPojo
+
+    @Operation(summary = "Returns all monitors with their details")
+    @Get("/details")
+    @ExecuteOn(TaskExecutors.IO)
+    fun getMonitorsWithDetails(
+        @QueryValue
+        @Parameter(required = false)
+        enabledOnly: Boolean?
     ): List<MonitorDetailsDto>
 
     @Operation(summary = "Returns a monitor's details")
-    @Get("/{monitorId}")
+    @Get("/{monitorId}/details")
     @ExecuteOn(TaskExecutors.IO)
-    fun getMonitor(monitorId: Int): MonitorDetailsDto
+    fun getMonitorDetails(monitorId: Int): MonitorDetailsDto
 
     @Operation(summary = "Creates a monitor")
     @Post("/")

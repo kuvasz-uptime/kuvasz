@@ -19,8 +19,13 @@ class MonitorCrudService @Inject constructor(
 
     fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> = monitorRepository.getMonitorDetails(monitorId)
 
-    fun getMonitorDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorDetails(enabledOnly)
+    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(enabledOnly)
+
+    fun getMonitor(monitorId: Int): Option<MonitorPojo> = monitorRepository.findById(monitorId).toOption()
+
+    fun getMonitors(enabledOnly: Boolean): List<MonitorPojo> =
+        monitorRepository.getMonitors(enabledOnly)
 
     fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorPojo =
         monitorRepository.returningInsert(monitorCreateDto.toMonitorPojo()).fold(

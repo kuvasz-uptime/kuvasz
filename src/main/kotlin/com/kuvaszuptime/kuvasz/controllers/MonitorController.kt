@@ -35,8 +35,8 @@ class MonitorController @Inject constructor(
             content = [Content(array = ArraySchema(schema = Schema(implementation = MonitorDetailsDto::class)))]
         )
     )
-    override fun getMonitors(@QueryValue enabledOnly: Boolean?): List<MonitorDetailsDto> =
-        monitorCrudService.getMonitorDetails(enabledOnly ?: false)
+    override fun getMonitorsWithDetails(@QueryValue enabledOnly: Boolean?): List<MonitorDetailsDto> =
+        monitorCrudService.getMonitorsWithDetails(enabledOnly ?: false)
 
     @ApiResponses(
         ApiResponse(
@@ -50,8 +50,36 @@ class MonitorController @Inject constructor(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    override fun getMonitor(monitorId: Int): MonitorDetailsDto =
+    override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto =
         monitorCrudService.getMonitorDetails(monitorId).fold(
+            { throw MonitorNotFoundError(monitorId) },
+            { it }
+        )
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+            content = [Content(array = ArraySchema(schema = Schema(implementation = MonitorPojo::class)))]
+        )
+    )
+    override fun getMonitors(@QueryValue enabledOnly: Boolean?): List<MonitorPojo> =
+        monitorCrudService.getMonitors(enabledOnly ?: false)
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+            content = [Content(schema = Schema(implementation = MonitorPojo::class))]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    override fun getMonitor(monitorId: Int): MonitorPojo =
+        monitorCrudService.getMonitor(monitorId).fold(
             { throw MonitorNotFoundError(monitorId) },
             { it }
         )

@@ -37,7 +37,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
             .fetchOneInto(MonitorDetailsDto::class.java)
             .toOption()
 
-    fun getMonitorDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
+    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         getMonitorDetailsSelect()
             .apply {
                 if (enabledOnly) {
@@ -51,6 +51,17 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 UPTIME_EVENT.ERROR
             )
             .fetchInto(MonitorDetailsDto::class.java)
+
+    fun getMonitors(enabledOnly: Boolean): List<MonitorPojo> =
+        dsl
+            .select(MONITOR.asterisk())
+            .from(MONITOR)
+            .apply {
+                if (enabledOnly) {
+                    where(MONITOR.ENABLED.isTrue)
+                }
+            }
+            .fetchInto(MonitorPojo::class.java)
 
     fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {

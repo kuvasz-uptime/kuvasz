@@ -8,9 +8,13 @@ import io.micronaut.http.client.annotation.Client
 
 @Client("/monitor")
 interface MonitorClient : MonitorOperations {
-    override fun getMonitor(monitorId: Int): MonitorDetailsDto
+    override fun getMonitor(monitorId: Int): MonitorPojo
 
-    override fun getMonitors(enabledOnly: Boolean?): List<MonitorDetailsDto>
+    override fun getMonitors(enabledOnly: Boolean?): List<MonitorPojo>
+
+    override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto
+
+    override fun getMonitorsWithDetails(enabledOnly: Boolean?): List<MonitorDetailsDto>
 
     override fun createMonitor(monitor: MonitorCreateDto): MonitorPojo
 
