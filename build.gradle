@@ -59,7 +59,6 @@ dependencies {
     runtimeOnly("ch.qos.logback.contrib:logback-json-classic:${logbackJsonVersion}")
     runtimeOnly("ch.qos.logback.contrib:logback-jackson:${logbackJsonVersion}")
     runtimeOnly("net.logstash.logback:logstash-logback-encoder:${logstashEncoderVersion}")
-    runtimeOnly("org.codehaus.janino:janino:${janinoVersion}")
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
     testImplementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))
