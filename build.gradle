@@ -9,6 +9,7 @@ plugins {
     id "jacoco"
     id "nu.studer.jooq" version "${jooqPluginVersion}"
     id "com.palantir.git-version" version "${palantirGitVersion}"
+    id "name.remal.check-updates" version "${checkUpdatesVersion}"
 }
 
 version gitVersion()
@@ -180,6 +181,7 @@ task updateApiDoc(type: Copy) {
 check.dependsOn("updateApiDoc")
 
 jooq {
+    version = jooqVersion
     generateSchemaSourceOnCompilation = false
     primary(sourceSets.main) {
         jdbc {
