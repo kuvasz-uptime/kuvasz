@@ -56,9 +56,6 @@ dependencies {
     implementation("org.postgresql:postgresql:${postgresVersion}")
     detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
     runtimeOnly("ch.qos.logback:logback-classic")
-    runtimeOnly("ch.qos.logback.contrib:logback-json-classic:${logbackJsonVersion}")
-    runtimeOnly("ch.qos.logback.contrib:logback-jackson:${logbackJsonVersion}")
-    runtimeOnly("net.logstash.logback:logstash-logback-encoder:${logstashEncoderVersion}")
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
     testImplementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))
