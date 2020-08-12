@@ -4,6 +4,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/kuvasz-uptime/kuvasz/badge)](https://www.codefactor.io/repository/github/kuvasz-uptime/kuvasz)
 ![Latest Release](https://badgen.net/github/release/kuvasz-uptime/kuvasz)
 [![Gitter](https://badges.gitter.im/kuvasz-uptime/community.svg)](https://gitter.im/kuvasz-uptime/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![DockerHub](https://badgen.net/badge/docker/hub/blue?icon=docker)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
 
 # Disclaimer
 
