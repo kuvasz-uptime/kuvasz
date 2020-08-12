@@ -12,6 +12,8 @@ import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.scheduling.TaskExecutors
+import io.micronaut.scheduling.annotation.ExecuteOn
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +25,7 @@ class UptimeChecker @Inject constructor(
     private val uptimeEventRepository: UptimeEventRepository
 ) {
 
+    @ExecuteOn(TaskExecutors.IO)
     fun check(monitor: MonitorPojo, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         var start = 0L
@@ -79,7 +82,6 @@ class UptimeChecker @Inject constructor(
     }
 
     private fun sendHttpRequest(uri: URI): RawHttpResponse {
-        // TODO revise headers
         val request = HttpRequest.GET<Any>(uri)
             .header(HttpHeaders.ACCEPT, "*/*")
             .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
