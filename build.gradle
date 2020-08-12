@@ -65,7 +65,7 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core:${kotestVersion}")
     testImplementation("io.mockk:mockk:${mockkVersion}")
     testImplementation("org.testcontainers:postgresql:${testContainersVersion}")
-    jooqRuntime("org.postgresql:postgresql:${postgresVersion}")
+    jooqGenerator("org.postgresql:postgresql:${postgresVersion}")
 }
 
 test.classpath += configurations.developmentOnly
@@ -178,43 +178,48 @@ task updateApiDoc(type: Copy) {
     into "$projectDir/docs/api-doc"
 }
 
-check.dependsOn("updateApiDoc")
+build.dependsOn("updateApiDoc")
 
 jooq {
     version = jooqVersion
-    generateSchemaSourceOnCompilation = false
-    primary(sourceSets.main) {
-        jdbc {
-            url = "jdbc:postgresql://localhost:5432/postgres"
-            username = "postgres"
-            password = "pass"
-            driver = "org.postgresql.Driver"
-        }
-        generator {
-            target {
-                directory = "src/jooq/java"
-                packageName = "com.kuvaszuptime.kuvasz"
-            }
-            generate {
-                validationAnnotations = true
-                jpaAnnotations = true
-                daos = true
-                pojosEqualsAndHashCode = true
-                fluentSetters = true
-            }
-            database {
-                inputSchema = "kuvasz"
-                outputSchemaToDefault = true
-                excludes = "flyway_schema_history"
-            }
-            strategy {
-                name = null
-                matchers {
-                    tables {
-                        table {
-                            pojoClass {
-                                transform = 'PASCAL'
-                                expression = "\$0_Pojo"
+    configurations {
+        main {
+            generateSchemaSourceOnCompilation = false
+            generationTool {
+                jdbc {
+                    url = "jdbc:postgresql://localhost:5432/postgres"
+                    user = "postgres"
+                    password = "pass"
+                    driver = "org.postgresql.Driver"
+                }
+                generator {
+                    name = "org.jooq.codegen.DefaultGenerator"
+                    target {
+                        directory = "src/jooq/java"
+                        packageName = "com.kuvaszuptime.kuvasz"
+                    }
+                    generate {
+                        validationAnnotations = true
+                        jpaAnnotations = true
+                        daos = true
+                        pojosEqualsAndHashCode = true
+                        fluentSetters = true
+                    }
+                    database {
+                        inputSchema = "kuvasz"
+                        outputSchemaToDefault = true
+                        excludes = "flyway_schema_history"
+                    }
+                    strategy {
+                        name = null
+                        matchers {
+                            tables {
+                                table {
+                                    pojoClass {
+                                        transform = 'PASCAL'
+                                        expression = "\$0_Pojo"
+                                    }
+                                }
                             }
                         }
                     }
