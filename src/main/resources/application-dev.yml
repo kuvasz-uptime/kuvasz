@@ -19,9 +19,9 @@ app-config:
 ---
 handler-config:
   smtp-event-handler:
-    enabled: true
+    enabled: false
     from: 'noreply@kuvasz.uptime'
-    to: 'kobor.adam@gmail.com'
+    to: 'recipient@kuvasz.uptime'
 ---
 admin-auth:
   username: user
@@ -30,5 +30,5 @@ admin-auth:
 smtp-config:
   host: 'smtp.mailtrap.io'
   port: 465
-  username: 03e9f47ea76cbc
-  password: d7ef7b9a295b8d
+  username: username # Provide your mailtrap username
+  password: password # Provide your mailtrap password
