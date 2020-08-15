@@ -40,7 +40,7 @@ micronaut:
 ---
 datasources:
   default:
-    url: ${DATABASE_JDBC_URL}
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:postgres}
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
     driverClassName: 'org.postgresql.Driver'
