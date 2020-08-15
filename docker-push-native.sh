@@ -11,4 +11,5 @@ done
 
 echo "Pushing docker image with tag: ${TAG}..."
 docker push kuvaszmonitoring/kuvasz:${TAG}
+docker push kuvaszmonitoring/kuvasz:latest-native
 echo "Pushing docker image with tag: ${TAG}...OK"
