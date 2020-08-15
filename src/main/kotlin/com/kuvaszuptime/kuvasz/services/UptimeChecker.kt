@@ -88,6 +88,7 @@ class UptimeChecker @Inject constructor(
     }
 
     @EventListener
+    @Suppress("UNUSED_PARAMETER")
     internal fun onShutdownEvent(event: ShutdownEvent) {
         httpClient.close()
     }

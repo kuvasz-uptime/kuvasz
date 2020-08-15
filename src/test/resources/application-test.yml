@@ -12,6 +12,13 @@ micronaut:
 app-config:
   http-communication-logging:
     enabled: true
+---
 admin-auth:
   username: test-user
   password: test-pass-test-pass-test-pass
+---
+handler-config:
+  smtp-event-handler:
+    enabled: false
+    from: 'noreply@kuvasz.uptime'
+    to: 'test-to@kuvasz.uptime'

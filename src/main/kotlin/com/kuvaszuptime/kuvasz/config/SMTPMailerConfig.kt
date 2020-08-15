@@ -18,10 +18,8 @@ class SMTPMailerConfig {
     @NotNull
     var port: Int? = null
 
-    @NotBlank
     var username: String? = null
 
-    @NotBlank
     var password: String? = null
 
     var transportStrategy: TransportStrategy = TransportStrategy.SMTP_TLS

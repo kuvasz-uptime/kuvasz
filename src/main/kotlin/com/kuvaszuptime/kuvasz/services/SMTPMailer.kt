@@ -21,10 +21,13 @@ class SMTPMailer @Inject constructor(smtpMailerConfig: SMTPMailerConfig) {
         MailerBuilder
             .withTransportStrategy(smtpMailerConfig.transportStrategy.toJavaMailerTransportStrategy())
             .withSMTPServerHost(smtpMailerConfig.host)
-            .withSMTPServerUsername(smtpMailerConfig.username)
-            .withSMTPServerPassword(smtpMailerConfig.password)
             .withSMTPServerPort(smtpMailerConfig.port)
-            .buildMailer()
+            .apply {
+                if (!smtpMailerConfig.username.isNullOrBlank() && !smtpMailerConfig.password.isNullOrBlank()) {
+                    withSMTPServerUsername(smtpMailerConfig.username)
+                        .withSMTPServerPassword(smtpMailerConfig.password)
+                }
+            }.buildMailer()
 
     init {
         @Suppress("TooGenericExceptionCaught")

@@ -81,6 +81,6 @@ admin-auth:
 smtp-config:
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
-  username: ${SMTP_USERNAME}
-  password: ${SMTP_PASSWORD}
+  username: ${SMTP_USERNAME:``}
+  password: ${SMTP_PASSWORD:``}
   transport-strategy: ${SMTP_TRANSPORT_STRATEGY:`SMTP_TLS`}
