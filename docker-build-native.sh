@@ -13,5 +13,5 @@ done
 TAG="${VERSION}-native"
 
 echo "Building docker image with tag: ${TAG}..."
-docker build . -t kuvaszmonitoring/kuvasz:${TAG} --build-arg VERSION=${VERSION}
+docker build . -t kuvaszmonitoring/kuvasz:${TAG} -t kuvaszmonitoring/kuvasz:latest-native --build-arg VERSION=${VERSION}
 echo "Building docker image with tag: ${TAG}...OK"

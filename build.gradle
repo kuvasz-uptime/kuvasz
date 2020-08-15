@@ -160,8 +160,15 @@ tasks.withType(JavaExec) {
     }
 }
 
-jib.to.image = "kuvaszmonitoring/kuvasz:${version}"
-jib.container.environment = ["JAVA_TOOL_OPTIONS": "-Xms64M -Xmx128M"]
+jib {
+    to {
+        image = "kuvaszmonitoring/kuvasz:${version}"
+        tags = ["latest"]
+    }
+    container {
+        environment = ["JAVA_TOOL_OPTIONS": "-Xms64M -Xmx128M"]
+    }
+}
 
 task buildNativeImage(type: Exec) {
     dependsOn("shadowJar")
