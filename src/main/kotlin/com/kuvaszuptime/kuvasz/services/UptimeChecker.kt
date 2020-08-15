@@ -8,10 +8,12 @@ import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isSuccess
+import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.runtime.event.annotation.EventListener
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import java.net.URI
@@ -24,6 +26,10 @@ class UptimeChecker @Inject constructor(
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository
 ) {
+
+    companion object {
+        private const val RETRY_COUNT = 3L
+    }
 
     @ExecuteOn(TaskExecutors.IO)
     fun check(monitor: MonitorPojo, uriOverride: URI? = null) {
@@ -81,12 +87,17 @@ class UptimeChecker @Inject constructor(
             )
     }
 
+    @EventListener
+    internal fun onShutdownEvent(event: ShutdownEvent) {
+        httpClient.close()
+    }
+
     private fun sendHttpRequest(uri: URI): RawHttpResponse {
         val request = HttpRequest.GET<Any>(uri)
             .header(HttpHeaders.ACCEPT, "*/*")
             .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
             .header(HttpHeaders.CACHE_CONTROL, "no-cache")
 
-        return httpClient.exchange(request)
+        return httpClient.exchange(request).retry(RETRY_COUNT)
     }
 }
