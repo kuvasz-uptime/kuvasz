@@ -1,0 +1,23 @@
+{
+  "resources": [
+    {
+      "pattern": "\\QMETA-INF/javamail.charset.map\\E"
+    },
+    {
+      "pattern": "\\QMETA-INF/javamail.default.address.map\\E"
+    },
+    {
+      "pattern": "\\QMETA-INF/javamail.default.providers\\E"
+    },
+    {
+      "pattern": "\\QMETA-INF/mailcap.default\\E"
+    },
+    {
+      "pattern": "\\QMETA-INF/mailcap\\E"
+    },
+    {
+      "pattern": "\\QMETA-INF/services/javax.mail.Provider\\E"
+    }
+  ],
+  "bundles": []
+}

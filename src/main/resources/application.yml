@@ -40,7 +40,7 @@ micronaut:
 ---
 datasources:
   default:
-    url: ${DATABASE_JDBC_URL}
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:postgres}
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
     driverClassName: 'org.postgresql.Driver'
@@ -65,8 +65,22 @@ jooq:
 app-config:
   http-communication-logging:
     enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}
+---
+handler-config:
   log-event-handler:
     enabled: ${ENABLE_LOG_EVENT_HANDLER:`true`}
+  smtp-event-handler:
+    enabled: ${ENABLE_SMTP_EVENT_HANDLER:`false`}
+    from: ${SMTP_FROM_ADDRESS}
+    to: ${SMTP_TO_ADDRESS}
+---
 admin-auth:
   username: ${ADMIN_USER}
   password: ${ADMIN_PASSWORD}
+---
+smtp-config:
+  host: ${SMTP_HOST}
+  port: ${SMTP_PORT}
+  username: ${SMTP_USERNAME:``}
+  password: ${SMTP_PASSWORD:``}
+  transport-strategy: ${SMTP_TRANSPORT_STRATEGY:`SMTP_TLS`}

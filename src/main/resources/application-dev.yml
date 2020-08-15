@@ -10,13 +10,25 @@ micronaut:
 ---
 datasources:
   default:
-    url: 'jdbc:postgresql://localhost:5432/postgres'
     username: 'postgres'
     password: 'pass'
 ---
 app-config:
   http-communication-logging:
     enabled: true
+---
+handler-config:
+  smtp-event-handler:
+    enabled: false
+    from: 'noreply@kuvasz.uptime'
+    to: 'recipient@kuvasz.uptime'
+---
 admin-auth:
   username: user
   password: pass3j4hkhk23hk23k232hk3h232
+---
+smtp-config:
+  host: 'smtp.mailtrap.io'
+  port: 465
+  username: username # Provide your mailtrap username
+  password: password # Provide your mailtrap password

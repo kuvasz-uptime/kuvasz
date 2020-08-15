@@ -17,7 +17,7 @@ class DatabaseEventHandler @Inject constructor(
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository
-) : EventHandler {
+) {
     companion object {
         private val logger = LoggerFactory.getLogger(DatabaseEventHandler::class.java)
     }

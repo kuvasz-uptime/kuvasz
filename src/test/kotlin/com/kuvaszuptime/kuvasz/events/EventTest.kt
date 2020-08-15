@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz.events
 import arrow.core.Option
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.continueWhenStateChanges
 import com.kuvaszuptime.kuvasz.models.getEndedEventDuration
+import com.kuvaszuptime.kuvasz.models.runWhenStateChanges
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -75,7 +75,7 @@ class EventTest : BehaviorSpec() {
                 var testValue = 0
 
                 then("it should invoke the given lambda") {
-                    event.continueWhenStateChanges {
+                    event.runWhenStateChanges {
                         testValue = 1
                     }
                     testValue shouldBe 1
@@ -95,7 +95,7 @@ class EventTest : BehaviorSpec() {
                 var testValue = 0
 
                 then("it should not invoke the given lambda") {
-                    event.continueWhenStateChanges {
+                    event.runWhenStateChanges {
                         testValue = 1
                     }
                     testValue shouldBe 0
@@ -112,7 +112,7 @@ class EventTest : BehaviorSpec() {
                 var testValue = 0
 
                 then("it should invoke the given lambda") {
-                    event.continueWhenStateChanges {
+                    event.runWhenStateChanges {
                         testValue = 1
                     }
                     testValue shouldBe 1
