@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.micronaut.http.HttpStatus
 import java.net.URI
 import kotlin.time.Duration
@@ -61,13 +62,35 @@ fun UptimeMonitorEvent.getEndedEventDuration(): Option<Duration> =
         )
     }
 
-fun UptimeMonitorEvent.continueWhenStateChanges(toRun: () -> Unit) {
+fun UptimeMonitorEvent.runWhenStateChanges(toRun: (UptimeMonitorEvent) -> Unit) {
     return previousEvent.fold(
-        { toRun() },
+        { toRun(this) },
         { previousEvent ->
             if (uptimeStatusNotEquals(previousEvent)) {
-                toRun()
+                toRun(this)
             }
         }
+    )
+}
+
+fun UptimeMonitorEvent.toMessage(): String =
+    when (this) {
+        is MonitorUpEvent -> toMessage()
+        is MonitorDownEvent -> toMessage()
+    }
+
+fun MonitorUpEvent.toMessage(): String {
+    val message = "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (${status.code}). Latency was: ${latency}ms."
+    return getEndedEventDuration().toDurationString().fold(
+        { message },
+        { "$message Was down for $it." }
+    )
+}
+
+fun MonitorDownEvent.toMessage(): String {
+    val message = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN. Reason: ${error.message}."
+    return getEndedEventDuration().toDurationString().fold(
+        { message },
+        { "$message Was up for $it." }
     )
 }

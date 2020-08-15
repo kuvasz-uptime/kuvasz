@@ -17,6 +17,19 @@ datasources:
 app-config:
   http-communication-logging:
     enabled: true
+---
+handler-config:
+  smtp-event-handler:
+    enabled: true
+    from: 'noreply@kuvasz.uptime'
+    to: 'kobor.adam@gmail.com'
+---
 admin-auth:
   username: user
   password: pass3j4hkhk23hk23k232hk3h232
+---
+smtp-config:
+  host: 'smtp.mailtrap.io'
+  port: 465
+  username: 03e9f47ea76cbc
+  password: d7ef7b9a295b8d
