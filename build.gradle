@@ -34,8 +34,6 @@ dependencies {
     kapt("io.micronaut.security:micronaut-security-annotations")
     compileOnly(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
-    compile("org.simplejavamail:simple-java-mail:${simpleJavaMailVersion}")
-    compile("org.simplejavamail:batch-module:${simpleJavaMailVersion}")
     implementation("io.arrow-kt:arrow-core-data:${arrowDataVersion}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))
@@ -57,6 +55,8 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation "nu.studer:gradle-jooq-plugin:$jooqPluginVersion"
     implementation("org.postgresql:postgresql:${postgresVersion}")
+    implementation("org.simplejavamail:simple-java-mail:${simpleJavaMailVersion}")
+    implementation("org.simplejavamail:batch-module:${simpleJavaMailVersion}")
     detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
     runtimeOnly("ch.qos.logback:logback-classic")
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
