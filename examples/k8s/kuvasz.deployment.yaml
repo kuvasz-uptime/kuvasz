@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuvasz-service
+  namespace: kuvasz
+spec:
+  selector:
+    matchLabels:
+      app: kuvasz-service
+  template:
+    metadata:
+      labels:
+        app: kuvasz-service
+    spec:
+      containers:
+        - image: kuvaszmonitoring/kuvasz:latest
+          name: kuvasz-service
+          resources:
+            requests:
+              memory: 154Mi # Pay attention to this limit!
+              cpu: 1024m
+            limits:
+              memory: 384Mi # Pay attention to this limit! It's the lowest memory limit you can set to have a stable service
+              cpu: 1024m
+          tty: true
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: database_host
+            - name: DATABASE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: database_port
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: database_name
+            - name: HTTP_COMMUNICATION_LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: http_communication_log_level
+            - name: HTTP_COMMUNICATION_LOG_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: http_communication_log_enabled
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: admin-credentials
+                  key: username
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-credentials
+                  key: password
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: JWT_SIGNATURE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-generator-secret
+                  key: secret
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-credentials
+                  key: username
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-credentials
+                  key: password
+            - name: SMTP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: smtp_host
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: smtp_port
+            - name: SMTP_TRANSPORT_STRATEGY
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: smtp_transport_strategy
+            - name: ENABLE_SMTP_EVENT_HANDLER
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: smtp_event_handler_enabled
+            - name: SMTP_FROM_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: smtp_from_address
+            - name: SMTP_TO_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: smtp_to_address
