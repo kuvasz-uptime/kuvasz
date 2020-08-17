@@ -78,3 +78,7 @@ If you are going to deploy Kuvasz with **docker-compose or Kubernetes**, you sho
 ## 📚  Further reading
 
 If you want to know more about the fundamentals of Kuvasz, head to the [**Events & Event handlers**](https://github.com/kuvasz-uptime/kuvasz/wiki/Events-&-Event-handlers) section!
+
+## ⁉️ Do you have a question?
+
+There is a dedicated room for Kuvasz on [Gitter](https://gitter.im/kuvasz-uptime/community).
