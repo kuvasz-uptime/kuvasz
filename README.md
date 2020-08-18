@@ -10,21 +10,21 @@
 
 ---
 
-## ℹ️  What is Kuvasz?
+## ℹ️ What is Kuvasz?
 
 Kuvasz is a **headless uptime monitor service**, which means that it is able to watch all of your precious websites and notify you if something bad happens to them. It is built in Kotlin, on top of the awesome [Micronaut framework](https://github.com/micronaut-projects). 
 There are a lot of exciting, new features on the roadmap, you should check them out [here](https://github.com/kuvasz-uptime/kuvasz/projects/1). If you don't prefer headless services, stay calm, _Kuvasz Dashboard_, a full-featured but standalone GUI for the service is also on its way.
 
-### 🐶  Where does the name come from?
+### Where does the name come from?
 
 Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & guard dog. You can read more about them on [Wikipedia](https://en.wikipedia.org/wiki/Kuvasz).
 
-### ✅  Features
+### Features
 
 - Uptime & latency monitoring with a configurable interval
 - Email notifications through SMTP
 
-### 🚧  Under development
+### Under development 🚧
 
 - SSL certification monitoring
 - Regular Lighthouse audits for your websites
@@ -33,11 +33,11 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 
 ## ⚡️  Quick start guide
 
-### ☝️  Requirements
+### Requirements
 
 - You have **a running PostgreSQL instance** (Preferably 12+)
 
-### 🎬  Starting Kuvasz
+### Starting Kuvasz
 
 The quickest way to spin up an instance of Kuvasz is something like this:
 
@@ -70,12 +70,12 @@ curl --location --request POST 'https://your.host:8080/monitor/' \
 
 You can read more about the **monitor management** in the [dedicated section](https://github.com/kuvasz-uptime/kuvasz/wiki/Monitor-management) of the Wiki.
 
-## ⛴  Deployment
+## ⛴ Deployment
 
 Although the example above is simple, when you want to deploy Kuvasz to production you'll probably end up with a more mature tooling or configuration. You can find the available **configuration properties [here](https://github.com/kuvasz-uptime/kuvasz/wiki/Configuration)**.
 If you are going to deploy Kuvasz with **docker-compose or Kubernetes**, you should take a look at the [**deployment related examples**](https://github.com/kuvasz-uptime/kuvasz/tree/main/examples), or the [**Deployment**](https://github.com/kuvasz-uptime/kuvasz/wiki/Deployment) section of the Wiki.
 
-## 📚  Further reading
+## 📚 Further reading
 
 If you want to know more about the fundamentals of Kuvasz, head to the [**Events & Event handlers**](https://github.com/kuvasz-uptime/kuvasz/wiki/Events-&-Event-handlers) section!
 
