@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.RedirectEvent
-import com.kuvaszuptime.kuvasz.models.toMessage
+import com.kuvaszuptime.kuvasz.models.toPlainMessage
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
@@ -17,10 +17,10 @@ class LogEventHandler @Inject constructor(eventDispatcher: EventDispatcher) {
 
     init {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
-            logger.info(event.toMessage())
+            logger.info(event.toPlainMessage())
         }
         eventDispatcher.subscribeToMonitorDownEvents { event ->
-            logger.error(event.toMessage())
+            logger.error(event.toPlainMessage())
         }
         eventDispatcher.subscribeToRedirectEvents { event ->
             logger.warn(event.toLogMessage())

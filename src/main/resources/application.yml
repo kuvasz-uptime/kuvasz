@@ -75,6 +75,9 @@ handler-config:
     enabled: ${ENABLE_SMTP_EVENT_HANDLER:`false`}
     from: ${SMTP_FROM_ADDRESS}
     to: ${SMTP_TO_ADDRESS}
+  slack-event-handler:
+    enabled: ${ENABLE_SLACK_EVENT_HANDLER:`false`}
+    webhook-url: ${SLACK_WEBHOOK_URL}
 ---
 admin-auth:
   username: ${ADMIN_USER}

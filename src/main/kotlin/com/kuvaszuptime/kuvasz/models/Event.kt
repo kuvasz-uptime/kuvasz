@@ -40,10 +40,28 @@ data class RedirectEvent(
     val redirectLocation: URI
 ) : Event()
 
+data class StructuredUpMessage(
+    val summary: String,
+    val latency: String,
+    val previousDownTime: Option<String>
+)
+
+data class StructuredDownMessage(
+    val summary: String,
+    val error: String,
+    val previousUpTime: Option<String>
+)
+
 fun UptimeMonitorEvent.toUptimeStatus(): UptimeStatus =
     when (this) {
         is MonitorUpEvent -> UptimeStatus.UP
         is MonitorDownEvent -> UptimeStatus.DOWN
+    }
+
+fun UptimeMonitorEvent.toEmoji(): String =
+    when (this) {
+        is MonitorUpEvent -> Emoji.CHECK_OK
+        is MonitorDownEvent -> Emoji.ALERT
     }
 
 fun UptimeMonitorEvent.uptimeStatusEquals(previousEvent: UptimeEventPojo) =
@@ -73,24 +91,34 @@ fun UptimeMonitorEvent.runWhenStateChanges(toRun: (UptimeMonitorEvent) -> Unit) 
     )
 }
 
-fun UptimeMonitorEvent.toMessage(): String =
-    when (this) {
-        is MonitorUpEvent -> toMessage()
-        is MonitorDownEvent -> toMessage()
+fun MonitorUpEvent.toPlainMessage(): String =
+    toStructuredMessage().let { details ->
+        listOfNotNull(
+            details.summary,
+            details.latency,
+            details.previousDownTime.orNull()
+        ).joinToString(". ")
     }
 
-fun MonitorUpEvent.toMessage(): String {
-    val message = "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (${status.code}). Latency was: ${latency}ms."
-    return getEndedEventDuration().toDurationString().fold(
-        { message },
-        { "$message Was down for $it." }
+fun MonitorUpEvent.toStructuredMessage() =
+    StructuredUpMessage(
+        summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (${status.code})",
+        latency = "Latency: ${latency}ms",
+        previousDownTime = getEndedEventDuration().toDurationString().map { "Was down for $it" }
     )
-}
 
-fun MonitorDownEvent.toMessage(): String {
-    val message = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN. Reason: ${error.message}."
-    return getEndedEventDuration().toDurationString().fold(
-        { message },
-        { "$message Was up for $it." }
+fun MonitorDownEvent.toPlainMessage(): String =
+    toStructuredMessage().let { details ->
+        listOfNotNull(
+            details.summary,
+            details.error,
+            details.previousUpTime.orNull()
+        ).joinToString(". ")
+    }
+
+fun MonitorDownEvent.toStructuredMessage() =
+    StructuredDownMessage(
+        summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN",
+        error = "Reason: ${error.message}",
+        previousUpTime = getEndedEventDuration().toDurationString().map { "Was up for $it" }
     )
-}

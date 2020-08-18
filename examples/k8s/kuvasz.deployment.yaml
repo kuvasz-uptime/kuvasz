@@ -116,3 +116,13 @@ spec:
                 configMapKeyRef:
                   name: kuvasz-config
                   key: smtp_to_address
+            - name: ENABLE_SLACK_EVENT_HANDLER
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: slack_event_handler_enabled
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: slack_webhook_url
