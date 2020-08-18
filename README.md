@@ -23,12 +23,13 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 
 - Uptime & latency monitoring with a configurable interval
 - Email notifications through SMTP
+- Slack notifications through webhoooks
 
 ### Under development 🚧
 
 - SSL certification monitoring
 - Regular Lighthouse audits for your websites
-- Pagerduty, Opsgenie, Slack integration
+- Pagerduty, Opsgenie integration
 - Kuvasz Dashboard, a standalone GUI
 
 ## ⚡️  Quick start guide

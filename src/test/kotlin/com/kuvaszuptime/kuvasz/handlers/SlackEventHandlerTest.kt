@@ -2,45 +2,50 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import arrow.core.Option
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.config.handlers.SMTPEventHandlerConfig
-import com.kuvaszuptime.kuvasz.factories.EmailFactory
+import com.kuvaszuptime.kuvasz.config.handlers.SlackEventHandlerConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.SMTPMailer
+import com.kuvaszuptime.kuvasz.services.SlackWebhookService
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.micronaut.context.annotation.Property
+import io.micronaut.core.type.Argument
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.RxHttpClient
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MicronautTest
 import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import org.simplejavamail.api.email.Email
+import io.reactivex.Flowable
 
 @MicronautTest
-@Property(name = "handler-config.smtp-event-handler.enabled", value = "true")
-class SMTPEventHandlerTest(
+class SlackEventHandlerTest(
     private val eventDispatcher: EventDispatcher,
     private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
-    smtpEventHandlerConfig: SMTPEventHandlerConfig,
-    smtpMailer: SMTPMailer
+    private val uptimeEventRepository: UptimeEventRepository
 
 ) : DatabaseBehaviorSpec() {
-    init {
-        val emailFactory = EmailFactory(smtpEventHandlerConfig)
-        val mailerSpy = spyk(smtpMailer, recordPrivateCalls = true)
-        SMTPEventHandler(smtpEventHandlerConfig, mailerSpy, eventDispatcher)
+    private val mockHttpClient = mockk<RxHttpClient>()
 
-        given("the SMTPEventHandler") {
+    init {
+        val eventHandlerConfig = SlackEventHandlerConfig().apply { webhookUrl = "https://jklfdalda.com/webhook" }
+        val slackWebhookService = SlackWebhookService(eventHandlerConfig, mockHttpClient)
+        val webhookServiceSpy = spyk(slackWebhookService, recordPrivateCalls = true)
+        SlackEventHandler(webhookServiceSpy, eventDispatcher)
+
+        given("the SlackEventHandler") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createMonitor(monitorRepository)
                 val event = MonitorUpEvent(
@@ -49,17 +54,15 @@ class SMTPEventHandlerTest(
                     latency = 1000,
                     previousEvent = Option.empty()
                 )
-                val expectedEmail = emailFactory.fromUptimeMonitorEvent(event)
+                mockHttpResponse(HttpStatus.OK)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send an email about the event") {
-                    val slot = slot<Email>()
+                then("it should send a webhook message about the event") {
+                    val slot = slot<SlackWebhookMessage>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is UP"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
                 }
             }
 
@@ -71,17 +74,15 @@ class SMTPEventHandlerTest(
                     error = Throwable(),
                     previousEvent = Option.empty()
                 )
-                val expectedEmail = emailFactory.fromUptimeMonitorEvent(event)
+                mockHttpResponse(HttpStatus.OK)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send an email about the event") {
-                    val slot = slot<Email>()
+                then("it should send a webhook message about the event") {
+                    val slot = slot<SlackWebhookMessage>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is DOWN"
                 }
             }
 
@@ -93,9 +94,9 @@ class SMTPEventHandlerTest(
                     latency = 1000,
                     previousEvent = Option.empty()
                 )
+                mockHttpResponse(HttpStatus.OK)
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
-                val expectedEmail = emailFactory.fromUptimeMonitorEvent(firstEvent)
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -105,14 +106,11 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one notification about them") {
+                    val slot = slot<SlackWebhookMessage>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldContain "Latency: 1000ms"
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is UP"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Latency: 1000ms"
                 }
             }
 
@@ -124,9 +122,9 @@ class SMTPEventHandlerTest(
                     error = Throwable("First error"),
                     previousEvent = Option.empty()
                 )
+                mockHttpResponse(HttpStatus.OK)
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
-                val expectedEmail = emailFactory.fromUptimeMonitorEvent(firstEvent)
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -136,14 +134,11 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one notification about them") {
+                    val slot = slot<SlackWebhookMessage>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldContain "First error"
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "First error"
                 }
             }
 
@@ -155,6 +150,7 @@ class SMTPEventHandlerTest(
                     previousEvent = Option.empty(),
                     error = Throwable()
                 )
+                mockHttpResponse(HttpStatus.OK)
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
 
@@ -166,20 +162,13 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = emailFactory.fromUptimeMonitorEvent(firstEvent)
-                val secondExpectedEmail = emailFactory.fromUptimeMonitorEvent(secondEvent)
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<SlackWebhookMessage>()
 
-                then("it should send two different emails about them") {
-                    val emailsSent = mutableListOf<Email>()
-
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is DOWN"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldContain "Latency: 1000ms"
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is UP"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
+                    notificationsSent[0].text shouldContain "is DOWN"
+                    notificationsSent[1].text shouldContain "Latency: 1000ms"
+                    notificationsSent[1].text shouldContain "is UP"
                 }
             }
 
@@ -191,6 +180,7 @@ class SMTPEventHandlerTest(
                     latency = 1000,
                     previousEvent = Option.empty()
                 )
+                mockHttpResponse(HttpStatus.OK)
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
 
@@ -202,20 +192,33 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = emailFactory.fromUptimeMonitorEvent(firstEvent)
-                val secondExpectedEmail = emailFactory.fromUptimeMonitorEvent(secondEvent)
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<SlackWebhookMessage>()
 
-                then("it should send two different emails about them") {
-                    val emailsSent = mutableListOf<Email>()
+                    verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
+                    notificationsSent[0].text shouldContain "Latency: 1000ms"
+                    notificationsSent[0].text shouldContain "is UP"
+                    notificationsSent[1].text shouldContain "is DOWN"
+                }
+            }
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldContain "Latency: 1000ms"
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is UP"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is DOWN"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+            `when`("it receives an event but an error happens when it calls the webhook") {
+                val monitor = createMonitor(monitorRepository)
+                val event = MonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1000,
+                    previousEvent = Option.empty()
+                )
+                mockHttpErrorResponse(HttpStatus.BAD_REQUEST, "bad_request")
+
+                then("it should send a webhook message about the event") {
+                    val slot = slot<SlackWebhookMessage>()
+
+                    shouldNotThrowAny { eventDispatcher.dispatch(event) }
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
+
                 }
             }
         }
@@ -224,5 +227,29 @@ class SMTPEventHandlerTest(
     override fun afterTest(testCase: TestCase, result: TestResult) {
         clearAllMocks()
         super.afterTest(testCase, result)
+    }
+
+    private fun mockHttpResponse(status: HttpStatus, body: String = "") {
+        every {
+            mockHttpClient.exchange<SlackWebhookMessage, String, String>(
+                any(),
+                Argument.STRING,
+                Argument.STRING
+            )
+        } returns Flowable.just(
+            HttpResponse.status<String>(status).body(body)
+        )
+    }
+
+    private fun mockHttpErrorResponse(status: HttpStatus, body: String = "") {
+        every {
+            mockHttpClient.exchange<SlackWebhookMessage, String, String>(
+                any(),
+                Argument.STRING,
+                Argument.STRING
+            )
+        } returns Flowable.error(
+            HttpClientResponseException("error", HttpResponse.status<String>(status).body(body))
+        )
     }
 }

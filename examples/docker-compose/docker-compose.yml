@@ -26,3 +26,5 @@ services:
       SMTP_FROM_ADDRESS: 'noreply@kuvasz.uptime'
       SMTP_TO_ADDRESS: 'your.email@example.com'
       SMTP_TRANSPORT_STRATEGY: 'SMTP_TLS'
+      ENABLE_SLACK_EVENT_HANDLER: 'true'
+      SLACK_WEBHOOK_URL: 'https://your.slack-webhook.url'

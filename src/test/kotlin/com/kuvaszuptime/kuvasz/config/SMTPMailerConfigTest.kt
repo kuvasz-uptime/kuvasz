@@ -9,7 +9,7 @@ import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
 
 class SMTPMailerConfigTest : BehaviorSpec({
-    given("an SMTPMailerConfigTest bean") {
+    given("an SMTPMailerConfig bean") {
         `when`("the SMTP host does not exists") {
             val properties = PropertySource.of(
                 "test",
