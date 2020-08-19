@@ -12,7 +12,7 @@
 
 ## ℹ️ What is Kuvasz?
 
-Kuvasz is a **headless uptime monitor service**, which means that it is able to watch all of your precious websites and notify you if something bad happens to them. It is built in Kotlin, on top of the awesome [Micronaut framework](https://github.com/micronaut-projects). 
+Kuvasz is a **headless uptime monitor service**, which means that it is able to watch all of your precious websites and notifies you if something bad happens to them. It is built in Kotlin, on top of the awesome [Micronaut framework](https://github.com/micronaut-projects). 
 There are a lot of exciting, new features on the roadmap, you should check them out [here](https://github.com/kuvasz-uptime/kuvasz/projects/1). If you don't prefer headless services, stay calm, _Kuvasz Dashboard_, a full-featured but standalone GUI for the service is also on its way.
 
 ### Where does the name come from?
