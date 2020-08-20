@@ -1,4 +1,4 @@
-FROM oracle/graalvm-ce:20.1.0-java11 as graalvm
+FROM oracle/graalvm-ce:20.2.0-java11 as graalvm
 ARG VERSION=""
 RUN gu install native-image
 
