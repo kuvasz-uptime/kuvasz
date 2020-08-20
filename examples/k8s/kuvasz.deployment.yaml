@@ -126,3 +126,8 @@ spec:
                 configMapKeyRef:
                   name: kuvasz-config
                   key: slack_webhook_url
+            - name: DATA_RETENTION_DAYS
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: data_retention_days

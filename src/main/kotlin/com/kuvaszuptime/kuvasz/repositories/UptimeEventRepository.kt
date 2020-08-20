@@ -42,4 +42,10 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
             .set(UPTIME_EVENT.ENDED_AT, endedAt)
             .where(UPTIME_EVENT.ID.eq(eventId))
             .execute()
+
+    fun deleteEventsBeforeDate(limit: OffsetDateTime) =
+        dsl.delete(UPTIME_EVENT)
+            .where(UPTIME_EVENT.ENDED_AT.isNotNull)
+            .and(UPTIME_EVENT.ENDED_AT.lessThan(limit))
+            .execute()
 }

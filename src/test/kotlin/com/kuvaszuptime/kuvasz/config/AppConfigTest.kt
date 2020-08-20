@@ -8,13 +8,13 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
 
-class SlackEventHandlerConfigTest : BehaviorSpec({
-    given("an SlackEventHandlerConfig bean") {
-        `when`("there is no webhook URL in the configuration") {
+class AppConfigTest : BehaviorSpec({
+    given("an AppConfig bean") {
+        `when`("there is a data-retention-days parameter with a null value") {
             val properties = PropertySource.of(
                 "test",
                 mapOf(
-                    "handler-config.slack-event-handler.enabled" to "true"
+                    "app-config.data-retention-days" to "null"
                 )
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
@@ -22,24 +22,22 @@ class SlackEventHandlerConfigTest : BehaviorSpec({
                     ApplicationContext.run(properties)
                 }
                 exceptionToMessage(exception) shouldContain
-                        "Bean definition [com.kuvaszuptime.kuvasz.handlers.SlackEventHandler] could not be loaded"
+                        "Error resolving property value [app-config.data-retention-days]"
             }
         }
 
-        `when`("there the webhookUrl is not a valid URI") {
+        `when`("there is a data-retention-days parameter with an exceptionally low value") {
             val properties = PropertySource.of(
                 "test",
                 mapOf(
-                    "handler-config.slack-event-handler.enabled" to "true",
-                    "handler-config.slack-event-handler.webhook-url" to "jklfdjaklfjdalfda"
+                    "app-config.data-retention-days" to "6"
                 )
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception = shouldThrow<BeanInstantiationException> {
                     ApplicationContext.run(properties)
                 }
-                exceptionToMessage(exception) shouldContain
-                        "Bean definition [com.kuvaszuptime.kuvasz.handlers.SlackEventHandler] could not be loaded"
+                exceptionToMessage(exception) shouldContain "dataRetentionDays - must be greater than or equal to 7"
             }
         }
     }

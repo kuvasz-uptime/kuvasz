@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.handlers.SlackEventHandlerConfig
 import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
+import io.micronaut.context.annotation.Requires
 import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
@@ -13,6 +14,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
+@Requires(property = "handler-config.slack-event-handler.enabled", value = "true")
 class SlackWebhookService @Inject constructor(
     private val slackEventHandlerConfig: SlackEventHandlerConfig,
     private val httpClient: RxHttpClient

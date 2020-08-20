@@ -24,6 +24,7 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 - Uptime & latency monitoring with a configurable interval
 - Email notifications through SMTP
 - Slack notifications through webhoooks
+- Configurable data retention period
 
 ### Under development 🚧
 
