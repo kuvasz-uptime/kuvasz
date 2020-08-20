@@ -9,6 +9,10 @@ micronaut:
               secret: testSecretItsVeryVerySecretSecret
     enabled: false
 ---
+datasources:
+  default:
+    maximumPoolSize: 3
+---
 app-config:
   http-communication-logging:
     enabled: true

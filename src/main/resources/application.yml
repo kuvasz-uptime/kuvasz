@@ -16,6 +16,8 @@ micronaut:
     intercept-url-map:
       - pattern: /health
         access: isAnonymous()
+      - pattern: /info
+        access: isAnonymous()
       - pattern: /swagger-ui/**
         access: isAnonymous()
       - pattern: /swagger/**
@@ -37,6 +39,13 @@ micronaut:
   http:
     client:
       follow-redirects: false
+endpoints:
+  health:
+    enabled: true
+    sensitive: true
+  info:
+    enabled: true
+    sensitive: false
 ---
 datasources:
   default:
