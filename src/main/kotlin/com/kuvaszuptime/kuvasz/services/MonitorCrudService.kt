@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import javax.inject.Inject
@@ -14,13 +15,30 @@ import javax.inject.Singleton
 @Singleton
 class MonitorCrudService @Inject constructor(
     private val monitorRepository: MonitorRepository,
+    private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler
 ) {
 
-    fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> = monitorRepository.getMonitorDetails(monitorId)
+    companion object {
+        private const val P95 = 95
+        private const val P99 = 99
+    }
+
+    fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> =
+        monitorRepository.getMonitorDetails(monitorId).map { detailsDto ->
+            detailsDto.copy(
+                p95LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(monitorId, P95),
+                p99LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(monitorId, P99)
+            )
+        }
 
     fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabledOnly)
+        monitorRepository.getMonitorsWithDetails(enabledOnly).map { detailsDto ->
+            detailsDto.copy(
+                p95LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(detailsDto.id, P95),
+                p99LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(detailsDto.id, P99)
+            )
+        }
 
     fun getMonitor(monitorId: Int): Option<MonitorPojo> = monitorRepository.findById(monitorId).toOption()
 
