@@ -57,6 +57,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResult'
+  /info:
+    get:
+      tags:
+      - Management operations
+      summary: Info endpoint
+      description: "Returns info about the application (e.g. which handlers are enabled,\
+        \ etc.)"
+      operationId: info
+      parameters: []
+      responses:
+        "200":
+          description: The standard response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResult'
+              example:
+                handlers:
+                  log-event-handler.enabled: true
+                  smtp-event-handler.enabled: false
+                  slack-event-handler.enabled: true
   /monitor/details:
     get:
       tags:
@@ -285,6 +306,11 @@ components:
           - UP
           - DOWN
           - UNKNOWN
+    InfoResult:
+      type: object
+      properties:
+        handlers:
+          type: object
     MonitorDetailsDto:
       type: object
       properties:
