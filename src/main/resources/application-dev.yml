@@ -19,16 +19,14 @@ app-config:
 ---
 handler-config:
   smtp-event-handler:
-    enabled: false
-    from: 'noreply@kuvasz.uptime'
-    to: 'recipient@kuvasz.uptime'
+    enabled: ${ENABLE_SMTP_EVENT_HANDLER:`false`}
+    from: ${SMTP_FROM_ADDRESS:`noreply@kuvasz.uptime'`}
+    to: ${SMTP_TO_ADDRESS:`recipient@kuvasz.uptime`}
 ---
 admin-auth:
   username: user
   password: pass3j4hkhk23hk23k232hk3h232
 ---
 smtp-config:
-  host: 'smtp.mailtrap.io'
-  port: 465
-  username: username # Provide your mailtrap username
-  password: password # Provide your mailtrap password
+  host: ${SMTP_HOST:`smtp.mailtrap.io`}
+  port: ${SMTP_PORT:`465`}
