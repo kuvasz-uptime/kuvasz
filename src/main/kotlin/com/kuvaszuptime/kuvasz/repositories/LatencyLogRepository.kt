@@ -24,4 +24,16 @@ class LatencyLogRepository @Inject constructor(jooqConfig: Configuration) : Late
         dsl.delete(LATENCY_LOG)
             .where(LATENCY_LOG.CREATED_AT.lessThan(limit))
             .execute()
+
+    fun getLatencyPercentileForMonitor(monitorId: Int, percentile: Int): Int? =
+        dsl.fetch(
+            """
+            with ranked as (
+                select latency_log.latency, ntile(100) over (order by latency_log.latency) as quartile 
+                from latency_log where monitor_id = ? 
+            )
+            select min(latency) from ranked
+            where quartile = ?
+            group by quartile""", monitorId, percentile
+        ).into(Int::class.java).firstOrNull()
 }

@@ -347,6 +347,14 @@ components:
           type: integer
           format: int32
           nullable: true
+        p95LatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        p99LatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
     UptimeStatus:
       type: string
       enum:

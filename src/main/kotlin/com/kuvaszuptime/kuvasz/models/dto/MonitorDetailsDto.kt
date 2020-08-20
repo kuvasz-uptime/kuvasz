@@ -17,5 +17,7 @@ data class MonitorDetailsDto(
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
-    val averageLatencyInMs: Int?
+    val averageLatencyInMs: Int?,
+    val p95LatencyInMs: Int?,
+    val p99LatencyInMs: Int?
 )
