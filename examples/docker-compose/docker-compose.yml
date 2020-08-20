@@ -28,3 +28,4 @@ services:
       SMTP_TRANSPORT_STRATEGY: 'SMTP_TLS'
       ENABLE_SLACK_EVENT_HANDLER: 'true'
       SLACK_WEBHOOK_URL: 'https://your.slack-webhook.url'
+      DATA_RETENTION_DAYS: 30

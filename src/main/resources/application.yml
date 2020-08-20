@@ -76,6 +76,7 @@ jooq:
 app-config:
   http-communication-logging:
     enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}
+  data-retention-days: ${DATA_RETENTION_DAYS:`30`}
 ---
 handler-config:
   log-event-handler:
