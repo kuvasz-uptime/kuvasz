@@ -166,9 +166,9 @@ class SlackEventHandlerTest(
                     val notificationsSent = mutableListOf<SlackWebhookMessage>()
 
                     verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0].text shouldContain "is DOWN"
+                    notificationsSent[0].text shouldContain "is DOWN (500)"
                     notificationsSent[1].text shouldContain "Latency: 1000ms"
-                    notificationsSent[1].text shouldContain "is UP"
+                    notificationsSent[1].text shouldContain "is UP (200)"
                 }
             }
 
@@ -197,8 +197,8 @@ class SlackEventHandlerTest(
 
                     verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
                     notificationsSent[0].text shouldContain "Latency: 1000ms"
-                    notificationsSent[0].text shouldContain "is UP"
-                    notificationsSent[1].text shouldContain "is DOWN"
+                    notificationsSent[0].text shouldContain "is UP (200)"
+                    notificationsSent[1].text shouldContain "is DOWN (500)"
                 }
             }
 

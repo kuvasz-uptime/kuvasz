@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.models
 
 import arrow.core.Option
+import arrow.core.getOrElse
+import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
@@ -118,7 +120,8 @@ fun MonitorDownEvent.toPlainMessage(): String =
 
 fun MonitorDownEvent.toStructuredMessage() =
     StructuredDownMessage(
-        summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN",
+        summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
+                status.toOption().map { " (" + it.code + ")" }.getOrElse { "" },
         error = "Reason: ${error.message}",
         previousUpTime = getEndedEventDuration().toDurationString().map { "Was up for $it" }
     )
