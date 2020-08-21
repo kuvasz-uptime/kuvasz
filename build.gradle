@@ -57,8 +57,8 @@ dependencies {
     implementation("org.postgresql:postgresql:${postgresVersion}")
     implementation("org.simplejavamail:simple-java-mail:${simpleJavaMailVersion}")
     implementation("org.simplejavamail:batch-module:${simpleJavaMailVersion}")
+    implementation("ch.qos.logback:logback-classic")
     detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
-    runtimeOnly("ch.qos.logback:logback-classic")
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
     testImplementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))

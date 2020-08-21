@@ -1,5 +1,5 @@
 <configuration>
-    <variable name="communicationLogLevel" value="${HTTP_COMMUNICATION_LOG_LEVEL:-INFO}"/>
+    <contextListener class="com.kuvaszuptime.kuvasz.config.LoggerStartupListener"/>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
         <!-- encoders are assigned the type
@@ -12,7 +12,7 @@
     </appender>
 
     <logger name="org.jooq" level="ERROR"/>
-    <logger name="com.kuvaszuptime.kuvasz.services.HttpCommunicationLogger" level="${communicationLogLevel}"/>
+    <logger name="com.kuvaszuptime.kuvasz.services.HttpCommunicationLogger" level="${HTTP_COMMUNICATION_LOG_LEVEL}"/>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
