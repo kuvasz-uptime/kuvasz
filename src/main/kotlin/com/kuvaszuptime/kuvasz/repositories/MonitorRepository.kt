@@ -16,7 +16,9 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import org.jooq.Configuration
 import org.jooq.exception.DataAccessException
-import org.jooq.impl.DSL
+import org.jooq.impl.DSL.avg
+import org.jooq.impl.DSL.inline
+import org.jooq.impl.SQLDataType
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -109,7 +111,9 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 UPTIME_EVENT.STATUS.`as`("uptimeStatus"),
                 UPTIME_EVENT.STARTED_AT.`as`("uptimeStatusStartedAt"),
                 UPTIME_EVENT.ERROR.`as`("uptimeError"),
-                DSL.avg(LATENCY_LOG.LATENCY).`as`("averageLatencyInMs")
+                avg(LATENCY_LOG.LATENCY).`as`("averageLatencyInMs"),
+                inline(null, SQLDataType.INTEGER).`as`("p95LatencyInMs"),
+                inline(null, SQLDataType.INTEGER).`as`("p99LatencyInMs")
             )
             .from(MONITOR)
             .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))

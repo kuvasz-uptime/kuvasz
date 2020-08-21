@@ -19,24 +19,21 @@ class MonitorCrudService @Inject constructor(
     private val checkScheduler: CheckScheduler
 ) {
 
-    companion object {
-        private const val P95 = 95
-        private const val P99 = 99
-    }
-
     fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> =
         monitorRepository.getMonitorDetails(monitorId).map { detailsDto ->
+            val latencyPercentiles = latencyLogRepository.getLatencyPercentilesForMonitor(monitorId)
             detailsDto.copy(
-                p95LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(monitorId, P95),
-                p99LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(monitorId, P99)
+                p95LatencyInMs = latencyPercentiles?.p95,
+                p99LatencyInMs = latencyPercentiles?.p99
             )
         }
 
     fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabledOnly).map { detailsDto ->
+            val latencyPercentiles = latencyLogRepository.getLatencyPercentilesForMonitor(detailsDto.id)
             detailsDto.copy(
-                p95LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(detailsDto.id, P95),
-                p99LatencyInMs = latencyLogRepository.getLatencyPercentileForMonitor(detailsDto.id, P99)
+                p95LatencyInMs = latencyPercentiles?.p95,
+                p99LatencyInMs = latencyPercentiles?.p99
             )
         }
 

@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -31,6 +32,7 @@ class MonitorControllerTest(
     @Client("/") private val client: RxHttpClient,
     private val monitorClient: MonitorClient,
     private val monitorRepository: MonitorRepository,
+    private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler
 ) : DatabaseBehaviorSpec() {
 
@@ -38,6 +40,10 @@ class MonitorControllerTest(
         given("MonitorController's getMonitorsWithDetails() endpoint") {
             `when`("there is any monitor in the database") {
                 val monitor = createMonitor(monitorRepository)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+
                 val response = monitorClient.getMonitorsWithDetails(enabledOnly = null)
                 then("it should return them") {
                     response shouldHaveSize 1
@@ -46,7 +52,9 @@ class MonitorControllerTest(
                     responseItem.name shouldBe monitor.name
                     responseItem.url.toString() shouldBe monitor.url
                     responseItem.enabled shouldBe monitor.enabled
-                    responseItem.averageLatencyInMs shouldBe null
+                    responseItem.averageLatencyInMs shouldBe 800
+                    responseItem.p95LatencyInMs shouldBe 1200
+                    responseItem.p99LatencyInMs shouldBe 1200
                     responseItem.uptimeStatus shouldBe null
                     responseItem.createdAt shouldBe monitor.createdAt
                 }
