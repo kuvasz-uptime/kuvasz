@@ -1,0 +1,26 @@
+[
+  {
+    "name": "com.sun.mail.smtp.SMTPTransport",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "javax.mail.Session",
+          "javax.mail.URLName"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.simplejavamail.internal.batchsupport.BatchSupport",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "javax.activation.MailcapCommandMap"
+  }
+]
