@@ -1,19 +1,18 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.kuvaszuptime.kuvasz.util.toNullable
-import com.kuvaszuptime.kuvasz.util.unnest
+import com.kuvaszuptime.kuvasz.config.HttpCommunicationLogConfig
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.annotation.Introspected
-import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
+import io.micronaut.logging.LogLevel
 import org.slf4j.LoggerFactory
 import java.net.URI
+import javax.inject.Inject
 import javax.inject.Singleton
 
 @Introspected
@@ -22,12 +21,15 @@ data class HttpMessageLog(
     val method: String,
     val uri: URI,
     val headers: List<String>?,
-    val body: Any?
+    val body: String?
 )
 
 @Singleton
-@Requires(property = "app-config.http-communication-logging.enabled", value = "true")
-class HttpCommunicationLogger {
+@Requires(property = "http-communication-log.enabled", value = "true")
+class HttpCommunicationLogger @Inject constructor(httpLogConfig: HttpCommunicationLogConfig) {
+
+    private val withHeaders = httpLogConfig.level.ordinal <= LogLevel.DEBUG.ordinal
+    private val withBody = httpLogConfig.level.ordinal <= LogLevel.TRACE.ordinal
 
     companion object {
         private val objectMapper = ObjectMapper().apply {
@@ -39,59 +41,28 @@ class HttpCommunicationLogger {
     }
 
     fun log(request: HttpRequest<*>) {
-        logger.info(
-            objectMapper.writeValueAsString(
-                request.toLog(
-                    withHeaders = logger.isDebugEnabled,
-                    withBody = logger.isTraceEnabled
-                )
-            )
-        )
+        logger.info(objectMapper.writeValueAsString(request.toLog()))
     }
 
     fun log(request: HttpRequest<*>, response: HttpResponse<*>) {
-        logger.info(
-            objectMapper.writeValueAsString(
-                response.toLog(
-                    request,
-                    withHeaders = logger.isDebugEnabled,
-                    withBody = logger.isTraceEnabled
-                )
-            )
-        )
+        logger.info(objectMapper.writeValueAsString(response.toLog(request)))
     }
 
-    private fun HttpRequest<*>.toLog(
-        withHeaders: Boolean,
-        withBody: Boolean
-    ): HttpMessageLog =
+    private fun HttpRequest<*>.toLog(): HttpMessageLog =
         HttpMessageLog(
             method = method.name,
             uri = uri,
             headers = if (withHeaders) headers.toList() else null,
-            body = if (withBody) body.unnest().toNullable() else null
+            body = if (withBody) getBody(String::class.java).orElse("") else null
         )
 
-    private fun HttpResponse<*>.toLog(
-        request: HttpRequest<*>,
-        withHeaders: Boolean,
-        withBody: Boolean
-    ): HttpMessageLog =
+    private fun HttpResponse<*>.toLog(request: HttpRequest<*>): HttpMessageLog =
         HttpMessageLog(
             status = status.code,
             method = request.method.name,
             uri = request.uri,
             headers = if (withHeaders) headers.toList() else null,
-            body = if (withBody) {
-                body.unnest().toNullable()?.let { nonNullBody ->
-                    when (nonNullBody) {
-                        is ByteBuffer<*> -> getBody(JsonNode::class.java).toNullable()
-                        else -> nonNullBody
-                    }
-                }
-            } else {
-                null
-            }
+            body = if (withBody) getBody(String::class.java).orElse("") else null
         )
 
     private fun HttpHeaders.toList() = flatMap { (key, value) -> value.map { "$key: $it" } }

@@ -13,7 +13,7 @@ import org.reactivestreams.Publisher
 import javax.inject.Inject
 
 @Filter("/**")
-@Requires(property = "app-config.http-communication-logging.enabled", value = "true")
+@Requires(property = "http-communication-log.enabled", value = "true")
 class LoggingHttpClientFilter
 @Inject constructor(private val service: HttpCommunicationLogger) : HttpClientFilter {
 

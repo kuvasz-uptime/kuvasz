@@ -13,9 +13,8 @@ datasources:
     username: 'postgres'
     password: 'pass'
 ---
-app-config:
-  http-communication-logging:
-    enabled: true
+http-communication-log:
+  enabled: true
 ---
 handler-config:
   smtp-event-handler:
