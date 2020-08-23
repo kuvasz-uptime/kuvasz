@@ -15,15 +15,24 @@ import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import org.jooq.Configuration
+import org.jooq.SelectOnConditionStep
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL.avg
-import org.jooq.impl.DSL.inline
-import org.jooq.impl.SQLDataType
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.min
+import org.jooq.impl.DSL.percentRank
+import org.jooq.impl.DSL.select
+import org.jooq.impl.DSL.table
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MonitorRepository @Inject constructor(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
+
+    companion object {
+        private const val P95 = .95
+        private const val P99 = .99
+    }
 
     private val dsl = jooqConfig.dsl()
 
@@ -98,8 +107,23 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
             e.handle()
         }
 
-    private fun getMonitorDetailsSelect() =
-        dsl
+    private fun getMonitorDetailsSelect(): SelectOnConditionStep<*> {
+        val percentilesCTE = "percentiles"
+        val latency = "latency"
+        val percentile = "percentile"
+        val monitorId = "monitor_id"
+        val p95 = table(percentilesCTE).`as`("p95")
+        val p99 = table(percentilesCTE).`as`("p99")
+
+        return dsl
+            .with(percentilesCTE).`as`(
+                select(
+                    LATENCY_LOG.MONITOR_ID.`as`(monitorId),
+                    LATENCY_LOG.LATENCY.`as`(latency),
+                    percentRank().over()
+                        .partitionBy(LATENCY_LOG.MONITOR_ID).orderBy(LATENCY_LOG.LATENCY).`as`(percentile)
+                ).from(LATENCY_LOG)
+            )
             .select(
                 MONITOR.ID.`as`("id"),
                 MONITOR.NAME.`as`("name"),
@@ -112,12 +136,21 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 UPTIME_EVENT.STARTED_AT.`as`("uptimeStatusStartedAt"),
                 UPTIME_EVENT.ERROR.`as`("uptimeError"),
                 avg(LATENCY_LOG.LATENCY).`as`("averageLatencyInMs"),
-                inline(null, SQLDataType.INTEGER).`as`("p95LatencyInMs"),
-                inline(null, SQLDataType.INTEGER).`as`("p99LatencyInMs")
+                min(field("p95.$latency", Int::class.java)).`as`("p95LatencyInMs"),
+                min(field("p99.$latency", Int::class.java)).`as`("p99LatencyInMs")
             )
             .from(MONITOR)
+            .leftJoin(p95).on(
+                MONITOR.ID.eq(field("p95.$monitorId", Int::class.java))
+                    .and(field("p95.$percentile", Double::class.java).greaterOrEqual(P95))
+            )
+            .leftJoin(p99).on(
+                MONITOR.ID.eq(field("p99.$monitorId", Int::class.java))
+                    .and(field("p99.$percentile", Double::class.java).greaterOrEqual(P99))
+            )
             .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
             .leftJoin(LATENCY_LOG).on(MONITOR.ID.eq(LATENCY_LOG.MONITOR_ID))
+    }
 
     private fun DataAccessException.handle(): Either<PersistenceError, Nothing> {
         val persistenceError = toPersistenceError()

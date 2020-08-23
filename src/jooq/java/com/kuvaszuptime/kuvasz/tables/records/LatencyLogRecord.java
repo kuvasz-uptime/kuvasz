@@ -33,11 +33,13 @@ import org.jooq.impl.UpdatableRecordImpl;
 @Table(name = "latency_log", uniqueConstraints = {
     @UniqueConstraint(name = "latency_log_pkey", columnNames = {"id"})
 }, indexes = {
+    @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
+    @Index(name = "latency_log_latency_monitor_idx", columnList = "monitor_id ASC, latency ASC"),
     @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
 })
 public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> implements Record4<Integer, Integer, Integer, OffsetDateTime> {
 
-    private static final long serialVersionUID = 1412652498;
+    private static final long serialVersionUID = -956178274;
 
     /**
      * Setter for <code>latency_log.id</code>.
