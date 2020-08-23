@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Option
+import arrow.core.firstOrNone
 import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
@@ -17,7 +18,8 @@ class MonitorCrudService @Inject constructor(
     private val checkScheduler: CheckScheduler
 ) {
 
-    fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> = monitorRepository.getMonitorDetails(monitorId)
+    fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(false, monitorId).firstOrNone()
 
     fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabledOnly)
