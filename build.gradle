@@ -58,6 +58,9 @@ dependencies {
     implementation("org.simplejavamail:simple-java-mail:${simpleJavaMailVersion}")
     implementation("org.simplejavamail:batch-module:${simpleJavaMailVersion}")
     implementation("ch.qos.logback:logback-classic")
+    implementation("org.zalando:logbook-core:$logbookVersion")
+    implementation("org.zalando:logbook-netty:$logbookVersion")
+    implementation("org.zalando:logbook-json:$logbookVersion")
     detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")

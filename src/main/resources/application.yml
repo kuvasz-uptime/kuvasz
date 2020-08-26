@@ -78,7 +78,6 @@ app-config:
 ---
 http-communication-log:
   enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}
-  level: ${HTTP_COMMUNICATION_LOG_LEVEL:`INFO`}
 ---
 handler-config:
   log-event-handler:

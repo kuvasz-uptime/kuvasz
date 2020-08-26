@@ -41,11 +41,6 @@ spec:
                 configMapKeyRef:
                   name: kuvasz-config
                   key: database_name
-            - name: HTTP_COMMUNICATION_LOG_LEVEL
-              valueFrom:
-                configMapKeyRef:
-                  name: kuvasz-config
-                  key: http_communication_log_level
             - name: HTTP_COMMUNICATION_LOG_ENABLED
               valueFrom:
                 configMapKeyRef:

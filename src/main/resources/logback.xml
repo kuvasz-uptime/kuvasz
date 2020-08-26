@@ -11,6 +11,7 @@
     </appender>
 
     <logger name="org.jooq" level="ERROR"/>
+    <logger name="org.zalando.logbook" level="TRACE"/>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>

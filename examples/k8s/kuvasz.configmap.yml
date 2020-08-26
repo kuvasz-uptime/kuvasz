@@ -8,7 +8,6 @@ data:
   database_port: "5432"
   database_name: "postgres"
   http_communication_log_enabled: "true"
-  http_communication_log_level: INFO
   log_handler_enabled: "true"
   smtp_event_handler_enabled: "true"
   smtp_host: "smtp.host"

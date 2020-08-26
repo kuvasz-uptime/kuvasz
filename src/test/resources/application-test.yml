@@ -15,7 +15,6 @@ datasources:
 ---
 http-communication-log:
   enabled: true
-  level: TRACE
 ---
 admin-auth:
   username: test-user

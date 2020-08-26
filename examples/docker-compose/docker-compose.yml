@@ -16,7 +16,6 @@ services:
       DATABASE_PASSWORD: OhThisIsSoSecure
       JWT_SIGNATURE_SECRET: ThisOneShouldBeVeryRandomAsWell
       ENABLE_HTTP_COMMUNICATION_LOG: 'true'
-      HTTP_COMMUNICATION_LOG_LEVEL: INFO
       ENABLE_LOG_EVENT_HANDLER: 'true'
       ENABLE_SMTP_EVENT_HANDLER: 'true'
       SMTP_HOST: 'smtp.your.host'
