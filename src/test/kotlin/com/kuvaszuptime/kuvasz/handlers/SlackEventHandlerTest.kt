@@ -128,7 +128,7 @@ class SlackEventHandlerTest(
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
-                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    status = HttpStatus.NOT_FOUND,
                     error = Throwable("Second error"),
                     previousEvent = Option.just(firstUptimeRecord)
                 )
@@ -138,7 +138,7 @@ class SlackEventHandlerTest(
                     val slot = slot<SlackWebhookMessage>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain "First error"
+                    slot.captured.text shouldContain "(500)"
                 }
             }
 

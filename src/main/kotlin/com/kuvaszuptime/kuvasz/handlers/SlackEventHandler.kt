@@ -72,7 +72,6 @@ class SlackEventHandler @Inject constructor(
             is MonitorDownEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
                     "*${details.summary}*",
-                    "_${details.error}_",
                     details.previousUpTime.orNull()
                 )
             }
