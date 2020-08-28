@@ -22,20 +22,23 @@ class AdminAuthProvider @Inject constructor(private val authConfig: AdminAuthCon
         httpRequest: HttpRequest<*>?,
         authenticationRequest: AuthenticationRequest<*, *>
     ): Publisher<AuthenticationResponse> {
-        return Flowable.create({ emitter: FlowableEmitter<AuthenticationResponse> ->
-            if (authenticationRequest.identity == authConfig.username &&
-                authenticationRequest.secret == authConfig.password
-            ) {
-                val userDetails =
-                    UserDetails(
-                        authenticationRequest.identity as String,
-                        listOf(Role.ADMIN.alias)
-                    )
-                emitter.onNext(userDetails)
-                emitter.onComplete()
-            } else {
-                emitter.onError(AuthenticationException(AuthenticationFailed()))
-            }
-        }, BackpressureStrategy.ERROR)
+        return Flowable.create(
+            { emitter: FlowableEmitter<AuthenticationResponse> ->
+                if (authenticationRequest.identity == authConfig.username &&
+                    authenticationRequest.secret == authConfig.password
+                ) {
+                    val userDetails =
+                        UserDetails(
+                            authenticationRequest.identity as String,
+                            listOf(Role.ADMIN.alias)
+                        )
+                    emitter.onNext(userDetails)
+                    emitter.onComplete()
+                } else {
+                    emitter.onError(AuthenticationException(AuthenticationFailed()))
+                }
+            },
+            BackpressureStrategy.ERROR
+        )
     }
 }
