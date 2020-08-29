@@ -1,12 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Option
-import arrow.core.firstOrNone
 import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import javax.inject.Inject
@@ -15,14 +15,32 @@ import javax.inject.Singleton
 @Singleton
 class MonitorCrudService @Inject constructor(
     private val monitorRepository: MonitorRepository,
+    private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler
 ) {
 
     fun getMonitorDetails(monitorId: Int): Option<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(false, monitorId).firstOrNone()
+        monitorRepository
+            .getMonitorWithDetails(monitorId)
+            .map { detailsDto ->
+                val latencies = latencyLogRepository.getLatencyPercentiles(detailsDto.id).firstOrNull()
+                detailsDto.copy(
+                    p95LatencyInMs = latencies?.p95,
+                    p99LatencyInMs = latencies?.p99
+                )
+            }
 
-    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabledOnly)
+    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> {
+        val latencies = latencyLogRepository.getLatencyPercentiles()
+
+        return monitorRepository.getMonitorsWithDetails(enabledOnly).map { detailsDto ->
+            val matchingLatency = latencies.find { it.monitorId == detailsDto.id }
+            detailsDto.copy(
+                p95LatencyInMs = matchingLatency?.p95,
+                p99LatencyInMs = matchingLatency?.p99
+            )
+        }
+    }
 
     fun getMonitor(monitorId: Int): Option<MonitorPojo> = monitorRepository.findById(monitorId).toOption()
 
