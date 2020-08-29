@@ -17,7 +17,8 @@ import javax.inject.Singleton
 @Requires(property = "handler-config.telegram-event-handler.enabled", value = "true")
 class TelegramWebhookService @Inject constructor(
     private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
-    private val httpClient: RxHttpClient) {
+    private val httpClient: RxHttpClient
+) {
     private val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/"
 
     companion object {
@@ -25,16 +26,16 @@ class TelegramWebhookService @Inject constructor(
     }
 
     fun sendMessage(message: TelegramWebhookMessage): Flowable<HttpResponse<String>> {
-        val request: HttpRequest<TelegramWebhookMessage> = HttpRequest.POST(url, message);
+        val request: HttpRequest<TelegramWebhookMessage> = HttpRequest.POST(url, message)
 
         return httpClient
             .exchange(request, Argument.STRING, Argument.STRING)
-            .retry(RETRY_COUNT);
+            .retry(RETRY_COUNT)
     }
 
     @EventListener
     @Suppress("UNUSED_PARAMETER")
     internal fun onShutdownEvent(event: ShutdownEvent) {
-        httpClient.close();
+        httpClient.close()
     }
 }

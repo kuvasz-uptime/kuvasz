@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.models.TelegramWebhookMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.runWhenStateChanges
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory
 
 @Context
 @Requires(property = "handler-config.telegram-event-handler.enabled", value = "true")
-class TelegramEventHandler (
+class TelegramEventHandler(
     private val telegramEventHandler: TelegramWebhookService,
     private val eventDispatcher: EventDispatcher
 ) {
