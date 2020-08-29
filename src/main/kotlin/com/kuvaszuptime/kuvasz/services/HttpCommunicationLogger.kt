@@ -16,22 +16,27 @@ class HttpCommunicationLogger(private val logbook: Logbook) : BeanCreatedEventLi
 
     override fun onCreated(event: BeanCreatedEvent<ChannelPipelineCustomizer>): ChannelPipelineCustomizer {
         val customizer = event.bean
+        val handlerName = "logbook"
         if (customizer.isServerChannel) {
             customizer.doOnConnect { pipeline: ChannelPipeline ->
-                pipeline.addAfter(
-                    ChannelPipelineCustomizer.HANDLER_HTTP_SERVER_CODEC,
-                    "logbook",
-                    LogbookServerHandler(logbook)
-                )
+                if (pipeline.get(handlerName) == null) {
+                    pipeline.addAfter(
+                        ChannelPipelineCustomizer.HANDLER_HTTP_SERVER_CODEC,
+                        handlerName,
+                        LogbookServerHandler(logbook)
+                    )
+                }
                 pipeline
             }
         } else {
             customizer.doOnConnect { pipeline: ChannelPipeline ->
-                pipeline.addAfter(
-                    ChannelPipelineCustomizer.HANDLER_HTTP_CLIENT_CODEC,
-                    "logbook",
-                    LogbookClientHandler(logbook)
-                )
+                if (pipeline.get(handlerName) == null) {
+                    pipeline.addAfter(
+                        ChannelPipelineCustomizer.HANDLER_HTTP_CLIENT_CODEC,
+                        handlerName,
+                        LogbookClientHandler(logbook)
+                    )
+                }
                 pipeline
             }
         }
