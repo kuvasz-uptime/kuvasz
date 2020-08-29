@@ -20,7 +20,7 @@ import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row6;
+import org.jooq.Row7;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -36,7 +36,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class UptimeEvent extends TableImpl<UptimeEventRecord> {
 
-    private static final long serialVersionUID = 497612164;
+    private static final long serialVersionUID = -1860882345;
 
     /**
      * The reference instance of <code>uptime_event</code>
@@ -80,6 +80,11 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
      * The column <code>uptime_event.ended_at</code>. The current event ended at
      */
     public final TableField<UptimeEventRecord, OffsetDateTime> ENDED_AT = createField(DSL.name("ended_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE, this, "The current event ended at");
+
+    /**
+     * The column <code>uptime_event.updated_at</code>.
+     */
+    public final TableField<UptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false), this, "");
 
     /**
      * Create a <code>uptime_event</code> table reference
@@ -175,11 +180,11 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row6 type methods
+    // Row7 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row6<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime> fieldsRow() {
-        return (Row6) super.fieldsRow();
+    public Row7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
+        return (Row7) super.fieldsRow();
     }
 }

@@ -92,6 +92,7 @@ class DatabaseCleanerTest(
                 .setMonitorId(monitorId)
                 .setStatus(UptimeStatus.UP)
                 .setStartedAt(startedAt)
+                .setUpdatedAt(endedAt ?: startedAt)
                 .setEndedAt(endedAt)
         )
 

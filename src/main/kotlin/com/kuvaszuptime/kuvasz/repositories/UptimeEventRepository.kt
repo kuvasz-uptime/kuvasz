@@ -21,6 +21,7 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
             .setMonitorId(event.monitor.id)
             .setStatus(event.toUptimeStatus())
             .setStartedAt(event.dispatchedAt)
+            .setUpdatedAt(event.dispatchedAt)
 
         if (event is MonitorDownEvent) {
             eventToInsert.error = event.error.message
@@ -40,6 +41,7 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
     fun endEventById(eventId: Int, endedAt: OffsetDateTime) =
         dsl.update(UPTIME_EVENT)
             .set(UPTIME_EVENT.ENDED_AT, endedAt)
+            .set(UPTIME_EVENT.UPDATED_AT, endedAt)
             .where(UPTIME_EVENT.ID.eq(eventId))
             .execute()
 
@@ -47,5 +49,11 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
         dsl.delete(UPTIME_EVENT)
             .where(UPTIME_EVENT.ENDED_AT.isNotNull)
             .and(UPTIME_EVENT.ENDED_AT.lessThan(limit))
+            .execute()
+
+    fun updateEventUpdatedAt(eventId: Int, updatedAt: OffsetDateTime) =
+        dsl.update(UPTIME_EVENT)
+            .set(UPTIME_EVENT.UPDATED_AT, updatedAt)
+            .where(UPTIME_EVENT.ID.eq(eventId))
             .execute()
 }

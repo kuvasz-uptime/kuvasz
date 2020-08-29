@@ -48,6 +48,8 @@ class DatabaseEventHandler @Inject constructor(
                         uptimeEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt)
                         uptimeEventRepository.insertFromMonitorEvent(currentEvent)
                     }
+                } else {
+                    uptimeEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
                 }
             }
         )

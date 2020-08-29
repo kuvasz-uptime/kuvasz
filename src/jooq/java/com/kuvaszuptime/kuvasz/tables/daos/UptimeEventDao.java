@@ -131,4 +131,18 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     public List<UptimeEventPojo> fetchByEndedAt(OffsetDateTime... values) {
         return fetch(UptimeEvent.UPTIME_EVENT.ENDED_AT, values);
     }
+
+    /**
+     * Fetch records that have <code>updated_at BETWEEN lowerInclusive AND upperInclusive</code>
+     */
+    public List<UptimeEventPojo> fetchRangeOfUpdatedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
+        return fetchRange(UptimeEvent.UPTIME_EVENT.UPDATED_AT, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>updated_at IN (values)</code>
+     */
+    public List<UptimeEventPojo> fetchByUpdatedAt(OffsetDateTime... values) {
+        return fetch(UptimeEvent.UPTIME_EVENT.UPDATED_AT, values);
+    }
 }

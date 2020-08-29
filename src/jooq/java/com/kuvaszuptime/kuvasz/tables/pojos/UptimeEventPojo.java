@@ -34,7 +34,7 @@ import javax.validation.constraints.NotNull;
 })
 public class UptimeEventPojo implements Serializable {
 
-    private static final long serialVersionUID = -692998392;
+    private static final long serialVersionUID = 1847709210;
 
     private Integer        id;
     private Integer        monitorId;
@@ -42,6 +42,7 @@ public class UptimeEventPojo implements Serializable {
     private String         error;
     private OffsetDateTime startedAt;
     private OffsetDateTime endedAt;
+    private OffsetDateTime updatedAt;
 
     public UptimeEventPojo() {}
 
@@ -52,6 +53,7 @@ public class UptimeEventPojo implements Serializable {
         this.error = value.error;
         this.startedAt = value.startedAt;
         this.endedAt = value.endedAt;
+        this.updatedAt = value.updatedAt;
     }
 
     public UptimeEventPojo(
@@ -60,7 +62,8 @@ public class UptimeEventPojo implements Serializable {
         UptimeStatus   status,
         String         error,
         OffsetDateTime startedAt,
-        OffsetDateTime endedAt
+        OffsetDateTime endedAt,
+        OffsetDateTime updatedAt
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -68,6 +71,7 @@ public class UptimeEventPojo implements Serializable {
         this.error = error;
         this.startedAt = startedAt;
         this.endedAt = endedAt;
+        this.updatedAt = updatedAt;
     }
 
     @Id
@@ -134,6 +138,17 @@ public class UptimeEventPojo implements Serializable {
         return this;
     }
 
+    @Column(name = "updated_at", nullable = false)
+    @NotNull
+    public OffsetDateTime getUpdatedAt() {
+        return this.updatedAt;
+    }
+
+    public UptimeEventPojo setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -179,6 +194,12 @@ public class UptimeEventPojo implements Serializable {
         }
         else if (!endedAt.equals(other.endedAt))
             return false;
+        if (updatedAt == null) {
+            if (other.updatedAt != null)
+                return false;
+        }
+        else if (!updatedAt.equals(other.updatedAt))
+            return false;
         return true;
     }
 
@@ -192,6 +213,7 @@ public class UptimeEventPojo implements Serializable {
         result = prime * result + ((this.error == null) ? 0 : this.error.hashCode());
         result = prime * result + ((this.startedAt == null) ? 0 : this.startedAt.hashCode());
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
+        result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         return result;
     }
 
@@ -205,6 +227,7 @@ public class UptimeEventPojo implements Serializable {
         sb.append(", ").append(error);
         sb.append(", ").append(startedAt);
         sb.append(", ").append(endedAt);
+        sb.append(", ").append(updatedAt);
 
         sb.append(")");
         return sb.toString();

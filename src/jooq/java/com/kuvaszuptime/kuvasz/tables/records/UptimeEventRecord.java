@@ -21,8 +21,8 @@ import javax.validation.constraints.NotNull;
 
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record6;
-import org.jooq.Row6;
+import org.jooq.Record7;
+import org.jooq.Row7;
 import org.jooq.impl.UpdatableRecordImpl;
 
 
@@ -38,9 +38,9 @@ import org.jooq.impl.UpdatableRecordImpl;
     @Index(name = "uptime_event_ended_at_idx", columnList = "ended_at ASC"),
     @Index(name = "uptime_event_monitor_idx", columnList = "monitor_id ASC")
 })
-public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> implements Record6<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime> {
+public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> implements Record7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> {
 
-    private static final long serialVersionUID = 187938053;
+    private static final long serialVersionUID = -32451597;
 
     /**
      * Setter for <code>uptime_event.id</code>.
@@ -142,6 +142,23 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
         return (OffsetDateTime) get(5);
     }
 
+    /**
+     * Setter for <code>uptime_event.updated_at</code>.
+     */
+    public UptimeEventRecord setUpdatedAt(OffsetDateTime value) {
+        set(6, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>uptime_event.updated_at</code>.
+     */
+    @Column(name = "updated_at", nullable = false)
+    @NotNull
+    public OffsetDateTime getUpdatedAt() {
+        return (OffsetDateTime) get(6);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -152,17 +169,17 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     }
 
     // -------------------------------------------------------------------------
-    // Record6 type implementation
+    // Record7 type implementation
     // -------------------------------------------------------------------------
 
     @Override
-    public Row6<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime> fieldsRow() {
-        return (Row6) super.fieldsRow();
+    public Row7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
+        return (Row7) super.fieldsRow();
     }
 
     @Override
-    public Row6<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime> valuesRow() {
-        return (Row6) super.valuesRow();
+    public Row7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> valuesRow() {
+        return (Row7) super.valuesRow();
     }
 
     @Override
@@ -196,6 +213,11 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     }
 
     @Override
+    public Field<OffsetDateTime> field7() {
+        return UptimeEvent.UPTIME_EVENT.UPDATED_AT;
+    }
+
+    @Override
     public Integer component1() {
         return getId();
     }
@@ -226,6 +248,11 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     }
 
     @Override
+    public OffsetDateTime component7() {
+        return getUpdatedAt();
+    }
+
+    @Override
     public Integer value1() {
         return getId();
     }
@@ -253,6 +280,11 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     @Override
     public OffsetDateTime value6() {
         return getEndedAt();
+    }
+
+    @Override
+    public OffsetDateTime value7() {
+        return getUpdatedAt();
     }
 
     @Override
@@ -292,13 +324,20 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     }
 
     @Override
-    public UptimeEventRecord values(Integer value1, Integer value2, UptimeStatus value3, String value4, OffsetDateTime value5, OffsetDateTime value6) {
+    public UptimeEventRecord value7(OffsetDateTime value) {
+        setUpdatedAt(value);
+        return this;
+    }
+
+    @Override
+    public UptimeEventRecord values(Integer value1, Integer value2, UptimeStatus value3, String value4, OffsetDateTime value5, OffsetDateTime value6, OffsetDateTime value7) {
         value1(value1);
         value2(value2);
         value3(value3);
         value4(value4);
         value5(value5);
         value6(value6);
+        value7(value7);
         return this;
     }
 
@@ -316,7 +355,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     /**
      * Create a detached, initialised UptimeEventRecord
      */
-    public UptimeEventRecord(Integer id, Integer monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt) {
+    public UptimeEventRecord(Integer id, Integer monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
         super(UptimeEvent.UPTIME_EVENT);
 
         set(0, id);
@@ -325,5 +364,6 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
         set(3, error);
         set(4, startedAt);
         set(5, endedAt);
+        set(6, updatedAt);
     }
 }
