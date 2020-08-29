@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import javax.inject.Inject
 
-@Controller("/monitor", produces = [MediaType.APPLICATION_JSON])
+@Controller("/monitors", produces = [MediaType.APPLICATION_JSON])
 @Tag(name = "Monitor operations")
 @SecurityRequirement(name = "bearerAuth")
 class MonitorController @Inject constructor(
@@ -52,34 +52,6 @@ class MonitorController @Inject constructor(
     )
     override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto =
         monitorCrudService.getMonitorDetails(monitorId).fold(
-            { throw MonitorNotFoundError(monitorId) },
-            { it }
-        )
-
-    @ApiResponses(
-        ApiResponse(
-            responseCode = "200",
-            description = "Successful query",
-            content = [Content(array = ArraySchema(schema = Schema(implementation = MonitorPojo::class)))]
-        )
-    )
-    override fun getMonitors(@QueryValue enabledOnly: Boolean?): List<MonitorPojo> =
-        monitorCrudService.getMonitors(enabledOnly ?: false)
-
-    @ApiResponses(
-        ApiResponse(
-            responseCode = "200",
-            description = "Successful query",
-            content = [Content(schema = Schema(implementation = MonitorPojo::class))]
-        ),
-        ApiResponse(
-            responseCode = "404",
-            description = "Not found",
-            content = [Content(schema = Schema(implementation = ServiceError::class))]
-        )
-    )
-    override fun getMonitor(monitorId: Int): MonitorPojo =
-        monitorCrudService.getMonitor(monitorId).fold(
             { throw MonitorNotFoundError(monitorId) },
             { it }
         )

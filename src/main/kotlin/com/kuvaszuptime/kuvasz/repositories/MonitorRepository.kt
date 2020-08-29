@@ -55,17 +55,6 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
             .fetchOneInto(MonitorDetailsDto::class.java)
             .toOption()
 
-    fun getMonitors(enabledOnly: Boolean): List<MonitorPojo> =
-        dsl
-            .select(MONITOR.asterisk())
-            .from(MONITOR)
-            .apply {
-                if (enabledOnly) {
-                    where(MONITOR.ENABLED.isTrue)
-                }
-            }
-            .fetchInto(MonitorPojo::class.java)
-
     fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {
             Either.right(

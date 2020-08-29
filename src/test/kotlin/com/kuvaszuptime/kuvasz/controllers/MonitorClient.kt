@@ -6,12 +6,8 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import io.micronaut.http.client.annotation.Client
 
-@Client("/monitor")
+@Client("/monitors")
 interface MonitorClient : MonitorOperations {
-    override fun getMonitor(monitorId: Int): MonitorPojo
-
-    override fun getMonitors(enabledOnly: Boolean?): List<MonitorPojo>
-
     override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto
 
     override fun getMonitorsWithDetails(enabledOnly: Boolean?): List<MonitorDetailsDto>

@@ -42,11 +42,6 @@ class MonitorCrudService @Inject constructor(
         }
     }
 
-    fun getMonitor(monitorId: Int): Option<MonitorPojo> = monitorRepository.findById(monitorId).toOption()
-
-    fun getMonitors(enabledOnly: Boolean): List<MonitorPojo> =
-        monitorRepository.getMonitors(enabledOnly)
-
     fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorPojo =
         monitorRepository.returningInsert(monitorCreateDto.toMonitorPojo()).fold(
             { persistenceError -> throw persistenceError },
