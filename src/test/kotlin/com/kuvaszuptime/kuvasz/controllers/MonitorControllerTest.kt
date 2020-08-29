@@ -3,13 +3,17 @@ package com.kuvaszuptime.kuvasz.controllers
 import arrow.core.Option
 import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.test.TestCase
@@ -33,6 +37,7 @@ class MonitorControllerTest(
     private val monitorClient: MonitorClient,
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
+    private val uptimeEventRepository: UptimeEventRepository,
     private val checkScheduler: CheckScheduler
 ) : DatabaseBehaviorSpec() {
 
@@ -43,6 +48,14 @@ class MonitorControllerTest(
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+                val now = getCurrentTimestamp()
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    status = UptimeStatus.UP,
+                    endedAt = null
+                )
 
                 val response = monitorClient.getMonitorsWithDetails(enabledOnly = null)
                 then("it should return them") {
@@ -55,7 +68,8 @@ class MonitorControllerTest(
                     responseItem.averageLatencyInMs shouldBe 800
                     responseItem.p95LatencyInMs shouldBe 1200
                     responseItem.p99LatencyInMs shouldBe 1200
-                    responseItem.uptimeStatus shouldBe null
+                    responseItem.uptimeStatus shouldBe UptimeStatus.UP
+                    responseItem.lastUptimeCheck shouldBe now
                     responseItem.createdAt shouldBe monitor.createdAt
                 }
             }
@@ -88,15 +102,27 @@ class MonitorControllerTest(
         given("MonitorController's getMonitorDetails() endpoint") {
             `when`("there is a monitor with the given ID in the database") {
                 val monitor = createMonitor(monitorRepository)
-                val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+                val now = getCurrentTimestamp()
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    status = UptimeStatus.UP,
+                    endedAt = null
+                )
                 then("it should return it") {
+                    val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
                     response.id shouldBe monitor.id
                     response.name shouldBe monitor.name
                     response.url.toString() shouldBe monitor.url
                     response.enabled shouldBe monitor.enabled
-                    response.averageLatencyInMs shouldBe null
-                    response.uptimeStatus shouldBe null
+                    response.averageLatencyInMs shouldBe 800
+                    response.uptimeStatus shouldBe UptimeStatus.UP
                     response.createdAt shouldBe monitor.createdAt
+                    response.lastUptimeCheck shouldBe now
                 }
             }
 
@@ -313,7 +339,8 @@ class MonitorControllerTest(
                     uptimeCheckInterval = null,
                     enabled = true
                 )
-                val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitors/${firstCreatedMonitor.id}", updateDto)
+                val updateRequest =
+                    HttpRequest.PATCH<MonitorUpdateDto>("/monitors/${firstCreatedMonitor.id}", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)
                 }

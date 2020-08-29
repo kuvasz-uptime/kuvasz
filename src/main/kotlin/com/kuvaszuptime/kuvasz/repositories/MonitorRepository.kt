@@ -39,6 +39,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 MONITOR.ID,
                 UPTIME_EVENT.STATUS,
                 UPTIME_EVENT.STARTED_AT,
+                UPTIME_EVENT.UPDATED_AT,
                 UPTIME_EVENT.ERROR
             )
             .fetchInto(MonitorDetailsDto::class.java)
@@ -50,6 +51,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 MONITOR.ID,
                 UPTIME_EVENT.STATUS,
                 UPTIME_EVENT.STARTED_AT,
+                UPTIME_EVENT.UPDATED_AT,
                 UPTIME_EVENT.ERROR
             )
             .fetchOneInto(MonitorDetailsDto::class.java)
@@ -100,6 +102,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 MONITOR.UPDATED_AT.`as`("updatedAt"),
                 UPTIME_EVENT.STATUS.`as`("uptimeStatus"),
                 UPTIME_EVENT.STARTED_AT.`as`("uptimeStatusStartedAt"),
+                UPTIME_EVENT.UPDATED_AT.`as`("lastUptimeCheck"),
                 UPTIME_EVENT.ERROR.`as`("uptimeError"),
                 round(avg(LATENCY_LOG.LATENCY), -1).`as`("averageLatencyInMs"),
                 inline(null, SQLDataType.INTEGER).`as`("p95LatencyInMs"),

@@ -288,6 +288,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        lastUptimeCheck:
+          type: string
+          format: date-time
+          nullable: true
         uptimeError:
           type: string
           nullable: true

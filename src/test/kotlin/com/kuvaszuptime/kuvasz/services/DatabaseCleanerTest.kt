@@ -1,13 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldHaveSize
 import io.micronaut.context.annotation.Property
@@ -27,7 +26,12 @@ class DatabaseCleanerTest(
         given("a DatabaseCleaner service") {
             `when`("there is an UPTIME_EVENT record with an end date greater than retention limit") {
                 val monitor = createMonitor(monitorRepository)
-                insertUptimeEventRecord(monitor.id, getCurrentTimestamp().minusDays(1), getCurrentTimestamp())
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(1),
+                    endedAt = getCurrentTimestamp()
+                )
                 databaseCleaner.cleanObsoleteData()
 
                 then("it should not delete it") {
@@ -38,7 +42,12 @@ class DatabaseCleanerTest(
 
             `when`("there is an UPTIME_EVENT record without an end date") {
                 val monitor = createMonitor(monitorRepository)
-                insertUptimeEventRecord(monitor.id, getCurrentTimestamp().minusDays(20), null)
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = null
+                )
                 databaseCleaner.cleanObsoleteData()
 
                 then("it should not delete it") {
@@ -49,10 +58,11 @@ class DatabaseCleanerTest(
 
             `when`("there is an UPTIME_EVENT record with an end date less than retention limit") {
                 val monitor = createMonitor(monitorRepository)
-                insertUptimeEventRecord(
-                    monitor.id,
-                    getCurrentTimestamp().minusDays(20),
-                    getCurrentTimestamp().minusDays(8)
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = getCurrentTimestamp().minusDays(8)
                 )
                 databaseCleaner.cleanObsoleteData()
 
@@ -85,16 +95,6 @@ class DatabaseCleanerTest(
             }
         }
     }
-
-    private fun insertUptimeEventRecord(monitorId: Int, startedAt: OffsetDateTime, endedAt: OffsetDateTime?) =
-        uptimeEventRepository.insert(
-            UptimeEventPojo()
-                .setMonitorId(monitorId)
-                .setStatus(UptimeStatus.UP)
-                .setStartedAt(startedAt)
-                .setUpdatedAt(endedAt ?: startedAt)
-                .setEndedAt(endedAt)
-        )
 
     private fun insertLatencyLogRecord(monitorId: Int, createdAt: OffsetDateTime) =
         latencyLogRepository.insert(
