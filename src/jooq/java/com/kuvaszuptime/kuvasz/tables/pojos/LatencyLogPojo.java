@@ -27,12 +27,11 @@ import javax.validation.constraints.NotNull;
     @UniqueConstraint(name = "latency_log_pkey", columnNames = {"id"})
 }, indexes = {
     @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
-    @Index(name = "latency_log_latency_monitor_idx", columnList = "monitor_id ASC, latency ASC"),
     @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
 })
 public class LatencyLogPojo implements Serializable {
 
-    private static final long serialVersionUID = 592240026;
+    private static final long serialVersionUID = 1568220283;
 
     private Integer        id;
     private Integer        monitorId;

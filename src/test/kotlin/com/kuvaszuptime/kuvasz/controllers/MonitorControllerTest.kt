@@ -102,68 +102,7 @@ class MonitorControllerTest(
 
             `when`("there is no monitor with the given ID in the database") {
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any>("/monitor/1232132432/details")
-                }
-                then("it should return a 404") {
-                    response.status shouldBe HttpStatus.NOT_FOUND
-                }
-            }
-        }
-
-        given("MonitorController's getMonitors() endpoint") {
-            `when`("there is any monitor in the database") {
-                val monitor = createMonitor(monitorRepository)
-                val response = monitorClient.getMonitors(enabledOnly = null)
-                then("it should return them") {
-                    response shouldHaveSize 1
-                    val responseItem = response.first()
-                    responseItem.id shouldBe monitor.id
-                    responseItem.name shouldBe monitor.name
-                    responseItem.url shouldBe monitor.url
-                    responseItem.enabled shouldBe monitor.enabled
-                    responseItem.createdAt shouldBe monitor.createdAt
-                }
-            }
-
-            `when`("enabledOnly parameter is set to true") {
-                createMonitor(monitorRepository, enabled = false, monitorName = "name1")
-                val enabledMonitor = createMonitor(monitorRepository, id = 11111, monitorName = "name2")
-                val response = monitorClient.getMonitors(enabledOnly = true)
-                then("it should not return disabled monitor") {
-                    response shouldHaveSize 1
-                    val responseItem = response.first()
-                    responseItem.id shouldBe enabledMonitor.id
-                    responseItem.name shouldBe enabledMonitor.name
-                    responseItem.url.toString() shouldBe enabledMonitor.url
-                    responseItem.enabled shouldBe enabledMonitor.enabled
-                    responseItem.createdAt shouldBe enabledMonitor.createdAt
-                }
-            }
-
-            `when`("there isn't any monitor in the database") {
-                val response = monitorClient.getMonitorsWithDetails(enabledOnly = false)
-                then("it should return an empty list") {
-                    response shouldHaveSize 0
-                }
-            }
-        }
-
-        given("MonitorController's getMonitor() endpoint") {
-            `when`("there is a monitor with the given ID in the database") {
-                val monitor = createMonitor(monitorRepository)
-                val response = monitorClient.getMonitor(monitorId = monitor.id)
-                then("it should return it") {
-                    response.id shouldBe monitor.id
-                    response.name shouldBe monitor.name
-                    response.url.toString() shouldBe monitor.url
-                    response.enabled shouldBe monitor.enabled
-                    response.createdAt shouldBe monitor.createdAt
-                }
-            }
-
-            `when`("there is no monitor with the given ID in the database") {
-                val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any>("/monitor/1232132432")
+                    client.toBlocking().exchange<Any>("/monitors/1232132432")
                 }
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
@@ -206,7 +145,7 @@ class MonitorControllerTest(
                     enabled = false
                 )
                 val firstCreatedMonitor = monitorClient.createMonitor(firstMonitor)
-                val secondRequest = HttpRequest.POST("/monitor", secondMonitor)
+                val secondRequest = HttpRequest.POST("/monitors", secondMonitor)
                 val secondResponse = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorCreateDto, Any>(secondRequest)
                 }
@@ -226,7 +165,7 @@ class MonitorControllerTest(
                     uptimeCheckInterval = 6000,
                     enabled = true
                 )
-                val request = HttpRequest.POST("/monitor", monitorToCreate)
+                val request = HttpRequest.POST("/monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorCreateDto, Any>(request)
                 }
@@ -244,7 +183,7 @@ class MonitorControllerTest(
                     uptimeCheckInterval = 59,
                     enabled = true
                 )
-                val request = HttpRequest.POST("/monitor", monitorToCreate)
+                val request = HttpRequest.POST("/monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorCreateDto, Any>(request)
                 }
@@ -266,7 +205,7 @@ class MonitorControllerTest(
                     enabled = true
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
-                val deleteRequest = HttpRequest.DELETE<Any>("/monitor/${createdMonitor.id}")
+                val deleteRequest = HttpRequest.DELETE<Any>("/monitors/${createdMonitor.id}")
                 val response = client.toBlocking().exchange<Any, Any>(deleteRequest)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id).toOption()
 
@@ -279,7 +218,7 @@ class MonitorControllerTest(
             }
 
             `when`("it is called with a non existing monitor ID") {
-                val deleteRequest = HttpRequest.DELETE<Any>("/monitor/123232")
+                val deleteRequest = HttpRequest.DELETE<Any>("/monitors/123232")
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<Any, Any>(deleteRequest)
                 }
@@ -374,7 +313,7 @@ class MonitorControllerTest(
                     uptimeCheckInterval = null,
                     enabled = true
                 )
-                val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitor/${firstCreatedMonitor.id}", updateDto)
+                val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitors/${firstCreatedMonitor.id}", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)
                 }
@@ -388,7 +327,7 @@ class MonitorControllerTest(
 
             `when`("it is called with a non existing monitor ID") {
                 val updateDto = MonitorUpdateDto(null, null, null, null)
-                val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitor/123232", updateDto)
+                val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitors/123232", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)
                 }

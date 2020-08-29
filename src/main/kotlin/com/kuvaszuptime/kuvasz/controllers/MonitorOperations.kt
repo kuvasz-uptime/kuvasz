@@ -20,22 +20,8 @@ import javax.validation.Valid
 @Validated
 interface MonitorOperations {
 
-    @Operation(summary = "Returns all monitors")
-    @Get("/")
-    @ExecuteOn(TaskExecutors.IO)
-    fun getMonitors(
-        @QueryValue
-        @Parameter(required = false)
-        enabledOnly: Boolean?
-    ): List<MonitorPojo>
-
-    @Operation(summary = "Returns a monitor")
-    @Get("/{monitorId}")
-    @ExecuteOn(TaskExecutors.IO)
-    fun getMonitor(monitorId: Int): MonitorPojo
-
     @Operation(summary = "Returns all monitors with their details")
-    @Get("/details")
+    @Get("/")
     @ExecuteOn(TaskExecutors.IO)
     fun getMonitorsWithDetails(
         @QueryValue
@@ -44,7 +30,7 @@ interface MonitorOperations {
     ): List<MonitorDetailsDto>
 
     @Operation(summary = "Returns a monitor's details")
-    @Get("/{monitorId}/details")
+    @Get("/{monitorId}")
     @ExecuteOn(TaskExecutors.IO)
     fun getMonitorDetails(monitorId: Int): MonitorDetailsDto
 

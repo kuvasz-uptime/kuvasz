@@ -64,7 +64,7 @@ class AuthenticationTest(
 
         `when`("an anonymous user calls it") {
             val exception = shouldThrow<HttpClientResponseException> {
-                client.toBlocking().exchange<Any>("/monitor")
+                client.toBlocking().exchange<Any>("/monitors")
             }
             then("it should return 401") {
                 exception.status shouldBe HttpStatus.UNAUTHORIZED
@@ -77,7 +77,7 @@ class AuthenticationTest(
             val loginResponse = client.toBlocking().exchange(loginRequest, BearerAccessRefreshToken::class.java)
             val token = loginResponse.body()!!
 
-            val request = HttpRequest.GET<Any>("/monitor").bearerAuth(token.accessToken)
+            val request = HttpRequest.GET<Any>("/monitors").bearerAuth(token.accessToken)
             val response = client.toBlocking().exchange<Any, Any>(request)
             then("it should return 200") {
                 response.status shouldBe HttpStatus.OK

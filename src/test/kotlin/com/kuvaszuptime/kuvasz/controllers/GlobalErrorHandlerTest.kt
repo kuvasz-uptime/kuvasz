@@ -28,7 +28,7 @@ class GlobalErrorHandlerTest : BehaviorSpec({
 
     given("an endpoint that accepts a payload") {
         `when`("it is called with an invalid JSON") {
-            val request = HttpRequest.POST<String>("/monitor", "not-a-json")
+            val request = HttpRequest.POST<String>("/monitors", "not-a-json")
             val exception = shouldThrow<HttpClientResponseException> {
                 client.toBlocking()
                     .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
@@ -42,7 +42,7 @@ class GlobalErrorHandlerTest : BehaviorSpec({
 
         `when`("it is called with a JSON that contains a non-convertible property") {
             val request =
-                HttpRequest.POST<String>("/monitor", "{\"uptimeCheckInterval\":\"not-a-number\"}")
+                HttpRequest.POST<String>("/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
             val exception = shouldThrow<HttpClientResponseException> {
                 client.toBlocking()
                     .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
@@ -60,7 +60,7 @@ class GlobalErrorHandlerTest : BehaviorSpec({
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/monitor", monitorDto)
+            val request = HttpRequest.POST("/monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws PersistenceError("This is an error message")
 
@@ -82,7 +82,7 @@ class GlobalErrorHandlerTest : BehaviorSpec({
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/monitor", monitorDto)
+            val request = HttpRequest.POST("/monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws SchedulingError("This is an error message")
 
@@ -104,7 +104,7 @@ class GlobalErrorHandlerTest : BehaviorSpec({
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/monitor", monitorDto)
+            val request = HttpRequest.POST("/monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws DuplicationError("This is an error message")
 

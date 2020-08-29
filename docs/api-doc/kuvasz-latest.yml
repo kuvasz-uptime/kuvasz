@@ -78,7 +78,7 @@ paths:
                   log-event-handler.enabled: true
                   smtp-event-handler.enabled: false
                   slack-event-handler.enabled: true
-  /monitor/details:
+  /monitors:
     get:
       tags:
       - Monitor operations
@@ -100,58 +100,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MonitorDetailsDto'
-      security:
-      - bearerAuth: []
-  /monitor/{monitorId}/details:
-    get:
-      tags:
-      - Monitor operations
-      summary: Returns a monitor's details
-      operationId: getMonitorDetails
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int32
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MonitorDetailsDto'
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceError'
-      security:
-      - bearerAuth: []
-  /monitor:
-    get:
-      tags:
-      - Monitor operations
-      summary: Returns all monitors
-      operationId: getMonitors
-      parameters:
-      - name: enabledOnly
-        in: query
-        required: false
-        schema:
-          type: boolean
-          nullable: true
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MonitorPojo'
       security:
       - bearerAuth: []
     post:
@@ -181,12 +129,12 @@ paths:
                 $ref: '#/components/schemas/ServiceError'
       security:
       - bearerAuth: []
-  /monitor/{monitorId}:
+  /monitors/{monitorId}:
     get:
       tags:
       - Monitor operations
-      summary: Returns a monitor
-      operationId: getMonitor
+      summary: Returns a monitor's details
+      operationId: getMonitorDetails
       parameters:
       - name: monitorId
         in: path
@@ -200,7 +148,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonitorPojo'
+                $ref: '#/components/schemas/MonitorDetailsDto'
         "404":
           description: Not found
           content:
