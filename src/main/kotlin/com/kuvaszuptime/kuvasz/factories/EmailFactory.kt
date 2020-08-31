@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.config.handlers.EmailEventHandlerConfig
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.models.toEmoji
-import com.kuvaszuptime.kuvasz.models.toStructuredMessage
-import com.kuvaszuptime.kuvasz.models.toUptimeStatus
+import com.kuvaszuptime.kuvasz.util.toEmoji
+import com.kuvaszuptime.kuvasz.util.toStructuredMessage
+import com.kuvaszuptime.kuvasz.util.toUptimeStatus
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.email.EmailBuilder
 

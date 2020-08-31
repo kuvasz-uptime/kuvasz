@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.RedirectEvent
-import com.kuvaszuptime.kuvasz.models.toPlainMessage
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.util.toPlainMessage
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory

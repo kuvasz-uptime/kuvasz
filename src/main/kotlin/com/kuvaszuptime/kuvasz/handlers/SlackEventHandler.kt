@@ -4,11 +4,11 @@ import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.models.runWhenStateChanges
-import com.kuvaszuptime.kuvasz.models.toEmoji
-import com.kuvaszuptime.kuvasz.models.toStructuredMessage
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.SlackWebhookService
+import com.kuvaszuptime.kuvasz.util.runWhenStateChanges
+import com.kuvaszuptime.kuvasz.util.toEmoji
+import com.kuvaszuptime.kuvasz.util.toStructuredMessage
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpResponse
