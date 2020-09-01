@@ -7,12 +7,12 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.micronaut.http.HttpStatus
 import java.net.URI
 
-sealed class Event {
+sealed class MonitorEvent {
+    abstract val monitor: MonitorPojo
     val dispatchedAt = getCurrentTimestamp()
 }
 
-sealed class UptimeMonitorEvent : Event() {
-    abstract val monitor: MonitorPojo
+sealed class UptimeMonitorEvent : MonitorEvent() {
     abstract val previousEvent: Option<UptimeEventPojo>
 }
 
@@ -31,6 +31,6 @@ data class MonitorDownEvent(
 ) : UptimeMonitorEvent()
 
 data class RedirectEvent(
-    val monitor: MonitorPojo,
+    override val monitor: MonitorPojo,
     val redirectLocation: URI
-) : Event()
+) : MonitorEvent()

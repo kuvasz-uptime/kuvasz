@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.models.Event
+import com.kuvaszuptime.kuvasz.models.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.RedirectEvent
@@ -15,7 +15,7 @@ class EventDispatcher {
     private val monitorDownEvents = PublishSubject.create<MonitorDownEvent>()
     private val redirectEvents = PublishSubject.create<RedirectEvent>()
 
-    fun dispatch(event: Event) =
+    fun dispatch(event: MonitorEvent) =
         when (event) {
             is MonitorUpEvent -> monitorUpEvents.onNext(event)
             is MonitorDownEvent -> monitorDownEvents.onNext(event)
