@@ -18,3 +18,4 @@ data:
   slack_event_handler_enabled: "true"
   slack_webhook_url: "https://your.slack-webhook.url"
   data_retention_days: "30"
+  telegram_event_handler_enabled: "true"

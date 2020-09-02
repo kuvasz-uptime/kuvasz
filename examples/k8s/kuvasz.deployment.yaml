@@ -132,3 +132,18 @@ spec:
                 configMapKeyRef:
                   name: kuvasz-config
                   key: data_retention_days
+            - name: ENABLE_TELEGRAM_EVENT_HANDLER
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: telegram_event_handler_enabled
+            - name: TELEGRAM_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: telegram-credentials
+                  key: api-token
+            - name: TELEGRAM_CHAT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: telegram-credentials
+                  key: chat-id

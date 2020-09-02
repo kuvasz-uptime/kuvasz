@@ -89,6 +89,10 @@ handler-config:
   slack-event-handler:
     enabled: ${ENABLE_SLACK_EVENT_HANDLER:`false`}
     webhook-url: ${SLACK_WEBHOOK_URL}
+  telegram-event-handler:
+    enabled: ${ENABLE_TELEGRAM_EVENT_HANDLER:`false`}
+    token: ${TELEGRAM_API_TOKEN}
+    chat-id: ${TELEGRAM_CHAT_ID}
 ---
 admin-auth:
   username: ${ADMIN_USER}
