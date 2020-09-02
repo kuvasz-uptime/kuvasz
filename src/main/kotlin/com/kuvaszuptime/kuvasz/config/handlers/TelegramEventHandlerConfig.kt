@@ -9,4 +9,5 @@ import javax.inject.Singleton
 @Introspected
 class TelegramEventHandlerConfig {
     var token: String? = null
+    var channelId: String = ""
 }

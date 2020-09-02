@@ -19,14 +19,20 @@ class TelegramWebhookService @Inject constructor(
     private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
     private val httpClient: RxHttpClient
 ) {
-    private val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/"
+    private val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/sendMessage"
 
     companion object {
         private const val RETRY_COUNT = 3L
     }
 
-    fun sendMessage(message: TelegramWebhookMessage): Flowable<HttpResponse<String>> {
-        val request: HttpRequest<TelegramWebhookMessage> = HttpRequest.POST(url, message)
+    fun sendMessage(message: String): Flowable<HttpResponse<String>> {
+        val request: HttpRequest<TelegramWebhookMessage> = HttpRequest.POST(
+            url,
+            TelegramWebhookMessage(
+                text = message,
+                chat_id = telegramEventHandlerConfig.channelId
+            )
+        )
 
         return httpClient
             .exchange(request, Argument.STRING, Argument.STRING)

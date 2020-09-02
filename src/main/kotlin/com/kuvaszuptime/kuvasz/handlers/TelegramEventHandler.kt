@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.TelegramWebhookMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.runWhenStateChanges
 import com.kuvaszuptime.kuvasz.models.toEmoji
@@ -44,7 +43,7 @@ class TelegramEventHandler(
         }
     }
 
-    private fun UptimeMonitorEvent.toTelegramMessage() = TelegramWebhookMessage(text = "${toEmoji()} ${toMessage()}")
+    private fun UptimeMonitorEvent.toTelegramMessage() = "${toEmoji()} ${toMessage()}"
 
     private fun Flowable<HttpResponse<String>>.handleResponse() =
         subscribe(
