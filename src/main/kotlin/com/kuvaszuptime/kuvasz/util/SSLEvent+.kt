@@ -1,3 +1,4 @@
+@file:Suppress("CommentSpacing")
 package com.kuvaszuptime.kuvasz.util
 
 import arrow.core.Option
