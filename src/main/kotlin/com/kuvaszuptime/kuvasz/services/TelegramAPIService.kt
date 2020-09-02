@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
-import com.kuvaszuptime.kuvasz.models.TelegramWebhookMessage
+import com.kuvaszuptime.kuvasz.models.TelegramAPIMessage
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.core.type.Argument
@@ -15,8 +15,8 @@ import javax.inject.Singleton
 
 @Singleton
 @Requires(property = "handler-config.telegram-event-handler.enabled", value = "true")
-class TelegramWebhookService @Inject constructor(
-    private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
+class TelegramAPIService @Inject constructor(
+    telegramEventHandlerConfig: TelegramEventHandlerConfig,
     private val httpClient: RxHttpClient
 ) {
     private val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/sendMessage"
@@ -25,14 +25,8 @@ class TelegramWebhookService @Inject constructor(
         private const val RETRY_COUNT = 3L
     }
 
-    fun sendMessage(message: String): Flowable<HttpResponse<String>> {
-        val request: HttpRequest<TelegramWebhookMessage> = HttpRequest.POST(
-            url,
-            TelegramWebhookMessage(
-                text = message,
-                chat_id = telegramEventHandlerConfig.channelId
-            )
-        )
+    fun sendMessage(message: TelegramAPIMessage): Flowable<HttpResponse<String>> {
+        val request: HttpRequest<TelegramAPIMessage> = HttpRequest.POST(url, message)
 
         return httpClient
             .exchange(request, Argument.STRING, Argument.STRING)

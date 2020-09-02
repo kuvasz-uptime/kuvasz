@@ -4,7 +4,9 @@ import io.micronaut.core.annotation.Introspected
 
 @Suppress("ConstructorParameterNaming")
 @Introspected
-data class TelegramWebhookMessage(
+data class TelegramAPIMessage(
     val chat_id: String,
-    val text: String
+    val text: String,
+    val disable_web_page_preview: Boolean = true,
+    val parse_mode: String = "HTML"
 )

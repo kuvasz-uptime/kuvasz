@@ -6,12 +6,11 @@ import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
-import com.kuvaszuptime.kuvasz.models.TelegramWebhookMessage
+import com.kuvaszuptime.kuvasz.models.TelegramAPIMessage
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.TelegramWebhookService
+import com.kuvaszuptime.kuvasz.services.TelegramAPIService
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
@@ -36,17 +35,17 @@ class TelegramEventHandlerTest(
     private val eventDispatcher: EventDispatcher,
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository
-): DatabaseBehaviorSpec() {
+) : DatabaseBehaviorSpec() {
     private val mockHttpClient = mockk<RxHttpClient>()
 
     init {
         val eventHandlerConfig = TelegramEventHandlerConfig().apply {
             token = "my_token"
-            channelId = "@channel"
+            chatId = "@channel"
         }
-        val telegramWebhookService = TelegramWebhookService(eventHandlerConfig, mockHttpClient);
-        val webhookServiceSpy = spyk(telegramWebhookService, recordPrivateCalls = true)
-        TelegramEventHandler(webhookServiceSpy,eventDispatcher)
+        val telegramAPIService = TelegramAPIService(eventHandlerConfig, mockHttpClient);
+        val apiServiceSpy = spyk(telegramAPIService, recordPrivateCalls = true)
+        TelegramEventHandler(apiServiceSpy, eventHandlerConfig, eventDispatcher)
 
         given("the TelegramEventHandler") {
             `when`("it receives a MonitorUpEvent and There is no previous event for the monitor") {
@@ -61,11 +60,11 @@ class TelegramEventHandlerTest(
 
                 eventDispatcher.dispatch(event);
 
-                then("it should send a webhook message about the event") {
-                    val slot = slot<String>();
+                then("it should send a message about the event") {
+                    val slot = slot<TelegramAPIMessage>();
 
-                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
                 }
             }
 
@@ -81,11 +80,11 @@ class TelegramEventHandlerTest(
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send a webhook message about the event") {
-                    val slot = slot<String>()
+                then("it should send a message about the event") {
+                    val slot = slot<TelegramAPIMessage>()
 
-                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is DOWN"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is DOWN"
                 }
             }
 
@@ -110,10 +109,10 @@ class TelegramEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<String>()
+                    val slot = slot<TelegramAPIMessage>()
 
-                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Latency: 1000ms"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Latency: 1000ms"
                 }
             }
 
@@ -138,10 +137,10 @@ class TelegramEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<String>()
+                    val slot = slot<TelegramAPIMessage>()
 
-                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "(500)"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "(500)"
                 }
             }
 
@@ -166,12 +165,12 @@ class TelegramEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<String>()
+                    val notificationsSent = mutableListOf<TelegramAPIMessage>()
 
-                    verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0] shouldContain "is DOWN (500)"
-                    notificationsSent[1] shouldContain "Latency: 1000ms"
-                    notificationsSent[1] shouldContain "is UP (200)"
+                    verify(exactly = 2) { apiServiceSpy.sendMessage(capture(notificationsSent)) }
+                    notificationsSent[0].text shouldContain "is DOWN (500)"
+                    notificationsSent[1].text shouldContain "Latency: 1000ms"
+                    notificationsSent[1].text shouldContain "is UP (200)"
                 }
             }
 
@@ -196,16 +195,16 @@ class TelegramEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<String>()
+                    val notificationsSent = mutableListOf<TelegramAPIMessage>()
 
-                    verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0] shouldContain "Latency: 1000ms"
-                    notificationsSent[0] shouldContain "is UP (200)"
-                    notificationsSent[1] shouldContain "is DOWN (500)"
+                    verify(exactly = 2) { apiServiceSpy.sendMessage(capture(notificationsSent)) }
+                    notificationsSent[0].text shouldContain "Latency: 1000ms"
+                    notificationsSent[0].text shouldContain "is UP (200)"
+                    notificationsSent[1].text shouldContain "is DOWN (500)"
                 }
             }
 
-            `when`("it receives an event but an error happens when it calls the webhook") {
+            `when`("it receives an event but an error happens when it calls the API") {
                 val monitor = createMonitor(monitorRepository)
                 val event = MonitorUpEvent(
                     monitor = monitor,
@@ -215,17 +214,18 @@ class TelegramEventHandlerTest(
                 )
                 mockHttpErrorResponse(HttpStatus.BAD_REQUEST, "bad_request")
 
-                then("it should send a webhook message about the event") {
-                    val slot = slot<String>()
+                then("it should send a message about the event") {
+                    val slot = slot<TelegramAPIMessage>()
 
                     shouldNotThrowAny { eventDispatcher.dispatch(event) }
-                    verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
                 }
             }
         }
 
     }
+
     override fun afterTest(testCase: TestCase, result: TestResult) {
         clearAllMocks()
         super.afterTest(testCase, result)
@@ -233,7 +233,7 @@ class TelegramEventHandlerTest(
 
     private fun mockHttpResponse(status: HttpStatus, body: String = "") {
         every {
-            mockHttpClient.exchange<TelegramWebhookMessage, String, String>(
+            mockHttpClient.exchange<TelegramAPIMessage, String, String>(
                 any(),
                 Argument.STRING,
                 Argument.STRING
@@ -245,7 +245,7 @@ class TelegramEventHandlerTest(
 
     private fun mockHttpErrorResponse(status: HttpStatus, body: String = "") {
         every {
-            mockHttpClient.exchange<TelegramWebhookMessage, String, String>(
+            mockHttpClient.exchange<TelegramAPIMessage, String, String>(
                 any(),
                 Argument.STRING,
                 Argument.STRING

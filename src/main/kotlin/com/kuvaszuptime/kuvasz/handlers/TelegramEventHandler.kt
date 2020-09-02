@@ -1,13 +1,15 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.TelegramAPIMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.runWhenStateChanges
 import com.kuvaszuptime.kuvasz.models.toEmoji
 import com.kuvaszuptime.kuvasz.models.toStructuredMessage
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.TelegramWebhookService
+import com.kuvaszuptime.kuvasz.services.TelegramAPIService
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpResponse
@@ -20,7 +22,8 @@ import org.slf4j.LoggerFactory
 @Context
 @Requires(property = "handler-config.telegram-event-handler.enabled", value = "true")
 class TelegramEventHandler(
-    private val telegramEventHandler: TelegramWebhookService,
+    private val telegramAPIService: TelegramAPIService,
+    private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
     private val eventDispatcher: EventDispatcher
 ) {
     companion object {
@@ -35,15 +38,19 @@ class TelegramEventHandler(
     private fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.runWhenStateChanges { telegramEventHandler.sendMessage(it.toTelegramMessage()).handleResponse() }
+            event.runWhenStateChanges { telegramAPIService.sendMessage(it.toTelegramMessage()).handleResponse() }
         }
         eventDispatcher.subscribeToMonitorDownEvents { event ->
             logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.runWhenStateChanges { telegramEventHandler.sendMessage(it.toTelegramMessage()).handleResponse() }
+            event.runWhenStateChanges { telegramAPIService.sendMessage(it.toTelegramMessage()).handleResponse() }
         }
     }
 
-    private fun UptimeMonitorEvent.toTelegramMessage() = "${toEmoji()} ${toMessage()}"
+    private fun UptimeMonitorEvent.toTelegramMessage(): TelegramAPIMessage =
+        TelegramAPIMessage(
+            text = "${toEmoji()} ${toHTMLMessage()}",
+            chat_id = telegramEventHandlerConfig.chatId
+        )
 
     private fun Flowable<HttpResponse<String>>.handleResponse() =
         subscribe(
@@ -53,23 +60,23 @@ class TelegramEventHandler(
             { ex ->
                 if (ex is HttpClientResponseException) {
                     val responseBody = ex.response.getBody(String::class.java)
-                    logger.error("Telegram message cannot be sent to your configured webhook: $responseBody")
+                    logger.error("Telegram message cannot be delivered due to an error: $responseBody")
                 }
             }
         )
 
-    private fun UptimeMonitorEvent.toMessage() =
+    private fun UptimeMonitorEvent.toHTMLMessage() =
         when (this) {
             is MonitorUpEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    "*${details.summary}*",
-                    "_${details.latency}_",
+                    "<b>${details.summary}</b>",
+                    "<i>${details.latency}</i>",
                     details.previousDownTime.orNull()
                 )
             }
             is MonitorDownEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    "*${details.summary}*",
+                    "<b>${details.summary}</b>",
                     details.previousUpTime.orNull()
                 )
             }
