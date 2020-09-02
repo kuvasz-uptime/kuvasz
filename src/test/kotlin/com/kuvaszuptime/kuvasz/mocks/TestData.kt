@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import java.time.OffsetDateTime
 
+@Suppress("LongParameterList")
 fun createMonitor(
     repository: MonitorRepository,
     id: Int = 99999,

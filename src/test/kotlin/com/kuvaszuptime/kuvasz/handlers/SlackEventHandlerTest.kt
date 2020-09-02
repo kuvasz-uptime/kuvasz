@@ -218,7 +218,6 @@ class SlackEventHandlerTest(
                     shouldNotThrowAny { eventDispatcher.dispatch(event) }
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
                     slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
-
                 }
             }
         }

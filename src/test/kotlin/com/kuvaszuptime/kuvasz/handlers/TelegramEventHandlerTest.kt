@@ -43,7 +43,7 @@ class TelegramEventHandlerTest(
             token = "my_token"
             chatId = "@channel"
         }
-        val telegramAPIService = TelegramAPIService(eventHandlerConfig, mockHttpClient);
+        val telegramAPIService = TelegramAPIService(eventHandlerConfig, mockHttpClient)
         val apiServiceSpy = spyk(telegramAPIService, recordPrivateCalls = true)
         TelegramEventHandler(apiServiceSpy, eventHandlerConfig, eventDispatcher)
 
@@ -58,10 +58,10 @@ class TelegramEventHandlerTest(
                 )
                 mockHttpResponse(HttpStatus.OK)
 
-                eventDispatcher.dispatch(event);
+                eventDispatcher.dispatch(event)
 
                 then("it should send a message about the event") {
-                    val slot = slot<TelegramAPIMessage>();
+                    val slot = slot<TelegramAPIMessage>()
 
                     verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
                     slot.captured.text shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
@@ -223,7 +223,6 @@ class TelegramEventHandlerTest(
                 }
             }
         }
-
     }
 
     override fun afterTest(testCase: TestCase, result: TestResult) {

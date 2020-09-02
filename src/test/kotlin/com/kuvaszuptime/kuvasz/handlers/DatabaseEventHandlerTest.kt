@@ -149,7 +149,7 @@ class DatabaseEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should create a new UptimeEvent record, end the previous one and should create a LatencyLog record") {
+                then("it should create a new UptimeEvent and a LatencyLog record, and end the previous one") {
                     val uptimeRecords = uptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
                     val latencyRecord = latencyLogRepository.fetchOne(LATENCY_LOG.MONITOR_ID, monitor.id)
 

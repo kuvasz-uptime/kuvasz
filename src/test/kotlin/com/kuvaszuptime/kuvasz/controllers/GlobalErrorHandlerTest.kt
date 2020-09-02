@@ -20,104 +20,105 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.mockk.every
 import io.mockk.mockk
 
-class GlobalErrorHandlerTest : BehaviorSpec({
+class GlobalErrorHandlerTest : BehaviorSpec(
+    {
+        val crudServiceMock = mockk<MonitorCrudService>()
+        val server = startTestApplication(mockBeans = listOf(crudServiceMock))
+        val client = server.getLowLevelClient()
 
-    val crudServiceMock = mockk<MonitorCrudService>()
-    val server = startTestApplication(mockBeans = listOf(crudServiceMock))
-    val client = server.getLowLevelClient()
-
-    given("an endpoint that accepts a payload") {
-        `when`("it is called with an invalid JSON") {
-            val request = HttpRequest.POST<String>("/monitors", "not-a-json")
-            val exception = shouldThrow<HttpClientResponseException> {
-                client.toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+        given("an endpoint that accepts a payload") {
+            `when`("it is called with an invalid JSON") {
+                val request = HttpRequest.POST<String>("/monitors", "not-a-json")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking()
+                        .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                }
+                then("should return a 400 with the correct error message") {
+                    exception.status shouldBe HttpStatus.BAD_REQUEST
+                    val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                    responseBody.message shouldBe "Can't parse the JSON in the payload"
+                }
             }
-            then("should return a 400 with the correct error message") {
-                exception.status shouldBe HttpStatus.BAD_REQUEST
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
-                responseBody.message shouldBe "Can't parse the JSON in the payload"
+
+            `when`("it is called with a JSON that contains a non-convertible property") {
+                val request =
+                    HttpRequest.POST<String>("/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking()
+                        .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                }
+                then("should return a 400 with the correct error message") {
+                    exception.status shouldBe HttpStatus.BAD_REQUEST
+                    val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                    responseBody.message shouldStartWith "Failed to convert argument:"
+                }
             }
-        }
 
-        `when`("it is called with a JSON that contains a non-convertible property") {
-            val request =
-                HttpRequest.POST<String>("/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
-            val exception = shouldThrow<HttpClientResponseException> {
-                client.toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+            `when`("it is called with a valid body but the underlying logic throws a PersistenceError") {
+                val monitorDto = MonitorCreateDto(
+                    name = "test",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 60
+                )
+                val request = HttpRequest.POST("/monitors", monitorDto)
+
+                every { crudServiceMock.createMonitor(any()) } throws PersistenceError("This is an error message")
+
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client
+                        .toBlocking()
+                        .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                }
+                then("should return a 500 with the correct error message") {
+                    exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
+                    val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                    responseBody.message shouldBe "This is an error message"
+                }
             }
-            then("should return a 400 with the correct error message") {
-                exception.status shouldBe HttpStatus.BAD_REQUEST
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
-                responseBody.message shouldStartWith "Failed to convert argument:"
+
+            `when`("it is called with a valid body but the underlying logic throws a SchedulingError") {
+                val monitorDto = MonitorCreateDto(
+                    name = "test",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 60
+                )
+                val request = HttpRequest.POST("/monitors", monitorDto)
+
+                every { crudServiceMock.createMonitor(any()) } throws SchedulingError("This is an error message")
+
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client
+                        .toBlocking()
+                        .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                }
+                then("should return a 500 with the correct error message") {
+                    exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
+                    val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                    responseBody.message shouldBe "This is an error message"
+                }
             }
-        }
 
-        `when`("it is called with a valid body but the underlying logic throws a PersistenceError") {
-            val monitorDto = MonitorCreateDto(
-                name = "test",
-                url = "https://valid-url.com",
-                uptimeCheckInterval = 60
-            )
-            val request = HttpRequest.POST("/monitors", monitorDto)
+            `when`("it is called with a valid body but the underlying logic throws a DuplicationError") {
+                val monitorDto = MonitorCreateDto(
+                    name = "test",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 60
+                )
+                val request = HttpRequest.POST("/monitors", monitorDto)
 
-            every { crudServiceMock.createMonitor(any()) } throws PersistenceError("This is an error message")
+                every { crudServiceMock.createMonitor(any()) } throws DuplicationError("This is an error message")
 
-            val exception = shouldThrow<HttpClientResponseException> {
-                client
-                    .toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
-            }
-            then("should return a 500 with the correct error message") {
-                exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
-                responseBody.message shouldBe "This is an error message"
-            }
-        }
-
-        `when`("it is called with a valid body but the underlying logic throws a SchedulingError") {
-            val monitorDto = MonitorCreateDto(
-                name = "test",
-                url = "https://valid-url.com",
-                uptimeCheckInterval = 60
-            )
-            val request = HttpRequest.POST("/monitors", monitorDto)
-
-            every { crudServiceMock.createMonitor(any()) } throws SchedulingError("This is an error message")
-
-            val exception = shouldThrow<HttpClientResponseException> {
-                client
-                    .toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
-            }
-            then("should return a 500 with the correct error message") {
-                exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
-                responseBody.message shouldBe "This is an error message"
-            }
-        }
-
-        `when`("it is called with a valid body but the underlying logic throws a DuplicationError") {
-            val monitorDto = MonitorCreateDto(
-                name = "test",
-                url = "https://valid-url.com",
-                uptimeCheckInterval = 60
-            )
-            val request = HttpRequest.POST("/monitors", monitorDto)
-
-            every { crudServiceMock.createMonitor(any()) } throws DuplicationError("This is an error message")
-
-            val exception = shouldThrow<HttpClientResponseException> {
-                client
-                    .toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
-            }
-            then("should return a 409 with the correct error message") {
-                exception.status shouldBe HttpStatus.CONFLICT
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
-                responseBody.message shouldBe "This is an error message"
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client
+                        .toBlocking()
+                        .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                }
+                then("should return a 409 with the correct error message") {
+                    exception.status shouldBe HttpStatus.CONFLICT
+                    val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                    responseBody.message shouldBe "This is an error message"
+                }
             }
         }
     }
-})
+)

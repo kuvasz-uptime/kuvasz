@@ -98,6 +98,13 @@ jacocoTestReport {
     )
 }
 
+detekt {
+    input = files(
+            "src/main/kotlin",
+            "src/test/kotlin"
+    )
+}
+
 build {
     dependsOn("detekt")
 }

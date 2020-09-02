@@ -8,39 +8,41 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
 
-class AdminAuthConfigTest : BehaviorSpec({
-    given("an AdminAuthConfig bean") {
-        `when`("password is less than 12 characters long") {
-            val properties = PropertySource.of(
-                "test",
-                mapOf(
-                    "admin-auth.username" to "test-user",
-                    "admin-auth.password" to "tooShortPas"
+class AdminAuthConfigTest : BehaviorSpec(
+    {
+        given("an AdminAuthConfig bean") {
+            `when`("password is less than 12 characters long") {
+                val properties = PropertySource.of(
+                    "test",
+                    mapOf(
+                        "admin-auth.username" to "test-user",
+                        "admin-auth.password" to "tooShortPas"
+                    )
                 )
-            )
-            then("ApplicationContext should throw a BeanInstantiationException") {
-                val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                then("ApplicationContext should throw a BeanInstantiationException") {
+                    val exception = shouldThrow<BeanInstantiationException> {
+                        ApplicationContext.run(properties)
+                    }
+                    exceptionToMessage(exception) shouldContain "password - size must be between 12"
                 }
-                exceptionToMessage(exception) shouldContain "password - size must be between 12"
             }
-        }
 
-        `when`("username or password is blank") {
-            val properties = PropertySource.of(
-                "test",
-                mapOf(
-                    "admin-auth.username" to "",
-                    "admin-auth.password" to ""
+            `when`("username or password is blank") {
+                val properties = PropertySource.of(
+                    "test",
+                    mapOf(
+                        "admin-auth.username" to "",
+                        "admin-auth.password" to ""
+                    )
                 )
-            )
-            then("ApplicationContext should throw a BeanInstantiationException") {
-                val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                then("ApplicationContext should throw a BeanInstantiationException") {
+                    val exception = shouldThrow<BeanInstantiationException> {
+                        ApplicationContext.run(properties)
+                    }
+                    exceptionToMessage(exception) shouldContain "username - must not be blank"
+                    exceptionToMessage(exception) shouldContain "password - must not be blank"
                 }
-                exceptionToMessage(exception) shouldContain "username - must not be blank"
-                exceptionToMessage(exception) shouldContain "password - must not be blank"
             }
         }
     }
-})
+)

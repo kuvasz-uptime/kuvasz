@@ -9,15 +9,17 @@ import io.micronaut.test.annotation.MicronautTest
 @MicronautTest
 class InfoEndpointTest(
     @Client("/") private val client: RxHttpClient
-) : BehaviorSpec({
-    given("the /info endpoint") {
-        `when`("it has been called") {
-            val response = client.toBlocking().retrieve("/info")
-            then("it should return information about the event handlers") {
-                response shouldContain "log-event-handler.enabled"
-                response shouldContain "smtp-event-handler.enabled"
-                response shouldContain "slack-event-handler.enabled"
+) : BehaviorSpec(
+    {
+        given("the /info endpoint") {
+            `when`("it has been called") {
+                val response = client.toBlocking().retrieve("/info")
+                then("it should return information about the event handlers") {
+                    response shouldContain "log-event-handler.enabled"
+                    response shouldContain "smtp-event-handler.enabled"
+                    response shouldContain "slack-event-handler.enabled"
+                }
             }
         }
     }
-})
+)

@@ -216,7 +216,8 @@ class MonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "uptimeCheckInterval: must be greater than or equal to 60"
+                    exceptionToMessage(response) shouldContain
+                            "uptimeCheckInterval: must be greater than or equal to 60"
                 }
             }
         }
