@@ -7,8 +7,8 @@ import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.Emoji
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.StructuredDownMessage
-import com.kuvaszuptime.kuvasz.models.StructuredUpMessage
+import com.kuvaszuptime.kuvasz.models.StructuredMonitorDownMessage
+import com.kuvaszuptime.kuvasz.models.StructuredMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import kotlin.time.Duration
@@ -64,7 +64,7 @@ fun MonitorUpEvent.toPlainMessage(): String =
     }
 
 fun MonitorUpEvent.toStructuredMessage() =
-    StructuredUpMessage(
+    StructuredMonitorUpMessage(
         summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (${status.code})",
         latency = "Latency: ${latency}ms",
         previousDownTime = getEndedEventDuration().toDurationString().map { "Was down for $it" }
@@ -80,7 +80,7 @@ fun MonitorDownEvent.toPlainMessage(): String =
     }
 
 fun MonitorDownEvent.toStructuredMessage() =
-    StructuredDownMessage(
+    StructuredMonitorDownMessage(
         summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
                 status.toOption().map { " (" + it.code + ")" }.getOrElse { "" },
         error = "Reason: ${error.message}",

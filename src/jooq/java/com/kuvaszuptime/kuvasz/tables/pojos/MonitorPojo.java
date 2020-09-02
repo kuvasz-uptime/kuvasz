@@ -29,7 +29,7 @@ import javax.validation.constraints.Size;
 })
 public class MonitorPojo implements Serializable {
 
-    private static final long serialVersionUID = -1292240686;
+    private static final long serialVersionUID = -1878969857;
 
     private Integer        id;
     private String         name;
@@ -38,6 +38,7 @@ public class MonitorPojo implements Serializable {
     private Boolean        enabled;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private Boolean        sslCheckEnabled;
 
     public MonitorPojo() {}
 
@@ -49,6 +50,7 @@ public class MonitorPojo implements Serializable {
         this.enabled = value.enabled;
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
+        this.sslCheckEnabled = value.sslCheckEnabled;
     }
 
     public MonitorPojo(
@@ -58,7 +60,8 @@ public class MonitorPojo implements Serializable {
         Integer        uptimeCheckInterval,
         Boolean        enabled,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        Boolean        sslCheckEnabled
     ) {
         this.id = id;
         this.name = name;
@@ -67,6 +70,7 @@ public class MonitorPojo implements Serializable {
         this.enabled = enabled;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.sslCheckEnabled = sslCheckEnabled;
     }
 
     @Id
@@ -145,6 +149,16 @@ public class MonitorPojo implements Serializable {
         return this;
     }
 
+    @Column(name = "ssl_check_enabled", nullable = false)
+    public Boolean getSslCheckEnabled() {
+        return this.sslCheckEnabled;
+    }
+
+    public MonitorPojo setSslCheckEnabled(Boolean sslCheckEnabled) {
+        this.sslCheckEnabled = sslCheckEnabled;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -196,6 +210,12 @@ public class MonitorPojo implements Serializable {
         }
         else if (!updatedAt.equals(other.updatedAt))
             return false;
+        if (sslCheckEnabled == null) {
+            if (other.sslCheckEnabled != null)
+                return false;
+        }
+        else if (!sslCheckEnabled.equals(other.sslCheckEnabled))
+            return false;
         return true;
     }
 
@@ -210,6 +230,7 @@ public class MonitorPojo implements Serializable {
         result = prime * result + ((this.enabled == null) ? 0 : this.enabled.hashCode());
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.sslCheckEnabled == null) ? 0 : this.sslCheckEnabled.hashCode());
         return result;
     }
 
@@ -224,6 +245,7 @@ public class MonitorPojo implements Serializable {
         sb.append(", ").append(enabled);
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(sslCheckEnabled);
 
         sb.append(")");
         return sb.toString();

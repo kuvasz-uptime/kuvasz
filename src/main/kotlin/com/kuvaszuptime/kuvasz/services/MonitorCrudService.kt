@@ -1,13 +1,16 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Option
+import arrow.core.getOrElse
 import arrow.core.toOption
+import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,6 +18,7 @@ import javax.inject.Singleton
 @Singleton
 class MonitorCrudService @Inject constructor(
     private val monitorRepository: MonitorRepository,
+    private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler
 ) {
@@ -79,6 +83,11 @@ class MonitorCrudService @Inject constructor(
                 updatedMonitor.saveAndReschedule(existingMonitor)
             }
         )
+
+    fun isMonitorUp(monitorId: Int): Boolean =
+        uptimeEventRepository.getPreviousEventByMonitorId(monitorId)
+            .map { it.status == UptimeStatus.UP }
+            .getOrElse { false }
 
     private fun MonitorPojo.saveAndReschedule(existingMonitor: MonitorPojo): MonitorPojo =
         monitorRepository.returningUpdate(this).fold(

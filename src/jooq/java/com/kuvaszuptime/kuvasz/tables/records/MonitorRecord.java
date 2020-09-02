@@ -20,8 +20,8 @@ import javax.validation.constraints.Size;
 
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record7;
-import org.jooq.Row7;
+import org.jooq.Record8;
+import org.jooq.Row8;
 import org.jooq.impl.UpdatableRecordImpl;
 
 
@@ -34,9 +34,9 @@ import org.jooq.impl.UpdatableRecordImpl;
     @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"}),
     @UniqueConstraint(name = "unique_monitor_name", columnNames = {"name"})
 })
-public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record7<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime> {
+public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record8<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean> {
 
-    private static final long serialVersionUID = 1383018433;
+    private static final long serialVersionUID = 1165953385;
 
     /**
      * Setter for <code>monitor.id</code>.
@@ -156,6 +156,22 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         return (OffsetDateTime) get(6);
     }
 
+    /**
+     * Setter for <code>monitor.ssl_check_enabled</code>.
+     */
+    public MonitorRecord setSslCheckEnabled(Boolean value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>monitor.ssl_check_enabled</code>.
+     */
+    @Column(name = "ssl_check_enabled", nullable = false)
+    public Boolean getSslCheckEnabled() {
+        return (Boolean) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -166,17 +182,17 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     // -------------------------------------------------------------------------
-    // Record7 type implementation
+    // Record8 type implementation
     // -------------------------------------------------------------------------
 
     @Override
-    public Row7<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime> fieldsRow() {
-        return (Row7) super.fieldsRow();
+    public Row8<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean> fieldsRow() {
+        return (Row8) super.fieldsRow();
     }
 
     @Override
-    public Row7<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime> valuesRow() {
-        return (Row7) super.valuesRow();
+    public Row8<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean> valuesRow() {
+        return (Row8) super.valuesRow();
     }
 
     @Override
@@ -215,6 +231,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     @Override
+    public Field<Boolean> field8() {
+        return Monitor.MONITOR.SSL_CHECK_ENABLED;
+    }
+
+    @Override
     public Integer component1() {
         return getId();
     }
@@ -250,6 +271,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     @Override
+    public Boolean component8() {
+        return getSslCheckEnabled();
+    }
+
+    @Override
     public Integer value1() {
         return getId();
     }
@@ -282,6 +308,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     @Override
     public OffsetDateTime value7() {
         return getUpdatedAt();
+    }
+
+    @Override
+    public Boolean value8() {
+        return getSslCheckEnabled();
     }
 
     @Override
@@ -327,7 +358,13 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     @Override
-    public MonitorRecord values(Integer value1, String value2, String value3, Integer value4, Boolean value5, OffsetDateTime value6, OffsetDateTime value7) {
+    public MonitorRecord value8(Boolean value) {
+        setSslCheckEnabled(value);
+        return this;
+    }
+
+    @Override
+    public MonitorRecord values(Integer value1, String value2, String value3, Integer value4, Boolean value5, OffsetDateTime value6, OffsetDateTime value7, Boolean value8) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -335,6 +372,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         value5(value5);
         value6(value6);
         value7(value7);
+        value8(value8);
         return this;
     }
 
@@ -352,7 +390,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Integer id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public MonitorRecord(Integer id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled) {
         super(Monitor.MONITOR);
 
         set(0, id);
@@ -362,5 +400,6 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         set(4, enabled);
         set(5, createdAt);
         set(6, updatedAt);
+        set(7, sslCheckEnabled);
     }
 }
