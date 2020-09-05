@@ -73,7 +73,7 @@ class UptimeCheckerTest(
                 eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
 
-                then("it should dispatch a MonitorDownEvent") {
+                then("it should dispatch a MonitorDownEvent and a MonitorUpEvent") {
                     uptimeCheckerSpy.check(monitor)
                     clearAllMocks()
                     mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
@@ -98,7 +98,7 @@ class UptimeCheckerTest(
                 eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
 
-                then("it should dispatch a MonitorDownEvent") {
+                then("it should dispatch a MonitorUpEvent and a MonitorDownEvent") {
                     uptimeCheckerSpy.check(monitor)
                     clearAllMocks()
                     mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
