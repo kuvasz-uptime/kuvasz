@@ -12,7 +12,6 @@
 
     <logger name="org.jooq.Constants" level="WARN"/>
     <logger name="org.jooq" level="INFO"/>
-    <logger name="org.zalando.logbook" level="TRACE"/>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
