@@ -1,12 +1,13 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import arrow.core.getOrElse
 import arrow.core.toOption
+import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.UptimeEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
-import com.kuvaszuptime.kuvasz.util.toUptimeStatus
 import org.jooq.Configuration
 import java.time.OffsetDateTime
 import javax.inject.Inject
@@ -56,4 +57,9 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
             .set(UPTIME_EVENT.UPDATED_AT, updatedAt)
             .where(UPTIME_EVENT.ID.eq(eventId))
             .execute()
+
+    fun isMonitorUp(monitorId: Int): Boolean =
+        getPreviousEventByMonitorId(monitorId)
+            .map { it.status == UptimeStatus.UP }
+            .getOrElse { false }
 }

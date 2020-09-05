@@ -4,9 +4,6 @@ import com.kuvaszuptime.kuvasz.config.handlers.EmailEventHandlerConfig
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.util.toEmoji
-import com.kuvaszuptime.kuvasz.util.toStructuredMessage
-import com.kuvaszuptime.kuvasz.util.toUptimeStatus
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.email.EmailBuilder
 
@@ -19,7 +16,7 @@ class EmailFactory(private val config: EmailEventHandlerConfig) {
             .buildEmail()
 
     private fun UptimeMonitorEvent.getSubject(): String =
-        "[kuvasz-uptime] - ${toEmoji()} [${monitor.name}] ${monitor.url} is ${toUptimeStatus()}"
+        "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${monitor.url} is ${toUptimeStatus()}"
 
     private fun createEmailBase() =
         EmailBuilder

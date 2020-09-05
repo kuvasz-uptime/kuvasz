@@ -9,5 +9,5 @@ data class ScheduledCheck(
 )
 
 enum class CheckType {
-    UPTIME
+    UPTIME, SSL
 }

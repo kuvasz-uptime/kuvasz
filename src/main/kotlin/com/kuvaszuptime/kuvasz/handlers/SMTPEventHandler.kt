@@ -4,7 +4,6 @@ import com.kuvaszuptime.kuvasz.config.handlers.SMTPEventHandlerConfig
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.SMTPMailer
-import com.kuvaszuptime.kuvasz.util.runWhenStateChanges
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory

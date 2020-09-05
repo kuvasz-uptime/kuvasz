@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.models.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.SslEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
-import com.kuvaszuptime.kuvasz.util.toSSLStatus
 import org.jooq.Configuration
 import java.time.OffsetDateTime
 import javax.inject.Inject

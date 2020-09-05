@@ -6,9 +6,6 @@ import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.SlackWebhookService
-import com.kuvaszuptime.kuvasz.util.runWhenStateChanges
-import com.kuvaszuptime.kuvasz.util.toEmoji
-import com.kuvaszuptime.kuvasz.util.toStructuredMessage
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpResponse
@@ -45,7 +42,7 @@ class SlackEventHandler @Inject constructor(
         }
     }
 
-    private fun UptimeMonitorEvent.toSlackMessage() = SlackWebhookMessage(text = "${toEmoji()} ${toMessage()}")
+    private fun UptimeMonitorEvent.toSlackMessage() = SlackWebhookMessage(text = toMessage())
 
     private fun Flowable<HttpResponse<String>>.handleResponse() =
         subscribe(
@@ -64,14 +61,14 @@ class SlackEventHandler @Inject constructor(
         when (this) {
             is MonitorUpEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    "*${details.summary}*",
+                    "${getEmoji()} *${details.summary}*",
                     "_${details.latency}_",
                     details.previousDownTime.orNull()
                 )
             }
             is MonitorDownEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    "*${details.summary}*",
+                    "${getEmoji()} *${details.summary}*",
                     details.previousUpTime.orNull()
                 )
             }

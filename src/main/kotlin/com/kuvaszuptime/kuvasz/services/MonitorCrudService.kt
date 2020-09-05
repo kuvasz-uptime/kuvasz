@@ -1,16 +1,13 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Option
-import arrow.core.getOrElse
 import arrow.core.toOption
-import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,7 +15,6 @@ import javax.inject.Singleton
 @Singleton
 class MonitorCrudService @Inject constructor(
     private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler
 ) {
@@ -51,7 +47,7 @@ class MonitorCrudService @Inject constructor(
             { persistenceError -> throw persistenceError },
             { insertedMonitor ->
                 if (insertedMonitor.enabled) {
-                    checkScheduler.createChecksForMonitor(insertedMonitor).mapLeft { schedulingError ->
+                    checkScheduler.createChecksForMonitor(insertedMonitor).map { schedulingError ->
                         monitorRepository.deleteById(insertedMonitor.id)
                         throw schedulingError
                     }
@@ -85,19 +81,14 @@ class MonitorCrudService @Inject constructor(
             }
         )
 
-    fun isMonitorUp(monitorId: Int): Boolean =
-        uptimeEventRepository.getPreviousEventByMonitorId(monitorId)
-            .map { it.status == UptimeStatus.UP }
-            .getOrElse { false }
-
     private fun MonitorPojo.saveAndReschedule(existingMonitor: MonitorPojo): MonitorPojo =
         monitorRepository.returningUpdate(this).fold(
             { persistenceError -> throw persistenceError },
             { updatedMonitor ->
                 if (updatedMonitor.enabled) {
                     checkScheduler.updateChecksForMonitor(existingMonitor, updatedMonitor).fold(
-                        { schedulingError -> throw schedulingError },
-                        { updatedMonitor }
+                        { updatedMonitor },
+                        { schedulingError -> throw schedulingError }
                     )
                 } else {
                     checkScheduler.removeChecksOfMonitor(existingMonitor)

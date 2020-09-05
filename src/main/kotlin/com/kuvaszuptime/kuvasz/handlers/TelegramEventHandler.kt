@@ -7,9 +7,6 @@ import com.kuvaszuptime.kuvasz.models.TelegramAPIMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TelegramAPIService
-import com.kuvaszuptime.kuvasz.util.runWhenStateChanges
-import com.kuvaszuptime.kuvasz.util.toEmoji
-import com.kuvaszuptime.kuvasz.util.toStructuredMessage
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpResponse
@@ -48,7 +45,7 @@ class TelegramEventHandler(
 
     private fun UptimeMonitorEvent.toTelegramMessage(): TelegramAPIMessage =
         TelegramAPIMessage(
-            text = "${toEmoji()} ${toHTMLMessage()}",
+            text = toHTMLMessage(),
             chat_id = telegramEventHandlerConfig.chatId
         )
 
@@ -69,14 +66,14 @@ class TelegramEventHandler(
         when (this) {
             is MonitorUpEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    "<b>${details.summary}</b>",
+                    "${getEmoji()} <b>${details.summary}</b>",
                     "<i>${details.latency}</i>",
                     details.previousDownTime.orNull()
                 )
             }
             is MonitorDownEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    "<b>${details.summary}</b>",
+                    "${getEmoji()} <b>${details.summary}</b>",
                     details.previousUpTime.orNull()
                 )
             }

@@ -6,6 +6,8 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Date
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 fun getCurrentTimestamp(): OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC"))
 
@@ -18,3 +20,6 @@ fun Option<Duration>.toDurationString(): Option<String> = map { duration ->
 fun Int.toDurationOfSeconds(): java.time.Duration = java.time.Duration.ofSeconds(toLong())
 
 fun Date.toOffsetDateTime(): OffsetDateTime = toInstant().atOffset(ZoneOffset.UTC)
+
+fun OffsetDateTime.diffToDuration(endDateTime: OffsetDateTime): Duration =
+    (endDateTime.toEpochSecond() - this.toEpochSecond()).toDuration(DurationUnit.SECONDS)
