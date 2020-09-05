@@ -26,7 +26,7 @@ class SSLValidator {
                         validFrom = cert.notBefore.toOffsetDateTime(),
                         validTo = cert.notAfter.toOffsetDateTime()
                     )
-                }.toEither { SSLValidationError("There were no matching CN with the given host") }
+                }.toEither { SSLValidationError("There were no matching CN for the given host") }
         } catch (e: Throwable) {
             Either.left(SSLValidationError(e.message))
         }
