@@ -80,6 +80,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                     .set(MONITOR.URL, updatedPojo.url)
                     .set(MONITOR.UPTIME_CHECK_INTERVAL, updatedPojo.uptimeCheckInterval)
                     .set(MONITOR.ENABLED, updatedPojo.enabled)
+                    .set(MONITOR.SSL_CHECK_ENABLED, updatedPojo.sslCheckEnabled)
                     .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
                     .where(MONITOR.ID.eq(updatedPojo.id))
                     .returning(MONITOR.asterisk())
@@ -98,6 +99,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 MONITOR.URL.`as`("url"),
                 MONITOR.UPTIME_CHECK_INTERVAL.`as`("uptimeCheckInterval"),
                 MONITOR.ENABLED.`as`("enabled"),
+                MONITOR.SSL_CHECK_ENABLED.`as`("sslCheckEnabled"),
                 MONITOR.CREATED_AT.`as`("createdAt"),
                 MONITOR.UPDATED_AT.`as`("updatedAt"),
                 UPTIME_EVENT.STATUS.`as`("uptimeStatus"),

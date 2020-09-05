@@ -12,6 +12,7 @@ data class MonitorDetailsDto(
     val url: URI,
     val uptimeCheckInterval: Int,
     val enabled: Boolean,
+    val sslCheckEnabled: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime?,
     val uptimeStatus: UptimeStatus?,

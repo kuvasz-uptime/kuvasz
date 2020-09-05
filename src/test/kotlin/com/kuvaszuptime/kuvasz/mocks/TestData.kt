@@ -13,6 +13,7 @@ fun createMonitor(
     repository: MonitorRepository,
     id: Int = 99999,
     enabled: Boolean = true,
+    sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
     monitorName: String = "testMonitor",
     url: String = "http://irrelevant.com"
@@ -23,6 +24,7 @@ fun createMonitor(
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setUrl(url)
         .setEnabled(enabled)
+        .setSslCheckEnabled(sslCheckEnabled)
         .setCreatedAt(getCurrentTimestamp())
     repository.insert(monitor)
     return monitor

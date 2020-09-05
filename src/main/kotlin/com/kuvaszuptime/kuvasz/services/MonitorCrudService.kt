@@ -78,6 +78,7 @@ class MonitorCrudService @Inject constructor(
                     url = monitorUpdateDto.url ?: existingMonitor.url
                     uptimeCheckInterval = monitorUpdateDto.uptimeCheckInterval ?: existingMonitor.uptimeCheckInterval
                     enabled = monitorUpdateDto.enabled ?: existingMonitor.enabled
+                    sslCheckEnabled = monitorUpdateDto.sslCheckEnabled ?: existingMonitor.sslCheckEnabled
                 }
 
                 updatedMonitor.saveAndReschedule(existingMonitor)
