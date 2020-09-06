@@ -58,6 +58,7 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
             .where(UPTIME_EVENT.ID.eq(eventId))
             .execute()
 
+    // TODO write separate test for this
     fun isMonitorUp(monitorId: Int): Boolean =
         getPreviousEventByMonitorId(monitorId)
             .map { it.status == UptimeStatus.UP }

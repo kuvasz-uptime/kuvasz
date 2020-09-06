@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Either
-import arrow.core.Option
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
@@ -32,15 +31,14 @@ import java.time.OffsetDateTime
 
 @MicronautTest
 class SSLCheckerTest(
-    private val monitorRepository: MonitorRepository
+    private val monitorRepository: MonitorRepository,
+    sslEventRepository: SSLEventRepository
 ) : DatabaseBehaviorSpec() {
-    private val sslEventRepository = mockk<SSLEventRepository>()
+
     private val sslValidator = mockk<SSLValidator>()
     private val uptimeEventRepository = mockk<UptimeEventRepository>()
 
     init {
-        every { sslEventRepository.getPreviousEventByMonitorId(any()) } returns Option.empty()
-
         val eventDispatcher = EventDispatcher()
         val sslChecker = spyk(
             SSLChecker(
