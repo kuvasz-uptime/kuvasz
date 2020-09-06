@@ -105,7 +105,7 @@ sealed class SSLMonitorEvent : MonitorEvent() {
 
     override fun getEmoji(): String =
         when (this) {
-            is SSLValidEvent -> Emoji.CHECK_OK
+            is SSLValidEvent -> Emoji.LOCK
             is SSLInvalidEvent -> Emoji.ALERT
             is SSLWillExpireEvent -> Emoji.WARNING
         }
