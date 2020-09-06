@@ -275,6 +275,8 @@ components:
           format: int32
         enabled:
           type: boolean
+        sslCheckEnabled:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -344,6 +346,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        sslCheckEnabled:
+          type: boolean
     MonitorCreateDto:
       required:
       - name
@@ -364,6 +368,9 @@ components:
         enabled:
           type: boolean
           nullable: true
+        sslCheckEnabled:
+          type: boolean
+          nullable: true
     MonitorUpdateDto:
       type: object
       properties:
@@ -380,6 +387,9 @@ components:
           format: int32
           nullable: true
         enabled:
+          type: boolean
+          nullable: true
+        sslCheckEnabled:
           type: boolean
           nullable: true
   securitySchemes:
