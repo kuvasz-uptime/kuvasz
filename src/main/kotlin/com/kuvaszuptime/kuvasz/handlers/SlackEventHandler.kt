@@ -2,6 +2,10 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -40,9 +44,23 @@ class SlackEventHandler @Inject constructor(
             logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.runWhenStateChanges { slackWebhookService.sendMessage(it.toSlackMessage()).handleResponse() }
         }
+        eventDispatcher.subscribeToSSLValidEvents { event ->
+            logger.debug("An SSLValidEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.runWhenStateChanges { slackWebhookService.sendMessage(it.toSlackMessage()).handleResponse() }
+        }
+        eventDispatcher.subscribeToSSLInvalidEvents { event ->
+            logger.debug("An SSLInvalidEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.runWhenStateChanges { slackWebhookService.sendMessage(it.toSlackMessage()).handleResponse() }
+        }
+        eventDispatcher.subscribeToSSLWillExpireEvents { event ->
+            logger.debug("An SSLWillExpireEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.runWhenStateChanges { slackWebhookService.sendMessage(it.toSlackMessage()).handleResponse() }
+        }
     }
 
     private fun UptimeMonitorEvent.toSlackMessage() = SlackWebhookMessage(text = toMessage())
+
+    private fun SSLMonitorEvent.toSlackMessage() = SlackWebhookMessage(text = toMessage())
 
     private fun Flowable<HttpResponse<String>>.handleResponse() =
         subscribe(
@@ -57,8 +75,8 @@ class SlackEventHandler @Inject constructor(
             }
         )
 
-    private fun UptimeMonitorEvent.toMessage() =
-        when (this) {
+    private fun UptimeMonitorEvent.toMessage(): String {
+        val messageParts: List<String> = when (this) {
             is MonitorUpEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
                     "${getEmoji()} *${details.summary}*",
@@ -72,5 +90,34 @@ class SlackEventHandler @Inject constructor(
                     details.previousUpTime.orNull()
                 )
             }
-        }.joinToString("\n")
+        }
+
+        return messageParts.joinToString("\n")
+    }
+
+    private fun SSLMonitorEvent.toMessage(): String {
+        val messageParts: List<String> = when (this) {
+            is SSLValidEvent -> toStructuredMessage().let { details ->
+                listOfNotNull(
+                    "${getEmoji()} *${details.summary}*",
+                    details.previousInvalidEvent.orNull()
+                )
+            }
+            is SSLWillExpireEvent -> toStructuredMessage().let { details ->
+                listOf(
+                    "${getEmoji()} *${details.summary}*",
+                    "_${details.validUntil}_"
+                )
+            }
+            is SSLInvalidEvent -> toStructuredMessage().let { details ->
+                listOfNotNull(
+                    "${getEmoji()} *${details.summary}*",
+                    "_${details.error}_",
+                    details.previousValidEvent.orNull()
+                )
+            }
+        }
+
+        return messageParts.joinToString("\n")
+    }
 }
