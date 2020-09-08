@@ -45,7 +45,6 @@ class SlackEventHandlerTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository
-
 ) : DatabaseBehaviorSpec() {
     private val mockHttpClient = mockk<RxHttpClient>()
 
@@ -64,15 +63,15 @@ class SlackEventHandlerTest(
                     latency = 1000,
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(event)
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (200)"
+                    slot.captured shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (200)"
                 }
             }
 
@@ -84,15 +83,15 @@ class SlackEventHandlerTest(
                     error = Throwable(),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(event)
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN"
+                    slot.captured shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN"
                 }
             }
 
@@ -104,7 +103,7 @@ class SlackEventHandlerTest(
                     latency = 1000,
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
 
@@ -117,10 +116,10 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain "Latency: 1000ms"
+                    slot.captured shouldContain "Latency: 1000ms"
                 }
             }
 
@@ -132,7 +131,7 @@ class SlackEventHandlerTest(
                     error = Throwable("First error"),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
 
@@ -145,10 +144,10 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain "(500)"
+                    slot.captured shouldContain "(500)"
                 }
             }
 
@@ -160,7 +159,7 @@ class SlackEventHandlerTest(
                     previousEvent = Option.empty(),
                     error = Throwable()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
 
@@ -173,12 +172,12 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<SlackWebhookMessage>()
+                    val notificationsSent = mutableListOf<String>()
 
                     verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0].text shouldContain "is DOWN (500)"
-                    notificationsSent[1].text shouldContain "Latency: 1000ms"
-                    notificationsSent[1].text shouldContain "is UP (200)"
+                    notificationsSent[0] shouldContain "is DOWN (500)"
+                    notificationsSent[1] shouldContain "Latency: 1000ms"
+                    notificationsSent[1] shouldContain "is UP (200)"
                 }
             }
 
@@ -190,7 +189,7 @@ class SlackEventHandlerTest(
                     latency = 1000,
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
 
@@ -203,12 +202,12 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<SlackWebhookMessage>()
+                    val notificationsSent = mutableListOf<String>()
 
                     verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0].text shouldContain "Latency: 1000ms"
-                    notificationsSent[0].text shouldContain "is UP (200)"
-                    notificationsSent[1].text shouldContain "is DOWN (500)"
+                    notificationsSent[0] shouldContain "Latency: 1000ms"
+                    notificationsSent[0] shouldContain "is UP (200)"
+                    notificationsSent[1] shouldContain "is DOWN (500)"
                 }
             }
         }
@@ -221,15 +220,15 @@ class SlackEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(event)
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain
+                    slot.captured shouldContain
                             "Your site \"${monitor.name}\" (${monitor.url}) has a VALID certificate"
                 }
             }
@@ -241,15 +240,15 @@ class SlackEventHandlerTest(
                     previousEvent = Option.empty(),
                     error = SSLValidationError("ssl error")
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(event)
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain
+                    slot.captured shouldContain
                             "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate"
                 }
             }
@@ -261,7 +260,7 @@ class SlackEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
 
@@ -273,10 +272,10 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldNotContain OffsetDateTime.MAX.toString()
+                    slot.captured shouldNotContain OffsetDateTime.MAX.toString()
                 }
             }
 
@@ -287,7 +286,7 @@ class SlackEventHandlerTest(
                     previousEvent = Option.empty(),
                     error = SSLValidationError("ssl error1")
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
 
@@ -299,10 +298,10 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain "ssl error1"
+                    slot.captured shouldContain "ssl error1"
                 }
             }
 
@@ -313,7 +312,7 @@ class SlackEventHandlerTest(
                     previousEvent = Option.empty(),
                     error = SSLValidationError("ssl error1")
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
 
@@ -325,11 +324,11 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<SlackWebhookMessage>()
+                    val notificationsSent = mutableListOf<String>()
 
                     verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0].text shouldContain "has an INVALID certificate"
-                    notificationsSent[1].text shouldContain "has a VALID certificate"
+                    notificationsSent[0] shouldContain "has an INVALID certificate"
+                    notificationsSent[1] shouldContain "has a VALID certificate"
                 }
             }
 
@@ -340,7 +339,7 @@ class SlackEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
 
@@ -352,11 +351,11 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<SlackWebhookMessage>()
+                    val notificationsSent = mutableListOf<String>()
 
                     verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0].text shouldContain "has a VALID certificate"
-                    notificationsSent[1].text shouldContain "has an INVALID certificate"
+                    notificationsSent[0] shouldContain "has a VALID certificate"
+                    notificationsSent[1] shouldContain "has an INVALID certificate"
                 }
             }
 
@@ -367,15 +366,15 @@ class SlackEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(event)
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain
+                    slot.captured shouldContain
                             "Your SSL certificate for ${monitor.url} will expire soon"
                 }
             }
@@ -387,7 +386,7 @@ class SlackEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
 
@@ -399,10 +398,10 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldNotContain OffsetDateTime.MAX.toString()
+                    slot.captured shouldNotContain OffsetDateTime.MAX.toString()
                 }
             }
 
@@ -413,7 +412,7 @@ class SlackEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = Option.empty()
                 )
-                mockHttpResponse()
+                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
 
@@ -425,11 +424,11 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<SlackWebhookMessage>()
+                    val notificationsSent = mutableListOf<String>()
 
                     verify(exactly = 2) { webhookServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0].text shouldContain "has a VALID certificate"
-                    notificationsSent[1].text shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
+                    notificationsSent[0] shouldContain "has a VALID certificate"
+                    notificationsSent[1] shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
                 }
             }
         }
@@ -446,11 +445,11 @@ class SlackEventHandlerTest(
                 mockHttpErrorResponse()
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<SlackWebhookMessage>()
+                    val slot = slot<String>()
 
                     shouldNotThrowAny { eventDispatcher.dispatch(event) }
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured.text shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (200)"
+                    slot.captured shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (200)"
                 }
             }
         }
@@ -461,7 +460,7 @@ class SlackEventHandlerTest(
         super.afterTest(testCase, result)
     }
 
-    private fun mockHttpResponse() {
+    private fun mockSuccessfulHttpResponse() {
         every {
             mockHttpClient.exchange<SlackWebhookMessage, String, String>(any(), Argument.STRING, Argument.STRING)
         } returns Flowable.just(

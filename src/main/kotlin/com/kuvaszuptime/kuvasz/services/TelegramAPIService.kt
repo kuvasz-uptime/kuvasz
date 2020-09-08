@@ -18,13 +18,14 @@ import javax.inject.Singleton
 class TelegramAPIService @Inject constructor(
     private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
     private val httpClient: RxHttpClient
-) {
+) : TextMessageService {
 
     companion object {
-        private const val RETRY_COUNT = 3L
+        internal const val RETRY_COUNT = 3L
     }
 
-    fun sendMessage(message: TelegramAPIMessage): Flowable<HttpResponse<String>> {
+    override fun sendMessage(content: String): Flowable<HttpResponse<String>> {
+        val message = TelegramAPIMessage(chat_id = telegramEventHandlerConfig.chatId, text = content)
         val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/sendMessage"
         val request: HttpRequest<TelegramAPIMessage> = HttpRequest.POST(url, message)
 
