@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.formatters.TextFormatter
 import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.SSLInvalidEvent
@@ -24,9 +25,7 @@ abstract class TextMessageEventHandler(
 
     internal abstract val logger: Logger
 
-    internal abstract fun String.bold(): String
-
-    internal abstract fun String.italic(): String
+    internal abstract val formatter: TextFormatter
 
     init {
         subscribeToEvents()
@@ -36,25 +35,37 @@ abstract class TextMessageEventHandler(
     internal fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.runWhenStateChanges { messageService.sendMessage(it.toFormattedMessage()).handleResponse() }
+            event.handle()
         }
         eventDispatcher.subscribeToMonitorDownEvents { event ->
             logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.runWhenStateChanges { messageService.sendMessage(it.toFormattedMessage()).handleResponse() }
+            event.handle()
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->
             logger.debug("An SSLValidEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.runWhenStateChanges { messageService.sendMessage(it.toFormattedMessage()).handleResponse() }
+            event.handle()
         }
         eventDispatcher.subscribeToSSLInvalidEvents { event ->
             logger.debug("An SSLInvalidEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.runWhenStateChanges { messageService.sendMessage(it.toFormattedMessage()).handleResponse() }
+            event.handle()
         }
         eventDispatcher.subscribeToSSLWillExpireEvents { event ->
             logger.debug("An SSLWillExpireEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.runWhenStateChanges { messageService.sendMessage(it.toFormattedMessage()).handleResponse() }
+            event.handle()
         }
     }
+
+    private fun UptimeMonitorEvent.handle() =
+        this.runWhenStateChanges { event ->
+            val message = event.toFormattedMessage()
+            messageService.sendMessage(message).handleResponse()
+        }
+
+    private fun SSLMonitorEvent.handle() =
+        this.runWhenStateChanges { event ->
+            val message = event.toFormattedMessage()
+            messageService.sendMessage(message).handleResponse()
+        }
 
     private fun Flowable<HttpResponse<String>>.handleResponse(): Disposable =
         subscribe(
@@ -73,14 +84,14 @@ abstract class TextMessageEventHandler(
         val messageParts: List<String> = when (this) {
             is MonitorUpEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    getEmoji() + " " + details.summary.bold(),
-                    details.latency.italic(),
+                    getEmoji() + " " + formatter.bold(details.summary),
+                    formatter.italic(details.latency),
                     details.previousDownTime.orNull()
                 )
             }
             is MonitorDownEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    getEmoji() + " " + details.summary.bold(),
+                    getEmoji() + " " + formatter.bold(details.summary),
                     details.previousUpTime.orNull()
                 )
             }
@@ -93,20 +104,20 @@ abstract class TextMessageEventHandler(
         val messageParts: List<String> = when (this) {
             is SSLValidEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    getEmoji() + " " + details.summary.bold(),
+                    getEmoji() + " " + formatter.bold(details.summary),
                     details.previousInvalidEvent.orNull()
                 )
             }
             is SSLWillExpireEvent -> toStructuredMessage().let { details ->
                 listOf(
-                    getEmoji() + " " + details.summary.bold(),
-                    details.validUntil.italic()
+                    getEmoji() + " " + formatter.bold(details.summary),
+                    formatter.italic(details.validUntil)
                 )
             }
             is SSLInvalidEvent -> toStructuredMessage().let { details ->
                 listOfNotNull(
-                    getEmoji() + " " + details.summary.bold(),
-                    details.error.italic(),
+                    getEmoji() + " " + formatter.bold(details.summary),
+                    formatter.italic(details.error),
                     details.previousValidEvent.orNull()
                 )
             }

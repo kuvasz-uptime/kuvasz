@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.formatters.SlackTextFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.SlackWebhookService
 import io.micronaut.context.annotation.Context
@@ -16,7 +17,5 @@ class SlackEventHandler @Inject constructor(
 
     override val logger = LoggerFactory.getLogger(SlackEventHandler::class.java)
 
-    override fun String.bold(): String = "*$this*"
-
-    override fun String.italic(): String = "_{$this}_"
+    override val formatter = SlackTextFormatter
 }
