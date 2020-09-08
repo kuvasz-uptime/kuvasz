@@ -1,12 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.formatters.TextFormatter
-import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.formatters.TextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.SSLMonitorEvent
-import com.kuvaszuptime.kuvasz.models.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TextMessageService
@@ -25,7 +20,7 @@ abstract class TextMessageEventHandler(
 
     internal abstract val logger: Logger
 
-    internal abstract val formatter: TextFormatter
+    internal abstract val formatter: TextMessageFormatter
 
     init {
         subscribeToEvents()
@@ -57,13 +52,13 @@ abstract class TextMessageEventHandler(
 
     private fun UptimeMonitorEvent.handle() =
         this.runWhenStateChanges { event ->
-            val message = event.toFormattedMessage()
+            val message = formatter.toFormattedMessage(event)
             messageService.sendMessage(message).handleResponse()
         }
 
     private fun SSLMonitorEvent.handle() =
         this.runWhenStateChanges { event ->
-            val message = event.toFormattedMessage()
+            val message = formatter.toFormattedMessage(event)
             messageService.sendMessage(message).handleResponse()
         }
 
@@ -79,52 +74,4 @@ abstract class TextMessageEventHandler(
                 }
             }
         )
-
-    private fun UptimeMonitorEvent.toFormattedMessage(): String {
-        val messageParts: List<String> = when (this) {
-            is MonitorUpEvent -> toStructuredMessage().let { details ->
-                listOfNotNull(
-                    getEmoji() + " " + formatter.bold(details.summary),
-                    formatter.italic(details.latency),
-                    details.previousDownTime.orNull()
-                )
-            }
-            is MonitorDownEvent -> toStructuredMessage().let { details ->
-                listOfNotNull(
-                    getEmoji() + " " + formatter.bold(details.summary),
-                    details.previousUpTime.orNull()
-                )
-            }
-        }
-
-        return messageParts.assemble()
-    }
-
-    private fun SSLMonitorEvent.toFormattedMessage(): String {
-        val messageParts: List<String> = when (this) {
-            is SSLValidEvent -> toStructuredMessage().let { details ->
-                listOfNotNull(
-                    getEmoji() + " " + formatter.bold(details.summary),
-                    details.previousInvalidEvent.orNull()
-                )
-            }
-            is SSLWillExpireEvent -> toStructuredMessage().let { details ->
-                listOf(
-                    getEmoji() + " " + formatter.bold(details.summary),
-                    formatter.italic(details.validUntil)
-                )
-            }
-            is SSLInvalidEvent -> toStructuredMessage().let { details ->
-                listOfNotNull(
-                    getEmoji() + " " + formatter.bold(details.summary),
-                    formatter.italic(details.error),
-                    details.previousValidEvent.orNull()
-                )
-            }
-        }
-
-        return messageParts.assemble()
-    }
-
-    private fun List<String>.assemble(): String = joinToString("\n")
 }
