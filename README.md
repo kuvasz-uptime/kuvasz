@@ -21,7 +21,8 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 
 ### Features
 
-- Uptime & latency monitoring with a configurable interval
+- [Uptime & latency](https://github.com/kuvasz-uptime/kuvasz/wiki/Uptime-checks) monitoring with a configurable interval
+- [SSL certification](https://github.com/kuvasz-uptime/kuvasz/wiki/SSL-checks) monitoring
 - Email notifications through SMTP
 - Slack notifications through webhoooks
 - Telegram notifications through the Bot API
@@ -29,7 +30,6 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 
 ### Under development 🚧
 
-- SSL certification monitoring
 - Regular Lighthouse audits for your websites
 - Pagerduty, Opsgenie integration
 - Kuvasz Dashboard, a standalone GUI
