@@ -67,6 +67,7 @@ paths:
                   log-event-handler.enabled: true
                   smtp-event-handler.enabled: false
                   slack-event-handler.enabled: true
+                  telegram-event-handler.enabled: true
 components:
   schemas:
     UserNamePasswordCredentials:
