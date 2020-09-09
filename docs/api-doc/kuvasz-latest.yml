@@ -294,7 +294,20 @@ components:
           type: string
           format: date-time
           nullable: true
+        sslStatus:
+          $ref: '#/components/schemas/SslStatus'
+        sslStatusStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastSSLCheck:
+          type: string
+          format: date-time
+          nullable: true
         uptimeError:
+          type: string
+          nullable: true
+        sslError:
           type: string
           nullable: true
         averageLatencyInMs:
@@ -314,6 +327,12 @@ components:
       enum:
       - UP
       - DOWN
+    SslStatus:
+      type: string
+      enum:
+      - VALID
+      - INVALID
+      - WILL_EXPIRE
     ServiceError:
       type: object
       properties:

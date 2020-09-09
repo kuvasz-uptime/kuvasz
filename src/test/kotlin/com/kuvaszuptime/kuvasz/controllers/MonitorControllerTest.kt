@@ -3,14 +3,17 @@ package com.kuvaszuptime.kuvasz.controllers
 import arrow.core.Option
 import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -33,6 +36,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MicronautTest
 
+@Suppress("LongParameterList")
 @MicronautTest
 class MonitorControllerTest(
     @Client("/") private val client: RxHttpClient,
@@ -40,6 +44,7 @@ class MonitorControllerTest(
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val uptimeEventRepository: UptimeEventRepository,
+    private val sslEventRepository: SSLEventRepository,
     private val checkScheduler: CheckScheduler
 ) : DatabaseBehaviorSpec() {
 
@@ -58,6 +63,12 @@ class MonitorControllerTest(
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    endedAt = null
+                )
 
                 val response = monitorClient.getMonitorsWithDetails(enabledOnly = null)
                 then("it should return them") {
@@ -72,8 +83,14 @@ class MonitorControllerTest(
                     responseItem.p95LatencyInMs shouldBe 1200
                     responseItem.p99LatencyInMs shouldBe 1200
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
+                    responseItem.uptimeStatusStartedAt shouldBe now
+                    responseItem.uptimeError shouldBe null
                     responseItem.lastUptimeCheck shouldBe now
                     responseItem.createdAt shouldBe monitor.createdAt
+                    responseItem.sslStatus shouldBe SslStatus.VALID
+                    responseItem.sslStatusStartedAt shouldBe now
+                    responseItem.lastSSLCheck shouldBe now
+                    responseItem.sslError shouldBe null
                 }
             }
 
@@ -91,6 +108,7 @@ class MonitorControllerTest(
                     responseItem.sslCheckEnabled shouldBe enabledMonitor.sslCheckEnabled
                     responseItem.averageLatencyInMs shouldBe null
                     responseItem.uptimeStatus shouldBe null
+                    responseItem.sslStatus shouldBe null
                     responseItem.createdAt shouldBe enabledMonitor.createdAt
                 }
             }
@@ -117,6 +135,13 @@ class MonitorControllerTest(
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    endedAt = null
+                )
+
                 then("it should return it") {
                     val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
                     response.id shouldBe monitor.id
@@ -128,6 +153,10 @@ class MonitorControllerTest(
                     response.uptimeStatus shouldBe UptimeStatus.UP
                     response.createdAt shouldBe monitor.createdAt
                     response.lastUptimeCheck shouldBe now
+                    response.sslStatus shouldBe SslStatus.VALID
+                    response.sslStatusStartedAt shouldBe now
+                    response.lastSSLCheck shouldBe now
+                    response.sslError shouldBe null
                 }
             }
 
