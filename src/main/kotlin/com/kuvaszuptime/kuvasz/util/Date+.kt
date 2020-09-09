@@ -12,9 +12,11 @@ import kotlin.time.toDuration
 fun getCurrentTimestamp(): OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC"))
 
 fun Option<Duration>.toDurationString(): Option<String> = map { duration ->
-    duration.toComponents { days, hours, minutes, seconds, _ ->
-        "$days day(s), $hours hour(s), $minutes minute(s), $seconds second(s)"
-    }
+    duration.toDurationString()
+}
+
+fun Duration.toDurationString(): String = toComponents { days, hours, minutes, seconds, _ ->
+    "$days day(s), $hours hour(s), $minutes minute(s), $seconds second(s)"
 }
 
 fun Int.toDurationOfSeconds(): java.time.Duration = java.time.Duration.ofSeconds(toLong())
