@@ -181,10 +181,9 @@ class SSLCheckerTest(
 
     private fun mockValidationResult(
         status: SslStatus,
-        validFrom: OffsetDateTime = getCurrentTimestamp().minusDays(30),
         validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)
     ) {
-        val certInfo = CertificateInfo(validFrom, validTo)
+        val certInfo = CertificateInfo(validTo)
         val mockResult: Either<SSLValidationError, CertificateInfo> = when (status) {
             SslStatus.VALID -> Either.right(certInfo)
             SslStatus.WILL_EXPIRE -> Either.right(certInfo)

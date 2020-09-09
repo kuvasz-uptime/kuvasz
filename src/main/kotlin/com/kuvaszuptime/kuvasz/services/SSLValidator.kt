@@ -22,10 +22,7 @@ class SSLValidator {
 
             getCertificateForHost(url, conn.serverCertificates)
                 .map { cert ->
-                    CertificateInfo(
-                        validFrom = cert.notBefore.toOffsetDateTime(),
-                        validTo = cert.notAfter.toOffsetDateTime()
-                    )
+                    CertificateInfo(validTo = cert.notAfter.toOffsetDateTime())
                 }.toEither { SSLValidationError("There were no matching CN for the given host") }
         } catch (e: Throwable) {
             Either.left(SSLValidationError(e.message))

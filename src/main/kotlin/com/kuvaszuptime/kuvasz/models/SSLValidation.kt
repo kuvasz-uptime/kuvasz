@@ -7,6 +7,5 @@ data class SSLValidationError(
 )
 
 data class CertificateInfo(
-    val validFrom: OffsetDateTime,
     val validTo: OffsetDateTime
 )

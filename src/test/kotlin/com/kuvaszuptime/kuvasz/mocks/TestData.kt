@@ -66,7 +66,5 @@ fun createSSLEventRecord(
             .setEndedAt(endedAt)
     )
 
-fun generateCertificateInfo(
-    validFrom: OffsetDateTime = getCurrentTimestamp().minusDays(30),
-    validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)
-) = CertificateInfo(validFrom, validTo)
+fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)) =
+    CertificateInfo(validTo)
