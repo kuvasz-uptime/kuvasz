@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.toOption
-import com.kuvaszuptime.kuvasz.models.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.SslEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
@@ -18,7 +18,7 @@ class SSLEventRepository @Inject constructor(jooqConfig: Configuration) : SslEve
     fun insertFromMonitorEvent(event: SSLMonitorEvent) {
         val eventToInsert = SslEventPojo()
             .setMonitorId(event.monitor.id)
-            .setStatus(event.toSSLStatus())
+            .setStatus(event.sslStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
 

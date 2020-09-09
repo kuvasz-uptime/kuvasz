@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.models.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo

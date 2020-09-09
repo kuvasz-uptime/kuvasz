@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.formatters.SlackTextFormatter
+import com.kuvaszuptime.kuvasz.models.events.formatters.SlackTextFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.SlackWebhookService
 import io.micronaut.context.annotation.Context
@@ -13,7 +13,7 @@ import javax.inject.Inject
 class SlackEventHandler @Inject constructor(
     slackWebhookService: SlackWebhookService,
     eventDispatcher: EventDispatcher
-) : TextMessageEventHandler(eventDispatcher, slackWebhookService) {
+) : RTCMessageEventHandler(eventDispatcher, slackWebhookService) {
 
     override val logger = LoggerFactory.getLogger(SlackEventHandler::class.java)
 

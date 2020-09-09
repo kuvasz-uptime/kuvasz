@@ -1,10 +1,12 @@
-package com.kuvaszuptime.kuvasz.models
+package com.kuvaszuptime.kuvasz.models.events
 
 import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
@@ -17,25 +19,16 @@ import kotlin.time.Duration
 
 sealed class MonitorEvent {
     abstract val monitor: MonitorPojo
-    val dispatchedAt = getCurrentTimestamp()
 
-    abstract fun getEmoji(): String
+    abstract fun toStructuredMessage(): StructuredMessage
+
+    val dispatchedAt = getCurrentTimestamp()
 }
 
 sealed class UptimeMonitorEvent : MonitorEvent() {
     abstract val previousEvent: Option<UptimeEventPojo>
 
-    override fun getEmoji(): String =
-        when (this) {
-            is MonitorUpEvent -> Emoji.CHECK_OK
-            is MonitorDownEvent -> Emoji.ALERT
-        }
-
-    fun toUptimeStatus(): UptimeStatus =
-        when (this) {
-            is MonitorUpEvent -> UptimeStatus.UP
-            is MonitorDownEvent -> UptimeStatus.DOWN
-        }
+    abstract val uptimeStatus: UptimeStatus
 
     fun statusNotEquals(previousEvent: UptimeEventPojo) = !statusEquals(previousEvent)
 
@@ -59,7 +52,7 @@ sealed class UptimeMonitorEvent : MonitorEvent() {
         )
     }
 
-    private fun statusEquals(previousEvent: UptimeEventPojo) = toUptimeStatus() == previousEvent.status
+    private fun statusEquals(previousEvent: UptimeEventPojo) = uptimeStatus == previousEvent.status
 }
 
 data class MonitorUpEvent(
@@ -69,7 +62,9 @@ data class MonitorUpEvent(
     override val previousEvent: Option<UptimeEventPojo>
 ) : UptimeMonitorEvent() {
 
-    fun toStructuredMessage() =
+    override val uptimeStatus = UptimeStatus.UP
+
+    override fun toStructuredMessage() =
         StructuredMonitorUpMessage(
             summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (${status.code})",
             latency = "Latency: ${latency}ms",
@@ -84,7 +79,9 @@ data class MonitorDownEvent(
     override val previousEvent: Option<UptimeEventPojo>
 ) : UptimeMonitorEvent() {
 
-    fun toStructuredMessage() =
+    override val uptimeStatus = UptimeStatus.DOWN
+
+    override fun toStructuredMessage() =
         StructuredMonitorDownMessage(
             summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
                     status.toOption().map { " (" + it.code + ")" }.getOrElse { "" },
@@ -97,25 +94,16 @@ data class RedirectEvent(
     override val monitor: MonitorPojo,
     val redirectLocation: URI
 ) : MonitorEvent() {
-    override fun getEmoji() = Emoji.INFO
+
+    override fun toStructuredMessage() = StructuredRedirectMessage(
+        summary = "Request to \"${monitor.name}\" (${monitor.url}) has been redirected"
+    )
 }
 
 sealed class SSLMonitorEvent : MonitorEvent() {
     abstract val previousEvent: Option<SslEventPojo>
 
-    override fun getEmoji(): String =
-        when (this) {
-            is SSLValidEvent -> Emoji.LOCK
-            is SSLInvalidEvent -> Emoji.ALERT
-            is SSLWillExpireEvent -> Emoji.WARNING
-        }
-
-    fun toSSLStatus(): SslStatus =
-        when (this) {
-            is SSLValidEvent -> SslStatus.VALID
-            is SSLWillExpireEvent -> SslStatus.WILL_EXPIRE
-            is SSLInvalidEvent -> SslStatus.INVALID
-        }
+    abstract val sslStatus: SslStatus
 
     fun statusNotEquals(previousEvent: SslEventPojo) = !statusEquals(previousEvent)
 
@@ -141,7 +129,7 @@ sealed class SSLMonitorEvent : MonitorEvent() {
         )
     }
 
-    private fun statusEquals(previousEvent: SslEventPojo) = toSSLStatus() == previousEvent.status
+    private fun statusEquals(previousEvent: SslEventPojo) = sslStatus == previousEvent.status
 }
 
 data class SSLValidEvent(
@@ -150,7 +138,9 @@ data class SSLValidEvent(
     override val previousEvent: Option<SslEventPojo>
 ) : SSLMonitorEvent() {
 
-    fun toStructuredMessage() =
+    override val sslStatus = SslStatus.VALID
+
+    override fun toStructuredMessage() =
         StructuredSSLValidMessage(
             summary = "Your site \"${monitor.name}\" (${monitor.url}) has a VALID certificate",
             previousInvalidEvent = getEndedEventDuration().toDurationString()
@@ -164,7 +154,9 @@ data class SSLInvalidEvent(
     override val previousEvent: Option<SslEventPojo>
 ) : SSLMonitorEvent() {
 
-    fun toStructuredMessage() =
+    override val sslStatus = SslStatus.INVALID
+
+    override fun toStructuredMessage() =
         StructuredSSLInvalidMessage(
             summary = "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate",
             error = "Reason: ${error.message}",
@@ -179,7 +171,9 @@ data class SSLWillExpireEvent(
     override val previousEvent: Option<SslEventPojo>
 ) : SSLMonitorEvent() {
 
-    fun toStructuredMessage() =
+    override val sslStatus = SslStatus.WILL_EXPIRE
+
+    override fun toStructuredMessage() =
         StructuredSSLWillExpireMessage(
             summary = "Your SSL certificate for ${monitor.url} will expire soon",
             validUntil = "Expiry date: ${certInfo.validTo}"

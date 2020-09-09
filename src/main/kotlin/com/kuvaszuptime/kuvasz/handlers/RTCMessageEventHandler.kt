@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.formatters.TextMessageFormatter
-import com.kuvaszuptime.kuvasz.models.SSLMonitorEvent
-import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
+import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TextMessageService
 import io.micronaut.http.HttpResponse
@@ -13,14 +13,14 @@ import io.reactivex.Flowable
 import io.reactivex.disposables.Disposable
 import org.slf4j.Logger
 
-abstract class TextMessageEventHandler(
+abstract class RTCMessageEventHandler(
     private val eventDispatcher: EventDispatcher,
     private val messageService: TextMessageService
 ) {
 
     internal abstract val logger: Logger
 
-    internal abstract val formatter: TextMessageFormatter
+    internal abstract val formatter: RichTextMessageFormatter
 
     init {
         subscribeToEvents()

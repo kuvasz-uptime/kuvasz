@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.formatters.TelegramTextFormatter
+import com.kuvaszuptime.kuvasz.models.events.formatters.TelegramTextFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TelegramAPIService
 import io.micronaut.context.annotation.Context
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 class TelegramEventHandler(
     telegramAPIService: TelegramAPIService,
     eventDispatcher: EventDispatcher
-) : TextMessageEventHandler(eventDispatcher, telegramAPIService) {
+) : RTCMessageEventHandler(eventDispatcher, telegramAPIService) {
 
     override val logger = LoggerFactory.getLogger(TelegramEventHandler::class.java)
 

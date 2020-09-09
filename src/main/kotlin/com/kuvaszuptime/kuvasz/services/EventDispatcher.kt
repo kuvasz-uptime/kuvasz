@@ -1,12 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.MonitorEvent
-import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.RedirectEvent
-import com.kuvaszuptime.kuvasz.models.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import javax.inject.Singleton

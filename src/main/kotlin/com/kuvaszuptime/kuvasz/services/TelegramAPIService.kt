@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
-import com.kuvaszuptime.kuvasz.models.TelegramAPIMessage
+import com.kuvaszuptime.kuvasz.models.handlers.TelegramAPIMessage
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.core.type.Argument
