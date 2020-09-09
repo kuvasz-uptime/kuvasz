@@ -21,8 +21,8 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 
 ### Features
 
-- [Uptime & latency](https://github.com/kuvasz-uptime/kuvasz/wiki/Uptime-checks) monitoring with a configurable interval
-- [SSL certification](https://github.com/kuvasz-uptime/kuvasz/wiki/SSL-checks) monitoring
+- Uptime & latency monitoring with a configurable interval
+- SSL certification monitoring (once a day)
 - Email notifications through SMTP
 - Slack notifications through webhoooks
 - Telegram notifications through the Bot API
