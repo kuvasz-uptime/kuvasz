@@ -2,9 +2,11 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -19,6 +21,7 @@ class DatabaseCleanerTest(
     private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val monitorRepository: MonitorRepository,
+    private val sslEventRepository: SSLEventRepository,
     private val databaseCleaner: DatabaseCleaner
 ) : DatabaseBehaviorSpec() {
     init {
@@ -91,6 +94,54 @@ class DatabaseCleanerTest(
                 then("it should delete it") {
                     val latencyLogRecords = latencyLogRepository.fetchByMonitorId(monitor.id)
                     latencyLogRecords shouldHaveSize 0
+                }
+            }
+
+            `when`("there is an SSL_EVENT record with an end date greater than retention limit") {
+                val monitor = createMonitor(monitorRepository)
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(1),
+                    endedAt = getCurrentTimestamp()
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    val sslEventRecords = sslEventRepository.fetchByMonitorId(monitor.id)
+                    sslEventRecords shouldHaveSize 1
+                }
+            }
+
+            `when`("there is an SSL_EVENT record without an end date") {
+                val monitor = createMonitor(monitorRepository)
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = null
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    val sslEventRecords = sslEventRepository.fetchByMonitorId(monitor.id)
+                    sslEventRecords shouldHaveSize 1
+                }
+            }
+
+            `when`("there is an SSL_EVENT record with an end date less than retention limit") {
+                val monitor = createMonitor(monitorRepository)
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = getCurrentTimestamp().minusDays(8)
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should delete it") {
+                    val sslEventRecords = sslEventRepository.fetchByMonitorId(monitor.id)
+                    sslEventRecords shouldHaveSize 0
                 }
             }
         }

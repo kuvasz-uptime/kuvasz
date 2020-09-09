@@ -28,6 +28,10 @@ class HandlersInfoSource @Inject constructor(private val environment: Environmen
                 "slack-event-handler.enabled" to environment.getBooleanProp(
                     "handler-config.slack-event-handler.enabled",
                     false
+                ),
+                "telegram-event-handler.enabled" to environment.getBooleanProp(
+                    "handler-config.telegram-event-handler.enabled",
+                    false
                 )
             )
         return MapPropertySource("handlers", mapOf("handlers" to handlerConfigs))

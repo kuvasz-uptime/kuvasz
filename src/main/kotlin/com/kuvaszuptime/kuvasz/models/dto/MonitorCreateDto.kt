@@ -19,11 +19,13 @@ data class MonitorCreateDto(
     @get:NotNull
     @get:Min(MIN_UPTIME_CHECK_INTERVAL)
     val uptimeCheckInterval: Int,
-    val enabled: Boolean? = true
+    val enabled: Boolean? = true,
+    val sslCheckEnabled: Boolean? = false
 ) {
     fun toMonitorPojo(): MonitorPojo = MonitorPojo()
         .setName(name)
         .setUrl(url)
         .setEnabled(enabled)
         .setUptimeCheckInterval(uptimeCheckInterval)
+        .setSslCheckEnabled(sslCheckEnabled)
 }

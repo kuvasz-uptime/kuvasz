@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.handlers.SlackEventHandlerConfig
-import com.kuvaszuptime.kuvasz.models.SlackWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.SlackWebhookMessage
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.core.type.Argument
@@ -18,13 +18,14 @@ import javax.inject.Singleton
 class SlackWebhookService @Inject constructor(
     private val slackEventHandlerConfig: SlackEventHandlerConfig,
     private val httpClient: RxHttpClient
-) {
+) : TextMessageService {
 
     companion object {
         private const val RETRY_COUNT = 3L
     }
 
-    fun sendMessage(message: SlackWebhookMessage): Flowable<HttpResponse<String>> {
+    override fun sendMessage(content: String): Flowable<HttpResponse<String>> {
+        val message = SlackWebhookMessage(text = content)
         val request: HttpRequest<SlackWebhookMessage> = HttpRequest.POST(slackEventHandlerConfig.webhookUrl, message)
 
         return httpClient

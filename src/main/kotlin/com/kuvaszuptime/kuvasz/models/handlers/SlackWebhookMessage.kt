@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models
+package com.kuvaszuptime.kuvasz.models.handlers
 
 import io.micronaut.core.annotation.Introspected
 import java.net.URI

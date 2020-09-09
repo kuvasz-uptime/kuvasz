@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Either
+import arrow.core.Option
+import arrow.core.Option.Companion.empty
+import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.ScheduledCheck
 import com.kuvaszuptime.kuvasz.models.SchedulingError
@@ -12,6 +15,7 @@ import io.micronaut.context.annotation.Context
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 import javax.annotation.PostConstruct
 import javax.inject.Inject
@@ -21,10 +25,13 @@ import javax.inject.Named
 class CheckScheduler @Inject constructor(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,
-    private val uptimeChecker: UptimeChecker
+    private val uptimeChecker: UptimeChecker,
+    private val sslChecker: SSLChecker
 ) {
 
     companion object {
+        private const val SSL_CHECK_INITIAL_DELAY_MINUTES = 1L
+        private const val SSL_CHECK_PERIOD_DAYS = 1L
         private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
     }
 
@@ -38,23 +45,42 @@ class CheckScheduler @Inject constructor(
 
     fun getScheduledChecks() = scheduledChecks
 
-    fun createChecksForMonitor(monitor: MonitorPojo): Either<SchedulingError, ScheduledCheck> =
-        scheduleUptimeCheck(monitor).bimap(
-            { e ->
-                logger.error(
-                    "Uptime check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${e.message}"
-                )
-                SchedulingError(e.message)
-            },
-            { scheduledTask ->
-                val scheduledCheck =
-                    ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledTask)
-                scheduledChecks.add(scheduledCheck)
-                logger.info("Uptime check for \"${monitor.name}\" (${monitor.url}) has been set up successfully")
+    fun createChecksForMonitor(monitor: MonitorPojo): Option<SchedulingError> {
+        fun Throwable.log(checkType: CheckType, monitor: MonitorPojo) {
+            logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: $message")
+        }
 
-                scheduledCheck
+        fun ScheduledCheck.log(monitor: MonitorPojo) {
+            logger.info("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully")
+        }
+
+        return scheduleUptimeCheck(monitor).fold(
+            { error ->
+                error.log(CheckType.UPTIME, monitor)
+                SchedulingError(error.message).toOption()
+            },
+            { scheduledUptimeTask ->
+                ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledUptimeTask)
+                    .also { scheduledChecks.add(it) }
+                    .also { it.log(monitor) }
+
+                if (monitor.sslCheckEnabled) {
+                    scheduleSSLCheck(monitor).fold(
+                        { error ->
+                            error.log(CheckType.SSL, monitor)
+                            SchedulingError(error.message).toOption()
+                        },
+                        { scheduledSSLTask ->
+                            ScheduledCheck(checkType = CheckType.SSL, monitorId = monitor.id, task = scheduledSSLTask)
+                                .also { scheduledChecks.add(it) }
+                                .also { it.log(monitor) }
+                        }
+                    )
+                }
+                empty()
             }
         )
+    }
 
     fun removeChecksOfMonitor(monitor: MonitorPojo) {
         scheduledChecks.forEach { check ->
@@ -76,7 +102,7 @@ class CheckScheduler @Inject constructor(
     fun updateChecksForMonitor(
         existingMonitor: MonitorPojo,
         updatedMonitor: MonitorPojo
-    ): Either<SchedulingError, ScheduledCheck> {
+    ): Option<SchedulingError> {
         removeChecksOfMonitor(existingMonitor)
         return createChecksForMonitor(updatedMonitor)
     }
@@ -86,6 +112,15 @@ class CheckScheduler @Inject constructor(
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
             taskScheduler.scheduleAtFixedRate(period, period) {
                 uptimeChecker.check(monitor)
+            }
+        }
+
+    private fun scheduleSSLCheck(monitor: MonitorPojo): Either<Throwable, ScheduledFuture<*>> =
+        Either.catchBlocking {
+            val initialDelay = Duration.ofMinutes(SSL_CHECK_INITIAL_DELAY_MINUTES)
+            val period = Duration.ofDays(SSL_CHECK_PERIOD_DAYS)
+            taskScheduler.scheduleAtFixedRate(initialDelay, period) {
+                sslChecker.check(monitor)
             }
         }
 }

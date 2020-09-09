@@ -13,5 +13,6 @@ data class MonitorUpdateDto(
     val url: String?,
     @get:Min(MIN_UPTIME_CHECK_INTERVAL)
     val uptimeCheckInterval: Int?,
-    val enabled: Boolean?
+    val enabled: Boolean?,
+    val sslCheckEnabled: Boolean?
 )

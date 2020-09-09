@@ -6,6 +6,7 @@ package com.kuvaszuptime.kuvasz;
 
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
 import com.kuvaszuptime.kuvasz.tables.Monitor;
+import com.kuvaszuptime.kuvasz.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 
 
@@ -24,6 +25,11 @@ public class Tables {
      * The table <code>monitor</code>.
      */
     public static final Monitor MONITOR = Monitor.MONITOR;
+
+    /**
+     * The table <code>ssl_event</code>.
+     */
+    public static final SslEvent SSL_EVENT = SslEvent.SSL_EVENT;
 
     /**
      * The table <code>uptime_event</code>.

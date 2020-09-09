@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
-import com.kuvaszuptime.kuvasz.models.TelegramAPIMessage
+import com.kuvaszuptime.kuvasz.models.handlers.TelegramAPIMessage
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.core.type.Argument
@@ -16,16 +16,17 @@ import javax.inject.Singleton
 @Singleton
 @Requires(property = "handler-config.telegram-event-handler.enabled", value = "true")
 class TelegramAPIService @Inject constructor(
-    telegramEventHandlerConfig: TelegramEventHandlerConfig,
+    private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
     private val httpClient: RxHttpClient
-) {
-    private val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/sendMessage"
+) : TextMessageService {
 
     companion object {
-        private const val RETRY_COUNT = 3L
+        internal const val RETRY_COUNT = 3L
     }
 
-    fun sendMessage(message: TelegramAPIMessage): Flowable<HttpResponse<String>> {
+    override fun sendMessage(content: String): Flowable<HttpResponse<String>> {
+        val message = TelegramAPIMessage(chat_id = telegramEventHandlerConfig.chatId, text = content)
+        val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/sendMessage"
         val request: HttpRequest<TelegramAPIMessage> = HttpRequest.POST(url, message)
 
         return httpClient

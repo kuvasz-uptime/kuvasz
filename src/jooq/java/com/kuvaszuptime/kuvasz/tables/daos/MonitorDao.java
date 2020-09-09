@@ -151,4 +151,18 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     public List<MonitorPojo> fetchByUpdatedAt(OffsetDateTime... values) {
         return fetch(Monitor.MONITOR.UPDATED_AT, values);
     }
+
+    /**
+     * Fetch records that have <code>ssl_check_enabled BETWEEN lowerInclusive AND upperInclusive</code>
+     */
+    public List<MonitorPojo> fetchRangeOfSslCheckEnabled(Boolean lowerInclusive, Boolean upperInclusive) {
+        return fetchRange(Monitor.MONITOR.SSL_CHECK_ENABLED, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>ssl_check_enabled IN (values)</code>
+     */
+    public List<MonitorPojo> fetchBySslCheckEnabled(Boolean... values) {
+        return fetch(Monitor.MONITOR.SSL_CHECK_ENABLED, values);
+    }
 }

@@ -1,9 +1,10 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import arrow.core.getOrElse
 import arrow.core.toOption
-import com.kuvaszuptime.kuvasz.models.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.models.toUptimeStatus
+import com.kuvaszuptime.kuvasz.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.UptimeEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
@@ -19,7 +20,7 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
     fun insertFromMonitorEvent(event: UptimeMonitorEvent) {
         val eventToInsert = UptimeEventPojo()
             .setMonitorId(event.monitor.id)
-            .setStatus(event.toUptimeStatus())
+            .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
 
@@ -56,4 +57,9 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
             .set(UPTIME_EVENT.UPDATED_AT, updatedAt)
             .where(UPTIME_EVENT.ID.eq(eventId))
             .execute()
+
+    fun isMonitorUp(monitorId: Int): Boolean =
+        getPreviousEventByMonitorId(monitorId)
+            .map { it.status == UptimeStatus.UP }
+            .getOrElse { false }
 }

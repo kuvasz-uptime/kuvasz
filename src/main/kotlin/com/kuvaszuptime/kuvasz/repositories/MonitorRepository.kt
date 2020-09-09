@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.PersistenceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.Monitor.MONITOR
+import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.MonitorDao
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
@@ -40,7 +41,11 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 UPTIME_EVENT.STATUS,
                 UPTIME_EVENT.STARTED_AT,
                 UPTIME_EVENT.UPDATED_AT,
-                UPTIME_EVENT.ERROR
+                UPTIME_EVENT.ERROR,
+                SSL_EVENT.STATUS,
+                SSL_EVENT.STARTED_AT,
+                SSL_EVENT.UPDATED_AT,
+                SSL_EVENT.ERROR
             )
             .fetchInto(MonitorDetailsDto::class.java)
 
@@ -52,7 +57,11 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 UPTIME_EVENT.STATUS,
                 UPTIME_EVENT.STARTED_AT,
                 UPTIME_EVENT.UPDATED_AT,
-                UPTIME_EVENT.ERROR
+                UPTIME_EVENT.ERROR,
+                SSL_EVENT.STATUS,
+                SSL_EVENT.STARTED_AT,
+                SSL_EVENT.UPDATED_AT,
+                SSL_EVENT.ERROR
             )
             .fetchOneInto(MonitorDetailsDto::class.java)
             .toOption()
@@ -80,6 +89,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                     .set(MONITOR.URL, updatedPojo.url)
                     .set(MONITOR.UPTIME_CHECK_INTERVAL, updatedPojo.uptimeCheckInterval)
                     .set(MONITOR.ENABLED, updatedPojo.enabled)
+                    .set(MONITOR.SSL_CHECK_ENABLED, updatedPojo.sslCheckEnabled)
                     .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
                     .where(MONITOR.ID.eq(updatedPojo.id))
                     .returning(MONITOR.asterisk())
@@ -98,18 +108,24 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 MONITOR.URL.`as`("url"),
                 MONITOR.UPTIME_CHECK_INTERVAL.`as`("uptimeCheckInterval"),
                 MONITOR.ENABLED.`as`("enabled"),
+                MONITOR.SSL_CHECK_ENABLED.`as`("sslCheckEnabled"),
                 MONITOR.CREATED_AT.`as`("createdAt"),
                 MONITOR.UPDATED_AT.`as`("updatedAt"),
                 UPTIME_EVENT.STATUS.`as`("uptimeStatus"),
                 UPTIME_EVENT.STARTED_AT.`as`("uptimeStatusStartedAt"),
                 UPTIME_EVENT.UPDATED_AT.`as`("lastUptimeCheck"),
+                SSL_EVENT.STATUS.`as`("sslStatus"),
+                SSL_EVENT.STARTED_AT.`as`("sslStatusStartedAt"),
+                SSL_EVENT.UPDATED_AT.`as`("lastSSLCheck"),
                 UPTIME_EVENT.ERROR.`as`("uptimeError"),
+                SSL_EVENT.ERROR.`as`("sslError"),
                 round(avg(LATENCY_LOG.LATENCY), -1).`as`("averageLatencyInMs"),
                 inline(null, SQLDataType.INTEGER).`as`("p95LatencyInMs"),
                 inline(null, SQLDataType.INTEGER).`as`("p99LatencyInMs")
             )
             .from(MONITOR)
             .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
+            .leftJoin(SSL_EVENT).on(MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
             .leftJoin(LATENCY_LOG).on(MONITOR.ID.eq(LATENCY_LOG.MONITOR_ID))
 
     private fun DataAccessException.handle(): Either<PersistenceError, Nothing> {

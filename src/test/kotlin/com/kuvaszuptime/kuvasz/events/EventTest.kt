@@ -2,9 +2,7 @@ package com.kuvaszuptime.kuvasz.events
 
 import arrow.core.Option
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.getEndedEventDuration
-import com.kuvaszuptime.kuvasz.models.runWhenStateChanges
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe

@@ -47,7 +47,7 @@ class MonitorCrudService @Inject constructor(
             { persistenceError -> throw persistenceError },
             { insertedMonitor ->
                 if (insertedMonitor.enabled) {
-                    checkScheduler.createChecksForMonitor(insertedMonitor).mapLeft { schedulingError ->
+                    checkScheduler.createChecksForMonitor(insertedMonitor).map { schedulingError ->
                         monitorRepository.deleteById(insertedMonitor.id)
                         throw schedulingError
                     }
@@ -74,6 +74,7 @@ class MonitorCrudService @Inject constructor(
                     url = monitorUpdateDto.url ?: existingMonitor.url
                     uptimeCheckInterval = monitorUpdateDto.uptimeCheckInterval ?: existingMonitor.uptimeCheckInterval
                     enabled = monitorUpdateDto.enabled ?: existingMonitor.enabled
+                    sslCheckEnabled = monitorUpdateDto.sslCheckEnabled ?: existingMonitor.sslCheckEnabled
                 }
 
                 updatedMonitor.saveAndReschedule(existingMonitor)
@@ -86,8 +87,8 @@ class MonitorCrudService @Inject constructor(
             { updatedMonitor ->
                 if (updatedMonitor.enabled) {
                     checkScheduler.updateChecksForMonitor(existingMonitor, updatedMonitor).fold(
-                        { schedulingError -> throw schedulingError },
-                        { updatedMonitor }
+                        { updatedMonitor },
+                        { schedulingError -> throw schedulingError }
                     )
                 } else {
                     checkScheduler.removeChecksOfMonitor(existingMonitor)

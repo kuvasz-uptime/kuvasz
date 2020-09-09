@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.testutils
 
-import com.kuvaszuptime.kuvasz.models.Event
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import io.reactivex.subscribers.TestSubscriber
 
-fun <T : Event> T.toSubscriber(testSubscriber: TestSubscriber<T>) = testSubscriber.onNext(this)
+fun <T : MonitorEvent> T.toSubscriber(testSubscriber: TestSubscriber<T>) = testSubscriber.onNext(this)

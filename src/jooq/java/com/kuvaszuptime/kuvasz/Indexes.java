@@ -5,6 +5,7 @@ package com.kuvaszuptime.kuvasz;
 
 
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
+import com.kuvaszuptime.kuvasz.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 
 import org.jooq.Index;
@@ -24,6 +25,8 @@ public class Indexes {
 
     public static final Index LATENCY_LOG_LATENCY_IDX = Indexes0.LATENCY_LOG_LATENCY_IDX;
     public static final Index LATENCY_LOG_MONITOR_IDX = Indexes0.LATENCY_LOG_MONITOR_IDX;
+    public static final Index SSL_EVENT_ENDED_AT_IDX = Indexes0.SSL_EVENT_ENDED_AT_IDX;
+    public static final Index SSL_EVENT_MONITOR_IDX = Indexes0.SSL_EVENT_MONITOR_IDX;
     public static final Index UPTIME_EVENT_ENDED_AT_IDX = Indexes0.UPTIME_EVENT_ENDED_AT_IDX;
     public static final Index UPTIME_EVENT_MONITOR_IDX = Indexes0.UPTIME_EVENT_MONITOR_IDX;
 
@@ -34,6 +37,8 @@ public class Indexes {
     private static class Indexes0 {
         public static Index LATENCY_LOG_LATENCY_IDX = Internal.createIndex("latency_log_latency_idx", LatencyLog.LATENCY_LOG, new OrderField[] { LatencyLog.LATENCY_LOG.LATENCY }, false);
         public static Index LATENCY_LOG_MONITOR_IDX = Internal.createIndex("latency_log_monitor_idx", LatencyLog.LATENCY_LOG, new OrderField[] { LatencyLog.LATENCY_LOG.MONITOR_ID }, false);
+        public static Index SSL_EVENT_ENDED_AT_IDX = Internal.createIndex("ssl_event_ended_at_idx", SslEvent.SSL_EVENT, new OrderField[] { SslEvent.SSL_EVENT.ENDED_AT }, false);
+        public static Index SSL_EVENT_MONITOR_IDX = Internal.createIndex("ssl_event_monitor_idx", SslEvent.SSL_EVENT, new OrderField[] { SslEvent.SSL_EVENT.MONITOR_ID }, false);
         public static Index UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex("uptime_event_ended_at_idx", UptimeEvent.UPTIME_EVENT, new OrderField[] { UptimeEvent.UPTIME_EVENT.ENDED_AT }, false);
         public static Index UPTIME_EVENT_MONITOR_IDX = Internal.createIndex("uptime_event_monitor_idx", UptimeEvent.UPTIME_EVENT, new OrderField[] { UptimeEvent.UPTIME_EVENT.MONITOR_ID }, false);
     }

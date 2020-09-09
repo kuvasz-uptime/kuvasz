@@ -3,13 +3,17 @@ package com.kuvaszuptime.kuvasz.controllers
 import arrow.core.Option
 import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -20,6 +24,7 @@ import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -31,6 +36,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MicronautTest
 
+@Suppress("LongParameterList")
 @MicronautTest
 class MonitorControllerTest(
     @Client("/") private val client: RxHttpClient,
@@ -38,6 +44,7 @@ class MonitorControllerTest(
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val uptimeEventRepository: UptimeEventRepository,
+    private val sslEventRepository: SSLEventRepository,
     private val checkScheduler: CheckScheduler
 ) : DatabaseBehaviorSpec() {
 
@@ -56,6 +63,12 @@ class MonitorControllerTest(
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    endedAt = null
+                )
 
                 val response = monitorClient.getMonitorsWithDetails(enabledOnly = null)
                 then("it should return them") {
@@ -65,12 +78,19 @@ class MonitorControllerTest(
                     responseItem.name shouldBe monitor.name
                     responseItem.url.toString() shouldBe monitor.url
                     responseItem.enabled shouldBe monitor.enabled
+                    responseItem.enabled shouldBe monitor.sslCheckEnabled
                     responseItem.averageLatencyInMs shouldBe 800
                     responseItem.p95LatencyInMs shouldBe 1200
                     responseItem.p99LatencyInMs shouldBe 1200
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
+                    responseItem.uptimeStatusStartedAt shouldBe now
+                    responseItem.uptimeError shouldBe null
                     responseItem.lastUptimeCheck shouldBe now
                     responseItem.createdAt shouldBe monitor.createdAt
+                    responseItem.sslStatus shouldBe SslStatus.VALID
+                    responseItem.sslStatusStartedAt shouldBe now
+                    responseItem.lastSSLCheck shouldBe now
+                    responseItem.sslError shouldBe null
                 }
             }
 
@@ -85,8 +105,10 @@ class MonitorControllerTest(
                     responseItem.name shouldBe enabledMonitor.name
                     responseItem.url.toString() shouldBe enabledMonitor.url
                     responseItem.enabled shouldBe enabledMonitor.enabled
+                    responseItem.sslCheckEnabled shouldBe enabledMonitor.sslCheckEnabled
                     responseItem.averageLatencyInMs shouldBe null
                     responseItem.uptimeStatus shouldBe null
+                    responseItem.sslStatus shouldBe null
                     responseItem.createdAt shouldBe enabledMonitor.createdAt
                 }
             }
@@ -113,16 +135,28 @@ class MonitorControllerTest(
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    endedAt = null
+                )
+
                 then("it should return it") {
                     val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
                     response.id shouldBe monitor.id
                     response.name shouldBe monitor.name
                     response.url.toString() shouldBe monitor.url
                     response.enabled shouldBe monitor.enabled
+                    response.sslCheckEnabled shouldBe monitor.sslCheckEnabled
                     response.averageLatencyInMs shouldBe 800
                     response.uptimeStatus shouldBe UptimeStatus.UP
                     response.createdAt shouldBe monitor.createdAt
                     response.lastUptimeCheck shouldBe now
+                    response.sslStatus shouldBe SslStatus.VALID
+                    response.sslStatusStartedAt shouldBe now
+                    response.lastSSLCheck shouldBe now
+                    response.sslError shouldBe null
                 }
             }
 
@@ -153,7 +187,8 @@ class MonitorControllerTest(
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
                     monitorInDb.enabled shouldBe createdMonitor.enabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
-                    checkScheduler.getScheduledChecks().forOne { it.monitorId shouldBe createdMonitor.id }
+                    checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
+                        .forOne { it.checkType shouldBe CheckType.UPTIME }
                 }
             }
 
@@ -180,7 +215,8 @@ class MonitorControllerTest(
                     secondResponse.status shouldBe HttpStatus.CONFLICT
                     val monitorsInDb = monitorRepository.fetchByName(firstCreatedMonitor.name)
                     monitorsInDb shouldHaveSize 1
-                    checkScheduler.getScheduledChecks().forOne { it.monitorId shouldBe firstCreatedMonitor.id }
+                    checkScheduler.getScheduledChecks().filter { it.monitorId == firstCreatedMonitor.id }
+                        .forOne { it.checkType shouldBe CheckType.UPTIME }
                 }
             }
 
@@ -263,29 +299,35 @@ class MonitorControllerTest(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
-                    enabled = true
+                    enabled = true,
+                    sslCheckEnabled = true
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
-                checkScheduler.getScheduledChecks().forOne { it.monitorId shouldBe createdMonitor.id }
+                val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
+                checks.forOne { it.checkType shouldBe CheckType.UPTIME }
+                checks.forOne { it.checkType shouldBe CheckType.SSL }
 
                 val updateDto = MonitorUpdateDto(
                     name = "updated_test_monitor",
                     url = "https://updated-url.com",
                     uptimeCheckInterval = 5000,
-                    enabled = false
+                    enabled = false,
+                    sslCheckEnabled = false
                 )
-                val updatedMonitor = monitorClient.updateMonitor(createdMonitor.id, updateDto)
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
                 then("it should update the monitor and remove the checks of it") {
-                    monitorInDb.name shouldBe updatedMonitor.name
-                    monitorInDb.url shouldBe updatedMonitor.url
-                    monitorInDb.uptimeCheckInterval shouldBe updatedMonitor.uptimeCheckInterval
-                    monitorInDb.enabled shouldBe updatedMonitor.enabled
+                    monitorInDb.name shouldBe updateDto.name
+                    monitorInDb.url shouldBe updateDto.url
+                    monitorInDb.uptimeCheckInterval shouldBe updateDto.uptimeCheckInterval
+                    monitorInDb.enabled shouldBe updateDto.enabled
+                    monitorInDb.sslCheckEnabled shouldBe updateDto.sslCheckEnabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
 
-                    checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe createdMonitor.id }
+                    val updatedChecks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
+                    updatedChecks.shouldBeEmpty()
                 }
             }
 
@@ -303,20 +345,24 @@ class MonitorControllerTest(
                     name = null,
                     url = null,
                     uptimeCheckInterval = null,
-                    enabled = true
+                    enabled = true,
+                    sslCheckEnabled = true
                 )
-                val updatedMonitor = monitorClient.updateMonitor(createdMonitor.id, updateDto)
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
                 then("it should update the monitor and create the checks of it") {
                     monitorInDb.name shouldBe createdMonitor.name
                     monitorInDb.url shouldBe createdMonitor.url
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
-                    monitorInDb.enabled shouldBe updatedMonitor.enabled
+                    monitorInDb.enabled shouldBe updateDto.enabled
+                    monitorInDb.sslCheckEnabled shouldBe updateDto.sslCheckEnabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
 
-                    checkScheduler.getScheduledChecks().forOne { it.monitorId shouldBe createdMonitor.id }
+                    val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
+                    checks.forOne { it.checkType shouldBe CheckType.UPTIME }
+                    checks.forOne { it.checkType shouldBe CheckType.SSL }
                 }
             }
 
@@ -338,7 +384,8 @@ class MonitorControllerTest(
                     name = secondCreatedMonitor.name,
                     url = null,
                     uptimeCheckInterval = null,
-                    enabled = true
+                    enabled = null,
+                    sslCheckEnabled = null
                 )
                 val updateRequest =
                     HttpRequest.PATCH<MonitorUpdateDto>("/monitors/${firstCreatedMonitor.id}", updateDto)
@@ -354,7 +401,7 @@ class MonitorControllerTest(
             }
 
             `when`("it is called with a non existing monitor ID") {
-                val updateDto = MonitorUpdateDto(null, null, null, null)
+                val updateDto = MonitorUpdateDto(null, null, null, null, null)
                 val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitors/123232", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)
