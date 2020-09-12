@@ -65,7 +65,7 @@ dependencies {
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
     testImplementation(platform("io.micronaut:micronaut-bom:$micronautVersion"))
-    testImplementation("io.micronaut.test:micronaut-test-kotest:$micronautKotestVersion")
+    testImplementation("io.micronaut.test:micronaut-test-kotest")
     testImplementation("io.kotest:kotest-runner-junit5-jvm")
     testImplementation("io.mockk:mockk:${mockkVersion}")
     testImplementation("org.testcontainers:postgresql:${postgresTestContainersVersion}")
