@@ -1,7 +1,5 @@
 package com.kuvaszuptime.kuvasz.services
 
-import arrow.core.Option
-import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.api.mailer.AsyncResponse
@@ -40,5 +38,5 @@ class SMTPMailer @Inject constructor(smtpMailerConfig: SMTPMailerConfig) {
         }
     }
 
-    fun sendAsync(email: Email): Option<AsyncResponse> = mailerClient.sendMail(email, true).toOption()
+    fun sendAsync(email: Email): AsyncResponse? = mailerClient.sendMail(email, true)
 }

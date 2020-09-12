@@ -54,34 +54,28 @@ class DatabaseEventHandler @Inject constructor(
     }
 
     private fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {
-        currentEvent.previousEvent.fold(
-            { uptimeEventRepository.insertFromMonitorEvent(currentEvent) },
-            { previousEvent ->
-                if (currentEvent.statusNotEquals(previousEvent)) {
-                    uptimeEventRepository.transaction {
-                        uptimeEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt)
-                        uptimeEventRepository.insertFromMonitorEvent(currentEvent)
-                    }
-                } else {
-                    uptimeEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
+        currentEvent.previousEvent?.let { previousEvent ->
+            if (currentEvent.statusNotEquals(previousEvent)) {
+                uptimeEventRepository.transaction {
+                    uptimeEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt)
+                    uptimeEventRepository.insertFromMonitorEvent(currentEvent)
                 }
+            } else {
+                uptimeEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
             }
-        )
+        } ?: uptimeEventRepository.insertFromMonitorEvent(currentEvent)
     }
 
     private fun handleSSLMonitorEvent(currentEvent: SSLMonitorEvent) {
-        currentEvent.previousEvent.fold(
-            { sslEventRepository.insertFromMonitorEvent(currentEvent) },
-            { previousEvent ->
-                if (currentEvent.statusNotEquals(previousEvent)) {
-                    sslEventRepository.transaction {
-                        sslEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt)
-                        sslEventRepository.insertFromMonitorEvent(currentEvent)
-                    }
-                } else {
-                    sslEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
+        currentEvent.previousEvent?.let { previousEvent ->
+            if (currentEvent.statusNotEquals(previousEvent)) {
+                sslEventRepository.transaction {
+                    sslEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt)
+                    sslEventRepository.insertFromMonitorEvent(currentEvent)
                 }
+            } else {
+                sslEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
             }
-        )
+        } ?: sslEventRepository.insertFromMonitorEvent(currentEvent)
     }
 }

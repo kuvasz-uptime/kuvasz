@@ -1,9 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Either
-import arrow.core.Option
-import arrow.core.Option.Companion.empty
-import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.ScheduledCheck
 import com.kuvaszuptime.kuvasz.models.SchedulingError
@@ -45,7 +42,7 @@ class CheckScheduler @Inject constructor(
 
     fun getScheduledChecks() = scheduledChecks
 
-    fun createChecksForMonitor(monitor: MonitorPojo): Option<SchedulingError> {
+    fun createChecksForMonitor(monitor: MonitorPojo): SchedulingError? {
         fun Throwable.log(checkType: CheckType, monitor: MonitorPojo) {
             logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: $message")
         }
@@ -57,7 +54,7 @@ class CheckScheduler @Inject constructor(
         return scheduleUptimeCheck(monitor).fold(
             { error ->
                 error.log(CheckType.UPTIME, monitor)
-                SchedulingError(error.message).toOption()
+                SchedulingError(error.message)
             },
             { scheduledUptimeTask ->
                 ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledUptimeTask)
@@ -68,7 +65,7 @@ class CheckScheduler @Inject constructor(
                     scheduleSSLCheck(monitor).fold(
                         { error ->
                             error.log(CheckType.SSL, monitor)
-                            SchedulingError(error.message).toOption()
+                            SchedulingError(error.message)
                         },
                         { scheduledSSLTask ->
                             ScheduledCheck(checkType = CheckType.SSL, monitorId = monitor.id, task = scheduledSSLTask)
@@ -77,7 +74,7 @@ class CheckScheduler @Inject constructor(
                         }
                     )
                 }
-                empty()
+                null
             }
         )
     }
@@ -102,7 +99,7 @@ class CheckScheduler @Inject constructor(
     fun updateChecksForMonitor(
         existingMonitor: MonitorPojo,
         updatedMonitor: MonitorPojo
-    ): Option<SchedulingError> {
+    ): SchedulingError? {
         removeChecksOfMonitor(existingMonitor)
         return createChecksForMonitor(updatedMonitor)
     }

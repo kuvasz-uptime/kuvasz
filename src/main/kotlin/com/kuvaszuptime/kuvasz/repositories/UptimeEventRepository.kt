@@ -1,7 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import arrow.core.getOrElse
-import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -31,13 +29,12 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
         insert(eventToInsert)
     }
 
-    fun getPreviousEventByMonitorId(monitorId: Int) =
+    fun getPreviousEventByMonitorId(monitorId: Int): UptimeEventPojo? =
         dsl.select(UPTIME_EVENT.asterisk())
             .from(UPTIME_EVENT)
             .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
             .and(UPTIME_EVENT.ENDED_AT.isNull)
             .fetchOneInto(UptimeEventPojo::class.java)
-            .toOption()
 
     fun endEventById(eventId: Int, endedAt: OffsetDateTime) =
         dsl.update(UPTIME_EVENT)
@@ -59,7 +56,5 @@ class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : Upt
             .execute()
 
     fun isMonitorUp(monitorId: Int): Boolean =
-        getPreviousEventByMonitorId(monitorId)
-            .map { it.status == UptimeStatus.UP }
-            .getOrElse { false }
+        getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: false
 }

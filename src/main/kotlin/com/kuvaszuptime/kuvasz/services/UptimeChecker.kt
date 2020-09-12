@@ -51,27 +51,25 @@ class UptimeChecker @Inject constructor(
                             )
                         )
                     } else {
-                        response.getRedirectionUri().fold(
-                            {
-                                eventDispatcher.dispatch(
-                                    MonitorDownEvent(
-                                        monitor = monitor,
-                                        status = response.status,
-                                        error = Throwable(message = "Unknown error occurred"),
-                                        previousEvent = previousEvent
-                                    )
+                        val redirectionUri = response.getRedirectionUri()
+                        if (redirectionUri != null) {
+                            eventDispatcher.dispatch(
+                                RedirectEvent(
+                                    monitor = monitor,
+                                    redirectLocation = redirectionUri
                                 )
-                            },
-                            { redirectionUri ->
-                                eventDispatcher.dispatch(
-                                    RedirectEvent(
-                                        monitor = monitor,
-                                        redirectLocation = redirectionUri
-                                    )
+                            )
+                            check(monitor, redirectionUri)
+                        } else {
+                            eventDispatcher.dispatch(
+                                MonitorDownEvent(
+                                    monitor = monitor,
+                                    status = response.status,
+                                    error = Throwable(message = "Unknown error occurred"),
+                                    previousEvent = previousEvent
                                 )
-                                check(monitor, redirectionUri)
-                            }
-                        )
+                            )
+                        }
                     }
                 },
                 { error ->

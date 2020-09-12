@@ -1,7 +1,5 @@
 package com.kuvaszuptime.kuvasz.models.events
 
-import arrow.core.Option
-
 sealed class StructuredMessage
 
 sealed class StructuredMonitorMessage : StructuredMessage()
@@ -9,13 +7,13 @@ sealed class StructuredMonitorMessage : StructuredMessage()
 data class StructuredMonitorUpMessage(
     val summary: String,
     val latency: String,
-    val previousDownTime: Option<String>
+    val previousDownTime: String?
 ) : StructuredMonitorMessage()
 
 data class StructuredMonitorDownMessage(
     val summary: String,
     val error: String,
-    val previousUpTime: Option<String>
+    val previousUpTime: String?
 ) : StructuredMonitorMessage()
 
 data class StructuredRedirectMessage(
@@ -26,13 +24,13 @@ sealed class StructuredSSLMessage : StructuredMessage()
 
 data class StructuredSSLValidMessage(
     val summary: String,
-    val previousInvalidEvent: Option<String>
+    val previousInvalidEvent: String?
 ) : StructuredSSLMessage()
 
 data class StructuredSSLInvalidMessage(
     val summary: String,
     val error: String,
-    val previousValidEvent: Option<String>
+    val previousValidEvent: String?
 ) : StructuredSSLMessage()
 
 data class StructuredSSLWillExpireMessage(

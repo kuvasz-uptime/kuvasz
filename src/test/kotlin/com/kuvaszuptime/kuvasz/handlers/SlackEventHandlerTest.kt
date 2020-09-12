@@ -1,15 +1,14 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import arrow.core.Option
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.handlers.SlackEventHandlerConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.handlers.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -61,7 +60,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
 
@@ -81,7 +80,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Throwable(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
 
@@ -101,7 +100,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -111,7 +110,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1200,
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -129,7 +128,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Throwable("First error"),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -139,7 +138,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.NOT_FOUND,
                     error = Throwable("Second error"),
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -156,7 +155,7 @@ class SlackEventHandlerTest(
                 val firstEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = Throwable()
                 )
                 mockSuccessfulHttpResponse()
@@ -167,7 +166,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -187,7 +186,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -196,7 +195,7 @@ class SlackEventHandlerTest(
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    previousEvent = Option.just(firstUptimeRecord),
+                    previousEvent = firstUptimeRecord,
                     error = Throwable()
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -218,7 +217,7 @@ class SlackEventHandlerTest(
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
 
@@ -237,7 +236,7 @@ class SlackEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val event = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error")
                 )
                 mockSuccessfulHttpResponse()
@@ -258,7 +257,7 @@ class SlackEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -267,7 +266,7 @@ class SlackEventHandlerTest(
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -283,7 +282,7 @@ class SlackEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error1")
                 )
                 mockSuccessfulHttpResponse()
@@ -292,7 +291,7 @@ class SlackEventHandlerTest(
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.just(firstSSLRecord),
+                    previousEvent = firstSSLRecord,
                     error = SSLValidationError("ssl error2")
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -309,7 +308,7 @@ class SlackEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error1")
                 )
                 mockSuccessfulHttpResponse()
@@ -319,7 +318,7 @@ class SlackEventHandlerTest(
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -337,7 +336,7 @@ class SlackEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -345,7 +344,7 @@ class SlackEventHandlerTest(
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.just(firstSSLRecord),
+                    previousEvent = firstSSLRecord,
                     error = SSLValidationError("ssl error")
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -364,7 +363,7 @@ class SlackEventHandlerTest(
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
 
@@ -384,7 +383,7 @@ class SlackEventHandlerTest(
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -393,7 +392,7 @@ class SlackEventHandlerTest(
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -410,7 +409,7 @@ class SlackEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -419,7 +418,7 @@ class SlackEventHandlerTest(
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -440,7 +439,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 mockHttpErrorResponse()
 

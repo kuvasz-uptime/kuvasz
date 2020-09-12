@@ -19,13 +19,13 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
                 listOfNotNull(
                     event.getEmoji() + " " + bold(details.summary),
                     italic(details.latency),
-                    details.previousDownTime.orNull()
+                    details.previousDownTime
                 )
             }
             is MonitorDownEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
                     event.getEmoji() + " " + bold(details.summary),
-                    details.previousUpTime.orNull()
+                    details.previousUpTime
                 )
             }
         }
@@ -38,7 +38,7 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
             is SSLValidEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
                     event.getEmoji() + " " + bold(details.summary),
-                    details.previousInvalidEvent.orNull()
+                    details.previousInvalidEvent
                 )
             }
             is SSLWillExpireEvent -> event.toStructuredMessage().let { details ->
@@ -51,7 +51,7 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
                 listOfNotNull(
                     event.getEmoji() + " " + bold(details.summary),
                     italic(details.error),
-                    details.previousValidEvent.orNull()
+                    details.previousValidEvent
                 )
             }
         }

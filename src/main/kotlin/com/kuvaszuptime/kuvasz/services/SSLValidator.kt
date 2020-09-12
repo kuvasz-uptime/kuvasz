@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Either
-import arrow.core.Option
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
@@ -20,24 +19,16 @@ class SSLValidator {
             val conn = url.openConnection() as HttpsURLConnection
             conn.connect()
 
-            getCertificateForHost(url, conn.serverCertificates)
-                .map { cert ->
-                    CertificateInfo(validTo = cert.notAfter.toOffsetDateTime())
-                }.toEither { SSLValidationError("There were no matching CN for the given host") }
+            getCertificateForHost(url, conn.serverCertificates)?.let { cert ->
+                Either.right(CertificateInfo(validTo = cert.notAfter.toOffsetDateTime()))
+            } ?: Either.left(SSLValidationError("There were no matching CN for the given host"))
         } catch (e: Throwable) {
             Either.left(SSLValidationError(e.message))
         }
     }
 
-    private fun getCertificateForHost(url: URL, certs: Array<Certificate>): Option<X509Certificate> {
-        certs
-            .filterIsInstance<X509Certificate>()
-            .forEach { cert ->
-                if (cert.cnMatchesWithHost(url)) return Option.just(cert)
-            }
-
-        return Option.empty()
-    }
+    private fun getCertificateForHost(url: URL, certs: Array<Certificate>): X509Certificate? =
+        certs.filterIsInstance<X509Certificate>().firstOrNull { it.cnMatchesWithHost(url) }
 
     private fun X509Certificate.cnMatchesWithHost(url: URL): Boolean {
         val cn = subjectDN.name.split(",").first().trimEnd().removePrefix("CN=")

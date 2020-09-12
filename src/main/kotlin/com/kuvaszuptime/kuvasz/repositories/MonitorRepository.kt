@@ -1,8 +1,6 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
-import arrow.core.Option
-import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.models.DuplicationError
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedError
 import com.kuvaszuptime.kuvasz.models.PersistenceError
@@ -49,7 +47,7 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
             )
             .fetchInto(MonitorDetailsDto::class.java)
 
-    fun getMonitorWithDetails(monitorId: Int): Option<MonitorDetailsDto> =
+    fun getMonitorWithDetails(monitorId: Int): MonitorDetailsDto? =
         monitorDetailsSelect()
             .where(MONITOR.ID.eq(monitorId))
             .groupBy(
@@ -64,7 +62,6 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                 SSL_EVENT.ERROR
             )
             .fetchOneInto(MonitorDetailsDto::class.java)
-            .toOption()
 
     fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {

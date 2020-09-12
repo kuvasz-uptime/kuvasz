@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import arrow.core.Option
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.handlers.SMTPEventHandlerConfig
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
@@ -57,7 +56,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 val expectedEmail = emailFactory.fromMonitorEvent(event)
 
@@ -79,7 +78,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Throwable(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 val expectedEmail = emailFactory.fromMonitorEvent(event)
 
@@ -101,7 +100,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
@@ -111,7 +110,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1200,
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -132,7 +131,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Throwable("First error"),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
@@ -142,7 +141,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Throwable("Second error"),
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -162,7 +161,7 @@ class SMTPEventHandlerTest(
                 val firstEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = Throwable()
                 )
                 eventDispatcher.dispatch(firstEvent)
@@ -172,7 +171,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -199,7 +198,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
@@ -207,7 +206,7 @@ class SMTPEventHandlerTest(
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    previousEvent = Option.just(firstUptimeRecord),
+                    previousEvent = firstUptimeRecord,
                     error = Throwable()
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -236,7 +235,7 @@ class SMTPEventHandlerTest(
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 val expectedEmail = emailFactory.fromMonitorEvent(event)
 
@@ -256,7 +255,7 @@ class SMTPEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val event = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error")
                 )
                 val expectedEmail = emailFactory.fromMonitorEvent(event)
@@ -278,7 +277,7 @@ class SMTPEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
@@ -287,7 +286,7 @@ class SMTPEventHandlerTest(
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -306,7 +305,7 @@ class SMTPEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error1")
                 )
                 eventDispatcher.dispatch(firstEvent)
@@ -316,7 +315,7 @@ class SMTPEventHandlerTest(
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.just(firstSSLRecord),
+                    previousEvent = firstSSLRecord,
                     error = SSLValidationError("ssl error2")
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -336,7 +335,7 @@ class SMTPEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error1")
                 )
                 eventDispatcher.dispatch(firstEvent)
@@ -345,7 +344,7 @@ class SMTPEventHandlerTest(
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -370,14 +369,14 @@ class SMTPEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.just(firstSSLRecord),
+                    previousEvent = firstSSLRecord,
                     error = SSLValidationError("ssl error")
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -403,7 +402,7 @@ class SMTPEventHandlerTest(
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 val expectedEmail = emailFactory.fromMonitorEvent(event)
 
@@ -424,7 +423,7 @@ class SMTPEventHandlerTest(
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
 
@@ -434,7 +433,7 @@ class SMTPEventHandlerTest(
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -454,7 +453,7 @@ class SMTPEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
@@ -462,7 +461,7 @@ class SMTPEventHandlerTest(
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 

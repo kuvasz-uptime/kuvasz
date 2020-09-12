@@ -1,7 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import arrow.core.Option
-import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
@@ -270,11 +268,11 @@ class MonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/monitors/${createdMonitor.id}")
                 val response = client.toBlocking().exchange<Any, Any>(deleteRequest)
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).toOption()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)
 
                 then("it should delete the monitor and also remove the checks of it") {
                     response.status shouldBe HttpStatus.NO_CONTENT
-                    monitorInDb shouldBe Option.empty()
+                    monitorInDb shouldBe null
 
                     checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe createdMonitor.id }
                 }

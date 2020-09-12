@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
@@ -29,13 +28,12 @@ class SSLEventRepository @Inject constructor(jooqConfig: Configuration) : SslEve
         insert(eventToInsert)
     }
 
-    fun getPreviousEventByMonitorId(monitorId: Int) =
+    fun getPreviousEventByMonitorId(monitorId: Int): SslEventPojo? =
         dsl.select(SSL_EVENT.asterisk())
             .from(SSL_EVENT)
             .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
             .and(SSL_EVENT.ENDED_AT.isNull)
             .fetchOneInto(SslEventPojo::class.java)
-            .toOption()
 
     fun endEventById(eventId: Int, endedAt: OffsetDateTime) =
         dsl.update(SSL_EVENT)

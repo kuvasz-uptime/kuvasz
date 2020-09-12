@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
-import arrow.core.Option
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
@@ -32,7 +31,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
         given("toFormattedMessage(event: UptimeMonitorEvent)") {
 
             `when`("it gets a MonitorUpEvent without a previousEvent") {
-                val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, Option.empty())
+                val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -43,7 +42,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
 
             `when`("it gets a MonitorUpEvent with a previousEvent with the same status") {
                 val previousEvent = UptimeEventPojo().setStatus(UptimeStatus.UP)
-                val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, Option.just(previousEvent))
+                val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -55,7 +54,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
             `when`("it gets a MonitorUpEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
                 val previousEvent = UptimeEventPojo().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
-                val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, Option.just(previousEvent))
+                val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
 
                 then("it should return the correct message") {
                     val expectedDurationString =
@@ -68,7 +67,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets a MonitorDownEvent without a previousEvent") {
-                val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Throwable("uptime error"), Option.empty())
+                val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Throwable("uptime error"), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -83,7 +82,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                     monitor,
                     HttpStatus.BAD_REQUEST,
                     Throwable("uptime error"),
-                    Option.just(previousEvent)
+                    previousEvent
                 )
 
                 then("it should return the correct message") {
@@ -100,7 +99,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                     monitor,
                     HttpStatus.BAD_REQUEST,
                     Throwable("uptime error"),
-                    Option.just(previousEvent)
+                    previousEvent
                 )
 
                 then("it should return the correct message") {
@@ -117,7 +116,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
         given("toFormattedMessage(event: SSLMonitorEvent)") {
 
             `when`("it gets an SSLValidEvent without a previousEvent") {
-                val event = SSLValidEvent(monitor, generateCertificateInfo(), Option.empty())
+                val event = SSLValidEvent(monitor, generateCertificateInfo(), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -128,7 +127,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
 
             `when`("it gets an SSLValidEvent with a previousEvent with the same status") {
                 val previousEvent = SslEventPojo().setStatus(SslStatus.VALID)
-                val event = SSLValidEvent(monitor, generateCertificateInfo(), Option.just(previousEvent))
+                val event = SSLValidEvent(monitor, generateCertificateInfo(), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -140,7 +139,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
             `when`("it gets an SSLValidEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
                 val previousEvent = SslEventPojo().setStatus(SslStatus.INVALID).setStartedAt(previousStartedAt)
-                val event = SSLValidEvent(monitor, generateCertificateInfo(), Option.just(previousEvent))
+                val event = SSLValidEvent(monitor, generateCertificateInfo(), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedDurationString =
@@ -153,7 +152,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets an SSLInvalidEvent without a previousEvent") {
-                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), Option.empty())
+                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -165,7 +164,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
 
             `when`("it gets an SSLInvalidEvent with a previousEvent with the same status") {
                 val previousEvent = SslEventPojo().setStatus(SslStatus.INVALID)
-                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), Option.just(previousEvent))
+                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedMessage = "🚨 <b>Your site \"test_monitor\" (https://test.url) has an INVALID " +
@@ -177,7 +176,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
             `when`("it gets an SSLInvalidEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
                 val previousEvent = SslEventPojo().setStatus(SslStatus.VALID).setStartedAt(previousStartedAt)
-                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), Option.just(previousEvent))
+                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedDurationString =
@@ -190,7 +189,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets an SSLWillExpireEvent") {
-                val event = SSLWillExpireEvent(monitor, generateCertificateInfo(), Option.empty())
+                val event = SSLWillExpireEvent(monitor, generateCertificateInfo(), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =

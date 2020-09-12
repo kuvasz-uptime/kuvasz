@@ -51,10 +51,7 @@ class MonitorController @Inject constructor(
         )
     )
     override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto =
-        monitorCrudService.getMonitorDetails(monitorId).fold(
-            { throw MonitorNotFoundError(monitorId) },
-            { it }
-        )
+        monitorCrudService.getMonitorDetails(monitorId) ?: throw MonitorNotFoundError(monitorId)
 
     @Status(HttpStatus.CREATED)
     @ApiResponses(

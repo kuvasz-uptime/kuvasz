@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.events
 
-import arrow.core.Option
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.micronaut.http.HttpStatus
 import io.mockk.mockk
 import java.time.OffsetDateTime
@@ -21,11 +21,10 @@ class EventTest : BehaviorSpec() {
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.just(previousEvent)
+                    previousEvent = previousEvent
                 )
-                then("it should return Some") {
-                    val result = event.getEndedEventDuration()
-                    result.isDefined() shouldBe true
+                then("it should return a Duration") {
+                    event.getEndedEventDuration() shouldNotBe null
                 }
             }
 
@@ -37,24 +36,22 @@ class EventTest : BehaviorSpec() {
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.just(previousEvent)
+                    previousEvent = previousEvent
                 )
-                then("it should return Empty") {
-                    val result = event.getEndedEventDuration()
-                    result.isEmpty() shouldBe true
+                then("it should return null") {
+                    event.getEndedEventDuration() shouldBe null
                 }
             }
 
-            `when`("previousEvent is an Empty") {
+            `when`("previousEvent is null") {
                 val event = MonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
-                then("it should return Empty") {
-                    val result = event.getEndedEventDuration()
-                    result.isEmpty() shouldBe true
+                then("it should return null") {
+                    event.getEndedEventDuration() shouldBe null
                 }
             }
         }
@@ -68,7 +65,7 @@ class EventTest : BehaviorSpec() {
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.just(previousEvent)
+                    previousEvent = previousEvent
                 )
                 var testValue = 0
 
@@ -88,7 +85,7 @@ class EventTest : BehaviorSpec() {
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.just(previousEvent)
+                    previousEvent = previousEvent
                 )
                 var testValue = 0
 
@@ -100,12 +97,12 @@ class EventTest : BehaviorSpec() {
                 }
             }
 
-            `when`("previousEvent is an Empty") {
+            `when`("previousEvent is null") {
                 val event = MonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 var testValue = 0
 

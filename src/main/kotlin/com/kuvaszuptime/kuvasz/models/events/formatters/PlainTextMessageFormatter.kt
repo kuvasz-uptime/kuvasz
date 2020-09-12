@@ -16,14 +16,14 @@ object PlainTextMessageFormatter : TextMessageFormatter {
                 listOfNotNull(
                     details.summary,
                     details.latency,
-                    details.previousDownTime.orNull()
+                    details.previousDownTime
                 )
             }
             is MonitorDownEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
                     details.summary,
                     details.error,
-                    details.previousUpTime.orNull()
+                    details.previousUpTime
                 )
             }
         }
@@ -36,7 +36,7 @@ object PlainTextMessageFormatter : TextMessageFormatter {
             is SSLValidEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
                     details.summary,
-                    details.previousInvalidEvent.orNull()
+                    details.previousInvalidEvent
                 )
             }
             is SSLWillExpireEvent -> event.toStructuredMessage().let { details ->
@@ -49,7 +49,7 @@ object PlainTextMessageFormatter : TextMessageFormatter {
                 listOfNotNull(
                     details.summary,
                     details.error,
-                    details.previousValidEvent.orNull()
+                    details.previousValidEvent
                 )
             }
         }

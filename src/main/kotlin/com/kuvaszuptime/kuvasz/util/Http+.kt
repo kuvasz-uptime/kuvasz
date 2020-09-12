@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.util
 
-import arrow.core.Option
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
@@ -25,11 +24,7 @@ fun HttpResponse<*>.isRedirected() =
 
 fun String.toUri() = URI(this)
 
-fun HttpResponse<*>.getRedirectionUri(): Option<URI> =
-    Option.fromNullable(
-        if (isRedirected()) {
-            header(HttpHeaders.LOCATION)?.toUri()
-        } else {
-            null
-        }
-    )
+fun HttpResponse<*>.getRedirectionUri(): URI? =
+    if (isRedirected()) {
+        header(HttpHeaders.LOCATION)?.toUri()
+    } else null

@@ -1,16 +1,15 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import arrow.core.Option
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -53,7 +52,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(event)
 
@@ -83,7 +82,7 @@ class DatabaseEventHandlerTest(
                 val event = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = Throwable()
                 )
                 eventDispatcher.dispatch(event)
@@ -107,7 +106,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
@@ -116,7 +115,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1200,
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -145,7 +144,7 @@ class DatabaseEventHandlerTest(
                 val firstEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = Throwable()
                 )
                 eventDispatcher.dispatch(firstEvent)
@@ -155,7 +154,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -185,7 +184,7 @@ class DatabaseEventHandlerTest(
                 val firstEvent = MonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     latency = 1000
                 )
                 eventDispatcher.dispatch(firstEvent)
@@ -195,7 +194,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Throwable(),
-                    previousEvent = Option.just(firstUptimeRecord)
+                    previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -227,7 +226,7 @@ class DatabaseEventHandlerTest(
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(event)
 
@@ -248,7 +247,7 @@ class DatabaseEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val event = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error")
                 )
                 eventDispatcher.dispatch(event)
@@ -272,7 +271,7 @@ class DatabaseEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
@@ -280,7 +279,7 @@ class DatabaseEventHandlerTest(
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -300,7 +299,7 @@ class DatabaseEventHandlerTest(
                 val monitor = createMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.empty(),
+                    previousEvent = null,
                     error = SSLValidationError("ssl error")
                 )
                 eventDispatcher.dispatch(firstEvent)
@@ -309,7 +308,7 @@ class DatabaseEventHandlerTest(
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -336,14 +335,14 @@ class DatabaseEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
-                    previousEvent = Option.just(firstSSLRecord),
+                    previousEvent = firstSSLRecord,
                     error = SSLValidationError("ssl error")
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -371,7 +370,7 @@ class DatabaseEventHandlerTest(
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(event)
 
@@ -393,7 +392,7 @@ class DatabaseEventHandlerTest(
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
@@ -401,7 +400,7 @@ class DatabaseEventHandlerTest(
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 
@@ -422,7 +421,7 @@ class DatabaseEventHandlerTest(
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.empty()
+                    previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
@@ -430,7 +429,7 @@ class DatabaseEventHandlerTest(
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
-                    previousEvent = Option.just(firstSSLRecord)
+                    previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
 

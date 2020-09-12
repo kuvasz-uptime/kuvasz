@@ -2,7 +2,6 @@
 
 package com.kuvaszuptime.kuvasz.util
 
-import arrow.core.toOption
 import com.kuvaszuptime.kuvasz.models.DuplicationError
 import com.kuvaszuptime.kuvasz.models.PersistenceError
 import org.jooq.Configuration
@@ -16,7 +15,6 @@ fun <R : TableRecord<R>, P, T> DAO<R, P, T>.transaction(block: () -> Unit) {
 }
 
 fun DataAccessException.toPersistenceError(): PersistenceError =
-    getCause(PSQLException::class.java)?.message.toOption().fold(
-        { PersistenceError(message) },
-        { if (it.contains("duplicate key")) DuplicationError() else PersistenceError(it) }
-    )
+    getCause(PSQLException::class.java)?.message?.let { message ->
+        if (message.contains("duplicate key")) DuplicationError() else PersistenceError(message)
+    } ?: PersistenceError(message)
