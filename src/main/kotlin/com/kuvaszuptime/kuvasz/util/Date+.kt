@@ -10,10 +10,8 @@ import kotlin.time.toDuration
 
 fun getCurrentTimestamp(): OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC"))
 
-fun Duration?.toDurationString(): String? = this?.let { duration ->
-    duration.toComponents { days, hours, minutes, seconds, _ ->
-        "$days day(s), $hours hour(s), $minutes minute(s), $seconds second(s)"
-    }
+fun Duration?.toDurationString(): String? = this?.toComponents { days, hours, minutes, seconds, _ ->
+    "$days day(s), $hours hour(s), $minutes minute(s), $seconds second(s)"
 }
 
 fun Int.toDurationOfSeconds(): java.time.Duration = java.time.Duration.ofSeconds(toLong())

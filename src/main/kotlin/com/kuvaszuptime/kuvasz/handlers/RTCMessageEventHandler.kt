@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TextMessageService
 import io.micronaut.http.HttpResponse

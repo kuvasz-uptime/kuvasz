@@ -61,7 +61,7 @@ complexity:
     active: true
     threshold: 4
   ComplexInterface:
-    active: false
+    active: true
     threshold: 10
     includeStaticDeclarations: false
     includePrivateDeclarations: false
@@ -158,13 +158,13 @@ empty-blocks:
 exceptions:
   active: true
   ExceptionRaisedInUnexpectedLocation:
-    active: false
+    active: true
     methodNames: [toString, hashCode, equals, finalize]
   InstanceOfCheckForException:
     active: false
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**']
   NotImplementedDeclaration:
-    active: false
+    active: true
   PrintStackTrace:
     active: false
   RethrowCaughtException:
@@ -236,7 +236,7 @@ formatting:
     autoCorrect: true
     insertFinalNewLine: true
   ImportOrdering:
-    active: false
+    active: true
     autoCorrect: true
     layout: 'idea'
   Indentation:
@@ -329,8 +329,8 @@ formatting:
     active: false
     autoCorrect: true
   StringTemplate:
-    active: false
-    autoCorrect: false
+    active: true
+    autoCorrect: true
 
 naming:
   active: true
@@ -431,7 +431,7 @@ performance:
 potential-bugs:
   active: true
   Deprecation:
-    active: false
+    active: true
   DuplicateCaseInWhenExpression:
     active: true
   EqualsAlwaysReturnsTrueOrFalse:
@@ -471,7 +471,7 @@ potential-bugs:
   UnconditionalJumpStatementInLoop:
     active: false
   UnnecessaryNotNullOperator:
-    active: false
+    active: true
   UnnecessarySafeCall:
     active: false
   UnreachableCode:
@@ -479,7 +479,7 @@ potential-bugs:
   UnsafeCallOnNullableType:
     active: true
   UnsafeCast:
-    active: false
+    active: true
   UselessPostfixExpression:
     active: false
   WrongEqualsTypeParameter:
@@ -611,17 +611,17 @@ style:
   UnnecessaryInheritance:
     active: true
   UnnecessaryLet:
-    active: false
+    active: true
   UnnecessaryParentheses:
-    active: false
+    active: true
   UntilInsteadOfRangeTo:
     active: false
   UnusedImports:
-    active: false
+    active: true
   UnusedPrivateClass:
     active: true
   UnusedPrivateMember:
-    active: false
+    active: true
     allowedNames: '(_|ignored|expected|serialVersionUID)'
   UseArrayLiteralsInAnnotations:
     active: false
@@ -632,7 +632,7 @@ style:
     excludeAnnotatedClasses: []
     allowVars: false
   UseIfInsteadOfWhen:
-    active: false
+    active: true
   UseRequire:
     active: false
   UselessCallOnNotNull:
@@ -640,7 +640,7 @@ style:
   UtilityClassWithPublicConstructor:
     active: true
   VarCouldBeVal:
-    active: false
+    active: true
   WildcardImport:
     active: true
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**']
