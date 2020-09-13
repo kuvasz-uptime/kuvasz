@@ -27,6 +27,18 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
 
     private val dsl = jooqConfig.dsl()
 
+    private val detailsGroupByFields = listOf(
+        MONITOR.ID,
+        UPTIME_EVENT.STATUS,
+        UPTIME_EVENT.STARTED_AT,
+        UPTIME_EVENT.UPDATED_AT,
+        UPTIME_EVENT.ERROR,
+        SSL_EVENT.STATUS,
+        SSL_EVENT.STARTED_AT,
+        SSL_EVENT.UPDATED_AT,
+        SSL_EVENT.ERROR
+    )
+
     fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -34,33 +46,13 @@ class MonitorRepository @Inject constructor(jooqConfig: Configuration) : Monitor
                     where(MONITOR.ENABLED.isTrue)
                 }
             }
-            .groupBy(
-                MONITOR.ID,
-                UPTIME_EVENT.STATUS,
-                UPTIME_EVENT.STARTED_AT,
-                UPTIME_EVENT.UPDATED_AT,
-                UPTIME_EVENT.ERROR,
-                SSL_EVENT.STATUS,
-                SSL_EVENT.STARTED_AT,
-                SSL_EVENT.UPDATED_AT,
-                SSL_EVENT.ERROR
-            )
+            .groupBy(detailsGroupByFields)
             .fetchInto(MonitorDetailsDto::class.java)
 
     fun getMonitorWithDetails(monitorId: Int): MonitorDetailsDto? =
         monitorDetailsSelect()
             .where(MONITOR.ID.eq(monitorId))
-            .groupBy(
-                MONITOR.ID,
-                UPTIME_EVENT.STATUS,
-                UPTIME_EVENT.STARTED_AT,
-                UPTIME_EVENT.UPDATED_AT,
-                UPTIME_EVENT.ERROR,
-                SSL_EVENT.STATUS,
-                SSL_EVENT.STARTED_AT,
-                SSL_EVENT.UPDATED_AT,
-                SSL_EVENT.ERROR
-            )
+            .groupBy(detailsGroupByFields)
             .fetchOneInto(MonitorDetailsDto::class.java)
 
     fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
