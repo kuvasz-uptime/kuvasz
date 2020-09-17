@@ -93,6 +93,9 @@ handler-config:
     enabled: ${ENABLE_TELEGRAM_EVENT_HANDLER:`false`}
     token: ${TELEGRAM_API_TOKEN}
     chat-id: ${TELEGRAM_CHAT_ID}
+  pagerduty-event-handler:
+    enabled: ${ENABLE_PAGERDUTY_EVENT_HANDLER:`false`}
+    integration-key: ${PAGERDUTY_INTEGRATION_KEY}
 ---
 admin-auth:
   username: ${ADMIN_USER}

@@ -32,6 +32,10 @@ class HandlersInfoSource @Inject constructor(private val environment: Environmen
                 "telegram-event-handler.enabled" to environment.getBooleanProp(
                     "handler-config.telegram-event-handler.enabled",
                     false
+                ),
+                "pagerduty-event-handler.enabled" to environment.getBooleanProp(
+                    "handler-config.pagerduty-event-handler.enabled",
+                    false
                 )
             )
         return MapPropertySource("handlers", mapOf("handlers" to handlerConfigs))

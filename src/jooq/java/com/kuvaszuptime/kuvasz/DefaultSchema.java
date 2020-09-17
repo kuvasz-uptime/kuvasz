@@ -6,6 +6,7 @@ package com.kuvaszuptime.kuvasz;
 
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
 import com.kuvaszuptime.kuvasz.tables.Monitor;
+import com.kuvaszuptime.kuvasz.tables.PagerdutyIncident;
 import com.kuvaszuptime.kuvasz.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 
@@ -24,7 +25,7 @@ import org.jooq.impl.SchemaImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class DefaultSchema extends SchemaImpl {
 
-    private static final long serialVersionUID = -839450692;
+    private static final long serialVersionUID = 1246640525;
 
     /**
      * The reference instance of <code>DEFAULT_SCHEMA</code>
@@ -40,6 +41,11 @@ public class DefaultSchema extends SchemaImpl {
      * The table <code>monitor</code>.
      */
     public final Monitor MONITOR = Monitor.MONITOR;
+
+    /**
+     * The table <code>pagerduty_incident</code>.
+     */
+    public final PagerdutyIncident PAGERDUTY_INCIDENT = PagerdutyIncident.PAGERDUTY_INCIDENT;
 
     /**
      * The table <code>ssl_event</code>.
@@ -69,6 +75,7 @@ public class DefaultSchema extends SchemaImpl {
         return Arrays.<Sequence<?>>asList(
             Sequences.LATENCY_LOG_ID_SEQ,
             Sequences.MONITOR_ID_SEQ,
+            Sequences.PAGERDUTY_INCIDENT_ID_SEQ,
             Sequences.SSL_EVENT_ID_SEQ,
             Sequences.UPTIME_EVENT_ID_SEQ);
     }
@@ -78,6 +85,7 @@ public class DefaultSchema extends SchemaImpl {
         return Arrays.<Table<?>>asList(
             LatencyLog.LATENCY_LOG,
             Monitor.MONITOR,
+            PagerdutyIncident.PAGERDUTY_INCIDENT,
             SslEvent.SSL_EVENT,
             UptimeEvent.UPTIME_EVENT);
     }
