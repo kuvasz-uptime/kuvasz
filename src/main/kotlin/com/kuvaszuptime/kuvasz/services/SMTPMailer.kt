@@ -5,11 +5,10 @@ import org.simplejavamail.api.email.Email
 import org.simplejavamail.api.mailer.AsyncResponse
 import org.simplejavamail.mailer.MailerBuilder
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SMTPMailer @Inject constructor(smtpMailerConfig: SMTPMailerConfig) {
+class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
 
     companion object {
         private val logger = LoggerFactory.getLogger(SMTPMailer::class.java)

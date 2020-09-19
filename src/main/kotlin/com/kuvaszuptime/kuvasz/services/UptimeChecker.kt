@@ -17,11 +17,10 @@ import io.micronaut.runtime.event.annotation.EventListener
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import java.net.URI
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class UptimeChecker @Inject constructor(
+class UptimeChecker(
     private val httpClient: RxHttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository

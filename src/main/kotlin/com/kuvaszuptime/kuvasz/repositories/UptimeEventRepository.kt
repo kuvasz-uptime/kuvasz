@@ -8,11 +8,10 @@ import com.kuvaszuptime.kuvasz.tables.daos.UptimeEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import org.jooq.Configuration
 import java.time.OffsetDateTime
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class UptimeEventRepository @Inject constructor(jooqConfig: Configuration) : UptimeEventDao(jooqConfig) {
+class UptimeEventRepository(jooqConfig: Configuration) : UptimeEventDao(jooqConfig) {
     private val dsl = jooqConfig.dsl()
 
     fun insertFromMonitorEvent(event: UptimeMonitorEvent) {

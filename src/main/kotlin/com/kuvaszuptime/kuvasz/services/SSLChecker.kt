@@ -10,11 +10,10 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import java.net.URL
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SSLChecker @Inject constructor(
+class SSLChecker(
     private val sslValidator: SSLValidator,
     private val uptimeEventRepository: UptimeEventRepository,
     private val eventDispatcher: EventDispatcher,

@@ -7,11 +7,10 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MonitorCrudService @Inject constructor(
+class MonitorCrudService(
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler

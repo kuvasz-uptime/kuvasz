@@ -10,12 +10,11 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.runtime.event.annotation.EventListener
 import io.reactivex.Flowable
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 @Requires(property = "handler-config.telegram-event-handler.enabled", value = "true")
-class TelegramAPIService @Inject constructor(
+class TelegramAPIService(
     private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
     private val httpClient: RxHttpClient
 ) : TextMessageService {

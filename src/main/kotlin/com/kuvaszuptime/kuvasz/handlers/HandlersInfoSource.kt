@@ -6,11 +6,10 @@ import io.micronaut.context.env.PropertySource
 import io.micronaut.management.endpoint.info.InfoSource
 import io.reactivex.Flowable
 import org.reactivestreams.Publisher
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class HandlersInfoSource @Inject constructor(private val environment: Environment) : InfoSource {
+class HandlersInfoSource(private val environment: Environment) : InfoSource {
 
     override fun getSource(): Publisher<PropertySource> = Flowable.just(retrieveConfigurationInfo())
 

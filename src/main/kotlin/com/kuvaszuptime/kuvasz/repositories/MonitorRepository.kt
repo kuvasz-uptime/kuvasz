@@ -19,11 +19,10 @@ import org.jooq.impl.DSL.avg
 import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.round
 import org.jooq.impl.SQLDataType
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MonitorRepository @Inject constructor(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
+class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
 
     private val dsl = jooqConfig.dsl()
 

@@ -10,12 +10,11 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.runtime.event.annotation.EventListener
 import io.reactivex.Flowable
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 @Requires(property = "handler-config.slack-event-handler.enabled", value = "true")
-class SlackWebhookService @Inject constructor(
+class SlackWebhookService(
     private val slackEventHandlerConfig: SlackEventHandlerConfig,
     private val httpClient: RxHttpClient
 ) : TextMessageService {

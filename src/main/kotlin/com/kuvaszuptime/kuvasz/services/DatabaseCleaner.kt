@@ -9,11 +9,10 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.micronaut.scheduling.annotation.Scheduled
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DatabaseCleaner @Inject constructor(
+class DatabaseCleaner(
     private val appConfig: AppConfig,
     private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository,

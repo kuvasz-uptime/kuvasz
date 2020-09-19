@@ -11,10 +11,9 @@ import io.micronaut.context.annotation.Context
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
 
 @Context
-class DatabaseEventHandler @Inject constructor(
+class DatabaseEventHandler(
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository,

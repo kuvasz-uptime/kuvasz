@@ -6,11 +6,10 @@ import com.kuvaszuptime.kuvasz.services.SlackWebhookService
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
 
 @Context
 @Requires(property = "handler-config.slack-event-handler.enabled", value = "true")
-class SlackEventHandler @Inject constructor(
+class SlackEventHandler(
     slackWebhookService: SlackWebhookService,
     eventDispatcher: EventDispatcher
 ) : RTCMessageEventHandler(eventDispatcher, slackWebhookService) {
