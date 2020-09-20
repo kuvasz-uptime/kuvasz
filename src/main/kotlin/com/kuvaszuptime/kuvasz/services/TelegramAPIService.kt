@@ -25,5 +25,5 @@ class TelegramAPIService(
     private val client: TelegramAPIClient
 ) : TextMessageService {
     override fun sendMessage(content: String): Single<String> =
-        client.sendMessage(TelegramAPIMessage(chat_id = telegramEventHandlerConfig.chatId, text = content))
+        client.sendMessage(TelegramAPIMessage(chatId = telegramEventHandlerConfig.chatId, text = content))
 }

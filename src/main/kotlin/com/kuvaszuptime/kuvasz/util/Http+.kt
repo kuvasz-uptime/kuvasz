@@ -12,7 +12,6 @@ typealias RawHttpResponse = Flowable<HttpResponse<ByteBuffer<Any>>>
 @Suppress("MagicNumber")
 fun HttpResponse<*>.isSuccess() = this.status.code in 200..299
 
-@Suppress("MagicNumber")
 fun HttpResponse<*>.isRedirected() =
     listOf(
         HttpStatus.MOVED_PERMANENTLY,

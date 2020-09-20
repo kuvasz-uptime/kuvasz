@@ -1,13 +1,14 @@
 package com.kuvaszuptime.kuvasz.models.handlers
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.micronaut.core.annotation.Introspected
 import java.net.URI
 
-@Suppress("ConstructorParameterNaming")
 @Introspected
 data class SlackWebhookMessage(
     val username: String = "KuvaszBot",
-    val icon_url: URI = URI(ICON_URL),
+    @field:JsonProperty("icon_url")
+    val iconUrl: URI = URI(ICON_URL),
     val text: String
 ) {
     companion object {
