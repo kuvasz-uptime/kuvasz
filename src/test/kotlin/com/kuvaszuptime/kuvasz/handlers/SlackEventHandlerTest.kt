@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.config.handlers.SlackEventHandlerConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
@@ -10,11 +9,11 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.models.handlers.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.SlackWebhookClient
 import com.kuvaszuptime.kuvasz.services.SlackWebhookService
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
@@ -23,10 +22,10 @@ import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import io.micronaut.core.type.Argument
+import io.micronaut.context.annotation.Property
+import io.micronaut.context.annotation.PropertySource
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
-import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MicronautTest
 import io.mockk.clearAllMocks
@@ -35,21 +34,24 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import io.reactivex.Flowable
+import io.reactivex.Single
 import java.time.OffsetDateTime
 
 @MicronautTest
+@PropertySource(
+    Property(name = "handler-config.slack-event-handler.enabled", value = "true"),
+    Property(name = "handler-config.slack-event-handler.webhook-url", value = "https://jklfdalda.com/webhook")
+)
 class SlackEventHandlerTest(
     private val eventDispatcher: EventDispatcher,
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository
 ) : DatabaseBehaviorSpec() {
-    private val mockHttpClient = mockk<RxHttpClient>()
+    private val mockClient = mockk<SlackWebhookClient>()
 
     init {
-        val eventHandlerConfig = SlackEventHandlerConfig().apply { webhookUrl = "https://jklfdalda.com/webhook" }
-        val slackWebhookService = SlackWebhookService(eventHandlerConfig, mockHttpClient)
+        val slackWebhookService = SlackWebhookService(mockClient)
         val webhookServiceSpy = spyk(slackWebhookService, recordPrivateCalls = true)
         SlackEventHandler(webhookServiceSpy, eventDispatcher)
 
@@ -461,16 +463,14 @@ class SlackEventHandlerTest(
 
     private fun mockSuccessfulHttpResponse() {
         every {
-            mockHttpClient.exchange<SlackWebhookMessage, String, String>(any(), Argument.STRING, Argument.STRING)
-        } returns Flowable.just(
-            HttpResponse.ok()
-        )
+            mockClient.sendMessage(any())
+        } returns Single.just("ok")
     }
 
     private fun mockHttpErrorResponse() {
         every {
-            mockHttpClient.exchange<SlackWebhookMessage, String, String>(any(), Argument.STRING, Argument.STRING)
-        } returns Flowable.error(
+            mockClient.sendMessage(any())
+        } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )
     }
