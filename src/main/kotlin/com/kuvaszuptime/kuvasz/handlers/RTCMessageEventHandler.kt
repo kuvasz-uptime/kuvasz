@@ -6,8 +6,6 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TextMessageService
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.scheduling.TaskExecutors
-import io.micronaut.scheduling.annotation.ExecuteOn
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import org.slf4j.Logger
@@ -25,7 +23,6 @@ abstract class RTCMessageEventHandler(
         subscribeToEvents()
     }
 
-    @ExecuteOn(TaskExecutors.IO)
     internal fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")

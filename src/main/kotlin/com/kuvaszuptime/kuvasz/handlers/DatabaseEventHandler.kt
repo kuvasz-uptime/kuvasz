@@ -8,8 +8,6 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.transaction
 import io.micronaut.context.annotation.Context
-import io.micronaut.scheduling.TaskExecutors
-import io.micronaut.scheduling.annotation.ExecuteOn
 import org.slf4j.LoggerFactory
 
 @Context
@@ -27,7 +25,6 @@ class DatabaseEventHandler(
         subscribeToEvents()
     }
 
-    @ExecuteOn(TaskExecutors.IO)
     private fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")

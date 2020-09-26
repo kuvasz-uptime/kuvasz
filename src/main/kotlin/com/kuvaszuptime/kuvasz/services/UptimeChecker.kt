@@ -14,8 +14,6 @@ import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.event.annotation.EventListener
-import io.micronaut.scheduling.TaskExecutors
-import io.micronaut.scheduling.annotation.ExecuteOn
 import java.net.URI
 import javax.inject.Singleton
 
@@ -30,7 +28,6 @@ class UptimeChecker(
         private const val RETRY_COUNT = 3L
     }
 
-    @ExecuteOn(TaskExecutors.IO)
     fun check(monitor: MonitorPojo, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         var start = 0L
