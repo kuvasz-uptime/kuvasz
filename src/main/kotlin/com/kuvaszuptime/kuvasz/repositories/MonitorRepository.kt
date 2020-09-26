@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import org.jooq.Configuration
 import org.jooq.exception.DataAccessException
+import org.jooq.impl.DSL.`when`
 import org.jooq.impl.DSL.avg
 import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.round
@@ -79,6 +80,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
                     .set(MONITOR.ENABLED, updatedPojo.enabled)
                     .set(MONITOR.SSL_CHECK_ENABLED, updatedPojo.sslCheckEnabled)
                     .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
+                    .set(MONITOR.PAGERDUTY_INTEGRATION_KEY, updatedPojo.pagerdutyIntegrationKey)
                     .where(MONITOR.ID.eq(updatedPojo.id))
                     .returning(MONITOR.asterisk())
                     .fetchOne()
@@ -109,7 +111,11 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
                 SSL_EVENT.ERROR.`as`("sslError"),
                 round(avg(LATENCY_LOG.LATENCY), -1).`as`("averageLatencyInMs"),
                 inline(null, SQLDataType.INTEGER).`as`("p95LatencyInMs"),
-                inline(null, SQLDataType.INTEGER).`as`("p99LatencyInMs")
+                inline(null, SQLDataType.INTEGER).`as`("p99LatencyInMs"),
+                `when`(
+                    MONITOR.PAGERDUTY_INTEGRATION_KEY.isNull.or(MONITOR.PAGERDUTY_INTEGRATION_KEY.eq("")),
+                    "FALSE"
+                ).otherwise("TRUE").`as`("pagerdutyKeyPresent")
             )
             .from(MONITOR)
             .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))

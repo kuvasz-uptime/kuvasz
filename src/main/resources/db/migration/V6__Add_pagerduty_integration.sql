@@ -12,3 +12,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS "pagerduty_incident_dedup_key_idx" ON "pagerdu
 CREATE INDEX IF NOT EXISTS "pagerduty_incident_uptime_event_idx" ON "pagerduty_incident" USING btree ("uptime_event_id" ASC NULLS LAST);
 CREATE INDEX IF NOT EXISTS "pagerduty_incident_ssl_event_idx" ON "pagerduty_incident" USING btree ("ssl_event_id" ASC NULLS LAST);
 CREATE INDEX IF NOT EXISTS "pagerduty_incident_ended_at_idx" ON "pagerduty_incident" USING btree ("ended_at" ASC NULLS LAST);
+
+ALTER TABLE monitor
+    ADD COLUMN pagerduty_integration_key VARCHAR NULL;

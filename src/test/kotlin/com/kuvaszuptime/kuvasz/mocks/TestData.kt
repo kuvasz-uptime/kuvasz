@@ -20,13 +20,15 @@ fun createMonitor(
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
     monitorName: String = "testMonitor",
-    url: String = "http://irrelevant.com"
+    url: String = "http://irrelevant.com",
+    pagerdutyIntegrationKey: String? = null
 ): MonitorPojo {
     val monitor = MonitorPojo()
         .setId(id)
         .setName(monitorName)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setUrl(url)
+        .setPagerdutyIntegrationKey(pagerdutyIntegrationKey)
         .setEnabled(enabled)
         .setSslCheckEnabled(sslCheckEnabled)
         .setCreatedAt(getCurrentTimestamp())

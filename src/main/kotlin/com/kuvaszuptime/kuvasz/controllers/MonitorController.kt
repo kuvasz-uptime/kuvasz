@@ -4,9 +4,10 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -57,7 +58,7 @@ class MonitorController(
         ApiResponse(
             responseCode = "201",
             description = "Successful creation",
-            content = [Content(schema = Schema(implementation = MonitorPojo::class))]
+            content = [Content(schema = Schema(implementation = MonitorDto::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -65,7 +66,10 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    override fun createMonitor(monitor: MonitorCreateDto): MonitorPojo = monitorCrudService.createMonitor(monitor)
+    override fun createMonitor(monitor: MonitorCreateDto): MonitorDto {
+        val updatedPojo = monitorCrudService.createMonitor(monitor)
+        return MonitorDto.fromMonitorPojo(updatedPojo)
+    }
 
     @Status(HttpStatus.NO_CONTENT)
     @ApiResponses(
@@ -84,7 +88,8 @@ class MonitorController(
     @ApiResponses(
         ApiResponse(
             responseCode = "200",
-            description = "Successful update"
+            description = "Successful update",
+            content = [Content(schema = Schema(implementation = MonitorDto::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -97,6 +102,46 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    override fun updateMonitor(monitorId: Int, monitorUpdateDto: MonitorUpdateDto): MonitorPojo =
-        monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
+    override fun updateMonitor(monitorId: Int, monitorUpdateDto: MonitorUpdateDto): MonitorDto {
+        val updatedPojo = monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
+        return MonitorDto.fromMonitorPojo(updatedPojo)
+    }
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful update or create",
+            content = [Content(schema = Schema(implementation = MonitorDto::class))]
+        ),
+        ApiResponse(
+            responseCode = "400",
+            description = "Bad request",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    override fun upsertPagerdutyIntegrationKey(monitorId: Int, upsertDto: PagerdutyKeyUpdateDto): MonitorDto {
+        val updatedPojo = monitorCrudService.updatePagerdutyIntegrationKey(monitorId, upsertDto.pagerdutyIntegrationKey)
+        return MonitorDto.fromMonitorPojo(updatedPojo)
+    }
+
+    @Status(HttpStatus.NO_CONTENT)
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "204",
+            description = "Successful deletion"
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    override fun deletePagerdutyIntegrationKey(monitorId: Int) {
+        monitorCrudService.updatePagerdutyIntegrationKey(monitorId, null)
+    }
 }

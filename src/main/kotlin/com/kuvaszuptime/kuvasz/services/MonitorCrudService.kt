@@ -66,6 +66,7 @@ class MonitorCrudService(
                 uptimeCheckInterval = monitorUpdateDto.uptimeCheckInterval ?: existingMonitor.uptimeCheckInterval
                 enabled = monitorUpdateDto.enabled ?: existingMonitor.enabled
                 sslCheckEnabled = monitorUpdateDto.sslCheckEnabled ?: existingMonitor.sslCheckEnabled
+                pagerdutyIntegrationKey = existingMonitor.pagerdutyIntegrationKey
             }
 
             updatedMonitor.saveAndReschedule(existingMonitor)
@@ -83,4 +84,10 @@ class MonitorCrudService(
                 updatedMonitor
             }
         )
+
+    fun updatePagerdutyIntegrationKey(monitorId: Int, integrationKey: String?): MonitorPojo =
+        monitorRepository.findById(monitorId)?.let { existingMonitor ->
+            val updatedMonitor = existingMonitor.setPagerdutyIntegrationKey(integrationKey)
+            updatedMonitor.saveAndReschedule(existingMonitor)
+        } ?: throw MonitorNotFoundError(monitorId)
 }

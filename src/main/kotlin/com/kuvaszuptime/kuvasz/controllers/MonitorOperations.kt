@@ -2,13 +2,15 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
@@ -37,7 +39,7 @@ interface MonitorOperations {
     @Operation(summary = "Creates a monitor")
     @Post("/")
     @ExecuteOn(TaskExecutors.IO)
-    fun createMonitor(@Valid @Body monitor: MonitorCreateDto): MonitorPojo
+    fun createMonitor(@Valid @Body monitor: MonitorCreateDto): MonitorDto
 
     @Operation(summary = "Deletes a monitor by ID")
     @Delete("/{monitorId}")
@@ -47,5 +49,15 @@ interface MonitorOperations {
     @Operation(summary = "Updates a monitor by ID")
     @Patch("/{monitorId}")
     @ExecuteOn(TaskExecutors.IO)
-    fun updateMonitor(monitorId: Int, @Valid @Body monitorUpdateDto: MonitorUpdateDto): MonitorPojo
+    fun updateMonitor(monitorId: Int, @Valid @Body monitorUpdateDto: MonitorUpdateDto): MonitorDto
+
+    @Operation(summary = "Updates or creates a Pagerduty integration key for the given monitor")
+    @Put("/{monitorId}/pagerduty-integration-key")
+    @ExecuteOn(TaskExecutors.IO)
+    fun upsertPagerdutyIntegrationKey(monitorId: Int, @Valid @Body upsertDto: PagerdutyKeyUpdateDto): MonitorDto
+
+    @Operation(summary = "Deletes the Pagerduty integration key of the given monitor")
+    @Delete("/{monitorId}/pagerduty-integration-key")
+    @ExecuteOn(TaskExecutors.IO)
+    fun deletePagerdutyIntegrationKey(monitorId: Int)
 }

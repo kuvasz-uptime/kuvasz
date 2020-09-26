@@ -165,4 +165,18 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     public List<MonitorPojo> fetchBySslCheckEnabled(Boolean... values) {
         return fetch(Monitor.MONITOR.SSL_CHECK_ENABLED, values);
     }
+
+    /**
+     * Fetch records that have <code>pagerduty_integration_key BETWEEN lowerInclusive AND upperInclusive</code>
+     */
+    public List<MonitorPojo> fetchRangeOfPagerdutyIntegrationKey(String lowerInclusive, String upperInclusive) {
+        return fetchRange(Monitor.MONITOR.PAGERDUTY_INTEGRATION_KEY, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>pagerduty_integration_key IN (values)</code>
+     */
+    public List<MonitorPojo> fetchByPagerdutyIntegrationKey(String... values) {
+        return fetch(Monitor.MONITOR.PAGERDUTY_INTEGRATION_KEY, values);
+    }
 }
