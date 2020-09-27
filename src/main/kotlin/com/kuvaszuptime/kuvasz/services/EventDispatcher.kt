@@ -14,12 +14,12 @@ import javax.inject.Singleton
 @Singleton
 class EventDispatcher {
 
-    private val monitorUpEvents = PublishSubject.create<MonitorUpEvent>()
-    private val monitorDownEvents = PublishSubject.create<MonitorDownEvent>()
-    private val redirectEvents = PublishSubject.create<RedirectEvent>()
-    private val sslValidEvents = PublishSubject.create<SSLValidEvent>()
-    private val sslWillExpireEvents = PublishSubject.create<SSLWillExpireEvent>()
-    private val sslInvalidEvents = PublishSubject.create<SSLInvalidEvent>()
+    private val monitorUpEvents = PublishSubject.create<MonitorUpEvent>().toSerialized()
+    private val monitorDownEvents = PublishSubject.create<MonitorDownEvent>().toSerialized()
+    private val redirectEvents = PublishSubject.create<RedirectEvent>().toSerialized()
+    private val sslValidEvents = PublishSubject.create<SSLValidEvent>().toSerialized()
+    private val sslWillExpireEvents = PublishSubject.create<SSLWillExpireEvent>().toSerialized()
+    private val sslInvalidEvents = PublishSubject.create<SSLInvalidEvent>().toSerialized()
 
     fun dispatch(event: MonitorEvent) =
         when (event) {

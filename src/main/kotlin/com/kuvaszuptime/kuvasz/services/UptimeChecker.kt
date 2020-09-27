@@ -8,18 +8,23 @@ import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isSuccess
+import io.micronaut.context.annotation.Factory
 import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.client.DefaultHttpClientConfiguration
+import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.RxHttpClient
+import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.event.annotation.EventListener
 import java.net.URI
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Singleton
 class UptimeChecker(
-    private val httpClient: RxHttpClient,
+    @Client("uptime-checker") private val httpClient: RxHttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository
 ) {
@@ -94,5 +99,17 @@ class UptimeChecker(
             .header(HttpHeaders.CACHE_CONTROL, "no-cache")
 
         return httpClient.exchange(request).retry(RETRY_COUNT)
+    }
+}
+
+@Factory
+class UptimeCheckerHttpClientConfigFactory {
+
+    @Named("uptime-checker")
+    @Singleton
+    fun configuration(): HttpClientConfiguration {
+        val config = DefaultHttpClientConfiguration()
+        config.eventLoopGroup = "uptime-check"
+        return config
     }
 }

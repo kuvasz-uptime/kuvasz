@@ -39,6 +39,12 @@ micronaut:
   http:
     client:
       follow-redirects: false
+  netty:
+    event-loops:
+      uptime-check:
+        num-threads: 20
+        prefer-native-transport: true
+        executor: 'io'
 endpoints:
   health:
     enabled: true
