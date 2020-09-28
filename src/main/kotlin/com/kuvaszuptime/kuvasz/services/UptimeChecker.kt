@@ -9,7 +9,6 @@ import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isSuccess
 import io.micronaut.context.annotation.Factory
-import io.micronaut.context.event.ShutdownEvent
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -17,7 +16,6 @@ import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.runtime.event.annotation.EventListener
 import java.net.URI
 import javax.inject.Named
 import javax.inject.Singleton
@@ -84,12 +82,6 @@ class UptimeChecker(
                     )
                 }
             )
-    }
-
-    @EventListener
-    @Suppress("UNUSED_PARAMETER")
-    internal fun onShutdownEvent(event: ShutdownEvent) {
-        httpClient.close()
     }
 
     private fun sendHttpRequest(uri: URI): RawHttpResponse {
