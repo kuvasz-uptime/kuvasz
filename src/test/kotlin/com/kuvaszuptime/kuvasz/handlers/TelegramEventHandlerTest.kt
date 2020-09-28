@@ -444,12 +444,8 @@ class TelegramEventHandlerTest(
                 )
                 mockHttpErrorResponse()
 
-                then("it should send a webhook message about the event") {
-                    val slot = slot<String>()
-
+                then("it should not throw an exception") {
                     shouldNotThrowAny { eventDispatcher.dispatch(event) }
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (200)"
                 }
             }
         }
