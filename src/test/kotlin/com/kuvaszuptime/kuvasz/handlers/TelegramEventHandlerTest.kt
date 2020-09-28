@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
@@ -38,20 +39,23 @@ import java.time.OffsetDateTime
 
 @MicronautTest
 class TelegramEventHandlerTest(
-    private val eventDispatcher: EventDispatcher,
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
-    private val sslEventRepository: SSLEventRepository
+    private val sslEventRepository: SSLEventRepository,
+    latencyLogRepository: LatencyLogRepository
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<TelegramAPIClient>()
 
     init {
+        val eventDispatcher = EventDispatcher()
         val eventHandlerConfig = TelegramEventHandlerConfig().apply {
             token = "my_token"
             chatId = "@channel"
         }
         val telegramAPIService = TelegramAPIService(eventHandlerConfig, mockClient)
         val apiServiceSpy = spyk(telegramAPIService, recordPrivateCalls = true)
+
+        DatabaseEventHandler(eventDispatcher, uptimeEventRepository, latencyLogRepository, sslEventRepository)
         TelegramEventHandler(apiServiceSpy, eventDispatcher)
 
         given("the TelegramEventHandler") {

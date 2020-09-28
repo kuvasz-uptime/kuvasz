@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
@@ -23,7 +24,6 @@ import io.kotest.core.test.TestResult
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.annotation.MicronautTest
 import io.mockk.clearAllMocks
@@ -34,19 +34,20 @@ import org.simplejavamail.api.email.Email
 import java.time.OffsetDateTime
 
 @MicronautTest
-@Property(name = "handler-config.smtp-event-handler.enabled", value = "true")
 class SMTPEventHandlerTest(
-    private val eventDispatcher: EventDispatcher,
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
+    latencyLogRepository: LatencyLogRepository,
     smtpEventHandlerConfig: SMTPEventHandlerConfig,
     smtpMailer: SMTPMailer
-
 ) : DatabaseBehaviorSpec() {
     init {
+        val eventDispatcher = EventDispatcher()
         val emailFactory = EmailFactory(smtpEventHandlerConfig)
         val mailerSpy = spyk(smtpMailer, recordPrivateCalls = true)
+
+        DatabaseEventHandler(eventDispatcher, uptimeEventRepository, latencyLogRepository, sslEventRepository)
         SMTPEventHandler(smtpEventHandlerConfig, mailerSpy, eventDispatcher)
 
         given("the SMTPEventHandler - UPTIME events") {

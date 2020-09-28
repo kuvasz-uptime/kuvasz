@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
@@ -22,8 +23,6 @@ import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import io.micronaut.context.annotation.Property
-import io.micronaut.context.annotation.PropertySource
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -38,21 +37,20 @@ import io.reactivex.Single
 import java.time.OffsetDateTime
 
 @MicronautTest
-@PropertySource(
-    Property(name = "handler-config.slack-event-handler.enabled", value = "true"),
-    Property(name = "handler-config.slack-event-handler.webhook-url", value = "https://jklfdalda.com/webhook")
-)
 class SlackEventHandlerTest(
-    private val eventDispatcher: EventDispatcher,
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
-    private val sslEventRepository: SSLEventRepository
+    private val sslEventRepository: SSLEventRepository,
+    latencyLogRepository: LatencyLogRepository
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<SlackWebhookClient>()
 
     init {
+        val eventDispatcher = EventDispatcher()
         val slackWebhookService = SlackWebhookService(mockClient)
         val webhookServiceSpy = spyk(slackWebhookService, recordPrivateCalls = true)
+
+        DatabaseEventHandler(eventDispatcher, uptimeEventRepository, latencyLogRepository, sslEventRepository)
         SlackEventHandler(webhookServiceSpy, eventDispatcher)
 
         given("the SlackEventHandler - UPTIME events") {
