@@ -13,7 +13,7 @@ import io.reactivex.Single
 interface PagerdutyAPIClient {
 
     @Post("/enqueue")
-    fun createAlert(@Body request: PagerdutyTriggerRequest): Single<String>
+    fun triggerAlert(@Body request: PagerdutyTriggerRequest): Single<String>
 
     @Post("/enqueue")
     fun resolveAlert(@Body request: PagerdutyResolveRequest): Single<String>

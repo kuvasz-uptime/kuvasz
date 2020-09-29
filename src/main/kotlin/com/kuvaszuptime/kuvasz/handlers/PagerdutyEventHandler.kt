@@ -82,12 +82,14 @@ class PagerdutyEventHandler(
             runWhenStateChanges { event ->
                 when (event) {
                     is MonitorUpEvent -> {
-                        val request = event.toResolveRequest(deduplicationKey)
-                        apiClient.resolveAlert(request).handleResponse()
+                        if (previousEvent != null) {
+                            val request = event.toResolveRequest(deduplicationKey)
+                            apiClient.resolveAlert(request).handleResponse()
+                        }
                     }
                     is MonitorDownEvent -> {
                         val request = event.toTriggerRequest(deduplicationKey)
-                        apiClient.createAlert(request).handleResponse()
+                        apiClient.triggerAlert(request).handleResponse()
                     }
                 }
             }
@@ -99,16 +101,18 @@ class PagerdutyEventHandler(
             runWhenStateChanges { event ->
                 when (event) {
                     is SSLValidEvent -> {
-                        val request = event.toResolveRequest(deduplicationKey)
-                        apiClient.resolveAlert(request).handleResponse()
+                        if (previousEvent != null) {
+                            val request = event.toResolveRequest(deduplicationKey)
+                            apiClient.resolveAlert(request).handleResponse()
+                        }
                     }
                     is SSLInvalidEvent -> {
                         val request = event.toTriggerRequest(deduplicationKey)
-                        apiClient.createAlert(request).handleResponse()
+                        apiClient.triggerAlert(request).handleResponse()
                     }
                     is SSLWillExpireEvent -> {
                         val request = event.toTriggerRequest(deduplicationKey, PagerdutySeverity.WARNING)
-                        apiClient.createAlert(request).handleResponse()
+                        apiClient.triggerAlert(request).handleResponse()
                     }
                 }
             }
