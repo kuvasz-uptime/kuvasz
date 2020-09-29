@@ -12,11 +12,10 @@ import io.reactivex.BackpressureStrategy
 import io.reactivex.Flowable
 import io.reactivex.FlowableEmitter
 import org.reactivestreams.Publisher
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AdminAuthProvider @Inject constructor(private val authConfig: AdminAuthConfig) : AuthenticationProvider {
+class AdminAuthProvider(private val authConfig: AdminAuthConfig) : AuthenticationProvider {
 
     override fun authenticate(
         httpRequest: HttpRequest<*>?,

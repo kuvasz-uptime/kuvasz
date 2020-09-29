@@ -9,11 +9,10 @@ import com.kuvaszuptime.kuvasz.services.SMTPMailer
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
 
 @Context
 @Requires(property = "handler-config.smtp-event-handler.enabled", value = "true")
-class SMTPEventHandler @Inject constructor(
+class SMTPEventHandler(
     smtpEventHandlerConfig: SMTPEventHandlerConfig,
     private val smtpMailer: SMTPMailer,
     private val eventDispatcher: EventDispatcher

@@ -1,8 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
-import io.micronaut.http.HttpResponse
-import io.reactivex.Flowable
+import io.reactivex.Single
 
 interface TextMessageService {
-    fun sendMessage(content: String): Flowable<HttpResponse<String>>
+    fun sendMessage(content: String): Single<String>
 }

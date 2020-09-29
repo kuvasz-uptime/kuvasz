@@ -9,11 +9,10 @@ import org.jooq.impl.DSL
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.min
 import java.time.OffsetDateTime
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class LatencyLogRepository @Inject constructor(jooqConfig: Configuration) : LatencyLogDao(jooqConfig) {
+class LatencyLogRepository(jooqConfig: Configuration) : LatencyLogDao(jooqConfig) {
 
     companion object {
         private const val P95 = .95

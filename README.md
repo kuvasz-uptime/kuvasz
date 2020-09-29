@@ -26,12 +26,12 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 - Email notifications through SMTP
 - Slack notifications through webhoooks
 - Telegram notifications through the Bot API
+- PagerDuty integration with automatic incident resolution
 - Configurable data retention period
 
 ### Future ideas 🚧
 
 - Regular Lighthouse audits for your websites
-- Pagerduty, Opsgenie integration
 
 ## ⚡️  Quick start guide
 

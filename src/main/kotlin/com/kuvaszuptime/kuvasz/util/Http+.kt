@@ -12,7 +12,6 @@ typealias RawHttpResponse = Flowable<HttpResponse<ByteBuffer<Any>>>
 @Suppress("MagicNumber")
 fun HttpResponse<*>.isSuccess() = this.status.code in 200..299
 
-@Suppress("MagicNumber")
 fun HttpResponse<*>.isRedirected() =
     listOf(
         HttpStatus.MOVED_PERMANENTLY,
@@ -24,7 +23,4 @@ fun HttpResponse<*>.isRedirected() =
 
 fun String.toUri() = URI(this)
 
-fun HttpResponse<*>.getRedirectionUri(): URI? =
-    if (isRedirected()) {
-        header(HttpHeaders.LOCATION)?.toUri()
-    } else null
+fun HttpResponse<*>.getRedirectionUri(): URI? = if (isRedirected()) header(HttpHeaders.LOCATION)?.toUri() else null

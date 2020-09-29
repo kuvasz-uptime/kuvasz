@@ -17,7 +17,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Identity;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row8;
+import org.jooq.Row9;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -33,7 +33,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Monitor extends TableImpl<MonitorRecord> {
 
-    private static final long serialVersionUID = 1271016748;
+    private static final long serialVersionUID = 2078797674;
 
     /**
      * The reference instance of <code>monitor</code>
@@ -87,6 +87,11 @@ public class Monitor extends TableImpl<MonitorRecord> {
      * The column <code>monitor.ssl_check_enabled</code>.
      */
     public final TableField<MonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), org.jooq.impl.SQLDataType.BOOLEAN.nullable(false).defaultValue(org.jooq.impl.DSL.field("false", org.jooq.impl.SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>monitor.pagerduty_integration_key</code>.
+     */
+    public final TableField<MonitorRecord, String> PAGERDUTY_INTEGRATION_KEY = createField(DSL.name("pagerduty_integration_key"), org.jooq.impl.SQLDataType.VARCHAR, this, "");
 
     /**
      * Create a <code>monitor</code> table reference
@@ -168,11 +173,11 @@ public class Monitor extends TableImpl<MonitorRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row8 type methods
+    // Row9 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row8<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean> fieldsRow() {
-        return (Row8) super.fieldsRow();
+    public Row9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> fieldsRow() {
+        return (Row9) super.fieldsRow();
     }
 }

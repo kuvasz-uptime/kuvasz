@@ -7,11 +7,10 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MonitorCrudService @Inject constructor(
+class MonitorCrudService(
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler
@@ -67,6 +66,7 @@ class MonitorCrudService @Inject constructor(
                 uptimeCheckInterval = monitorUpdateDto.uptimeCheckInterval ?: existingMonitor.uptimeCheckInterval
                 enabled = monitorUpdateDto.enabled ?: existingMonitor.enabled
                 sslCheckEnabled = monitorUpdateDto.sslCheckEnabled ?: existingMonitor.sslCheckEnabled
+                pagerdutyIntegrationKey = existingMonitor.pagerdutyIntegrationKey
             }
 
             updatedMonitor.saveAndReschedule(existingMonitor)
@@ -84,4 +84,10 @@ class MonitorCrudService @Inject constructor(
                 updatedMonitor
             }
         )
+
+    fun updatePagerdutyIntegrationKey(monitorId: Int, integrationKey: String?): MonitorPojo =
+        monitorRepository.findById(monitorId)?.let { existingMonitor ->
+            val updatedMonitor = existingMonitor.setPagerdutyIntegrationKey(integrationKey)
+            updatedMonitor.saveAndReschedule(existingMonitor)
+        } ?: throw MonitorNotFoundError(monitorId)
 }

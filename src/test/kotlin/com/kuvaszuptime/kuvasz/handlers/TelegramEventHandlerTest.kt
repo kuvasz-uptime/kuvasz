@@ -10,11 +10,12 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.models.handlers.SlackWebhookMessage
+import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.TelegramAPIClient
 import com.kuvaszuptime.kuvasz.services.TelegramAPIService
 import com.kuvaszuptime.kuvasz.tables.SslEvent
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent
@@ -23,10 +24,8 @@ import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
-import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MicronautTest
 import io.mockk.clearAllMocks
@@ -35,25 +34,28 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import io.reactivex.Flowable
+import io.reactivex.Single
 import java.time.OffsetDateTime
 
 @MicronautTest
 class TelegramEventHandlerTest(
-    private val eventDispatcher: EventDispatcher,
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
-    private val sslEventRepository: SSLEventRepository
+    private val sslEventRepository: SSLEventRepository,
+    latencyLogRepository: LatencyLogRepository
 ) : DatabaseBehaviorSpec() {
-    private val mockHttpClient = mockk<RxHttpClient>()
+    private val mockClient = mockk<TelegramAPIClient>()
 
     init {
+        val eventDispatcher = EventDispatcher()
         val eventHandlerConfig = TelegramEventHandlerConfig().apply {
             token = "my_token"
             chatId = "@channel"
         }
-        val telegramAPIService = TelegramAPIService(eventHandlerConfig, mockHttpClient)
+        val telegramAPIService = TelegramAPIService(eventHandlerConfig, mockClient)
         val apiServiceSpy = spyk(telegramAPIService, recordPrivateCalls = true)
+
+        DatabaseEventHandler(eventDispatcher, uptimeEventRepository, latencyLogRepository, sslEventRepository)
         TelegramEventHandler(apiServiceSpy, eventDispatcher)
 
         given("the TelegramEventHandler") {
@@ -446,12 +448,8 @@ class TelegramEventHandlerTest(
                 )
                 mockHttpErrorResponse()
 
-                then("it should send a webhook message about the event") {
-                    val slot = slot<String>()
-
+                then("it should not throw an exception") {
                     shouldNotThrowAny { eventDispatcher.dispatch(event) }
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (200)"
                 }
             }
         }
@@ -464,16 +462,14 @@ class TelegramEventHandlerTest(
 
     private fun mockSuccessfulHttpResponse() {
         every {
-            mockHttpClient.exchange<SlackWebhookMessage, String, String>(any(), Argument.STRING, Argument.STRING)
-        } returns Flowable.just(
-            HttpResponse.ok()
-        )
+            mockClient.sendMessage(any())
+        } returns Single.just("ok")
     }
 
     private fun mockHttpErrorResponse() {
         every {
-            mockHttpClient.exchange<SlackWebhookMessage, String, String>(any(), Argument.STRING, Argument.STRING)
-        } returns Flowable.error(
+            mockClient.sendMessage(any())
+        } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )
     }

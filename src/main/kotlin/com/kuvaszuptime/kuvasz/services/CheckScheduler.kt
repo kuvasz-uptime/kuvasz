@@ -15,11 +15,10 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 import javax.annotation.PostConstruct
-import javax.inject.Inject
 import javax.inject.Named
 
 @Context
-class CheckScheduler @Inject constructor(
+class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,
     private val uptimeChecker: UptimeChecker,

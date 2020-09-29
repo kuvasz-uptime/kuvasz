@@ -29,7 +29,7 @@ import javax.validation.constraints.Size;
 })
 public class MonitorPojo implements Serializable {
 
-    private static final long serialVersionUID = -1878969857;
+    private static final long serialVersionUID = -1828922669;
 
     private Integer        id;
     private String         name;
@@ -39,6 +39,7 @@ public class MonitorPojo implements Serializable {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private Boolean        sslCheckEnabled;
+    private String         pagerdutyIntegrationKey;
 
     public MonitorPojo() {}
 
@@ -51,6 +52,7 @@ public class MonitorPojo implements Serializable {
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
         this.sslCheckEnabled = value.sslCheckEnabled;
+        this.pagerdutyIntegrationKey = value.pagerdutyIntegrationKey;
     }
 
     public MonitorPojo(
@@ -61,7 +63,8 @@ public class MonitorPojo implements Serializable {
         Boolean        enabled,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        Boolean        sslCheckEnabled
+        Boolean        sslCheckEnabled,
+        String         pagerdutyIntegrationKey
     ) {
         this.id = id;
         this.name = name;
@@ -71,6 +74,7 @@ public class MonitorPojo implements Serializable {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.sslCheckEnabled = sslCheckEnabled;
+        this.pagerdutyIntegrationKey = pagerdutyIntegrationKey;
     }
 
     @Id
@@ -159,6 +163,16 @@ public class MonitorPojo implements Serializable {
         return this;
     }
 
+    @Column(name = "pagerduty_integration_key")
+    public String getPagerdutyIntegrationKey() {
+        return this.pagerdutyIntegrationKey;
+    }
+
+    public MonitorPojo setPagerdutyIntegrationKey(String pagerdutyIntegrationKey) {
+        this.pagerdutyIntegrationKey = pagerdutyIntegrationKey;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -216,6 +230,12 @@ public class MonitorPojo implements Serializable {
         }
         else if (!sslCheckEnabled.equals(other.sslCheckEnabled))
             return false;
+        if (pagerdutyIntegrationKey == null) {
+            if (other.pagerdutyIntegrationKey != null)
+                return false;
+        }
+        else if (!pagerdutyIntegrationKey.equals(other.pagerdutyIntegrationKey))
+            return false;
         return true;
     }
 
@@ -231,6 +251,7 @@ public class MonitorPojo implements Serializable {
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.sslCheckEnabled == null) ? 0 : this.sslCheckEnabled.hashCode());
+        result = prime * result + ((this.pagerdutyIntegrationKey == null) ? 0 : this.pagerdutyIntegrationKey.hashCode());
         return result;
     }
 
@@ -246,6 +267,7 @@ public class MonitorPojo implements Serializable {
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(sslCheckEnabled);
+        sb.append(", ").append(pagerdutyIntegrationKey);
 
         sb.append(")");
         return sb.toString();

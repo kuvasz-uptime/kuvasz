@@ -3,40 +3,27 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramAPIMessage
 import io.micronaut.context.annotation.Requires
-import io.micronaut.context.event.ShutdownEvent
-import io.micronaut.core.type.Argument
-import io.micronaut.http.HttpRequest
-import io.micronaut.http.HttpResponse
-import io.micronaut.http.client.RxHttpClient
-import io.micronaut.runtime.event.annotation.EventListener
-import io.reactivex.Flowable
-import javax.inject.Inject
+import io.micronaut.http.annotation.Body
+import io.micronaut.http.annotation.Post
+import io.micronaut.http.client.annotation.Client
+import io.micronaut.retry.annotation.Retryable
+import io.reactivex.Single
 import javax.inject.Singleton
+
+@Client("https://api.telegram.org/bot\${handler-config.telegram-event-handler.token}")
+@Retryable
+interface TelegramAPIClient {
+
+    @Post("/sendMessage")
+    fun sendMessage(@Body message: TelegramAPIMessage): Single<String>
+}
 
 @Singleton
 @Requires(property = "handler-config.telegram-event-handler.enabled", value = "true")
-class TelegramAPIService @Inject constructor(
+class TelegramAPIService(
     private val telegramEventHandlerConfig: TelegramEventHandlerConfig,
-    private val httpClient: RxHttpClient
+    private val client: TelegramAPIClient
 ) : TextMessageService {
-
-    companion object {
-        internal const val RETRY_COUNT = 3L
-    }
-
-    override fun sendMessage(content: String): Flowable<HttpResponse<String>> {
-        val message = TelegramAPIMessage(chat_id = telegramEventHandlerConfig.chatId, text = content)
-        val url = "https://api.telegram.org/bot" + telegramEventHandlerConfig.token + "/sendMessage"
-        val request: HttpRequest<TelegramAPIMessage> = HttpRequest.POST(url, message)
-
-        return httpClient
-            .exchange(request, Argument.STRING, Argument.STRING)
-            .retry(RETRY_COUNT)
-    }
-
-    @EventListener
-    @Suppress("UNUSED_PARAMETER")
-    internal fun onShutdownEvent(event: ShutdownEvent) {
-        httpClient.close()
-    }
+    override fun sendMessage(content: String): Single<String> =
+        client.sendMessage(TelegramAPIMessage(chatId = telegramEventHandlerConfig.chatId, text = content))
 }

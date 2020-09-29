@@ -26,5 +26,6 @@ data class MonitorDetailsDto(
     val sslError: String?,
     val averageLatencyInMs: Int?,
     val p95LatencyInMs: Int?,
-    val p99LatencyInMs: Int?
+    val p99LatencyInMs: Int?,
+    val pagerdutyKeyPresent: Boolean
 )

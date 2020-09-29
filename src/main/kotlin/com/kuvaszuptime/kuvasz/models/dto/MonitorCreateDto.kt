@@ -20,7 +20,8 @@ data class MonitorCreateDto(
     @get:Min(MIN_UPTIME_CHECK_INTERVAL)
     val uptimeCheckInterval: Int,
     val enabled: Boolean? = true,
-    val sslCheckEnabled: Boolean? = false
+    val sslCheckEnabled: Boolean? = false,
+    val pagerdutyIntegrationKey: String? = null
 ) {
     fun toMonitorPojo(): MonitorPojo = MonitorPojo()
         .setName(name)
@@ -28,4 +29,5 @@ data class MonitorCreateDto(
         .setEnabled(enabled)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setSslCheckEnabled(sslCheckEnabled)
+        .setPagerdutyIntegrationKey(pagerdutyIntegrationKey)
 }

@@ -8,21 +8,21 @@ import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isSuccess
-import io.micronaut.context.event.ShutdownEvent
+import io.micronaut.context.annotation.Factory
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.client.DefaultHttpClientConfiguration
+import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.RxHttpClient
+import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.runtime.event.annotation.EventListener
-import io.micronaut.scheduling.TaskExecutors
-import io.micronaut.scheduling.annotation.ExecuteOn
 import java.net.URI
-import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Singleton
-class UptimeChecker @Inject constructor(
-    private val httpClient: RxHttpClient,
+class UptimeChecker(
+    @Client("uptime-checker") private val httpClient: RxHttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository
 ) {
@@ -31,7 +31,6 @@ class UptimeChecker @Inject constructor(
         private const val RETRY_COUNT = 3L
     }
 
-    @ExecuteOn(TaskExecutors.IO)
     fun check(monitor: MonitorPojo, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         var start = 0L
@@ -85,12 +84,6 @@ class UptimeChecker @Inject constructor(
             )
     }
 
-    @EventListener
-    @Suppress("UNUSED_PARAMETER")
-    internal fun onShutdownEvent(event: ShutdownEvent) {
-        httpClient.close()
-    }
-
     private fun sendHttpRequest(uri: URI): RawHttpResponse {
         val request = HttpRequest.GET<Any>(uri)
             .header(HttpHeaders.ACCEPT, "*/*")
@@ -98,5 +91,17 @@ class UptimeChecker @Inject constructor(
             .header(HttpHeaders.CACHE_CONTROL, "no-cache")
 
         return httpClient.exchange(request).retry(RETRY_COUNT)
+    }
+}
+
+@Factory
+class UptimeCheckerHttpClientConfigFactory {
+
+    @Named("uptime-checker")
+    @Singleton
+    fun configuration(): HttpClientConfiguration {
+        val config = DefaultHttpClientConfiguration()
+        config.eventLoopGroup = "uptime-check"
+        return config
     }
 }

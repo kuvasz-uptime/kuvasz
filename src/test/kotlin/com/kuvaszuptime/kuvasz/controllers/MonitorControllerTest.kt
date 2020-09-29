@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -48,8 +49,8 @@ class MonitorControllerTest(
 
     init {
         given("MonitorController's getMonitorsWithDetails() endpoint") {
-            `when`("there is any monitor in the database") {
-                val monitor = createMonitor(monitorRepository)
+            `when`("there is a monitor in the database") {
+                val monitor = createMonitor(monitorRepository, pagerdutyIntegrationKey = "something")
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
@@ -89,6 +90,7 @@ class MonitorControllerTest(
                     responseItem.sslStatusStartedAt shouldBe now
                     responseItem.lastSSLCheck shouldBe now
                     responseItem.sslError shouldBe null
+                    responseItem.pagerdutyKeyPresent shouldBe true
                 }
             }
 
@@ -108,6 +110,7 @@ class MonitorControllerTest(
                     responseItem.uptimeStatus shouldBe null
                     responseItem.sslStatus shouldBe null
                     responseItem.createdAt shouldBe enabledMonitor.createdAt
+                    responseItem.pagerdutyKeyPresent shouldBe false
                 }
             }
 
@@ -121,7 +124,7 @@ class MonitorControllerTest(
 
         given("MonitorController's getMonitorDetails() endpoint") {
             `when`("there is a monitor with the given ID in the database") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(monitorRepository, pagerdutyIntegrationKey = "something")
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
@@ -155,6 +158,7 @@ class MonitorControllerTest(
                     response.sslStatusStartedAt shouldBe now
                     response.lastSSLCheck shouldBe now
                     response.sslError shouldBe null
+                    response.pagerdutyKeyPresent shouldBe true
                 }
             }
 
@@ -174,7 +178,8 @@ class MonitorControllerTest(
                 val monitorToCreate = MonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
-                    uptimeCheckInterval = 6000
+                    uptimeCheckInterval = 6000,
+                    pagerdutyIntegrationKey = "something"
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -185,6 +190,7 @@ class MonitorControllerTest(
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
                     monitorInDb.enabled shouldBe createdMonitor.enabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
+                    monitorInDb.pagerdutyIntegrationKey shouldBe monitorToCreate.pagerdutyIntegrationKey
                     checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
                         .forOne { it.checkType shouldBe CheckType.UPTIME }
                 }
@@ -298,7 +304,8 @@ class MonitorControllerTest(
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = true,
-                    sslCheckEnabled = true
+                    sslCheckEnabled = true,
+                    pagerdutyIntegrationKey = "something"
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
@@ -323,6 +330,7 @@ class MonitorControllerTest(
                     monitorInDb.sslCheckEnabled shouldBe updateDto.sslCheckEnabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
+                    monitorInDb.pagerdutyIntegrationKey shouldBe createDto.pagerdutyIntegrationKey
 
                     val updatedChecks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
                     updatedChecks.shouldBeEmpty()
@@ -334,7 +342,8 @@ class MonitorControllerTest(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
-                    enabled = false
+                    enabled = false,
+                    pagerdutyIntegrationKey = "something"
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe createdMonitor.id }
@@ -357,6 +366,7 @@ class MonitorControllerTest(
                     monitorInDb.sslCheckEnabled shouldBe updateDto.sslCheckEnabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
+                    monitorInDb.pagerdutyIntegrationKey shouldBe createDto.pagerdutyIntegrationKey
 
                     val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
                     checks.forOne { it.checkType shouldBe CheckType.UPTIME }
@@ -403,6 +413,102 @@ class MonitorControllerTest(
                 val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitors/123232", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)
+                }
+
+                then("it should return a 404") {
+                    response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
+
+        given("MonitorController's deletePagerdutyIntegrationKey() endpoint") {
+
+            `when`("it is called with an existing monitor ID") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    pagerdutyIntegrationKey = "something"
+                )
+                val createdMonitor = monitorClient.createMonitor(monitorToCreate)
+                val deleteRequest = HttpRequest.DELETE<Any>("/monitors/${createdMonitor.id}/pagerduty-integration-key")
+                val response = client.toBlocking().exchange<Any, Any>(deleteRequest)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)
+
+                then("it should delete the integration key of the given monitor") {
+                    response.status shouldBe HttpStatus.NO_CONTENT
+                    monitorInDb.pagerdutyIntegrationKey shouldBe null
+                }
+            }
+
+            `when`("it is called with a non existing monitor ID") {
+                val deleteRequest = HttpRequest.DELETE<Any>("/monitors/123232/pagerduty-integration-key")
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking().exchange<Any, Any>(deleteRequest)
+                }
+
+                then("it should return a 404") {
+                    response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
+
+        given("MonitorController's upsertPagerdutyIntegrationKey() endpoint") {
+
+            `when`("it is called with an existing monitor ID and an integration key") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    sslCheckEnabled = true,
+                    pagerdutyIntegrationKey = "originalKey"
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = PagerdutyKeyUpdateDto(
+                    pagerdutyIntegrationKey = "updatedKey"
+                )
+                val updatedMonitor = monitorClient.upsertPagerdutyIntegrationKey(createdMonitor.id, updateDto)
+                val updatedMonitorInDb = monitorRepository.findById(createdMonitor.id)!!
+
+                then("it should update the integration key") {
+                    createdMonitor.pagerdutyKeyPresent shouldBe true
+                    updatedMonitor.pagerdutyKeyPresent shouldBe true
+                    updatedMonitorInDb.pagerdutyIntegrationKey shouldBe updateDto.pagerdutyIntegrationKey
+                }
+            }
+
+            `when`("it is called with an existing monitor, without an integration key") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    sslCheckEnabled = true
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = PagerdutyKeyUpdateDto(
+                    pagerdutyIntegrationKey = "updatedKey"
+                )
+                val updatedMonitor = monitorClient.upsertPagerdutyIntegrationKey(createdMonitor.id, updateDto)
+                val updatedMonitorInDb = monitorRepository.findById(createdMonitor.id)!!
+
+                then("it should create the integration key") {
+                    createdMonitor.pagerdutyKeyPresent shouldBe false
+                    updatedMonitor.pagerdutyKeyPresent shouldBe true
+                    updatedMonitorInDb.pagerdutyIntegrationKey shouldBe updateDto.pagerdutyIntegrationKey
+                }
+            }
+
+            `when`("it is called with a non existing monitor ID") {
+                val updateDto = PagerdutyKeyUpdateDto("something")
+                val updateRequest =
+                    HttpRequest.PUT<PagerdutyKeyUpdateDto>("/monitors/123232/pagerduty-integration-key", updateDto)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking().exchange<PagerdutyKeyUpdateDto, Any>(updateRequest)
                 }
 
                 then("it should return a 404") {

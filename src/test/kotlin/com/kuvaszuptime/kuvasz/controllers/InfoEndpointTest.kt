@@ -19,6 +19,7 @@ class InfoEndpointTest(
                     response shouldContain "smtp-event-handler.enabled"
                     response shouldContain "slack-event-handler.enabled"
                     response shouldContain "telegram-event-handler.enabled"
+                    response shouldContain "pagerduty-event-handler.enabled"
                 }
             }
         }

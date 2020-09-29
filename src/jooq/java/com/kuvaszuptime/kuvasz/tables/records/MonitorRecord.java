@@ -20,8 +20,8 @@ import javax.validation.constraints.Size;
 
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record8;
-import org.jooq.Row8;
+import org.jooq.Record9;
+import org.jooq.Row9;
 import org.jooq.impl.UpdatableRecordImpl;
 
 
@@ -34,9 +34,9 @@ import org.jooq.impl.UpdatableRecordImpl;
     @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"}),
     @UniqueConstraint(name = "unique_monitor_name", columnNames = {"name"})
 })
-public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record8<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean> {
+public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> {
 
-    private static final long serialVersionUID = 1165953385;
+    private static final long serialVersionUID = -1258639093;
 
     /**
      * Setter for <code>monitor.id</code>.
@@ -172,6 +172,22 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         return (Boolean) get(7);
     }
 
+    /**
+     * Setter for <code>monitor.pagerduty_integration_key</code>.
+     */
+    public MonitorRecord setPagerdutyIntegrationKey(String value) {
+        set(8, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>monitor.pagerduty_integration_key</code>.
+     */
+    @Column(name = "pagerduty_integration_key")
+    public String getPagerdutyIntegrationKey() {
+        return (String) get(8);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -182,17 +198,17 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     // -------------------------------------------------------------------------
-    // Record8 type implementation
+    // Record9 type implementation
     // -------------------------------------------------------------------------
 
     @Override
-    public Row8<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean> fieldsRow() {
-        return (Row8) super.fieldsRow();
+    public Row9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> fieldsRow() {
+        return (Row9) super.fieldsRow();
     }
 
     @Override
-    public Row8<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean> valuesRow() {
-        return (Row8) super.valuesRow();
+    public Row9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> valuesRow() {
+        return (Row9) super.valuesRow();
     }
 
     @Override
@@ -236,6 +252,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     @Override
+    public Field<String> field9() {
+        return Monitor.MONITOR.PAGERDUTY_INTEGRATION_KEY;
+    }
+
+    @Override
     public Integer component1() {
         return getId();
     }
@@ -276,6 +297,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     @Override
+    public String component9() {
+        return getPagerdutyIntegrationKey();
+    }
+
+    @Override
     public Integer value1() {
         return getId();
     }
@@ -313,6 +339,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     @Override
     public Boolean value8() {
         return getSslCheckEnabled();
+    }
+
+    @Override
+    public String value9() {
+        return getPagerdutyIntegrationKey();
     }
 
     @Override
@@ -364,7 +395,13 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     @Override
-    public MonitorRecord values(Integer value1, String value2, String value3, Integer value4, Boolean value5, OffsetDateTime value6, OffsetDateTime value7, Boolean value8) {
+    public MonitorRecord value9(String value) {
+        setPagerdutyIntegrationKey(value);
+        return this;
+    }
+
+    @Override
+    public MonitorRecord values(Integer value1, String value2, String value3, Integer value4, Boolean value5, OffsetDateTime value6, OffsetDateTime value7, Boolean value8, String value9) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -373,6 +410,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         value6(value6);
         value7(value7);
         value8(value8);
+        value9(value9);
         return this;
     }
 
@@ -390,7 +428,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Integer id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled) {
+    public MonitorRecord(Integer id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, String pagerdutyIntegrationKey) {
         super(Monitor.MONITOR);
 
         set(0, id);
@@ -401,5 +439,6 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         set(5, createdAt);
         set(6, updatedAt);
         set(7, sslCheckEnabled);
+        set(8, pagerdutyIntegrationKey);
     }
 }
