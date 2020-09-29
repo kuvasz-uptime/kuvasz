@@ -79,6 +79,7 @@ paths:
                   smtp-event-handler.enabled: false
                   slack-event-handler.enabled: true
                   telegram-event-handler.enabled: true
+                  pagerduty-event-handler.enabled: true
   /monitors:
     get:
       tags:
