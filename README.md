@@ -85,7 +85,7 @@ If you want to know more about the fundamentals of Kuvasz, head to the [**Events
 
 There is a dedicated room for Kuvasz on [Gitter](https://gitter.im/kuvasz-uptime/community).
 
-## Sponsors
+## ❤️ Sponsors
 
 [![JetBrains](https://github.com/kuvasz-uptime/kuvasz/raw/main/docs/jetbrains-logo.png)](https://www.jetbrains.com/?from=kuvasz)
 
