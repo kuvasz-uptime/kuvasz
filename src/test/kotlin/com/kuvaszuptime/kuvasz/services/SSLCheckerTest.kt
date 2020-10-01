@@ -20,7 +20,7 @@ import io.kotest.core.test.TestResult
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -29,7 +29,7 @@ import io.mockk.verify
 import io.reactivex.subscribers.TestSubscriber
 import java.time.OffsetDateTime
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class SSLCheckerTest(
     private val monitorRepository: MonitorRepository,
     sslEventRepository: SSLEventRepository

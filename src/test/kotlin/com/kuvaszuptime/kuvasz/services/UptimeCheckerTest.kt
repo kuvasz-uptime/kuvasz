@@ -16,7 +16,7 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.simple.SimpleHttpResponseFactory
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.spyk
@@ -24,7 +24,7 @@ import io.reactivex.Flowable.fromArray
 import io.reactivex.subscribers.TestSubscriber
 import java.net.URI
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class UptimeCheckerTest(
     uptimeChecker: UptimeChecker,
     private val monitorRepository: MonitorRepository,

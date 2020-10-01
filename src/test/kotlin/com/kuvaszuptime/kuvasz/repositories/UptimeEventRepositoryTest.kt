@@ -6,9 +6,9 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class UptimeEventRepositoryTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository

@@ -25,7 +25,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.http.HttpStatus
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 import io.mockk.clearAllMocks
 import io.mockk.slot
 import io.mockk.spyk
@@ -33,7 +33,7 @@ import io.mockk.verify
 import org.simplejavamail.api.email.Email
 import java.time.OffsetDateTime
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class SMTPEventHandlerTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,

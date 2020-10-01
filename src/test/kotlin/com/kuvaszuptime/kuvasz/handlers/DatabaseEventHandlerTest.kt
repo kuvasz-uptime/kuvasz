@@ -25,13 +25,13 @@ import io.kotest.core.test.TestResult
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpStatus
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 import io.mockk.clearAllMocks
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class DatabaseEventHandlerTest(
     uptimeEventRepository: UptimeEventRepository,
     latencyLogRepository: LatencyLogRepository,

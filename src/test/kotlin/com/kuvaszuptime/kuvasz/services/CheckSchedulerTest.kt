@@ -11,9 +11,9 @@ import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class CheckSchedulerTest(
     private val checkScheduler: CheckScheduler,
     private val monitorRepository: MonitorRepository

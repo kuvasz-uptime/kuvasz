@@ -28,7 +28,7 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -36,7 +36,7 @@ import io.mockk.slot
 import io.mockk.verify
 import io.reactivex.Single
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class PagerdutyEventHandlerTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,

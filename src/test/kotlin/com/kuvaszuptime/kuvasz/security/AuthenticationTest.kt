@@ -15,7 +15,7 @@ import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
-import io.micronaut.test.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 
 @MicronautTest
 @Property(name = "micronaut.security.enabled", value = "true")
