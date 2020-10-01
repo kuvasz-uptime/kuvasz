@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz
 
-import com.kuvaszuptime.kuvasz.testutils.isLast
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
@@ -12,10 +11,8 @@ abstract class DatabaseBehaviorSpec(body: BehaviorSpec.() -> Unit = {}) : Behavi
     @Inject
     lateinit var flyway: Flyway
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
-        if (testCase.isLast()) {
-            flyway.clean()
-            flyway.migrate()
-        }
+    override fun afterContainer(testCase: TestCase, result: TestResult) {
+        flyway.clean()
+        flyway.migrate()
     }
 }
