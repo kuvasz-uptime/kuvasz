@@ -516,6 +516,116 @@ class MonitorControllerTest(
                 }
             }
         }
+
+        given("MonitorController's getUptimeEvents() endpoint") {
+            `when`("there is a monitor with the given ID in the database with uptime events") {
+                val monitor = createMonitor(monitorRepository)
+                val anotherMonitor =
+                    createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
+                val now = getCurrentTimestamp()
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    status = UptimeStatus.UP,
+                    endedAt = null
+                )
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now.minusDays(1),
+                    status = UptimeStatus.DOWN,
+                    endedAt = now
+                )
+                createUptimeEventRecord(
+                    repository = uptimeEventRepository,
+                    monitorId = anotherMonitor.id,
+                    startedAt = now,
+                    status = UptimeStatus.UP,
+                    endedAt = null
+                )
+
+                then("it should return its uptime events") {
+                    val response = monitorClient.getUptimeEvents(monitorId = monitor.id)
+                    response shouldHaveSize 2
+                    response.forOne { it.status shouldBe UptimeStatus.UP }
+                    response.forOne { it.status shouldBe UptimeStatus.DOWN }
+                }
+            }
+
+            `when`("there is a monitor with the given ID in the database without uptime events") {
+                val monitor = createMonitor(monitorRepository)
+
+                then("it should return an empty list") {
+                    val response = monitorClient.getUptimeEvents(monitorId = monitor.id)
+                    response shouldHaveSize 0
+                }
+            }
+
+            `when`("there is no monitor with the given ID in the database") {
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking().exchange<Any>("/monitors/1232132432/uptime-events")
+                }
+                then("it should return a 404") {
+                    response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
+
+        given("MonitorController's getSSLEvents() endpoint") {
+            `when`("there is a monitor with the given ID in the database with SSL events") {
+                val monitor = createMonitor(monitorRepository)
+                val anotherMonitor =
+                    createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
+                val now = getCurrentTimestamp()
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now,
+                    status = SslStatus.VALID,
+                    endedAt = null
+                )
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = monitor.id,
+                    startedAt = now.minusDays(1),
+                    status = SslStatus.INVALID,
+                    endedAt = now
+                )
+                createSSLEventRecord(
+                    repository = sslEventRepository,
+                    monitorId = anotherMonitor.id,
+                    startedAt = now,
+                    status = SslStatus.VALID,
+                    endedAt = null
+                )
+
+                then("it should return its uptime events") {
+                    val response = monitorClient.getSSLEvents(monitorId = monitor.id)
+                    response shouldHaveSize 2
+                    response.forOne { it.status shouldBe SslStatus.VALID }
+                    response.forOne { it.status shouldBe SslStatus.INVALID }
+                }
+            }
+
+            `when`("there is a monitor with the given ID in the database without ssl events") {
+                val monitor = createMonitor(monitorRepository)
+
+                then("it should return an empty list") {
+                    val response = monitorClient.getSSLEvents(monitorId = monitor.id)
+                    response shouldHaveSize 0
+                }
+            }
+
+            `when`("there is no monitor with the given ID in the database") {
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking().exchange<Any>("/monitors/1232132432/ssl-events")
+                }
+                then("it should return a 404") {
+                    response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
     }
 
     override fun afterTest(testCase: TestCase, result: TestResult) {

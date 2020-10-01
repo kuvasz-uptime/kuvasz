@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.client.annotation.Client
 
 @Client("/monitors")
@@ -22,4 +24,8 @@ interface MonitorClient : MonitorOperations {
     override fun upsertPagerdutyIntegrationKey(monitorId: Int, upsertDto: PagerdutyKeyUpdateDto): MonitorDto
 
     override fun deletePagerdutyIntegrationKey(monitorId: Int)
+
+    override fun getUptimeEvents(monitorId: Int): List<UptimeEventDto>
+
+    override fun getSSLEvents(monitorId: Int): List<SSLEventDto>
 }
