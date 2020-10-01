@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Get
@@ -60,4 +62,14 @@ interface MonitorOperations {
     @Delete("/{monitorId}/pagerduty-integration-key")
     @ExecuteOn(TaskExecutors.IO)
     fun deletePagerdutyIntegrationKey(monitorId: Int)
+
+    @Operation(summary = "Returns the uptime events of the given monitor")
+    @Get("/{monitorId}/uptime-events")
+    @ExecuteOn(TaskExecutors.IO)
+    fun getUptimeEvents(monitorId: Int): List<UptimeEventDto>
+
+    @Operation(summary = "Returns the SSL events of the given monitor")
+    @Get("/{monitorId}/ssl-events")
+    @ExecuteOn(TaskExecutors.IO)
+    fun getSSLEvents(monitorId: Int): List<SSLEventDto>
 }

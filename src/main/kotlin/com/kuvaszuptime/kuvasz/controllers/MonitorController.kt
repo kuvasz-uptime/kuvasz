@@ -7,6 +7,8 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
@@ -144,4 +146,23 @@ class MonitorController(
     override fun deletePagerdutyIntegrationKey(monitorId: Int) {
         monitorCrudService.updatePagerdutyIntegrationKey(monitorId, null)
     }
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+            content = [Content(array = ArraySchema(schema = Schema(implementation = UptimeEventDto::class)))]
+        )
+    )
+    override fun getUptimeEvents(monitorId: Int): List<UptimeEventDto> =
+        monitorCrudService.getUptimeEventsByMonitorId(monitorId)
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+            content = [Content(array = ArraySchema(schema = Schema(implementation = SSLEventDto::class)))]
+        )
+    )
+    override fun getSSLEvents(monitorId: Int): List<SSLEventDto> = monitorCrudService.getSSLEventsByMonitorId(monitorId)
 }

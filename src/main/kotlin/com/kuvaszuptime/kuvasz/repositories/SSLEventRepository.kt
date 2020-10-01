@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
@@ -52,4 +53,18 @@ class SSLEventRepository(jooqConfig: Configuration) : SslEventDao(jooqConfig) {
             .set(SSL_EVENT.UPDATED_AT, updatedAt)
             .where(SSL_EVENT.ID.eq(eventId))
             .execute()
+
+    fun getEventsByMonitorId(monitorId: Int): List<SSLEventDto> =
+        dsl
+            .select(
+                SSL_EVENT.STATUS.`as`("status"),
+                SSL_EVENT.ERROR.`as`("error"),
+                SSL_EVENT.STARTED_AT.`as`("startedAt"),
+                SSL_EVENT.ENDED_AT.`as`("endedAt"),
+                SSL_EVENT.UPDATED_AT.`as`("updatedAt")
+            )
+            .from(SSL_EVENT)
+            .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
+            .orderBy(SSL_EVENT.STARTED_AT.desc())
+            .fetchInto(SSLEventDto::class.java)
 }

@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
@@ -56,4 +57,18 @@ class UptimeEventRepository(jooqConfig: Configuration) : UptimeEventDao(jooqConf
 
     fun isMonitorUp(monitorId: Int): Boolean =
         getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: false
+
+    fun getEventsByMonitorId(monitorId: Int): List<UptimeEventDto> =
+        dsl
+            .select(
+                UPTIME_EVENT.STATUS.`as`("status"),
+                UPTIME_EVENT.ERROR.`as`("error"),
+                UPTIME_EVENT.STARTED_AT.`as`("startedAt"),
+                UPTIME_EVENT.ENDED_AT.`as`("endedAt"),
+                UPTIME_EVENT.UPDATED_AT.`as`("updatedAt")
+            )
+            .from(UPTIME_EVENT)
+            .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+            .orderBy(UPTIME_EVENT.STARTED_AT.desc())
+            .fetchInto(UptimeEventDto::class.java)
 }

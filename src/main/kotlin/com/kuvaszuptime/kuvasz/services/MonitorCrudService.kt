@@ -4,8 +4,12 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import javax.inject.Singleton
 
@@ -13,7 +17,9 @@ import javax.inject.Singleton
 class MonitorCrudService(
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
-    private val checkScheduler: CheckScheduler
+    private val checkScheduler: CheckScheduler,
+    private val uptimeEventRepository: UptimeEventRepository,
+    private val sslEventRepository: SSLEventRepository
 ) {
 
     fun getMonitorDetails(monitorId: Int): MonitorDetailsDto? =
@@ -89,5 +95,15 @@ class MonitorCrudService(
         monitorRepository.findById(monitorId)?.let { existingMonitor ->
             val updatedMonitor = existingMonitor.setPagerdutyIntegrationKey(integrationKey)
             updatedMonitor.saveAndReschedule(existingMonitor)
+        } ?: throw MonitorNotFoundError(monitorId)
+
+    fun getUptimeEventsByMonitorId(monitorId: Int): List<UptimeEventDto> =
+        monitorRepository.findById(monitorId)?.let { _ ->
+            uptimeEventRepository.getEventsByMonitorId(monitorId)
+        } ?: throw MonitorNotFoundError(monitorId)
+
+    fun getSSLEventsByMonitorId(monitorId: Int): List<SSLEventDto> =
+        monitorRepository.findById(monitorId)?.let { _ ->
+            sslEventRepository.getEventsByMonitorId(monitorId)
         } ?: throw MonitorNotFoundError(monitorId)
 }
