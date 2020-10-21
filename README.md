@@ -52,7 +52,7 @@ docker run -p 8080:8080 \
 -e DATABASE_NAME=your_database \
 -e DATABASE_USER=your_db_user \
 -e DATABASE_PASSWORD=OhThisIsSoSecure \
--e JWT_SIGNATURE_SECRET=ThisOneShouldBeVeryRandomAsWell \
+-e JWT_SIGNATURE_SECRET=testSecretItsVeryVerySecretSecret \
 kuvaszmonitoring/kuvasz:latest
 ```
 
