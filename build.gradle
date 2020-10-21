@@ -52,7 +52,6 @@ dependencies {
     implementation("io.micronaut.sql:micronaut-jooq:$micronautJooqVersion")
     implementation("io.micronaut.security:micronaut-security-jwt")
     implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonKotlinVersion")
     implementation "nu.studer:gradle-jooq-plugin:$jooqPluginVersion"
     implementation("org.postgresql:postgresql:${postgresVersion}")
     implementation("org.simplejavamail:simple-java-mail:${simpleJavaMailVersion}")
@@ -61,6 +60,7 @@ dependencies {
     implementation("org.zalando:logbook-core:$logbookVersion")
     implementation("org.zalando:logbook-netty:$logbookVersion")
     implementation("org.zalando:logbook-json:$logbookVersion")
+    runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
     detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
     kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
