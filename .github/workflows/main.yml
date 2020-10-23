@@ -21,7 +21,7 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ secrets.CACHE_VERSION }}-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
-          ${{ runner.os }}-gradle-
+          ${{ runner.os }}-gradle-${{ secrets.CACHE_VERSION }}-
     - name: Run Gradle check
       run: ./gradlew check
     - name: Codecov
