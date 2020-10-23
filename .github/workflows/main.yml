@@ -19,11 +19,11 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ secrets.CACHE_VERSION }}-${{ hashFiles('**/*.gradle*') }}
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
-          ${{ runner.os }}-gradle-${{ secrets.CACHE_VERSION }}-
+          ${{ runner.os }}-gradle-
     - name: Run Gradle check
-      run: ./gradlew check
+      run: ./gradlew check --info
     - name: Codecov
       uses: codecov/codecov-action@v1.0.11
       with:
