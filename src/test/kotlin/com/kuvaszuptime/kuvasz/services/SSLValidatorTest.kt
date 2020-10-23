@@ -18,8 +18,6 @@ class SSLValidatorTest : StringSpec(
                 row("https://sha256.badssl.com/", true),
                 row("https://sha384.badssl.com/", true),
                 row("https://sha512.badssl.com/", true),
-                row("https://1000-sans.badssl.com/", true),
-                row("https://10000-sans.badssl.com/", true),
                 row("https://ecc256.badssl.com/", true),
                 row("https://ecc384.badssl.com/", true),
                 row("https://rsa2048.badssl.com/", true),
@@ -36,9 +34,6 @@ class SSLValidatorTest : StringSpec(
                 row("https://incomplete-chain.badssl.com/", false)
             ).forAll { url, isValid ->
                 val result = validator.validate(URL(url))
-                println(url)
-                println(isValid)
-                println(result)
 
                 (if (isValid) result.isRight() else result.isLeft()).shouldBeTrue()
             }
