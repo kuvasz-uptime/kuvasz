@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.testutils
 
 import org.testcontainers.containers.PostgreSQLContainer
 
-class TestDbContainer : PostgreSQLContainer<TestDbContainer>() {
+class TestDbContainer : PostgreSQLContainer<TestDbContainer>("postgres:12") {
     companion object {
         lateinit var instance: TestDbContainer
 
@@ -10,7 +10,6 @@ class TestDbContainer : PostgreSQLContainer<TestDbContainer>() {
             if (!Companion::instance.isInitialized) {
                 instance =
                     TestDbContainer()
-                instance.dockerImageName = "postgres:12"
                 instance.start()
 
                 System.setProperty("datasources.default.url", instance.jdbcUrl)
