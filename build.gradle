@@ -1,3 +1,11 @@
+buildscript {
+    configurations['classpath'].resolutionStrategy.eachDependency {
+        if (requested.group == 'org.jooq') {
+            useVersion jooqVersion
+        }
+    }
+}
+
 plugins {
     id "org.jetbrains.kotlin.jvm" version "${kotlinVersion}"
     id "org.jetbrains.kotlin.kapt" version "${kotlinVersion}"
@@ -96,6 +104,29 @@ jacocoTestReport {
                 exclude("com/kuvaszuptime/kuvasz/Application.class")
             }
     )
+}
+
+jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories.setFrom(
+                fileTree("build/classes/kotlin/main") {
+                    exclude("com/kuvaszuptime/kuvasz/Application.class")
+                }
+        )
+    }
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                minimum = 0.9
+            }
+        }
+    }
+}
+
+check {
+    dependsOn("jacocoTestCoverageVerification")
 }
 
 detekt {
@@ -210,7 +241,6 @@ jooq {
                     driver = "org.postgresql.Driver"
                 }
                 generator {
-                    name = "org.jooq.codegen.DefaultGenerator"
                     target {
                         directory = "src/jooq/java"
                         packageName = "com.kuvaszuptime.kuvasz"

@@ -30,20 +30,28 @@ import io.mockk.clearAllMocks
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import org.jooq.Configuration
 
 @MicronautTest(startApplication = false)
 class DatabaseEventHandlerTest(
     uptimeEventRepository: UptimeEventRepository,
     latencyLogRepository: LatencyLogRepository,
     monitorRepository: MonitorRepository,
-    sslEventRepository: SSLEventRepository
+    sslEventRepository: SSLEventRepository,
+    jooqConfig: Configuration
 ) : DatabaseBehaviorSpec() {
     init {
         val eventDispatcher = EventDispatcher()
         val uptimeEventRepositorySpy = spyk(uptimeEventRepository)
         val latencyLogRepositorySpy = spyk(latencyLogRepository)
         val sslEventRepositorySpy = spyk(sslEventRepository)
-        DatabaseEventHandler(eventDispatcher, uptimeEventRepositorySpy, latencyLogRepositorySpy, sslEventRepositorySpy)
+        DatabaseEventHandler(
+            eventDispatcher,
+            uptimeEventRepositorySpy,
+            latencyLogRepositorySpy,
+            sslEventRepositorySpy,
+            jooqConfig
+        )
 
         given("the DatabaseEventHandler - UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
@@ -69,11 +77,11 @@ class DatabaseEventHandlerTest(
                         )
                     }
 
-                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord!!.status shouldBe UptimeStatus.UP
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
-                    expectedLatencyRecord.latency shouldBe event.latency
+                    expectedLatencyRecord!!.latency shouldBe event.latency
                 }
             }
 
@@ -93,7 +101,7 @@ class DatabaseEventHandlerTest(
                     verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
                     verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any()) }
 
-                    expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
+                    expectedUptimeRecord!!.status shouldBe UptimeStatus.DOWN
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
@@ -123,14 +131,14 @@ class DatabaseEventHandlerTest(
                     val expectedUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
                     val latencyRecords = latencyLogRepository.fetchByMonitorId(monitor.id).sortedBy { it.createdAt }
 
-                    verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent) }
-                    verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any()) }
+                    verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
+                    verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any(), any()) }
                     verifyOrder {
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, firstEvent.latency)
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, secondEvent.latency)
                     }
 
-                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord!!.status shouldBe UptimeStatus.UP
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
                     latencyRecords shouldHaveSize 2
@@ -148,7 +156,7 @@ class DatabaseEventHandlerTest(
                     error = Throwable()
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)!!
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -160,13 +168,13 @@ class DatabaseEventHandlerTest(
 
                 then("it should create a new UptimeEvent and a LatencyLog record, and end the previous one") {
                     val uptimeRecords = uptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
-                    val latencyRecord = latencyLogRepository.fetchOne(LATENCY_LOG.MONITOR_ID, monitor.id)
+                    val latencyRecord = latencyLogRepository.fetchOne(LATENCY_LOG.MONITOR_ID, monitor.id)!!
 
                     verifyOrder {
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent)
+                        uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, secondEvent.latency)
-                        uptimeEventRepositorySpy.endEventById(firstUptimeRecord.id, secondEvent.dispatchedAt)
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent)
+                        uptimeEventRepositorySpy.endEventById(firstUptimeRecord.id, secondEvent.dispatchedAt, any())
+                        uptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
                     }
 
                     uptimeRecords[0].status shouldBe UptimeStatus.DOWN
@@ -188,7 +196,7 @@ class DatabaseEventHandlerTest(
                     latency = 1000
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)!!
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -200,13 +208,13 @@ class DatabaseEventHandlerTest(
 
                 then("it should create a new UptimeEvent record and end the previous one") {
                     val uptimeRecords = uptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
-                    val latencyRecord = latencyLogRepository.fetchOne(LATENCY_LOG.MONITOR_ID, monitor.id)
+                    val latencyRecord = latencyLogRepository.fetchOne(LATENCY_LOG.MONITOR_ID, monitor.id)!!
 
                     verifyOrder {
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, firstEvent.latency)
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent)
-                        uptimeEventRepositorySpy.endEventById(firstUptimeRecord.id, secondEvent.dispatchedAt)
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent)
+                        uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        uptimeEventRepositorySpy.endEventById(firstUptimeRecord.id, secondEvent.dispatchedAt, any())
+                        uptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
                     }
 
                     uptimeRecords[0].status shouldBe UptimeStatus.UP
@@ -231,7 +239,7 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(event)
 
                 then("it should insert a new SSLEvent record with status VALID") {
-                    val expectedSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, event.monitor.id)
+                    val expectedSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, event.monitor.id)!!
 
                     verify(exactly = 1) { sslEventRepositorySpy.insertFromMonitorEvent(event) }
                     verify(exactly = 0) { sslEventRepositorySpy.endEventById(any(), any()) }
@@ -255,10 +263,10 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new SSLEvent record with status INVALID") {
                     val expectedSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, event.monitor.id)
 
-                    verify(exactly = 1) { sslEventRepositorySpy.insertFromMonitorEvent(event) }
-                    verify(exactly = 0) { sslEventRepositorySpy.endEventById(any(), any()) }
+                    verify(exactly = 1) { sslEventRepositorySpy.insertFromMonitorEvent(event, any()) }
+                    verify(exactly = 0) { sslEventRepositorySpy.endEventById(any(), any(), any()) }
 
-                    expectedSSLRecord.status shouldBe SslStatus.INVALID
+                    expectedSSLRecord!!.status shouldBe SslStatus.INVALID
                     expectedSSLRecord.startedAt shouldBe event.dispatchedAt
                     expectedSSLRecord.endedAt shouldBe null
                     expectedSSLRecord.updatedAt shouldBe event.dispatchedAt
@@ -289,7 +297,7 @@ class DatabaseEventHandlerTest(
                     verify(exactly = 1) { sslEventRepositorySpy.insertFromMonitorEvent(firstEvent) }
                     verify(exactly = 0) { sslEventRepositorySpy.endEventById(any(), any()) }
 
-                    expectedSSLRecord.status shouldBe SslStatus.VALID
+                    expectedSSLRecord!!.status shouldBe SslStatus.VALID
                     expectedSSLRecord.endedAt shouldBe null
                     expectedSSLRecord.updatedAt shouldBe secondEvent.dispatchedAt
                 }
@@ -303,7 +311,7 @@ class DatabaseEventHandlerTest(
                     error = SSLValidationError("ssl error")
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)!!
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -316,9 +324,9 @@ class DatabaseEventHandlerTest(
                     val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
 
                     verifyOrder {
-                        sslEventRepositorySpy.insertFromMonitorEvent(firstEvent)
-                        sslEventRepositorySpy.endEventById(firstSSLRecord.id, secondEvent.dispatchedAt)
-                        sslEventRepositorySpy.insertFromMonitorEvent(secondEvent)
+                        sslEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        sslEventRepositorySpy.endEventById(firstSSLRecord.id, secondEvent.dispatchedAt, any())
+                        sslEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
                     }
 
                     sslRecords[0].status shouldBe SslStatus.INVALID
@@ -338,7 +346,7 @@ class DatabaseEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)!!
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
@@ -351,9 +359,9 @@ class DatabaseEventHandlerTest(
                     val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
 
                     verifyOrder {
-                        sslEventRepositorySpy.insertFromMonitorEvent(firstEvent)
-                        sslEventRepositorySpy.endEventById(firstSSLRecord.id, secondEvent.dispatchedAt)
-                        sslEventRepositorySpy.insertFromMonitorEvent(secondEvent)
+                        sslEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        sslEventRepositorySpy.endEventById(firstSSLRecord.id, secondEvent.dispatchedAt, any())
+                        sslEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
                     }
 
                     sslRecords[0].status shouldBe SslStatus.VALID
@@ -375,7 +383,7 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(event)
 
                 then("it should insert a new SSLEvent record with status WILL_EXPIRE") {
-                    val expectedSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, event.monitor.id)
+                    val expectedSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, event.monitor.id)!!
 
                     verify(exactly = 1) { sslEventRepositorySpy.insertFromMonitorEvent(event) }
                     verify(exactly = 0) { sslEventRepositorySpy.endEventById(any(), any()) }
@@ -405,7 +413,7 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should not insert a new SSLEvent record") {
-                    val expectedSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                    val expectedSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)!!
 
                     verify(exactly = 1) { sslEventRepositorySpy.insertFromMonitorEvent(firstEvent) }
                     verify(exactly = 0) { sslEventRepositorySpy.endEventById(any(), any()) }
@@ -424,7 +432,7 @@ class DatabaseEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)!!
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
@@ -437,9 +445,9 @@ class DatabaseEventHandlerTest(
                     val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
 
                     verifyOrder {
-                        sslEventRepositorySpy.insertFromMonitorEvent(firstEvent)
-                        sslEventRepositorySpy.endEventById(firstSSLRecord.id, secondEvent.dispatchedAt)
-                        sslEventRepositorySpy.insertFromMonitorEvent(secondEvent)
+                        sslEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        sslEventRepositorySpy.endEventById(firstSSLRecord.id, secondEvent.dispatchedAt, any())
+                        sslEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
                     }
 
                     sslRecords[0].status shouldBe SslStatus.VALID

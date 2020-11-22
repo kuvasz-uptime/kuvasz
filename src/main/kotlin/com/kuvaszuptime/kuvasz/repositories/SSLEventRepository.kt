@@ -7,14 +7,15 @@ import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.SslEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
 import org.jooq.Configuration
+import org.jooq.impl.DSL
 import java.time.OffsetDateTime
 import javax.inject.Singleton
 
 @Singleton
-class SSLEventRepository(jooqConfig: Configuration) : SslEventDao(jooqConfig) {
+class SSLEventRepository(private val jooqConfig: Configuration) : SslEventDao(jooqConfig) {
     private val dsl = jooqConfig.dsl()
 
-    fun insertFromMonitorEvent(event: SSLMonitorEvent) {
+    fun insertFromMonitorEvent(event: SSLMonitorEvent, configuration: Configuration? = jooqConfig) {
         val eventToInsert = SslEventPojo()
             .setMonitorId(event.monitor.id)
             .setStatus(event.sslStatus)
@@ -25,7 +26,10 @@ class SSLEventRepository(jooqConfig: Configuration) : SslEventDao(jooqConfig) {
             eventToInsert.error = event.error.message
         }
 
-        insert(eventToInsert)
+        DSL.using(configuration)
+            .insertInto(SSL_EVENT)
+            .set(dsl.newRecord(SSL_EVENT, eventToInsert))
+            .execute()
     }
 
     fun getPreviousEventByMonitorId(monitorId: Int): SslEventPojo? =
@@ -35,8 +39,9 @@ class SSLEventRepository(jooqConfig: Configuration) : SslEventDao(jooqConfig) {
             .and(SSL_EVENT.ENDED_AT.isNull)
             .fetchOneInto(SslEventPojo::class.java)
 
-    fun endEventById(eventId: Int, endedAt: OffsetDateTime) =
-        dsl.update(SSL_EVENT)
+    fun endEventById(eventId: Int, endedAt: OffsetDateTime, configuration: Configuration? = jooqConfig) =
+        DSL.using(configuration)
+            .update(SSL_EVENT)
             .set(SSL_EVENT.ENDED_AT, endedAt)
             .set(SSL_EVENT.UPDATED_AT, endedAt)
             .where(SSL_EVENT.ID.eq(eventId))

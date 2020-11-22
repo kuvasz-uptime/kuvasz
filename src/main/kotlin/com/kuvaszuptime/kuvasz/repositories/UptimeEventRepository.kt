@@ -8,14 +8,15 @@ import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.UptimeEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import org.jooq.Configuration
+import org.jooq.impl.DSL
 import java.time.OffsetDateTime
 import javax.inject.Singleton
 
 @Singleton
-class UptimeEventRepository(jooqConfig: Configuration) : UptimeEventDao(jooqConfig) {
+class UptimeEventRepository(private val jooqConfig: Configuration) : UptimeEventDao(jooqConfig) {
     private val dsl = jooqConfig.dsl()
 
-    fun insertFromMonitorEvent(event: UptimeMonitorEvent) {
+    fun insertFromMonitorEvent(event: UptimeMonitorEvent, configuration: Configuration? = jooqConfig) {
         val eventToInsert = UptimeEventPojo()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
@@ -26,7 +27,10 @@ class UptimeEventRepository(jooqConfig: Configuration) : UptimeEventDao(jooqConf
             eventToInsert.error = event.error.message
         }
 
-        insert(eventToInsert)
+        DSL.using(configuration)
+            .insertInto(UPTIME_EVENT)
+            .set(dsl.newRecord(UPTIME_EVENT, eventToInsert))
+            .execute()
     }
 
     fun getPreviousEventByMonitorId(monitorId: Int): UptimeEventPojo? =
@@ -36,8 +40,9 @@ class UptimeEventRepository(jooqConfig: Configuration) : UptimeEventDao(jooqConf
             .and(UPTIME_EVENT.ENDED_AT.isNull)
             .fetchOneInto(UptimeEventPojo::class.java)
 
-    fun endEventById(eventId: Int, endedAt: OffsetDateTime) =
-        dsl.update(UPTIME_EVENT)
+    fun endEventById(eventId: Int, endedAt: OffsetDateTime, configuration: Configuration? = jooqConfig) =
+        DSL.using(configuration)
+            .update(UPTIME_EVENT)
             .set(UPTIME_EVENT.ENDED_AT, endedAt)
             .set(UPTIME_EVENT.UPDATED_AT, endedAt)
             .where(UPTIME_EVENT.ID.eq(eventId))

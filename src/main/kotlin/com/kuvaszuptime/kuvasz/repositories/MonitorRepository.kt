@@ -11,6 +11,8 @@ import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.MonitorDao
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.util.fetchOneIntoOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import org.jooq.Configuration
@@ -62,8 +64,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
                     .insertInto(MONITOR)
                     .set(dsl.newRecord(MONITOR, monitorPojo))
                     .returning(MONITOR.asterisk())
-                    .fetchOne()
-                    .into(MonitorPojo::class.java)
+                    .fetchOneIntoOrThrow<MonitorRecord, MonitorPojo>()
             )
         } catch (e: DataAccessException) {
             e.handle()
@@ -83,8 +84,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
                     .set(MONITOR.PAGERDUTY_INTEGRATION_KEY, updatedPojo.pagerdutyIntegrationKey)
                     .where(MONITOR.ID.eq(updatedPojo.id))
                     .returning(MONITOR.asterisk())
-                    .fetchOne()
-                    .into(MonitorPojo::class.java)
+                    .fetchOneIntoOrThrow<MonitorRecord, MonitorPojo>()
             )
         } catch (e: DataAccessException) {
             e.handle()
