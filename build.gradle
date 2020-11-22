@@ -106,6 +106,29 @@ jacocoTestReport {
     )
 }
 
+jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories.setFrom(
+                fileTree("build/classes/kotlin/main") {
+                    exclude("com/kuvaszuptime/kuvasz/Application.class")
+                }
+        )
+    }
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                minimum = 0.9
+            }
+        }
+    }
+}
+
+check {
+    dependsOn("jacocoTestCoverageVerification")
+}
+
 detekt {
     input = files(
             "src/main/kotlin",
