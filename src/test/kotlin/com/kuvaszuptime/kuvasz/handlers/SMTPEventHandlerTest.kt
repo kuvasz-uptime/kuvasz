@@ -30,9 +30,11 @@ import io.mockk.clearAllMocks
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import org.jooq.Configuration
 import org.simplejavamail.api.email.Email
 import java.time.OffsetDateTime
 
+@Suppress("LongParameterList")
 @MicronautTest(startApplication = false)
 class SMTPEventHandlerTest(
     private val monitorRepository: MonitorRepository,
@@ -40,14 +42,21 @@ class SMTPEventHandlerTest(
     private val sslEventRepository: SSLEventRepository,
     latencyLogRepository: LatencyLogRepository,
     smtpEventHandlerConfig: SMTPEventHandlerConfig,
-    smtpMailer: SMTPMailer
+    smtpMailer: SMTPMailer,
+    jooqConfig: Configuration
 ) : DatabaseBehaviorSpec() {
     init {
         val eventDispatcher = EventDispatcher()
         val emailFactory = EmailFactory(smtpEventHandlerConfig)
         val mailerSpy = spyk(smtpMailer, recordPrivateCalls = true)
 
-        DatabaseEventHandler(eventDispatcher, uptimeEventRepository, latencyLogRepository, sslEventRepository)
+        DatabaseEventHandler(
+            eventDispatcher,
+            uptimeEventRepository,
+            latencyLogRepository,
+            sslEventRepository,
+            jooqConfig
+        )
         SMTPEventHandler(smtpEventHandlerConfig, mailerSpy, eventDispatcher)
 
         given("the SMTPEventHandler - UPTIME events") {

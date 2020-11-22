@@ -11,7 +11,7 @@ import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 
 
 /**
- * Convenience access to all tables in 
+ * Convenience access to all tables in the default schema.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Tables {

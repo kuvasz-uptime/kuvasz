@@ -23,15 +23,19 @@ import javax.validation.constraints.NotNull;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
-@Table(name = "latency_log", uniqueConstraints = {
-    @UniqueConstraint(name = "latency_log_pkey", columnNames = {"id"})
-}, indexes = {
-    @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
-    @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
-})
+@Table(
+    name = "latency_log",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "latency_log_pkey", columnNames = { "id" })
+    },
+    indexes = {
+        @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
+        @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
+    }
+)
 public class LatencyLogPojo implements Serializable {
 
-    private static final long serialVersionUID = 1568220283;
+    private static final long serialVersionUID = 1L;
 
     private Integer        id;
     private Integer        monitorId;
@@ -59,6 +63,9 @@ public class LatencyLogPojo implements Serializable {
         this.createdAt = createdAt;
     }
 
+    /**
+     * Getter for <code>latency_log.id</code>.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, precision = 32)
@@ -66,38 +73,59 @@ public class LatencyLogPojo implements Serializable {
         return this.id;
     }
 
+    /**
+     * Setter for <code>latency_log.id</code>.
+     */
     public LatencyLogPojo setId(Integer id) {
         this.id = id;
         return this;
     }
 
+    /**
+     * Getter for <code>latency_log.monitor_id</code>.
+     */
     @Column(name = "monitor_id", nullable = false, precision = 32)
     @NotNull
     public Integer getMonitorId() {
         return this.monitorId;
     }
 
+    /**
+     * Setter for <code>latency_log.monitor_id</code>.
+     */
     public LatencyLogPojo setMonitorId(Integer monitorId) {
         this.monitorId = monitorId;
         return this;
     }
 
+    /**
+     * Getter for <code>latency_log.latency</code>. Lateny in ms
+     */
     @Column(name = "latency", nullable = false, precision = 32)
     @NotNull
     public Integer getLatency() {
         return this.latency;
     }
 
+    /**
+     * Setter for <code>latency_log.latency</code>. Lateny in ms
+     */
     public LatencyLogPojo setLatency(Integer latency) {
         this.latency = latency;
         return this;
     }
 
-    @Column(name = "created_at", nullable = false)
+    /**
+     * Getter for <code>latency_log.created_at</code>.
+     */
+    @Column(name = "created_at", nullable = false, precision = 6)
     public OffsetDateTime getCreatedAt() {
         return this.createdAt;
     }
 
+    /**
+     * Setter for <code>latency_log.created_at</code>.
+     */
     public LatencyLogPojo setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
         return this;

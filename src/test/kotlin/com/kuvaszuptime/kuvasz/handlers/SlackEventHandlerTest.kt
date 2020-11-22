@@ -34,6 +34,7 @@ import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import io.reactivex.Single
+import org.jooq.Configuration
 import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
@@ -41,7 +42,8 @@ class SlackEventHandlerTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
-    latencyLogRepository: LatencyLogRepository
+    latencyLogRepository: LatencyLogRepository,
+    jooqConfig: Configuration
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<SlackWebhookClient>()
 
@@ -50,7 +52,13 @@ class SlackEventHandlerTest(
         val slackWebhookService = SlackWebhookService(mockClient)
         val webhookServiceSpy = spyk(slackWebhookService, recordPrivateCalls = true)
 
-        DatabaseEventHandler(eventDispatcher, uptimeEventRepository, latencyLogRepository, sslEventRepository)
+        DatabaseEventHandler(
+            eventDispatcher,
+            uptimeEventRepository,
+            latencyLogRepository,
+            sslEventRepository,
+            jooqConfig
+        )
         SlackEventHandler(webhookServiceSpy, eventDispatcher)
 
         given("the SlackEventHandler - UPTIME events") {

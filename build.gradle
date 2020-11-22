@@ -1,3 +1,11 @@
+buildscript {
+    configurations['classpath'].resolutionStrategy.eachDependency {
+        if (requested.group == 'org.jooq') {
+            useVersion jooqVersion
+        }
+    }
+}
+
 plugins {
     id "org.jetbrains.kotlin.jvm" version "${kotlinVersion}"
     id "org.jetbrains.kotlin.kapt" version "${kotlinVersion}"
@@ -210,7 +218,6 @@ jooq {
                     driver = "org.postgresql.Driver"
                 }
                 generator {
-                    name = "org.jooq.codegen.DefaultGenerator"
                     target {
                         directory = "src/jooq/java"
                         packageName = "com.kuvaszuptime.kuvasz"

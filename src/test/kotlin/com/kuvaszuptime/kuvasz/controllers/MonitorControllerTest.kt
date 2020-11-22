@@ -438,7 +438,7 @@ class MonitorControllerTest(
 
                 then("it should delete the integration key of the given monitor") {
                     response.status shouldBe HttpStatus.NO_CONTENT
-                    monitorInDb.pagerdutyIntegrationKey shouldBe null
+                    monitorInDb!!.pagerdutyIntegrationKey shouldBe null
                 }
             }
 

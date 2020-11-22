@@ -6,8 +6,9 @@ import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.util.transaction
 import io.micronaut.context.annotation.Context
+import org.jooq.Configuration
+import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 
 @Context
@@ -15,7 +16,8 @@ class DatabaseEventHandler(
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository,
-    private val sslEventRepository: SSLEventRepository
+    private val sslEventRepository: SSLEventRepository,
+    private val jooqConfig: Configuration
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(DatabaseEventHandler::class.java)
@@ -52,9 +54,9 @@ class DatabaseEventHandler(
     private fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {
         currentEvent.previousEvent?.let { previousEvent ->
             if (currentEvent.statusNotEquals(previousEvent)) {
-                uptimeEventRepository.transaction {
-                    uptimeEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt)
-                    uptimeEventRepository.insertFromMonitorEvent(currentEvent)
+                DSL.using(jooqConfig).transaction { config ->
+                    uptimeEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt, config)
+                    uptimeEventRepository.insertFromMonitorEvent(currentEvent, config)
                 }
             } else {
                 uptimeEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
@@ -65,9 +67,9 @@ class DatabaseEventHandler(
     private fun handleSSLMonitorEvent(currentEvent: SSLMonitorEvent) {
         currentEvent.previousEvent?.let { previousEvent ->
             if (currentEvent.statusNotEquals(previousEvent)) {
-                sslEventRepository.transaction {
-                    sslEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt)
-                    sslEventRepository.insertFromMonitorEvent(currentEvent)
+                DSL.using(jooqConfig).transaction { config ->
+                    sslEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt, config)
+                    sslEventRepository.insertFromMonitorEvent(currentEvent, config)
                 }
             } else {
                 sslEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)

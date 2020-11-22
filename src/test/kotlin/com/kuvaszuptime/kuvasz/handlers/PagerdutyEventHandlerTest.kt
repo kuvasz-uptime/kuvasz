@@ -35,20 +35,28 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.reactivex.Single
+import org.jooq.Configuration
 
 @MicronautTest(startApplication = false)
 class PagerdutyEventHandlerTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
     sslEventRepository: SSLEventRepository,
-    latencyLogRepository: LatencyLogRepository
+    latencyLogRepository: LatencyLogRepository,
+    jooqConfig: Configuration
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<PagerdutyAPIClient>()
 
     init {
         val eventDispatcher = EventDispatcher()
 
-        DatabaseEventHandler(eventDispatcher, uptimeEventRepository, latencyLogRepository, sslEventRepository)
+        DatabaseEventHandler(
+            eventDispatcher,
+            uptimeEventRepository,
+            latencyLogRepository,
+            sslEventRepository,
+            jooqConfig
+        )
         PagerdutyEventHandler(eventDispatcher, mockClient)
 
         given("the PagerdutyEventHandler - UPTIME events") {
