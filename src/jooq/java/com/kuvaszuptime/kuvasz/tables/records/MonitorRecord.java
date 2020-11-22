@@ -30,16 +30,13 @@ import org.jooq.impl.UpdatableRecordImpl;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
-@Table(
-    name = "monitor",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "monitor_pkey", columnNames = { "id" }),
-        @UniqueConstraint(name = "unique_monitor_name", columnNames = { "name" })
-    }
-)
+@Table(name = "monitor", uniqueConstraints = {
+    @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"}),
+    @UniqueConstraint(name = "unique_monitor_name", columnNames = {"name"})
+})
 public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1258639093;
 
     /**
      * Setter for <code>monitor.id</code>.
@@ -138,7 +135,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     /**
      * Getter for <code>monitor.created_at</code>.
      */
-    @Column(name = "created_at", nullable = false, precision = 6)
+    @Column(name = "created_at", nullable = false)
     public OffsetDateTime getCreatedAt() {
         return (OffsetDateTime) get(5);
     }
@@ -154,7 +151,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     /**
      * Getter for <code>monitor.updated_at</code>.
      */
-    @Column(name = "updated_at", precision = 6)
+    @Column(name = "updated_at")
     public OffsetDateTime getUpdatedAt() {
         return (OffsetDateTime) get(6);
     }
@@ -434,14 +431,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     public MonitorRecord(Integer id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, String pagerdutyIntegrationKey) {
         super(Monitor.MONITOR);
 
-        setId(id);
-        setName(name);
-        setUrl(url);
-        setUptimeCheckInterval(uptimeCheckInterval);
-        setEnabled(enabled);
-        setCreatedAt(createdAt);
-        setUpdatedAt(updatedAt);
-        setSslCheckEnabled(sslCheckEnabled);
-        setPagerdutyIntegrationKey(pagerdutyIntegrationKey);
+        set(0, id);
+        set(1, name);
+        set(2, url);
+        set(3, uptimeCheckInterval);
+        set(4, enabled);
+        set(5, createdAt);
+        set(6, updatedAt);
+        set(7, sslCheckEnabled);
+        set(8, pagerdutyIntegrationKey);
     }
 }

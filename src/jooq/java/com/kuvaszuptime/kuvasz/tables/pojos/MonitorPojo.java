@@ -23,16 +23,13 @@ import javax.validation.constraints.Size;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
-@Table(
-    name = "monitor",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "monitor_pkey", columnNames = { "id" }),
-        @UniqueConstraint(name = "unique_monitor_name", columnNames = { "name" })
-    }
-)
+@Table(name = "monitor", uniqueConstraints = {
+    @UniqueConstraint(name = "monitor_pkey", columnNames = {"id"}),
+    @UniqueConstraint(name = "unique_monitor_name", columnNames = {"name"})
+})
 public class MonitorPojo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1828922669;
 
     private Integer        id;
     private String         name;
@@ -80,9 +77,6 @@ public class MonitorPojo implements Serializable {
         this.pagerdutyIntegrationKey = pagerdutyIntegrationKey;
     }
 
-    /**
-     * Getter for <code>monitor.id</code>.
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, precision = 32)
@@ -90,17 +84,11 @@ public class MonitorPojo implements Serializable {
         return this.id;
     }
 
-    /**
-     * Setter for <code>monitor.id</code>.
-     */
     public MonitorPojo setId(Integer id) {
         this.id = id;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.name</code>. Monitor's name
-     */
     @Column(name = "name", nullable = false, length = 255)
     @NotNull
     @Size(max = 255)
@@ -108,123 +96,78 @@ public class MonitorPojo implements Serializable {
         return this.name;
     }
 
-    /**
-     * Setter for <code>monitor.name</code>. Monitor's name
-     */
     public MonitorPojo setName(String name) {
         this.name = name;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.url</code>. URL to check
-     */
     @Column(name = "url", nullable = false)
     @NotNull
     public String getUrl() {
         return this.url;
     }
 
-    /**
-     * Setter for <code>monitor.url</code>. URL to check
-     */
     public MonitorPojo setUrl(String url) {
         this.url = url;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
-     */
     @Column(name = "uptime_check_interval", nullable = false, precision = 32)
     @NotNull
     public Integer getUptimeCheckInterval() {
         return this.uptimeCheckInterval;
     }
 
-    /**
-     * Setter for <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
-     */
     public MonitorPojo setUptimeCheckInterval(Integer uptimeCheckInterval) {
         this.uptimeCheckInterval = uptimeCheckInterval;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.enabled</code>. Flag to toggle the monitor
-     */
     @Column(name = "enabled", nullable = false)
     public Boolean getEnabled() {
         return this.enabled;
     }
 
-    /**
-     * Setter for <code>monitor.enabled</code>. Flag to toggle the monitor
-     */
     public MonitorPojo setEnabled(Boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.created_at</code>.
-     */
-    @Column(name = "created_at", nullable = false, precision = 6)
+    @Column(name = "created_at", nullable = false)
     public OffsetDateTime getCreatedAt() {
         return this.createdAt;
     }
 
-    /**
-     * Setter for <code>monitor.created_at</code>.
-     */
     public MonitorPojo setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.updated_at</code>.
-     */
-    @Column(name = "updated_at", precision = 6)
+    @Column(name = "updated_at")
     public OffsetDateTime getUpdatedAt() {
         return this.updatedAt;
     }
 
-    /**
-     * Setter for <code>monitor.updated_at</code>.
-     */
     public MonitorPojo setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.ssl_check_enabled</code>.
-     */
     @Column(name = "ssl_check_enabled", nullable = false)
     public Boolean getSslCheckEnabled() {
         return this.sslCheckEnabled;
     }
 
-    /**
-     * Setter for <code>monitor.ssl_check_enabled</code>.
-     */
     public MonitorPojo setSslCheckEnabled(Boolean sslCheckEnabled) {
         this.sslCheckEnabled = sslCheckEnabled;
         return this;
     }
 
-    /**
-     * Getter for <code>monitor.pagerduty_integration_key</code>.
-     */
     @Column(name = "pagerduty_integration_key")
     public String getPagerdutyIntegrationKey() {
         return this.pagerdutyIntegrationKey;
     }
 
-    /**
-     * Setter for <code>monitor.pagerduty_integration_key</code>.
-     */
     public MonitorPojo setPagerdutyIntegrationKey(String pagerdutyIntegrationKey) {
         this.pagerdutyIntegrationKey = pagerdutyIntegrationKey;
         return this;

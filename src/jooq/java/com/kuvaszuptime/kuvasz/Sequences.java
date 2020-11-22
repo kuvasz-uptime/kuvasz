@@ -6,11 +6,10 @@ package com.kuvaszuptime.kuvasz;
 
 import org.jooq.Sequence;
 import org.jooq.impl.Internal;
-import org.jooq.impl.SQLDataType;
 
 
 /**
- * Convenience access to all sequences in the default schema.
+ * Convenience access to all sequences in 
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Sequences {
@@ -18,20 +17,20 @@ public class Sequences {
     /**
      * The sequence <code>latency_log_id_seq</code>
      */
-    public static final Sequence<Integer> LATENCY_LOG_ID_SEQ = Internal.createSequence("latency_log_id_seq", DefaultSchema.DEFAULT_SCHEMA, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Integer> LATENCY_LOG_ID_SEQ = Internal.createSequence("latency_log_id_seq", DefaultSchema.DEFAULT_SCHEMA, org.jooq.impl.SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
 
     /**
      * The sequence <code>monitor_id_seq</code>
      */
-    public static final Sequence<Integer> MONITOR_ID_SEQ = Internal.createSequence("monitor_id_seq", DefaultSchema.DEFAULT_SCHEMA, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Integer> MONITOR_ID_SEQ = Internal.createSequence("monitor_id_seq", DefaultSchema.DEFAULT_SCHEMA, org.jooq.impl.SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
 
     /**
      * The sequence <code>ssl_event_id_seq</code>
      */
-    public static final Sequence<Integer> SSL_EVENT_ID_SEQ = Internal.createSequence("ssl_event_id_seq", DefaultSchema.DEFAULT_SCHEMA, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Integer> SSL_EVENT_ID_SEQ = Internal.createSequence("ssl_event_id_seq", DefaultSchema.DEFAULT_SCHEMA, org.jooq.impl.SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
 
     /**
      * The sequence <code>uptime_event_id_seq</code>
      */
-    public static final Sequence<Integer> UPTIME_EVENT_ID_SEQ = Internal.createSequence("uptime_event_id_seq", DefaultSchema.DEFAULT_SCHEMA, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Integer> UPTIME_EVENT_ID_SEQ = Internal.createSequence("uptime_event_id_seq", DefaultSchema.DEFAULT_SCHEMA, org.jooq.impl.SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
 }

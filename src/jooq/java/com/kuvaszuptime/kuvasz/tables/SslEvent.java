@@ -27,7 +27,6 @@ import org.jooq.TableField;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 
@@ -37,7 +36,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class SslEvent extends TableImpl<SslEventRecord> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2029223819;
 
     /**
      * The reference instance of <code>ssl_event</code>
@@ -55,44 +54,43 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     /**
      * The column <code>ssl_event.id</code>.
      */
-    public final TableField<SslEventRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
+    public final TableField<SslEventRecord, Integer> ID = createField(DSL.name("id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaultValue(org.jooq.impl.DSL.field("nextval('kuvasz.ssl_event_id_seq'::regclass)", org.jooq.impl.SQLDataType.INTEGER)), this, "");
 
     /**
      * The column <code>ssl_event.monitor_id</code>.
      */
-    public final TableField<SslEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<SslEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
      * The column <code>ssl_event.status</code>. Status of the event
      */
-    public final TableField<SslEventRecord, SslStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.kuvaszuptime.kuvasz.enums.SslStatus.class), this, "Status of the event");
+    public final TableField<SslEventRecord, SslStatus> STATUS = createField(DSL.name("status"), org.jooq.impl.SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.kuvaszuptime.kuvasz.enums.SslStatus.class), this, "Status of the event");
 
     /**
      * The column <code>ssl_event.error</code>.
      */
-    public final TableField<SslEventRecord, String> ERROR = createField(DSL.name("error"), SQLDataType.CLOB, this, "");
+    public final TableField<SslEventRecord, String> ERROR = createField(DSL.name("error"), org.jooq.impl.SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>ssl_event.started_at</code>. The current event started at
      */
-    public final TableField<SslEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
+    public final TableField<SslEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false).defaultValue(org.jooq.impl.DSL.field("now()", org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
     /**
      * The column <code>ssl_event.ended_at</code>. The current event ended at
      */
-    public final TableField<SslEventRecord, OffsetDateTime> ENDED_AT = createField(DSL.name("ended_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "The current event ended at");
+    public final TableField<SslEventRecord, OffsetDateTime> ENDED_AT = createField(DSL.name("ended_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE, this, "The current event ended at");
 
     /**
      * The column <code>ssl_event.updated_at</code>.
      */
-    public final TableField<SslEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
+    public final TableField<SslEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false), this, "");
 
-    private SslEvent(Name alias, Table<SslEventRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private SslEvent(Name alias, Table<SslEventRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>ssl_event</code> table reference
+     */
+    public SslEvent() {
+        this(DSL.name("ssl_event"), null);
     }
 
     /**
@@ -109,11 +107,12 @@ public class SslEvent extends TableImpl<SslEventRecord> {
         this(alias, SSL_EVENT);
     }
 
-    /**
-     * Create a <code>ssl_event</code> table reference
-     */
-    public SslEvent() {
-        this(DSL.name("ssl_event"), null);
+    private SslEvent(Name alias, Table<SslEventRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private SslEvent(Name alias, Table<SslEventRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
     }
 
     public <O extends Record> SslEvent(Table<O> child, ForeignKey<O, SslEventRecord> key) {
@@ -132,7 +131,7 @@ public class SslEvent extends TableImpl<SslEventRecord> {
 
     @Override
     public Identity<SslEventRecord, Integer> getIdentity() {
-        return (Identity<SslEventRecord, Integer>) super.getIdentity();
+        return Keys.IDENTITY_SSL_EVENT;
     }
 
     @Override

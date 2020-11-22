@@ -25,20 +25,16 @@ import javax.validation.constraints.NotNull;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
-@Table(
-    name = "uptime_event",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uptime_event_pkey", columnNames = { "id" }),
-        @UniqueConstraint(name = "uptime_event_key", columnNames = { "monitor_id", "status", "ended_at" })
-    },
-    indexes = {
-        @Index(name = "uptime_event_ended_at_idx", columnList = "ended_at ASC"),
-        @Index(name = "uptime_event_monitor_idx", columnList = "monitor_id ASC")
-    }
-)
+@Table(name = "uptime_event", uniqueConstraints = {
+    @UniqueConstraint(name = "uptime_event_pkey", columnNames = {"id"}),
+    @UniqueConstraint(name = "uptime_event_key", columnNames = {"monitor_id", "status", "ended_at"})
+}, indexes = {
+    @Index(name = "uptime_event_ended_at_idx", columnList = "ended_at ASC"),
+    @Index(name = "uptime_event_monitor_idx", columnList = "monitor_id ASC")
+})
 public class UptimeEventPojo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1847709210;
 
     private Integer        id;
     private Integer        monitorId;
@@ -78,9 +74,6 @@ public class UptimeEventPojo implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    /**
-     * Getter for <code>uptime_event.id</code>.
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, precision = 32)
@@ -88,108 +81,69 @@ public class UptimeEventPojo implements Serializable {
         return this.id;
     }
 
-    /**
-     * Setter for <code>uptime_event.id</code>.
-     */
     public UptimeEventPojo setId(Integer id) {
         this.id = id;
         return this;
     }
 
-    /**
-     * Getter for <code>uptime_event.monitor_id</code>.
-     */
     @Column(name = "monitor_id", nullable = false, precision = 32)
     @NotNull
     public Integer getMonitorId() {
         return this.monitorId;
     }
 
-    /**
-     * Setter for <code>uptime_event.monitor_id</code>.
-     */
     public UptimeEventPojo setMonitorId(Integer monitorId) {
         this.monitorId = monitorId;
         return this;
     }
 
-    /**
-     * Getter for <code>uptime_event.status</code>. Status of the event
-     */
     @Column(name = "status", nullable = false)
     @NotNull
     public UptimeStatus getStatus() {
         return this.status;
     }
 
-    /**
-     * Setter for <code>uptime_event.status</code>. Status of the event
-     */
     public UptimeEventPojo setStatus(UptimeStatus status) {
         this.status = status;
         return this;
     }
 
-    /**
-     * Getter for <code>uptime_event.error</code>.
-     */
     @Column(name = "error")
     public String getError() {
         return this.error;
     }
 
-    /**
-     * Setter for <code>uptime_event.error</code>.
-     */
     public UptimeEventPojo setError(String error) {
         this.error = error;
         return this;
     }
 
-    /**
-     * Getter for <code>uptime_event.started_at</code>. The current event started at
-     */
-    @Column(name = "started_at", nullable = false, precision = 6)
+    @Column(name = "started_at", nullable = false)
     public OffsetDateTime getStartedAt() {
         return this.startedAt;
     }
 
-    /**
-     * Setter for <code>uptime_event.started_at</code>. The current event started at
-     */
     public UptimeEventPojo setStartedAt(OffsetDateTime startedAt) {
         this.startedAt = startedAt;
         return this;
     }
 
-    /**
-     * Getter for <code>uptime_event.ended_at</code>. The current event ended at
-     */
-    @Column(name = "ended_at", precision = 6)
+    @Column(name = "ended_at")
     public OffsetDateTime getEndedAt() {
         return this.endedAt;
     }
 
-    /**
-     * Setter for <code>uptime_event.ended_at</code>. The current event ended at
-     */
     public UptimeEventPojo setEndedAt(OffsetDateTime endedAt) {
         this.endedAt = endedAt;
         return this;
     }
 
-    /**
-     * Getter for <code>uptime_event.updated_at</code>.
-     */
-    @Column(name = "updated_at", nullable = false, precision = 6)
+    @Column(name = "updated_at", nullable = false)
     @NotNull
     public OffsetDateTime getUpdatedAt() {
         return this.updatedAt;
     }
 
-    /**
-     * Setter for <code>uptime_event.updated_at</code>.
-     */
     public UptimeEventPojo setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
         return this;

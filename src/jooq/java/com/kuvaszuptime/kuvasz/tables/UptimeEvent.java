@@ -27,7 +27,6 @@ import org.jooq.TableField;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 
@@ -37,7 +36,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class UptimeEvent extends TableImpl<UptimeEventRecord> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1860882345;
 
     /**
      * The reference instance of <code>uptime_event</code>
@@ -55,44 +54,43 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     /**
      * The column <code>uptime_event.id</code>.
      */
-    public final TableField<UptimeEventRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
+    public final TableField<UptimeEventRecord, Integer> ID = createField(DSL.name("id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaultValue(org.jooq.impl.DSL.field("nextval('kuvasz.uptime_event_id_seq'::regclass)", org.jooq.impl.SQLDataType.INTEGER)), this, "");
 
     /**
      * The column <code>uptime_event.monitor_id</code>.
      */
-    public final TableField<UptimeEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<UptimeEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
      * The column <code>uptime_event.status</code>. Status of the event
      */
-    public final TableField<UptimeEventRecord, UptimeStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.kuvaszuptime.kuvasz.enums.UptimeStatus.class), this, "Status of the event");
+    public final TableField<UptimeEventRecord, UptimeStatus> STATUS = createField(DSL.name("status"), org.jooq.impl.SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.kuvaszuptime.kuvasz.enums.UptimeStatus.class), this, "Status of the event");
 
     /**
      * The column <code>uptime_event.error</code>.
      */
-    public final TableField<UptimeEventRecord, String> ERROR = createField(DSL.name("error"), SQLDataType.CLOB, this, "");
+    public final TableField<UptimeEventRecord, String> ERROR = createField(DSL.name("error"), org.jooq.impl.SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>uptime_event.started_at</code>. The current event started at
      */
-    public final TableField<UptimeEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
+    public final TableField<UptimeEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false).defaultValue(org.jooq.impl.DSL.field("now()", org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
     /**
      * The column <code>uptime_event.ended_at</code>. The current event ended at
      */
-    public final TableField<UptimeEventRecord, OffsetDateTime> ENDED_AT = createField(DSL.name("ended_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "The current event ended at");
+    public final TableField<UptimeEventRecord, OffsetDateTime> ENDED_AT = createField(DSL.name("ended_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE, this, "The current event ended at");
 
     /**
      * The column <code>uptime_event.updated_at</code>.
      */
-    public final TableField<UptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
+    public final TableField<UptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false), this, "");
 
-    private UptimeEvent(Name alias, Table<UptimeEventRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private UptimeEvent(Name alias, Table<UptimeEventRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>uptime_event</code> table reference
+     */
+    public UptimeEvent() {
+        this(DSL.name("uptime_event"), null);
     }
 
     /**
@@ -109,11 +107,12 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
         this(alias, UPTIME_EVENT);
     }
 
-    /**
-     * Create a <code>uptime_event</code> table reference
-     */
-    public UptimeEvent() {
-        this(DSL.name("uptime_event"), null);
+    private UptimeEvent(Name alias, Table<UptimeEventRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private UptimeEvent(Name alias, Table<UptimeEventRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
     }
 
     public <O extends Record> UptimeEvent(Table<O> child, ForeignKey<O, UptimeEventRecord> key) {
@@ -132,7 +131,7 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
 
     @Override
     public Identity<UptimeEventRecord, Integer> getIdentity() {
-        return (Identity<UptimeEventRecord, Integer>) super.getIdentity();
+        return Keys.IDENTITY_UPTIME_EVENT;
     }
 
     @Override

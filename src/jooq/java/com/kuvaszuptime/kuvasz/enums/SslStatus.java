@@ -31,7 +31,7 @@ public enum SslStatus implements EnumType {
 
     @Override
     public Catalog getCatalog() {
-        return getSchema().getCatalog();
+        return getSchema() == null ? null : getSchema().getCatalog();
     }
 
     @Override
