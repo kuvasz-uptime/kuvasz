@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.factories
 
 import io.micronaut.context.annotation.Factory
+import jakarta.inject.Singleton
 import org.zalando.logbook.Conditions.exclude
 import org.zalando.logbook.Conditions.requestTo
 import org.zalando.logbook.DefaultHttpLogWriter
@@ -9,7 +10,6 @@ import org.zalando.logbook.Logbook
 import org.zalando.logbook.SecurityStrategy
 import org.zalando.logbook.WithoutBodyStrategy
 import org.zalando.logbook.json.JsonHttpLogFormatter
-import javax.inject.Singleton
 
 @Factory
 class LogbookFactory {

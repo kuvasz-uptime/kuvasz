@@ -6,10 +6,10 @@ import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.SslEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
+import jakarta.inject.Singleton
 import org.jooq.Configuration
 import org.jooq.impl.DSL
 import java.time.OffsetDateTime
-import javax.inject.Singleton
 
 @Singleton
 class SSLEventRepository(private val jooqConfig: Configuration) : SslEventDao(jooqConfig) {

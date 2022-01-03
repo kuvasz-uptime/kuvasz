@@ -4,9 +4,9 @@ import arrow.core.Either
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
+import jakarta.inject.Singleton
 import java.net.URL
 import java.security.cert.X509Certificate
-import javax.inject.Singleton
 import javax.net.ssl.HttpsURLConnection
 
 @Singleton

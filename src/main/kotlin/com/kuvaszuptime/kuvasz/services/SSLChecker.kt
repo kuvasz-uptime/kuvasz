@@ -7,8 +7,8 @@ import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import jakarta.inject.Singleton
 import java.net.URL
-import javax.inject.Singleton
 
 @Singleton
 class SSLChecker(

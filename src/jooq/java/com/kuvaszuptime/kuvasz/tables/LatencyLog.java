@@ -26,6 +26,7 @@ import org.jooq.TableField;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 
@@ -35,7 +36,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class LatencyLog extends TableImpl<LatencyLogRecord> {
 
-    private static final long serialVersionUID = -466401116;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The reference instance of <code>latency_log</code>
@@ -53,28 +54,29 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     /**
      * The column <code>latency_log.id</code>.
      */
-    public final TableField<LatencyLogRecord, Integer> ID = createField(DSL.name("id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaultValue(org.jooq.impl.DSL.field("nextval('kuvasz.latency_log_id_seq'::regclass)", org.jooq.impl.SQLDataType.INTEGER)), this, "");
+    public final TableField<LatencyLogRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
 
     /**
      * The column <code>latency_log.monitor_id</code>.
      */
-    public final TableField<LatencyLogRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<LatencyLogRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
      * The column <code>latency_log.latency</code>. Lateny in ms
      */
-    public final TableField<LatencyLogRecord, Integer> LATENCY = createField(DSL.name("latency"), org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "Lateny in ms");
+    public final TableField<LatencyLogRecord, Integer> LATENCY = createField(DSL.name("latency"), SQLDataType.INTEGER.nullable(false), this, "Lateny in ms");
 
     /**
      * The column <code>latency_log.created_at</code>.
      */
-    public final TableField<LatencyLogRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false).defaultValue(org.jooq.impl.DSL.field("now()", org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
+    public final TableField<LatencyLogRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
-    /**
-     * Create a <code>latency_log</code> table reference
-     */
-    public LatencyLog() {
-        this(DSL.name("latency_log"), null);
+    private LatencyLog(Name alias, Table<LatencyLogRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private LatencyLog(Name alias, Table<LatencyLogRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
     }
 
     /**
@@ -91,12 +93,11 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
         this(alias, LATENCY_LOG);
     }
 
-    private LatencyLog(Name alias, Table<LatencyLogRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private LatencyLog(Name alias, Table<LatencyLogRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>latency_log</code> table reference
+     */
+    public LatencyLog() {
+        this(DSL.name("latency_log"), null);
     }
 
     public <O extends Record> LatencyLog(Table<O> child, ForeignKey<O, LatencyLogRecord> key) {
@@ -115,7 +116,7 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
 
     @Override
     public Identity<LatencyLogRecord, Integer> getIdentity() {
-        return Keys.IDENTITY_LATENCY_LOG;
+        return (Identity<LatencyLogRecord, Integer>) super.getIdentity();
     }
 
     @Override
@@ -133,8 +134,13 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
         return Arrays.<ForeignKey<LatencyLogRecord, ?>>asList(Keys.LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY);
     }
 
+    private transient Monitor _monitor;
+
     public Monitor monitor() {
-        return new Monitor(this, Keys.LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY);
+        if (_monitor == null)
+            _monitor = new Monitor(this, Keys.LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY);
+
+        return _monitor;
     }
 
     @Override

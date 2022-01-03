@@ -15,11 +15,11 @@ import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.fetchOneIntoOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
+import jakarta.inject.Singleton
 import org.jooq.Configuration
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL.*
 import org.jooq.impl.SQLDataType
-import javax.inject.Singleton
 
 @Singleton
 class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {

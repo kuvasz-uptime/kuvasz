@@ -25,16 +25,20 @@ import javax.validation.constraints.NotNull;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
-@Table(name = "ssl_event", uniqueConstraints = {
-    @UniqueConstraint(name = "ssl_event_pkey", columnNames = {"id"}),
-    @UniqueConstraint(name = "ssl_event_key", columnNames = {"monitor_id", "status", "ended_at"})
-}, indexes = {
-    @Index(name = "ssl_event_ended_at_idx", columnList = "ended_at ASC"),
-    @Index(name = "ssl_event_monitor_idx", columnList = "monitor_id ASC")
-})
+@Table(
+    name = "ssl_event",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "ssl_event_pkey", columnNames = { "id" }),
+        @UniqueConstraint(name = "ssl_event_key", columnNames = { "monitor_id", "status", "ended_at" })
+    },
+    indexes = {
+        @Index(name = "ssl_event_ended_at_idx", columnList = "ended_at ASC"),
+        @Index(name = "ssl_event_monitor_idx", columnList = "monitor_id ASC")
+    }
+)
 public class SslEventPojo implements Serializable {
 
-    private static final long serialVersionUID = -231279334;
+    private static final long serialVersionUID = 1L;
 
     private Integer        id;
     private Integer        monitorId;
@@ -74,6 +78,9 @@ public class SslEventPojo implements Serializable {
         this.updatedAt = updatedAt;
     }
 
+    /**
+     * Getter for <code>ssl_event.id</code>.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, precision = 32)
@@ -81,69 +88,108 @@ public class SslEventPojo implements Serializable {
         return this.id;
     }
 
+    /**
+     * Setter for <code>ssl_event.id</code>.
+     */
     public SslEventPojo setId(Integer id) {
         this.id = id;
         return this;
     }
 
+    /**
+     * Getter for <code>ssl_event.monitor_id</code>.
+     */
     @Column(name = "monitor_id", nullable = false, precision = 32)
     @NotNull
     public Integer getMonitorId() {
         return this.monitorId;
     }
 
+    /**
+     * Setter for <code>ssl_event.monitor_id</code>.
+     */
     public SslEventPojo setMonitorId(Integer monitorId) {
         this.monitorId = monitorId;
         return this;
     }
 
+    /**
+     * Getter for <code>ssl_event.status</code>. Status of the event
+     */
     @Column(name = "status", nullable = false)
     @NotNull
     public SslStatus getStatus() {
         return this.status;
     }
 
+    /**
+     * Setter for <code>ssl_event.status</code>. Status of the event
+     */
     public SslEventPojo setStatus(SslStatus status) {
         this.status = status;
         return this;
     }
 
+    /**
+     * Getter for <code>ssl_event.error</code>.
+     */
     @Column(name = "error")
     public String getError() {
         return this.error;
     }
 
+    /**
+     * Setter for <code>ssl_event.error</code>.
+     */
     public SslEventPojo setError(String error) {
         this.error = error;
         return this;
     }
 
-    @Column(name = "started_at", nullable = false)
+    /**
+     * Getter for <code>ssl_event.started_at</code>. The current event started at
+     */
+    @Column(name = "started_at", nullable = false, precision = 6)
     public OffsetDateTime getStartedAt() {
         return this.startedAt;
     }
 
+    /**
+     * Setter for <code>ssl_event.started_at</code>. The current event started at
+     */
     public SslEventPojo setStartedAt(OffsetDateTime startedAt) {
         this.startedAt = startedAt;
         return this;
     }
 
-    @Column(name = "ended_at")
+    /**
+     * Getter for <code>ssl_event.ended_at</code>. The current event ended at
+     */
+    @Column(name = "ended_at", precision = 6)
     public OffsetDateTime getEndedAt() {
         return this.endedAt;
     }
 
+    /**
+     * Setter for <code>ssl_event.ended_at</code>. The current event ended at
+     */
     public SslEventPojo setEndedAt(OffsetDateTime endedAt) {
         this.endedAt = endedAt;
         return this;
     }
 
-    @Column(name = "updated_at", nullable = false)
+    /**
+     * Getter for <code>ssl_event.updated_at</code>.
+     */
+    @Column(name = "updated_at", nullable = false, precision = 6)
     @NotNull
     public OffsetDateTime getUpdatedAt() {
         return this.updatedAt;
     }
 
+    /**
+     * Setter for <code>ssl_event.updated_at</code>.
+     */
     public SslEventPojo setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
         return this;

@@ -13,12 +13,12 @@ import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClientConfiguration
-import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.rxjava2.http.client.RxHttpClient
+import jakarta.inject.Named
+import jakarta.inject.Singleton
 import java.net.URI
-import javax.inject.Named
-import javax.inject.Singleton
 
 @Singleton
 class UptimeChecker(

@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
-import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.rxjava2.http.client.RxHttpClient
 import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 
 @MicronautTest

@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
+import jakarta.inject.Singleton
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.api.mailer.AsyncResponse
 import org.simplejavamail.mailer.MailerBuilder
 import org.slf4j.LoggerFactory
-import javax.inject.Singleton
 
 @Singleton
 class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {

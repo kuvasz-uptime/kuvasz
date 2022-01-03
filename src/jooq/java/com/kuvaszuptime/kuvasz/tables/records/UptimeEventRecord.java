@@ -31,16 +31,20 @@ import org.jooq.impl.UpdatableRecordImpl;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
-@Table(name = "uptime_event", uniqueConstraints = {
-    @UniqueConstraint(name = "uptime_event_pkey", columnNames = {"id"}),
-    @UniqueConstraint(name = "uptime_event_key", columnNames = {"monitor_id", "status", "ended_at"})
-}, indexes = {
-    @Index(name = "uptime_event_ended_at_idx", columnList = "ended_at ASC"),
-    @Index(name = "uptime_event_monitor_idx", columnList = "monitor_id ASC")
-})
+@Table(
+    name = "uptime_event",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uptime_event_pkey", columnNames = { "id" }),
+        @UniqueConstraint(name = "uptime_event_key", columnNames = { "monitor_id", "status", "ended_at" })
+    },
+    indexes = {
+        @Index(name = "uptime_event_ended_at_idx", columnList = "ended_at ASC"),
+        @Index(name = "uptime_event_monitor_idx", columnList = "monitor_id ASC")
+    }
+)
 public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> implements Record7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> {
 
-    private static final long serialVersionUID = -32451597;
+    private static final long serialVersionUID = 1L;
 
     /**
      * Setter for <code>uptime_event.id</code>.
@@ -121,7 +125,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     /**
      * Getter for <code>uptime_event.started_at</code>. The current event started at
      */
-    @Column(name = "started_at", nullable = false)
+    @Column(name = "started_at", nullable = false, precision = 6)
     public OffsetDateTime getStartedAt() {
         return (OffsetDateTime) get(4);
     }
@@ -137,7 +141,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     /**
      * Getter for <code>uptime_event.ended_at</code>. The current event ended at
      */
-    @Column(name = "ended_at")
+    @Column(name = "ended_at", precision = 6)
     public OffsetDateTime getEndedAt() {
         return (OffsetDateTime) get(5);
     }
@@ -153,7 +157,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     /**
      * Getter for <code>uptime_event.updated_at</code>.
      */
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, precision = 6)
     @NotNull
     public OffsetDateTime getUpdatedAt() {
         return (OffsetDateTime) get(6);
@@ -358,12 +362,12 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     public UptimeEventRecord(Integer id, Integer monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
         super(UptimeEvent.UPTIME_EVENT);
 
-        set(0, id);
-        set(1, monitorId);
-        set(2, status);
-        set(3, error);
-        set(4, startedAt);
-        set(5, endedAt);
-        set(6, updatedAt);
+        setId(id);
+        setMonitorId(monitorId);
+        setStatus(status);
+        setError(error);
+        setStartedAt(startedAt);
+        setEndedAt(endedAt);
+        setUpdatedAt(updatedAt);
     }
 }

@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import jakarta.inject.Inject
 import org.flywaydb.core.Flyway
-import javax.inject.Inject
 
 abstract class DatabaseBehaviorSpec(body: BehaviorSpec.() -> Unit = {}) : BehaviorSpec(body) {
 

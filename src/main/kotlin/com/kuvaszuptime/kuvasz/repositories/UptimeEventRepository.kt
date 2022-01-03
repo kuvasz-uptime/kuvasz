@@ -7,10 +7,10 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.tables.daos.UptimeEventDao
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import jakarta.inject.Singleton
 import org.jooq.Configuration
 import org.jooq.impl.DSL
 import java.time.OffsetDateTime
-import javax.inject.Singleton
 
 @Singleton
 class UptimeEventRepository(private val jooqConfig: Configuration) : UptimeEventDao(jooqConfig) {

@@ -30,15 +30,19 @@ import org.jooq.impl.UpdatableRecordImpl;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 @Entity
-@Table(name = "latency_log", uniqueConstraints = {
-    @UniqueConstraint(name = "latency_log_pkey", columnNames = {"id"})
-}, indexes = {
-    @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
-    @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
-})
+@Table(
+    name = "latency_log",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "latency_log_pkey", columnNames = { "id" })
+    },
+    indexes = {
+        @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
+        @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
+    }
+)
 public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> implements Record4<Integer, Integer, Integer, OffsetDateTime> {
 
-    private static final long serialVersionUID = 936267229;
+    private static final long serialVersionUID = 1L;
 
     /**
      * Setter for <code>latency_log.id</code>.
@@ -103,7 +107,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
     /**
      * Getter for <code>latency_log.created_at</code>.
      */
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, precision = 6)
     public OffsetDateTime getCreatedAt() {
         return (OffsetDateTime) get(3);
     }
@@ -241,9 +245,9 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
     public LatencyLogRecord(Integer id, Integer monitorId, Integer latency, OffsetDateTime createdAt) {
         super(LatencyLog.LATENCY_LOG);
 
-        set(0, id);
-        set(1, monitorId);
-        set(2, latency);
-        set(3, createdAt);
+        setId(id);
+        setMonitorId(monitorId);
+        setLatency(latency);
+        setCreatedAt(createdAt);
     }
 }

@@ -11,7 +11,7 @@ import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 @Singleton
 class MonitorCrudService(

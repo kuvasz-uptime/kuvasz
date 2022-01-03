@@ -24,6 +24,7 @@ import org.jooq.TableField;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 
@@ -33,7 +34,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Monitor extends TableImpl<MonitorRecord> {
 
-    private static final long serialVersionUID = 2078797674;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The reference instance of <code>monitor</code>
@@ -51,53 +52,54 @@ public class Monitor extends TableImpl<MonitorRecord> {
     /**
      * The column <code>monitor.id</code>.
      */
-    public final TableField<MonitorRecord, Integer> ID = createField(DSL.name("id"), org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaultValue(org.jooq.impl.DSL.field("nextval('kuvasz.monitor_id_seq'::regclass)", org.jooq.impl.SQLDataType.INTEGER)), this, "");
+    public final TableField<MonitorRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
 
     /**
      * The column <code>monitor.name</code>. Monitor's name
      */
-    public final TableField<MonitorRecord, String> NAME = createField(DSL.name("name"), org.jooq.impl.SQLDataType.VARCHAR(255).nullable(false), this, "Monitor's name");
+    public final TableField<MonitorRecord, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(255).nullable(false), this, "Monitor's name");
 
     /**
      * The column <code>monitor.url</code>. URL to check
      */
-    public final TableField<MonitorRecord, String> URL = createField(DSL.name("url"), org.jooq.impl.SQLDataType.CLOB.nullable(false), this, "URL to check");
+    public final TableField<MonitorRecord, String> URL = createField(DSL.name("url"), SQLDataType.CLOB.nullable(false), this, "URL to check");
 
     /**
      * The column <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
      */
-    public final TableField<MonitorRecord, Integer> UPTIME_CHECK_INTERVAL = createField(DSL.name("uptime_check_interval"), org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "Uptime checking interval in seconds");
+    public final TableField<MonitorRecord, Integer> UPTIME_CHECK_INTERVAL = createField(DSL.name("uptime_check_interval"), SQLDataType.INTEGER.nullable(false), this, "Uptime checking interval in seconds");
 
     /**
      * The column <code>monitor.enabled</code>. Flag to toggle the monitor
      */
-    public final TableField<MonitorRecord, Boolean> ENABLED = createField(DSL.name("enabled"), org.jooq.impl.SQLDataType.BOOLEAN.nullable(false).defaultValue(org.jooq.impl.DSL.field("true", org.jooq.impl.SQLDataType.BOOLEAN)), this, "Flag to toggle the monitor");
+    public final TableField<MonitorRecord, Boolean> ENABLED = createField(DSL.name("enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field("true", SQLDataType.BOOLEAN)), this, "Flag to toggle the monitor");
 
     /**
      * The column <code>monitor.created_at</code>.
      */
-    public final TableField<MonitorRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE.nullable(false).defaultValue(org.jooq.impl.DSL.field("now()", org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
+    public final TableField<MonitorRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
     /**
      * The column <code>monitor.updated_at</code>.
      */
-    public final TableField<MonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), org.jooq.impl.SQLDataType.TIMESTAMPWITHTIMEZONE, this, "");
+    public final TableField<MonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "");
 
     /**
      * The column <code>monitor.ssl_check_enabled</code>.
      */
-    public final TableField<MonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), org.jooq.impl.SQLDataType.BOOLEAN.nullable(false).defaultValue(org.jooq.impl.DSL.field("false", org.jooq.impl.SQLDataType.BOOLEAN)), this, "");
+    public final TableField<MonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
 
     /**
      * The column <code>monitor.pagerduty_integration_key</code>.
      */
-    public final TableField<MonitorRecord, String> PAGERDUTY_INTEGRATION_KEY = createField(DSL.name("pagerduty_integration_key"), org.jooq.impl.SQLDataType.VARCHAR, this, "");
+    public final TableField<MonitorRecord, String> PAGERDUTY_INTEGRATION_KEY = createField(DSL.name("pagerduty_integration_key"), SQLDataType.VARCHAR, this, "");
 
-    /**
-     * Create a <code>monitor</code> table reference
-     */
-    public Monitor() {
-        this(DSL.name("monitor"), null);
+    private Monitor(Name alias, Table<MonitorRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private Monitor(Name alias, Table<MonitorRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
     }
 
     /**
@@ -114,12 +116,11 @@ public class Monitor extends TableImpl<MonitorRecord> {
         this(alias, MONITOR);
     }
 
-    private Monitor(Name alias, Table<MonitorRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private Monitor(Name alias, Table<MonitorRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>monitor</code> table reference
+     */
+    public Monitor() {
+        this(DSL.name("monitor"), null);
     }
 
     public <O extends Record> Monitor(Table<O> child, ForeignKey<O, MonitorRecord> key) {
@@ -133,7 +134,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
 
     @Override
     public Identity<MonitorRecord, Integer> getIdentity() {
-        return Keys.IDENTITY_MONITOR;
+        return (Identity<MonitorRecord, Integer>) super.getIdentity();
     }
 
     @Override

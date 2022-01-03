@@ -12,30 +12,6 @@ tags:
 - name: Management operations
 - name: Monitor operations
 paths:
-  /login:
-    post:
-      tags:
-      - Security operations
-      summary: Login endpoint
-      description: After a successful login it returns a valid access token that you
-        should use in your authenticated request
-      operationId: login
-      parameters: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserNamePasswordCredentials'
-        required: true
-      responses:
-        "200":
-          description: Successful login
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BearerAccessRefreshToken'
-        "401":
-          description: Unauthorized
   /health:
     get:
       tags:
@@ -80,6 +56,30 @@ paths:
                   slack-event-handler.enabled: true
                   telegram-event-handler.enabled: true
                   pagerduty-event-handler.enabled: true
+  /login:
+    post:
+      tags:
+      - Security operations
+      summary: Login endpoint
+      description: After a successful login it returns a valid access token that you
+        should use in your authenticated request
+      operationId: login
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNamePasswordCredentials'
+        required: true
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BearerAccessRefreshToken'
+        "401":
+          description: Unauthorized
   /monitors:
     get:
       tags:
@@ -284,30 +284,6 @@ paths:
                 $ref: '#/components/schemas/ServiceError'
       security:
       - bearerAuth: []
-  /monitors/{monitorId}/uptime-events:
-    get:
-      tags:
-      - Monitor operations
-      summary: Returns the uptime events of the given monitor
-      operationId: getUptimeEvents
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int32
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UptimeEventDto'
-      security:
-      - bearerAuth: []
   /monitors/{monitorId}/ssl-events:
     get:
       tags:
@@ -332,15 +308,32 @@ paths:
                   $ref: '#/components/schemas/SSLEventDto'
       security:
       - bearerAuth: []
+  /monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns the uptime events of the given monitor
+      operationId: getUptimeEvents
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UptimeEventDto'
+      security:
+      - bearerAuth: []
 components:
   schemas:
-    UserNamePasswordCredentials:
-      type: object
-      properties:
-        username:
-          type: string
-        password:
-          type: string
     BearerAccessRefreshToken:
       type: object
       properties:
@@ -376,114 +369,6 @@ components:
       properties:
         handlers:
           type: object
-    MonitorDetailsDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int32
-        name:
-          type: string
-        url:
-          type: string
-          format: uri
-        uptimeCheckInterval:
-          type: integer
-          format: int32
-        enabled:
-          type: boolean
-        sslCheckEnabled:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-          nullable: true
-        uptimeStatus:
-          $ref: '#/components/schemas/UptimeStatus'
-        uptimeStatusStartedAt:
-          type: string
-          format: date-time
-          nullable: true
-        lastUptimeCheck:
-          type: string
-          format: date-time
-          nullable: true
-        sslStatus:
-          $ref: '#/components/schemas/SslStatus'
-        sslStatusStartedAt:
-          type: string
-          format: date-time
-          nullable: true
-        lastSSLCheck:
-          type: string
-          format: date-time
-          nullable: true
-        uptimeError:
-          type: string
-          nullable: true
-        sslError:
-          type: string
-          nullable: true
-        averageLatencyInMs:
-          type: integer
-          format: int32
-          nullable: true
-        p95LatencyInMs:
-          type: integer
-          format: int32
-          nullable: true
-        p99LatencyInMs:
-          type: integer
-          format: int32
-          nullable: true
-        pagerdutyKeyPresent:
-          type: boolean
-    UptimeStatus:
-      type: string
-      enum:
-      - UP
-      - DOWN
-    SslStatus:
-      type: string
-      enum:
-      - VALID
-      - INVALID
-      - WILL_EXPIRE
-    ServiceError:
-      type: object
-      properties:
-        message:
-          type: string
-          nullable: true
-    MonitorDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int32
-        name:
-          type: string
-        url:
-          type: string
-        uptimeCheckInterval:
-          type: integer
-          format: int32
-        enabled:
-          type: boolean
-        sslCheckEnabled:
-          type: boolean
-        pagerdutyKeyPresent:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-          nullable: true
     MonitorCreateDto:
       required:
       - name
@@ -509,6 +394,119 @@ components:
           nullable: true
         pagerdutyIntegrationKey:
           type: string
+          nullable: true
+    MonitorDetailsDto:
+      required:
+      - createdAt
+      - enabled
+      - id
+      - name
+      - pagerdutyKeyPresent
+      - sslCheckEnabled
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        uptimeCheckInterval:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        sslCheckEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeStatus:
+          allOf:
+          - $ref: '#/components/schemas/UptimeStatus'
+          - nullable: true
+        uptimeStatusStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          format: date-time
+          nullable: true
+        sslStatus:
+          allOf:
+          - $ref: '#/components/schemas/SslStatus'
+          - nullable: true
+        sslStatusStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastSSLCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          nullable: true
+        sslError:
+          type: string
+          nullable: true
+        averageLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        P95LatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        P99LatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        pagerdutyKeyPresent:
+          type: boolean
+    MonitorDto:
+      required:
+      - createdAt
+      - enabled
+      - id
+      - name
+      - pagerdutyKeyPresent
+      - sslCheckEnabled
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        url:
+          type: string
+        uptimeCheckInterval:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        sslCheckEnabled:
+          type: boolean
+        pagerdutyKeyPresent:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
           nullable: true
     MonitorUpdateDto:
       type: object
@@ -539,25 +537,11 @@ components:
         pagerdutyIntegrationKey:
           minLength: 1
           type: string
-    UptimeEventDto:
-      type: object
-      properties:
-        status:
-          $ref: '#/components/schemas/UptimeStatus'
-        error:
-          type: string
-          nullable: true
-        startedAt:
-          type: string
-          format: date-time
-        endedAt:
-          type: string
-          format: date-time
-          nullable: true
-        updatedAt:
-          type: string
-          format: date-time
     SSLEventDto:
+      required:
+      - startedAt
+      - status
+      - updatedAt
       type: object
       properties:
         status:
@@ -575,6 +559,52 @@ components:
         updatedAt:
           type: string
           format: date-time
+    ServiceError:
+      type: object
+      properties:
+        message:
+          type: string
+          nullable: true
+    SslStatus:
+      type: string
+      enum:
+      - VALID
+      - INVALID
+      - WILL_EXPIRE
+    UptimeEventDto:
+      required:
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/UptimeStatus'
+        error:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    UptimeStatus:
+      type: string
+      enum:
+      - UP
+      - DOWN
+    UserNamePasswordCredentials:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
   securitySchemes:
     bearerAuth:
       type: http
