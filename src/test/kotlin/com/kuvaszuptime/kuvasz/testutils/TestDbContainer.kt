@@ -4,12 +4,11 @@ import org.testcontainers.containers.PostgreSQLContainer
 
 class TestDbContainer : PostgreSQLContainer<TestDbContainer>("postgres:12") {
     companion object {
-        lateinit var instance: TestDbContainer
+        private lateinit var instance: TestDbContainer
 
         fun start() {
             if (!Companion::instance.isInitialized) {
-                instance =
-                    TestDbContainer()
+                instance = TestDbContainer()
                 instance.start()
 
                 System.setProperty("datasources.default.url", instance.jdbcUrl)
