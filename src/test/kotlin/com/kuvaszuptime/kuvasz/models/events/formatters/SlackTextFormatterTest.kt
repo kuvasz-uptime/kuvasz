@@ -61,7 +61,7 @@ class SlackTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "✅ *Your monitor \"test_monitor\" (https://test.url) is UP (200)*\n_Latency: 300ms_\n" +
-                                "Was down for $expectedDurationString"
+                            "Was down for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -107,7 +107,7 @@ class SlackTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "🚨 *Your monitor \"test_monitor\" (https://test.url) is DOWN (400)*\n" +
-                                "Was up for $expectedDurationString"
+                            "Was up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -146,7 +146,7 @@ class SlackTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "\uD83D\uDD12️ *Your site \"test_monitor\" (https://test.url) has a VALID certificate*\n" +
-                                "Was INVALID for $expectedDurationString"
+                            "Was INVALID for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -157,7 +157,7 @@ class SlackTextFormatterTest : BehaviorSpec(
                 then("it should return the correct message") {
                     val expectedMessage =
                         "🚨 *Your site \"test_monitor\" (https://test.url) has an INVALID " +
-                                "certificate*\n_Reason: ssl error_"
+                            "certificate*\n_Reason: ssl error_"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -168,7 +168,7 @@ class SlackTextFormatterTest : BehaviorSpec(
 
                 then("it should return the correct message") {
                     val expectedMessage = "🚨 *Your site \"test_monitor\" (https://test.url) has an INVALID " +
-                            "certificate*\n_Reason: ssl error_"
+                        "certificate*\n_Reason: ssl error_"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -183,7 +183,7 @@ class SlackTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "🚨 *Your site \"test_monitor\" (https://test.url) has an INVALID certificate*\n" +
-                                "_Reason: ssl error_\nWas VALID for $expectedDurationString"
+                            "_Reason: ssl error_\nWas VALID for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -194,7 +194,7 @@ class SlackTextFormatterTest : BehaviorSpec(
                 then("it should return the correct message") {
                     val expectedMessage =
                         "⚠️ *Your SSL certificate for https://test.url will expire soon*\n" +
-                                "_Expiry date: ${event.certInfo.validTo}_"
+                            "_Expiry date: ${event.certInfo.validTo}_"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }

@@ -56,7 +56,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
 
     fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {
-            Either.right(
+            Either.Right(
                 dsl
                     .insertInto(MONITOR)
                     .set(dsl.newRecord(MONITOR, monitorPojo))
@@ -69,7 +69,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
 
     fun returningUpdate(updatedPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {
-            Either.right(
+            Either.Right(
                 dsl
                     .update(MONITOR)
                     .set(MONITOR.NAME, updatedPojo.name)
@@ -121,7 +121,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
 
     private fun DataAccessException.handle(): Either<PersistenceError, Nothing> {
         val persistenceError = toPersistenceError()
-        return Either.left(
+        return Either.Left(
             if (persistenceError is DuplicationError) {
                 MonitorDuplicatedError()
             } else persistenceError

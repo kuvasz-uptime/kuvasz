@@ -4,12 +4,7 @@ import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.*
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
@@ -63,7 +58,7 @@ class LogMessageFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "✅ Your monitor \"test_monitor\" (https://test.url) is UP (200). Latency: 300ms. " +
-                                "Was down for $expectedDurationString"
+                            "Was down for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -109,7 +104,7 @@ class LogMessageFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "🚨 Your monitor \"test_monitor\" (https://test.url) is DOWN (400). Reason: uptime error. " +
-                                "Was up for $expectedDurationString"
+                            "Was up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -161,7 +156,7 @@ class LogMessageFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "\uD83D\uDD12️ Your site \"test_monitor\" (https://test.url) has a VALID certificate. " +
-                                "Was INVALID for $expectedDurationString"
+                            "Was INVALID for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -197,7 +192,7 @@ class LogMessageFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "🚨 Your site \"test_monitor\" (https://test.url) has an INVALID certificate. " +
-                                "Reason: ssl error. Was VALID for $expectedDurationString"
+                            "Reason: ssl error. Was VALID for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -208,7 +203,7 @@ class LogMessageFormatterTest : BehaviorSpec(
                 then("it should return the correct message") {
                     val expectedMessage =
                         "⚠️ Your SSL certificate for https://test.url will expire soon. " +
-                                "Expiry date: ${event.certInfo.validTo}"
+                            "Expiry date: ${event.certInfo.validTo}"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }

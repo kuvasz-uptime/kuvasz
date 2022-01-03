@@ -19,10 +19,10 @@ class SSLValidator {
             conn.connect()
 
             conn.serverCertificates.filterIsInstance<X509Certificate>().firstOrNull()?.let { cert ->
-                Either.right(CertificateInfo(validTo = cert.notAfter.toOffsetDateTime()))
-            } ?: Either.left(SSLValidationError("There were no matching CN for the given host"))
+                Either.Right(CertificateInfo(validTo = cert.notAfter.toOffsetDateTime()))
+            } ?: Either.Left(SSLValidationError("There were no matching CN for the given host"))
         } catch (e: Throwable) {
-            Either.left(SSLValidationError(e.message))
+            Either.Left(SSLValidationError(e.message))
         }
     }
 }
