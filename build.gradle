@@ -201,6 +201,9 @@ tasks.withType(JavaExec) {
 }
 
 jib {
+    from {
+        image = "gcr.io/distroless/java:11"
+    }
     to {
         image = "kuvaszmonitoring/kuvasz:${version}"
         tags = ["latest"]
