@@ -20,6 +20,7 @@ plugins {
     id "com.github.ben-manes.versions" version "${checkUpdatesVersion}"
     id "io.micronaut.application" version "${micronautPluginVersion}"
     id "org.jlleitschuh.gradle.ktlint" version "${ktLintPluginVersion}"
+    id "org.flywaydb.flyway" version "${flywayPluginVersion}"
 }
 
 version gitVersion()
@@ -90,7 +91,7 @@ shadowJar {
 }
 
 jacoco {
-    toolVersion = "0.8.5"
+    toolVersion = jacocoVersion
 }
 
 jacocoTestReport {
@@ -234,6 +235,12 @@ task updateApiDoc(type: Copy) {
     into "$projectDir/docs/api-doc"
 }
 
+def dbUrl = "jdbc:postgresql://localhost:5432/postgres"
+def dbUser = "postgres"
+def dbPassword = System.getenv("DB_PASSWORD") ?: "pass"
+def dbSchema = "kuvasz"
+def dbDriver = "org.postgresql.Driver"
+
 jooq {
     version = jooqVersion
     configurations {
@@ -241,9 +248,9 @@ jooq {
             generateSchemaSourceOnCompilation = false
             generationTool {
                 jdbc {
-                    url = "jdbc:postgresql://localhost:5432/postgres"
-                    user = "postgres"
-                    password = "pass"
+                    url = dbUrl
+                    user = dbUser
+                    password = dbPassword
                     driver = "org.postgresql.Driver"
                 }
                 generator {
@@ -259,7 +266,7 @@ jooq {
                         fluentSetters = true
                     }
                     database {
-                        inputSchema = "kuvasz"
+                        inputSchema = dbSchema
                         outputSchemaToDefault = true
                         excludes = "flyway_schema_history"
                     }
@@ -280,4 +287,12 @@ jooq {
             }
         }
     }
+}
+
+flyway {
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+    schemas = [dbSchema]
+    driver = dbDriver
 }
