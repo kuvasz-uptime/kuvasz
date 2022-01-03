@@ -17,7 +17,7 @@ plugins {
     id "jacoco"
     id "nu.studer.jooq" version "${jooqPluginVersion}"
     id "com.palantir.git-version" version "${palantirGitVersion}"
-    id "name.remal.check-updates" version "${checkUpdatesVersion}"
+    id "com.github.ben-manes.versions" version "${checkUpdatesVersion}"
     id "io.micronaut.application" version "${micronautPluginVersion}"
 }
 
