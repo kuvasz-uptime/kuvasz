@@ -74,7 +74,6 @@ dependencies {
     implementation("org.zalando:logbook-netty:$logbookVersion")
     implementation("org.zalando:logbook-json:$logbookVersion")
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
-    detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
     testImplementation("io.mockk:mockk:${mockkVersion}")
     testImplementation("org.testcontainers:postgresql:${postgresTestContainersVersion}")
     jooqGenerator("org.postgresql:postgresql:${postgresVersion}")
