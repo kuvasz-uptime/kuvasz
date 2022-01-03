@@ -19,6 +19,7 @@ plugins {
     id "com.palantir.git-version" version "${palantirGitVersion}"
     id "com.github.ben-manes.versions" version "${checkUpdatesVersion}"
     id "io.micronaut.application" version "${micronautPluginVersion}"
+    id "org.jlleitschuh.gradle.ktlint" version "${ktLintPluginVersion}"
 }
 
 version gitVersion()
@@ -134,6 +135,11 @@ detekt {
             "src/main/kotlin",
             "src/test/kotlin"
     )
+}
+
+ktlint {
+    version.set(ktLintVersion)
+    disabledRules = ["no-wildcard-imports"]
 }
 
 build {

@@ -24,8 +24,8 @@ class TelegramEventHandlerConfigTest : BehaviorSpec(
                         ApplicationContext.run(properties)
                     }
                     exceptionToMessage(exception) shouldContain
-                            "Bean definition [com.kuvaszuptime.kuvasz.handlers.TelegramEventHandler] " +
-                            "could not be loaded"
+                        "Bean definition [com.kuvaszuptime.kuvasz.handlers.TelegramEventHandler] " +
+                        "could not be loaded"
                 }
             }
 
@@ -42,8 +42,8 @@ class TelegramEventHandlerConfigTest : BehaviorSpec(
                         ApplicationContext.run(properties)
                     }
                     exceptionToMessage(exception) shouldContain
-                            "Bean definition [com.kuvaszuptime.kuvasz.handlers.TelegramEventHandler] " +
-                            "could not be loaded"
+                        "Bean definition [com.kuvaszuptime.kuvasz.handlers.TelegramEventHandler] " +
+                        "could not be loaded"
                 }
             }
 
@@ -61,8 +61,8 @@ class TelegramEventHandlerConfigTest : BehaviorSpec(
                         ApplicationContext.run(properties)
                     }
                     exceptionToMessage(exception) shouldContain
-                            "Bean definition [com.kuvaszuptime.kuvasz.handlers.TelegramEventHandler] " +
-                            "could not be loaded"
+                        "Bean definition [com.kuvaszuptime.kuvasz.handlers.TelegramEventHandler] " +
+                        "could not be loaded"
                 }
             }
         }

@@ -75,7 +75,7 @@ data class MonitorDownEvent(
     override fun toStructuredMessage() =
         StructuredMonitorDownMessage(
             summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
-                    (status?.let { " (" + it.code + ")" } ?: ""),
+                (status?.let { " (" + it.code + ")" } ?: ""),
             error = "Reason: ${error.message}",
             previousUpTime = getEndedEventDuration().toDurationString()?.let { "Was up for $it" }
         )

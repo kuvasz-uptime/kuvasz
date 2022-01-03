@@ -17,10 +17,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import org.jooq.Configuration
 import org.jooq.exception.DataAccessException
-import org.jooq.impl.DSL.`when`
-import org.jooq.impl.DSL.avg
-import org.jooq.impl.DSL.inline
-import org.jooq.impl.DSL.round
+import org.jooq.impl.DSL.*
 import org.jooq.impl.SQLDataType
 import javax.inject.Singleton
 
