@@ -23,10 +23,11 @@ plugins {
 
 version gitVersion()
 group "com.kuvaszuptime.kuvasz"
+def javaTargetVersion = "11"
 
 repositories {
+    gradlePluginPortal()
     mavenCentral()
-    jcenter()
 }
 
 micronaut {
@@ -148,7 +149,7 @@ test {
 }
 
 java {
-    sourceCompatibility = JavaVersion.toVersion('11')
+    sourceCompatibility = JavaVersion.toVersion(javaTargetVersion)
 }
 
 allOpen {
@@ -156,7 +157,7 @@ allOpen {
 }
 compileKotlin {
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = javaTargetVersion
         //Will retain parameter names for Java reflection
         javaParameters = true
         freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
@@ -165,7 +166,7 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = javaTargetVersion
         javaParameters = true
         freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
