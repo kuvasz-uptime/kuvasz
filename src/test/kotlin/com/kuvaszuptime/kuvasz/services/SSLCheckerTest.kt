@@ -185,9 +185,9 @@ class SSLCheckerTest(
     ) {
         val certInfo = CertificateInfo(validTo)
         val mockResult: Either<SSLValidationError, CertificateInfo> = when (status) {
-            SslStatus.VALID -> Either.right(certInfo)
-            SslStatus.WILL_EXPIRE -> Either.right(certInfo)
-            SslStatus.INVALID -> Either.left(SSLValidationError("validation error"))
+            SslStatus.VALID -> Either.Right(certInfo)
+            SslStatus.WILL_EXPIRE -> Either.Right(certInfo)
+            SslStatus.INVALID -> Either.Left(SSLValidationError("validation error"))
         }
         every { sslValidator.validate(any()) } returns mockResult
     }

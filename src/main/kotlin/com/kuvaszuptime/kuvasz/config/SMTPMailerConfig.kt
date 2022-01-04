@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.core.annotation.Introspected
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import org.simplejavamail.api.mailer.config.TransportStrategy as JavaMailerTransportStrategy

@@ -61,7 +61,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "✅ <b>Your monitor \"test_monitor\" (https://test.url) is UP (200)</b>\n<i>Latency: 300ms" +
-                                "</i>\nWas down for $expectedDurationString"
+                            "</i>\nWas down for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -107,7 +107,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "🚨 <b>Your monitor \"test_monitor\" (https://test.url) is DOWN (400)</b>\n" +
-                                "Was up for $expectedDurationString"
+                            "Was up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -146,7 +146,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "\uD83D\uDD12️ <b>Your site \"test_monitor\" (https://test.url) has a VALID certificate</b>\n" +
-                                "Was INVALID for $expectedDurationString"
+                            "Was INVALID for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -157,7 +157,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                 then("it should return the correct message") {
                     val expectedMessage =
                         "🚨 <b>Your site \"test_monitor\" (https://test.url) has an INVALID " +
-                                "certificate</b>\n<i>Reason: ssl error</i>"
+                            "certificate</b>\n<i>Reason: ssl error</i>"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -168,7 +168,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
 
                 then("it should return the correct message") {
                     val expectedMessage = "🚨 <b>Your site \"test_monitor\" (https://test.url) has an INVALID " +
-                            "certificate</b>\n<i>Reason: ssl error</i>"
+                        "certificate</b>\n<i>Reason: ssl error</i>"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -183,7 +183,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "🚨 <b>Your site \"test_monitor\" (https://test.url) has an INVALID certificate</b>\n" +
-                                "<i>Reason: ssl error</i>\nWas VALID for $expectedDurationString"
+                            "<i>Reason: ssl error</i>\nWas VALID for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -194,7 +194,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                 then("it should return the correct message") {
                     val expectedMessage =
                         "⚠️ <b>Your SSL certificate for https://test.url will expire soon</b>\n" +
-                                "<i>Expiry date: ${event.certInfo.validTo}</i>"
+                            "<i>Expiry date: ${event.certInfo.validTo}</i>"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }

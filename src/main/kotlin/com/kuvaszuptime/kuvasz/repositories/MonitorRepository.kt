@@ -15,14 +15,11 @@ import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.fetchOneIntoOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
+import jakarta.inject.Singleton
 import org.jooq.Configuration
 import org.jooq.exception.DataAccessException
-import org.jooq.impl.DSL.`when`
-import org.jooq.impl.DSL.avg
-import org.jooq.impl.DSL.inline
-import org.jooq.impl.DSL.round
+import org.jooq.impl.DSL.*
 import org.jooq.impl.SQLDataType
-import javax.inject.Singleton
 
 @Singleton
 class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
@@ -59,7 +56,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
 
     fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {
-            Either.right(
+            Either.Right(
                 dsl
                     .insertInto(MONITOR)
                     .set(dsl.newRecord(MONITOR, monitorPojo))
@@ -72,7 +69,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
 
     fun returningUpdate(updatedPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {
-            Either.right(
+            Either.Right(
                 dsl
                     .update(MONITOR)
                     .set(MONITOR.NAME, updatedPojo.name)
@@ -124,7 +121,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
 
     private fun DataAccessException.handle(): Either<PersistenceError, Nothing> {
         val persistenceError = toPersistenceError()
-        return Either.left(
+        return Either.Left(
             if (persistenceError is DuplicationError) {
                 MonitorDuplicatedError()
             } else persistenceError

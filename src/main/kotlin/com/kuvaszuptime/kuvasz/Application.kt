@@ -14,7 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
         title = "kuvasz",
         version = "latest",
         description = "Kuvasz [pronounce as 'koovas'] is an open-source, headless uptime and SSL monitoring service, " +
-                "built in Kotlin on top of the awesome Micronaut framework",
+            "built in Kotlin on top of the awesome Micronaut framework",
         contact = Contact(
             url = "https://github.com/kuvasz-uptime/kuvasz"
         )

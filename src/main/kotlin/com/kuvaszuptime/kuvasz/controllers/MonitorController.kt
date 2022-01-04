@@ -15,6 +15,9 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.http.annotation.Status
+import io.micronaut.scheduling.TaskExecutors
+import io.micronaut.scheduling.annotation.ExecuteOn
+import io.micronaut.validation.Validated
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -22,8 +25,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import javax.validation.Valid
 
 @Controller("/monitors", produces = [MediaType.APPLICATION_JSON])
+@Validated
 @Tag(name = "Monitor operations")
 @SecurityRequirement(name = "bearerAuth")
 class MonitorController(
@@ -37,6 +42,7 @@ class MonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = MonitorDetailsDto::class)))]
         )
     )
+    @ExecuteOn(TaskExecutors.IO)
     override fun getMonitorsWithDetails(@QueryValue enabledOnly: Boolean?): List<MonitorDetailsDto> =
         monitorCrudService.getMonitorsWithDetails(enabledOnly ?: false)
 
@@ -52,6 +58,7 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
+    @ExecuteOn(TaskExecutors.IO)
     override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto =
         monitorCrudService.getMonitorDetails(monitorId) ?: throw MonitorNotFoundError(monitorId)
 
@@ -68,7 +75,8 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    override fun createMonitor(monitor: MonitorCreateDto): MonitorDto {
+    @ExecuteOn(TaskExecutors.IO)
+    override fun createMonitor(@Valid monitor: MonitorCreateDto): MonitorDto {
         val updatedPojo = monitorCrudService.createMonitor(monitor)
         return MonitorDto.fromMonitorPojo(updatedPojo)
     }
@@ -85,6 +93,7 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
+    @ExecuteOn(TaskExecutors.IO)
     override fun deleteMonitor(monitorId: Int) = monitorCrudService.deleteMonitorById(monitorId)
 
     @ApiResponses(
@@ -104,7 +113,8 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    override fun updateMonitor(monitorId: Int, monitorUpdateDto: MonitorUpdateDto): MonitorDto {
+    @ExecuteOn(TaskExecutors.IO)
+    override fun updateMonitor(monitorId: Int, @Valid monitorUpdateDto: MonitorUpdateDto): MonitorDto {
         val updatedPojo = monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
         return MonitorDto.fromMonitorPojo(updatedPojo)
     }
@@ -126,7 +136,8 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    override fun upsertPagerdutyIntegrationKey(monitorId: Int, upsertDto: PagerdutyKeyUpdateDto): MonitorDto {
+    @ExecuteOn(TaskExecutors.IO)
+    override fun upsertPagerdutyIntegrationKey(monitorId: Int, @Valid upsertDto: PagerdutyKeyUpdateDto): MonitorDto {
         val updatedPojo = monitorCrudService.updatePagerdutyIntegrationKey(monitorId, upsertDto.pagerdutyIntegrationKey)
         return MonitorDto.fromMonitorPojo(updatedPojo)
     }
@@ -143,6 +154,7 @@ class MonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
+    @ExecuteOn(TaskExecutors.IO)
     override fun deletePagerdutyIntegrationKey(monitorId: Int) {
         monitorCrudService.updatePagerdutyIntegrationKey(monitorId, null)
     }
@@ -154,6 +166,7 @@ class MonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = UptimeEventDto::class)))]
         )
     )
+    @ExecuteOn(TaskExecutors.IO)
     override fun getUptimeEvents(monitorId: Int): List<UptimeEventDto> =
         monitorCrudService.getUptimeEventsByMonitorId(monitorId)
 
@@ -164,5 +177,6 @@ class MonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = SSLEventDto::class)))]
         )
     )
+    @ExecuteOn(TaskExecutors.IO)
     override fun getSSLEvents(monitorId: Int): List<SSLEventDto> = monitorCrudService.getSSLEventsByMonitorId(monitorId)
 }

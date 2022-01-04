@@ -8,8 +8,8 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.micronaut.scheduling.annotation.Scheduled
+import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
-import javax.inject.Singleton
 
 @Singleton
 class DatabaseCleaner(

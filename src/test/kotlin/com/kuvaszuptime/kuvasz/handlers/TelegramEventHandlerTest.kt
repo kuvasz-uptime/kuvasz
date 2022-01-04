@@ -5,11 +5,7 @@ import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.*
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -28,12 +24,7 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest.annotation.MicronautTest
-import io.mockk.clearAllMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.spyk
-import io.mockk.verify
+import io.mockk.*
 import io.reactivex.Single
 import org.jooq.Configuration
 import java.time.OffsetDateTime
@@ -241,7 +232,7 @@ class TelegramEventHandlerTest(
 
                     verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
                     slot.captured shouldContain
-                            "Your site \"${monitor.name}\" (${monitor.url}) has a VALID certificate"
+                        "Your site \"${monitor.name}\" (${monitor.url}) has a VALID certificate"
                 }
             }
 
@@ -261,7 +252,7 @@ class TelegramEventHandlerTest(
 
                     verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
                     slot.captured shouldContain
-                            "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate"
+                        "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate"
                 }
             }
 
@@ -387,7 +378,7 @@ class TelegramEventHandlerTest(
 
                     verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
                     slot.captured shouldContain
-                            "Your SSL certificate for ${monitor.url} will expire soon"
+                        "Your SSL certificate for ${monitor.url} will expire soon"
                 }
             }
 

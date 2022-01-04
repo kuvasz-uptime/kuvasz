@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.validation
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 import javax.validation.Constraint
 
 @Retention(AnnotationRetention.RUNTIME)

@@ -4,12 +4,12 @@ import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.daos.LatencyLogDao
 import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo
 import io.micronaut.core.annotation.Introspected
+import jakarta.inject.Singleton
 import org.jooq.Configuration
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.min
 import java.time.OffsetDateTime
-import javax.inject.Singleton
 
 @Singleton
 class LatencyLogRepository(jooqConfig: Configuration) : LatencyLogDao(jooqConfig) {

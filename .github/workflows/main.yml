@@ -29,6 +29,3 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
         fail_ci_if_error: false
-    - name: Build shadowJar
-      run: ./gradlew shadowJar
-

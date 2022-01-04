@@ -56,7 +56,7 @@ class CheckSchedulerTest(
 
             `when`(
                 "there is an enabled monitor in the database with disabled SSL checks" +
-                        " and initialize has been called"
+                    " and initialize has been called"
             ) {
                 val monitor = createMonitor(monitorRepository, sslCheckEnabled = false)
 

@@ -8,7 +8,7 @@ import io.micronaut.http.annotation.Post
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.retry.annotation.Retryable
 import io.reactivex.Single
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 @Client("https://api.telegram.org/bot\${handler-config.telegram-event-handler.token}")
 @Retryable

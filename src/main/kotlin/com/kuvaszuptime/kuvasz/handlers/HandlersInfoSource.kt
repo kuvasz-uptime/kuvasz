@@ -5,8 +5,8 @@ import io.micronaut.context.env.MapPropertySource
 import io.micronaut.context.env.PropertySource
 import io.micronaut.management.endpoint.info.InfoSource
 import io.reactivex.Flowable
+import jakarta.inject.Singleton
 import org.reactivestreams.Publisher
-import javax.inject.Singleton
 
 @Singleton
 class HandlersInfoSource(private val environment: Environment) : InfoSource {

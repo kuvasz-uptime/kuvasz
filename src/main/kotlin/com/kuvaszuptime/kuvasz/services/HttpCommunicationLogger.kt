@@ -5,10 +5,10 @@ import io.micronaut.context.event.BeanCreatedEvent
 import io.micronaut.context.event.BeanCreatedEventListener
 import io.micronaut.http.netty.channel.ChannelPipelineCustomizer
 import io.netty.channel.ChannelPipeline
+import jakarta.inject.Singleton
 import org.zalando.logbook.Logbook
 import org.zalando.logbook.netty.LogbookClientHandler
 import org.zalando.logbook.netty.LogbookServerHandler
-import javax.inject.Singleton
 
 @Singleton
 @Requires(property = "http-communication-log.enabled", value = "true")

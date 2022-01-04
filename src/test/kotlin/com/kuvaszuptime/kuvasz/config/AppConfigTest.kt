@@ -23,7 +23,7 @@ class AppConfigTest : BehaviorSpec(
                         ApplicationContext.run(properties)
                     }
                     exceptionToMessage(exception) shouldContain
-                            "Error resolving property value [app-config.data-retention-days]"
+                        "Error resolving property value [app-config.data-retention-days]"
                 }
             }
 

@@ -30,9 +30,9 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
-import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.rxjava2.http.client.RxHttpClient
 import io.micronaut.test.extensions.kotest.annotation.MicronautTest
 
 @Suppress("LongParameterList")
@@ -257,7 +257,7 @@ class MonitorControllerTest(
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     exceptionToMessage(response) shouldContain
-                            "uptimeCheckInterval: must be greater than or equal to 60"
+                        "uptimeCheckInterval: must be greater than or equal to 60"
                 }
             }
         }

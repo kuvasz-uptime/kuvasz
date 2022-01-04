@@ -12,21 +12,23 @@ plugins {
     id "org.jetbrains.kotlin.plugin.allopen" version "${kotlinVersion}"
     id "application"
     id "com.google.cloud.tools.jib" version "${jibVersion}"
-    id "com.github.johnrengelman.shadow" version "${shadowVersion}"
     id "io.gitlab.arturbosch.detekt" version "${detektVersion}"
     id "jacoco"
     id "nu.studer.jooq" version "${jooqPluginVersion}"
     id "com.palantir.git-version" version "${palantirGitVersion}"
-    id "name.remal.check-updates" version "${checkUpdatesVersion}"
+    id "com.github.ben-manes.versions" version "${checkUpdatesVersion}"
     id "io.micronaut.application" version "${micronautPluginVersion}"
+    id "org.jlleitschuh.gradle.ktlint" version "${ktLintPluginVersion}"
+    id "org.flywaydb.flyway" version "${flywayPluginVersion}"
 }
 
 version gitVersion()
 group "com.kuvaszuptime.kuvasz"
+def javaTargetVersion = "11"
 
 repositories {
+    gradlePluginPortal()
     mavenCentral()
-    jcenter()
 }
 
 micronaut {
@@ -45,51 +47,48 @@ configurations {
 }
 
 dependencies {
-    kapt("io.micronaut:micronaut-graal")
-    kapt("io.micronaut.configuration:micronaut-openapi")
+    kapt("io.micronaut.openapi:micronaut-openapi")
     kapt("io.micronaut.security:micronaut-security-annotations")
+    kapt("io.micronaut:micronaut-graal")
+    runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
     compileOnly("org.graalvm.nativeimage:svm")
-    implementation("io.micronaut:micronaut-validation")
+    implementation "nu.studer:gradle-jooq-plugin:$jooqPluginVersion"
+    implementation("ch.qos.logback:logback-classic")
     implementation("io.arrow-kt:arrow-core-data:${arrowDataVersion}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
-    implementation("io.micronaut:micronaut-validation")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
-    implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
-    implementation("io.micronaut:micronaut-runtime")
-    implementation("javax.annotation:javax.annotation-api")
-    implementation("io.micronaut:micronaut-http-client")
-    implementation("io.swagger.core.v3:swagger-annotations")
     implementation("io.micronaut.flyway:micronaut-flyway")
+    implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
+    implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
+    implementation("io.micronaut.rxjava2:micronaut-rxjava2")
+    implementation("io.micronaut.rxjava2:micronaut-rxjava2-http-client")
+    implementation("io.micronaut.security:micronaut-security-jwt")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
     implementation("io.micronaut.sql:micronaut-jooq")
-    implementation("io.micronaut.security:micronaut-security-jwt")
-    implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
-    implementation "nu.studer:gradle-jooq-plugin:$jooqPluginVersion"
+    implementation("io.micronaut:micronaut-http-client")
+    implementation("io.micronaut:micronaut-runtime")
+    implementation("io.micronaut:micronaut-validation")
+    implementation("io.micronaut:micronaut-validation")
+    implementation("io.swagger.core.v3:swagger-annotations")
+    implementation("javax.annotation:javax.annotation-api")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation("org.postgresql:postgresql:${postgresVersion}")
-    implementation("org.simplejavamail:simple-java-mail:${simpleJavaMailVersion}")
     implementation("org.simplejavamail:batch-module:${simpleJavaMailVersion}")
-    implementation("ch.qos.logback:logback-classic")
+    implementation("org.simplejavamail:simple-java-mail:${simpleJavaMailVersion}")
     implementation("org.zalando:logbook-core:$logbookVersion")
-    implementation("org.zalando:logbook-netty:$logbookVersion")
     implementation("org.zalando:logbook-json:$logbookVersion")
-    runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
-    detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
+    implementation("org.zalando:logbook-netty:$logbookVersion")
+    jooqGenerator("org.postgresql:postgresql:${postgresVersion}")
     testImplementation("io.mockk:mockk:${mockkVersion}")
     testImplementation("org.testcontainers:postgresql:${postgresTestContainersVersion}")
-    jooqGenerator("org.postgresql:postgresql:${postgresVersion}")
 }
 
 test.classpath += configurations.developmentOnly
 
 mainClassName = "com.kuvaszuptime.kuvasz.Application"
 
-shadowJar {
-    mergeServiceFiles()
-}
-
 jacoco {
-    toolVersion = "0.8.5"
+    toolVersion = jacocoVersion
 }
 
 jacocoTestReport {
@@ -136,6 +135,11 @@ detekt {
     )
 }
 
+ktlint {
+    version.set(ktLintVersion)
+    disabledRules = ["no-wildcard-imports"]
+}
+
 build {
     dependsOn("detekt")
 }
@@ -149,15 +153,16 @@ test {
 }
 
 java {
-    sourceCompatibility = JavaVersion.toVersion('11')
+    sourceCompatibility = JavaVersion.toVersion(javaTargetVersion)
 }
 
 allOpen {
-    annotation("io.micronaut.aop.Around")
+    annotation("jakarta.inject.Singleton")
 }
+
 compileKotlin {
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = javaTargetVersion
         //Will retain parameter names for Java reflection
         javaParameters = true
         freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
@@ -166,7 +171,7 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = javaTargetVersion
         javaParameters = true
         freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
@@ -194,6 +199,9 @@ tasks.withType(JavaExec) {
 }
 
 jib {
+    from {
+        image = "gcr.io/distroless/java:11"
+    }
     to {
         image = "kuvaszmonitoring/kuvasz:${version}"
         tags = ["latest"]
@@ -203,12 +211,6 @@ jib {
     }
 }
 
-task buildNativeImage(type: Exec) {
-    dependsOn("shadowJar")
-    workingDir projectDir
-    commandLine "sh", "./docker-build-native.sh", "-v${version}"
-}
-
 task pushNativeImage(type: Exec) {
     workingDir projectDir
     commandLine "sh", "./docker-push-native.sh", "-t${version}-native"
@@ -216,10 +218,10 @@ task pushNativeImage(type: Exec) {
 
 task releaseDockerImages() {
     dependsOn("jib")
-    dependsOn("buildNativeImage")
+    dependsOn("dockerBuildNative")
     dependsOn("pushNativeImage")
-    tasks.findByName("buildNativeImage").mustRunAfter "jib"
-    tasks.findByName("pushNativeImage").mustRunAfter "buildNativeImage"
+    tasks.findByName("dockerBuildNative").mustRunAfter "jib"
+    tasks.findByName("pushNativeImage").mustRunAfter "dockerBuildNative"
 }
 
 task updateApiDoc(type: Copy) {
@@ -228,6 +230,12 @@ task updateApiDoc(type: Copy) {
     into "$projectDir/docs/api-doc"
 }
 
+def dbUrl = "jdbc:postgresql://localhost:5432/postgres"
+def dbUser = "postgres"
+def dbPassword = System.getenv("DB_PASSWORD") ?: "pass"
+def dbSchema = "kuvasz"
+def dbDriver = "org.postgresql.Driver"
+
 jooq {
     version = jooqVersion
     configurations {
@@ -235,9 +243,9 @@ jooq {
             generateSchemaSourceOnCompilation = false
             generationTool {
                 jdbc {
-                    url = "jdbc:postgresql://localhost:5432/postgres"
-                    user = "postgres"
-                    password = "pass"
+                    url = dbUrl
+                    user = dbUser
+                    password = dbPassword
                     driver = "org.postgresql.Driver"
                 }
                 generator {
@@ -253,7 +261,7 @@ jooq {
                         fluentSetters = true
                     }
                     database {
-                        inputSchema = "kuvasz"
+                        inputSchema = dbSchema
                         outputSchemaToDefault = true
                         excludes = "flyway_schema_history"
                     }
@@ -274,4 +282,20 @@ jooq {
             }
         }
     }
+}
+
+flyway {
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+    schemas = [dbSchema]
+    driver = dbDriver
+}
+
+tasks.named("dockerfileNative") {
+    args("-Xms64M ", "-Xmx128m", "-Dio.netty.allocator.maxOrder=8")
+}
+
+tasks.named("dockerBuildNative") {
+    images = ["kuvaszmonitoring/kuvasz:$version-native", "kuvaszmonitoring/kuvasz:latest-native"]
 }
