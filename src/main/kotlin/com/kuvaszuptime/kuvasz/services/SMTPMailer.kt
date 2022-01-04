@@ -3,9 +3,9 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import jakarta.inject.Singleton
 import org.simplejavamail.api.email.Email
-import org.simplejavamail.api.mailer.AsyncResponse
 import org.simplejavamail.mailer.MailerBuilder
 import org.slf4j.LoggerFactory
+import java.util.concurrent.CompletableFuture
 
 @Singleton
 class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
@@ -19,6 +19,7 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
             .withTransportStrategy(smtpMailerConfig.transportStrategy.toJavaMailerTransportStrategy())
             .withSMTPServerHost(smtpMailerConfig.host)
             .withSMTPServerPort(smtpMailerConfig.port)
+            .async()
             .apply {
                 if (!smtpMailerConfig.username.isNullOrBlank() && !smtpMailerConfig.password.isNullOrBlank()) {
                     withSMTPServerUsername(smtpMailerConfig.username)
@@ -37,5 +38,5 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
         }
     }
 
-    fun sendAsync(email: Email): AsyncResponse? = mailerClient.sendMail(email, true)
+    fun sendAsync(email: Email): CompletableFuture<Void> = mailerClient.sendMail(email, true)
 }
