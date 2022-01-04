@@ -162,8 +162,9 @@ java {
 }
 
 allOpen {
-    annotation("io.micronaut.aop.Around")
+    annotation("jakarta.inject.Singleton")
 }
+
 compileKotlin {
     kotlinOptions {
         jvmTarget = javaTargetVersion
