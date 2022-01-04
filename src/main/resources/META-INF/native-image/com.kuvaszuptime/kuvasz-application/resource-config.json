@@ -16,7 +16,7 @@
       "pattern": "\\QMETA-INF/mailcap\\E"
     },
     {
-      "pattern": "\\QMETA-INF/services/javax.mail.Provider\\E"
+      "pattern": "\\QMETA-INF/services/jakarta.mail.Provider\\E"
     }
   ],
   "bundles": []

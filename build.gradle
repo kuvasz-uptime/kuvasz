@@ -12,7 +12,6 @@ plugins {
     id "org.jetbrains.kotlin.plugin.allopen" version "${kotlinVersion}"
     id "application"
     id "com.google.cloud.tools.jib" version "${jibVersion}"
-    id "com.github.johnrengelman.shadow" version "${shadowVersion}"
     id "io.gitlab.arturbosch.detekt" version "${detektVersion}"
     id "jacoco"
     id "nu.studer.jooq" version "${jooqPluginVersion}"
@@ -87,10 +86,6 @@ dependencies {
 test.classpath += configurations.developmentOnly
 
 mainClassName = "com.kuvaszuptime.kuvasz.Application"
-
-shadowJar {
-    mergeServiceFiles()
-}
 
 jacoco {
     toolVersion = jacocoVersion
@@ -216,12 +211,6 @@ jib {
     }
 }
 
-task buildNativeImage(type: Exec) {
-    dependsOn("shadowJar")
-    workingDir projectDir
-    commandLine "sh", "./docker-build-native.sh", "-v${version}"
-}
-
 task pushNativeImage(type: Exec) {
     workingDir projectDir
     commandLine "sh", "./docker-push-native.sh", "-t${version}-native"
@@ -229,10 +218,10 @@ task pushNativeImage(type: Exec) {
 
 task releaseDockerImages() {
     dependsOn("jib")
-    dependsOn("buildNativeImage")
+    dependsOn("dockerBuildNative")
     dependsOn("pushNativeImage")
-    tasks.findByName("buildNativeImage").mustRunAfter "jib"
-    tasks.findByName("pushNativeImage").mustRunAfter "buildNativeImage"
+    tasks.findByName("dockerBuildNative").mustRunAfter "jib"
+    tasks.findByName("pushNativeImage").mustRunAfter "dockerBuildNative"
 }
 
 task updateApiDoc(type: Copy) {
@@ -301,4 +290,12 @@ flyway {
     password = dbPassword
     schemas = [dbSchema]
     driver = dbDriver
+}
+
+tasks.named("dockerfileNative") {
+    args("-Xms64M ", "-Xmx128m", "-Dio.netty.allocator.maxOrder=8")
+}
+
+tasks.named("dockerBuildNative") {
+    images = ["kuvaszmonitoring/kuvasz:$version-native", "kuvaszmonitoring/kuvasz:latest-native"]
 }

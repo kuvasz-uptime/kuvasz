@@ -5,8 +5,8 @@
       {
         "name": "<init>",
         "parameterTypes": [
-          "javax.mail.Session",
-          "javax.mail.URLName"
+          "jakarta.mail.Session",
+          "jakarta.mail.URLName"
         ]
       }
     ]
@@ -21,6 +21,6 @@
     ]
   },
   {
-    "name": "javax.activation.MailcapCommandMap"
+    "name": "jakarta.activation.MailcapCommandMap"
   }
 ]
