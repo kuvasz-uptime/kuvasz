@@ -6,8 +6,8 @@ import java.time.temporal.ChronoField
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToLong
 
-infix fun OffsetDateTime.shouldBe(otherOffsetDateTime: OffsetDateTime) =
-    this.roundToMicros().isEqual(otherOffsetDateTime.roundToMicros()).shouldBeTrue()
+infix fun OffsetDateTime?.shouldBe(otherOffsetDateTime: OffsetDateTime) =
+    (this != null && this.roundToMicros().isEqual(otherOffsetDateTime.roundToMicros())).shouldBeTrue()
 
 @Suppress("MagicNumber")
 private fun OffsetDateTime.roundToMicros(): OffsetDateTime {
