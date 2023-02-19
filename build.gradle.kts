@@ -52,7 +52,6 @@ micronaut {
 }
 
 val kotlinCoroutinesVersion = "1.6.4"
-val logbookVersion = "2.14.0"
 val jooqPluginVersion: String by project
 val kotlinVersion: String by project
 val postgresVersion = "42.5.4"
@@ -87,9 +86,6 @@ dependencies {
     implementation("org.postgresql:postgresql:$postgresVersion")
     implementation("org.simplejavamail:batch-module:$simpleJavaMailVersion")
     implementation("org.simplejavamail:simple-java-mail:$simpleJavaMailVersion")
-    implementation("org.zalando:logbook-core:$logbookVersion")
-    implementation("org.zalando:logbook-json:$logbookVersion")
-    implementation("org.zalando:logbook-netty:$logbookVersion")
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
     testImplementation("io.mockk:mockk:1.13.3")
     testImplementation("org.testcontainers:postgresql:1.16.2")
