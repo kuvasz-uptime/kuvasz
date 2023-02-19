@@ -34,6 +34,10 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.rxjava2.http.client.RxHttpClient
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoField
+import java.time.temporal.ChronoUnit
+import kotlin.math.roundToLong
 
 @Suppress("LongParameterList")
 @MicronautTest
@@ -82,13 +86,13 @@ class MonitorControllerTest(
                     responseItem.p95LatencyInMs shouldBe 1200
                     responseItem.p99LatencyInMs shouldBe 1200
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
-                    responseItem.uptimeStatusStartedAt shouldBe now
+                    responseItem.uptimeStatusStartedAt?.roundToMicros() shouldBe now
                     responseItem.uptimeError shouldBe null
-                    responseItem.lastUptimeCheck shouldBe now
+                    responseItem.lastUptimeCheck?.roundToMicros() shouldBe now
                     responseItem.createdAt shouldBe monitor.createdAt
                     responseItem.sslStatus shouldBe SslStatus.VALID
-                    responseItem.sslStatusStartedAt shouldBe now
-                    responseItem.lastSSLCheck shouldBe now
+                    responseItem.sslStatusStartedAt?.roundToMicros() shouldBe now
+                    responseItem.lastSSLCheck?.roundToMicros() shouldBe now
                     responseItem.sslError shouldBe null
                     responseItem.pagerdutyKeyPresent shouldBe true
                 }
@@ -153,10 +157,10 @@ class MonitorControllerTest(
                     response.averageLatencyInMs shouldBe 800
                     response.uptimeStatus shouldBe UptimeStatus.UP
                     response.createdAt shouldBe monitor.createdAt
-                    response.lastUptimeCheck shouldBe now
+                    response.lastUptimeCheck?.roundToMicros() shouldBe now
                     response.sslStatus shouldBe SslStatus.VALID
-                    response.sslStatusStartedAt shouldBe now
-                    response.lastSSLCheck shouldBe now
+                    response.sslStatusStartedAt?.roundToMicros() shouldBe now
+                    response.lastSSLCheck?.roundToMicros() shouldBe now
                     response.sslError shouldBe null
                     response.pagerdutyKeyPresent shouldBe true
                 }
@@ -632,4 +636,11 @@ class MonitorControllerTest(
         checkScheduler.removeAllChecks()
         super.afterTest(testCase, result)
     }
+}
+
+@Suppress("MagicNumber")
+private fun OffsetDateTime.roundToMicros(): OffsetDateTime {
+    val nanos = get(ChronoField.NANO_OF_SECOND)
+    val roundedMicros = (nanos / 1000.0).roundToLong()
+    return truncatedTo(ChronoUnit.SECONDS).plus(roundedMicros, ChronoUnit.MICROS)
 }

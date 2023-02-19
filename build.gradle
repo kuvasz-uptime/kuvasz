@@ -42,11 +42,6 @@ micronaut {
     }
 }
 
-configurations {
-    // for dependencies that are needed for development only
-    developmentOnly
-}
-
 dependencies {
     kapt("io.micronaut.openapi:micronaut-openapi")
     kapt("io.micronaut.security:micronaut-security-annotations")
@@ -81,8 +76,6 @@ dependencies {
     testImplementation("io.mockk:mockk:${mockkVersion}")
     testImplementation("org.testcontainers:postgresql:${postgresTestContainersVersion}")
 }
-
-test.classpath += configurations.developmentOnly
 
 mainClassName = "com.kuvaszuptime.kuvasz.Application"
 
@@ -175,10 +168,7 @@ compileTestKotlin {
 }
 
 tasks.withType(JavaExec) {
-    classpath += configurations.developmentOnly
     jvmArgs(
-            "-XX:TieredStopAtLevel=1",
-            "-Dcom.sun.management.jmxremote",
             "-Xms64M",
             "-Xmx128M",
             "-Dlogback.configurationFile=logback-dev.xml"

@@ -24,7 +24,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: Run Gradle check
-      run: ./gradlew check --info
+      run: ./gradlew check
     - name: Codecov
       uses: codecov/codecov-action@v3
       with:
