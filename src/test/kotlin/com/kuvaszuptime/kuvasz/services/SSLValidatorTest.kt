@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
+import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -8,6 +9,7 @@ import io.kotest.data.table
 import io.kotest.matchers.booleans.shouldBeTrue
 import java.net.URL
 
+@Ignored("badssl.com seems to be broken") // FIXME
 class SSLValidatorTest : StringSpec(
     {
         val validator = SSLValidator()

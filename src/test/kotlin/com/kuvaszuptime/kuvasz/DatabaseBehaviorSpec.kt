@@ -11,7 +11,7 @@ abstract class DatabaseBehaviorSpec(body: BehaviorSpec.() -> Unit = {}) : Behavi
     @Inject
     lateinit var flyway: Flyway
 
-    override fun afterContainer(testCase: TestCase, result: TestResult) {
+    override suspend fun afterContainer(testCase: TestCase, result: TestResult) {
         flyway.clean()
         flyway.migrate()
     }

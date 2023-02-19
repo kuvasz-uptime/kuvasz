@@ -33,7 +33,7 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.rxjava2.http.client.RxHttpClient
-import io.micronaut.test.extensions.kotest.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @Suppress("LongParameterList")
 @MicronautTest
@@ -628,7 +628,7 @@ class MonitorControllerTest(
         }
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         checkScheduler.removeAllChecks()
         super.afterTest(testCase, result)
     }

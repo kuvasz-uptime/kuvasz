@@ -20,12 +20,8 @@ import io.kotest.core.test.TestResult
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
-import io.micronaut.test.extensions.kotest.annotation.MicronautTest
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.spyk
-import io.mockk.verify
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.*
 import io.reactivex.subscribers.TestSubscriber
 import java.time.OffsetDateTime
 
@@ -174,7 +170,7 @@ class SSLCheckerTest(
         }
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         clearMocks(sslValidator)
         super.afterTest(testCase, result)
     }

@@ -1,6 +1,6 @@
 buildscript {
-    configurations['classpath'].resolutionStrategy.eachDependency {
-        if (requested.group == 'org.jooq') {
+    configurations["classpath"].resolutionStrategy.eachDependency {
+        if (requested.group == "org.jooq") {
             useVersion jooqVersion
         }
     }
@@ -17,14 +17,15 @@ plugins {
     id "nu.studer.jooq" version "${jooqPluginVersion}"
     id "com.palantir.git-version" version "${palantirGitVersion}"
     id "com.github.ben-manes.versions" version "${checkUpdatesVersion}"
-    id "io.micronaut.application" version "${micronautPluginVersion}"
+    id "io.micronaut.minimal.application" version "${micronautPluginVersion}"
+    id "io.micronaut.docker" version "${micronautPluginVersion}"
     id "org.jlleitschuh.gradle.ktlint" version "${ktLintPluginVersion}"
     id "org.flywaydb.flyway" version "${flywayPluginVersion}"
 }
 
 version gitVersion()
 group "com.kuvaszuptime.kuvasz"
-def javaTargetVersion = "11"
+def javaTargetVersion = "17"
 
 repositories {
     gradlePluginPortal()
@@ -34,7 +35,7 @@ repositories {
 micronaut {
     version micronautVersion
     runtime "netty"
-    testRuntime "kotest"
+    testRuntime "kotest5"
     processing {
         incremental true
         annotations "com.kuvaszuptime.kuvasz.*"
@@ -49,9 +50,7 @@ configurations {
 dependencies {
     kapt("io.micronaut.openapi:micronaut-openapi")
     kapt("io.micronaut.security:micronaut-security-annotations")
-    kapt("io.micronaut:micronaut-graal")
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
-    compileOnly("org.graalvm.nativeimage:svm")
     implementation "nu.studer:gradle-jooq-plugin:$jooqPluginVersion"
     implementation("ch.qos.logback:logback-classic")
     implementation("io.arrow-kt:arrow-core-data:${arrowDataVersion}")
@@ -93,10 +92,10 @@ jacoco {
 
 jacocoTestReport {
     reports {
-        xml.enabled true
+        xml.required = true
         xml.destination file("${buildDir}/reports/jacoco/report.xml")
-        html.enabled true
-        csv.enabled false
+        html.required = true
+        csv.required = false
     }
     classDirectories.setFrom(
             fileTree("build/classes/kotlin/main") {
@@ -165,7 +164,6 @@ compileKotlin {
         jvmTarget = javaTargetVersion
         //Will retain parameter names for Java reflection
         javaParameters = true
-        freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
     finalizedBy("updateApiDoc")
 }
@@ -173,7 +171,6 @@ compileTestKotlin {
     kotlinOptions {
         jvmTarget = javaTargetVersion
         javaParameters = true
-        freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     }
 }
 
@@ -185,8 +182,6 @@ tasks.withType(JavaExec) {
             "-Xms64M",
             "-Xmx128M",
             "-Dlogback.configurationFile=logback-dev.xml"
-//            "-agentlib:native-image-agent=experimental-class-loader-support,config-output-dir=./tmp",
-//            "-Dorg.graalvm.nativeimage.imagecode=agent"
     )
     systemProperty("micronaut.environments", "dev")
     if (gradle.startParameter.continuous) {
@@ -200,7 +195,13 @@ tasks.withType(JavaExec) {
 
 jib {
     from {
-        image = "gcr.io/distroless/java:11"
+        image = "gcr.io/distroless/java17-debian11"
+        platforms {
+            platform {
+                os = "linux"
+                architecture = "amd64"
+            }
+        }
     }
     to {
         image = "kuvaszmonitoring/kuvasz:${version}"
@@ -209,19 +210,6 @@ jib {
     container {
         environment = ["JAVA_TOOL_OPTIONS": "-Xms64M -Xmx128M"]
     }
-}
-
-task pushNativeImage(type: Exec) {
-    workingDir projectDir
-    commandLine "sh", "./docker-push-native.sh", "-t${version}-native"
-}
-
-task releaseDockerImages() {
-    dependsOn("jib")
-    dependsOn("dockerBuildNative")
-    dependsOn("pushNativeImage")
-    tasks.findByName("dockerBuildNative").mustRunAfter "jib"
-    tasks.findByName("pushNativeImage").mustRunAfter "dockerBuildNative"
 }
 
 task updateApiDoc(type: Copy) {
@@ -290,12 +278,4 @@ flyway {
     password = dbPassword
     schemas = [dbSchema]
     driver = dbDriver
-}
-
-tasks.named("dockerfileNative") {
-    args("-Xms64M ", "-Xmx128m", "-Dio.netty.allocator.maxOrder=8")
-}
-
-tasks.named("dockerBuildNative") {
-    images = ["kuvaszmonitoring/kuvasz:$version-native", "kuvaszmonitoring/kuvasz:latest-native"]
 }

@@ -23,7 +23,7 @@ abstract class RTCMessageEventHandler(
         subscribeToEvents()
     }
 
-    internal fun subscribeToEvents() {
+    private fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()

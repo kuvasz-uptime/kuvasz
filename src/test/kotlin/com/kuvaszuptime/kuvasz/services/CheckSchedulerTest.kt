@@ -11,7 +11,7 @@ import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.micronaut.test.extensions.kotest.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(startApplication = false)
 class CheckSchedulerTest(
@@ -71,7 +71,7 @@ class CheckSchedulerTest(
         }
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         checkScheduler.removeAllChecks()
         super.afterTest(testCase, result)
     }

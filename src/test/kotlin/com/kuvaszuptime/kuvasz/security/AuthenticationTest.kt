@@ -8,6 +8,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
@@ -15,7 +16,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.rxjava2.http.client.RxHttpClient
 import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
-import io.micronaut.test.extensions.kotest.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest
 @Property(name = "micronaut.security.enabled", value = "true")
@@ -45,7 +46,7 @@ class AuthenticationTest(
                     response.status shouldBe HttpStatus.OK
                     token.username shouldBe credentials.username
                     token.accessToken shouldNotBe null
-                    (parsedJwt is SignedJWT) shouldBe true
+                    parsedJwt.shouldBeInstanceOf<SignedJWT>()
                 }
             }
 
