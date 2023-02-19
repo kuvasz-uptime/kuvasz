@@ -8,12 +8,12 @@ import com.kuvaszuptime.kuvasz.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo;
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord;
+import org.jooq.Configuration;
+import org.jooq.impl.DAOImpl;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-
-import org.jooq.Configuration;
-import org.jooq.impl.DAOImpl;
+import java.util.Optional;
 
 
 /**
@@ -42,7 +42,8 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     }
 
     /**
-     * Fetch records that have <code>id BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>id BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<UptimeEventPojo> fetchRangeOfId(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(UptimeEvent.UPTIME_EVENT.ID, lowerInclusive, upperInclusive);
@@ -63,7 +64,15 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     }
 
     /**
-     * Fetch records that have <code>monitor_id BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch a unique record that has <code>id = value</code>
+     */
+    public Optional<UptimeEventPojo> fetchOptionalById(Integer value) {
+        return fetchOptional(UptimeEvent.UPTIME_EVENT.ID, value);
+    }
+
+    /**
+     * Fetch records that have <code>monitor_id BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<UptimeEventPojo> fetchRangeOfMonitorId(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(UptimeEvent.UPTIME_EVENT.MONITOR_ID, lowerInclusive, upperInclusive);
@@ -77,7 +86,8 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     }
 
     /**
-     * Fetch records that have <code>status BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>status BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<UptimeEventPojo> fetchRangeOfStatus(UptimeStatus lowerInclusive, UptimeStatus upperInclusive) {
         return fetchRange(UptimeEvent.UPTIME_EVENT.STATUS, lowerInclusive, upperInclusive);
@@ -91,7 +101,8 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     }
 
     /**
-     * Fetch records that have <code>error BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>error BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<UptimeEventPojo> fetchRangeOfError(String lowerInclusive, String upperInclusive) {
         return fetchRange(UptimeEvent.UPTIME_EVENT.ERROR, lowerInclusive, upperInclusive);
@@ -105,7 +116,8 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     }
 
     /**
-     * Fetch records that have <code>started_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>started_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<UptimeEventPojo> fetchRangeOfStartedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(UptimeEvent.UPTIME_EVENT.STARTED_AT, lowerInclusive, upperInclusive);
@@ -119,7 +131,8 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     }
 
     /**
-     * Fetch records that have <code>ended_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>ended_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<UptimeEventPojo> fetchRangeOfEndedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(UptimeEvent.UPTIME_EVENT.ENDED_AT, lowerInclusive, upperInclusive);
@@ -133,7 +146,8 @@ public class UptimeEventDao extends DAOImpl<UptimeEventRecord, UptimeEventPojo, 
     }
 
     /**
-     * Fetch records that have <code>updated_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>updated_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<UptimeEventPojo> fetchRangeOfUpdatedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(UptimeEvent.UPTIME_EVENT.UPDATED_AT, lowerInclusive, upperInclusive);

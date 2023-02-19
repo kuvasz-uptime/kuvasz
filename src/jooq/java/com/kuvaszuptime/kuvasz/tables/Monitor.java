@@ -7,25 +7,16 @@ package com.kuvaszuptime.kuvasz.tables;
 import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Keys;
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord;
+import org.jooq.Record;
+import org.jooq.*;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
+import org.jooq.impl.TableImpl;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
-
-import org.jooq.Field;
-import org.jooq.ForeignKey;
-import org.jooq.Identity;
-import org.jooq.Name;
-import org.jooq.Record;
-import org.jooq.Row9;
-import org.jooq.Schema;
-import org.jooq.Table;
-import org.jooq.TableField;
-import org.jooq.TableOptions;
-import org.jooq.UniqueKey;
-import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
-import org.jooq.impl.TableImpl;
+import java.util.function.Function;
 
 
 /**
@@ -65,7 +56,8 @@ public class Monitor extends TableImpl<MonitorRecord> {
     public final TableField<MonitorRecord, String> URL = createField(DSL.name("url"), SQLDataType.CLOB.nullable(false), this, "URL to check");
 
     /**
-     * The column <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
+     * The column <code>monitor.uptime_check_interval</code>. Uptime checking
+     * interval in seconds
      */
     public final TableField<MonitorRecord, Integer> UPTIME_CHECK_INTERVAL = createField(DSL.name("uptime_check_interval"), SQLDataType.INTEGER.nullable(false), this, "Uptime checking interval in seconds");
 
@@ -129,7 +121,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
 
     @Override
     public Schema getSchema() {
-        return DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
     }
 
     @Override
@@ -143,8 +135,8 @@ public class Monitor extends TableImpl<MonitorRecord> {
     }
 
     @Override
-    public List<UniqueKey<MonitorRecord>> getKeys() {
-        return Arrays.<UniqueKey<MonitorRecord>>asList(Keys.MONITOR_PKEY, Keys.UNIQUE_MONITOR_NAME);
+    public List<UniqueKey<MonitorRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UNIQUE_MONITOR_NAME);
     }
 
     @Override
@@ -155,6 +147,11 @@ public class Monitor extends TableImpl<MonitorRecord> {
     @Override
     public Monitor as(Name alias) {
         return new Monitor(alias, this);
+    }
+
+    @Override
+    public Monitor as(Table<?> alias) {
+        return new Monitor(alias.getQualifiedName(), this);
     }
 
     /**
@@ -173,6 +170,14 @@ public class Monitor extends TableImpl<MonitorRecord> {
         return new Monitor(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public Monitor rename(Table<?> name) {
+        return new Monitor(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row9 type methods
     // -------------------------------------------------------------------------
@@ -180,5 +185,20 @@ public class Monitor extends TableImpl<MonitorRecord> {
     @Override
     public Row9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> fieldsRow() {
         return (Row9) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function9<? super Integer, ? super String, ? super String, ? super Integer, ? super Boolean, ? super OffsetDateTime, ? super OffsetDateTime, ? super Boolean, ? super String, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function9<? super Integer, ? super String, ? super String, ? super Integer, ? super Boolean, ? super OffsetDateTime, ? super OffsetDateTime, ? super Boolean, ? super String, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

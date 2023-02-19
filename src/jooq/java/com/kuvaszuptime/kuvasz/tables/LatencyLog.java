@@ -8,26 +8,16 @@ import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Indexes;
 import com.kuvaszuptime.kuvasz.Keys;
 import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord;
+import org.jooq.Record;
+import org.jooq.*;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
+import org.jooq.impl.TableImpl;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
-
-import org.jooq.Field;
-import org.jooq.ForeignKey;
-import org.jooq.Identity;
-import org.jooq.Index;
-import org.jooq.Name;
-import org.jooq.Record;
-import org.jooq.Row4;
-import org.jooq.Schema;
-import org.jooq.Table;
-import org.jooq.TableField;
-import org.jooq.TableOptions;
-import org.jooq.UniqueKey;
-import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
-import org.jooq.impl.TableImpl;
+import java.util.function.Function;
 
 
 /**
@@ -106,12 +96,12 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
 
     @Override
     public Schema getSchema() {
-        return DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.LATENCY_LOG_LATENCY_IDX, Indexes.LATENCY_LOG_MONITOR_IDX);
+        return Arrays.asList(Indexes.LATENCY_LOG_LATENCY_IDX, Indexes.LATENCY_LOG_MONITOR_IDX);
     }
 
     @Override
@@ -125,17 +115,15 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     }
 
     @Override
-    public List<UniqueKey<LatencyLogRecord>> getKeys() {
-        return Arrays.<UniqueKey<LatencyLogRecord>>asList(Keys.LATENCY_LOG_PKEY);
-    }
-
-    @Override
     public List<ForeignKey<LatencyLogRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<LatencyLogRecord, ?>>asList(Keys.LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY);
+        return Arrays.asList(Keys.LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY);
     }
 
     private transient Monitor _monitor;
 
+    /**
+     * Get the implicit join path to the <code>kuvasz.monitor</code> table.
+     */
     public Monitor monitor() {
         if (_monitor == null)
             _monitor = new Monitor(this, Keys.LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY);
@@ -151,6 +139,11 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     @Override
     public LatencyLog as(Name alias) {
         return new LatencyLog(alias, this);
+    }
+
+    @Override
+    public LatencyLog as(Table<?> alias) {
+        return new LatencyLog(alias.getQualifiedName(), this);
     }
 
     /**
@@ -169,6 +162,14 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
         return new LatencyLog(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public LatencyLog rename(Table<?> name) {
+        return new LatencyLog(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row4 type methods
     // -------------------------------------------------------------------------
@@ -176,5 +177,20 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     @Override
     public Row4<Integer, Integer, Integer, OffsetDateTime> fieldsRow() {
         return (Row4) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function4<? super Integer, ? super Integer, ? super Integer, ? super OffsetDateTime, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function4<? super Integer, ? super Integer, ? super Integer, ? super OffsetDateTime, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

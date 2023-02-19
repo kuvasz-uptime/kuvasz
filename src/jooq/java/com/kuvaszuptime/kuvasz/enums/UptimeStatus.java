@@ -5,7 +5,6 @@ package com.kuvaszuptime.kuvasz.enums;
 
 
 import com.kuvaszuptime.kuvasz.DefaultSchema;
-
 import org.jooq.Catalog;
 import org.jooq.EnumType;
 import org.jooq.Schema;
@@ -45,5 +44,12 @@ public enum UptimeStatus implements EnumType {
     @Override
     public String getLiteral() {
         return literal;
+    }
+
+    /**
+     * Lookup a value of this EnumType by its literal
+     */
+    public static UptimeStatus lookupLiteral(String literal) {
+        return EnumType.lookupLiteral(UptimeStatus.class, literal);
     }
 }

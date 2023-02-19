@@ -9,26 +9,16 @@ import com.kuvaszuptime.kuvasz.Indexes;
 import com.kuvaszuptime.kuvasz.Keys;
 import com.kuvaszuptime.kuvasz.enums.SslStatus;
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord;
+import org.jooq.Record;
+import org.jooq.*;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
+import org.jooq.impl.TableImpl;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
-
-import org.jooq.Field;
-import org.jooq.ForeignKey;
-import org.jooq.Identity;
-import org.jooq.Index;
-import org.jooq.Name;
-import org.jooq.Record;
-import org.jooq.Row7;
-import org.jooq.Schema;
-import org.jooq.Table;
-import org.jooq.TableField;
-import org.jooq.TableOptions;
-import org.jooq.UniqueKey;
-import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
-import org.jooq.impl.TableImpl;
+import java.util.function.Function;
 
 
 /**
@@ -73,7 +63,8 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     public final TableField<SslEventRecord, String> ERROR = createField(DSL.name("error"), SQLDataType.CLOB, this, "");
 
     /**
-     * The column <code>ssl_event.started_at</code>. The current event started at
+     * The column <code>ssl_event.started_at</code>. The current event started
+     * at
      */
     public final TableField<SslEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
@@ -122,12 +113,12 @@ public class SslEvent extends TableImpl<SslEventRecord> {
 
     @Override
     public Schema getSchema() {
-        return DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.SSL_EVENT_ENDED_AT_IDX, Indexes.SSL_EVENT_MONITOR_IDX);
+        return Arrays.asList(Indexes.SSL_EVENT_ENDED_AT_IDX, Indexes.SSL_EVENT_MONITOR_IDX);
     }
 
     @Override
@@ -141,17 +132,20 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     }
 
     @Override
-    public List<UniqueKey<SslEventRecord>> getKeys() {
-        return Arrays.<UniqueKey<SslEventRecord>>asList(Keys.SSL_EVENT_PKEY, Keys.SSL_EVENT_KEY);
+    public List<UniqueKey<SslEventRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.SSL_EVENT_KEY);
     }
 
     @Override
     public List<ForeignKey<SslEventRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<SslEventRecord, ?>>asList(Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY);
+        return Arrays.asList(Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY);
     }
 
     private transient Monitor _monitor;
 
+    /**
+     * Get the implicit join path to the <code>kuvasz.monitor</code> table.
+     */
     public Monitor monitor() {
         if (_monitor == null)
             _monitor = new Monitor(this, Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY);
@@ -167,6 +161,11 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     @Override
     public SslEvent as(Name alias) {
         return new SslEvent(alias, this);
+    }
+
+    @Override
+    public SslEvent as(Table<?> alias) {
+        return new SslEvent(alias.getQualifiedName(), this);
     }
 
     /**
@@ -185,6 +184,14 @@ public class SslEvent extends TableImpl<SslEventRecord> {
         return new SslEvent(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public SslEvent rename(Table<?> name) {
+        return new SslEvent(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row7 type methods
     // -------------------------------------------------------------------------
@@ -192,5 +199,20 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     @Override
     public Row7<Integer, Integer, SslStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
         return (Row7) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function7<? super Integer, ? super Integer, ? super SslStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super Integer, ? super Integer, ? super SslStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

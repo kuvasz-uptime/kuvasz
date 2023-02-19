@@ -5,7 +5,6 @@ package com.kuvaszuptime.kuvasz.enums;
 
 
 import com.kuvaszuptime.kuvasz.DefaultSchema;
-
 import org.jooq.Catalog;
 import org.jooq.EnumType;
 import org.jooq.Schema;
@@ -47,5 +46,12 @@ public enum SslStatus implements EnumType {
     @Override
     public String getLiteral() {
         return literal;
+    }
+
+    /**
+     * Lookup a value of this EnumType by its literal
+     */
+    public static SslStatus lookupLiteral(String literal) {
+        return EnumType.lookupLiteral(SslStatus.class, literal);
     }
 }

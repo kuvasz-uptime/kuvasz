@@ -8,14 +8,12 @@ import com.kuvaszuptime.kuvasz.tables.LatencyLog;
 import com.kuvaszuptime.kuvasz.tables.Monitor;
 import com.kuvaszuptime.kuvasz.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
+import org.jooq.Catalog;
+import org.jooq.Table;
+import org.jooq.impl.SchemaImpl;
 
 import java.util.Arrays;
 import java.util.List;
-
-import org.jooq.Catalog;
-import org.jooq.Sequence;
-import org.jooq.Table;
-import org.jooq.impl.SchemaImpl;
 
 
 /**
@@ -65,20 +63,12 @@ public class DefaultSchema extends SchemaImpl {
     }
 
     @Override
-    public final List<Sequence<?>> getSequences() {
-        return Arrays.<Sequence<?>>asList(
-            Sequences.LATENCY_LOG_ID_SEQ,
-            Sequences.MONITOR_ID_SEQ,
-            Sequences.SSL_EVENT_ID_SEQ,
-            Sequences.UPTIME_EVENT_ID_SEQ);
-    }
-
-    @Override
     public final List<Table<?>> getTables() {
-        return Arrays.<Table<?>>asList(
+        return Arrays.asList(
             LatencyLog.LATENCY_LOG,
             Monitor.MONITOR,
             SslEvent.SSL_EVENT,
-            UptimeEvent.UPTIME_EVENT);
+            UptimeEvent.UPTIME_EVENT
+        );
     }
 }

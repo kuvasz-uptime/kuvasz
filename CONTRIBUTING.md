@@ -8,7 +8,7 @@ Kuvasz currently requires JDK 17
 
 ## IDE Setup
 
-Kuvasz can be imported into IntelliJ IDEA by opening the `build.gradle` file.
+Kuvasz can be imported into IntelliJ IDEA by opening the `build.gradle.kts` file.
 
 ## Docker Setup
 

@@ -8,12 +8,12 @@ import com.kuvaszuptime.kuvasz.enums.SslStatus;
 import com.kuvaszuptime.kuvasz.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo;
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord;
+import org.jooq.Configuration;
+import org.jooq.impl.DAOImpl;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-
-import org.jooq.Configuration;
-import org.jooq.impl.DAOImpl;
+import java.util.Optional;
 
 
 /**
@@ -42,7 +42,8 @@ public class SslEventDao extends DAOImpl<SslEventRecord, SslEventPojo, Integer> 
     }
 
     /**
-     * Fetch records that have <code>id BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>id BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<SslEventPojo> fetchRangeOfId(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(SslEvent.SSL_EVENT.ID, lowerInclusive, upperInclusive);
@@ -63,7 +64,15 @@ public class SslEventDao extends DAOImpl<SslEventRecord, SslEventPojo, Integer> 
     }
 
     /**
-     * Fetch records that have <code>monitor_id BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch a unique record that has <code>id = value</code>
+     */
+    public Optional<SslEventPojo> fetchOptionalById(Integer value) {
+        return fetchOptional(SslEvent.SSL_EVENT.ID, value);
+    }
+
+    /**
+     * Fetch records that have <code>monitor_id BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<SslEventPojo> fetchRangeOfMonitorId(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(SslEvent.SSL_EVENT.MONITOR_ID, lowerInclusive, upperInclusive);
@@ -77,7 +86,8 @@ public class SslEventDao extends DAOImpl<SslEventRecord, SslEventPojo, Integer> 
     }
 
     /**
-     * Fetch records that have <code>status BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>status BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<SslEventPojo> fetchRangeOfStatus(SslStatus lowerInclusive, SslStatus upperInclusive) {
         return fetchRange(SslEvent.SSL_EVENT.STATUS, lowerInclusive, upperInclusive);
@@ -91,7 +101,8 @@ public class SslEventDao extends DAOImpl<SslEventRecord, SslEventPojo, Integer> 
     }
 
     /**
-     * Fetch records that have <code>error BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>error BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<SslEventPojo> fetchRangeOfError(String lowerInclusive, String upperInclusive) {
         return fetchRange(SslEvent.SSL_EVENT.ERROR, lowerInclusive, upperInclusive);
@@ -105,7 +116,8 @@ public class SslEventDao extends DAOImpl<SslEventRecord, SslEventPojo, Integer> 
     }
 
     /**
-     * Fetch records that have <code>started_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>started_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<SslEventPojo> fetchRangeOfStartedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(SslEvent.SSL_EVENT.STARTED_AT, lowerInclusive, upperInclusive);
@@ -119,7 +131,8 @@ public class SslEventDao extends DAOImpl<SslEventRecord, SslEventPojo, Integer> 
     }
 
     /**
-     * Fetch records that have <code>ended_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>ended_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<SslEventPojo> fetchRangeOfEndedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(SslEvent.SSL_EVENT.ENDED_AT, lowerInclusive, upperInclusive);
@@ -133,7 +146,8 @@ public class SslEventDao extends DAOImpl<SslEventRecord, SslEventPojo, Integer> 
     }
 
     /**
-     * Fetch records that have <code>updated_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>updated_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<SslEventPojo> fetchRangeOfUpdatedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(SslEvent.SSL_EVENT.UPDATED_AT, lowerInclusive, upperInclusive);
