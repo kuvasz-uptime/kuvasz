@@ -6,8 +6,8 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TextMessageService
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.reactivex.Single
-import io.reactivex.disposables.Disposable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.disposables.Disposable
 import org.slf4j.Logger
 
 abstract class RTCMessageEventHandler(

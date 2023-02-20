@@ -7,8 +7,8 @@ import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import io.reactivex.disposables.Disposable
-import io.reactivex.subjects.PublishSubject
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.subjects.PublishSubject
 import jakarta.inject.Singleton
 
 @Singleton

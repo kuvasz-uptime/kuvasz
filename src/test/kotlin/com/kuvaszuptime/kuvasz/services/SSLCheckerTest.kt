@@ -22,7 +22,7 @@ import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.*
-import io.reactivex.subscribers.TestSubscriber
+import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
@@ -69,7 +69,7 @@ class SSLCheckerTest(
                 then("it should dispatch an SSLValidEvent") {
                     val expectedEvent = subscriber.values().first()
 
-                    subscriber.valueCount() shouldBe 1
+                    subscriber.awaitCount(1)
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
             }
@@ -86,7 +86,7 @@ class SSLCheckerTest(
                 then("it should dispatch an SSLInvalidEvent") {
                     val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                    subscriber.valueCount() shouldBe 1
+                    subscriber.awaitCount(1)
                     expectedEvent.monitor.id shouldBe monitor.id
                     expectedEvent.error.message shouldBe "validation error"
                 }
@@ -111,8 +111,8 @@ class SSLCheckerTest(
                     val expectedInvalidEvent = certInvalidSubscriber.values().first()
                     val expectedValidEvent = certValidSubscriber.values().first()
 
-                    certInvalidSubscriber.valueCount() shouldBe 1
-                    certValidSubscriber.valueCount() shouldBe 1
+                    certInvalidSubscriber.awaitCount(1)
+                    certValidSubscriber.awaitCount(1)
                     expectedInvalidEvent.monitor.id shouldBe monitor.id
                     expectedValidEvent.monitor.id shouldBe monitor.id
                     expectedInvalidEvent.dispatchedAt shouldBeLessThan expectedValidEvent.dispatchedAt
@@ -138,8 +138,8 @@ class SSLCheckerTest(
                     val expectedInvalidEvent = certInvalidSubscriber.values().first()
                     val expectedValidEvent = certValidSubscriber.values().first()
 
-                    certInvalidSubscriber.valueCount() shouldBe 1
-                    certValidSubscriber.valueCount() shouldBe 1
+                    certInvalidSubscriber.awaitCount(1)
+                    certValidSubscriber.awaitCount(1)
                     expectedInvalidEvent.monitor.id shouldBe monitor.id
                     expectedValidEvent.monitor.id shouldBe monitor.id
                     expectedInvalidEvent.dispatchedAt shouldBeGreaterThan expectedValidEvent.dispatchedAt
@@ -162,7 +162,7 @@ class SSLCheckerTest(
                 then("it should dispatch an SSLWillExpireEvent with the right expiration date") {
                     val expectedEvent = subscriber.values().first()
 
-                    subscriber.valueCount() shouldBe 1
+                    subscriber.awaitCount(1)
                     expectedEvent.monitor.id shouldBe monitor.id
                     expectedEvent.certInfo.validTo shouldBe validTo
                 }

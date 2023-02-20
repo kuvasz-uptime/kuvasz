@@ -15,14 +15,14 @@ import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.rxjava2.http.client.RxHttpClient
+import io.micronaut.rxjava3.http.client.Rx3HttpClient
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import java.net.URI
 
 @Singleton
 class UptimeChecker(
-    @Client("uptime-checker") private val httpClient: RxHttpClient,
+    @Client("uptime-checker") private val httpClient: Rx3HttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository
 ) {

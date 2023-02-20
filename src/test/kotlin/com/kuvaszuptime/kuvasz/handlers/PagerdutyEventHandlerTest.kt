@@ -26,7 +26,7 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.*
-import io.reactivex.Single
+import io.reactivex.rxjava3.core.Single
 import org.jooq.Configuration
 
 @MicronautTest(startApplication = false)

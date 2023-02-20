@@ -17,13 +17,12 @@ annotation class UsernamePasswordNotEquals(
 class UsernamePasswordValidatorFactory {
 
     @Singleton
-    fun usernamePasswordValidator(): ConstraintValidator<UsernamePasswordNotEquals, AdminAuthConfig> {
-        return ConstraintValidator { adminAuthConfig, _, _ ->
+    fun usernamePasswordValidator(): ConstraintValidator<UsernamePasswordNotEquals, AdminAuthConfig> =
+        ConstraintValidator { adminAuthConfig, _, _ ->
             val username = adminAuthConfig?.username?.lowercase()
             val password = adminAuthConfig?.password?.lowercase()
             if (username != null && password != null) username != password else false
         }
-    }
 
     private fun String.lowercase() = lowercase(Locale.getDefault())
 }
