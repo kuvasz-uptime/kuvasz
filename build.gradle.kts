@@ -143,7 +143,7 @@ detekt {
 
 ktlint {
     version.set("0.43.2")
-    disabledRules.set(listOf("no-wildcard-imports"))
+    disabledRules.set(setOf("no-wildcard-imports"))
 }
 
 tasks.named("build") {
