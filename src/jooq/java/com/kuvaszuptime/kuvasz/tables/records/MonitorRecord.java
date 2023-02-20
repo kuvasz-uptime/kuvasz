@@ -6,16 +6,24 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 import com.kuvaszuptime.kuvasz.tables.Monitor;
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import java.time.OffsetDateTime;
+
 import org.jooq.Field;
 import org.jooq.Record1;
 import org.jooq.Record9;
 import org.jooq.Row9;
 import org.jooq.impl.UpdatableRecordImpl;
-
-import java.time.OffsetDateTime;
 
 
 /**

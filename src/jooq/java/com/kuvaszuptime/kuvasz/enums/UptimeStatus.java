@@ -5,6 +5,7 @@ package com.kuvaszuptime.kuvasz.enums;
 
 
 import com.kuvaszuptime.kuvasz.DefaultSchema;
+
 import org.jooq.Catalog;
 import org.jooq.EnumType;
 import org.jooq.Schema;

@@ -8,12 +8,13 @@ import com.kuvaszuptime.kuvasz.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo;
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord;
-import org.jooq.Configuration;
-import org.jooq.impl.DAOImpl;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.jooq.Configuration;
+import org.jooq.impl.DAOImpl;
 
 
 /**

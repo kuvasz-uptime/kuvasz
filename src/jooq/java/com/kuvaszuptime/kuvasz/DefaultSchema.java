@@ -8,12 +8,13 @@ import com.kuvaszuptime.kuvasz.tables.LatencyLog;
 import com.kuvaszuptime.kuvasz.tables.Monitor;
 import com.kuvaszuptime.kuvasz.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
-import org.jooq.Catalog;
-import org.jooq.Table;
-import org.jooq.impl.SchemaImpl;
 
 import java.util.Arrays;
 import java.util.List;
+
+import org.jooq.Catalog;
+import org.jooq.Table;
+import org.jooq.impl.SchemaImpl;
 
 
 /**

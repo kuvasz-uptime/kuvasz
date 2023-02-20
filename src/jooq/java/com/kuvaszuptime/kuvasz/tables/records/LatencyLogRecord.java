@@ -6,15 +6,23 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
 import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+
+import java.time.OffsetDateTime;
+
 import org.jooq.Field;
 import org.jooq.Record1;
 import org.jooq.Record4;
 import org.jooq.Row4;
 import org.jooq.impl.UpdatableRecordImpl;
-
-import java.time.OffsetDateTime;
 
 
 /**

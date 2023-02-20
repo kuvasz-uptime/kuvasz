@@ -7,12 +7,13 @@ package com.kuvaszuptime.kuvasz.tables.daos;
 import com.kuvaszuptime.kuvasz.tables.Monitor;
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo;
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord;
-import org.jooq.Configuration;
-import org.jooq.impl.DAOImpl;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.jooq.Configuration;
+import org.jooq.impl.DAOImpl;
 
 
 /**

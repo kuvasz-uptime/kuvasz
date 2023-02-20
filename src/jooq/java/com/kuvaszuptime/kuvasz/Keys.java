@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord;
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord;
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord;
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord;
+
 import org.jooq.ForeignKey;
 import org.jooq.TableField;
 import org.jooq.UniqueKey;

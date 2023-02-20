@@ -7,12 +7,13 @@ package com.kuvaszuptime.kuvasz.tables.daos;
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
 import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo;
 import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord;
-import org.jooq.Configuration;
-import org.jooq.impl.DAOImpl;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.jooq.Configuration;
+import org.jooq.impl.DAOImpl;
 
 
 /**
