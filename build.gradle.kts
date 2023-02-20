@@ -13,22 +13,19 @@ buildscript {
 }
 
 plugins {
-    val kotlinVersion = "1.8.10"
-    val micronautPluginVersion = "3.7.2"
-
-    id("org.jetbrains.kotlin.jvm") version kotlinVersion
-    id("org.jetbrains.kotlin.kapt") version kotlinVersion
-    id("org.jetbrains.kotlin.plugin.allopen") version kotlinVersion
-    id("com.google.cloud.tools.jib") version "3.3.1"
-    id("io.gitlab.arturbosch.detekt") version "1.19.0"
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.kapt")
+    id("org.jetbrains.kotlin.plugin.allopen")
+    id("io.gitlab.arturbosch.detekt")
     id("jacoco")
-    id("nu.studer.jooq") version "8.1"
-    id("com.palantir.git-version") version "1.0.0"
-    id("com.github.ben-manes.versions") version "0.45.0"
-    id("io.micronaut.minimal.application") version micronautPluginVersion
-    id("io.micronaut.docker") version micronautPluginVersion
-    id("org.jlleitschuh.gradle.ktlint") version "10.2.1"
-    id("org.flywaydb.flyway") version "8.3.0"
+    id("io.micronaut.minimal.application")
+    id("io.micronaut.docker")
+    id("com.google.cloud.tools.jib")
+    id("nu.studer.jooq")
+    id("com.palantir.git-version")
+    id("com.github.ben-manes.versions")
+    id("org.jlleitschuh.gradle.ktlint")
+    id("org.flywaydb.flyway")
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
@@ -68,18 +65,14 @@ dependencies {
     implementation("io.arrow-kt:arrow-core-data:0.12.1")
     implementation("io.micronaut.flyway:micronaut-flyway")
     implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
-    implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
     implementation("io.micronaut.rxjava2:micronaut-rxjava2")
     implementation("io.micronaut.rxjava2:micronaut-rxjava2-http-client")
     implementation("io.micronaut.security:micronaut-security-jwt")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
     implementation("io.micronaut.sql:micronaut-jooq")
     implementation("io.micronaut:micronaut-http-client")
-    implementation("io.micronaut:micronaut-runtime")
-    implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.swagger.core.v3:swagger-annotations")
-    implementation("javax.annotation:javax.annotation-api")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
@@ -131,11 +124,13 @@ tasks.jacocoTestCoverageVerification {
 }
 
 tasks.named("check") {
+    dependsOn("detektMain")
+    dependsOn("detektTest")
     dependsOn("jacocoTestCoverageVerification")
 }
 
 detekt {
-    input = files(
+    source = files(
         "src/main/kotlin",
         "src/test/kotlin"
     )
@@ -259,6 +254,7 @@ jooq {
 }
 
 flyway {
+    cleanDisabled = false
     url = dbUrl
     user = dbUser
     password = dbPassword

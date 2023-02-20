@@ -75,7 +75,7 @@ data class MonitorDownEvent(
     override fun toStructuredMessage() =
         StructuredMonitorDownMessage(
             summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
-                (status?.let { " (" + it.code + ")" } ?: ""),
+                status?.let { " (" + it.code + ")" }.orEmpty(),
             error = "Reason: ${error.message}",
             previousUpTime = getEndedEventDuration().toDurationString()?.let { "Was up for $it" }
         )
@@ -105,7 +105,7 @@ sealed class SSLMonitorEvent : MonitorEvent() {
             } else null
         }
 
-    fun getPreviousStatusString(): String = previousEvent?.status?.name ?: ""
+    fun getPreviousStatusString(): String = previousEvent?.status?.name.orEmpty()
 
     fun runWhenStateChanges(toRun: (SSLMonitorEvent) -> Unit) =
         previousEvent?.let { previousEvent ->
