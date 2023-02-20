@@ -6,18 +6,18 @@ package com.kuvaszuptime.kuvasz.tables.pojos;
 
 import com.kuvaszuptime.kuvasz.enums.SslStatus;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
 
 
 /**
@@ -28,7 +28,6 @@ import javax.validation.constraints.NotNull;
 @Table(
     name = "ssl_event",
     uniqueConstraints = {
-        @UniqueConstraint(name = "ssl_event_pkey", columnNames = { "id" }),
         @UniqueConstraint(name = "ssl_event_key", columnNames = { "monitor_id", "status", "ended_at" })
     },
     indexes = {
@@ -40,10 +39,10 @@ public class SslEventPojo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Integer        id;
-    private Integer        monitorId;
-    private SslStatus      status;
-    private String         error;
+    private Integer id;
+    private Integer monitorId;
+    private SslStatus status;
+    private String error;
     private OffsetDateTime startedAt;
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
@@ -61,10 +60,10 @@ public class SslEventPojo implements Serializable {
     }
 
     public SslEventPojo(
-        Integer        id,
-        Integer        monitorId,
-        SslStatus      status,
-        String         error,
+        Integer id,
+        Integer monitorId,
+        SslStatus status,
+        String error,
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
         OffsetDateTime updatedAt
@@ -83,7 +82,7 @@ public class SslEventPojo implements Serializable {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, precision = 32)
+    @Column(name = "id", nullable = false)
     public Integer getId() {
         return this.id;
     }
@@ -99,7 +98,7 @@ public class SslEventPojo implements Serializable {
     /**
      * Getter for <code>ssl_event.monitor_id</code>.
      */
-    @Column(name = "monitor_id", nullable = false, precision = 32)
+    @Column(name = "monitor_id", nullable = false)
     @NotNull
     public Integer getMonitorId() {
         return this.monitorId;
@@ -147,7 +146,8 @@ public class SslEventPojo implements Serializable {
     }
 
     /**
-     * Getter for <code>ssl_event.started_at</code>. The current event started at
+     * Getter for <code>ssl_event.started_at</code>. The current event started
+     * at
      */
     @Column(name = "started_at", nullable = false, precision = 6)
     public OffsetDateTime getStartedAt() {
@@ -155,7 +155,8 @@ public class SslEventPojo implements Serializable {
     }
 
     /**
-     * Setter for <code>ssl_event.started_at</code>. The current event started at
+     * Setter for <code>ssl_event.started_at</code>. The current event started
+     * at
      */
     public SslEventPojo setStartedAt(OffsetDateTime startedAt) {
         this.startedAt = startedAt;
@@ -204,47 +205,47 @@ public class SslEventPojo implements Serializable {
         if (getClass() != obj.getClass())
             return false;
         final SslEventPojo other = (SslEventPojo) obj;
-        if (id == null) {
+        if (this.id == null) {
             if (other.id != null)
                 return false;
         }
-        else if (!id.equals(other.id))
+        else if (!this.id.equals(other.id))
             return false;
-        if (monitorId == null) {
+        if (this.monitorId == null) {
             if (other.monitorId != null)
                 return false;
         }
-        else if (!monitorId.equals(other.monitorId))
+        else if (!this.monitorId.equals(other.monitorId))
             return false;
-        if (status == null) {
+        if (this.status == null) {
             if (other.status != null)
                 return false;
         }
-        else if (!status.equals(other.status))
+        else if (!this.status.equals(other.status))
             return false;
-        if (error == null) {
+        if (this.error == null) {
             if (other.error != null)
                 return false;
         }
-        else if (!error.equals(other.error))
+        else if (!this.error.equals(other.error))
             return false;
-        if (startedAt == null) {
+        if (this.startedAt == null) {
             if (other.startedAt != null)
                 return false;
         }
-        else if (!startedAt.equals(other.startedAt))
+        else if (!this.startedAt.equals(other.startedAt))
             return false;
-        if (endedAt == null) {
+        if (this.endedAt == null) {
             if (other.endedAt != null)
                 return false;
         }
-        else if (!endedAt.equals(other.endedAt))
+        else if (!this.endedAt.equals(other.endedAt))
             return false;
-        if (updatedAt == null) {
+        if (this.updatedAt == null) {
             if (other.updatedAt != null)
                 return false;
         }
-        else if (!updatedAt.equals(other.updatedAt))
+        else if (!this.updatedAt.equals(other.updatedAt))
             return false;
         return true;
     }

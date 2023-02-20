@@ -3,12 +3,12 @@ package com.kuvaszuptime.kuvasz.controllers
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.client.annotation.Client
-import io.micronaut.rxjava2.http.client.RxHttpClient
-import io.micronaut.test.extensions.kotest.annotation.MicronautTest
+import io.micronaut.rxjava3.http.client.Rx3HttpClient
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest
 class InfoEndpointTest(
-    @Client("/") private val client: RxHttpClient
+    @Client("/") private val client: Rx3HttpClient
 ) : BehaviorSpec(
     {
         given("the /info endpoint") {

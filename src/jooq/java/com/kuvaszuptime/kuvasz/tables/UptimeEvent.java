@@ -13,15 +13,19 @@ import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Function7;
 import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Records;
 import org.jooq.Row7;
 import org.jooq.Schema;
+import org.jooq.SelectField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -73,7 +77,8 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     public final TableField<UptimeEventRecord, String> ERROR = createField(DSL.name("error"), SQLDataType.CLOB, this, "");
 
     /**
-     * The column <code>uptime_event.started_at</code>. The current event started at
+     * The column <code>uptime_event.started_at</code>. The current event
+     * started at
      */
     public final TableField<UptimeEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
@@ -122,12 +127,12 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
 
     @Override
     public Schema getSchema() {
-        return DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.UPTIME_EVENT_ENDED_AT_IDX, Indexes.UPTIME_EVENT_MONITOR_IDX);
+        return Arrays.asList(Indexes.UPTIME_EVENT_ENDED_AT_IDX, Indexes.UPTIME_EVENT_MONITOR_IDX);
     }
 
     @Override
@@ -141,17 +146,20 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     }
 
     @Override
-    public List<UniqueKey<UptimeEventRecord>> getKeys() {
-        return Arrays.<UniqueKey<UptimeEventRecord>>asList(Keys.UPTIME_EVENT_PKEY, Keys.UPTIME_EVENT_KEY);
+    public List<UniqueKey<UptimeEventRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UPTIME_EVENT_KEY);
     }
 
     @Override
     public List<ForeignKey<UptimeEventRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<UptimeEventRecord, ?>>asList(Keys.UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY);
+        return Arrays.asList(Keys.UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY);
     }
 
     private transient Monitor _monitor;
 
+    /**
+     * Get the implicit join path to the <code>kuvasz.monitor</code> table.
+     */
     public Monitor monitor() {
         if (_monitor == null)
             _monitor = new Monitor(this, Keys.UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY);
@@ -167,6 +175,11 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     @Override
     public UptimeEvent as(Name alias) {
         return new UptimeEvent(alias, this);
+    }
+
+    @Override
+    public UptimeEvent as(Table<?> alias) {
+        return new UptimeEvent(alias.getQualifiedName(), this);
     }
 
     /**
@@ -185,6 +198,14 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
         return new UptimeEvent(name, null);
     }
 
+    /**
+     * Rename this table
+     */
+    @Override
+    public UptimeEvent rename(Table<?> name) {
+        return new UptimeEvent(name.getQualifiedName(), null);
+    }
+
     // -------------------------------------------------------------------------
     // Row7 type methods
     // -------------------------------------------------------------------------
@@ -192,5 +213,20 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     @Override
     public Row7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
         return (Row7) super.fieldsRow();
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     */
+    public <U> SelectField<U> mapping(Function7<? super Integer, ? super Integer, ? super UptimeStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
+        return convertFrom(Records.mapping(from));
+    }
+
+    /**
+     * Convenience mapping calling {@link SelectField#convertFrom(Class,
+     * Function)}.
+     */
+    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super Integer, ? super Integer, ? super UptimeStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
+        return convertFrom(toType, Records.mapping(from));
     }
 }

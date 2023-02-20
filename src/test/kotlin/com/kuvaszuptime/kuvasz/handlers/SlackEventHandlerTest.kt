@@ -22,9 +22,9 @@ import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.test.extensions.kotest.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.*
-import io.reactivex.Single
+import io.reactivex.rxjava3.core.Single
 import org.jooq.Configuration
 import java.time.OffsetDateTime
 
@@ -449,7 +449,7 @@ class SlackEventHandlerTest(
         }
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         clearAllMocks()
         super.afterTest(testCase, result)
     }

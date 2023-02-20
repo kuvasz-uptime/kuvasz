@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.jooq.Configuration;
 import org.jooq.impl.DAOImpl;
@@ -41,7 +42,8 @@ public class LatencyLogDao extends DAOImpl<LatencyLogRecord, LatencyLogPojo, Int
     }
 
     /**
-     * Fetch records that have <code>id BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>id BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<LatencyLogPojo> fetchRangeOfId(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(LatencyLog.LATENCY_LOG.ID, lowerInclusive, upperInclusive);
@@ -62,7 +64,15 @@ public class LatencyLogDao extends DAOImpl<LatencyLogRecord, LatencyLogPojo, Int
     }
 
     /**
-     * Fetch records that have <code>monitor_id BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch a unique record that has <code>id = value</code>
+     */
+    public Optional<LatencyLogPojo> fetchOptionalById(Integer value) {
+        return fetchOptional(LatencyLog.LATENCY_LOG.ID, value);
+    }
+
+    /**
+     * Fetch records that have <code>monitor_id BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<LatencyLogPojo> fetchRangeOfMonitorId(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(LatencyLog.LATENCY_LOG.MONITOR_ID, lowerInclusive, upperInclusive);
@@ -76,7 +86,8 @@ public class LatencyLogDao extends DAOImpl<LatencyLogRecord, LatencyLogPojo, Int
     }
 
     /**
-     * Fetch records that have <code>latency BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>latency BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<LatencyLogPojo> fetchRangeOfLatency(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(LatencyLog.LATENCY_LOG.LATENCY, lowerInclusive, upperInclusive);
@@ -90,7 +101,8 @@ public class LatencyLogDao extends DAOImpl<LatencyLogRecord, LatencyLogPojo, Int
     }
 
     /**
-     * Fetch records that have <code>created_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>created_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<LatencyLogPojo> fetchRangeOfCreatedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(LatencyLog.LATENCY_LOG.CREATED_AT, lowerInclusive, upperInclusive);

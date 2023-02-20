@@ -4,7 +4,7 @@ import io.micronaut.context.env.Environment
 import io.micronaut.context.env.MapPropertySource
 import io.micronaut.context.env.PropertySource
 import io.micronaut.management.endpoint.info.InfoSource
-import io.reactivex.Flowable
+import io.reactivex.rxjava3.core.Flowable
 import jakarta.inject.Singleton
 import org.reactivestreams.Publisher
 

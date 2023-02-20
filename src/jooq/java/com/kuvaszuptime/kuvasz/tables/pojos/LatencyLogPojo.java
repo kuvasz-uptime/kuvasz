@@ -4,18 +4,17 @@
 package com.kuvaszuptime.kuvasz.tables.pojos;
 
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
 
 
 /**
@@ -25,9 +24,6 @@ import javax.validation.constraints.NotNull;
 @Entity
 @Table(
     name = "latency_log",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "latency_log_pkey", columnNames = { "id" })
-    },
     indexes = {
         @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
         @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
@@ -37,9 +33,9 @@ public class LatencyLogPojo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Integer        id;
-    private Integer        monitorId;
-    private Integer        latency;
+    private Integer id;
+    private Integer monitorId;
+    private Integer latency;
     private OffsetDateTime createdAt;
 
     public LatencyLogPojo() {}
@@ -52,9 +48,9 @@ public class LatencyLogPojo implements Serializable {
     }
 
     public LatencyLogPojo(
-        Integer        id,
-        Integer        monitorId,
-        Integer        latency,
+        Integer id,
+        Integer monitorId,
+        Integer latency,
         OffsetDateTime createdAt
     ) {
         this.id = id;
@@ -68,7 +64,7 @@ public class LatencyLogPojo implements Serializable {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, precision = 32)
+    @Column(name = "id", nullable = false)
     public Integer getId() {
         return this.id;
     }
@@ -84,7 +80,7 @@ public class LatencyLogPojo implements Serializable {
     /**
      * Getter for <code>latency_log.monitor_id</code>.
      */
-    @Column(name = "monitor_id", nullable = false, precision = 32)
+    @Column(name = "monitor_id", nullable = false)
     @NotNull
     public Integer getMonitorId() {
         return this.monitorId;
@@ -101,7 +97,7 @@ public class LatencyLogPojo implements Serializable {
     /**
      * Getter for <code>latency_log.latency</code>. Lateny in ms
      */
-    @Column(name = "latency", nullable = false, precision = 32)
+    @Column(name = "latency", nullable = false)
     @NotNull
     public Integer getLatency() {
         return this.latency;
@@ -140,29 +136,29 @@ public class LatencyLogPojo implements Serializable {
         if (getClass() != obj.getClass())
             return false;
         final LatencyLogPojo other = (LatencyLogPojo) obj;
-        if (id == null) {
+        if (this.id == null) {
             if (other.id != null)
                 return false;
         }
-        else if (!id.equals(other.id))
+        else if (!this.id.equals(other.id))
             return false;
-        if (monitorId == null) {
+        if (this.monitorId == null) {
             if (other.monitorId != null)
                 return false;
         }
-        else if (!monitorId.equals(other.monitorId))
+        else if (!this.monitorId.equals(other.monitorId))
             return false;
-        if (latency == null) {
+        if (this.latency == null) {
             if (other.latency != null)
                 return false;
         }
-        else if (!latency.equals(other.latency))
+        else if (!this.latency.equals(other.latency))
             return false;
-        if (createdAt == null) {
+        if (this.createdAt == null) {
             if (other.createdAt != null)
                 return false;
         }
-        else if (!createdAt.equals(other.createdAt))
+        else if (!this.createdAt.equals(other.createdAt))
             return false;
         return true;
     }

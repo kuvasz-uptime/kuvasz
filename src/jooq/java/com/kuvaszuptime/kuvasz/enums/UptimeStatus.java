@@ -46,4 +46,11 @@ public enum UptimeStatus implements EnumType {
     public String getLiteral() {
         return literal;
     }
+
+    /**
+     * Lookup a value of this EnumType by its literal
+     */
+    public static UptimeStatus lookupLiteral(String literal) {
+        return EnumType.lookupLiteral(UptimeStatus.class, literal);
+    }
 }

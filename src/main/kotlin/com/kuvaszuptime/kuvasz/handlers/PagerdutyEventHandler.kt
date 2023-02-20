@@ -1,13 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.*
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
@@ -17,8 +10,8 @@ import com.kuvaszuptime.kuvasz.services.PagerdutyAPIClient
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.reactivex.Single
-import io.reactivex.disposables.Disposable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.disposables.Disposable
 import org.slf4j.LoggerFactory
 
 @Context
@@ -35,7 +28,7 @@ class PagerdutyEventHandler(
         subscribeToEvents()
     }
 
-    internal fun subscribeToEvents() {
+    private fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()

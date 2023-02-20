@@ -4,18 +4,18 @@
 package com.kuvaszuptime.kuvasz.tables.pojos;
 
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 
 /**
@@ -26,7 +26,6 @@ import javax.validation.constraints.Size;
 @Table(
     name = "monitor",
     uniqueConstraints = {
-        @UniqueConstraint(name = "monitor_pkey", columnNames = { "id" }),
         @UniqueConstraint(name = "unique_monitor_name", columnNames = { "name" })
     }
 )
@@ -34,15 +33,15 @@ public class MonitorPojo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Integer        id;
-    private String         name;
-    private String         url;
-    private Integer        uptimeCheckInterval;
-    private Boolean        enabled;
+    private Integer id;
+    private String name;
+    private String url;
+    private Integer uptimeCheckInterval;
+    private Boolean enabled;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
-    private Boolean        sslCheckEnabled;
-    private String         pagerdutyIntegrationKey;
+    private Boolean sslCheckEnabled;
+    private String pagerdutyIntegrationKey;
 
     public MonitorPojo() {}
 
@@ -59,15 +58,15 @@ public class MonitorPojo implements Serializable {
     }
 
     public MonitorPojo(
-        Integer        id,
-        String         name,
-        String         url,
-        Integer        uptimeCheckInterval,
-        Boolean        enabled,
+        Integer id,
+        String name,
+        String url,
+        Integer uptimeCheckInterval,
+        Boolean enabled,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        Boolean        sslCheckEnabled,
-        String         pagerdutyIntegrationKey
+        Boolean sslCheckEnabled,
+        String pagerdutyIntegrationKey
     ) {
         this.id = id;
         this.name = name;
@@ -85,7 +84,7 @@ public class MonitorPojo implements Serializable {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, precision = 32)
+    @Column(name = "id", nullable = false)
     public Integer getId() {
         return this.id;
     }
@@ -134,16 +133,18 @@ public class MonitorPojo implements Serializable {
     }
 
     /**
-     * Getter for <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
+     * Getter for <code>monitor.uptime_check_interval</code>. Uptime checking
+     * interval in seconds
      */
-    @Column(name = "uptime_check_interval", nullable = false, precision = 32)
+    @Column(name = "uptime_check_interval", nullable = false)
     @NotNull
     public Integer getUptimeCheckInterval() {
         return this.uptimeCheckInterval;
     }
 
     /**
-     * Setter for <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
+     * Setter for <code>monitor.uptime_check_interval</code>. Uptime checking
+     * interval in seconds
      */
     public MonitorPojo setUptimeCheckInterval(Integer uptimeCheckInterval) {
         this.uptimeCheckInterval = uptimeCheckInterval;
@@ -239,59 +240,59 @@ public class MonitorPojo implements Serializable {
         if (getClass() != obj.getClass())
             return false;
         final MonitorPojo other = (MonitorPojo) obj;
-        if (id == null) {
+        if (this.id == null) {
             if (other.id != null)
                 return false;
         }
-        else if (!id.equals(other.id))
+        else if (!this.id.equals(other.id))
             return false;
-        if (name == null) {
+        if (this.name == null) {
             if (other.name != null)
                 return false;
         }
-        else if (!name.equals(other.name))
+        else if (!this.name.equals(other.name))
             return false;
-        if (url == null) {
+        if (this.url == null) {
             if (other.url != null)
                 return false;
         }
-        else if (!url.equals(other.url))
+        else if (!this.url.equals(other.url))
             return false;
-        if (uptimeCheckInterval == null) {
+        if (this.uptimeCheckInterval == null) {
             if (other.uptimeCheckInterval != null)
                 return false;
         }
-        else if (!uptimeCheckInterval.equals(other.uptimeCheckInterval))
+        else if (!this.uptimeCheckInterval.equals(other.uptimeCheckInterval))
             return false;
-        if (enabled == null) {
+        if (this.enabled == null) {
             if (other.enabled != null)
                 return false;
         }
-        else if (!enabled.equals(other.enabled))
+        else if (!this.enabled.equals(other.enabled))
             return false;
-        if (createdAt == null) {
+        if (this.createdAt == null) {
             if (other.createdAt != null)
                 return false;
         }
-        else if (!createdAt.equals(other.createdAt))
+        else if (!this.createdAt.equals(other.createdAt))
             return false;
-        if (updatedAt == null) {
+        if (this.updatedAt == null) {
             if (other.updatedAt != null)
                 return false;
         }
-        else if (!updatedAt.equals(other.updatedAt))
+        else if (!this.updatedAt.equals(other.updatedAt))
             return false;
-        if (sslCheckEnabled == null) {
+        if (this.sslCheckEnabled == null) {
             if (other.sslCheckEnabled != null)
                 return false;
         }
-        else if (!sslCheckEnabled.equals(other.sslCheckEnabled))
+        else if (!this.sslCheckEnabled.equals(other.sslCheckEnabled))
             return false;
-        if (pagerdutyIntegrationKey == null) {
+        if (this.pagerdutyIntegrationKey == null) {
             if (other.pagerdutyIntegrationKey != null)
                 return false;
         }
-        else if (!pagerdutyIntegrationKey.equals(other.pagerdutyIntegrationKey))
+        else if (!this.pagerdutyIntegrationKey.equals(other.pagerdutyIntegrationKey))
             return false;
         return true;
     }

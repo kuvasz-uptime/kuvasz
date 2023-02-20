@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
+import java.util.*
 import javax.validation.Constraint
 
 @Retention(AnnotationRetention.RUNTIME)
@@ -16,11 +17,12 @@ annotation class UsernamePasswordNotEquals(
 class UsernamePasswordValidatorFactory {
 
     @Singleton
-    fun usernamePasswordValidator(): ConstraintValidator<UsernamePasswordNotEquals, AdminAuthConfig> {
-        return ConstraintValidator { adminAuthConfig, _, _ ->
-            if (adminAuthConfig != null) {
-                adminAuthConfig.username!!.toLowerCase() != adminAuthConfig.password!!.toLowerCase()
-            } else false
+    fun usernamePasswordValidator(): ConstraintValidator<UsernamePasswordNotEquals, AdminAuthConfig> =
+        ConstraintValidator { adminAuthConfig, _, _ ->
+            val username = adminAuthConfig?.username?.lowercase()
+            val password = adminAuthConfig?.password?.lowercase()
+            if (username != null && password != null) username != password else false
         }
-    }
+
+    private fun String.lowercase() = lowercase(Locale.getDefault())
 }

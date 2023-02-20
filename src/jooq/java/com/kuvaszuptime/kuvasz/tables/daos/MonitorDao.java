@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.jooq.Configuration;
 import org.jooq.impl.DAOImpl;
@@ -41,7 +42,8 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>id BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>id BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfId(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(Monitor.MONITOR.ID, lowerInclusive, upperInclusive);
@@ -62,7 +64,15 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>name BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch a unique record that has <code>id = value</code>
+     */
+    public Optional<MonitorPojo> fetchOptionalById(Integer value) {
+        return fetchOptional(Monitor.MONITOR.ID, value);
+    }
+
+    /**
+     * Fetch records that have <code>name BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfName(String lowerInclusive, String upperInclusive) {
         return fetchRange(Monitor.MONITOR.NAME, lowerInclusive, upperInclusive);
@@ -83,7 +93,15 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>url BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch a unique record that has <code>name = value</code>
+     */
+    public Optional<MonitorPojo> fetchOptionalByName(String value) {
+        return fetchOptional(Monitor.MONITOR.NAME, value);
+    }
+
+    /**
+     * Fetch records that have <code>url BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfUrl(String lowerInclusive, String upperInclusive) {
         return fetchRange(Monitor.MONITOR.URL, lowerInclusive, upperInclusive);
@@ -97,7 +115,8 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>uptime_check_interval BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>uptime_check_interval BETWEEN
+     * lowerInclusive AND upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfUptimeCheckInterval(Integer lowerInclusive, Integer upperInclusive) {
         return fetchRange(Monitor.MONITOR.UPTIME_CHECK_INTERVAL, lowerInclusive, upperInclusive);
@@ -111,7 +130,8 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>enabled BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>enabled BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfEnabled(Boolean lowerInclusive, Boolean upperInclusive) {
         return fetchRange(Monitor.MONITOR.ENABLED, lowerInclusive, upperInclusive);
@@ -125,7 +145,8 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>created_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>created_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfCreatedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(Monitor.MONITOR.CREATED_AT, lowerInclusive, upperInclusive);
@@ -139,7 +160,8 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>updated_at BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>updated_at BETWEEN lowerInclusive AND
+     * upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfUpdatedAt(OffsetDateTime lowerInclusive, OffsetDateTime upperInclusive) {
         return fetchRange(Monitor.MONITOR.UPDATED_AT, lowerInclusive, upperInclusive);
@@ -153,7 +175,8 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>ssl_check_enabled BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>ssl_check_enabled BETWEEN lowerInclusive
+     * AND upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfSslCheckEnabled(Boolean lowerInclusive, Boolean upperInclusive) {
         return fetchRange(Monitor.MONITOR.SSL_CHECK_ENABLED, lowerInclusive, upperInclusive);
@@ -167,14 +190,16 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
     }
 
     /**
-     * Fetch records that have <code>pagerduty_integration_key BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>pagerduty_integration_key BETWEEN
+     * lowerInclusive AND upperInclusive</code>
      */
     public List<MonitorPojo> fetchRangeOfPagerdutyIntegrationKey(String lowerInclusive, String upperInclusive) {
         return fetchRange(Monitor.MONITOR.PAGERDUTY_INTEGRATION_KEY, lowerInclusive, upperInclusive);
     }
 
     /**
-     * Fetch records that have <code>pagerduty_integration_key IN (values)</code>
+     * Fetch records that have <code>pagerduty_integration_key IN
+     * (values)</code>
      */
     public List<MonitorPojo> fetchByPagerdutyIntegrationKey(String... values) {
         return fetch(Monitor.MONITOR.PAGERDUTY_INTEGRATION_KEY, values);

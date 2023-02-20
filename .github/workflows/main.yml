@@ -10,11 +10,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-java@v1
+    - uses: actions/checkout@v3
+    - uses: actions/setup-java@v3
       with:
-        java-version: 11
-    - uses: actions/cache@v2
+        distribution: adopt
+        java-version: 17
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.gradle/caches
@@ -23,9 +24,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: Run Gradle check
-      run: ./gradlew check --info
+      run: ./gradlew check
     - name: Codecov
-      uses: codecov/codecov-action@v1.0.11
+      uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
         fail_ci_if_error: false

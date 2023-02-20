@@ -6,18 +6,19 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
+import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
 
 import org.jooq.Field;
 import org.jooq.Record1;
@@ -34,7 +35,6 @@ import org.jooq.impl.UpdatableRecordImpl;
 @Table(
     name = "uptime_event",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uptime_event_pkey", columnNames = { "id" }),
         @UniqueConstraint(name = "uptime_event_key", columnNames = { "monitor_id", "status", "ended_at" })
     },
     indexes = {
@@ -59,7 +59,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, precision = 32)
+    @Column(name = "id", nullable = false)
     public Integer getId() {
         return (Integer) get(0);
     }
@@ -75,7 +75,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     /**
      * Getter for <code>uptime_event.monitor_id</code>.
      */
-    @Column(name = "monitor_id", nullable = false, precision = 32)
+    @Column(name = "monitor_id", nullable = false)
     @NotNull
     public Integer getMonitorId() {
         return (Integer) get(1);
@@ -115,7 +115,8 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     }
 
     /**
-     * Setter for <code>uptime_event.started_at</code>. The current event started at
+     * Setter for <code>uptime_event.started_at</code>. The current event
+     * started at
      */
     public UptimeEventRecord setStartedAt(OffsetDateTime value) {
         set(4, value);
@@ -123,7 +124,8 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     }
 
     /**
-     * Getter for <code>uptime_event.started_at</code>. The current event started at
+     * Getter for <code>uptime_event.started_at</code>. The current event
+     * started at
      */
     @Column(name = "started_at", nullable = false, precision = 6)
     public OffsetDateTime getStartedAt() {
@@ -369,5 +371,22 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+    }
+
+    /**
+     * Create a detached, initialised UptimeEventRecord
+     */
+    public UptimeEventRecord(UptimeEventPojo value) {
+        super(UptimeEvent.UPTIME_EVENT);
+
+        if (value != null) {
+            setId(value.getId());
+            setMonitorId(value.getMonitorId());
+            setStatus(value.getStatus());
+            setError(value.getError());
+            setStartedAt(value.getStartedAt());
+            setEndedAt(value.getEndedAt());
+            setUpdatedAt(value.getUpdatedAt());
+        }
     }
 }

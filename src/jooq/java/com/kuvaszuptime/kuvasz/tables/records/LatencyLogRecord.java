@@ -5,18 +5,18 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
+import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
 
 import org.jooq.Field;
 import org.jooq.Record1;
@@ -32,9 +32,6 @@ import org.jooq.impl.UpdatableRecordImpl;
 @Entity
 @Table(
     name = "latency_log",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "latency_log_pkey", columnNames = { "id" })
-    },
     indexes = {
         @Index(name = "latency_log_latency_idx", columnList = "latency ASC"),
         @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
@@ -57,7 +54,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, precision = 32)
+    @Column(name = "id", nullable = false)
     public Integer getId() {
         return (Integer) get(0);
     }
@@ -73,7 +70,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
     /**
      * Getter for <code>latency_log.monitor_id</code>.
      */
-    @Column(name = "monitor_id", nullable = false, precision = 32)
+    @Column(name = "monitor_id", nullable = false)
     @NotNull
     public Integer getMonitorId() {
         return (Integer) get(1);
@@ -90,7 +87,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
     /**
      * Getter for <code>latency_log.latency</code>. Lateny in ms
      */
-    @Column(name = "latency", nullable = false, precision = 32)
+    @Column(name = "latency", nullable = false)
     @NotNull
     public Integer getLatency() {
         return (Integer) get(2);
@@ -249,5 +246,19 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
         setMonitorId(monitorId);
         setLatency(latency);
         setCreatedAt(createdAt);
+    }
+
+    /**
+     * Create a detached, initialised LatencyLogRecord
+     */
+    public LatencyLogRecord(LatencyLogPojo value) {
+        super(LatencyLog.LATENCY_LOG);
+
+        if (value != null) {
+            setId(value.getId());
+            setMonitorId(value.getMonitorId());
+            setLatency(value.getLatency());
+            setCreatedAt(value.getCreatedAt());
+        }
     }
 }

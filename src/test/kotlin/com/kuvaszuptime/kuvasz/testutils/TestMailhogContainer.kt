@@ -15,7 +15,7 @@ object TestMailhogContainer {
         instance = KGenericContainer(IMAGE_NAME).withExposedPorts(SMTP_PORT, HTTP_PORT)
         instance.start()
 
-        System.setProperty("smtp-config.host", instance.containerIpAddress)
+        System.setProperty("smtp-config.host", instance.host)
         System.setProperty("smtp-config.port", instance.getMappedPort(SMTP_PORT).toString())
         System.setProperty("smtp-config.transport-strategy", TransportStrategy.SMTP.name)
     }

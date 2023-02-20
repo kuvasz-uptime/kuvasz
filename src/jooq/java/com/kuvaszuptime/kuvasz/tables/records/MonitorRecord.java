@@ -5,18 +5,19 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 
 import com.kuvaszuptime.kuvasz.tables.Monitor;
+import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 import org.jooq.Field;
 import org.jooq.Record1;
@@ -33,7 +34,6 @@ import org.jooq.impl.UpdatableRecordImpl;
 @Table(
     name = "monitor",
     uniqueConstraints = {
-        @UniqueConstraint(name = "monitor_pkey", columnNames = { "id" }),
         @UniqueConstraint(name = "unique_monitor_name", columnNames = { "name" })
     }
 )
@@ -54,7 +54,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, precision = 32)
+    @Column(name = "id", nullable = false)
     public Integer getId() {
         return (Integer) get(0);
     }
@@ -95,7 +95,8 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     /**
-     * Setter for <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
+     * Setter for <code>monitor.uptime_check_interval</code>. Uptime checking
+     * interval in seconds
      */
     public MonitorRecord setUptimeCheckInterval(Integer value) {
         set(3, value);
@@ -103,9 +104,10 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     /**
-     * Getter for <code>monitor.uptime_check_interval</code>. Uptime checking interval in seconds
+     * Getter for <code>monitor.uptime_check_interval</code>. Uptime checking
+     * interval in seconds
      */
-    @Column(name = "uptime_check_interval", nullable = false, precision = 32)
+    @Column(name = "uptime_check_interval", nullable = false)
     @NotNull
     public Integer getUptimeCheckInterval() {
         return (Integer) get(3);
@@ -443,5 +445,24 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         setUpdatedAt(updatedAt);
         setSslCheckEnabled(sslCheckEnabled);
         setPagerdutyIntegrationKey(pagerdutyIntegrationKey);
+    }
+
+    /**
+     * Create a detached, initialised MonitorRecord
+     */
+    public MonitorRecord(MonitorPojo value) {
+        super(Monitor.MONITOR);
+
+        if (value != null) {
+            setId(value.getId());
+            setName(value.getName());
+            setUrl(value.getUrl());
+            setUptimeCheckInterval(value.getUptimeCheckInterval());
+            setEnabled(value.getEnabled());
+            setCreatedAt(value.getCreatedAt());
+            setUpdatedAt(value.getUpdatedAt());
+            setSslCheckEnabled(value.getSslCheckEnabled());
+            setPagerdutyIntegrationKey(value.getPagerdutyIntegrationKey());
+        }
     }
 }

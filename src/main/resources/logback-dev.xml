@@ -5,14 +5,13 @@
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
             <pattern>
-                %cyan(%d{HH:mm:ss.SSS}) %gray([%thread]) %highlight(%-5level) %magenta(%logger{36}) - %msg%n
+                %cyan(%d{HH:mm:ss.SSS}) %yellow([%thread]) %highlight(%-5level) %magenta(%logger{36}) - %msg%n
             </pattern>
         </encoder>
     </appender>
 
     <logger name="org.jooq.Constants" level="WARN"/>
     <logger name="org.jooq" level="DEBUG"/>
-    <logger name="org.zalando.logbook" level="TRACE"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

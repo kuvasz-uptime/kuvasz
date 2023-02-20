@@ -12,7 +12,7 @@ import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldHaveSize
 import io.micronaut.context.annotation.Property
-import io.micronaut.test.extensions.kotest.annotation.MicronautTest
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)

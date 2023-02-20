@@ -38,5 +38,6 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
         }
     }
 
+    @Suppress("ForbiddenVoid")
     fun sendAsync(email: Email): CompletableFuture<Void> = mailerClient.sendMail(email, true)
 }

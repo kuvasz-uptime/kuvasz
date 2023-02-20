@@ -48,4 +48,11 @@ public enum SslStatus implements EnumType {
     public String getLiteral() {
         return literal;
     }
+
+    /**
+     * Lookup a value of this EnumType by its literal
+     */
+    public static SslStatus lookupLiteral(String literal) {
+        return EnumType.lookupLiteral(SslStatus.class, literal);
+    }
 }
