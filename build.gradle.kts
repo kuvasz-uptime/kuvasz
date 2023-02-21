@@ -52,7 +52,7 @@ val kotlinCoroutinesVersion = "1.6.4"
 val jooqPluginVersion: String by project
 val kotlinVersion: String by project
 val postgresVersion = "42.5.4"
-val simpleJavaMailVersion = "7.8.2"
+val simpleJavaMailVersion = "7.8.3"
 
 dependencies {
     kapt("io.micronaut.openapi:micronaut-openapi")
