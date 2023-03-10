@@ -18,6 +18,6 @@ pluginManagement {
         id("com.palantir.git-version") version "1.0.0"
         id("com.github.ben-manes.versions") version "0.46.0"
         id("org.jlleitschuh.gradle.ktlint") version "11.2.0"
-        id("org.flywaydb.flyway") version "9.15.1"
+        id("org.flywaydb.flyway") version "9.15.2"
     }
 }
