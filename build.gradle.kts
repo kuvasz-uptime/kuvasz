@@ -39,7 +39,7 @@ repositories {
 }
 
 micronaut {
-    version("3.8.5")
+    version("3.8.7")
     runtime("netty")
     testRuntime("kotest5")
     processing {
