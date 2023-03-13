@@ -39,7 +39,7 @@ repositories {
 }
 
 micronaut {
-    version("3.8.5")
+    version("3.8.6")
     runtime("netty")
     testRuntime("kotest5")
     processing {
@@ -80,7 +80,7 @@ dependencies {
     implementation("org.simplejavamail:batch-module:$simpleJavaMailVersion")
     implementation("org.simplejavamail:simple-java-mail:$simpleJavaMailVersion")
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
-    testImplementation("io.mockk:mockk:1.13.4")
+    testImplementation("io.mockk:mockk:1.13.3")
     testImplementation("org.testcontainers:postgresql:1.17.6")
 }
 
