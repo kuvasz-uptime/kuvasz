@@ -8,7 +8,7 @@ pluginManagement {
         kotlin("kapt") version kotlinVersion
         kotlin("plugin.allopen") version kotlinVersion
 
-        val micronautGradlePluginVersion = "3.7.5"
+        val micronautGradlePluginVersion = "3.7.7"
         id("io.micronaut.minimal.application") version micronautGradlePluginVersion
         id("io.micronaut.docker") version micronautGradlePluginVersion
 
