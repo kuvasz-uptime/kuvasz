@@ -48,7 +48,7 @@ micronaut {
     }
 }
 
-val kotlinCoroutinesVersion = "1.6.4"
+val kotlinCoroutinesVersion = "1.7.0"
 val jooqPluginVersion: String by project
 val kotlinVersion: String by project
 val postgresVersion = "42.5.4"
