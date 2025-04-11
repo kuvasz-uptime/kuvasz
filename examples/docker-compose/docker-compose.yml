@@ -15,6 +15,7 @@ services:
       DATABASE_USER: db_user
       DATABASE_PASSWORD: OhThisIsSoSecure
       JWT_SIGNATURE_SECRET: ThisOneShouldBeVeryRandomAsWell
+      ENABLE_AUTH: 'true'
       ENABLE_HTTP_COMMUNICATION_LOG: 'true'
       ENABLE_LOG_EVENT_HANDLER: 'true'
       ENABLE_SMTP_EVENT_HANDLER: 'true'

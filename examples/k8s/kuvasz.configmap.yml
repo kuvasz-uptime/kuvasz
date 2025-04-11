@@ -7,6 +7,7 @@ data:
   database_host: "database.host"
   database_port: "5432"
   database_name: "postgres"
+  enable_auth: "true"
   http_communication_log_enabled: "true"
   log_handler_enabled: "true"
   smtp_event_handler_enabled: "true"
