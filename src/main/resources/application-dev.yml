@@ -10,8 +10,9 @@ micronaut:
 ---
 datasources:
   default:
+    url: jdbc:postgresql://localhost:12348/postgres
     username: 'postgres'
-    password: 'pass'
+    password: 'postgres'
 ---
 http-communication-log:
   enabled: true
