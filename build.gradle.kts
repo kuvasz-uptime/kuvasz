@@ -64,7 +64,7 @@ dependencies {
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
     runtimeOnly("org.yaml:snakeyaml")
     implementation("nu.studer:gradle-jooq-plugin:$jooqPluginVersion")
-    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("ch.qos.logback:logback-classic")
     implementation("io.arrow-kt:arrow-core-data:0.12.1")
