@@ -65,7 +65,7 @@ dependencies {
     runtimeOnly("org.yaml:snakeyaml")
     implementation("nu.studer:gradle-jooq-plugin:$jooqPluginVersion")
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
-    implementation("jakarta.validation:jakarta.validation-api:3.0.2")
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
     implementation("ch.qos.logback:logback-classic")
     implementation("io.arrow-kt:arrow-core-data:0.12.1")
     implementation(mn.micronaut.flyway)
