@@ -12,7 +12,7 @@ import jakarta.inject.Singleton
 import org.reactivestreams.Publisher
 
 @Singleton
-class AdminAuthProvider(private val authConfig: AdminAuthConfig) : AuthenticationProvider {
+class AdminAuthProvider(private val authConfig: AdminAuthConfig) : AuthenticationProvider<HttpRequest<*>> {
 
     override fun authenticate(
         httpRequest: HttpRequest<*>?,

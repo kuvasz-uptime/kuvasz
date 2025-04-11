@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
 import io.micronaut.core.annotation.Introspected
-import javax.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotBlank
 
 @Introspected
 data class PagerdutyKeyUpdateDto(

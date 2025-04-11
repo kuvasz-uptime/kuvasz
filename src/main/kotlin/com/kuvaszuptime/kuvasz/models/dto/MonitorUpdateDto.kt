@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz.models.dto
 import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
 import io.micronaut.core.annotation.Introspected
-import javax.validation.constraints.Min
-import javax.validation.constraints.Pattern
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.Pattern
 
 @Introspected
 data class MonitorUpdateDto(

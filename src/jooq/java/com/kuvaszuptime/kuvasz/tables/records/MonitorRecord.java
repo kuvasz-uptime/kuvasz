@@ -19,10 +19,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
 
-import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record9;
-import org.jooq.Row9;
 import org.jooq.impl.UpdatableRecordImpl;
 
 
@@ -37,7 +34,7 @@ import org.jooq.impl.UpdatableRecordImpl;
         @UniqueConstraint(name = "unique_monitor_name", columnNames = { "name" })
     }
 )
-public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements Record9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> {
+public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
 
     private static final long serialVersionUID = 1L;
 
@@ -203,223 +200,6 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
     }
 
     // -------------------------------------------------------------------------
-    // Record9 type implementation
-    // -------------------------------------------------------------------------
-
-    @Override
-    public Row9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> fieldsRow() {
-        return (Row9) super.fieldsRow();
-    }
-
-    @Override
-    public Row9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> valuesRow() {
-        return (Row9) super.valuesRow();
-    }
-
-    @Override
-    public Field<Integer> field1() {
-        return Monitor.MONITOR.ID;
-    }
-
-    @Override
-    public Field<String> field2() {
-        return Monitor.MONITOR.NAME;
-    }
-
-    @Override
-    public Field<String> field3() {
-        return Monitor.MONITOR.URL;
-    }
-
-    @Override
-    public Field<Integer> field4() {
-        return Monitor.MONITOR.UPTIME_CHECK_INTERVAL;
-    }
-
-    @Override
-    public Field<Boolean> field5() {
-        return Monitor.MONITOR.ENABLED;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field6() {
-        return Monitor.MONITOR.CREATED_AT;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field7() {
-        return Monitor.MONITOR.UPDATED_AT;
-    }
-
-    @Override
-    public Field<Boolean> field8() {
-        return Monitor.MONITOR.SSL_CHECK_ENABLED;
-    }
-
-    @Override
-    public Field<String> field9() {
-        return Monitor.MONITOR.PAGERDUTY_INTEGRATION_KEY;
-    }
-
-    @Override
-    public Integer component1() {
-        return getId();
-    }
-
-    @Override
-    public String component2() {
-        return getName();
-    }
-
-    @Override
-    public String component3() {
-        return getUrl();
-    }
-
-    @Override
-    public Integer component4() {
-        return getUptimeCheckInterval();
-    }
-
-    @Override
-    public Boolean component5() {
-        return getEnabled();
-    }
-
-    @Override
-    public OffsetDateTime component6() {
-        return getCreatedAt();
-    }
-
-    @Override
-    public OffsetDateTime component7() {
-        return getUpdatedAt();
-    }
-
-    @Override
-    public Boolean component8() {
-        return getSslCheckEnabled();
-    }
-
-    @Override
-    public String component9() {
-        return getPagerdutyIntegrationKey();
-    }
-
-    @Override
-    public Integer value1() {
-        return getId();
-    }
-
-    @Override
-    public String value2() {
-        return getName();
-    }
-
-    @Override
-    public String value3() {
-        return getUrl();
-    }
-
-    @Override
-    public Integer value4() {
-        return getUptimeCheckInterval();
-    }
-
-    @Override
-    public Boolean value5() {
-        return getEnabled();
-    }
-
-    @Override
-    public OffsetDateTime value6() {
-        return getCreatedAt();
-    }
-
-    @Override
-    public OffsetDateTime value7() {
-        return getUpdatedAt();
-    }
-
-    @Override
-    public Boolean value8() {
-        return getSslCheckEnabled();
-    }
-
-    @Override
-    public String value9() {
-        return getPagerdutyIntegrationKey();
-    }
-
-    @Override
-    public MonitorRecord value1(Integer value) {
-        setId(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value2(String value) {
-        setName(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value3(String value) {
-        setUrl(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value4(Integer value) {
-        setUptimeCheckInterval(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value5(Boolean value) {
-        setEnabled(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value6(OffsetDateTime value) {
-        setCreatedAt(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value7(OffsetDateTime value) {
-        setUpdatedAt(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value8(Boolean value) {
-        setSslCheckEnabled(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord value9(String value) {
-        setPagerdutyIntegrationKey(value);
-        return this;
-    }
-
-    @Override
-    public MonitorRecord values(Integer value1, String value2, String value3, Integer value4, Boolean value5, OffsetDateTime value6, OffsetDateTime value7, Boolean value8, String value9) {
-        value1(value1);
-        value2(value2);
-        value3(value3);
-        value4(value4);
-        value5(value5);
-        value6(value6);
-        value7(value7);
-        value8(value8);
-        value9(value9);
-        return this;
-    }
-
-    // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
 
@@ -445,6 +225,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
         setUpdatedAt(updatedAt);
         setSslCheckEnabled(sslCheckEnabled);
         setPagerdutyIntegrationKey(pagerdutyIntegrationKey);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -463,6 +244,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> implements
             setUpdatedAt(value.getUpdatedAt());
             setSslCheckEnabled(value.getSslCheckEnabled());
             setPagerdutyIntegrationKey(value.getPagerdutyIntegrationKey());
+            resetChangedOnNotNull();
         }
     }
 }

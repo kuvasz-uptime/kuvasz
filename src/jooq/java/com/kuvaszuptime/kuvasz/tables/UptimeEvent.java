@@ -8,24 +8,29 @@ import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Indexes;
 import com.kuvaszuptime.kuvasz.Keys;
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus;
+import com.kuvaszuptime.kuvasz.tables.Monitor.MonitorPath;
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
+import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function7;
 import org.jooq.Identity;
 import org.jooq.Index;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
-import org.jooq.Records;
-import org.jooq.Row7;
+import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.SelectField;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -69,7 +74,7 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     /**
      * The column <code>uptime_event.status</code>. Status of the event
      */
-    public final TableField<UptimeEventRecord, UptimeStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.kuvaszuptime.kuvasz.enums.UptimeStatus.class), this, "Status of the event");
+    public final TableField<UptimeEventRecord, UptimeStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(UptimeStatus.class), this, "Status of the event");
 
     /**
      * The column <code>uptime_event.error</code>.
@@ -80,7 +85,7 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
      * The column <code>uptime_event.started_at</code>. The current event
      * started at
      */
-    public final TableField<UptimeEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
+    public final TableField<UptimeEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
     /**
      * The column <code>uptime_event.ended_at</code>. The current event ended at
@@ -93,11 +98,11 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     public final TableField<UptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
 
     private UptimeEvent(Name alias, Table<UptimeEventRecord> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private UptimeEvent(Name alias, Table<UptimeEventRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private UptimeEvent(Name alias, Table<UptimeEventRecord> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -121,8 +126,37 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
         this(DSL.name("uptime_event"), null);
     }
 
-    public <O extends Record> UptimeEvent(Table<O> child, ForeignKey<O, UptimeEventRecord> key) {
-        super(child, key, UPTIME_EVENT);
+    public <O extends Record> UptimeEvent(Table<O> path, ForeignKey<O, UptimeEventRecord> childPath, InverseForeignKey<O, UptimeEventRecord> parentPath) {
+        super(path, childPath, parentPath, UPTIME_EVENT);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class UptimeEventPath extends UptimeEvent implements Path<UptimeEventRecord> {
+
+        private static final long serialVersionUID = 1L;
+        public <O extends Record> UptimeEventPath(Table<O> path, ForeignKey<O, UptimeEventRecord> childPath, InverseForeignKey<O, UptimeEventRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private UptimeEventPath(Name alias, Table<UptimeEventRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public UptimeEventPath as(String alias) {
+            return new UptimeEventPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public UptimeEventPath as(Name alias) {
+            return new UptimeEventPath(alias, this);
+        }
+
+        @Override
+        public UptimeEventPath as(Table<?> alias) {
+            return new UptimeEventPath(alias.getQualifiedName(), this);
+        }
     }
 
     @Override
@@ -155,14 +189,14 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
         return Arrays.asList(Keys.UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY);
     }
 
-    private transient Monitor _monitor;
+    private transient MonitorPath _monitor;
 
     /**
      * Get the implicit join path to the <code>kuvasz.monitor</code> table.
      */
-    public Monitor monitor() {
+    public MonitorPath monitor() {
         if (_monitor == null)
-            _monitor = new Monitor(this, Keys.UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY);
+            _monitor = new MonitorPath(this, Keys.UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY, null);
 
         return _monitor;
     }
@@ -206,27 +240,87 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
         return new UptimeEvent(name.getQualifiedName(), null);
     }
 
-    // -------------------------------------------------------------------------
-    // Row7 type methods
-    // -------------------------------------------------------------------------
-
+    /**
+     * Create an inline derived table from this table
+     */
     @Override
-    public Row7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
-        return (Row7) super.fieldsRow();
+    public UptimeEvent where(Condition condition) {
+        return new UptimeEvent(getQualifiedName(), aliased() ? this : null, null, condition);
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Function7<? super Integer, ? super Integer, ? super UptimeStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
-        return convertFrom(Records.mapping(from));
+    @Override
+    public UptimeEvent where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super Integer, ? super Integer, ? super UptimeStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
-        return convertFrom(toType, Records.mapping(from));
+    @Override
+    public UptimeEvent where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public UptimeEvent where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public UptimeEvent where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public UptimeEvent where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public UptimeEvent where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public UptimeEvent where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public UptimeEvent whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public UptimeEvent whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

@@ -11,11 +11,11 @@ import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.context.annotation.Context
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
+import jakarta.annotation.PostConstruct
 import jakarta.inject.Named
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
-import javax.annotation.PostConstruct
 
 @Context
 class CheckScheduler(

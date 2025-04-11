@@ -22,7 +22,7 @@ handler-config:
     from: ${SMTP_FROM_ADDRESS:`noreply@kuvasz.uptime'`}
     to: ${SMTP_TO_ADDRESS:`recipient@kuvasz.uptime`}
   pagerduty-event-handler:
-    enabled: true
+    enabled: false
 ---
 admin-auth:
   username: user

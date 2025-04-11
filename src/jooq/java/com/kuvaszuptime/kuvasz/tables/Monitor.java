@@ -6,23 +6,30 @@ package com.kuvaszuptime.kuvasz.tables;
 
 import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Keys;
+import com.kuvaszuptime.kuvasz.tables.LatencyLog.LatencyLogPath;
+import com.kuvaszuptime.kuvasz.tables.SslEvent.SslEventPath;
+import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UptimeEventPath;
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
+import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function9;
 import org.jooq.Identity;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
-import org.jooq.Records;
-import org.jooq.Row9;
+import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.SelectField;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -77,12 +84,12 @@ public class Monitor extends TableImpl<MonitorRecord> {
     /**
      * The column <code>monitor.enabled</code>. Flag to toggle the monitor
      */
-    public final TableField<MonitorRecord, Boolean> ENABLED = createField(DSL.name("enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field("true", SQLDataType.BOOLEAN)), this, "Flag to toggle the monitor");
+    public final TableField<MonitorRecord, Boolean> ENABLED = createField(DSL.name("enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "Flag to toggle the monitor");
 
     /**
      * The column <code>monitor.created_at</code>.
      */
-    public final TableField<MonitorRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
+    public final TableField<MonitorRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
     /**
      * The column <code>monitor.updated_at</code>.
@@ -92,7 +99,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
     /**
      * The column <code>monitor.ssl_check_enabled</code>.
      */
-    public final TableField<MonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
+    public final TableField<MonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
     /**
      * The column <code>monitor.pagerduty_integration_key</code>.
@@ -100,11 +107,11 @@ public class Monitor extends TableImpl<MonitorRecord> {
     public final TableField<MonitorRecord, String> PAGERDUTY_INTEGRATION_KEY = createField(DSL.name("pagerduty_integration_key"), SQLDataType.VARCHAR, this, "");
 
     private Monitor(Name alias, Table<MonitorRecord> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private Monitor(Name alias, Table<MonitorRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private Monitor(Name alias, Table<MonitorRecord> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -128,8 +135,37 @@ public class Monitor extends TableImpl<MonitorRecord> {
         this(DSL.name("monitor"), null);
     }
 
-    public <O extends Record> Monitor(Table<O> child, ForeignKey<O, MonitorRecord> key) {
-        super(child, key, MONITOR);
+    public <O extends Record> Monitor(Table<O> path, ForeignKey<O, MonitorRecord> childPath, InverseForeignKey<O, MonitorRecord> parentPath) {
+        super(path, childPath, parentPath, MONITOR);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class MonitorPath extends Monitor implements Path<MonitorRecord> {
+
+        private static final long serialVersionUID = 1L;
+        public <O extends Record> MonitorPath(Table<O> path, ForeignKey<O, MonitorRecord> childPath, InverseForeignKey<O, MonitorRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private MonitorPath(Name alias, Table<MonitorRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public MonitorPath as(String alias) {
+            return new MonitorPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public MonitorPath as(Name alias) {
+            return new MonitorPath(alias, this);
+        }
+
+        @Override
+        public MonitorPath as(Table<?> alias) {
+            return new MonitorPath(alias.getQualifiedName(), this);
+        }
     }
 
     @Override
@@ -150,6 +186,45 @@ public class Monitor extends TableImpl<MonitorRecord> {
     @Override
     public List<UniqueKey<MonitorRecord>> getUniqueKeys() {
         return Arrays.asList(Keys.UNIQUE_MONITOR_NAME);
+    }
+
+    private transient LatencyLogPath _latencyLog;
+
+    /**
+     * Get the implicit to-many join path to the <code>kuvasz.latency_log</code>
+     * table
+     */
+    public LatencyLogPath latencyLog() {
+        if (_latencyLog == null)
+            _latencyLog = new LatencyLogPath(this, null, Keys.LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY.getInverseKey());
+
+        return _latencyLog;
+    }
+
+    private transient SslEventPath _sslEvent;
+
+    /**
+     * Get the implicit to-many join path to the <code>kuvasz.ssl_event</code>
+     * table
+     */
+    public SslEventPath sslEvent() {
+        if (_sslEvent == null)
+            _sslEvent = new SslEventPath(this, null, Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY.getInverseKey());
+
+        return _sslEvent;
+    }
+
+    private transient UptimeEventPath _uptimeEvent;
+
+    /**
+     * Get the implicit to-many join path to the
+     * <code>kuvasz.uptime_event</code> table
+     */
+    public UptimeEventPath uptimeEvent() {
+        if (_uptimeEvent == null)
+            _uptimeEvent = new UptimeEventPath(this, null, Keys.UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY.getInverseKey());
+
+        return _uptimeEvent;
     }
 
     @Override
@@ -191,27 +266,87 @@ public class Monitor extends TableImpl<MonitorRecord> {
         return new Monitor(name.getQualifiedName(), null);
     }
 
-    // -------------------------------------------------------------------------
-    // Row9 type methods
-    // -------------------------------------------------------------------------
-
+    /**
+     * Create an inline derived table from this table
+     */
     @Override
-    public Row9<Integer, String, String, Integer, Boolean, OffsetDateTime, OffsetDateTime, Boolean, String> fieldsRow() {
-        return (Row9) super.fieldsRow();
+    public Monitor where(Condition condition) {
+        return new Monitor(getQualifiedName(), aliased() ? this : null, null, condition);
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Function9<? super Integer, ? super String, ? super String, ? super Integer, ? super Boolean, ? super OffsetDateTime, ? super OffsetDateTime, ? super Boolean, ? super String, ? extends U> from) {
-        return convertFrom(Records.mapping(from));
+    @Override
+    public Monitor where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function9<? super Integer, ? super String, ? super String, ? super Integer, ? super Boolean, ? super OffsetDateTime, ? super OffsetDateTime, ? super Boolean, ? super String, ? extends U> from) {
-        return convertFrom(toType, Records.mapping(from));
+    @Override
+    public Monitor where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Monitor where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Monitor where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Monitor where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Monitor where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Monitor where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Monitor whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Monitor whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

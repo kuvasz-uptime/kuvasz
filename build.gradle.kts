@@ -10,6 +10,10 @@ buildscript {
             useVersion(jooqVersion)
         }
     }
+    val flywayPluginVersion: String by project
+    dependencies {
+        classpath("org.flywaydb:flyway-database-postgresql:$flywayPluginVersion")
+    }
 }
 
 plugins {
@@ -39,7 +43,6 @@ repositories {
 }
 
 micronaut {
-    version("3.8.6")
     runtime("netty")
     testRuntime("kotest5")
     processing {
@@ -48,30 +51,34 @@ micronaut {
     }
 }
 
-val kotlinCoroutinesVersion = "1.6.4"
+val kotlinCoroutinesVersion = "1.10.2"
 val jooqPluginVersion: String by project
 val kotlinVersion: String by project
-val postgresVersion = "42.5.4"
-val simpleJavaMailVersion = "8.0.0"
+val postgresVersion = "42.7.5"
+val simpleJavaMailVersion = "8.12.5"
 
 dependencies {
     kapt("io.micronaut.openapi:micronaut-openapi")
     kapt("io.micronaut.security:micronaut-security-annotations")
+    kapt("io.micronaut.validation:micronaut-validation-processor")
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
+    runtimeOnly("org.yaml:snakeyaml")
     implementation("nu.studer:gradle-jooq-plugin:$jooqPluginVersion")
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("ch.qos.logback:logback-classic")
     implementation("io.arrow-kt:arrow-core-data:0.12.1")
-    implementation("io.micronaut.flyway:micronaut-flyway")
-    implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
-    implementation("io.micronaut.rxjava3:micronaut-rxjava3")
-    implementation("io.micronaut.rxjava3:micronaut-rxjava3-http-client")
-    implementation("io.micronaut.security:micronaut-security-jwt")
-    implementation("io.micronaut.sql:micronaut-jdbc-hikari")
-    implementation("io.micronaut.sql:micronaut-jooq")
-    implementation("io.micronaut:micronaut-http-client")
-    implementation("io.micronaut:micronaut-validation")
+    implementation(mn.micronaut.flyway)
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    implementation(mn.micronaut.kotlin.extension.functions)
+    implementation(mn.micronaut.rxjava3)
+    implementation(mn.micronaut.rxjava3.http.client)
+    implementation(mn.micronaut.security.jwt)
+    implementation(mn.micronaut.jdbc.hikari)
+    implementation(mn.micronaut.jooq)
+    implementation(mn.micronaut.http.client)
+    implementation(mn.micronaut.retry)
+    implementation(mn.micronaut.validation)
     implementation("io.swagger.core.v3:swagger-annotations")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
@@ -80,12 +87,12 @@ dependencies {
     implementation("org.simplejavamail:batch-module:$simpleJavaMailVersion")
     implementation("org.simplejavamail:simple-java-mail:$simpleJavaMailVersion")
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
-    testImplementation("io.mockk:mockk:1.13.3")
+    testImplementation("io.mockk:mockk:1.14.0")
     testImplementation("org.testcontainers:postgresql:1.17.6")
 }
 
 application {
-    mainClass.set("com.kuvaszuptime.kuvasz.ApplicationKt")
+    mainClass.set("com.kuvaszuptime.kuvasz.Application")
 }
 
 jacoco {

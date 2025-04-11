@@ -4,8 +4,8 @@ import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
+import jakarta.validation.Constraint
 import java.util.*
-import javax.validation.Constraint
 
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [])

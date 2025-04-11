@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz.config
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
-import javax.validation.constraints.NotBlank
-import javax.validation.constraints.NotNull
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import org.simplejavamail.api.mailer.config.TransportStrategy as JavaMailerTransportStrategy
 
 @ConfigurationProperties("smtp-config")

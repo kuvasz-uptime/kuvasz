@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.config
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Context
 import io.micronaut.core.annotation.Introspected
-import javax.validation.constraints.Min
+import jakarta.validation.constraints.Min
 
 @ConfigurationProperties("app-config")
 @Context

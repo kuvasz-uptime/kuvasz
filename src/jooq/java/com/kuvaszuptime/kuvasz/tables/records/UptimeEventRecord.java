@@ -20,10 +20,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
 
-import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record7;
-import org.jooq.Row7;
 import org.jooq.impl.UpdatableRecordImpl;
 
 
@@ -42,7 +39,7 @@ import org.jooq.impl.UpdatableRecordImpl;
         @Index(name = "uptime_event_monitor_idx", columnList = "monitor_id ASC")
     }
 )
-public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> implements Record7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> {
+public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
 
     private static final long serialVersionUID = 1L;
 
@@ -175,179 +172,6 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
     }
 
     // -------------------------------------------------------------------------
-    // Record7 type implementation
-    // -------------------------------------------------------------------------
-
-    @Override
-    public Row7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
-        return (Row7) super.fieldsRow();
-    }
-
-    @Override
-    public Row7<Integer, Integer, UptimeStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> valuesRow() {
-        return (Row7) super.valuesRow();
-    }
-
-    @Override
-    public Field<Integer> field1() {
-        return UptimeEvent.UPTIME_EVENT.ID;
-    }
-
-    @Override
-    public Field<Integer> field2() {
-        return UptimeEvent.UPTIME_EVENT.MONITOR_ID;
-    }
-
-    @Override
-    public Field<UptimeStatus> field3() {
-        return UptimeEvent.UPTIME_EVENT.STATUS;
-    }
-
-    @Override
-    public Field<String> field4() {
-        return UptimeEvent.UPTIME_EVENT.ERROR;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field5() {
-        return UptimeEvent.UPTIME_EVENT.STARTED_AT;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field6() {
-        return UptimeEvent.UPTIME_EVENT.ENDED_AT;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field7() {
-        return UptimeEvent.UPTIME_EVENT.UPDATED_AT;
-    }
-
-    @Override
-    public Integer component1() {
-        return getId();
-    }
-
-    @Override
-    public Integer component2() {
-        return getMonitorId();
-    }
-
-    @Override
-    public UptimeStatus component3() {
-        return getStatus();
-    }
-
-    @Override
-    public String component4() {
-        return getError();
-    }
-
-    @Override
-    public OffsetDateTime component5() {
-        return getStartedAt();
-    }
-
-    @Override
-    public OffsetDateTime component6() {
-        return getEndedAt();
-    }
-
-    @Override
-    public OffsetDateTime component7() {
-        return getUpdatedAt();
-    }
-
-    @Override
-    public Integer value1() {
-        return getId();
-    }
-
-    @Override
-    public Integer value2() {
-        return getMonitorId();
-    }
-
-    @Override
-    public UptimeStatus value3() {
-        return getStatus();
-    }
-
-    @Override
-    public String value4() {
-        return getError();
-    }
-
-    @Override
-    public OffsetDateTime value5() {
-        return getStartedAt();
-    }
-
-    @Override
-    public OffsetDateTime value6() {
-        return getEndedAt();
-    }
-
-    @Override
-    public OffsetDateTime value7() {
-        return getUpdatedAt();
-    }
-
-    @Override
-    public UptimeEventRecord value1(Integer value) {
-        setId(value);
-        return this;
-    }
-
-    @Override
-    public UptimeEventRecord value2(Integer value) {
-        setMonitorId(value);
-        return this;
-    }
-
-    @Override
-    public UptimeEventRecord value3(UptimeStatus value) {
-        setStatus(value);
-        return this;
-    }
-
-    @Override
-    public UptimeEventRecord value4(String value) {
-        setError(value);
-        return this;
-    }
-
-    @Override
-    public UptimeEventRecord value5(OffsetDateTime value) {
-        setStartedAt(value);
-        return this;
-    }
-
-    @Override
-    public UptimeEventRecord value6(OffsetDateTime value) {
-        setEndedAt(value);
-        return this;
-    }
-
-    @Override
-    public UptimeEventRecord value7(OffsetDateTime value) {
-        setUpdatedAt(value);
-        return this;
-    }
-
-    @Override
-    public UptimeEventRecord values(Integer value1, Integer value2, UptimeStatus value3, String value4, OffsetDateTime value5, OffsetDateTime value6, OffsetDateTime value7) {
-        value1(value1);
-        value2(value2);
-        value3(value3);
-        value4(value4);
-        value5(value5);
-        value6(value6);
-        value7(value7);
-        return this;
-    }
-
-    // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
 
@@ -371,6 +195,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -387,6 +212,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> im
             setStartedAt(value.getStartedAt());
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
+            resetChangedOnNotNull();
         }
     }
 }
