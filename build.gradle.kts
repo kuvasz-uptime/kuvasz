@@ -88,7 +88,7 @@ dependencies {
     implementation("org.simplejavamail:simple-java-mail:$simpleJavaMailVersion")
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
     testImplementation("io.mockk:mockk:1.14.0")
-    testImplementation("org.testcontainers:postgresql:1.17.6")
+    testImplementation("org.testcontainers:postgresql:1.20.6")
 }
 
 application {
