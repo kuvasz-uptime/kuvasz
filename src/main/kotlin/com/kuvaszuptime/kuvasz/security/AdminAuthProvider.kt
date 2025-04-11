@@ -2,9 +2,9 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import io.micronaut.http.HttpRequest
-import io.micronaut.security.authentication.AuthenticationProvider
 import io.micronaut.security.authentication.AuthenticationRequest
 import io.micronaut.security.authentication.AuthenticationResponse
+import io.micronaut.security.authentication.provider.HttpRequestReactiveAuthenticationProvider
 import io.reactivex.rxjava3.core.BackpressureStrategy
 import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.FlowableEmitter
@@ -12,11 +12,11 @@ import jakarta.inject.Singleton
 import org.reactivestreams.Publisher
 
 @Singleton
-class AdminAuthProvider(private val authConfig: AdminAuthConfig) : AuthenticationProvider<HttpRequest<*>> {
+class AdminAuthProvider(private val authConfig: AdminAuthConfig) : HttpRequestReactiveAuthenticationProvider<Any> {
 
     override fun authenticate(
-        httpRequest: HttpRequest<*>?,
-        authenticationRequest: AuthenticationRequest<*, *>
+        requestContext: HttpRequest<Any>?,
+        authenticationRequest: AuthenticationRequest<String, String>,
     ): Publisher<AuthenticationResponse> {
         return Flowable.create(
             { emitter: FlowableEmitter<AuthenticationResponse> ->

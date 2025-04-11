@@ -1,6 +1,7 @@
 ---
 micronaut:
   security:
+    enabled: false
     token:
       jwt:
         signatures:

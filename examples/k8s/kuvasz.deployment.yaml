@@ -47,6 +47,11 @@ spec:
                 configMapKeyRef:
                   name: kuvasz-config
                   key: database_name
+            - name: ENABLE_AUTH
+              valueFrom:
+                configMapKeyRef:
+                  name: kuvasz-config
+                  key: enable-auth
             - name: HTTP_COMMUNICATION_LOG_ENABLED
               valueFrom:
                 configMapKeyRef:

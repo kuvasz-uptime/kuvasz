@@ -87,3 +87,47 @@ class AuthenticationTest(
         }
     }
 )
+
+@MicronautTest
+@Property(name = "micronaut.security.enabled", value = "false")
+class DisabledAuthenticationTest(
+    @Client("/") private val client: Rx3HttpClient,
+    private val authConfig: AdminAuthConfig
+) : BehaviorSpec(
+    {
+        given("a public endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val response = client.toBlocking().exchange<Any>("/health")
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+        given("the login endpoint") {
+
+            `when`("the user provides the right credentials") {
+                val credentials = generateCredentials(authConfig, valid = true)
+                val request = HttpRequest.POST("/login", credentials)
+
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking().exchange(request, Any::class.java)
+                }
+
+                then("it should return 404") {
+                    exception.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
+        given("an authenticated endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val response = client.toBlocking().exchange<Any>("/monitors")
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+    }
+)
