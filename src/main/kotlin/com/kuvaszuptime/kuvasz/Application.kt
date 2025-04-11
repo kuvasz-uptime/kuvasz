@@ -40,6 +40,7 @@ object Application {
         build()
             .args(*args)
             .packages("com.kuvaszuptime.kuvasz")
+            .banner(false)
             .start()
     }
 }

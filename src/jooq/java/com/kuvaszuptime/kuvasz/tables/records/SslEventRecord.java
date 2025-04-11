@@ -20,10 +20,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
 
-import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record7;
-import org.jooq.Row7;
 import org.jooq.impl.UpdatableRecordImpl;
 
 
@@ -42,7 +39,7 @@ import org.jooq.impl.UpdatableRecordImpl;
         @Index(name = "ssl_event_monitor_idx", columnList = "monitor_id ASC")
     }
 )
-public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> implements Record7<Integer, Integer, SslStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> {
+public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
 
     private static final long serialVersionUID = 1L;
 
@@ -175,179 +172,6 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> implemen
     }
 
     // -------------------------------------------------------------------------
-    // Record7 type implementation
-    // -------------------------------------------------------------------------
-
-    @Override
-    public Row7<Integer, Integer, SslStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
-        return (Row7) super.fieldsRow();
-    }
-
-    @Override
-    public Row7<Integer, Integer, SslStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> valuesRow() {
-        return (Row7) super.valuesRow();
-    }
-
-    @Override
-    public Field<Integer> field1() {
-        return SslEvent.SSL_EVENT.ID;
-    }
-
-    @Override
-    public Field<Integer> field2() {
-        return SslEvent.SSL_EVENT.MONITOR_ID;
-    }
-
-    @Override
-    public Field<SslStatus> field3() {
-        return SslEvent.SSL_EVENT.STATUS;
-    }
-
-    @Override
-    public Field<String> field4() {
-        return SslEvent.SSL_EVENT.ERROR;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field5() {
-        return SslEvent.SSL_EVENT.STARTED_AT;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field6() {
-        return SslEvent.SSL_EVENT.ENDED_AT;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field7() {
-        return SslEvent.SSL_EVENT.UPDATED_AT;
-    }
-
-    @Override
-    public Integer component1() {
-        return getId();
-    }
-
-    @Override
-    public Integer component2() {
-        return getMonitorId();
-    }
-
-    @Override
-    public SslStatus component3() {
-        return getStatus();
-    }
-
-    @Override
-    public String component4() {
-        return getError();
-    }
-
-    @Override
-    public OffsetDateTime component5() {
-        return getStartedAt();
-    }
-
-    @Override
-    public OffsetDateTime component6() {
-        return getEndedAt();
-    }
-
-    @Override
-    public OffsetDateTime component7() {
-        return getUpdatedAt();
-    }
-
-    @Override
-    public Integer value1() {
-        return getId();
-    }
-
-    @Override
-    public Integer value2() {
-        return getMonitorId();
-    }
-
-    @Override
-    public SslStatus value3() {
-        return getStatus();
-    }
-
-    @Override
-    public String value4() {
-        return getError();
-    }
-
-    @Override
-    public OffsetDateTime value5() {
-        return getStartedAt();
-    }
-
-    @Override
-    public OffsetDateTime value6() {
-        return getEndedAt();
-    }
-
-    @Override
-    public OffsetDateTime value7() {
-        return getUpdatedAt();
-    }
-
-    @Override
-    public SslEventRecord value1(Integer value) {
-        setId(value);
-        return this;
-    }
-
-    @Override
-    public SslEventRecord value2(Integer value) {
-        setMonitorId(value);
-        return this;
-    }
-
-    @Override
-    public SslEventRecord value3(SslStatus value) {
-        setStatus(value);
-        return this;
-    }
-
-    @Override
-    public SslEventRecord value4(String value) {
-        setError(value);
-        return this;
-    }
-
-    @Override
-    public SslEventRecord value5(OffsetDateTime value) {
-        setStartedAt(value);
-        return this;
-    }
-
-    @Override
-    public SslEventRecord value6(OffsetDateTime value) {
-        setEndedAt(value);
-        return this;
-    }
-
-    @Override
-    public SslEventRecord value7(OffsetDateTime value) {
-        setUpdatedAt(value);
-        return this;
-    }
-
-    @Override
-    public SslEventRecord values(Integer value1, Integer value2, SslStatus value3, String value4, OffsetDateTime value5, OffsetDateTime value6, OffsetDateTime value7) {
-        value1(value1);
-        value2(value2);
-        value3(value3);
-        value4(value4);
-        value5(value5);
-        value6(value6);
-        value7(value7);
-        return this;
-    }
-
-    // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
 
@@ -371,6 +195,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> implemen
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -387,6 +212,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> implemen
             setStartedAt(value.getStartedAt());
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
+            resetChangedOnNotNull();
         }
     }
 }

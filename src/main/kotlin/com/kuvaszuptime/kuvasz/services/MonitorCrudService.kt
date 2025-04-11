@@ -83,6 +83,7 @@ class MonitorCrudService(
             { persistenceError -> throw persistenceError },
             { updatedMonitor ->
                 if (updatedMonitor.enabled) {
+                    @Suppress("UnnecessaryLet")
                     checkScheduler.updateChecksForMonitor(existingMonitor, updatedMonitor)?.let { throw it }
                 } else {
                     checkScheduler.removeChecksOfMonitor(existingMonitor)

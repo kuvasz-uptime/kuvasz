@@ -18,10 +18,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
 
-import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record4;
-import org.jooq.Row4;
 import org.jooq.impl.UpdatableRecordImpl;
 
 
@@ -37,7 +34,7 @@ import org.jooq.impl.UpdatableRecordImpl;
         @Index(name = "latency_log_monitor_idx", columnList = "monitor_id ASC")
     }
 )
-public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> implements Record4<Integer, Integer, Integer, OffsetDateTime> {
+public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
 
     private static final long serialVersionUID = 1L;
 
@@ -119,113 +116,6 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
     }
 
     // -------------------------------------------------------------------------
-    // Record4 type implementation
-    // -------------------------------------------------------------------------
-
-    @Override
-    public Row4<Integer, Integer, Integer, OffsetDateTime> fieldsRow() {
-        return (Row4) super.fieldsRow();
-    }
-
-    @Override
-    public Row4<Integer, Integer, Integer, OffsetDateTime> valuesRow() {
-        return (Row4) super.valuesRow();
-    }
-
-    @Override
-    public Field<Integer> field1() {
-        return LatencyLog.LATENCY_LOG.ID;
-    }
-
-    @Override
-    public Field<Integer> field2() {
-        return LatencyLog.LATENCY_LOG.MONITOR_ID;
-    }
-
-    @Override
-    public Field<Integer> field3() {
-        return LatencyLog.LATENCY_LOG.LATENCY;
-    }
-
-    @Override
-    public Field<OffsetDateTime> field4() {
-        return LatencyLog.LATENCY_LOG.CREATED_AT;
-    }
-
-    @Override
-    public Integer component1() {
-        return getId();
-    }
-
-    @Override
-    public Integer component2() {
-        return getMonitorId();
-    }
-
-    @Override
-    public Integer component3() {
-        return getLatency();
-    }
-
-    @Override
-    public OffsetDateTime component4() {
-        return getCreatedAt();
-    }
-
-    @Override
-    public Integer value1() {
-        return getId();
-    }
-
-    @Override
-    public Integer value2() {
-        return getMonitorId();
-    }
-
-    @Override
-    public Integer value3() {
-        return getLatency();
-    }
-
-    @Override
-    public OffsetDateTime value4() {
-        return getCreatedAt();
-    }
-
-    @Override
-    public LatencyLogRecord value1(Integer value) {
-        setId(value);
-        return this;
-    }
-
-    @Override
-    public LatencyLogRecord value2(Integer value) {
-        setMonitorId(value);
-        return this;
-    }
-
-    @Override
-    public LatencyLogRecord value3(Integer value) {
-        setLatency(value);
-        return this;
-    }
-
-    @Override
-    public LatencyLogRecord value4(OffsetDateTime value) {
-        setCreatedAt(value);
-        return this;
-    }
-
-    @Override
-    public LatencyLogRecord values(Integer value1, Integer value2, Integer value3, OffsetDateTime value4) {
-        value1(value1);
-        value2(value2);
-        value3(value3);
-        value4(value4);
-        return this;
-    }
-
-    // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
 
@@ -246,6 +136,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
         setMonitorId(monitorId);
         setLatency(latency);
         setCreatedAt(createdAt);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -259,6 +150,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> impl
             setMonitorId(value.getMonitorId());
             setLatency(value.getLatency());
             setCreatedAt(value.getCreatedAt());
+            resetChangedOnNotNull();
         }
     }
 }

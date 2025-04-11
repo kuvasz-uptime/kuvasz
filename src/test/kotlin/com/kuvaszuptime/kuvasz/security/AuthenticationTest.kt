@@ -15,7 +15,7 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.rxjava3.http.client.Rx3HttpClient
-import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
+import io.micronaut.security.token.render.BearerAccessRefreshToken
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest

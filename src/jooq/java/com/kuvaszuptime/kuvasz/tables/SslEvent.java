@@ -8,24 +8,29 @@ import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Indexes;
 import com.kuvaszuptime.kuvasz.Keys;
 import com.kuvaszuptime.kuvasz.enums.SslStatus;
+import com.kuvaszuptime.kuvasz.tables.Monitor.MonitorPath;
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
+import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function7;
 import org.jooq.Identity;
 import org.jooq.Index;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
-import org.jooq.Records;
-import org.jooq.Row7;
+import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.SelectField;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -69,7 +74,7 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     /**
      * The column <code>ssl_event.status</code>. Status of the event
      */
-    public final TableField<SslEventRecord, SslStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.kuvaszuptime.kuvasz.enums.SslStatus.class), this, "Status of the event");
+    public final TableField<SslEventRecord, SslStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(SslStatus.class), this, "Status of the event");
 
     /**
      * The column <code>ssl_event.error</code>.
@@ -80,7 +85,7 @@ public class SslEvent extends TableImpl<SslEventRecord> {
      * The column <code>ssl_event.started_at</code>. The current event started
      * at
      */
-    public final TableField<SslEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
+    public final TableField<SslEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
     /**
      * The column <code>ssl_event.ended_at</code>. The current event ended at
@@ -93,11 +98,11 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     public final TableField<SslEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
 
     private SslEvent(Name alias, Table<SslEventRecord> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private SslEvent(Name alias, Table<SslEventRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private SslEvent(Name alias, Table<SslEventRecord> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -121,8 +126,37 @@ public class SslEvent extends TableImpl<SslEventRecord> {
         this(DSL.name("ssl_event"), null);
     }
 
-    public <O extends Record> SslEvent(Table<O> child, ForeignKey<O, SslEventRecord> key) {
-        super(child, key, SSL_EVENT);
+    public <O extends Record> SslEvent(Table<O> path, ForeignKey<O, SslEventRecord> childPath, InverseForeignKey<O, SslEventRecord> parentPath) {
+        super(path, childPath, parentPath, SSL_EVENT);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class SslEventPath extends SslEvent implements Path<SslEventRecord> {
+
+        private static final long serialVersionUID = 1L;
+        public <O extends Record> SslEventPath(Table<O> path, ForeignKey<O, SslEventRecord> childPath, InverseForeignKey<O, SslEventRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private SslEventPath(Name alias, Table<SslEventRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public SslEventPath as(String alias) {
+            return new SslEventPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public SslEventPath as(Name alias) {
+            return new SslEventPath(alias, this);
+        }
+
+        @Override
+        public SslEventPath as(Table<?> alias) {
+            return new SslEventPath(alias.getQualifiedName(), this);
+        }
     }
 
     @Override
@@ -155,14 +189,14 @@ public class SslEvent extends TableImpl<SslEventRecord> {
         return Arrays.asList(Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY);
     }
 
-    private transient Monitor _monitor;
+    private transient MonitorPath _monitor;
 
     /**
      * Get the implicit join path to the <code>kuvasz.monitor</code> table.
      */
-    public Monitor monitor() {
+    public MonitorPath monitor() {
         if (_monitor == null)
-            _monitor = new Monitor(this, Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY);
+            _monitor = new MonitorPath(this, Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY, null);
 
         return _monitor;
     }
@@ -206,27 +240,87 @@ public class SslEvent extends TableImpl<SslEventRecord> {
         return new SslEvent(name.getQualifiedName(), null);
     }
 
-    // -------------------------------------------------------------------------
-    // Row7 type methods
-    // -------------------------------------------------------------------------
-
+    /**
+     * Create an inline derived table from this table
+     */
     @Override
-    public Row7<Integer, Integer, SslStatus, String, OffsetDateTime, OffsetDateTime, OffsetDateTime> fieldsRow() {
-        return (Row7) super.fieldsRow();
+    public SslEvent where(Condition condition) {
+        return new SslEvent(getQualifiedName(), aliased() ? this : null, null, condition);
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Function7<? super Integer, ? super Integer, ? super SslStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
-        return convertFrom(Records.mapping(from));
+    @Override
+    public SslEvent where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super Integer, ? super Integer, ? super SslStatus, ? super String, ? super OffsetDateTime, ? super OffsetDateTime, ? super OffsetDateTime, ? extends U> from) {
-        return convertFrom(toType, Records.mapping(from));
+    @Override
+    public SslEvent where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public SslEvent where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public SslEvent where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public SslEvent where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public SslEvent where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public SslEvent where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public SslEvent whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public SslEvent whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

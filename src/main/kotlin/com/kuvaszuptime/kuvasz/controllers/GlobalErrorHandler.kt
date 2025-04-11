@@ -12,7 +12,7 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Error
-import javax.validation.ValidationException
+import jakarta.validation.ValidationException
 
 @Controller
 class GlobalErrorHandler {

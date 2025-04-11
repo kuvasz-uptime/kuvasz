@@ -40,7 +40,7 @@ class GlobalErrorHandlerTest(
 
                 exception.status shouldBe HttpStatus.BAD_REQUEST
                 val responseBody = exception.response.getBody(ServiceError::class.java).get()
-                responseBody.message shouldBe "Can't parse the JSON in the payload"
+                responseBody.message shouldBe "Invalid JSON"
             }
         }
 

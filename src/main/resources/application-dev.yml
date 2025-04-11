@@ -10,8 +10,9 @@ micronaut:
 ---
 datasources:
   default:
+    url: jdbc:postgresql://localhost:12348/postgres
     username: 'postgres'
-    password: 'pass'
+    password: 'postgres'
 ---
 http-communication-log:
   enabled: true
@@ -22,7 +23,7 @@ handler-config:
     from: ${SMTP_FROM_ADDRESS:`noreply@kuvasz.uptime'`}
     to: ${SMTP_TO_ADDRESS:`recipient@kuvasz.uptime`}
   pagerduty-event-handler:
-    enabled: true
+    enabled: false
 ---
 admin-auth:
   username: user
