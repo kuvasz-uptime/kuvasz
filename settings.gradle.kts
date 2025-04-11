@@ -26,5 +26,5 @@ pluginManagement {
 
 plugins {
     // This one should match the micronautGradlePluginVersion above
-    id("io.micronaut.platform.catalog") version "4.5.1"
+    id("io.micronaut.platform.catalog") version "4.5.2"
 }
