@@ -38,7 +38,7 @@ class AppConfigTest : BehaviorSpec(
                     val exception = shouldThrow<BeanInstantiationException> {
                         ApplicationContext.run(properties)
                     }
-                    exceptionToMessage(exception) shouldContain "dataRetentionDays - must be greater than or equal to 7"
+                    exceptionToMessage(exception) shouldContain "AppConfig.p0 - must be greater than or equal to 7"
                 }
             }
         }
