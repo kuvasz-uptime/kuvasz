@@ -34,6 +34,8 @@ class LatencyLogRepository(jooqConfig: Configuration) : LatencyLogDao(jooqConfig
             .where(LATENCY_LOG.CREATED_AT.lessThan(limit))
             .execute()
 
+    // Well well, that's not so performant in case of a really huge dataset. Definitely something that should be
+    // improved in the future.
     fun getLatencyPercentiles(monitorId: Int? = null): List<PercentileResult> =
         dsl
             .with("percentiles").`as`(
