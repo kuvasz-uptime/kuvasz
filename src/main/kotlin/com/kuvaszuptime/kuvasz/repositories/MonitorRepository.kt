@@ -54,12 +54,12 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
             .groupBy(detailsGroupByFields)
             .fetchOneInto(MonitorDetailsDto::class.java)
 
-    fun returningInsert(monitorPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
+    fun returningInsert(monitor: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {
             Either.Right(
                 dsl
                     .insertInto(MONITOR)
-                    .set(dsl.newRecord(MONITOR, monitorPojo))
+                    .set(dsl.newRecord(MONITOR, monitor))
                     .returning(MONITOR.asterisk())
                     .fetchOneIntoOrThrow<MonitorRecord, MonitorPojo>()
             )
@@ -67,19 +67,19 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
             e.handle()
         }
 
-    fun returningUpdate(updatedPojo: MonitorPojo): Either<PersistenceError, MonitorPojo> =
+    fun returningUpdate(updatedMonitor: MonitorPojo): Either<PersistenceError, MonitorPojo> =
         try {
             Either.Right(
                 dsl
                     .update(MONITOR)
-                    .set(MONITOR.NAME, updatedPojo.name)
-                    .set(MONITOR.URL, updatedPojo.url)
-                    .set(MONITOR.UPTIME_CHECK_INTERVAL, updatedPojo.uptimeCheckInterval)
-                    .set(MONITOR.ENABLED, updatedPojo.enabled)
-                    .set(MONITOR.SSL_CHECK_ENABLED, updatedPojo.sslCheckEnabled)
+                    .set(MONITOR.NAME, updatedMonitor.name)
+                    .set(MONITOR.URL, updatedMonitor.url)
+                    .set(MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
+                    .set(MONITOR.ENABLED, updatedMonitor.enabled)
+                    .set(MONITOR.SSL_CHECK_ENABLED, updatedMonitor.sslCheckEnabled)
                     .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
-                    .set(MONITOR.PAGERDUTY_INTEGRATION_KEY, updatedPojo.pagerdutyIntegrationKey)
-                    .where(MONITOR.ID.eq(updatedPojo.id))
+                    .set(MONITOR.PAGERDUTY_INTEGRATION_KEY, updatedMonitor.pagerdutyIntegrationKey)
+                    .where(MONITOR.ID.eq(updatedMonitor.id))
                     .returning(MONITOR.asterisk())
                     .fetchOneIntoOrThrow<MonitorRecord, MonitorPojo>()
             )

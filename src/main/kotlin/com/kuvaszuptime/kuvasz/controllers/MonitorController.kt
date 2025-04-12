@@ -77,8 +77,8 @@ class MonitorController(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun createMonitor(@Valid monitor: MonitorCreateDto): MonitorDto {
-        val updatedPojo = monitorCrudService.createMonitor(monitor)
-        return MonitorDto.fromMonitorPojo(updatedPojo)
+        val createdMonitor = monitorCrudService.createMonitor(monitor)
+        return MonitorDto.fromMonitorPojo(createdMonitor)
     }
 
     @Status(HttpStatus.NO_CONTENT)
@@ -115,8 +115,8 @@ class MonitorController(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun updateMonitor(monitorId: Int, @Valid monitorUpdateDto: MonitorUpdateDto): MonitorDto {
-        val updatedPojo = monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
-        return MonitorDto.fromMonitorPojo(updatedPojo)
+        val updatedMonitor = monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
+        return MonitorDto.fromMonitorPojo(updatedMonitor)
     }
 
     @ApiResponses(
@@ -138,8 +138,11 @@ class MonitorController(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun upsertPagerdutyIntegrationKey(monitorId: Int, @Valid upsertDto: PagerdutyKeyUpdateDto): MonitorDto {
-        val updatedPojo = monitorCrudService.updatePagerdutyIntegrationKey(monitorId, upsertDto.pagerdutyIntegrationKey)
-        return MonitorDto.fromMonitorPojo(updatedPojo)
+        val updatedMonitor = monitorCrudService.updatePagerdutyIntegrationKey(
+            monitorId,
+            upsertDto.pagerdutyIntegrationKey,
+        )
+        return MonitorDto.fromMonitorPojo(updatedMonitor)
     }
 
     @Status(HttpStatus.NO_CONTENT)
