@@ -237,10 +237,7 @@ jooq {
                     }
                     generate.apply {
                         isDeprecated = false
-                        isValidationAnnotations = true
-                        isJpaAnnotations = true
-                        isPojos = true
-                        isImmutablePojos = false
+                        isValidationAnnotations = false
                         isFluentSetters = true
                         isDaos = true
                     }
