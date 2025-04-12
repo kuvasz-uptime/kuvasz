@@ -58,9 +58,9 @@ class MonitorCrudService(
         )
 
     fun deleteMonitorById(monitorId: Int): Unit =
-        monitorRepository.findById(monitorId)?.let { monitorPojo ->
-            monitorRepository.deleteById(monitorPojo.id)
-            checkScheduler.removeChecksOfMonitor(monitorPojo)
+        monitorRepository.findById(monitorId)?.let { monitor ->
+            monitorRepository.deleteById(monitor.id)
+            checkScheduler.removeChecksOfMonitor(monitor)
         } ?: throw MonitorNotFoundError(monitorId)
 
     fun updateMonitor(monitorId: Int, monitorUpdateDto: MonitorUpdateDto): MonitorPojo =
