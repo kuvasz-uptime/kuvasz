@@ -102,6 +102,7 @@ class UptimeCheckerHttpClientConfigFactory {
     fun configuration(): HttpClientConfiguration {
         val config = DefaultHttpClientConfiguration()
         config.eventLoopGroup = "uptime-check"
+        config.isFollowRedirects = false
         return config
     }
 }

@@ -37,9 +37,6 @@ micronaut:
       swagger-ui:
         paths: classpath:META-INF/swagger/views/swagger-ui
         mapping: /swagger-ui/**
-  http:
-    client:
-      follow-redirects: false
   netty:
     event-loops:
       uptime-check:
