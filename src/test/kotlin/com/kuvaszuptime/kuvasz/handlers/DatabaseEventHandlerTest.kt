@@ -18,7 +18,9 @@ import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -78,6 +80,27 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
                     expectedLatencyRecord!!.latency shouldBe event.latency
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and latency history is disabled") {
+
+                val monitor = createMonitor(monitorRepository, latencyHistoryEnabled = false)
+                val event = MonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1000,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(event)
+
+                then("it should NOT save the latency log record") {
+
+                    uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, event.monitor.id).shouldNotBeNull()
+                    latencyLogRepository.fetchByMonitorId(monitor.id).shouldBeEmpty()
+
+                    verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
+                    verify(exactly = 0) { latencyLogRepositorySpy.insertLatencyForMonitor(any(), any()) }
                 }
             }
 

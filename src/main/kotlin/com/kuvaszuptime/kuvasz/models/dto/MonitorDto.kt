@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
+import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import io.micronaut.core.annotation.Introspected
 import java.time.OffsetDateTime
@@ -13,6 +14,10 @@ data class MonitorDto(
     val enabled: Boolean,
     val sslCheckEnabled: Boolean,
     val pagerdutyKeyPresent: Boolean,
+    val requestMethod: HttpMethod,
+    val latencyHistoryEnabled: Boolean,
+    val forceNoCache: Boolean,
+    val followRedirects: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime?
 ) {
@@ -26,6 +31,10 @@ data class MonitorDto(
                 enabled = pojo.enabled,
                 sslCheckEnabled = pojo.sslCheckEnabled,
                 pagerdutyKeyPresent = !pojo.pagerdutyIntegrationKey.isNullOrBlank(),
+                requestMethod = pojo.requestMethod,
+                latencyHistoryEnabled = pojo.latencyHistoryEnabled,
+                forceNoCache = pojo.forceNoCache,
+                followRedirects = pojo.followRedirects,
                 createdAt = pojo.createdAt,
                 updatedAt = pojo.updatedAt
             )

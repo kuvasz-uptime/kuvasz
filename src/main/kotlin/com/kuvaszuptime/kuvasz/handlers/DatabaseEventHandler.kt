@@ -30,7 +30,9 @@ class DatabaseEventHandler(
     private fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
-            latencyLogRepository.insertLatencyForMonitor(event.monitor.id, event.latency)
+            if (event.monitor.latencyHistoryEnabled) {
+                latencyLogRepository.insertLatencyForMonitor(event.monitor.id, event.latency)
+            }
             handleUptimeMonitorEvent(event)
         }
         eventDispatcher.subscribeToMonitorDownEvents { event ->

@@ -1,15 +1,18 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.testutils.toSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
@@ -34,8 +37,42 @@ class UptimeCheckerTest(
         val uptimeCheckerSpy = spyk(uptimeChecker, recordPrivateCalls = true)
 
         given("the UptimeChecker service") {
-            `when`("it checks a monitor that is UP") {
+            `when`("it checks a monitor that is UP - GET") {
                 val monitor = createMonitor(monitorRepository)
+                val subscriber = TestSubscriber<MonitorUpEvent>()
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
+
+                uptimeCheckerSpy.check(monitor)
+
+                then("it should dispatch a MonitorUpEvent") {
+                    val expectedEvent = subscriber.values().first()
+
+                    subscriber.awaitCount(1)
+                    expectedEvent.status shouldBe HttpStatus.OK
+                    expectedEvent.monitor.id shouldBe monitor.id
+                }
+            }
+
+            `when`("it checks a monitor that is UP - HEAD") {
+                val monitor = createMonitor(monitorRepository, requestMethod = HttpMethod.HEAD)
+                val subscriber = TestSubscriber<MonitorUpEvent>()
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
+
+                uptimeCheckerSpy.check(monitor)
+
+                then("it should dispatch a MonitorUpEvent") {
+                    val expectedEvent = subscriber.values().first()
+
+                    subscriber.awaitCount(1)
+                    expectedEvent.status shouldBe HttpStatus.OK
+                    expectedEvent.monitor.id shouldBe monitor.id
+                }
+            }
+
+            `when`("it checks a monitor that is UP - forceNoCache is false") {
+                val monitor = createMonitor(monitorRepository, forceNoCache = false)
                 val subscriber = TestSubscriber<MonitorUpEvent>()
                 eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
@@ -66,7 +103,7 @@ class UptimeCheckerTest(
             }
 
             `when`("it checks a monitor that is DOWN but then it's UP again") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(monitorRepository, followRedirects = false)
                 val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
                 val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
                 eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
@@ -160,6 +197,31 @@ class UptimeCheckerTest(
                 }
             }
 
+            `when`("it checks a monitor that is redirected, but following redirects is disabled") {
+                val monitor = createMonitor(monitorRepository, followRedirects = false)
+                val redirectSubscriber = TestSubscriber<RedirectEvent>()
+                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
+                val redirectLocation = "http://redirected-bad.loc"
+                val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
+
+                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
+
+                uptimeCheckerSpy.check(monitor)
+
+                then("it should dispatch ony a MonitorDownEvent") {
+                    redirectSubscriber.values().shouldBeEmpty()
+                    val expectedDownEvent = monitorDownSubscriber.values().first()
+
+                    monitorDownSubscriber.awaitCount(1)
+                    expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
+                    expectedDownEvent.error.message shouldBe
+                        "The request was redirected, but the followRedirects option is disabled"
+                    expectedDownEvent.monitor.id shouldBe monitor.id
+                }
+            }
+
             `when`("it checks a monitor that is redirected with a Location header, but it's UP") {
                 val monitor = createMonitor(monitorRepository)
                 val redirectSubscriber = TestSubscriber<RedirectEvent>()
@@ -199,7 +261,7 @@ class UptimeCheckerTest(
         uptimeChecker: UptimeChecker,
         httpStatus: HttpStatus,
         requestUri: URI? = null,
-        additionalHeaders: Map<String, String> = emptyMap()
+        additionalHeaders: Map<String, String> = emptyMap(),
     ) {
         val response = SimpleHttpResponseFactory()
             .status<Any>(httpStatus)
@@ -208,6 +270,11 @@ class UptimeCheckerTest(
                     headers.add(name, value)
                 }
             }
-        every { uptimeChecker["sendHttpRequest"](requestUri ?: allAny<URI>()) } returns fromArray(response)
+        every {
+            uptimeChecker["sendHttpRequest"](
+                any<MonitorPojo>(),
+                requestUri ?: any<URI>()
+            )
+        } returns fromArray(response)
     }
 }

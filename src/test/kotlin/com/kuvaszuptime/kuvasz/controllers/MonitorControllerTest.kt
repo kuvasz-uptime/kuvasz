@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
@@ -25,6 +26,7 @@ import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -91,6 +93,10 @@ class MonitorControllerTest(
                     responseItem.lastSSLCheck shouldBe now
                     responseItem.sslError shouldBe null
                     responseItem.pagerdutyKeyPresent shouldBe true
+                    responseItem.requestMethod shouldBe HttpMethod.GET
+                    responseItem.latencyHistoryEnabled shouldBe true
+                    responseItem.forceNoCache shouldBe true
+                    responseItem.followRedirects shouldBe true
                 }
             }
 
@@ -111,6 +117,10 @@ class MonitorControllerTest(
                     responseItem.sslStatus shouldBe null
                     responseItem.createdAt shouldBe enabledMonitor.createdAt
                     responseItem.pagerdutyKeyPresent shouldBe false
+                    responseItem.requestMethod shouldBe HttpMethod.GET
+                    responseItem.latencyHistoryEnabled shouldBe true
+                    responseItem.forceNoCache shouldBe true
+                    responseItem.followRedirects shouldBe true
                 }
             }
 
@@ -124,7 +134,14 @@ class MonitorControllerTest(
 
         given("MonitorController's getMonitorDetails() endpoint") {
             `when`("there is a monitor with the given ID in the database") {
-                val monitor = createMonitor(monitorRepository, pagerdutyIntegrationKey = "something")
+                val monitor = createMonitor(
+                    monitorRepository,
+                    pagerdutyIntegrationKey = "something",
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = true,
+                    forceNoCache = false,
+                    followRedirects = false,
+                )
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
@@ -159,6 +176,37 @@ class MonitorControllerTest(
                     response.lastSSLCheck shouldBe now
                     response.sslError shouldBe null
                     response.pagerdutyKeyPresent shouldBe true
+                    response.requestMethod shouldBe HttpMethod.HEAD
+                    response.latencyHistoryEnabled shouldBe true
+                    response.forceNoCache shouldBe false
+                    response.followRedirects shouldBe false
+                    response.p95LatencyInMs shouldNotBe null
+                    response.p99LatencyInMs shouldNotBe null
+                }
+            }
+
+            `when`("there is a monitor with the given ID in the database - latency history disabled") {
+                val monitor = createMonitor(
+                    monitorRepository,
+                    pagerdutyIntegrationKey = "something",
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = false,
+                    forceNoCache = false,
+                    followRedirects = false,
+                )
+                // This situation is quite unlikely, because we don't store latency log records if history for them
+                // is disabled, but it's better to test if they are explicitly ignored
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+
+                then("it should return it, but without latency info") {
+                    val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
+                    response.id shouldBe monitor.id
+                    response.latencyHistoryEnabled shouldBe false
+                    response.averageLatencyInMs shouldBe null
+                    response.p95LatencyInMs shouldBe null
+                    response.p99LatencyInMs shouldBe null
                 }
             }
 
@@ -174,25 +222,83 @@ class MonitorControllerTest(
 
         given("MonitorController's createMonitor() endpoint") {
 
-            `when`("it is called with a valid DTO") {
+            `when`("it is called with a valid DTO - default parameters") {
                 val monitorToCreate = MonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
-                    pagerdutyIntegrationKey = "something"
+                )
+                val createdMonitor = monitorClient.createMonitor(monitorToCreate)
+
+                then("it should create a monitor and also schedule checks for it") {
+
+                    val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                    monitorInDb.name shouldBe createdMonitor.name
+                    monitorInDb.url shouldBe createdMonitor.url
+                    monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
+                    monitorInDb.enabled shouldBe true
+                    monitorInDb.enabled shouldBe createdMonitor.enabled
+                    monitorInDb.sslCheckEnabled shouldBe false
+                    monitorInDb.sslCheckEnabled shouldBe createdMonitor.sslCheckEnabled
+                    monitorInDb.createdAt shouldBe createdMonitor.createdAt
+                    monitorInDb.pagerdutyIntegrationKey shouldBe null
+                    monitorInDb.pagerdutyIntegrationKey shouldBe monitorToCreate.pagerdutyIntegrationKey
+                    monitorInDb.requestMethod shouldBe HttpMethod.GET
+                    monitorInDb.requestMethod shouldBe createdMonitor.requestMethod
+                    monitorInDb.latencyHistoryEnabled shouldBe true
+                    monitorInDb.latencyHistoryEnabled shouldBe createdMonitor.latencyHistoryEnabled
+                    monitorInDb.forceNoCache shouldBe true
+                    monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
+                    monitorInDb.followRedirects shouldBe true
+                    monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+
+                    checkScheduler.getScheduledChecks()
+                        .filter { it.monitorId == createdMonitor.id }
+                        .forOne { it.checkType shouldBe CheckType.UPTIME }
+                }
+            }
+
+            `when`("it is called with a valid DTO - explicit parameters") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor2",
+                    url = "https://valid-url2.com",
+                    uptimeCheckInterval = 65,
+                    enabled = false,
+                    sslCheckEnabled = true,
+                    pagerdutyIntegrationKey = "something",
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = false,
+                    forceNoCache = false,
+                    followRedirects = false
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
                 then("it should create a monitor and also schedule checks for it") {
                     val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                    monitorInDb.name shouldBe "test_monitor2"
                     monitorInDb.name shouldBe createdMonitor.name
+                    monitorInDb.url shouldBe "https://valid-url2.com"
                     monitorInDb.url shouldBe createdMonitor.url
+                    monitorInDb.uptimeCheckInterval shouldBe 65
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
+                    monitorInDb.enabled shouldBe false
                     monitorInDb.enabled shouldBe createdMonitor.enabled
+                    monitorInDb.sslCheckEnabled shouldBe true
+                    monitorInDb.sslCheckEnabled shouldBe createdMonitor.sslCheckEnabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
-                    monitorInDb.pagerdutyIntegrationKey shouldBe monitorToCreate.pagerdutyIntegrationKey
-                    checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
-                        .forOne { it.checkType shouldBe CheckType.UPTIME }
+                    monitorInDb.pagerdutyIntegrationKey shouldBe "something"
+                    monitorInDb.requestMethod shouldBe HttpMethod.HEAD
+                    monitorInDb.requestMethod shouldBe createdMonitor.requestMethod
+                    monitorInDb.latencyHistoryEnabled shouldBe false
+                    monitorInDb.latencyHistoryEnabled shouldBe createdMonitor.latencyHistoryEnabled
+                    monitorInDb.forceNoCache shouldBe false
+                    monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
+                    monitorInDb.followRedirects shouldBe false
+                    monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+
+                    checkScheduler.getScheduledChecks()
+                        .filter { it.monitorId == createdMonitor.id }
+                        .shouldBeEmpty()
                 }
             }
 
@@ -317,7 +423,11 @@ class MonitorControllerTest(
                     url = "https://updated-url.com",
                     uptimeCheckInterval = 5000,
                     enabled = false,
-                    sslCheckEnabled = false
+                    sslCheckEnabled = false,
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = false,
+                    forceNoCache = false,
+                    followRedirects = false,
                 )
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
@@ -331,6 +441,14 @@ class MonitorControllerTest(
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
                     monitorInDb.pagerdutyIntegrationKey shouldBe createDto.pagerdutyIntegrationKey
+                    monitorInDb.requestMethod shouldNotBe createdMonitor.requestMethod
+                    monitorInDb.requestMethod shouldBe updateDto.requestMethod
+                    monitorInDb.latencyHistoryEnabled shouldNotBe createdMonitor.latencyHistoryEnabled
+                    monitorInDb.latencyHistoryEnabled shouldBe updateDto.latencyHistoryEnabled
+                    monitorInDb.forceNoCache shouldNotBe createdMonitor.forceNoCache
+                    monitorInDb.forceNoCache shouldBe updateDto.forceNoCache
+                    monitorInDb.followRedirects shouldNotBe createdMonitor.followRedirects
+                    monitorInDb.followRedirects shouldBe updateDto.followRedirects
 
                     val updatedChecks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
                     updatedChecks.shouldBeEmpty()
@@ -353,7 +471,11 @@ class MonitorControllerTest(
                     url = null,
                     uptimeCheckInterval = null,
                     enabled = true,
-                    sslCheckEnabled = true
+                    sslCheckEnabled = true,
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = false,
+                    forceNoCache = false,
+                    followRedirects = false,
                 )
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
@@ -367,10 +489,45 @@ class MonitorControllerTest(
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
                     monitorInDb.pagerdutyIntegrationKey shouldBe createDto.pagerdutyIntegrationKey
+                    monitorInDb.requestMethod shouldBe updateDto.requestMethod
+                    monitorInDb.latencyHistoryEnabled shouldBe updateDto.latencyHistoryEnabled
+                    monitorInDb.forceNoCache shouldBe updateDto.forceNoCache
+                    monitorInDb.followRedirects shouldBe updateDto.followRedirects
 
                     val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
                     checks.forOne { it.checkType shouldBe CheckType.UPTIME }
                     checks.forOne { it.checkType shouldBe CheckType.SSL }
+                }
+            }
+
+            `when`("it is called to disable the latency history and there are previous latency logs") {
+
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    latencyHistoryEnabled = true
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+                latencyLogRepository.insertLatencyForMonitor(createdMonitor.id, 1200)
+                latencyLogRepository.fetchByMonitorId(createdMonitor.id).shouldNotBeEmpty()
+
+                val updateDto = MonitorUpdateDto(
+                    name = null,
+                    url = null,
+                    uptimeCheckInterval = null,
+                    enabled = null,
+                    sslCheckEnabled = null,
+                    requestMethod = null,
+                    latencyHistoryEnabled = false,
+                    forceNoCache = null,
+                    followRedirects = null,
+                )
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
+
+                then("it should remove the existing latency log records as well") {
+                    latencyLogRepository.fetchByMonitorId(createdMonitor.id).shouldBeEmpty()
                 }
             }
 
@@ -393,7 +550,11 @@ class MonitorControllerTest(
                     url = null,
                     uptimeCheckInterval = null,
                     enabled = null,
-                    sslCheckEnabled = null
+                    sslCheckEnabled = null,
+                    requestMethod = null,
+                    latencyHistoryEnabled = null,
+                    forceNoCache = null,
+                    followRedirects = null,
                 )
                 val updateRequest =
                     HttpRequest.PATCH<MonitorUpdateDto>("/monitors/${firstCreatedMonitor.id}", updateDto)
@@ -409,7 +570,17 @@ class MonitorControllerTest(
             }
 
             `when`("it is called with a non existing monitor ID") {
-                val updateDto = MonitorUpdateDto(null, null, null, null, null)
+                val updateDto = MonitorUpdateDto(
+                    name = null,
+                    url = null,
+                    uptimeCheckInterval = null,
+                    enabled = null,
+                    sslCheckEnabled = null,
+                    requestMethod = null,
+                    latencyHistoryEnabled = null,
+                    forceNoCache = null,
+                    followRedirects = null,
+                )
                 val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/monitors/123232", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)

@@ -6,6 +6,7 @@ package com.kuvaszuptime.kuvasz.tables;
 
 import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Keys;
+import com.kuvaszuptime.kuvasz.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.tables.LatencyLog.LatencyLogPath;
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SslEventPath;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UptimeEventPath;
@@ -105,6 +106,26 @@ public class Monitor extends TableImpl<MonitorRecord> {
      * The column <code>monitor.pagerduty_integration_key</code>.
      */
     public final TableField<MonitorRecord, String> PAGERDUTY_INTEGRATION_KEY = createField(DSL.name("pagerduty_integration_key"), SQLDataType.VARCHAR, this, "");
+
+    /**
+     * The column <code>monitor.latency_history_enabled</code>.
+     */
+    public final TableField<MonitorRecord, Boolean> LATENCY_HISTORY_ENABLED = createField(DSL.name("latency_history_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>monitor.follow_redirects</code>.
+     */
+    public final TableField<MonitorRecord, Boolean> FOLLOW_REDIRECTS = createField(DSL.name("follow_redirects"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>monitor.force_no_cache</code>.
+     */
+    public final TableField<MonitorRecord, Boolean> FORCE_NO_CACHE = createField(DSL.name("force_no_cache"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>monitor.request_method</code>.
+     */
+    public final TableField<MonitorRecord, HttpMethod> REQUEST_METHOD = createField(DSL.name("request_method"), SQLDataType.VARCHAR.nullable(false).defaultValue(DSL.field(DSL.raw("'GET'::kuvasz.http_method"), SQLDataType.VARCHAR)).asEnumDataType(HttpMethod.class), this, "");
 
     private Monitor(Name alias, Table<MonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

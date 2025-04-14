@@ -34,6 +34,11 @@ class LatencyLogRepository(jooqConfig: Configuration) : LatencyLogDao(jooqConfig
             .where(LATENCY_LOG.CREATED_AT.lessThan(limit))
             .execute()
 
+    fun deleteAllByMonitorId(monitorId: Int) =
+        dsl.delete(LATENCY_LOG)
+            .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
+            .execute()
+
     // Well well, that's not so performant in case of a really huge dataset. Definitely something that should be
     // improved in the future.
     fun getLatencyPercentiles(monitorId: Int? = null): List<PercentileResult> =
