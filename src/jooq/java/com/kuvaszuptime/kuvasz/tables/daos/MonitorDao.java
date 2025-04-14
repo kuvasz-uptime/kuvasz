@@ -4,6 +4,7 @@
 package com.kuvaszuptime.kuvasz.tables.daos;
 
 
+import com.kuvaszuptime.kuvasz.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.tables.Monitor;
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo;
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord;
@@ -203,5 +204,65 @@ public class MonitorDao extends DAOImpl<MonitorRecord, MonitorPojo, Integer> {
      */
     public List<MonitorPojo> fetchByPagerdutyIntegrationKey(String... values) {
         return fetch(Monitor.MONITOR.PAGERDUTY_INTEGRATION_KEY, values);
+    }
+
+    /**
+     * Fetch records that have <code>latency_history_enabled BETWEEN
+     * lowerInclusive AND upperInclusive</code>
+     */
+    public List<MonitorPojo> fetchRangeOfLatencyHistoryEnabled(Boolean lowerInclusive, Boolean upperInclusive) {
+        return fetchRange(Monitor.MONITOR.LATENCY_HISTORY_ENABLED, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>latency_history_enabled IN (values)</code>
+     */
+    public List<MonitorPojo> fetchByLatencyHistoryEnabled(Boolean... values) {
+        return fetch(Monitor.MONITOR.LATENCY_HISTORY_ENABLED, values);
+    }
+
+    /**
+     * Fetch records that have <code>follow_redirects BETWEEN lowerInclusive AND
+     * upperInclusive</code>
+     */
+    public List<MonitorPojo> fetchRangeOfFollowRedirects(Boolean lowerInclusive, Boolean upperInclusive) {
+        return fetchRange(Monitor.MONITOR.FOLLOW_REDIRECTS, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>follow_redirects IN (values)</code>
+     */
+    public List<MonitorPojo> fetchByFollowRedirects(Boolean... values) {
+        return fetch(Monitor.MONITOR.FOLLOW_REDIRECTS, values);
+    }
+
+    /**
+     * Fetch records that have <code>force_no_cache BETWEEN lowerInclusive AND
+     * upperInclusive</code>
+     */
+    public List<MonitorPojo> fetchRangeOfForceNoCache(Boolean lowerInclusive, Boolean upperInclusive) {
+        return fetchRange(Monitor.MONITOR.FORCE_NO_CACHE, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>force_no_cache IN (values)</code>
+     */
+    public List<MonitorPojo> fetchByForceNoCache(Boolean... values) {
+        return fetch(Monitor.MONITOR.FORCE_NO_CACHE, values);
+    }
+
+    /**
+     * Fetch records that have <code>request_method BETWEEN lowerInclusive AND
+     * upperInclusive</code>
+     */
+    public List<MonitorPojo> fetchRangeOfRequestMethod(HttpMethod lowerInclusive, HttpMethod upperInclusive) {
+        return fetchRange(Monitor.MONITOR.REQUEST_METHOD, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>request_method IN (values)</code>
+     */
+    public List<MonitorPojo> fetchByRequestMethod(HttpMethod... values) {
+        return fetch(Monitor.MONITOR.REQUEST_METHOD, values);
     }
 }

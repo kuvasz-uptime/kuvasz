@@ -9,7 +9,12 @@ import io.kotest.data.table
 import io.kotest.matchers.booleans.shouldBeTrue
 import java.net.URL
 
-@Ignored("badssl.com seems to be broken") // FIXME
+/**
+ * FIXME
+ * Since the logic behind wasn't changed since it's broke, we can assume that SSL check still works, but better stay
+ * on the safe side and fix this test later
+*/
+@Ignored("badssl.com seems to be broken")
 class SSLValidatorTest : StringSpec(
     {
         val validator = SSLValidator()

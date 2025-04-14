@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.mocks
 
+import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
@@ -10,6 +11,7 @@ import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
 import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.matchers.nulls.shouldNotBeNull
 import java.time.OffsetDateTime
 
 @Suppress("LongParameterList")
@@ -21,7 +23,11 @@ fun createMonitor(
     uptimeCheckInterval: Int = 30000,
     monitorName: String = "testMonitor",
     url: String = "http://irrelevant.com",
-    pagerdutyIntegrationKey: String? = null
+    pagerdutyIntegrationKey: String? = null,
+    requestMethod: HttpMethod = HttpMethod.GET,
+    latencyHistoryEnabled: Boolean = true,
+    forceNoCache: Boolean = true,
+    followRedirects: Boolean = true,
 ): MonitorPojo {
     val monitor = MonitorPojo()
         .setId(id)
@@ -30,10 +36,14 @@ fun createMonitor(
         .setUrl(url)
         .setPagerdutyIntegrationKey(pagerdutyIntegrationKey)
         .setEnabled(enabled)
+        .setRequestMethod(requestMethod)
         .setSslCheckEnabled(sslCheckEnabled)
         .setCreatedAt(getCurrentTimestamp())
-    repository.insert(monitor)
-    return monitor
+        .setRequestMethod(requestMethod)
+        .setLatencyHistoryEnabled(latencyHistoryEnabled)
+        .setForceNoCache(forceNoCache)
+        .setFollowRedirects(followRedirects)
+    return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 
 fun createUptimeEventRecord(

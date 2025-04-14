@@ -4,6 +4,8 @@
 package com.kuvaszuptime.kuvasz.tables.pojos;
 
 
+import com.kuvaszuptime.kuvasz.enums.HttpMethod;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 
@@ -25,6 +27,10 @@ public class MonitorPojo implements Serializable {
     private OffsetDateTime updatedAt;
     private Boolean sslCheckEnabled;
     private String pagerdutyIntegrationKey;
+    private Boolean latencyHistoryEnabled;
+    private Boolean followRedirects;
+    private Boolean forceNoCache;
+    private HttpMethod requestMethod;
 
     public MonitorPojo() {}
 
@@ -38,6 +44,10 @@ public class MonitorPojo implements Serializable {
         this.updatedAt = value.updatedAt;
         this.sslCheckEnabled = value.sslCheckEnabled;
         this.pagerdutyIntegrationKey = value.pagerdutyIntegrationKey;
+        this.latencyHistoryEnabled = value.latencyHistoryEnabled;
+        this.followRedirects = value.followRedirects;
+        this.forceNoCache = value.forceNoCache;
+        this.requestMethod = value.requestMethod;
     }
 
     public MonitorPojo(
@@ -49,7 +59,11 @@ public class MonitorPojo implements Serializable {
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         Boolean sslCheckEnabled,
-        String pagerdutyIntegrationKey
+        String pagerdutyIntegrationKey,
+        Boolean latencyHistoryEnabled,
+        Boolean followRedirects,
+        Boolean forceNoCache,
+        HttpMethod requestMethod
     ) {
         this.id = id;
         this.name = name;
@@ -60,6 +74,10 @@ public class MonitorPojo implements Serializable {
         this.updatedAt = updatedAt;
         this.sslCheckEnabled = sslCheckEnabled;
         this.pagerdutyIntegrationKey = pagerdutyIntegrationKey;
+        this.latencyHistoryEnabled = latencyHistoryEnabled;
+        this.followRedirects = followRedirects;
+        this.forceNoCache = forceNoCache;
+        this.requestMethod = requestMethod;
     }
 
     /**
@@ -199,6 +217,66 @@ public class MonitorPojo implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>monitor.latency_history_enabled</code>.
+     */
+    public Boolean getLatencyHistoryEnabled() {
+        return this.latencyHistoryEnabled;
+    }
+
+    /**
+     * Setter for <code>monitor.latency_history_enabled</code>.
+     */
+    public MonitorPojo setLatencyHistoryEnabled(Boolean latencyHistoryEnabled) {
+        this.latencyHistoryEnabled = latencyHistoryEnabled;
+        return this;
+    }
+
+    /**
+     * Getter for <code>monitor.follow_redirects</code>.
+     */
+    public Boolean getFollowRedirects() {
+        return this.followRedirects;
+    }
+
+    /**
+     * Setter for <code>monitor.follow_redirects</code>.
+     */
+    public MonitorPojo setFollowRedirects(Boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        return this;
+    }
+
+    /**
+     * Getter for <code>monitor.force_no_cache</code>.
+     */
+    public Boolean getForceNoCache() {
+        return this.forceNoCache;
+    }
+
+    /**
+     * Setter for <code>monitor.force_no_cache</code>.
+     */
+    public MonitorPojo setForceNoCache(Boolean forceNoCache) {
+        this.forceNoCache = forceNoCache;
+        return this;
+    }
+
+    /**
+     * Getter for <code>monitor.request_method</code>.
+     */
+    public HttpMethod getRequestMethod() {
+        return this.requestMethod;
+    }
+
+    /**
+     * Setter for <code>monitor.request_method</code>.
+     */
+    public MonitorPojo setRequestMethod(HttpMethod requestMethod) {
+        this.requestMethod = requestMethod;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -262,6 +340,30 @@ public class MonitorPojo implements Serializable {
         }
         else if (!this.pagerdutyIntegrationKey.equals(other.pagerdutyIntegrationKey))
             return false;
+        if (this.latencyHistoryEnabled == null) {
+            if (other.latencyHistoryEnabled != null)
+                return false;
+        }
+        else if (!this.latencyHistoryEnabled.equals(other.latencyHistoryEnabled))
+            return false;
+        if (this.followRedirects == null) {
+            if (other.followRedirects != null)
+                return false;
+        }
+        else if (!this.followRedirects.equals(other.followRedirects))
+            return false;
+        if (this.forceNoCache == null) {
+            if (other.forceNoCache != null)
+                return false;
+        }
+        else if (!this.forceNoCache.equals(other.forceNoCache))
+            return false;
+        if (this.requestMethod == null) {
+            if (other.requestMethod != null)
+                return false;
+        }
+        else if (!this.requestMethod.equals(other.requestMethod))
+            return false;
         return true;
     }
 
@@ -278,6 +380,10 @@ public class MonitorPojo implements Serializable {
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.sslCheckEnabled == null) ? 0 : this.sslCheckEnabled.hashCode());
         result = prime * result + ((this.pagerdutyIntegrationKey == null) ? 0 : this.pagerdutyIntegrationKey.hashCode());
+        result = prime * result + ((this.latencyHistoryEnabled == null) ? 0 : this.latencyHistoryEnabled.hashCode());
+        result = prime * result + ((this.followRedirects == null) ? 0 : this.followRedirects.hashCode());
+        result = prime * result + ((this.forceNoCache == null) ? 0 : this.forceNoCache.hashCode());
+        result = prime * result + ((this.requestMethod == null) ? 0 : this.requestMethod.hashCode());
         return result;
     }
 
@@ -294,6 +400,10 @@ public class MonitorPojo implements Serializable {
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(sslCheckEnabled);
         sb.append(", ").append(pagerdutyIntegrationKey);
+        sb.append(", ").append(latencyHistoryEnabled);
+        sb.append(", ").append(followRedirects);
+        sb.append(", ").append(forceNoCache);
+        sb.append(", ").append(requestMethod);
 
         sb.append(")");
         return sb.toString();

@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
+import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import io.micronaut.core.annotation.Introspected
@@ -27,5 +28,9 @@ data class MonitorDetailsDto(
     val averageLatencyInMs: Int?,
     val p95LatencyInMs: Int?,
     val p99LatencyInMs: Int?,
-    val pagerdutyKeyPresent: Boolean
+    val pagerdutyKeyPresent: Boolean,
+    val requestMethod: HttpMethod,
+    val latencyHistoryEnabled: Boolean,
+    val forceNoCache: Boolean,
+    val followRedirects: Boolean,
 )

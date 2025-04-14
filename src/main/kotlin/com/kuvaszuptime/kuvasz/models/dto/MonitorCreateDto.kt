@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
+import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
 import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
@@ -21,7 +22,11 @@ data class MonitorCreateDto(
     val uptimeCheckInterval: Int,
     val enabled: Boolean? = true,
     val sslCheckEnabled: Boolean? = false,
-    val pagerdutyIntegrationKey: String? = null
+    val pagerdutyIntegrationKey: String? = null,
+    val requestMethod: HttpMethod? = HttpMethod.GET,
+    val latencyHistoryEnabled: Boolean? = true,
+    val forceNoCache: Boolean? = true,
+    val followRedirects: Boolean? = true,
 ) {
     fun toMonitorPojo(): MonitorPojo = MonitorPojo()
         .setName(name)
@@ -30,4 +35,8 @@ data class MonitorCreateDto(
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setSslCheckEnabled(sslCheckEnabled)
         .setPagerdutyIntegrationKey(pagerdutyIntegrationKey)
+        .setRequestMethod(requestMethod)
+        .setLatencyHistoryEnabled(latencyHistoryEnabled)
+        .setForceNoCache(forceNoCache)
+        .setFollowRedirects(followRedirects)
 }
