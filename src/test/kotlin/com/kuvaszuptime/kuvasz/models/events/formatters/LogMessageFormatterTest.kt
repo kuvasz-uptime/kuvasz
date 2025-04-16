@@ -5,9 +5,9 @@ import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.*
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toDurationString
@@ -20,7 +20,7 @@ class LogMessageFormatterTest : BehaviorSpec(
     {
         val formatter = LogMessageFormatter
 
-        val monitor = MonitorPojo()
+        val monitor = MonitorRecord()
             .setId(1111)
             .setName("test_monitor")
             .setUrl("https://test.url")
@@ -38,7 +38,7 @@ class LogMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets a MonitorUpEvent with a previousEvent with the same status") {
-                val previousEvent = UptimeEventPojo().setStatus(UptimeStatus.UP)
+                val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.UP)
                 val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
 
                 then("it should return the correct message") {
@@ -50,7 +50,7 @@ class LogMessageFormatterTest : BehaviorSpec(
 
             `when`("it gets a MonitorUpEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
-                val previousEvent = UptimeEventPojo().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
+                val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
                 val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
 
                 then("it should return the correct message") {
@@ -74,7 +74,7 @@ class LogMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets a MonitorDownEvent with a previousEvent with the same status") {
-                val previousEvent = UptimeEventPojo().setStatus(UptimeStatus.DOWN)
+                val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.DOWN)
                 val event = MonitorDownEvent(
                     monitor,
                     HttpStatus.BAD_REQUEST,
@@ -91,7 +91,7 @@ class LogMessageFormatterTest : BehaviorSpec(
 
             `when`("it gets a MonitorDownEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
-                val previousEvent = UptimeEventPojo().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
+                val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
                 val event = MonitorDownEvent(
                     monitor,
                     HttpStatus.BAD_REQUEST,
@@ -136,7 +136,7 @@ class LogMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets an SSLValidEvent with a previousEvent with the same status") {
-                val previousEvent = SslEventPojo().setStatus(SslStatus.VALID)
+                val previousEvent = SslEventRecord().setStatus(SslStatus.VALID)
                 val event = SSLValidEvent(monitor, generateCertificateInfo(), previousEvent)
 
                 then("it should return the correct message") {
@@ -148,7 +148,7 @@ class LogMessageFormatterTest : BehaviorSpec(
 
             `when`("it gets an SSLValidEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
-                val previousEvent = SslEventPojo().setStatus(SslStatus.INVALID).setStartedAt(previousStartedAt)
+                val previousEvent = SslEventRecord().setStatus(SslStatus.INVALID).setStartedAt(previousStartedAt)
                 val event = SSLValidEvent(monitor, generateCertificateInfo(), previousEvent)
 
                 then("it should return the correct message") {
@@ -172,7 +172,7 @@ class LogMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets an SSLInvalidEvent with a previousEvent with the same status") {
-                val previousEvent = SslEventPojo().setStatus(SslStatus.INVALID)
+                val previousEvent = SslEventRecord().setStatus(SslStatus.INVALID)
                 val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), previousEvent)
 
                 then("it should return the correct message") {
@@ -184,7 +184,7 @@ class LogMessageFormatterTest : BehaviorSpec(
 
             `when`("it gets an SSLInvalidEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
-                val previousEvent = SslEventPojo().setStatus(SslStatus.VALID).setStartedAt(previousStartedAt)
+                val previousEvent = SslEventRecord().setStatus(SslStatus.VALID).setStartedAt(previousStartedAt)
                 val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), previousEvent)
 
                 then("it should return the correct message") {

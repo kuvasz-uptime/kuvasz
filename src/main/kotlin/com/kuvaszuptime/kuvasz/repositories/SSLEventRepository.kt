@@ -4,19 +4,18 @@ import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
-import com.kuvaszuptime.kuvasz.tables.daos.SslEventDao
-import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
+import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
 import jakarta.inject.Singleton
 import org.jooq.Configuration
 import org.jooq.impl.DSL
 import java.time.OffsetDateTime
 
 @Singleton
-class SSLEventRepository(private val jooqConfig: Configuration) : SslEventDao(jooqConfig) {
+class SSLEventRepository(private val jooqConfig: Configuration) {
     private val dsl = jooqConfig.dsl()
 
     fun insertFromMonitorEvent(event: SSLMonitorEvent, configuration: Configuration? = jooqConfig) {
-        val eventToInsert = SslEventPojo()
+        val eventToInsert = SslEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.sslStatus)
             .setStartedAt(event.dispatchedAt)
@@ -32,12 +31,11 @@ class SSLEventRepository(private val jooqConfig: Configuration) : SslEventDao(jo
             .execute()
     }
 
-    fun getPreviousEventByMonitorId(monitorId: Int): SslEventPojo? =
-        dsl.select(SSL_EVENT.asterisk())
-            .from(SSL_EVENT)
+    fun getPreviousEventByMonitorId(monitorId: Int): SslEventRecord? =
+        dsl.selectFrom(SSL_EVENT)
             .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
             .and(SSL_EVENT.ENDED_AT.isNull)
-            .fetchOneInto(SslEventPojo::class.java)
+            .fetchOne()
 
     fun endEventById(eventId: Int, endedAt: OffsetDateTime, configuration: Configuration? = jooqConfig) =
         DSL.using(configuration)
@@ -58,6 +56,11 @@ class SSLEventRepository(private val jooqConfig: Configuration) : SslEventDao(jo
             .set(SSL_EVENT.UPDATED_AT, updatedAt)
             .where(SSL_EVENT.ID.eq(eventId))
             .execute()
+
+    fun fetchByMonitorId(monitorId: Int): List<SslEventRecord> = dsl
+        .selectFrom(SSL_EVENT)
+        .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
+        .fetch()
 
     fun getEventsByMonitorId(monitorId: Int): List<SSLEventDto> =
         dsl

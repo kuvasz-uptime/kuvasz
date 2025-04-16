@@ -6,7 +6,6 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 import com.kuvaszuptime.kuvasz.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.tables.Monitor;
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo;
 
 import java.time.OffsetDateTime;
 
@@ -259,29 +258,5 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         setForceNoCache(forceNoCache);
         setRequestMethod(requestMethod);
         resetChangedOnNotNull();
-    }
-
-    /**
-     * Create a detached, initialised MonitorRecord
-     */
-    public MonitorRecord(MonitorPojo value) {
-        super(Monitor.MONITOR);
-
-        if (value != null) {
-            setId(value.getId());
-            setName(value.getName());
-            setUrl(value.getUrl());
-            setUptimeCheckInterval(value.getUptimeCheckInterval());
-            setEnabled(value.getEnabled());
-            setCreatedAt(value.getCreatedAt());
-            setUpdatedAt(value.getUpdatedAt());
-            setSslCheckEnabled(value.getSslCheckEnabled());
-            setPagerdutyIntegrationKey(value.getPagerdutyIntegrationKey());
-            setLatencyHistoryEnabled(value.getLatencyHistoryEnabled());
-            setFollowRedirects(value.getFollowRedirects());
-            setForceNoCache(value.getForceNoCache());
-            setRequestMethod(value.getRequestMethod());
-            resetChangedOnNotNull();
-        }
     }
 }

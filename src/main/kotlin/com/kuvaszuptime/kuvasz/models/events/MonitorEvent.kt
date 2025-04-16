@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toDurationString
@@ -15,7 +15,7 @@ import java.net.URI
 import kotlin.time.Duration
 
 sealed class MonitorEvent {
-    abstract val monitor: MonitorPojo
+    abstract val monitor: MonitorRecord
 
     abstract fun toStructuredMessage(): StructuredMessage
 
@@ -23,11 +23,11 @@ sealed class MonitorEvent {
 }
 
 sealed class UptimeMonitorEvent : MonitorEvent() {
-    abstract val previousEvent: UptimeEventPojo?
+    abstract val previousEvent: UptimeEventRecord?
 
     abstract val uptimeStatus: UptimeStatus
 
-    fun statusNotEquals(previousEvent: UptimeEventPojo) = !statusEquals(previousEvent)
+    fun statusNotEquals(previousEvent: UptimeEventRecord) = !statusEquals(previousEvent)
 
     fun getEndedEventDuration(): Duration? =
         previousEvent?.let { previousEvent ->
@@ -43,14 +43,14 @@ sealed class UptimeMonitorEvent : MonitorEvent() {
             }
         } ?: toRun(this)
 
-    private fun statusEquals(previousEvent: UptimeEventPojo) = uptimeStatus == previousEvent.status
+    private fun statusEquals(previousEvent: UptimeEventRecord) = uptimeStatus == previousEvent.status
 }
 
 data class MonitorUpEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val status: HttpStatus,
     val latency: Int,
-    override val previousEvent: UptimeEventPojo?
+    override val previousEvent: UptimeEventRecord?
 ) : UptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.UP
@@ -64,10 +64,10 @@ data class MonitorUpEvent(
 }
 
 data class MonitorDownEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val status: HttpStatus?,
     val error: Throwable,
-    override val previousEvent: UptimeEventPojo?
+    override val previousEvent: UptimeEventRecord?
 ) : UptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN
@@ -82,7 +82,7 @@ data class MonitorDownEvent(
 }
 
 data class RedirectEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val redirectLocation: URI
 ) : MonitorEvent() {
 
@@ -92,11 +92,11 @@ data class RedirectEvent(
 }
 
 sealed class SSLMonitorEvent : MonitorEvent() {
-    abstract val previousEvent: SslEventPojo?
+    abstract val previousEvent: SslEventRecord?
 
     abstract val sslStatus: SslStatus
 
-    fun statusNotEquals(previousEvent: SslEventPojo) = !statusEquals(previousEvent)
+    fun statusNotEquals(previousEvent: SslEventRecord) = !statusEquals(previousEvent)
 
     fun getEndedEventDuration(): Duration? =
         previousEvent?.let { previousEvent ->
@@ -114,13 +114,13 @@ sealed class SSLMonitorEvent : MonitorEvent() {
             }
         } ?: toRun(this)
 
-    private fun statusEquals(previousEvent: SslEventPojo) = sslStatus == previousEvent.status
+    private fun statusEquals(previousEvent: SslEventRecord) = sslStatus == previousEvent.status
 }
 
 data class SSLValidEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val certInfo: CertificateInfo,
-    override val previousEvent: SslEventPojo?
+    override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent() {
 
     override val sslStatus = SslStatus.VALID
@@ -134,9 +134,9 @@ data class SSLValidEvent(
 }
 
 data class SSLInvalidEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val error: SSLValidationError,
-    override val previousEvent: SslEventPojo?
+    override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent() {
 
     override val sslStatus = SslStatus.INVALID
@@ -151,9 +151,9 @@ data class SSLInvalidEvent(
 }
 
 data class SSLWillExpireEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val certInfo: CertificateInfo,
-    override val previousEvent: SslEventPojo?
+    override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent() {
 
     override val sslStatus = SslStatus.WILL_EXPIRE

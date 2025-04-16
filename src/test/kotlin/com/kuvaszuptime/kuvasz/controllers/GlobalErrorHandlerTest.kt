@@ -1,9 +1,12 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.*
+import com.kuvaszuptime.kuvasz.models.DuplicationError
+import com.kuvaszuptime.kuvasz.models.PersistenceError
+import com.kuvaszuptime.kuvasz.models.SchedulingError
+import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -33,7 +36,7 @@ class GlobalErrorHandlerTest(
             val request = HttpRequest.POST<String>("/monitors", "not-a-json")
             val exception = shouldThrow<HttpClientResponseException> {
                 client.toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
             }
 
             then("should return a 400 with the correct error message") {
@@ -50,7 +53,7 @@ class GlobalErrorHandlerTest(
                 HttpRequest.POST<String>("/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
             val exception = shouldThrow<HttpClientResponseException> {
                 client.toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
             }
 
             then("should return a 400 with the correct error message") {
@@ -76,7 +79,7 @@ class GlobalErrorHandlerTest(
             val exception = shouldThrow<HttpClientResponseException> {
                 client
                     .toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
             }
 
             then("should return a 500 with the correct error message") {
@@ -102,7 +105,7 @@ class GlobalErrorHandlerTest(
             val exception = shouldThrow<HttpClientResponseException> {
                 client
                     .toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
             }
             then("should return a 500 with the correct error message") {
                 exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
@@ -126,7 +129,7 @@ class GlobalErrorHandlerTest(
             val exception = shouldThrow<HttpClientResponseException> {
                 client
                     .toBlocking()
-                    .exchange(request, Argument.of(MonitorPojo::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
             }
 
             then("should return a 409 with the correct error message") {

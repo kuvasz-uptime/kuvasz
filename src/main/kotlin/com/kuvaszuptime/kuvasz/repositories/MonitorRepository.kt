@@ -9,10 +9,8 @@ import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
-import com.kuvaszuptime.kuvasz.tables.daos.MonitorDao
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
-import com.kuvaszuptime.kuvasz.util.fetchOneIntoOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import io.micronaut.core.util.StringUtils
@@ -25,7 +23,7 @@ import org.jooq.impl.SQLDataType
 import java.math.BigDecimal
 
 @Singleton
-class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
+class MonitorRepository(jooqConfig: Configuration) {
 
     private val dsl = jooqConfig.dsl()
 
@@ -41,11 +39,25 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
         SSL_EVENT.ERROR
     )
 
-    fun findById(monitorId: Int, txCtx: DSLContext = this.dsl): MonitorPojo? =
-        txCtx
-            .selectFrom(MONITOR)
-            .where(MONITOR.ID.eq(monitorId))
-            .fetchOneInto(MonitorPojo::class.java)
+    fun findById(monitorId: Int, txCtx: DSLContext = this.dsl): MonitorRecord? = txCtx
+        .selectFrom(MONITOR)
+        .where(MONITOR.ID.eq(monitorId))
+        .fetchOne()
+
+    fun findByName(name: String): MonitorRecord? = dsl
+        .selectFrom(MONITOR)
+        .where(MONITOR.NAME.eq(name))
+        .fetchOne()
+
+    fun fetchByEnabled(enabled: Boolean): List<MonitorRecord> = dsl
+        .selectFrom(MONITOR)
+        .where(MONITOR.ENABLED.eq(enabled))
+        .fetch()
+
+    fun deleteById(monitorId: Int): Int = dsl
+        .deleteFrom(MONITOR)
+        .where(MONITOR.ID.eq(monitorId))
+        .execute()
 
     fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         monitorDetailsSelect()
@@ -63,23 +75,23 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
             .groupBy(detailsGroupByFields)
             .fetchOneInto(MonitorDetailsDto::class.java)
 
-    fun returningInsert(monitor: MonitorPojo): Either<PersistenceError, MonitorPojo> =
+    fun returningInsert(monitor: MonitorRecord): Either<PersistenceError, MonitorRecord> =
         try {
             Either.Right(
                 dsl
                     .insertInto(MONITOR)
-                    .set(dsl.newRecord(MONITOR, monitor))
+                    .set(monitor)
                     .returning(MONITOR.asterisk())
-                    .fetchOneIntoOrThrow<MonitorRecord, MonitorPojo>()
+                    .fetchOneOrThrow<MonitorRecord>()
             )
         } catch (e: DataAccessException) {
             e.handle()
         }
 
     fun returningUpdate(
-        updatedMonitor: MonitorPojo,
+        updatedMonitor: MonitorRecord,
         txCtx: DSLContext = this.dsl,
-    ): Either<PersistenceError, MonitorPojo> =
+    ): Either<PersistenceError, MonitorRecord> =
         try {
             Either.Right(
                 txCtx
@@ -97,7 +109,7 @@ class MonitorRepository(jooqConfig: Configuration) : MonitorDao(jooqConfig) {
                     .set(MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
                     .where(MONITOR.ID.eq(updatedMonitor.id))
                     .returning(MONITOR.asterisk())
-                    .fetchOneIntoOrThrow<MonitorRecord, MonitorPojo>()
+                    .fetchOneOrThrow<MonitorRecord>()
             )
         } catch (e: DataAccessException) {
             e.handle()

@@ -5,19 +5,18 @@ import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
-import com.kuvaszuptime.kuvasz.tables.daos.UptimeEventDao
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import jakarta.inject.Singleton
 import org.jooq.Configuration
 import org.jooq.impl.DSL
 import java.time.OffsetDateTime
 
 @Singleton
-class UptimeEventRepository(private val jooqConfig: Configuration) : UptimeEventDao(jooqConfig) {
+class UptimeEventRepository(private val jooqConfig: Configuration) {
     private val dsl = jooqConfig.dsl()
 
     fun insertFromMonitorEvent(event: UptimeMonitorEvent, configuration: Configuration? = jooqConfig) {
-        val eventToInsert = UptimeEventPojo()
+        val eventToInsert = UptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
@@ -33,12 +32,16 @@ class UptimeEventRepository(private val jooqConfig: Configuration) : UptimeEvent
             .execute()
     }
 
-    fun getPreviousEventByMonitorId(monitorId: Int): UptimeEventPojo? =
-        dsl.select(UPTIME_EVENT.asterisk())
-            .from(UPTIME_EVENT)
+    fun fetchByMonitorId(monitorId: Int): List<UptimeEventRecord> = dsl
+        .selectFrom(UPTIME_EVENT)
+        .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+        .fetch()
+
+    fun getPreviousEventByMonitorId(monitorId: Int): UptimeEventRecord? =
+        dsl.selectFrom(UPTIME_EVENT)
             .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
             .and(UPTIME_EVENT.ENDED_AT.isNull)
-            .fetchOneInto(UptimeEventPojo::class.java)
+            .fetchOne()
 
     fun endEventById(eventId: Int, endedAt: OffsetDateTime, configuration: Configuration? = jooqConfig) =
         DSL.using(configuration)

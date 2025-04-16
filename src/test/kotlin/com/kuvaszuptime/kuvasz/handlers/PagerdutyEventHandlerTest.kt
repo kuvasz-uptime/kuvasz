@@ -15,8 +15,6 @@ import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.PagerdutyAPIClient
-import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
-import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
@@ -101,7 +99,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -126,7 +124,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -154,7 +152,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -186,7 +184,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -267,7 +265,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -290,7 +288,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
@@ -316,7 +314,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -346,7 +344,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
@@ -396,7 +394,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
@@ -420,7 +418,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,

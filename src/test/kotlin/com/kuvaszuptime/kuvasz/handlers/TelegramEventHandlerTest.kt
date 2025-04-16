@@ -13,8 +13,6 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TelegramAPIClient
 import com.kuvaszuptime.kuvasz.services.TelegramAPIService
-import com.kuvaszuptime.kuvasz.tables.SslEvent
-import com.kuvaszuptime.kuvasz.tables.UptimeEvent
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
@@ -108,7 +106,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UptimeEvent.UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -136,7 +134,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UptimeEvent.UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -164,7 +162,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UptimeEvent.UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -194,7 +192,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UptimeEvent.UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -265,7 +263,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -291,7 +289,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
@@ -317,7 +315,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -344,7 +342,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
@@ -391,7 +389,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
@@ -417,7 +415,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SslEvent.SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,

@@ -1,8 +1,3 @@
-import org.jooq.meta.jaxb.MatcherRule
-import org.jooq.meta.jaxb.MatcherTransformType
-import org.jooq.meta.jaxb.Matchers
-import org.jooq.meta.jaxb.MatchersTableType
-
 buildscript {
     val jooqVersion: String by project
     configurations["classpath"].resolutionStrategy.eachDependency {
@@ -239,24 +234,10 @@ jooq {
                         isDeprecated = false
                         isValidationAnnotations = false
                         isFluentSetters = true
-                        isDaos = true
                     }
                     target.apply {
                         directory = "src/jooq/java"
                         packageName = "com.kuvaszuptime.kuvasz"
-                    }
-                    strategy.apply {
-                        name = "PojoSuffixStrategy"
-                        matchers = Matchers().apply {
-                            tables = listOf(
-                                MatchersTableType().apply {
-                                    pojoClass = MatcherRule().apply {
-                                        transform = MatcherTransformType.PASCAL
-                                        expression = "\$0_Pojo"
-                                    }
-                                }
-                            )
-                        }
                     }
                 }
             }

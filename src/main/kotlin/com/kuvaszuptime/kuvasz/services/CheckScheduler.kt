@@ -5,7 +5,7 @@ import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.ScheduledCheck
 import com.kuvaszuptime.kuvasz.models.SchedulingError
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.catchBlocking
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.context.annotation.Context
@@ -41,12 +41,12 @@ class CheckScheduler(
 
     fun getScheduledChecks() = scheduledChecks
 
-    fun createChecksForMonitor(monitor: MonitorPojo): SchedulingError? {
-        fun Throwable.log(checkType: CheckType, monitor: MonitorPojo) {
+    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? {
+        fun Throwable.log(checkType: CheckType, monitor: MonitorRecord) {
             logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: $message")
         }
 
-        fun ScheduledCheck.log(monitor: MonitorPojo) {
+        fun ScheduledCheck.log(monitor: MonitorRecord) {
             logger.info("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully")
         }
 
@@ -78,7 +78,7 @@ class CheckScheduler(
         )
     }
 
-    fun removeChecksOfMonitor(monitor: MonitorPojo) {
+    fun removeChecksOfMonitor(monitor: MonitorRecord) {
         scheduledChecks.forEach { check ->
             if (check.monitorId == monitor.id) {
                 check.task.cancel(false)
@@ -96,14 +96,14 @@ class CheckScheduler(
     }
 
     fun updateChecksForMonitor(
-        existingMonitor: MonitorPojo,
-        updatedMonitor: MonitorPojo
+        existingMonitor: MonitorRecord,
+        updatedMonitor: MonitorRecord
     ): SchedulingError? {
         removeChecksOfMonitor(existingMonitor)
         return createChecksForMonitor(updatedMonitor)
     }
 
-    private fun scheduleUptimeCheck(monitor: MonitorPojo): Either<Throwable, ScheduledFuture<*>> =
+    private fun scheduleUptimeCheck(monitor: MonitorRecord): Either<Throwable, ScheduledFuture<*>> =
         Either.catchBlocking {
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
             taskScheduler.scheduleAtFixedRate(period, period) {
@@ -111,7 +111,7 @@ class CheckScheduler(
             }
         }
 
-    private fun scheduleSSLCheck(monitor: MonitorPojo): Either<Throwable, ScheduledFuture<*>> =
+    private fun scheduleSSLCheck(monitor: MonitorRecord): Either<Throwable, ScheduledFuture<*>> =
         Either.catchBlocking {
             val initialDelay = Duration.ofMinutes(SSL_CHECK_INITIAL_DELAY_MINUTES)
             val period = Duration.ofDays(SSL_CHECK_PERIOD_DAYS)

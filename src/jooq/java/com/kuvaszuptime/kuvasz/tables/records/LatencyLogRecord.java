@@ -5,7 +5,6 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
-import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo;
 
 import java.time.OffsetDateTime;
 
@@ -112,20 +111,5 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
         setLatency(latency);
         setCreatedAt(createdAt);
         resetChangedOnNotNull();
-    }
-
-    /**
-     * Create a detached, initialised LatencyLogRecord
-     */
-    public LatencyLogRecord(LatencyLogPojo value) {
-        super(LatencyLog.LATENCY_LOG);
-
-        if (value != null) {
-            setId(value.getId());
-            setMonitorId(value.getMonitorId());
-            setLatency(value.getLatency());
-            setCreatedAt(value.getCreatedAt());
-            resetChangedOnNotNull();
-        }
     }
 }

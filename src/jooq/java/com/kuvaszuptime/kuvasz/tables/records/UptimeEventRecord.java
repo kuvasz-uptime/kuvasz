@@ -6,7 +6,6 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo;
 
 import java.time.OffsetDateTime;
 
@@ -163,23 +162,5 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
         resetChangedOnNotNull();
-    }
-
-    /**
-     * Create a detached, initialised UptimeEventRecord
-     */
-    public UptimeEventRecord(UptimeEventPojo value) {
-        super(UptimeEvent.UPTIME_EVENT);
-
-        if (value != null) {
-            setId(value.getId());
-            setMonitorId(value.getMonitorId());
-            setStatus(value.getStatus());
-            setError(value.getError());
-            setStartedAt(value.getStartedAt());
-            setEndedAt(value.getEndedAt());
-            setUpdatedAt(value.getUpdatedAt());
-            resetChangedOnNotNull();
-        }
     }
 }

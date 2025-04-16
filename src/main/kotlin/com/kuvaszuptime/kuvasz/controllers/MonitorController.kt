@@ -2,13 +2,7 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
-import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.*
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
@@ -78,7 +72,7 @@ class MonitorController(
     @ExecuteOn(TaskExecutors.IO)
     override fun createMonitor(@Valid monitor: MonitorCreateDto): MonitorDto {
         val createdMonitor = monitorCrudService.createMonitor(monitor)
-        return MonitorDto.fromMonitorPojo(createdMonitor)
+        return MonitorDto.fromMonitorRecord(createdMonitor)
     }
 
     @Status(HttpStatus.NO_CONTENT)
@@ -116,7 +110,7 @@ class MonitorController(
     @ExecuteOn(TaskExecutors.IO)
     override fun updateMonitor(monitorId: Int, @Valid monitorUpdateDto: MonitorUpdateDto): MonitorDto {
         val updatedMonitor = monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
-        return MonitorDto.fromMonitorPojo(updatedMonitor)
+        return MonitorDto.fromMonitorRecord(updatedMonitor)
     }
 
     @ApiResponses(
@@ -142,7 +136,7 @@ class MonitorController(
             monitorId,
             upsertDto.pagerdutyIntegrationKey,
         )
-        return MonitorDto.fromMonitorPojo(updatedMonitor)
+        return MonitorDto.fromMonitorRecord(updatedMonitor)
     }
 
     @Status(HttpStatus.NO_CONTENT)

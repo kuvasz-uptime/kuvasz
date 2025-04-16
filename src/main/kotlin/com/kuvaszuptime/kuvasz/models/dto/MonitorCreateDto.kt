@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto
 import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import io.micronaut.core.annotation.Introspected
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -28,7 +28,7 @@ data class MonitorCreateDto(
     val forceNoCache: Boolean? = true,
     val followRedirects: Boolean? = true,
 ) {
-    fun toMonitorPojo(): MonitorPojo = MonitorPojo()
+    fun toMonitorRecord(): MonitorRecord = MonitorRecord()
         .setName(name)
         .setUrl(url)
         .setEnabled(enabled)

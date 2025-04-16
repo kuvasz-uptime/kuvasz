@@ -6,7 +6,7 @@ import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.exception.DataAccessException
@@ -44,8 +44,8 @@ class MonitorCrudService(
         }
     }
 
-    fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorPojo =
-        monitorRepository.returningInsert(monitorCreateDto.toMonitorPojo()).fold(
+    fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord =
+        monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord()).fold(
             { persistenceError -> throw persistenceError },
             { insertedMonitor ->
                 if (insertedMonitor.enabled) {
@@ -64,7 +64,7 @@ class MonitorCrudService(
             checkScheduler.removeChecksOfMonitor(monitor)
         } ?: throw MonitorNotFoundError(monitorId)
 
-    fun updateMonitor(monitorId: Int, monitorUpdateDto: MonitorUpdateDto): MonitorPojo =
+    fun updateMonitor(monitorId: Int, monitorUpdateDto: MonitorUpdateDto): MonitorRecord =
         try {
             dslContext.transactionResult { config ->
                 monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
@@ -79,8 +79,8 @@ class MonitorCrudService(
             throw ex.cause ?: ex
         }
 
-    private fun prepareUpdatePojo(monitorUpdateDto: MonitorUpdateDto, existingMonitor: MonitorPojo) =
-        MonitorPojo().apply {
+    private fun prepareUpdatePojo(monitorUpdateDto: MonitorUpdateDto, existingMonitor: MonitorRecord) =
+        MonitorRecord().apply {
             id = existingMonitor.id
             name = monitorUpdateDto.name ?: existingMonitor.name
             url = monitorUpdateDto.url ?: existingMonitor.url
@@ -96,10 +96,10 @@ class MonitorCrudService(
             followRedirects = monitorUpdateDto.followRedirects ?: existingMonitor.followRedirects
         }
 
-    private fun MonitorPojo.saveAndReschedule(
-        existingMonitor: MonitorPojo,
+    private fun MonitorRecord.saveAndReschedule(
+        existingMonitor: MonitorRecord,
         txCtx: DSLContext,
-    ): MonitorPojo =
+    ): MonitorRecord =
         monitorRepository.returningUpdate(this, txCtx).fold(
             { persistenceError -> throw persistenceError },
             { updatedMonitor ->
@@ -116,7 +116,7 @@ class MonitorCrudService(
             }
         )
 
-    fun updatePagerdutyIntegrationKey(monitorId: Int, integrationKey: String?): MonitorPojo =
+    fun updatePagerdutyIntegrationKey(monitorId: Int, integrationKey: String?): MonitorRecord =
         dslContext.transactionResult { config ->
             monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
                 val updatedMonitor = existingMonitor.setPagerdutyIntegrationKey(integrationKey)

@@ -6,7 +6,6 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 import com.kuvaszuptime.kuvasz.enums.SslStatus;
 import com.kuvaszuptime.kuvasz.tables.SslEvent;
-import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo;
 
 import java.time.OffsetDateTime;
 
@@ -163,23 +162,5 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
         resetChangedOnNotNull();
-    }
-
-    /**
-     * Create a detached, initialised SslEventRecord
-     */
-    public SslEventRecord(SslEventPojo value) {
-        super(SslEvent.SSL_EVENT);
-
-        if (value != null) {
-            setId(value.getId());
-            setMonitorId(value.getMonitorId());
-            setStatus(value.getStatus());
-            setError(value.getError());
-            setStartedAt(value.getStartedAt());
-            setEndedAt(value.getEndedAt());
-            setUpdatedAt(value.getUpdatedAt());
-            resetChangedOnNotNull();
-        }
     }
 }

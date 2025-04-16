@@ -5,8 +5,8 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.models.toMicronautHttpMethod
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isRedirected
@@ -36,7 +36,7 @@ class UptimeChecker(
         private const val RETRY_COUNT = 3L
     }
 
-    fun check(monitor: MonitorPojo, uriOverride: URI? = null) {
+    fun check(monitor: MonitorRecord, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         var start = 0L
 
@@ -58,10 +58,10 @@ class UptimeChecker(
     }
 
     private fun handleResponse(
-        monitor: MonitorPojo,
+        monitor: MonitorRecord,
         response: HttpResponse<ByteBuffer<Any>>,
         start: Long,
-        previousEvent: UptimeEventPojo?
+        previousEvent: UptimeEventRecord?
     ) {
         if (response.isSuccess()) {
             val latency = (System.currentTimeMillis() - start).toInt()
@@ -110,7 +110,7 @@ class UptimeChecker(
         }
     }
 
-    private fun sendHttpRequest(monitor: MonitorPojo, uri: URI): RawHttpResponse {
+    private fun sendHttpRequest(monitor: MonitorRecord, uri: URI): RawHttpResponse {
         val request = HttpRequest
             .create<Any>(
                 monitor.requestMethod.toMicronautHttpMethod(),
