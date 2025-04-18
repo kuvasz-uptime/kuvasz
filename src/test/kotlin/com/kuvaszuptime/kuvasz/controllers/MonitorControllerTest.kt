@@ -35,7 +35,6 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.rxjava3.http.client.Rx3HttpClient
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import org.jooq.DSLContext
 
 @Suppress("LongParameterList")
 @MicronautTest
@@ -45,7 +44,6 @@ class MonitorControllerTest(
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler,
-    private val dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
 
     init {

@@ -14,7 +14,6 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldHaveSize
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import org.jooq.DSLContext
 import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
@@ -25,7 +24,6 @@ class DatabaseCleanerTest(
     private val monitorRepository: MonitorRepository,
     private val sslEventRepository: SSLEventRepository,
     private val databaseCleaner: DatabaseCleaner,
-    private val dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     init {
 

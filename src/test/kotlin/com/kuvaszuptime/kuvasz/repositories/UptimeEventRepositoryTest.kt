@@ -7,13 +7,11 @@ import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
 class UptimeEventRepositoryTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
-    private val dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
 
     init {

@@ -227,7 +227,7 @@ jooq {
                 generator.apply {
                     database.apply {
                         inputSchema = dbSchema
-                        isOutputSchemaToDefault = true
+                        isOutputSchemaToDefault = false
                         excludes = "flyway_schema_history"
                     }
                     generate.apply {

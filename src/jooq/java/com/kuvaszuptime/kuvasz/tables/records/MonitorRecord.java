@@ -22,7 +22,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>monitor.id</code>.
+     * Setter for <code>kuvasz.monitor.id</code>.
      */
     public MonitorRecord setId(Integer value) {
         set(0, value);
@@ -30,14 +30,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.id</code>.
+     * Getter for <code>kuvasz.monitor.id</code>.
      */
     public Integer getId() {
         return (Integer) get(0);
     }
 
     /**
-     * Setter for <code>monitor.name</code>. Monitor's name
+     * Setter for <code>kuvasz.monitor.name</code>. Monitor's name
      */
     public MonitorRecord setName(String value) {
         set(1, value);
@@ -45,14 +45,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.name</code>. Monitor's name
+     * Getter for <code>kuvasz.monitor.name</code>. Monitor's name
      */
     public String getName() {
         return (String) get(1);
     }
 
     /**
-     * Setter for <code>monitor.url</code>. URL to check
+     * Setter for <code>kuvasz.monitor.url</code>. URL to check
      */
     public MonitorRecord setUrl(String value) {
         set(2, value);
@@ -60,15 +60,15 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.url</code>. URL to check
+     * Getter for <code>kuvasz.monitor.url</code>. URL to check
      */
     public String getUrl() {
         return (String) get(2);
     }
 
     /**
-     * Setter for <code>monitor.uptime_check_interval</code>. Uptime checking
-     * interval in seconds
+     * Setter for <code>kuvasz.monitor.uptime_check_interval</code>. Uptime
+     * checking interval in seconds
      */
     public MonitorRecord setUptimeCheckInterval(Integer value) {
         set(3, value);
@@ -76,15 +76,16 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.uptime_check_interval</code>. Uptime checking
-     * interval in seconds
+     * Getter for <code>kuvasz.monitor.uptime_check_interval</code>. Uptime
+     * checking interval in seconds
      */
     public Integer getUptimeCheckInterval() {
         return (Integer) get(3);
     }
 
     /**
-     * Setter for <code>monitor.enabled</code>. Flag to toggle the monitor
+     * Setter for <code>kuvasz.monitor.enabled</code>. Flag to toggle the
+     * monitor
      */
     public MonitorRecord setEnabled(Boolean value) {
         set(4, value);
@@ -92,14 +93,15 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.enabled</code>. Flag to toggle the monitor
+     * Getter for <code>kuvasz.monitor.enabled</code>. Flag to toggle the
+     * monitor
      */
     public Boolean getEnabled() {
         return (Boolean) get(4);
     }
 
     /**
-     * Setter for <code>monitor.created_at</code>.
+     * Setter for <code>kuvasz.monitor.created_at</code>.
      */
     public MonitorRecord setCreatedAt(OffsetDateTime value) {
         set(5, value);
@@ -107,14 +109,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.created_at</code>.
+     * Getter for <code>kuvasz.monitor.created_at</code>.
      */
     public OffsetDateTime getCreatedAt() {
         return (OffsetDateTime) get(5);
     }
 
     /**
-     * Setter for <code>monitor.updated_at</code>.
+     * Setter for <code>kuvasz.monitor.updated_at</code>.
      */
     public MonitorRecord setUpdatedAt(OffsetDateTime value) {
         set(6, value);
@@ -122,14 +124,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.updated_at</code>.
+     * Getter for <code>kuvasz.monitor.updated_at</code>.
      */
     public OffsetDateTime getUpdatedAt() {
         return (OffsetDateTime) get(6);
     }
 
     /**
-     * Setter for <code>monitor.ssl_check_enabled</code>.
+     * Setter for <code>kuvasz.monitor.ssl_check_enabled</code>.
      */
     public MonitorRecord setSslCheckEnabled(Boolean value) {
         set(7, value);
@@ -137,14 +139,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.ssl_check_enabled</code>.
+     * Getter for <code>kuvasz.monitor.ssl_check_enabled</code>.
      */
     public Boolean getSslCheckEnabled() {
         return (Boolean) get(7);
     }
 
     /**
-     * Setter for <code>monitor.pagerduty_integration_key</code>.
+     * Setter for <code>kuvasz.monitor.pagerduty_integration_key</code>.
      */
     public MonitorRecord setPagerdutyIntegrationKey(String value) {
         set(8, value);
@@ -152,14 +154,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.pagerduty_integration_key</code>.
+     * Getter for <code>kuvasz.monitor.pagerduty_integration_key</code>.
      */
     public String getPagerdutyIntegrationKey() {
         return (String) get(8);
     }
 
     /**
-     * Setter for <code>monitor.latency_history_enabled</code>.
+     * Setter for <code>kuvasz.monitor.latency_history_enabled</code>.
      */
     public MonitorRecord setLatencyHistoryEnabled(Boolean value) {
         set(9, value);
@@ -167,14 +169,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.latency_history_enabled</code>.
+     * Getter for <code>kuvasz.monitor.latency_history_enabled</code>.
      */
     public Boolean getLatencyHistoryEnabled() {
         return (Boolean) get(9);
     }
 
     /**
-     * Setter for <code>monitor.follow_redirects</code>.
+     * Setter for <code>kuvasz.monitor.follow_redirects</code>.
      */
     public MonitorRecord setFollowRedirects(Boolean value) {
         set(10, value);
@@ -182,14 +184,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.follow_redirects</code>.
+     * Getter for <code>kuvasz.monitor.follow_redirects</code>.
      */
     public Boolean getFollowRedirects() {
         return (Boolean) get(10);
     }
 
     /**
-     * Setter for <code>monitor.force_no_cache</code>.
+     * Setter for <code>kuvasz.monitor.force_no_cache</code>.
      */
     public MonitorRecord setForceNoCache(Boolean value) {
         set(11, value);
@@ -197,14 +199,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.force_no_cache</code>.
+     * Getter for <code>kuvasz.monitor.force_no_cache</code>.
      */
     public Boolean getForceNoCache() {
         return (Boolean) get(11);
     }
 
     /**
-     * Setter for <code>monitor.request_method</code>.
+     * Setter for <code>kuvasz.monitor.request_method</code>.
      */
     public MonitorRecord setRequestMethod(HttpMethod value) {
         set(12, value);
@@ -212,7 +214,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Getter for <code>monitor.request_method</code>.
+     * Getter for <code>kuvasz.monitor.request_method</code>.
      */
     public HttpMethod getRequestMethod() {
         return (HttpMethod) get(12);

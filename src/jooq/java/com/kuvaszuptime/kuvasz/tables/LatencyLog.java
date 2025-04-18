@@ -4,9 +4,9 @@
 package com.kuvaszuptime.kuvasz.tables;
 
 
-import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Indexes;
 import com.kuvaszuptime.kuvasz.Keys;
+import com.kuvaszuptime.kuvasz.Kuvasz;
 import com.kuvaszuptime.kuvasz.tables.Monitor.MonitorPath;
 import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord;
 
@@ -48,7 +48,7 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>latency_log</code>
+     * The reference instance of <code>kuvasz.latency_log</code>
      */
     public static final LatencyLog LATENCY_LOG = new LatencyLog();
 
@@ -61,22 +61,22 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     }
 
     /**
-     * The column <code>latency_log.id</code>.
+     * The column <code>kuvasz.latency_log.id</code>.
      */
     public final TableField<LatencyLogRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
 
     /**
-     * The column <code>latency_log.monitor_id</code>.
+     * The column <code>kuvasz.latency_log.monitor_id</code>.
      */
     public final TableField<LatencyLogRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
-     * The column <code>latency_log.latency</code>. Lateny in ms
+     * The column <code>kuvasz.latency_log.latency</code>. Lateny in ms
      */
     public final TableField<LatencyLogRecord, Integer> LATENCY = createField(DSL.name("latency"), SQLDataType.INTEGER.nullable(false), this, "Lateny in ms");
 
     /**
-     * The column <code>latency_log.created_at</code>.
+     * The column <code>kuvasz.latency_log.created_at</code>.
      */
     public final TableField<LatencyLogRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
@@ -89,21 +89,21 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     }
 
     /**
-     * Create an aliased <code>latency_log</code> table reference
+     * Create an aliased <code>kuvasz.latency_log</code> table reference
      */
     public LatencyLog(String alias) {
         this(DSL.name(alias), LATENCY_LOG);
     }
 
     /**
-     * Create an aliased <code>latency_log</code> table reference
+     * Create an aliased <code>kuvasz.latency_log</code> table reference
      */
     public LatencyLog(Name alias) {
         this(alias, LATENCY_LOG);
     }
 
     /**
-     * Create a <code>latency_log</code> table reference
+     * Create a <code>kuvasz.latency_log</code> table reference
      */
     public LatencyLog() {
         this(DSL.name("latency_log"), null);
@@ -144,7 +144,7 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
 
     @Override
     public Schema getSchema() {
-        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : Kuvasz.KUVASZ;
     }
 
     @Override

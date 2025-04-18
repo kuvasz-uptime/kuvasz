@@ -11,28 +11,28 @@ import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 
 
 /**
- * Convenience access to all tables in the default schema.
+ * Convenience access to all tables in kuvasz.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Tables {
 
     /**
-     * The table <code>latency_log</code>.
+     * The table <code>kuvasz.latency_log</code>.
      */
     public static final LatencyLog LATENCY_LOG = LatencyLog.LATENCY_LOG;
 
     /**
-     * The table <code>monitor</code>.
+     * The table <code>kuvasz.monitor</code>.
      */
     public static final Monitor MONITOR = Monitor.MONITOR;
 
     /**
-     * The table <code>ssl_event</code>.
+     * The table <code>kuvasz.ssl_event</code>.
      */
     public static final SslEvent SSL_EVENT = SslEvent.SSL_EVENT;
 
     /**
-     * The table <code>uptime_event</code>.
+     * The table <code>kuvasz.uptime_event</code>.
      */
     public static final UptimeEvent UPTIME_EVENT = UptimeEvent.UPTIME_EVENT;
 }

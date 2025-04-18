@@ -22,7 +22,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>ssl_event.id</code>.
+     * Setter for <code>kuvasz.ssl_event.id</code>.
      */
     public SslEventRecord setId(Integer value) {
         set(0, value);
@@ -30,14 +30,14 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     }
 
     /**
-     * Getter for <code>ssl_event.id</code>.
+     * Getter for <code>kuvasz.ssl_event.id</code>.
      */
     public Integer getId() {
         return (Integer) get(0);
     }
 
     /**
-     * Setter for <code>ssl_event.monitor_id</code>.
+     * Setter for <code>kuvasz.ssl_event.monitor_id</code>.
      */
     public SslEventRecord setMonitorId(Integer value) {
         set(1, value);
@@ -45,14 +45,14 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     }
 
     /**
-     * Getter for <code>ssl_event.monitor_id</code>.
+     * Getter for <code>kuvasz.ssl_event.monitor_id</code>.
      */
     public Integer getMonitorId() {
         return (Integer) get(1);
     }
 
     /**
-     * Setter for <code>ssl_event.status</code>. Status of the event
+     * Setter for <code>kuvasz.ssl_event.status</code>. Status of the event
      */
     public SslEventRecord setStatus(SslStatus value) {
         set(2, value);
@@ -60,14 +60,14 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     }
 
     /**
-     * Getter for <code>ssl_event.status</code>. Status of the event
+     * Getter for <code>kuvasz.ssl_event.status</code>. Status of the event
      */
     public SslStatus getStatus() {
         return (SslStatus) get(2);
     }
 
     /**
-     * Setter for <code>ssl_event.error</code>.
+     * Setter for <code>kuvasz.ssl_event.error</code>.
      */
     public SslEventRecord setError(String value) {
         set(3, value);
@@ -75,15 +75,15 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     }
 
     /**
-     * Getter for <code>ssl_event.error</code>.
+     * Getter for <code>kuvasz.ssl_event.error</code>.
      */
     public String getError() {
         return (String) get(3);
     }
 
     /**
-     * Setter for <code>ssl_event.started_at</code>. The current event started
-     * at
+     * Setter for <code>kuvasz.ssl_event.started_at</code>. The current event
+     * started at
      */
     public SslEventRecord setStartedAt(OffsetDateTime value) {
         set(4, value);
@@ -91,15 +91,16 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     }
 
     /**
-     * Getter for <code>ssl_event.started_at</code>. The current event started
-     * at
+     * Getter for <code>kuvasz.ssl_event.started_at</code>. The current event
+     * started at
      */
     public OffsetDateTime getStartedAt() {
         return (OffsetDateTime) get(4);
     }
 
     /**
-     * Setter for <code>ssl_event.ended_at</code>. The current event ended at
+     * Setter for <code>kuvasz.ssl_event.ended_at</code>. The current event
+     * ended at
      */
     public SslEventRecord setEndedAt(OffsetDateTime value) {
         set(5, value);
@@ -107,14 +108,15 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     }
 
     /**
-     * Getter for <code>ssl_event.ended_at</code>. The current event ended at
+     * Getter for <code>kuvasz.ssl_event.ended_at</code>. The current event
+     * ended at
      */
     public OffsetDateTime getEndedAt() {
         return (OffsetDateTime) get(5);
     }
 
     /**
-     * Setter for <code>ssl_event.updated_at</code>.
+     * Setter for <code>kuvasz.ssl_event.updated_at</code>.
      */
     public SslEventRecord setUpdatedAt(OffsetDateTime value) {
         set(6, value);
@@ -122,7 +124,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     }
 
     /**
-     * Getter for <code>ssl_event.updated_at</code>.
+     * Getter for <code>kuvasz.ssl_event.updated_at</code>.
      */
     public OffsetDateTime getUpdatedAt() {
         return (OffsetDateTime) get(6);
