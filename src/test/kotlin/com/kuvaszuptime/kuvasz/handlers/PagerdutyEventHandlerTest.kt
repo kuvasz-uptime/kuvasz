@@ -25,7 +25,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.*
 import io.reactivex.rxjava3.core.Single
-import org.jooq.Configuration
+import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
 class PagerdutyEventHandlerTest(
@@ -33,7 +33,7 @@ class PagerdutyEventHandlerTest(
     private val uptimeEventRepository: UptimeEventRepository,
     sslEventRepository: SSLEventRepository,
     latencyLogRepository: LatencyLogRepository,
-    jooqConfig: Configuration
+    dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<PagerdutyAPIClient>()
 
@@ -45,7 +45,7 @@ class PagerdutyEventHandlerTest(
             uptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
-            jooqConfig
+            dslContext,
         )
         PagerdutyEventHandler(eventDispatcher, mockClient)
 

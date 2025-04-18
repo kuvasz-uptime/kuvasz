@@ -24,7 +24,7 @@ import io.mockk.clearAllMocks
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import org.jooq.Configuration
+import org.jooq.DSLContext
 import org.simplejavamail.api.email.Email
 import java.time.OffsetDateTime
 
@@ -37,7 +37,7 @@ class SMTPEventHandlerTest(
     latencyLogRepository: LatencyLogRepository,
     smtpEventHandlerConfig: SMTPEventHandlerConfig,
     smtpMailer: SMTPMailer,
-    jooqConfig: Configuration
+    dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     init {
         val eventDispatcher = EventDispatcher()
@@ -49,7 +49,7 @@ class SMTPEventHandlerTest(
             uptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
-            jooqConfig
+            dslContext,
         )
         SMTPEventHandler(smtpEventHandlerConfig, mailerSpy, eventDispatcher)
 

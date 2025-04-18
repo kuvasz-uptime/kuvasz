@@ -27,7 +27,7 @@ import io.mockk.clearAllMocks
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import org.jooq.Configuration
+import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
 class DatabaseEventHandlerTest(
@@ -35,7 +35,7 @@ class DatabaseEventHandlerTest(
     latencyLogRepository: LatencyLogRepository,
     monitorRepository: MonitorRepository,
     sslEventRepository: SSLEventRepository,
-    jooqConfig: Configuration
+    dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     init {
         val eventDispatcher = EventDispatcher()
@@ -47,7 +47,7 @@ class DatabaseEventHandlerTest(
             uptimeEventRepositorySpy,
             latencyLogRepositorySpy,
             sslEventRepositorySpy,
-            jooqConfig
+            dslContext,
         )
 
         given("the DatabaseEventHandler - UPTIME events") {

@@ -4,22 +4,20 @@ import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord
 import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
-import org.jooq.Configuration
+import org.jooq.DSLContext
 import org.jooq.impl.DSL.*
 import java.time.OffsetDateTime
 
 @Singleton
-class LatencyLogRepository(jooqConfig: Configuration) {
+class LatencyLogRepository(private val dslContext: DSLContext) {
 
     companion object {
         private const val P95 = .95
         private const val P99 = .99
     }
 
-    private val dsl = jooqConfig.dsl()
-
     fun insertLatencyForMonitor(monitorId: Int, latency: Int) {
-        dsl.insertInto(LATENCY_LOG)
+        dslContext.insertInto(LATENCY_LOG)
             .set(
                 LatencyLogRecord()
                     .setMonitorId(monitorId)
@@ -28,24 +26,24 @@ class LatencyLogRepository(jooqConfig: Configuration) {
             .execute()
     }
 
-    fun fetchByMonitorId(monitorId: Int): List<LatencyLogRecord> = dsl
+    fun fetchByMonitorId(monitorId: Int): List<LatencyLogRecord> = dslContext
         .selectFrom(LATENCY_LOG)
         .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun deleteLogsBeforeDate(limit: OffsetDateTime) = dsl
+    fun deleteLogsBeforeDate(limit: OffsetDateTime) = dslContext
         .delete(LATENCY_LOG)
         .where(LATENCY_LOG.CREATED_AT.lessThan(limit))
         .execute()
 
-    fun deleteAllByMonitorId(monitorId: Int) = dsl
+    fun deleteAllByMonitorId(monitorId: Int) = dslContext
         .delete(LATENCY_LOG)
         .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
         .execute()
 
     // Well well, that's not so performant in case of a really huge dataset. Definitely something that should be
     // improved in the future.
-    fun getLatencyPercentiles(monitorId: Int? = null): List<PercentileResult> = dsl
+    fun getLatencyPercentiles(monitorId: Int? = null): List<PercentileResult> = dslContext
         .with("percentiles").`as`(
             selectDistinct(
                 LATENCY_LOG.MONITOR_ID.`as`("monitor_id"),

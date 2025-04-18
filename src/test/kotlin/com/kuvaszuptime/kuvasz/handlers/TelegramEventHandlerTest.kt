@@ -24,7 +24,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.*
 import io.reactivex.rxjava3.core.Single
-import org.jooq.Configuration
+import org.jooq.DSLContext
 import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
@@ -33,7 +33,7 @@ class TelegramEventHandlerTest(
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     latencyLogRepository: LatencyLogRepository,
-    jooqConfig: Configuration
+    dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<TelegramAPIClient>()
 
@@ -51,7 +51,7 @@ class TelegramEventHandlerTest(
             uptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
-            jooqConfig
+            dslContext,
         )
         TelegramEventHandler(apiServiceSpy, eventDispatcher)
 
