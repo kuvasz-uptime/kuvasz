@@ -12,74 +12,6 @@ tags:
 - name: Management operations
 - name: Monitor operations
 paths:
-  /health:
-    get:
-      tags:
-      - Management operations
-      summary: Health endpoint
-      description: Returns the current status of the application
-      operationId: health
-      parameters: []
-      responses:
-        "200":
-          description: Service is UP
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthResult'
-        "503":
-          description: Service is DOWN
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthResult'
-  /info:
-    get:
-      tags:
-      - Management operations
-      summary: Info endpoint
-      description: "Returns info about the application (e.g. which handlers are enabled,\
-        \ etc.)"
-      operationId: info
-      parameters: []
-      responses:
-        "200":
-          description: The standard response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InfoResult'
-              example:
-                handlers:
-                  log-event-handler.enabled: true
-                  smtp-event-handler.enabled: false
-                  slack-event-handler.enabled: true
-                  telegram-event-handler.enabled: true
-                  pagerduty-event-handler.enabled: true
-  /login:
-    post:
-      tags:
-      - Security operations
-      summary: Login endpoint
-      description: After a successful login it returns a valid access token that you
-        should use in your authenticated request
-      operationId: login
-      parameters: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserNamePasswordCredentials'
-        required: true
-      responses:
-        "200":
-          description: Successful login
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BearerAccessRefreshToken'
-        "401":
-          description: Unauthorized
   /monitors:
     get:
       tags:
@@ -100,7 +32,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/MonitorDetailsDto'
+                  $ref: "#/components/schemas/MonitorDetailsDto"
       security:
       - bearerAuth: []
     post:
@@ -112,7 +44,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MonitorCreateDto'
+              $ref: "#/components/schemas/MonitorCreateDto"
         required: true
       responses:
         "201":
@@ -120,13 +52,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonitorDto'
+                $ref: "#/components/schemas/MonitorDto"
         "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
   /monitors/{monitorId}:
@@ -148,13 +80,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonitorDetailsDto'
+                $ref: "#/components/schemas/MonitorDetailsDto"
         "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
     delete:
@@ -177,7 +109,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
     patch:
@@ -196,7 +128,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MonitorUpdateDto'
+              $ref: "#/components/schemas/MonitorUpdateDto"
         required: true
       responses:
         "200":
@@ -204,19 +136,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonitorDto'
+                $ref: "#/components/schemas/MonitorDto"
         "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
         "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
   /monitors/{monitorId}/pagerduty-integration-key:
@@ -236,7 +168,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PagerdutyKeyUpdateDto'
+              $ref: "#/components/schemas/PagerdutyKeyUpdateDto"
         required: true
       responses:
         "200":
@@ -244,19 +176,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonitorDto'
+                $ref: "#/components/schemas/MonitorDto"
         "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
         "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
     delete:
@@ -279,7 +211,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceError'
+                $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
   /monitors/{monitorId}/ssl-events:
@@ -303,7 +235,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SSLEventDto'
+                  $ref: "#/components/schemas/SSLEventDto"
       security:
       - bearerAuth: []
   /monitors/{monitorId}/uptime-events:
@@ -327,9 +259,77 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/UptimeEventDto'
+                  $ref: "#/components/schemas/UptimeEventDto"
       security:
       - bearerAuth: []
+  /login:
+    post:
+      tags:
+      - Security operations
+      summary: Login endpoint
+      description: After a successful login it returns a valid access token that you
+        should use in your authenticated request
+      operationId: login
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserNamePasswordCredentials"
+        required: true
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BearerAccessRefreshToken"
+        "401":
+          description: Unauthorized
+  /health:
+    get:
+      tags:
+      - Management operations
+      summary: Health endpoint
+      description: Returns the current status of the application
+      operationId: health
+      parameters: []
+      responses:
+        "200":
+          description: Service is UP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResult"
+        "503":
+          description: Service is DOWN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResult"
+  /info:
+    get:
+      tags:
+      - Management operations
+      summary: Info endpoint
+      description: "Returns info about the application (e.g. which handlers are enabled,\
+        \ etc.)"
+      operationId: info
+      parameters: []
+      responses:
+        "200":
+          description: The standard response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfoResult"
+              example:
+                handlers:
+                  log-event-handler.enabled: true
+                  smtp-event-handler.enabled: false
+                  slack-event-handler.enabled: true
+                  telegram-event-handler.enabled: true
+                  pagerduty-event-handler.enabled: true
 components:
   schemas:
     BearerAccessRefreshToken:
@@ -362,6 +362,11 @@ components:
           - UP
           - DOWN
           - UNKNOWN
+    HttpMethod:
+      type: string
+      enum:
+      - GET
+      - HEAD
     InfoResult:
       type: object
       properties:
@@ -393,13 +398,30 @@ components:
         pagerdutyIntegrationKey:
           type: string
           nullable: true
+        requestMethod:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+          nullable: true
+        forceNoCache:
+          type: boolean
+          nullable: true
+        followRedirects:
+          type: boolean
+          nullable: true
     MonitorDetailsDto:
       required:
       - createdAt
       - enabled
+      - followRedirects
+      - forceNoCache
       - id
+      - latencyHistoryEnabled
       - name
       - pagerdutyKeyPresent
+      - requestMethod
       - sslCheckEnabled
       - uptimeCheckInterval
       - url
@@ -430,7 +452,7 @@ components:
         uptimeStatus:
           nullable: true
           allOf:
-          - $ref: '#/components/schemas/UptimeStatus'
+          - $ref: "#/components/schemas/UptimeStatus"
         uptimeStatusStartedAt:
           type: string
           format: date-time
@@ -442,7 +464,7 @@ components:
         sslStatus:
           nullable: true
           allOf:
-          - $ref: '#/components/schemas/SslStatus'
+          - $ref: "#/components/schemas/SslStatus"
         sslStatusStartedAt:
           type: string
           format: date-time
@@ -471,13 +493,25 @@ components:
           nullable: true
         pagerdutyKeyPresent:
           type: boolean
+        requestMethod:
+          $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+        forceNoCache:
+          type: boolean
+        followRedirects:
+          type: boolean
     MonitorDto:
       required:
       - createdAt
       - enabled
+      - followRedirects
+      - forceNoCache
       - id
+      - latencyHistoryEnabled
       - name
       - pagerdutyKeyPresent
+      - requestMethod
       - sslCheckEnabled
       - uptimeCheckInterval
       - url
@@ -498,6 +532,14 @@ components:
         sslCheckEnabled:
           type: boolean
         pagerdutyKeyPresent:
+          type: boolean
+        requestMethod:
+          $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+        forceNoCache:
+          type: boolean
+        followRedirects:
           type: boolean
         createdAt:
           type: string
@@ -527,6 +569,19 @@ components:
         sslCheckEnabled:
           type: boolean
           nullable: true
+        requestMethod:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+          nullable: true
+        forceNoCache:
+          type: boolean
+          nullable: true
+        followRedirects:
+          type: boolean
+          nullable: true
     PagerdutyKeyUpdateDto:
       required:
       - pagerdutyIntegrationKey
@@ -543,7 +598,7 @@ components:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/SslStatus'
+          $ref: "#/components/schemas/SslStatus"
         error:
           type: string
           nullable: true
@@ -565,7 +620,6 @@ components:
           nullable: true
     SslStatus:
       type: string
-      description: This class is generated by jOOQ.
       enum:
       - VALID
       - INVALID
@@ -578,7 +632,7 @@ components:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/UptimeStatus'
+          $ref: "#/components/schemas/UptimeStatus"
         error:
           type: string
           nullable: true
@@ -594,7 +648,6 @@ components:
           format: date-time
     UptimeStatus:
       type: string
-      description: This class is generated by jOOQ.
       enum:
       - UP
       - DOWN

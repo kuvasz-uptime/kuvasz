@@ -23,4 +23,16 @@ fun HttpResponse<*>.isRedirected(): Boolean =
 
 fun String.toUri(): URI = URI(this)
 
-fun HttpResponse<*>.getRedirectionUri(): URI? = if (isRedirected()) header(HttpHeaders.LOCATION)?.toUri() else null
+fun HttpResponse<*>.getRedirectionUri(originalUrl: String): URI? =
+    if (isRedirected()) {
+        header(HttpHeaders.LOCATION)
+            ?.let { locationHeader ->
+                // If the location header starts with "http", it's probably an absolute URL, we can use it as is
+                if (locationHeader.startsWith("http")) {
+                    locationHeader.toUri()
+                } else {
+                    // Otherwise, we need to resolve it against the original URL as a relative path
+                    URI(originalUrl).resolve(locationHeader)
+                }
+            }
+    } else null

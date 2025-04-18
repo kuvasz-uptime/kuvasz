@@ -8,7 +8,8 @@ import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo
+import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
+import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldHaveSize
 import io.micronaut.context.annotation.Property
@@ -22,7 +23,7 @@ class DatabaseCleanerTest(
     private val latencyLogRepository: LatencyLogRepository,
     private val monitorRepository: MonitorRepository,
     private val sslEventRepository: SSLEventRepository,
-    private val databaseCleaner: DatabaseCleaner
+    private val databaseCleaner: DatabaseCleaner,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -30,7 +31,7 @@ class DatabaseCleanerTest(
             `when`("there is an UPTIME_EVENT record with an end date greater than retention limit") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp().minusDays(1),
                     endedAt = getCurrentTimestamp()
@@ -46,7 +47,7 @@ class DatabaseCleanerTest(
             `when`("there is an UPTIME_EVENT record without an end date") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp().minusDays(20),
                     endedAt = null
@@ -62,7 +63,7 @@ class DatabaseCleanerTest(
             `when`("there is an UPTIME_EVENT record with an end date less than retention limit") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp().minusDays(20),
                     endedAt = getCurrentTimestamp().minusDays(8)
@@ -100,7 +101,7 @@ class DatabaseCleanerTest(
             `when`("there is an SSL_EVENT record with an end date greater than retention limit") {
                 val monitor = createMonitor(monitorRepository)
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp().minusDays(1),
                     endedAt = getCurrentTimestamp()
@@ -116,7 +117,7 @@ class DatabaseCleanerTest(
             `when`("there is an SSL_EVENT record without an end date") {
                 val monitor = createMonitor(monitorRepository)
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp().minusDays(20),
                     endedAt = null
@@ -132,7 +133,7 @@ class DatabaseCleanerTest(
             `when`("there is an SSL_EVENT record with an end date less than retention limit") {
                 val monitor = createMonitor(monitorRepository)
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp().minusDays(20),
                     endedAt = getCurrentTimestamp().minusDays(8)
@@ -147,11 +148,13 @@ class DatabaseCleanerTest(
         }
     }
 
-    private fun insertLatencyLogRecord(monitorId: Int, createdAt: OffsetDateTime) =
-        latencyLogRepository.insert(
-            LatencyLogPojo()
+    private fun insertLatencyLogRecord(monitorId: Int, createdAt: OffsetDateTime) = dslContext
+        .insertInto(LATENCY_LOG)
+        .set(
+            LatencyLogRecord()
                 .setMonitorId(monitorId)
                 .setLatency(1000)
                 .setCreatedAt(createdAt)
         )
+        .execute()
 }

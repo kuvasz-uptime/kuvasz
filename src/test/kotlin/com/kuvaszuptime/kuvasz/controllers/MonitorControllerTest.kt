@@ -13,8 +13,6 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -27,6 +25,7 @@ import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -44,9 +43,7 @@ class MonitorControllerTest(
     private val monitorClient: MonitorClient,
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
-    private val sslEventRepository: SSLEventRepository,
-    private val checkScheduler: CheckScheduler
+    private val checkScheduler: CheckScheduler,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -58,14 +55,14 @@ class MonitorControllerTest(
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     endedAt = null
@@ -147,14 +144,14 @@ class MonitorControllerTest(
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     endedAt = null
@@ -323,8 +320,8 @@ class MonitorControllerTest(
 
                 then("it should return a 409") {
                     secondResponse.status shouldBe HttpStatus.CONFLICT
-                    val monitorsInDb = monitorRepository.fetchByName(firstCreatedMonitor.name)
-                    monitorsInDb shouldHaveSize 1
+                    val monitorsInDb = monitorRepository.findByName(firstCreatedMonitor.name)
+                    monitorsInDb.shouldNotBeNull()
                     checkScheduler.getScheduledChecks().filter { it.monitorId == firstCreatedMonitor.id }
                         .forOne { it.checkType shouldBe CheckType.UPTIME }
                 }
@@ -695,21 +692,21 @@ class MonitorControllerTest(
                     createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now.minusDays(1),
                     status = UptimeStatus.DOWN,
                     endedAt = now
                 )
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = anotherMonitor.id,
                     startedAt = now,
                     status = UptimeStatus.UP,
@@ -750,21 +747,21 @@ class MonitorControllerTest(
                     createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     status = SslStatus.VALID,
                     endedAt = null
                 )
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = now.minusDays(1),
                     status = SslStatus.INVALID,
                     endedAt = now
                 )
                 createSSLEventRecord(
-                    repository = sslEventRepository,
+                    dslContext,
                     monitorId = anotherMonitor.id,
                     startedAt = now,
                     status = SslStatus.VALID,

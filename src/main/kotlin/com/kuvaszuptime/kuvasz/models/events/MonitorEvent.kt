@@ -4,9 +4,10 @@ import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.ERROR_MAX_LENGTH
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toDurationString
@@ -15,19 +16,23 @@ import java.net.URI
 import kotlin.time.Duration
 
 sealed class MonitorEvent {
-    abstract val monitor: MonitorPojo
+    abstract val monitor: MonitorRecord
 
     abstract fun toStructuredMessage(): StructuredMessage
 
     val dispatchedAt = getCurrentTimestamp()
+
+    companion object {
+        const val ERROR_MAX_LENGTH = 255
+    }
 }
 
 sealed class UptimeMonitorEvent : MonitorEvent() {
-    abstract val previousEvent: UptimeEventPojo?
+    abstract val previousEvent: UptimeEventRecord?
 
     abstract val uptimeStatus: UptimeStatus
 
-    fun statusNotEquals(previousEvent: UptimeEventPojo) = !statusEquals(previousEvent)
+    fun statusNotEquals(previousEvent: UptimeEventRecord) = !statusEquals(previousEvent)
 
     fun getEndedEventDuration(): Duration? =
         previousEvent?.let { previousEvent ->
@@ -43,14 +48,14 @@ sealed class UptimeMonitorEvent : MonitorEvent() {
             }
         } ?: toRun(this)
 
-    private fun statusEquals(previousEvent: UptimeEventPojo) = uptimeStatus == previousEvent.status
+    private fun statusEquals(previousEvent: UptimeEventRecord) = uptimeStatus == previousEvent.status
 }
 
 data class MonitorUpEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val status: HttpStatus,
     val latency: Int,
-    override val previousEvent: UptimeEventPojo?
+    override val previousEvent: UptimeEventRecord?
 ) : UptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.UP
@@ -64,39 +69,45 @@ data class MonitorUpEvent(
 }
 
 data class MonitorDownEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val status: HttpStatus?,
     val error: Throwable,
-    override val previousEvent: UptimeEventPojo?
+    override val previousEvent: UptimeEventRecord?
 ) : UptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN
 
-    override fun toStructuredMessage() =
-        StructuredMonitorDownMessage(
+    override fun toStructuredMessage(): StructuredMonitorDownMessage {
+        val sanitizedError = error.message?.sanitizeMessage()
+        val structuredError = if (status != null) {
+            "${status.code} ${status.reason}"
+        } else sanitizedError
+
+        return StructuredMonitorDownMessage(
             summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
                 status?.let { " (" + it.code + ")" }.orEmpty(),
-            error = "Reason: ${error.message}",
+            error = "Reason: $structuredError",
             previousUpTime = getEndedEventDuration().toDurationString()?.let { "Was up for $it" }
         )
+    }
 }
 
 data class RedirectEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val redirectLocation: URI
 ) : MonitorEvent() {
 
     override fun toStructuredMessage() = StructuredRedirectMessage(
-        summary = "Request to \"${monitor.name}\" (${monitor.url}) has been redirected"
+        summary = "Request to \"${monitor.name}\" (${monitor.url}) has been redirected to $redirectLocation",
     )
 }
 
 sealed class SSLMonitorEvent : MonitorEvent() {
-    abstract val previousEvent: SslEventPojo?
+    abstract val previousEvent: SslEventRecord?
 
     abstract val sslStatus: SslStatus
 
-    fun statusNotEquals(previousEvent: SslEventPojo) = !statusEquals(previousEvent)
+    fun statusNotEquals(previousEvent: SslEventRecord) = !statusEquals(previousEvent)
 
     fun getEndedEventDuration(): Duration? =
         previousEvent?.let { previousEvent ->
@@ -114,13 +125,13 @@ sealed class SSLMonitorEvent : MonitorEvent() {
             }
         } ?: toRun(this)
 
-    private fun statusEquals(previousEvent: SslEventPojo) = sslStatus == previousEvent.status
+    private fun statusEquals(previousEvent: SslEventRecord) = sslStatus == previousEvent.status
 }
 
 data class SSLValidEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val certInfo: CertificateInfo,
-    override val previousEvent: SslEventPojo?
+    override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent() {
 
     override val sslStatus = SslStatus.VALID
@@ -134,9 +145,9 @@ data class SSLValidEvent(
 }
 
 data class SSLInvalidEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val error: SSLValidationError,
-    override val previousEvent: SslEventPojo?
+    override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent() {
 
     override val sslStatus = SslStatus.INVALID
@@ -144,16 +155,16 @@ data class SSLInvalidEvent(
     override fun toStructuredMessage() =
         StructuredSSLInvalidMessage(
             summary = "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate",
-            error = "Reason: ${error.message}",
+            error = "Reason: ${error.message?.sanitizeMessage()}",
             previousValidEvent = getEndedEventDuration().toDurationString()
                 ?.let { "Was ${getPreviousStatusString()} for $it" }
         )
 }
 
 data class SSLWillExpireEvent(
-    override val monitor: MonitorPojo,
+    override val monitor: MonitorRecord,
     val certInfo: CertificateInfo,
-    override val previousEvent: SslEventPojo?
+    override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent() {
 
     override val sslStatus = SslStatus.WILL_EXPIRE
@@ -164,3 +175,18 @@ data class SSLWillExpireEvent(
             validUntil = "Expiry date: ${certInfo.validTo}"
         )
 }
+
+private fun String.sanitizeMessage(): String {
+    val sanitized = removeControlChars()
+    return if (sanitized.length > ERROR_MAX_LENGTH) {
+        "${sanitized.take(ERROR_MAX_LENGTH)} ... [REDACTED]"
+    } else sanitized
+}
+
+/**
+ * Removes non-visible or non-readable characters from the string, also replaces null characters with the string
+ * "null" (null characters can't be handled by Postgres)
+ */
+private fun String.removeControlChars() =
+    replace("\u0000", "null")
+        .filter { !it.isISOControl() }

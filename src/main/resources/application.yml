@@ -40,9 +40,8 @@ micronaut:
   netty:
     event-loops:
       uptime-check:
-        num-threads: 20
+        num-threads: 40
         prefer-native-transport: true
-        executor: 'io'
 endpoints:
   health:
     enabled: true
@@ -80,9 +79,6 @@ jooq:
 app-config:
   data-retention-days: ${DATA_RETENTION_DAYS:`30`}
 ---
-http-communication-log:
-  enabled: ${ENABLE_HTTP_COMMUNICATION_LOG:`false`}
----
 handler-config:
   log-event-handler:
     enabled: ${ENABLE_LOG_EVENT_HANDLER:`true`}
@@ -110,3 +106,8 @@ smtp-config:
   username: ${SMTP_USERNAME:``}
   password: ${SMTP_PASSWORD:``}
   transport-strategy: ${SMTP_TRANSPORT_STRATEGY:`SMTP_TLS`}
+---
+logger:
+  levels:
+    org.jooq: ERROR
+    io.netty.channel.AbstractChannelHandlerContext: ERROR

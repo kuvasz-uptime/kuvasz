@@ -5,7 +5,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import java.net.URL
@@ -22,7 +22,7 @@ class SSLChecker(
         private const val EXPIRY_THRESHOLD_DAYS = 30L
     }
 
-    fun check(monitor: MonitorPojo) {
+    fun check(monitor: MonitorRecord) {
         if (uptimeEventRepository.isMonitorUp(monitor.id)) {
             val previousEvent = sslEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
             sslValidator.validate(URL(monitor.url)).fold(

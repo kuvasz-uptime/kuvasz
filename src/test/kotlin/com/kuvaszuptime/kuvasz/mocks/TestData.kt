@@ -5,13 +5,14 @@ import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.SslEventPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
+import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.nulls.shouldNotBeNull
+import org.jooq.DSLContext
 import java.time.OffsetDateTime
 
 @Suppress("LongParameterList")
@@ -28,8 +29,8 @@ fun createMonitor(
     latencyHistoryEnabled: Boolean = true,
     forceNoCache: Boolean = true,
     followRedirects: Boolean = true,
-): MonitorPojo {
-    val monitor = MonitorPojo()
+): MonitorRecord {
+    val monitor = MonitorRecord()
         .setId(id)
         .setName(monitorName)
         .setUptimeCheckInterval(uptimeCheckInterval)
@@ -47,36 +48,40 @@ fun createMonitor(
 }
 
 fun createUptimeEventRecord(
-    repository: UptimeEventRepository,
+    dslContext: DSLContext,
     monitorId: Int,
     status: UptimeStatus = UptimeStatus.UP,
     startedAt: OffsetDateTime,
     endedAt: OffsetDateTime?
-) =
-    repository.insert(
-        UptimeEventPojo()
+) = dslContext
+    .insertInto(UPTIME_EVENT)
+    .set(
+        UptimeEventRecord()
             .setMonitorId(monitorId)
             .setStatus(status)
             .setStartedAt(startedAt)
             .setUpdatedAt(endedAt ?: startedAt)
             .setEndedAt(endedAt)
     )
+    .execute()
 
 fun createSSLEventRecord(
-    repository: SSLEventRepository,
+    dslContext: DSLContext,
     monitorId: Int,
     status: SslStatus = SslStatus.VALID,
     startedAt: OffsetDateTime,
     endedAt: OffsetDateTime?
-) =
-    repository.insert(
-        SslEventPojo()
+) = dslContext
+    .insertInto(SSL_EVENT)
+    .set(
+        SslEventRecord()
             .setMonitorId(monitorId)
             .setStatus(status)
             .setStartedAt(startedAt)
             .setUpdatedAt(endedAt ?: startedAt)
             .setEndedAt(endedAt)
     )
+    .execute()
 
 fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)) =
     CertificateInfo(validTo)

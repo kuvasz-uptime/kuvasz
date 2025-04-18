@@ -6,7 +6,6 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo;
 
 import java.time.OffsetDateTime;
 
@@ -23,7 +22,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>uptime_event.id</code>.
+     * Setter for <code>kuvasz.uptime_event.id</code>.
      */
     public UptimeEventRecord setId(Integer value) {
         set(0, value);
@@ -31,14 +30,14 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Getter for <code>uptime_event.id</code>.
+     * Getter for <code>kuvasz.uptime_event.id</code>.
      */
     public Integer getId() {
         return (Integer) get(0);
     }
 
     /**
-     * Setter for <code>uptime_event.monitor_id</code>.
+     * Setter for <code>kuvasz.uptime_event.monitor_id</code>.
      */
     public UptimeEventRecord setMonitorId(Integer value) {
         set(1, value);
@@ -46,14 +45,14 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Getter for <code>uptime_event.monitor_id</code>.
+     * Getter for <code>kuvasz.uptime_event.monitor_id</code>.
      */
     public Integer getMonitorId() {
         return (Integer) get(1);
     }
 
     /**
-     * Setter for <code>uptime_event.status</code>. Status of the event
+     * Setter for <code>kuvasz.uptime_event.status</code>. Status of the event
      */
     public UptimeEventRecord setStatus(UptimeStatus value) {
         set(2, value);
@@ -61,14 +60,14 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Getter for <code>uptime_event.status</code>. Status of the event
+     * Getter for <code>kuvasz.uptime_event.status</code>. Status of the event
      */
     public UptimeStatus getStatus() {
         return (UptimeStatus) get(2);
     }
 
     /**
-     * Setter for <code>uptime_event.error</code>.
+     * Setter for <code>kuvasz.uptime_event.error</code>.
      */
     public UptimeEventRecord setError(String value) {
         set(3, value);
@@ -76,14 +75,14 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Getter for <code>uptime_event.error</code>.
+     * Getter for <code>kuvasz.uptime_event.error</code>.
      */
     public String getError() {
         return (String) get(3);
     }
 
     /**
-     * Setter for <code>uptime_event.started_at</code>. The current event
+     * Setter for <code>kuvasz.uptime_event.started_at</code>. The current event
      * started at
      */
     public UptimeEventRecord setStartedAt(OffsetDateTime value) {
@@ -92,7 +91,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Getter for <code>uptime_event.started_at</code>. The current event
+     * Getter for <code>kuvasz.uptime_event.started_at</code>. The current event
      * started at
      */
     public OffsetDateTime getStartedAt() {
@@ -100,7 +99,8 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Setter for <code>uptime_event.ended_at</code>. The current event ended at
+     * Setter for <code>kuvasz.uptime_event.ended_at</code>. The current event
+     * ended at
      */
     public UptimeEventRecord setEndedAt(OffsetDateTime value) {
         set(5, value);
@@ -108,14 +108,15 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Getter for <code>uptime_event.ended_at</code>. The current event ended at
+     * Getter for <code>kuvasz.uptime_event.ended_at</code>. The current event
+     * ended at
      */
     public OffsetDateTime getEndedAt() {
         return (OffsetDateTime) get(5);
     }
 
     /**
-     * Setter for <code>uptime_event.updated_at</code>.
+     * Setter for <code>kuvasz.uptime_event.updated_at</code>.
      */
     public UptimeEventRecord setUpdatedAt(OffsetDateTime value) {
         set(6, value);
@@ -123,7 +124,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     }
 
     /**
-     * Getter for <code>uptime_event.updated_at</code>.
+     * Getter for <code>kuvasz.uptime_event.updated_at</code>.
      */
     public OffsetDateTime getUpdatedAt() {
         return (OffsetDateTime) get(6);
@@ -163,23 +164,5 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
         resetChangedOnNotNull();
-    }
-
-    /**
-     * Create a detached, initialised UptimeEventRecord
-     */
-    public UptimeEventRecord(UptimeEventPojo value) {
-        super(UptimeEvent.UPTIME_EVENT);
-
-        if (value != null) {
-            setId(value.getId());
-            setMonitorId(value.getMonitorId());
-            setStatus(value.getStatus());
-            setError(value.getError());
-            setStartedAt(value.getStartedAt());
-            setEndedAt(value.getEndedAt());
-            setUpdatedAt(value.getUpdatedAt());
-            resetChangedOnNotNull();
-        }
     }
 }

@@ -5,51 +5,70 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.models.toMicronautHttpMethod
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isRedirected
 import com.kuvaszuptime.kuvasz.util.isSuccess
-import io.micronaut.context.annotation.Factory
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
-import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.runtime.ApplicationConfiguration
 import io.micronaut.rxjava3.http.client.Rx3HttpClient
-import jakarta.inject.Named
 import jakarta.inject.Singleton
+import org.slf4j.LoggerFactory
 import java.net.URI
+import java.time.Duration
+import java.util.*
 
 @Singleton
 class UptimeChecker(
-    @Client("uptime-checker") private val httpClient: Rx3HttpClient,
+    @Client(configuration = HttpCheckerClientConfiguration::class)
+    private val httpClient: Rx3HttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository
 ) {
 
     companion object {
         private const val RETRY_COUNT = 3L
+        private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
-    fun check(monitor: MonitorPojo, uriOverride: URI? = null) {
+    fun check(monitor: MonitorRecord, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         var start = 0L
 
+        if (uriOverride == null) {
+            logger.info("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
+        }
+
+        @Suppress("TooGenericExceptionCaught")
         sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
             .doOnSubscribe { start = System.currentTimeMillis() }
             .subscribe(
                 { response -> handleResponse(monitor, response, start, previousEvent) },
                 { error ->
+                    var clarifiedError = error
+                    val status = try {
+                        (error as? HttpClientResponseException)?.status
+                    } catch (ex: Throwable) {
+                        // Invalid status codes (e.g. 498) are throwing an IllegalArgumentException for example
+                        // Better to have an explicit error, because the status won't be visible later, so it would be
+                        // harder for the users to figure out what was failing during the check
+                        clarifiedError = HttpClientException(ex.message, ex)
+                        null
+                    }
                     eventDispatcher.dispatch(
                         MonitorDownEvent(
                             monitor = monitor,
-                            status = (error as? HttpClientResponseException)?.status,
-                            error = error,
+                            status = status,
+                            error = clarifiedError,
                             previousEvent = previousEvent
                         )
                     )
@@ -58,10 +77,10 @@ class UptimeChecker(
     }
 
     private fun handleResponse(
-        monitor: MonitorPojo,
+        monitor: MonitorRecord,
         response: HttpResponse<ByteBuffer<Any>>,
         start: Long,
-        previousEvent: UptimeEventPojo?
+        previousEvent: UptimeEventRecord?
     ) {
         if (response.isSuccess()) {
             val latency = (System.currentTimeMillis() - start).toInt()
@@ -74,7 +93,7 @@ class UptimeChecker(
                 )
             )
         } else if (response.isRedirected() && monitor.followRedirects) {
-            val redirectionUri = response.getRedirectionUri()
+            val redirectionUri = response.getRedirectionUri(originalUrl = monitor.url)
             if (redirectionUri != null) {
                 eventDispatcher.dispatch(
                     RedirectEvent(
@@ -110,7 +129,7 @@ class UptimeChecker(
         }
     }
 
-    private fun sendHttpRequest(monitor: MonitorPojo, uri: URI): RawHttpResponse {
+    private fun sendHttpRequest(monitor: MonitorRecord, uri: URI): RawHttpResponse {
         val request = HttpRequest
             .create<Any>(
                 monitor.requestMethod.toMicronautHttpMethod(),
@@ -127,15 +146,19 @@ class UptimeChecker(
     }
 }
 
-@Factory
-class UptimeCheckerHttpClientConfigFactory {
+@Singleton
+class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpClientConfiguration(config) {
 
-    @Named("uptime-checker")
-    @Singleton
-    fun configuration(): HttpClientConfiguration {
-        val config = DefaultHttpClientConfiguration()
-        config.eventLoopGroup = "uptime-check"
-        config.isFollowRedirects = false
-        return config
+    override fun getEventLoopGroup(): String = EVENT_LOOP_GROUP
+
+    override fun isFollowRedirects(): Boolean = false
+
+    override fun getReadTimeout(): Optional<Duration> = Optional.of(Duration.ofSeconds(READ_TIMEOUT_SECONDS))
+
+    override fun getConnectionPoolConfiguration(): ConnectionPoolConfiguration = ConnectionPoolConfiguration()
+
+    companion object {
+        private const val EVENT_LOOP_GROUP = "uptime-check"
+        private const val READ_TIMEOUT_SECONDS = 30L
     }
 }

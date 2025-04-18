@@ -9,3 +9,34 @@ services:
       - "12348:5432"
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+  kuvasz:
+    image: kuvaszmonitoring/kuvasz:latest
+    mem_limit: 384M
+    ports:
+      - "8080:8080"
+    environment:
+      ADMIN_USER: AdminUser
+      ADMIN_PASSWORD: ThisShouldBeVeryVerySecure
+      DATABASE_HOST: postgres16
+      DATABASE_PORT: 5432
+      DATABASE_NAME: postgres
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      JWT_SIGNATURE_SECRET: ThisOneShouldBeVeryRandomAsWell
+      ENABLE_AUTH: 'false'
+      ENABLE_LOG_EVENT_HANDLER: 'true'
+      ENABLE_SMTP_EVENT_HANDLER: 'false'
+      SMTP_HOST: 'sandbox.smtp.mailtrap.io'
+      SMTP_PORT: 465
+      SMTP_USERNAME: ''
+      SMTP_PASSWORD: ''
+      SMTP_FROM_ADDRESS: 'noreply@kuvasz.uptime'
+      SMTP_TO_ADDRESS: 'your.email@example.com'
+      SMTP_TRANSPORT_STRATEGY: 'SMTP_TLS'
+      ENABLE_SLACK_EVENT_HANDLER: 'false'
+      SLACK_WEBHOOK_URL: ''
+      DATA_RETENTION_DAYS: 30
+      ENABLE_TELEGRAM_EVENT_HANDLER: 'false'
+      TELEGRAM_API_TOKEN: ''
+      TELEGRAM_CHAT_ID: ''
+      ENABLE_PAGERDUTY_EVENT_HANDLER: 'false'

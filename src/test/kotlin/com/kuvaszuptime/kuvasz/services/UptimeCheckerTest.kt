@@ -7,7 +7,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.testutils.toSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
@@ -249,6 +249,35 @@ class UptimeCheckerTest(
                     expectedUpEvent.monitor.id shouldBe monitor.id
                 }
             }
+
+            `when`("it checks a monitor that is redirected with a relative Location header") {
+                val monitor = createMonitor(monitorRepository)
+                val redirectSubscriber = TestSubscriber<RedirectEvent>()
+                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
+                val redirectLocation = "/a-relative-path"
+                val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
+                val expectedFinalRedirectLocation = URI(monitor.url).resolve(redirectLocation)
+
+                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK, expectedFinalRedirectLocation)
+
+                uptimeCheckerSpy.check(monitor)
+
+                then("it should use the original URL as the base for the redirect") {
+                    val expectedRedirectEvent = redirectSubscriber.values().first()
+                    val expectedUpEvent = monitorUpSubscriber.values().first()
+
+                    redirectSubscriber.awaitCount(1)
+                    expectedRedirectEvent.redirectLocation shouldBe expectedFinalRedirectLocation
+                    expectedRedirectEvent.monitor.id shouldBe monitor.id
+
+                    monitorUpSubscriber.awaitCount(1)
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+                }
+            }
         }
     }
 
@@ -272,7 +301,7 @@ class UptimeCheckerTest(
             }
         every {
             uptimeChecker["sendHttpRequest"](
-                any<MonitorPojo>(),
+                any<MonitorRecord>(),
                 requestUri ?: any<URI>()
             )
         } returns fromArray(response)

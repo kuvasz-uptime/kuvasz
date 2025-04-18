@@ -4,7 +4,7 @@
 package com.kuvaszuptime.kuvasz.enums;
 
 
-import com.kuvaszuptime.kuvasz.DefaultSchema;
+import com.kuvaszuptime.kuvasz.Kuvasz;
 
 import org.jooq.Catalog;
 import org.jooq.EnumType;
@@ -34,7 +34,7 @@ public enum UptimeStatus implements EnumType {
 
     @Override
     public Schema getSchema() {
-        return DefaultSchema.DEFAULT_SCHEMA;
+        return Kuvasz.KUVASZ;
     }
 
     @Override

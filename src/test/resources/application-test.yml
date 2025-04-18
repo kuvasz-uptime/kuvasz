@@ -13,9 +13,6 @@ datasources:
   default:
     maximumPoolSize: 3
 ---
-http-communication-log:
-  enabled: true
----
 admin-auth:
   username: test-user
   password: test-pass-test-pass-test-pass
@@ -25,3 +22,7 @@ handler-config:
     enabled: false
     from: 'noreply@kuvasz.uptime'
     to: 'test-to@kuvasz.uptime'
+---
+logger:
+  levels:
+#    org.jooq: DEBUG

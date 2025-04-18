@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.tables.pojos.MonitorPojo
+import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import io.micronaut.core.annotation.Introspected
 import java.time.OffsetDateTime
 
@@ -22,21 +22,21 @@ data class MonitorDto(
     val updatedAt: OffsetDateTime?
 ) {
     companion object {
-        fun fromMonitorPojo(pojo: MonitorPojo) =
+        fun fromMonitorRecord(record: MonitorRecord) =
             MonitorDto(
-                id = pojo.id,
-                name = pojo.name,
-                url = pojo.url,
-                uptimeCheckInterval = pojo.uptimeCheckInterval,
-                enabled = pojo.enabled,
-                sslCheckEnabled = pojo.sslCheckEnabled,
-                pagerdutyKeyPresent = !pojo.pagerdutyIntegrationKey.isNullOrBlank(),
-                requestMethod = pojo.requestMethod,
-                latencyHistoryEnabled = pojo.latencyHistoryEnabled,
-                forceNoCache = pojo.forceNoCache,
-                followRedirects = pojo.followRedirects,
-                createdAt = pojo.createdAt,
-                updatedAt = pojo.updatedAt
+                id = record.id,
+                name = record.name,
+                url = record.url,
+                uptimeCheckInterval = record.uptimeCheckInterval,
+                enabled = record.enabled,
+                sslCheckEnabled = record.sslCheckEnabled,
+                pagerdutyKeyPresent = !record.pagerdutyIntegrationKey.isNullOrBlank(),
+                requestMethod = record.requestMethod,
+                latencyHistoryEnabled = record.latencyHistoryEnabled,
+                forceNoCache = record.forceNoCache,
+                followRedirects = record.followRedirects,
+                createdAt = record.createdAt,
+                updatedAt = record.updatedAt
             )
     }
 }

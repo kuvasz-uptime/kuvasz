@@ -5,7 +5,6 @@ package com.kuvaszuptime.kuvasz.tables.records;
 
 
 import com.kuvaszuptime.kuvasz.tables.LatencyLog;
-import com.kuvaszuptime.kuvasz.tables.pojos.LatencyLogPojo;
 
 import java.time.OffsetDateTime;
 
@@ -22,7 +21,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>latency_log.id</code>.
+     * Setter for <code>kuvasz.latency_log.id</code>.
      */
     public LatencyLogRecord setId(Integer value) {
         set(0, value);
@@ -30,14 +29,14 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     }
 
     /**
-     * Getter for <code>latency_log.id</code>.
+     * Getter for <code>kuvasz.latency_log.id</code>.
      */
     public Integer getId() {
         return (Integer) get(0);
     }
 
     /**
-     * Setter for <code>latency_log.monitor_id</code>.
+     * Setter for <code>kuvasz.latency_log.monitor_id</code>.
      */
     public LatencyLogRecord setMonitorId(Integer value) {
         set(1, value);
@@ -45,14 +44,14 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     }
 
     /**
-     * Getter for <code>latency_log.monitor_id</code>.
+     * Getter for <code>kuvasz.latency_log.monitor_id</code>.
      */
     public Integer getMonitorId() {
         return (Integer) get(1);
     }
 
     /**
-     * Setter for <code>latency_log.latency</code>. Lateny in ms
+     * Setter for <code>kuvasz.latency_log.latency</code>. Lateny in ms
      */
     public LatencyLogRecord setLatency(Integer value) {
         set(2, value);
@@ -60,14 +59,14 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     }
 
     /**
-     * Getter for <code>latency_log.latency</code>. Lateny in ms
+     * Getter for <code>kuvasz.latency_log.latency</code>. Lateny in ms
      */
     public Integer getLatency() {
         return (Integer) get(2);
     }
 
     /**
-     * Setter for <code>latency_log.created_at</code>.
+     * Setter for <code>kuvasz.latency_log.created_at</code>.
      */
     public LatencyLogRecord setCreatedAt(OffsetDateTime value) {
         set(3, value);
@@ -75,7 +74,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     }
 
     /**
-     * Getter for <code>latency_log.created_at</code>.
+     * Getter for <code>kuvasz.latency_log.created_at</code>.
      */
     public OffsetDateTime getCreatedAt() {
         return (OffsetDateTime) get(3);
@@ -112,20 +111,5 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
         setLatency(latency);
         setCreatedAt(createdAt);
         resetChangedOnNotNull();
-    }
-
-    /**
-     * Create a detached, initialised LatencyLogRecord
-     */
-    public LatencyLogRecord(LatencyLogPojo value) {
-        super(LatencyLog.LATENCY_LOG);
-
-        if (value != null) {
-            setId(value.getId());
-            setMonitorId(value.getMonitorId());
-            setLatency(value.getLatency());
-            setCreatedAt(value.getCreatedAt());
-            resetChangedOnNotNull();
-        }
     }
 }

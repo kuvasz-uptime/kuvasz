@@ -9,9 +9,10 @@
         </encoder>
     </appender>
 
-    <logger name="org.jooq" level="ERROR"/>
+    <!-- Need to be configured here, because the logger config in application.yml is evaluated later-->
+    <logger name="org.jooq.Constants" level="WARN"/>
 
-    <root level="info">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

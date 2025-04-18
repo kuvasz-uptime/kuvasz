@@ -4,8 +4,8 @@
 package com.kuvaszuptime.kuvasz.tables;
 
 
-import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Keys;
+import com.kuvaszuptime.kuvasz.Kuvasz;
 import com.kuvaszuptime.kuvasz.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.tables.LatencyLog.LatencyLogPath;
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SslEventPath;
@@ -49,7 +49,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>monitor</code>
+     * The reference instance of <code>kuvasz.monitor</code>
      */
     public static final Monitor MONITOR = new Monitor();
 
@@ -62,68 +62,69 @@ public class Monitor extends TableImpl<MonitorRecord> {
     }
 
     /**
-     * The column <code>monitor.id</code>.
+     * The column <code>kuvasz.monitor.id</code>.
      */
     public final TableField<MonitorRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
 
     /**
-     * The column <code>monitor.name</code>. Monitor's name
+     * The column <code>kuvasz.monitor.name</code>. Monitor's name
      */
     public final TableField<MonitorRecord, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(255).nullable(false), this, "Monitor's name");
 
     /**
-     * The column <code>monitor.url</code>. URL to check
+     * The column <code>kuvasz.monitor.url</code>. URL to check
      */
     public final TableField<MonitorRecord, String> URL = createField(DSL.name("url"), SQLDataType.CLOB.nullable(false), this, "URL to check");
 
     /**
-     * The column <code>monitor.uptime_check_interval</code>. Uptime checking
-     * interval in seconds
+     * The column <code>kuvasz.monitor.uptime_check_interval</code>. Uptime
+     * checking interval in seconds
      */
     public final TableField<MonitorRecord, Integer> UPTIME_CHECK_INTERVAL = createField(DSL.name("uptime_check_interval"), SQLDataType.INTEGER.nullable(false), this, "Uptime checking interval in seconds");
 
     /**
-     * The column <code>monitor.enabled</code>. Flag to toggle the monitor
+     * The column <code>kuvasz.monitor.enabled</code>. Flag to toggle the
+     * monitor
      */
     public final TableField<MonitorRecord, Boolean> ENABLED = createField(DSL.name("enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "Flag to toggle the monitor");
 
     /**
-     * The column <code>monitor.created_at</code>.
+     * The column <code>kuvasz.monitor.created_at</code>.
      */
     public final TableField<MonitorRecord, OffsetDateTime> CREATED_AT = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
     /**
-     * The column <code>monitor.updated_at</code>.
+     * The column <code>kuvasz.monitor.updated_at</code>.
      */
     public final TableField<MonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "");
 
     /**
-     * The column <code>monitor.ssl_check_enabled</code>.
+     * The column <code>kuvasz.monitor.ssl_check_enabled</code>.
      */
     public final TableField<MonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
     /**
-     * The column <code>monitor.pagerduty_integration_key</code>.
+     * The column <code>kuvasz.monitor.pagerduty_integration_key</code>.
      */
     public final TableField<MonitorRecord, String> PAGERDUTY_INTEGRATION_KEY = createField(DSL.name("pagerduty_integration_key"), SQLDataType.VARCHAR, this, "");
 
     /**
-     * The column <code>monitor.latency_history_enabled</code>.
+     * The column <code>kuvasz.monitor.latency_history_enabled</code>.
      */
     public final TableField<MonitorRecord, Boolean> LATENCY_HISTORY_ENABLED = createField(DSL.name("latency_history_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
 
     /**
-     * The column <code>monitor.follow_redirects</code>.
+     * The column <code>kuvasz.monitor.follow_redirects</code>.
      */
     public final TableField<MonitorRecord, Boolean> FOLLOW_REDIRECTS = createField(DSL.name("follow_redirects"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
 
     /**
-     * The column <code>monitor.force_no_cache</code>.
+     * The column <code>kuvasz.monitor.force_no_cache</code>.
      */
     public final TableField<MonitorRecord, Boolean> FORCE_NO_CACHE = createField(DSL.name("force_no_cache"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
 
     /**
-     * The column <code>monitor.request_method</code>.
+     * The column <code>kuvasz.monitor.request_method</code>.
      */
     public final TableField<MonitorRecord, HttpMethod> REQUEST_METHOD = createField(DSL.name("request_method"), SQLDataType.VARCHAR.nullable(false).defaultValue(DSL.field(DSL.raw("'GET'::kuvasz.http_method"), SQLDataType.VARCHAR)).asEnumDataType(HttpMethod.class), this, "");
 
@@ -136,21 +137,21 @@ public class Monitor extends TableImpl<MonitorRecord> {
     }
 
     /**
-     * Create an aliased <code>monitor</code> table reference
+     * Create an aliased <code>kuvasz.monitor</code> table reference
      */
     public Monitor(String alias) {
         this(DSL.name(alias), MONITOR);
     }
 
     /**
-     * Create an aliased <code>monitor</code> table reference
+     * Create an aliased <code>kuvasz.monitor</code> table reference
      */
     public Monitor(Name alias) {
         this(alias, MONITOR);
     }
 
     /**
-     * Create a <code>monitor</code> table reference
+     * Create a <code>kuvasz.monitor</code> table reference
      */
     public Monitor() {
         this(DSL.name("monitor"), null);
@@ -191,7 +192,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
 
     @Override
     public Schema getSchema() {
-        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : Kuvasz.KUVASZ;
     }
 
     @Override

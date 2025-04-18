@@ -11,7 +11,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 @MicronautTest(startApplication = false)
 class UptimeEventRepositoryTest(
     private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository
+    private val uptimeEventRepository: UptimeEventRepository,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -19,7 +19,7 @@ class UptimeEventRepositoryTest(
             `when`("the monitor is UP") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp(),
                     status = UptimeStatus.UP,
@@ -34,7 +34,7 @@ class UptimeEventRepositoryTest(
             `when`("the monitor is DOWN") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
-                    repository = uptimeEventRepository,
+                    dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp(),
                     status = UptimeStatus.DOWN,

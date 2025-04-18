@@ -1,7 +1,4 @@
-import org.jooq.meta.jaxb.MatcherRule
-import org.jooq.meta.jaxb.MatcherTransformType
-import org.jooq.meta.jaxb.Matchers
-import org.jooq.meta.jaxb.MatchersTableType
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 buildscript {
     val jooqVersion: String by project
@@ -30,6 +27,7 @@ plugins {
     id("com.github.ben-manes.versions")
     id("org.jlleitschuh.gradle.ktlint")
     id("org.flywaydb.flyway")
+    id("com.gradleup.shadow")
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
@@ -183,13 +181,21 @@ tasks.withType<JavaExec> {
     systemProperty("micronaut.environments", "dev")
 }
 
+tasks.withType<ShadowJar> {
+    mergeServiceFiles()
+}
+
 jib {
     from {
-        image = "gcr.io/distroless/java17-debian11"
+        image = "bellsoft/liberica-runtime-container:jre-17-cds-slim-musl"
         platforms {
             platform {
                 os = "linux"
                 architecture = "amd64"
+            }
+            platform {
+                os = "linux"
+                architecture = "arm64"
             }
         }
     }
@@ -232,31 +238,17 @@ jooq {
                 generator.apply {
                     database.apply {
                         inputSchema = dbSchema
-                        isOutputSchemaToDefault = true
+                        isOutputSchemaToDefault = false
                         excludes = "flyway_schema_history"
                     }
                     generate.apply {
                         isDeprecated = false
                         isValidationAnnotations = false
                         isFluentSetters = true
-                        isDaos = true
                     }
                     target.apply {
                         directory = "src/jooq/java"
                         packageName = "com.kuvaszuptime.kuvasz"
-                    }
-                    strategy.apply {
-                        name = "PojoSuffixStrategy"
-                        matchers = Matchers().apply {
-                            tables = listOf(
-                                MatchersTableType().apply {
-                                    pojoClass = MatcherRule().apply {
-                                        transform = MatcherTransformType.PASCAL
-                                        expression = "\$0_Pojo"
-                                    }
-                                }
-                            )
-                        }
                     }
                 }
             }

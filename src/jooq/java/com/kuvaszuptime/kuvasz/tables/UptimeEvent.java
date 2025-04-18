@@ -4,9 +4,9 @@
 package com.kuvaszuptime.kuvasz.tables;
 
 
-import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Indexes;
 import com.kuvaszuptime.kuvasz.Keys;
+import com.kuvaszuptime.kuvasz.Kuvasz;
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.tables.Monitor.MonitorPath;
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord;
@@ -49,7 +49,7 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>uptime_event</code>
+     * The reference instance of <code>kuvasz.uptime_event</code>
      */
     public static final UptimeEvent UPTIME_EVENT = new UptimeEvent();
 
@@ -62,38 +62,39 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     }
 
     /**
-     * The column <code>uptime_event.id</code>.
+     * The column <code>kuvasz.uptime_event.id</code>.
      */
     public final TableField<UptimeEventRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
 
     /**
-     * The column <code>uptime_event.monitor_id</code>.
+     * The column <code>kuvasz.uptime_event.monitor_id</code>.
      */
     public final TableField<UptimeEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
-     * The column <code>uptime_event.status</code>. Status of the event
+     * The column <code>kuvasz.uptime_event.status</code>. Status of the event
      */
     public final TableField<UptimeEventRecord, UptimeStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(UptimeStatus.class), this, "Status of the event");
 
     /**
-     * The column <code>uptime_event.error</code>.
+     * The column <code>kuvasz.uptime_event.error</code>.
      */
     public final TableField<UptimeEventRecord, String> ERROR = createField(DSL.name("error"), SQLDataType.CLOB, this, "");
 
     /**
-     * The column <code>uptime_event.started_at</code>. The current event
+     * The column <code>kuvasz.uptime_event.started_at</code>. The current event
      * started at
      */
     public final TableField<UptimeEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
     /**
-     * The column <code>uptime_event.ended_at</code>. The current event ended at
+     * The column <code>kuvasz.uptime_event.ended_at</code>. The current event
+     * ended at
      */
     public final TableField<UptimeEventRecord, OffsetDateTime> ENDED_AT = createField(DSL.name("ended_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "The current event ended at");
 
     /**
-     * The column <code>uptime_event.updated_at</code>.
+     * The column <code>kuvasz.uptime_event.updated_at</code>.
      */
     public final TableField<UptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
 
@@ -106,21 +107,21 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     }
 
     /**
-     * Create an aliased <code>uptime_event</code> table reference
+     * Create an aliased <code>kuvasz.uptime_event</code> table reference
      */
     public UptimeEvent(String alias) {
         this(DSL.name(alias), UPTIME_EVENT);
     }
 
     /**
-     * Create an aliased <code>uptime_event</code> table reference
+     * Create an aliased <code>kuvasz.uptime_event</code> table reference
      */
     public UptimeEvent(Name alias) {
         this(alias, UPTIME_EVENT);
     }
 
     /**
-     * Create a <code>uptime_event</code> table reference
+     * Create a <code>kuvasz.uptime_event</code> table reference
      */
     public UptimeEvent() {
         this(DSL.name("uptime_event"), null);
@@ -161,7 +162,7 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
 
     @Override
     public Schema getSchema() {
-        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : Kuvasz.KUVASZ;
     }
 
     @Override

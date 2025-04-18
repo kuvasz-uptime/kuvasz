@@ -12,8 +12,6 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.SlackWebhookClient
 import com.kuvaszuptime.kuvasz.services.SlackWebhookService
-import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
-import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
@@ -25,7 +23,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.*
 import io.reactivex.rxjava3.core.Single
-import org.jooq.Configuration
+import org.jooq.DSLContext
 import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
@@ -34,7 +32,7 @@ class SlackEventHandlerTest(
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     latencyLogRepository: LatencyLogRepository,
-    jooqConfig: Configuration
+    dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<SlackWebhookClient>()
 
@@ -48,7 +46,7 @@ class SlackEventHandlerTest(
             uptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
-            jooqConfig
+            dslContext,
         )
         SlackEventHandler(webhookServiceSpy, eventDispatcher)
 
@@ -103,7 +101,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -131,7 +129,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -159,7 +157,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -189,7 +187,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchOne(UPTIME_EVENT.MONITOR_ID, monitor.id)
+                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -260,7 +258,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -286,7 +284,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
@@ -312,7 +310,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -339,7 +337,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
                     monitor = monitor,
@@ -386,7 +384,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
@@ -412,7 +410,7 @@ class SlackEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstSSLRecord = sslEventRepository.fetchOne(SSL_EVENT.MONITOR_ID, monitor.id)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,

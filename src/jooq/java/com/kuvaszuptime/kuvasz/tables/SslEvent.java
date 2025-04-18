@@ -4,9 +4,9 @@
 package com.kuvaszuptime.kuvasz.tables;
 
 
-import com.kuvaszuptime.kuvasz.DefaultSchema;
 import com.kuvaszuptime.kuvasz.Indexes;
 import com.kuvaszuptime.kuvasz.Keys;
+import com.kuvaszuptime.kuvasz.Kuvasz;
 import com.kuvaszuptime.kuvasz.enums.SslStatus;
 import com.kuvaszuptime.kuvasz.tables.Monitor.MonitorPath;
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord;
@@ -49,7 +49,7 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * The reference instance of <code>ssl_event</code>
+     * The reference instance of <code>kuvasz.ssl_event</code>
      */
     public static final SslEvent SSL_EVENT = new SslEvent();
 
@@ -62,38 +62,39 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     }
 
     /**
-     * The column <code>ssl_event.id</code>.
+     * The column <code>kuvasz.ssl_event.id</code>.
      */
     public final TableField<SslEventRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
 
     /**
-     * The column <code>ssl_event.monitor_id</code>.
+     * The column <code>kuvasz.ssl_event.monitor_id</code>.
      */
     public final TableField<SslEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
-     * The column <code>ssl_event.status</code>. Status of the event
+     * The column <code>kuvasz.ssl_event.status</code>. Status of the event
      */
     public final TableField<SslEventRecord, SslStatus> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(SslStatus.class), this, "Status of the event");
 
     /**
-     * The column <code>ssl_event.error</code>.
+     * The column <code>kuvasz.ssl_event.error</code>.
      */
     public final TableField<SslEventRecord, String> ERROR = createField(DSL.name("error"), SQLDataType.CLOB, this, "");
 
     /**
-     * The column <code>ssl_event.started_at</code>. The current event started
-     * at
+     * The column <code>kuvasz.ssl_event.started_at</code>. The current event
+     * started at
      */
     public final TableField<SslEventRecord, OffsetDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "The current event started at");
 
     /**
-     * The column <code>ssl_event.ended_at</code>. The current event ended at
+     * The column <code>kuvasz.ssl_event.ended_at</code>. The current event
+     * ended at
      */
     public final TableField<SslEventRecord, OffsetDateTime> ENDED_AT = createField(DSL.name("ended_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "The current event ended at");
 
     /**
-     * The column <code>ssl_event.updated_at</code>.
+     * The column <code>kuvasz.ssl_event.updated_at</code>.
      */
     public final TableField<SslEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
 
@@ -106,21 +107,21 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     }
 
     /**
-     * Create an aliased <code>ssl_event</code> table reference
+     * Create an aliased <code>kuvasz.ssl_event</code> table reference
      */
     public SslEvent(String alias) {
         this(DSL.name(alias), SSL_EVENT);
     }
 
     /**
-     * Create an aliased <code>ssl_event</code> table reference
+     * Create an aliased <code>kuvasz.ssl_event</code> table reference
      */
     public SslEvent(Name alias) {
         this(alias, SSL_EVENT);
     }
 
     /**
-     * Create a <code>ssl_event</code> table reference
+     * Create a <code>kuvasz.ssl_event</code> table reference
      */
     public SslEvent() {
         this(DSL.name("ssl_event"), null);
@@ -161,7 +162,7 @@ public class SslEvent extends TableImpl<SslEventRecord> {
 
     @Override
     public Schema getSchema() {
-        return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
+        return aliased() ? null : Kuvasz.KUVASZ;
     }
 
     @Override

@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.events
 
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.tables.pojos.UptimeEventPojo
+import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -14,7 +14,7 @@ class EventTest : BehaviorSpec() {
     init {
         given("UptimeMonitorEvent.getEndedEventDuration() method") {
             `when`("the receiver's state differs from previousEvent's") {
-                val previousEvent = UptimeEventPojo()
+                val previousEvent = UptimeEventRecord()
                     .setStatus(UptimeStatus.DOWN)
                     .setStartedAt(OffsetDateTime.now())
                 val event = MonitorUpEvent(
@@ -29,7 +29,7 @@ class EventTest : BehaviorSpec() {
             }
 
             `when`("the receiver's state is the same as previousEvent's") {
-                val previousEvent = UptimeEventPojo()
+                val previousEvent = UptimeEventRecord()
                     .setStatus(UptimeStatus.UP)
                     .setStartedAt(OffsetDateTime.now())
                 val event = MonitorUpEvent(
@@ -58,7 +58,7 @@ class EventTest : BehaviorSpec() {
 
         given("UptimeMonitorEvent.continueWhenStateChanges() method") {
             `when`("the receiver's state differs from previousEvent's") {
-                val previousEvent = UptimeEventPojo()
+                val previousEvent = UptimeEventRecord()
                     .setStatus(UptimeStatus.DOWN)
                     .setStartedAt(OffsetDateTime.now())
                 val event = MonitorUpEvent(
@@ -78,7 +78,7 @@ class EventTest : BehaviorSpec() {
             }
 
             `when`("the receiver's state is the same as previousEvent's") {
-                val previousEvent = UptimeEventPojo()
+                val previousEvent = UptimeEventRecord()
                     .setStatus(UptimeStatus.UP)
                     .setStartedAt(OffsetDateTime.now())
                 val event = MonitorUpEvent(
