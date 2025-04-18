@@ -85,7 +85,7 @@ class UptimeChecker(
                 )
             )
         } else if (response.isRedirected() && monitor.followRedirects) {
-            val redirectionUri = response.getRedirectionUri()
+            val redirectionUri = response.getRedirectionUri(originalUrl = monitor.url)
             if (redirectionUri != null) {
                 eventDispatcher.dispatch(
                     RedirectEvent(
