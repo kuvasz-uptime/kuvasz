@@ -97,7 +97,7 @@ class CheckScheduler(
     private fun scheduleUptimeCheck(monitor: MonitorRecord): Result<ScheduledFuture<*>> =
         runCatching {
             // Spreading the first checks a little bit to prevent flooding the HTTP Client after startup
-            val initialDelay = uptimeCheckDelayRange.random().toDurationOfSeconds()
+            val initialDelay = (1..monitor.uptimeCheckInterval).random().toDurationOfSeconds()
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
             taskScheduler.scheduleAtFixedRate(initialDelay, period) {
                 uptimeChecker.check(monitor)
@@ -117,8 +117,5 @@ class CheckScheduler(
         private const val SSL_CHECK_INITIAL_DELAY_MINUTES = 1L
         private const val SSL_CHECK_PERIOD_DAYS = 1L
         private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
-
-        @Suppress("MagicNumber")
-        private val uptimeCheckDelayRange = (1..15)
     }
 }
