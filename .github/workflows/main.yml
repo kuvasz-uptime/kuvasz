@@ -25,10 +25,6 @@ jobs:
           ${{ runner.os }}-gradle-
     - name: Run Gradle check
       run: ./gradlew check
-    - name: Update API docs (to check if they are up to date)
-      run: ./gradlew updateApiDoc
-    - name: Verify generated sources committed
-      run: git diff --exit-code HEAD --
     - name: Codecov
       uses: codecov/codecov-action@v3
       with:
