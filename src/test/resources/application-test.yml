@@ -25,3 +25,8 @@ handler-config:
     enabled: false
     from: 'noreply@kuvasz.uptime'
     to: 'test-to@kuvasz.uptime'
+---
+logger:
+  levels:
+    org.jooq.Constants: WARN
+#    org.jooq: DEBUG

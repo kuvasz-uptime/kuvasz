@@ -110,3 +110,8 @@ smtp-config:
   username: ${SMTP_USERNAME:``}
   password: ${SMTP_PASSWORD:``}
   transport-strategy: ${SMTP_TRANSPORT_STRATEGY:`SMTP_TLS`}
+---
+logger:
+  levels:
+    org.jooq: ERROR
+    io.netty.channel.AbstractChannelHandlerContext: ERROR

@@ -33,3 +33,8 @@ admin-auth:
 smtp-config:
   host: ${SMTP_HOST:`smtp.mailtrap.io`}
   port: ${SMTP_PORT:`465`}
+---
+logger:
+  levels:
+    org.jooq.Constants: WARN
+#    org.jooq: DEBUG
