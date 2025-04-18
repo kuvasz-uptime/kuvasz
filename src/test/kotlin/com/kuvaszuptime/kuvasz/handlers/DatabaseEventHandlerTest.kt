@@ -18,6 +18,9 @@ import io.kotest.core.test.TestResult
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldHaveLength
+import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.clearAllMocks
@@ -238,7 +241,27 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[1].status shouldBe UptimeStatus.DOWN
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].error shouldBe "Reason: 500 Internal Server Error"
                     latencyRecord.latency shouldBe firstEvent.latency
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent - error message needs to be redacted") {
+                val monitor = createMonitor(monitorRepository)
+                val event = MonitorDownEvent(
+                    monitor = monitor,
+                    status = null,
+                    previousEvent = null,
+                    error = Throwable("error".repeat(200))
+                )
+                eventDispatcher.dispatch(event)
+
+                then("it should limit the error message to 255 characters and indicate that it was redacted") {
+                    val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    expectedUptimeRecord.error shouldHaveLength 255 + 8 + 15 // Prefix + 255 + suffix
+                    expectedUptimeRecord.error shouldStartWith "Reason: "
+                    expectedUptimeRecord.error shouldEndWith " ... [REDACTED]"
                 }
             }
         }

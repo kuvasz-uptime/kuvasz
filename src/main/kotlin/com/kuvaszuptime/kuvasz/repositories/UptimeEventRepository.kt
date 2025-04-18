@@ -23,7 +23,7 @@ class UptimeEventRepository(private val jooqConfig: Configuration) {
             .setUpdatedAt(event.dispatchedAt)
 
         if (event is MonitorDownEvent) {
-            eventToInsert.error = event.error.message
+            eventToInsert.error = event.toStructuredMessage().error
         }
 
         DSL.using(configuration)

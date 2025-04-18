@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.ERROR_MAX_LENGTH
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
@@ -20,6 +21,10 @@ sealed class MonitorEvent {
     abstract fun toStructuredMessage(): StructuredMessage
 
     val dispatchedAt = getCurrentTimestamp()
+
+    companion object {
+        const val ERROR_MAX_LENGTH = 255
+    }
 }
 
 sealed class UptimeMonitorEvent : MonitorEvent() {
@@ -72,13 +77,19 @@ data class MonitorDownEvent(
 
     override val uptimeStatus = UptimeStatus.DOWN
 
-    override fun toStructuredMessage() =
-        StructuredMonitorDownMessage(
+    override fun toStructuredMessage(): StructuredMonitorDownMessage {
+        val sanitizedError = error.message?.sanitizeMessage()
+        val structuredError = if (status != null) {
+            "${status.code} ${status.reason}"
+        } else sanitizedError
+
+        return StructuredMonitorDownMessage(
             summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
                 status?.let { " (" + it.code + ")" }.orEmpty(),
-            error = "Reason: ${error.message}",
+            error = "Reason: $structuredError",
             previousUpTime = getEndedEventDuration().toDurationString()?.let { "Was up for $it" }
         )
+    }
 }
 
 data class RedirectEvent(
@@ -87,7 +98,7 @@ data class RedirectEvent(
 ) : MonitorEvent() {
 
     override fun toStructuredMessage() = StructuredRedirectMessage(
-        summary = "Request to \"${monitor.name}\" (${monitor.url}) has been redirected"
+        summary = "Request to \"${monitor.name}\" (${monitor.url}) has been redirected to $redirectLocation",
     )
 }
 
@@ -144,7 +155,7 @@ data class SSLInvalidEvent(
     override fun toStructuredMessage() =
         StructuredSSLInvalidMessage(
             summary = "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate",
-            error = "Reason: ${error.message}",
+            error = "Reason: ${error.message?.sanitizeMessage()}",
             previousValidEvent = getEndedEventDuration().toDurationString()
                 ?.let { "Was ${getPreviousStatusString()} for $it" }
         )
@@ -164,3 +175,18 @@ data class SSLWillExpireEvent(
             validUntil = "Expiry date: ${certInfo.validTo}"
         )
 }
+
+private fun String.sanitizeMessage(): String {
+    val sanitized = removeControlChars()
+    return if (sanitized.length > ERROR_MAX_LENGTH) {
+        "${sanitized.take(ERROR_MAX_LENGTH)} ... [REDACTED]"
+    } else sanitized
+}
+
+/**
+ * Removes non-visible or non-readable characters from the string, also replaces null characters with the string
+ * "null" (null characters can't be handled by Postgres)
+ */
+private fun String.removeControlChars() =
+    replace("\u0000", "null")
+        .filter { !it.isISOControl() }

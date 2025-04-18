@@ -62,12 +62,22 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 }
             }
 
+            `when`("it gets a MonitorDownEvent without a status") {
+                val event = MonitorDownEvent(monitor, null, Throwable("uptime error"), null)
+
+                then("it should use the error message as a reason") {
+                    val expectedMessage =
+                        "Your monitor \"test_monitor\" (https://test.url) is DOWN\nReason: uptime error"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
             `when`("it gets a MonitorDownEvent without a previousEvent") {
                 val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Throwable("uptime error"), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
-                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: uptime error"
+                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -83,7 +93,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
                 then("it should return the correct message") {
                     val expectedMessage =
-                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: uptime error"
+                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -102,7 +112,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                     val expectedDurationString =
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
-                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: uptime error\n" +
+                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request\n" +
                             "Was up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }

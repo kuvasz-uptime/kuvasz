@@ -143,7 +143,7 @@ class SMTPEventHandlerTest(
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
-                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    status = HttpStatus.GATEWAY_TIMEOUT,
                     error = Throwable("Second error"),
                     previousEvent = firstUptimeRecord
                 )
@@ -153,7 +153,7 @@ class SMTPEventHandlerTest(
                     val slot = slot<Email>()
 
                     verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldContain "First error"
+                    slot.captured.plainText shouldContain "500 Internal Server Error"
                     slot.captured.plainText shouldBe expectedEmail.plainText
                     slot.captured.subject shouldContain "is DOWN"
                     slot.captured.subject shouldBe expectedEmail.subject
