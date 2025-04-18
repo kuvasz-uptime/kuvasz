@@ -117,6 +117,7 @@ class CheckScheduler(
         private const val SSL_CHECK_INITIAL_DELAY_MINUTES = 1L
         private const val SSL_CHECK_PERIOD_DAYS = 1L
         private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
+
         @Suppress("MagicNumber")
         private val uptimeCheckDelayRange = (1..15)
     }

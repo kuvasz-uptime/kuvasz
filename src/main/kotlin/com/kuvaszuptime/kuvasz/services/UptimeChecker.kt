@@ -11,23 +11,22 @@ import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isRedirected
 import com.kuvaszuptime.kuvasz.util.isSuccess
-import io.micronaut.context.annotation.Factory
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
-import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.runtime.ApplicationConfiguration
 import io.micronaut.rxjava3.http.client.Rx3HttpClient
-import jakarta.inject.Named
 import jakarta.inject.Singleton
 import java.net.URI
 
 @Singleton
 class UptimeChecker(
-    @Client("uptime-checker") private val httpClient: Rx3HttpClient,
+    @Client(configuration = HttpCheckerClientConfiguration::class)
+    private val httpClient: Rx3HttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository
 ) {
@@ -127,15 +126,16 @@ class UptimeChecker(
     }
 }
 
-@Factory
-class UptimeCheckerHttpClientConfigFactory {
+@Singleton
+class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpClientConfiguration(config) {
 
-    @Named("uptime-checker")
-    @Singleton
-    fun configuration(): HttpClientConfiguration {
-        val config = DefaultHttpClientConfiguration()
-        config.eventLoopGroup = "uptime-check"
-        config.isFollowRedirects = false
-        return config
+    override fun getEventLoopGroup(): String = EVENT_LOOP_GROUP
+
+    override fun isFollowRedirects(): Boolean = false
+
+    override fun getConnectionPoolConfiguration(): ConnectionPoolConfiguration = ConnectionPoolConfiguration()
+
+    companion object {
+        private const val EVENT_LOOP_GROUP = "uptime-check"
     }
 }

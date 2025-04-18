@@ -42,7 +42,6 @@ micronaut:
       uptime-check:
         num-threads: 20
         prefer-native-transport: true
-        executor: 'io'
 endpoints:
   health:
     enabled: true
