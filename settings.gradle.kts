@@ -10,7 +10,7 @@ pluginManagement {
         kotlin("kapt") version kotlinVersion
         kotlin("plugin.allopen") version kotlinVersion
 
-        val micronautGradlePluginVersion = "4.5.2"
+        val micronautGradlePluginVersion = "4.5.3"
         id("io.micronaut.minimal.application") version micronautGradlePluginVersion
         id("io.micronaut.docker") version micronautGradlePluginVersion
 
@@ -26,5 +26,5 @@ pluginManagement {
 
 plugins {
     // This one should match the micronautGradlePluginVersion above
-    id("io.micronaut.platform.catalog") version "4.5.2"
+    id("io.micronaut.platform.catalog") version "4.5.3"
 }
