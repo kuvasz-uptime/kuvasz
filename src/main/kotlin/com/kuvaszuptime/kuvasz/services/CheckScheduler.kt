@@ -1,12 +1,10 @@
 package com.kuvaszuptime.kuvasz.services
 
-import arrow.core.Either
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.ScheduledCheck
 import com.kuvaszuptime.kuvasz.models.SchedulingError
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
-import com.kuvaszuptime.kuvasz.util.catchBlocking
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.context.annotation.Context
 import io.micronaut.scheduling.TaskExecutors
@@ -25,18 +23,11 @@ class CheckScheduler(
     private val sslChecker: SSLChecker
 ) {
 
-    companion object {
-        private const val SSL_CHECK_INITIAL_DELAY_MINUTES = 1L
-        private const val SSL_CHECK_PERIOD_DAYS = 1L
-        private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
-    }
-
     private val scheduledChecks: MutableList<ScheduledCheck> = mutableListOf()
 
     @PostConstruct
     fun initialize() {
-        monitorRepository.fetchByEnabled(true)
-            .forEach { createChecksForMonitor(it) }
+        monitorRepository.fetchByEnabled(true).forEach { createChecksForMonitor(it) }
     }
 
     fun getScheduledChecks() = scheduledChecks
@@ -51,10 +42,6 @@ class CheckScheduler(
         }
 
         return scheduleUptimeCheck(monitor).fold(
-            { error ->
-                error.log(CheckType.UPTIME, monitor)
-                SchedulingError(error.message)
-            },
             { scheduledUptimeTask ->
                 ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledUptimeTask)
                     .also { scheduledChecks.add(it) }
@@ -62,18 +49,22 @@ class CheckScheduler(
 
                 if (monitor.sslCheckEnabled) {
                     scheduleSSLCheck(monitor).fold(
-                        { error ->
-                            error.log(CheckType.SSL, monitor)
-                            SchedulingError(error.message)
-                        },
                         { scheduledSSLTask ->
                             ScheduledCheck(checkType = CheckType.SSL, monitorId = monitor.id, task = scheduledSSLTask)
                                 .also { scheduledChecks.add(it) }
                                 .also { it.log(monitor) }
+                        },
+                        { error ->
+                            error.log(CheckType.SSL, monitor)
+                            SchedulingError(error.message)
                         }
                     )
                 }
                 null
+            },
+            { error ->
+                error.log(CheckType.UPTIME, monitor)
+                SchedulingError(error.message)
             }
         )
     }
@@ -103,20 +94,30 @@ class CheckScheduler(
         return createChecksForMonitor(updatedMonitor)
     }
 
-    private fun scheduleUptimeCheck(monitor: MonitorRecord): Either<Throwable, ScheduledFuture<*>> =
-        Either.catchBlocking {
+    private fun scheduleUptimeCheck(monitor: MonitorRecord): Result<ScheduledFuture<*>> =
+        runCatching {
+            // Spreading the first checks a little bit to prevent flooding the HTTP Client after startup
+            val initialDelay = uptimeCheckDelayRange.random().toDurationOfSeconds()
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
-            taskScheduler.scheduleAtFixedRate(period, period) {
+            taskScheduler.scheduleAtFixedRate(initialDelay, period) {
                 uptimeChecker.check(monitor)
             }
         }
 
-    private fun scheduleSSLCheck(monitor: MonitorRecord): Either<Throwable, ScheduledFuture<*>> =
-        Either.catchBlocking {
+    private fun scheduleSSLCheck(monitor: MonitorRecord): Result<ScheduledFuture<*>> =
+        runCatching {
             val initialDelay = Duration.ofMinutes(SSL_CHECK_INITIAL_DELAY_MINUTES)
             val period = Duration.ofDays(SSL_CHECK_PERIOD_DAYS)
             taskScheduler.scheduleAtFixedRate(initialDelay, period) {
                 sslChecker.check(monitor)
             }
         }
+
+    companion object {
+        private const val SSL_CHECK_INITIAL_DELAY_MINUTES = 1L
+        private const val SSL_CHECK_PERIOD_DAYS = 1L
+        private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
+        @Suppress("MagicNumber")
+        private val uptimeCheckDelayRange = (1..15)
+    }
 }
