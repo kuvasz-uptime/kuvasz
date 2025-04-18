@@ -22,7 +22,10 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.ApplicationConfiguration
 import io.micronaut.rxjava3.http.client.Rx3HttpClient
 import jakarta.inject.Singleton
+import org.slf4j.LoggerFactory
 import java.net.URI
+import java.time.Duration
+import java.util.*
 
 @Singleton
 class UptimeChecker(
@@ -34,11 +37,16 @@ class UptimeChecker(
 
     companion object {
         private const val RETRY_COUNT = 3L
+        private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
     fun check(monitor: MonitorRecord, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         var start = 0L
+
+        if (uriOverride == null) {
+            logger.info("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
+        }
 
         @Suppress("TooGenericExceptionCaught")
         sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
@@ -145,9 +153,12 @@ class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpCli
 
     override fun isFollowRedirects(): Boolean = false
 
+    override fun getReadTimeout(): Optional<Duration> = Optional.of(Duration.ofSeconds(READ_TIMEOUT_SECONDS))
+
     override fun getConnectionPoolConfiguration(): ConnectionPoolConfiguration = ConnectionPoolConfiguration()
 
     companion object {
         private const val EVENT_LOOP_GROUP = "uptime-check"
+        private const val READ_TIMEOUT_SECONDS = 30L
     }
 }

@@ -40,7 +40,7 @@ micronaut:
   netty:
     event-loops:
       uptime-check:
-        num-threads: 20
+        num-threads: 40
         prefer-native-transport: true
 endpoints:
   health:
