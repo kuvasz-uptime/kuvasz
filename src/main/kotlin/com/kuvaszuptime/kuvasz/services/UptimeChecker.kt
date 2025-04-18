@@ -17,6 +17,7 @@ import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.ApplicationConfiguration
 import io.micronaut.rxjava3.http.client.Rx3HttpClient
@@ -39,16 +40,27 @@ class UptimeChecker(
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         var start = 0L
 
+        @Suppress("TooGenericExceptionCaught")
         sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
             .doOnSubscribe { start = System.currentTimeMillis() }
             .subscribe(
                 { response -> handleResponse(monitor, response, start, previousEvent) },
                 { error ->
+                    var clarifiedError = error
+                    val status = try {
+                        (error as? HttpClientResponseException)?.status
+                    } catch (ex: Throwable) {
+                        // Invalid status codes (e.g. 498) are throwing an IllegalArgumentException for example
+                        // Better to have an explicit error, because the status won't be visible later, so it would be
+                        // harder for the users to figure out what was failing during the check
+                        clarifiedError = HttpClientException(ex.message, ex)
+                        null
+                    }
                     eventDispatcher.dispatch(
                         MonitorDownEvent(
                             monitor = monitor,
-                            status = (error as? HttpClientResponseException)?.status,
-                            error = error,
+                            status = status,
+                            error = clarifiedError,
                             previousEvent = previousEvent
                         )
                     )
