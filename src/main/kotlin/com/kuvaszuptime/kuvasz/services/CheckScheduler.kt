@@ -99,7 +99,7 @@ class CheckScheduler(
             // Spreading the first checks a little bit to prevent flooding the HTTP Client after startup
             val initialDelay = (1..monitor.uptimeCheckInterval).random().toDurationOfSeconds()
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
-            taskScheduler.scheduleAtFixedRate(initialDelay, period) {
+            taskScheduler.scheduleWithFixedDelay(initialDelay, period) {
                 uptimeChecker.check(monitor)
             }
         }
@@ -108,7 +108,7 @@ class CheckScheduler(
         runCatching {
             val initialDelay = Duration.ofMinutes(SSL_CHECK_INITIAL_DELAY_MINUTES)
             val period = Duration.ofDays(SSL_CHECK_PERIOD_DAYS)
-            taskScheduler.scheduleAtFixedRate(initialDelay, period) {
+            taskScheduler.scheduleWithFixedDelay(initialDelay, period) {
                 sslChecker.check(monitor)
             }
         }
