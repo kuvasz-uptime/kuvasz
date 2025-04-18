@@ -21,6 +21,7 @@ pluginManagement {
         id("com.github.ben-manes.versions") version "0.52.0"
         id("org.jlleitschuh.gradle.ktlint") version "11.3.1"
         id("org.flywaydb.flyway") version flywayPluginVersion
+        id("com.gradleup.shadow") version "8.3.6"
     }
 }
 

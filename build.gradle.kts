@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 buildscript {
     val jooqVersion: String by project
     configurations["classpath"].resolutionStrategy.eachDependency {
@@ -25,6 +27,7 @@ plugins {
     id("com.github.ben-manes.versions")
     id("org.jlleitschuh.gradle.ktlint")
     id("org.flywaydb.flyway")
+    id("com.gradleup.shadow")
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
@@ -178,13 +181,21 @@ tasks.withType<JavaExec> {
     systemProperty("micronaut.environments", "dev")
 }
 
+tasks.withType<ShadowJar> {
+    mergeServiceFiles()
+}
+
 jib {
     from {
-        image = "gcr.io/distroless/java17-debian11"
+        image = "bellsoft/liberica-runtime-container:jre-17-cds-slim-musl"
         platforms {
             platform {
                 os = "linux"
                 architecture = "amd64"
+            }
+            platform {
+                os = "linux"
+                architecture = "arm64"
             }
         }
     }
