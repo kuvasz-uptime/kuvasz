@@ -142,6 +142,8 @@ class UptimeChecker(
             )
             .header(HttpHeaders.ACCEPT, "*/*")
             .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
+            // TODO move it to const and make it overridable
+            .header(HttpHeaders.USER_AGENT, "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz")
             .apply {
                 if (monitor.forceNoCache)
                     header(HttpHeaders.CACHE_CONTROL, "no-cache")
