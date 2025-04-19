@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.models.toMicronautHttpMethod
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
-import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isRedirected
 import com.kuvaszuptime.kuvasz.util.isSuccess
@@ -15,13 +14,15 @@ import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.retry.annotation.Retryable
 import io.micronaut.runtime.ApplicationConfiguration
-import io.micronaut.rxjava3.http.client.Rx3HttpClient
 import jakarta.inject.Singleton
+import kotlinx.coroutines.reactive.awaitSingle
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
@@ -30,7 +31,7 @@ import java.util.*
 @Singleton
 class UptimeChecker(
     @Client(configuration = HttpCheckerClientConfiguration::class)
-    private val httpClient: Rx3HttpClient,
+    private val httpClient: HttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository
 ) {
@@ -40,50 +41,52 @@ class UptimeChecker(
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
-    fun check(monitor: MonitorRecord, uriOverride: URI? = null) {
+    suspend fun check(monitor: MonitorRecord, uriOverride: URI? = null) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
-        var start = 0L
 
         if (uriOverride == null) {
             logger.info("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
         }
 
         @Suppress("TooGenericExceptionCaught")
-        sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
-            .doOnSubscribe { start = System.currentTimeMillis() }
-            .subscribe(
-                { response -> handleResponse(monitor, response, start, previousEvent) },
-                { error ->
-                    var clarifiedError = error
-                    val status = try {
-                        (error as? HttpClientResponseException)?.status
-                    } catch (ex: Throwable) {
-                        // Invalid status codes (e.g. 498) are throwing an IllegalArgumentException for example
-                        // Better to have an explicit error, because the status won't be visible later, so it would be
-                        // harder for the users to figure out what was failing during the check
-                        clarifiedError = HttpClientException(ex.message, ex)
-                        null
-                    }
-                    eventDispatcher.dispatch(
-                        MonitorDownEvent(
-                            monitor = monitor,
-                            status = status,
-                            error = clarifiedError,
-                            previousEvent = previousEvent
-                        )
-                    )
-                }
+
+        try {
+            val start = System.currentTimeMillis()
+            val response = sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
+            val latency = (System.currentTimeMillis() - start).toInt()
+
+            handleResponse(monitor, response, latency, previousEvent)
+        } catch (error: Throwable) {
+            var clarifiedError = error
+            val status = try {
+                (error as? HttpClientResponseException)?.status
+            } catch (ex: Throwable) {
+                // Invalid status codes (e.g. 498) are throwing an IllegalArgumentException for example
+                // Better to have an explicit error, because the status won't be visible later, so it would be
+                // harder for the users to figure out what was failing during the check
+                clarifiedError = HttpClientException(ex.message, ex)
+                null
+            }
+            eventDispatcher.dispatch(
+                MonitorDownEvent(
+                    monitor = monitor,
+                    status = status,
+                    error = clarifiedError,
+                    previousEvent = previousEvent
+                )
             )
+        }
     }
 
-    private fun handleResponse(
+    // TODO handle redirect locations in a way that we pass in a list of previously
+    //  seen redirects to avoid redirect loops
+    private suspend fun handleResponse(
         monitor: MonitorRecord,
         response: HttpResponse<ByteBuffer<Any>>,
-        start: Long,
+        latency: Int,
         previousEvent: UptimeEventRecord?
     ) {
         if (response.isSuccess()) {
-            val latency = (System.currentTimeMillis() - start).toInt()
             eventDispatcher.dispatch(
                 MonitorUpEvent(
                     monitor = monitor,
@@ -129,7 +132,9 @@ class UptimeChecker(
         }
     }
 
-    private fun sendHttpRequest(monitor: MonitorRecord, uri: URI): RawHttpResponse {
+    @Retryable(delay = "5s", attempts = "$RETRY_COUNT", multiplier = "2")
+    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpResponse<ByteBuffer<Any>> {
+        logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val request = HttpRequest
             .create<Any>(
                 monitor.requestMethod.toMicronautHttpMethod(),
@@ -137,12 +142,14 @@ class UptimeChecker(
             )
             .header(HttpHeaders.ACCEPT, "*/*")
             .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
+            // TODO move it to const and make it overridable
+            .header(HttpHeaders.USER_AGENT, "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz")
             .apply {
                 if (monitor.forceNoCache)
                     header(HttpHeaders.CACHE_CONTROL, "no-cache")
             }
 
-        return httpClient.exchange(request).retry(RETRY_COUNT)
+        return httpClient.exchange(request).awaitSingle()
     }
 }
 

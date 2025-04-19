@@ -189,7 +189,7 @@ coroutines:
       - 'Default'
       - 'Unconfined'
   RedundantSuspendModifier:
-    active: true
+    active: false
   SleepInsteadOfDelay:
     active: true
   SuspendFunWithCoroutineScopeReceiver:

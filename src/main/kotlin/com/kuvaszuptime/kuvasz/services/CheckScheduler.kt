@@ -11,6 +11,9 @@ import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Named
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
@@ -20,8 +23,11 @@ class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,
     private val uptimeChecker: UptimeChecker,
-    private val sslChecker: SSLChecker
+    private val sslChecker: SSLChecker,
+    dispatcher: CoroutineDispatcher,
 ) {
+
+    private val scope = CoroutineScope(dispatcher)
 
     private val scheduledChecks: MutableList<ScheduledCheck> = mutableListOf()
 
@@ -100,13 +106,27 @@ class CheckScheduler(
             val initialDelay = (1..monitor.uptimeCheckInterval).random().toDurationOfSeconds()
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
             taskScheduler.scheduleWithFixedDelay(initialDelay, period) {
-                uptimeChecker.check(monitor)
+                scope.launch {
+                    @Suppress("TooGenericExceptionCaught")
+                    try {
+                        uptimeChecker.check(monitor)
+                    } catch (ex: Throwable) {
+                        // Better to catch and swallow everything that wasn't catched before to prevent
+                        // the accidental cancellation of the parent coroutine
+                        logger.error(
+                            "An unexpected error happened during the uptime check of a " +
+                                "monitor (${monitor.name}): ${ex.message}"
+                        )
+                    }
+                }
             }
         }
 
     private fun scheduleSSLCheck(monitor: MonitorRecord): Result<ScheduledFuture<*>> =
         runCatching {
-            val initialDelay = Duration.ofMinutes(SSL_CHECK_INITIAL_DELAY_MINUTES)
+            val initialDelay = Duration.ofSeconds(
+                (SSL_CHECK_INITIAL_DELAY_MIN_SECONDS..SSL_CHECK_INITIAL_DELAY_MAX_SECONDS).random()
+            )
             val period = Duration.ofDays(SSL_CHECK_PERIOD_DAYS)
             taskScheduler.scheduleWithFixedDelay(initialDelay, period) {
                 sslChecker.check(monitor)
@@ -114,7 +134,8 @@ class CheckScheduler(
         }
 
     companion object {
-        private const val SSL_CHECK_INITIAL_DELAY_MINUTES = 1L
+        private const val SSL_CHECK_INITIAL_DELAY_MIN_SECONDS = 60L
+        private const val SSL_CHECK_INITIAL_DELAY_MAX_SECONDS = 300L
         private const val SSL_CHECK_PERIOD_DAYS = 1L
         private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
     }

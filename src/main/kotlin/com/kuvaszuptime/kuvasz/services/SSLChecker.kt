@@ -19,6 +19,7 @@ class SSLChecker(
 ) {
 
     companion object {
+        // TODO make it configurable
         private const val EXPIRY_THRESHOLD_DAYS = 30L
     }
 
