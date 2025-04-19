@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
@@ -56,7 +58,12 @@ class DatabaseEventHandler(
         currentEvent.previousEvent?.let { previousEvent ->
             if (currentEvent.statusNotEquals(previousEvent)) {
                 dslContext.transaction { config ->
-                    uptimeEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt, config.dsl())
+                    uptimeEventRepository.endUnfinishedEventsOfMonitor(
+                        monitorId = previousEvent.monitorId,
+                        withStatus = if (currentEvent is MonitorDownEvent) UptimeStatus.UP else UptimeStatus.DOWN,
+                        endedAt = currentEvent.dispatchedAt,
+                        ctx = config.dsl()
+                    )
                     uptimeEventRepository.insertFromMonitorEvent(currentEvent, config.dsl())
                 }
             } else {
