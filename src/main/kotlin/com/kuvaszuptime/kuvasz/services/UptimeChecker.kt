@@ -43,7 +43,11 @@ class UptimeChecker(
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
-    suspend fun check(monitor: MonitorRecord, uriOverride: URI? = null) {
+    suspend fun check(
+        monitor: MonitorRecord,
+        uriOverride: URI? = null,
+        doAfter: (monitor: MonitorRecord) -> Unit = {},
+    ) {
         val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
 
         if (uriOverride == null) {
@@ -77,6 +81,7 @@ class UptimeChecker(
                 )
             )
         }
+        doAfter(monitor)
     }
 
     // TODO handle redirect locations in a way that we pass in a list of previously

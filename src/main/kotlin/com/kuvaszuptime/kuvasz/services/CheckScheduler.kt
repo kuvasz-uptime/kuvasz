@@ -16,8 +16,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.time.Duration
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
+@Suppress("TooManyFunctions") // TODO refactor
 @Context
 class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
@@ -38,21 +42,47 @@ class CheckScheduler(
 
     fun getScheduledChecks() = scheduledChecks
 
-    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? {
-        fun Throwable.log(checkType: CheckType, monitor: MonitorRecord) {
-            logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: $message")
-        }
+    @Suppress("UnusedPrivateMember") // False-positive
+    private fun ScheduledCheck.log(monitor: MonitorRecord) {
+        val estimatedNextCheckEpoch = System.currentTimeMillis() + task.getDelay(TimeUnit.MILLISECONDS)
+        val estimatedNextCheck =
+            Instant.ofEpochMilli(estimatedNextCheckEpoch).atOffset(ZoneOffset.UTC)
+        logger.info(
+            "${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully. " +
+                "Next check will happen around: $estimatedNextCheck"
+        )
+    }
 
-        fun ScheduledCheck.log(monitor: MonitorRecord) {
-            logger.info("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully")
-        }
+    private fun Throwable.log(checkType: CheckType, monitor: MonitorRecord) {
+        logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: $message")
+    }
+
+    private fun ScheduledFuture<*>.remember(monitor: MonitorRecord) {
+        ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = this)
+            .also { scheduledChecks.add(it) }
+            .also { it.log(monitor) }
+    }
+
+    private fun scheduledUptimeCheckSuccessHandler(
+        monitor: MonitorRecord,
+        doAfter: (ScheduledFuture<*>) -> Unit = {},
+    ): (ScheduledFuture<*>) -> SchedulingError? = { scheduledUptimeTask ->
+        scheduledUptimeTask.remember(monitor)
+        doAfter(scheduledUptimeTask)
+        null
+    }
+
+    private fun scheduledUptimeCheckErrorHandler(
+        monitor: MonitorRecord,
+    ): (Throwable) -> SchedulingError? = { error ->
+        error.log(CheckType.UPTIME, monitor)
+        SchedulingError(error.message)
+    }
+
+    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? {
 
         return scheduleUptimeCheck(monitor).fold(
-            { scheduledUptimeTask ->
-                ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledUptimeTask)
-                    .also { scheduledChecks.add(it) }
-                    .also { it.log(monitor) }
-
+            onSuccess = scheduledUptimeCheckSuccessHandler(monitor) { scheduledUptimeTask ->
                 if (monitor.sslCheckEnabled) {
                     scheduleSSLCheck(monitor).fold(
                         { scheduledSSLTask ->
@@ -66,12 +96,8 @@ class CheckScheduler(
                         }
                     )
                 }
-                null
             },
-            { error ->
-                error.log(CheckType.UPTIME, monitor)
-                SchedulingError(error.message)
-            }
+            onFailure = scheduledUptimeCheckErrorHandler(monitor)
         )
     }
 
@@ -82,7 +108,13 @@ class CheckScheduler(
             }
         }
         scheduledChecks.removeAll { it.monitorId == monitor.id }
-        logger.info("Uptime check for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
+        logger.info("Checks for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
+    }
+
+    fun removeUptimeCheckOfMonitor(monitor: MonitorRecord) {
+        val existingCheck = scheduledChecks
+            .filter { it.checkType == CheckType.UPTIME && it.monitorId == monitor.id }
+            .forEach { it.task.cancel(false) }
     }
 
     fun removeAllChecks() {
@@ -100,18 +132,29 @@ class CheckScheduler(
         return createChecksForMonitor(updatedMonitor)
     }
 
-    private fun scheduleUptimeCheck(monitor: MonitorRecord): Result<ScheduledFuture<*>> =
+    private fun scheduleUptimeCheck(
+        monitor: MonitorRecord,
+        resync: Boolean = false,
+    ): Result<ScheduledFuture<*>> =
         runCatching {
             // Spreading the first checks a little bit to prevent flooding the HTTP Client after startup
-            val initialDelay = (1..monitor.uptimeCheckInterval).random().toDurationOfSeconds()
+            val effectiveInitialDelay = if (resync) {
+                monitor.uptimeCheckInterval
+            } else
+                (1..monitor.uptimeCheckInterval).random()
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
-            taskScheduler.scheduleWithFixedDelay(initialDelay, period) {
+
+            taskScheduler.scheduleWithFixedDelay(effectiveInitialDelay.toDurationOfSeconds(), period) {
                 scope.launch {
                     @Suppress("TooGenericExceptionCaught")
                     try {
-                        uptimeChecker.check(monitor)
+                        uptimeChecker.check(monitor) { checkedMonitor ->
+                            // Re-applying the original check interval which acts like kind of a synchronization to
+                            // minimize the chance of overlapping requests
+                            reScheduleUptimeCheckForMonitor(checkedMonitor)
+                        }
                     } catch (ex: Throwable) {
-                        // Better to catch and swallow everything that wasn't catched before to prevent
+                        // Better to catch and swallow everything that wasn't caught before to prevent
                         // the accidental cancellation of the parent coroutine
                         logger.error(
                             "An unexpected error happened during the uptime check of a " +
@@ -132,6 +175,17 @@ class CheckScheduler(
                 sslChecker.check(monitor)
             }
         }
+
+    // Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
+    // delay of the monitor's uptime check interval, to decrease the chance of overlapping checks
+    fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingError? {
+        removeUptimeCheckOfMonitor(monitor)
+
+        return scheduleUptimeCheck(monitor, resync = true).fold(
+            onSuccess = scheduledUptimeCheckSuccessHandler(monitor),
+            onFailure = scheduledUptimeCheckErrorHandler(monitor),
+        )
+    }
 
     companion object {
         private const val SSL_CHECK_INITIAL_DELAY_MIN_SECONDS = 60L
