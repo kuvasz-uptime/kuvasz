@@ -112,9 +112,12 @@ class CheckScheduler(
     }
 
     fun removeUptimeCheckOfMonitor(monitor: MonitorRecord) {
-        val existingCheck = scheduledChecks
+        scheduledChecks
             .filter { it.checkType == CheckType.UPTIME && it.monitorId == monitor.id }
-            .forEach { it.task.cancel(false) }
+            .forEach { check ->
+                check.task.cancel(false)
+                scheduledChecks.remove(check)
+            }
     }
 
     fun removeAllChecks() {
@@ -178,6 +181,7 @@ class CheckScheduler(
 
     // Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
     // delay of the monitor's uptime check interval, to decrease the chance of overlapping checks
+    // TODO test
     fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingError? {
         removeUptimeCheckOfMonitor(monitor)
 
