@@ -33,11 +33,13 @@ class UptimeChecker(
     @Client(configuration = HttpCheckerClientConfiguration::class)
     private val httpClient: HttpClient,
     private val eventDispatcher: EventDispatcher,
-    private val uptimeEventRepository: UptimeEventRepository
+    private val uptimeEventRepository: UptimeEventRepository,
 ) {
 
     companion object {
         private const val RETRY_COUNT = 3L
+        private const val RETRY_INITIAL_DELAY = "1s"
+        private const val RETRY_BACKOFF_MULTIPLIER = 3L
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
@@ -49,7 +51,6 @@ class UptimeChecker(
         }
 
         @Suppress("TooGenericExceptionCaught")
-
         try {
             val start = System.currentTimeMillis()
             val response = sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
@@ -132,7 +133,7 @@ class UptimeChecker(
         }
     }
 
-    @Retryable(delay = "5s", attempts = "$RETRY_COUNT", multiplier = "2")
+    @Retryable(delay = RETRY_INITIAL_DELAY, attempts = "$RETRY_COUNT", multiplier = "$RETRY_BACKOFF_MULTIPLIER")
     suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpResponse<ByteBuffer<Any>> {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val request = HttpRequest
