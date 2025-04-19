@@ -12,16 +12,16 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.rxjava3.http.client.Rx3HttpClient
 import io.micronaut.security.token.render.BearerAccessRefreshToken
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest
 @Property(name = "micronaut.security.enabled", value = "true")
 class AuthenticationTest(
-    @Client("/") private val client: Rx3HttpClient,
+    @Client("/") private val client: HttpClient,
     private val authConfig: AdminAuthConfig
 ) : BehaviorSpec(
     {
@@ -91,7 +91,7 @@ class AuthenticationTest(
 @MicronautTest
 @Property(name = "micronaut.security.enabled", value = "false")
 class DisabledAuthenticationTest(
-    @Client("/") private val client: Rx3HttpClient,
+    @Client("/") private val client: HttpClient,
     private val authConfig: AdminAuthConfig
 ) : BehaviorSpec(
     {

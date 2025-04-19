@@ -63,7 +63,6 @@ dependencies {
     implementation(mn.logback.classic)
     implementation(mn.micronaut.http.client)
     implementation(mn.micronaut.rxjava3)
-    implementation(mn.micronaut.rxjava3.http.client)
     implementation(mn.micronaut.retry)
     implementation(mn.micronaut.security.jwt)
 
@@ -84,6 +83,7 @@ dependencies {
     implementation(mn.kotlin.stdlib.jdk8)
     implementation(mn.kotlin.reflect)
     implementation(mn.kotlinx.coroutines.core)
+    implementation(mn.kotlinx.coroutines.reactive)
     implementation(mn.micronaut.kotlin.extension.functions)
     implementation("io.arrow-kt:arrow-core-data:0.12.1")
 

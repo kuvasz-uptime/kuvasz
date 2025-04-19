@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
-import com.kuvaszuptime.kuvasz.testutils.toSubscriber
+import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
@@ -23,7 +23,6 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.spyk
-import io.reactivex.rxjava3.core.Flowable.fromArray
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.net.URI
 
@@ -34,13 +33,13 @@ class UptimeCheckerTest(
     private val eventDispatcher: EventDispatcher
 ) : DatabaseBehaviorSpec() {
     init {
-        val uptimeCheckerSpy = spyk(uptimeChecker, recordPrivateCalls = true)
+        val uptimeCheckerSpy = spyk(uptimeChecker)
 
         given("the UptimeChecker service") {
             `when`("it checks a monitor that is UP - GET") {
                 val monitor = createMonitor(monitorRepository)
                 val subscriber = TestSubscriber<MonitorUpEvent>()
-                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
 
                 uptimeCheckerSpy.check(monitor)
@@ -57,7 +56,7 @@ class UptimeCheckerTest(
             `when`("it checks a monitor that is UP - HEAD") {
                 val monitor = createMonitor(monitorRepository, requestMethod = HttpMethod.HEAD)
                 val subscriber = TestSubscriber<MonitorUpEvent>()
-                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
 
                 uptimeCheckerSpy.check(monitor)
@@ -74,7 +73,7 @@ class UptimeCheckerTest(
             `when`("it checks a monitor that is UP - forceNoCache is false") {
                 val monitor = createMonitor(monitorRepository, forceNoCache = false)
                 val subscriber = TestSubscriber<MonitorUpEvent>()
-                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(subscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
 
                 uptimeCheckerSpy.check(monitor)
@@ -91,7 +90,7 @@ class UptimeCheckerTest(
             `when`("it checks a monitor that is DOWN") {
                 val monitor = createMonitor(monitorRepository, url = "http://this-should-not.exist")
                 val subscriber = TestSubscriber<MonitorDownEvent>()
-                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(subscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
                 then("it should dispatch a MonitorDownEvent") {
                     uptimeCheckerSpy.check(monitor)
@@ -106,8 +105,8 @@ class UptimeCheckerTest(
                 val monitor = createMonitor(monitorRepository, followRedirects = false)
                 val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
                 val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
-                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
-                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(monitorDownSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
 
                 then("it should dispatch a MonitorDownEvent and a MonitorUpEvent") {
@@ -131,8 +130,8 @@ class UptimeCheckerTest(
                 val monitor = createMonitor(monitorRepository)
                 val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
                 val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
-                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
-                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(monitorDownSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
 
                 then("it should dispatch a MonitorUpEvent and a MonitorDownEvent") {
@@ -155,7 +154,7 @@ class UptimeCheckerTest(
             `when`("it checks a monitor that is redirected without a Location header") {
                 val monitor = createMonitor(monitorRepository)
                 val subscriber = TestSubscriber<MonitorDownEvent>()
-                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(subscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT)
 
                 uptimeCheckerSpy.check(monitor)
@@ -176,8 +175,8 @@ class UptimeCheckerTest(
                 val redirectLocation = "http://redirected-bad.loc"
                 val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
 
-                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(monitorDownSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.INTERNAL_SERVER_ERROR, redirectLocation.toUri())
 
@@ -204,8 +203,8 @@ class UptimeCheckerTest(
                 val redirectLocation = "http://redirected-bad.loc"
                 val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
 
-                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorDownEvents { it.toSubscriber(monitorDownSubscriber) }
+                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(monitorDownSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
 
                 uptimeCheckerSpy.check(monitor)
@@ -229,8 +228,8 @@ class UptimeCheckerTest(
                 val redirectLocation = "http://redirected-good.loc"
                 val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
 
-                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK, redirectLocation.toUri())
 
@@ -258,8 +257,8 @@ class UptimeCheckerTest(
                 val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
                 val expectedFinalRedirectLocation = URI(monitor.url).resolve(redirectLocation)
 
-                eventDispatcher.subscribeToRedirectEvents { it.toSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorUpEvents { it.toSubscriber(monitorUpSubscriber) }
+                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK, expectedFinalRedirectLocation)
 
@@ -304,6 +303,6 @@ class UptimeCheckerTest(
                 any<MonitorRecord>(),
                 requestUri ?: any<URI>()
             )
-        } returns fromArray(response)
+        } returns response
     }
 }
