@@ -44,13 +44,14 @@ class UptimeChecker(
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
+    private fun getPreviousEvent(monitor: MonitorRecord): UptimeEventRecord? =
+        uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
+
     suspend fun check(
         monitor: MonitorRecord,
         uriOverride: URI? = null,
         doAfter: (monitor: MonitorRecord) -> Unit = {},
     ) {
-        val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
-
         if (uriOverride == null) {
             logger.info("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
         }
@@ -61,7 +62,7 @@ class UptimeChecker(
             val response = sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
             val latency = (System.currentTimeMillis() - start).toInt()
 
-            handleResponse(monitor, response, latency, previousEvent)
+            handleResponse(monitor, response, latency)
         } catch (error: Throwable) {
             var clarifiedError = error
             val status = try {
@@ -78,7 +79,7 @@ class UptimeChecker(
                     monitor = monitor,
                     status = status,
                     error = clarifiedError,
-                    previousEvent = previousEvent
+                    previousEvent = getPreviousEvent(monitor)
                 )
             )
         }
@@ -91,7 +92,6 @@ class UptimeChecker(
         monitor: MonitorRecord,
         response: HttpResponse<ByteBuffer<Any>>,
         latency: Int,
-        previousEvent: UptimeEventRecord?
     ) {
         if (response.isSuccess()) {
             eventDispatcher.dispatch(
@@ -99,7 +99,7 @@ class UptimeChecker(
                     monitor = monitor,
                     status = response.status,
                     latency = latency,
-                    previousEvent = previousEvent
+                    previousEvent = getPreviousEvent(monitor),
                 )
             )
         } else if (response.isRedirected() && monitor.followRedirects) {
@@ -118,7 +118,7 @@ class UptimeChecker(
                         monitor = monitor,
                         status = response.status,
                         error = Throwable(message = "Invalid redirection without a Location header"),
-                        previousEvent = previousEvent
+                        previousEvent = getPreviousEvent(monitor)
                     )
                 )
             }
@@ -133,7 +133,7 @@ class UptimeChecker(
                     monitor = monitor,
                     status = response.status,
                     error = Throwable(message),
-                    previousEvent = previousEvent
+                    previousEvent = getPreviousEvent(monitor)
                 )
             )
         }
