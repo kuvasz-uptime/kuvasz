@@ -1,15 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.*
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.PublishSubject
+import io.reactivex.rxjava3.subjects.Subject
 import jakarta.inject.Singleton
+import org.slf4j.LoggerFactory
 
 @Singleton
 class EventDispatcher {
@@ -31,21 +28,35 @@ class EventDispatcher {
             is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
         }
 
+    private inline fun <reified T : MonitorEvent> Subject<T>.safeSubscribeOnIo(
+        crossinline consumer: (T) -> Unit
+    ): Disposable =
+        subscribeOn(Schedulers.io())
+            .subscribe { event ->
+                runCatching { consumer(event) }
+                    .exceptionOrNull()
+                    ?.let { logger.error("Error while processing a ${T::class.simpleName}", it) }
+            }
+
     fun subscribeToMonitorUpEvents(consumer: (MonitorUpEvent) -> Unit): Disposable =
-        monitorUpEvents.subscribe(consumer)
+        monitorUpEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToMonitorDownEvents(consumer: (MonitorDownEvent) -> Unit): Disposable =
-        monitorDownEvents.subscribe(consumer)
+        monitorDownEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToRedirectEvents(consumer: (RedirectEvent) -> Unit): Disposable =
-        redirectEvents.subscribe(consumer)
+        redirectEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToSSLValidEvents(consumer: (SSLValidEvent) -> Unit): Disposable =
-        sslValidEvents.subscribe(consumer)
+        sslValidEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToSSLInvalidEvents(consumer: (SSLInvalidEvent) -> Unit): Disposable =
-        sslInvalidEvents.subscribe(consumer)
+        sslInvalidEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToSSLWillExpireEvents(consumer: (SSLWillExpireEvent) -> Unit): Disposable =
-        sslWillExpireEvents.subscribe(consumer)
+        sslWillExpireEvents.safeSubscribeOnIo(consumer)
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(EventDispatcher::class.java)
+    }
 }
