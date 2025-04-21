@@ -34,34 +34,17 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
         .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    /**
-     * Returns the previous "open" event of the monitor by handling duplicated (therefore corrupted) open events
-     * gracefully.
-     */
     fun getPreviousEventByMonitorId(monitorId: Int): UptimeEventRecord? = dslContext
         .selectFrom(UPTIME_EVENT)
         .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .and(UPTIME_EVENT.ENDED_AT.isNull)
-        .orderBy(UPTIME_EVENT.STARTED_AT.desc())
-        .limit(1)
         .fetchOne()
 
-    /**
-     * Ends all unfinished events of a monitor with the given status and endedAt date. Kind of self-heals the issue
-     * if multiple open events would be created because of overlapping uptime checks.
-     */
-    fun endUnfinishedEventsOfMonitor(
-        monitorId: Int,
-        withStatus: UptimeStatus,
-        endedAt: OffsetDateTime,
-        ctx: DSLContext = dslContext,
-    ) = ctx
+    fun endEventById(eventId: Int, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
         .update(UPTIME_EVENT)
         .set(UPTIME_EVENT.ENDED_AT, endedAt)
         .set(UPTIME_EVENT.UPDATED_AT, endedAt)
-        .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .and(UPTIME_EVENT.ENDED_AT.isNull)
-        .and(UPTIME_EVENT.STATUS.eq(withStatus))
+        .where(UPTIME_EVENT.ID.eq(eventId))
         .execute()
 
     fun deleteEventsBeforeDate(limit: OffsetDateTime) = dslContext

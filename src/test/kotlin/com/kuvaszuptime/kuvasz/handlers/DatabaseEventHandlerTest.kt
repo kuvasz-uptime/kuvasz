@@ -66,7 +66,7 @@ class DatabaseEventHandlerTest(
                     val expectedLatencyRecord = latencyLogRepository.fetchByMonitorId(event.monitor.id).single()
 
                     verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
-                    verify(exactly = 0) { uptimeEventRepositorySpy.endUnfinishedEventsOfMonitor(any(), any(), any()) }
+                    verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any(), any()) }
                     verify(exactly = 1) {
                         latencyLogRepositorySpy.insertLatencyForMonitor(
                             event.monitor.id,
@@ -117,7 +117,7 @@ class DatabaseEventHandlerTest(
                     val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
                     verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
-                    verify(exactly = 0) { uptimeEventRepositorySpy.endUnfinishedEventsOfMonitor(any(), any(), any()) }
+                    verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
@@ -151,12 +151,7 @@ class DatabaseEventHandlerTest(
 
                     verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
                     verify(exactly = 0) {
-                        uptimeEventRepositorySpy.endUnfinishedEventsOfMonitor(
-                            any(),
-                            any(),
-                            any(),
-                            any()
-                        )
+                        uptimeEventRepositorySpy.endEventById(any(), any(), any())
                     }
                     verifyOrder {
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, firstEvent.latency)
@@ -198,9 +193,8 @@ class DatabaseEventHandlerTest(
                     verifyOrder {
                         uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, secondEvent.latency)
-                        uptimeEventRepositorySpy.endUnfinishedEventsOfMonitor(
-                            monitorId = firstUptimeRecord.monitorId,
-                            withStatus = UptimeStatus.DOWN,
+                        uptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
                             endedAt = secondEvent.dispatchedAt,
                             ctx = any()
                         )
@@ -243,9 +237,8 @@ class DatabaseEventHandlerTest(
                     verifyOrder {
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, firstEvent.latency)
                         uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
-                        uptimeEventRepositorySpy.endUnfinishedEventsOfMonitor(
-                            monitorId = firstUptimeRecord.monitorId,
-                            withStatus = UptimeStatus.UP,
+                        uptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
                             endedAt = secondEvent.dispatchedAt,
                             ctx = any()
                         )
