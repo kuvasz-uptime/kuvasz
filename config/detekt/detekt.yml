@@ -673,7 +673,7 @@ style:
   UnnecessaryInnerClass:
     active: false
   UnnecessaryLet:
-    active: true
+    active: false
   UnnecessaryParentheses:
     active: true
     allowForUnclearPrecedence: true

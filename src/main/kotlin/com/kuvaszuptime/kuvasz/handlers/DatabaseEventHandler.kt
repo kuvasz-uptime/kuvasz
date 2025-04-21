@@ -58,6 +58,7 @@ class DatabaseEventHandler(
                 "A previous event was found for [${currentEvent.monitor.name}] with ID: ${previousEvent.id} " +
                     "and status: ${previousEvent.status}. The current event's status is ${currentEvent.uptimeStatus}."
             )
+            // TODO refetch the previous event to ensure it is not stale, just in case
             if (currentEvent.statusNotEquals(previousEvent)) {
                 logger.debug(
                     "[${currentEvent.monitor.name}] The status of the previous event is different from the " +

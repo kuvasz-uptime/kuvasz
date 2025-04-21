@@ -154,7 +154,8 @@ class CheckScheduler(
                         uptimeChecker.check(monitor) { checkedMonitor ->
                             // Re-applying the original check interval which acts like kind of a synchronization to
                             // minimize the chance of overlapping requests
-                            reScheduleUptimeCheckForMonitor(checkedMonitor)
+                            // TODO test if it was really called
+                            if (checkedMonitor.enabled) reScheduleUptimeCheckForMonitor(checkedMonitor)
                         }
                     } catch (ex: Throwable) {
                         // Better to catch and swallow everything that wasn't caught before to prevent
