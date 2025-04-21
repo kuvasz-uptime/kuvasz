@@ -1,0 +1,4 @@
+logger:
+  levels:
+    org.jooq: DEBUG
+    com.kuvaszuptime: DEBUG
