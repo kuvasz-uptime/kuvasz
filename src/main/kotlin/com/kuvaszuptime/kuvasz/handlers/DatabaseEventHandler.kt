@@ -56,7 +56,15 @@ class DatabaseEventHandler(
 
     private fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {
         currentEvent.previousEvent?.let { previousEvent ->
+            logger.debug(
+                "A previous event was found for [${currentEvent.monitor.name}] with ID: ${previousEvent.id} " +
+                    "and status: ${previousEvent.status}. The current event's status is ${currentEvent.uptimeStatus}."
+            )
             if (currentEvent.statusNotEquals(previousEvent)) {
+                logger.debug(
+                    "[${currentEvent.monitor.name}] The status of the previous event is different from the " +
+                        "current event. Ending the previous event and inserting a new one."
+                )
                 dslContext.transaction { config ->
                     uptimeEventRepository.endUnfinishedEventsOfMonitor(
                         monitorId = previousEvent.monitorId,
@@ -65,11 +73,22 @@ class DatabaseEventHandler(
                         ctx = config.dsl()
                     )
                     uptimeEventRepository.insertFromMonitorEvent(currentEvent, config.dsl())
+                    logger.debug(
+                        "[${currentEvent.monitor.name}] The previous event has been ended and a new one " +
+                            "has been inserted."
+                    )
                 }
             } else {
+                logger.debug(
+                    "[${currentEvent.monitor.name}] The status of the previous event is the same as the current " +
+                        "event. Updating the updatedAt timestamp of the previous event."
+                )
                 uptimeEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
             }
-        } ?: uptimeEventRepository.insertFromMonitorEvent(currentEvent)
+        } ?: run {
+            logger.debug("A previous event was not found for [${currentEvent.monitor.name}], creating a new one")
+            uptimeEventRepository.insertFromMonitorEvent(currentEvent)
+        }
     }
 
     private fun handleSSLMonitorEvent(currentEvent: SSLMonitorEvent) {
