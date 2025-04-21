@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.models.toMicronautHttpMethod
+import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
@@ -34,6 +35,7 @@ class UptimeChecker(
     private val httpClient: HttpClient,
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository,
+    private val monitorRepository: MonitorRepository,
 ) {
 
     companion object {
@@ -50,7 +52,7 @@ class UptimeChecker(
     suspend fun check(
         monitor: MonitorRecord,
         uriOverride: URI? = null,
-        doAfter: (monitor: MonitorRecord) -> Unit = {},
+        doAfter: ((monitor: MonitorRecord) -> Unit)? = null,
     ) {
         if (uriOverride == null) {
             logger.info("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
@@ -83,7 +85,13 @@ class UptimeChecker(
                 )
             )
         }
-        doAfter(monitor)
+        logger.debug("Uptime check for monitor (${monitor.name}) finished")
+        if (doAfter != null) {
+            monitorRepository.findById(monitor.id)?.let { upToDateMonitor ->
+                logger.debug("Calling doAfter() hook on monitor with name [${upToDateMonitor.name}]")
+                doAfter(upToDateMonitor)
+            }
+        }
     }
 
     // TODO handle redirect locations in a way that we pass in a list of previously
