@@ -40,6 +40,7 @@ class UptimeChecker(
         private const val RETRY_COUNT = 3L
         private const val RETRY_INITIAL_DELAY = "1s"
         private const val RETRY_BACKOFF_MULTIPLIER = 3L
+        private const val RETRY_TIMEOUT = "30s"
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
@@ -138,7 +139,12 @@ class UptimeChecker(
         }
     }
 
-    @Retryable(delay = RETRY_INITIAL_DELAY, attempts = "$RETRY_COUNT", multiplier = "$RETRY_BACKOFF_MULTIPLIER")
+    @Retryable(
+        delay = RETRY_INITIAL_DELAY,
+        attempts = "$RETRY_COUNT",
+        multiplier = "$RETRY_BACKOFF_MULTIPLIER",
+        maxDelay = RETRY_TIMEOUT
+    )
     suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpResponse<ByteBuffer<Any>> {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val request = HttpRequest
