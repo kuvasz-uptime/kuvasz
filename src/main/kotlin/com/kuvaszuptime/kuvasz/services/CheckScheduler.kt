@@ -78,10 +78,9 @@ class CheckScheduler(
         SchedulingError(error.message)
     }
 
-    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? {
-
-        return scheduleUptimeCheck(monitor).fold(
-            onSuccess = scheduledUptimeCheckSuccessHandler(monitor) { scheduledUptimeTask ->
+    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? =
+        scheduleUptimeCheck(monitor, resync = false).fold(
+            onSuccess = scheduledUptimeCheckSuccessHandler(monitor) { _ ->
                 if (monitor.sslCheckEnabled) {
                     scheduleSSLCheck(monitor).fold(
                         { scheduledSSLTask ->
@@ -98,7 +97,6 @@ class CheckScheduler(
             },
             onFailure = scheduledUptimeCheckErrorHandler(monitor)
         )
-    }
 
     fun removeChecksOfMonitor(monitor: MonitorRecord) {
         scheduledChecks.forEach { check ->
@@ -136,7 +134,7 @@ class CheckScheduler(
 
     private fun scheduleUptimeCheck(
         monitor: MonitorRecord,
-        resync: Boolean = false,
+        resync: Boolean,
     ): Result<ScheduledFuture<*>> =
         runCatching {
             // Spreading the first checks a little bit to prevent flooding the HTTP Client after startup

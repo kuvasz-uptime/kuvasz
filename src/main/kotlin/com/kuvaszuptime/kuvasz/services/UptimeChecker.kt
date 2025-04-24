@@ -42,6 +42,7 @@ class UptimeChecker(
         private const val RETRY_COUNT = 2L
         private const val RETRY_INITIAL_DELAY = "500ms"
         private const val RETRY_BACKOFF_MULTIPLIER = 3L
+        private const val USER_AGENT = "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz"
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
@@ -160,8 +161,7 @@ class UptimeChecker(
             )
             .header(HttpHeaders.ACCEPT, "*/*")
             .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
-            // TODO move it to const and make it overridable
-            .header(HttpHeaders.USER_AGENT, "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz")
+            .header(HttpHeaders.USER_AGENT, USER_AGENT)
             .apply {
                 if (monitor.forceNoCache)
                     header(HttpHeaders.CACHE_CONTROL, "no-cache")
