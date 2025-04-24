@@ -11,9 +11,7 @@ import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Named
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
@@ -29,6 +27,7 @@ class CheckScheduler(
     private val uptimeChecker: UptimeChecker,
     private val sslChecker: SSLChecker,
     dispatcher: CoroutineDispatcher,
+    private val lockRegistry: UptimeCheckLockRegistry,
 ) {
 
     private val scope = CoroutineScope(dispatcher)
@@ -149,6 +148,8 @@ class CheckScheduler(
 
             taskScheduler.scheduleWithFixedDelay(effectiveInitialDelay.toDurationOfSeconds(), period) {
                 scope.launch {
+                    if (!lockRegistry.tryAcquire(monitor.id)) return@launch
+
                     @Suppress("TooGenericExceptionCaught")
                     try {
                         uptimeChecker.check(monitor) { checkedMonitor ->
@@ -164,6 +165,10 @@ class CheckScheduler(
                             "An unexpected error happened during the uptime check of a " +
                                 "monitor (${monitor.name}): ${ex.message}"
                         )
+                    } finally {
+                        withContext(NonCancellable) {
+                            lockRegistry.release(monitor.id)
+                        }
                     }
                 }
             }
