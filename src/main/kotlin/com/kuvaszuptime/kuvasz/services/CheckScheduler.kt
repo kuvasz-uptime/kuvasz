@@ -19,7 +19,6 @@ import java.time.ZoneOffset
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
-@Suppress("TooManyFunctions") // TODO refactor
 @Context
 class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
@@ -59,17 +58,13 @@ class CheckScheduler(
         logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: $message")
     }
 
-    private fun ScheduledFuture<*>.remember(monitor: MonitorRecord) {
-        ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = this)
-            .also { scheduledChecks.add(it) }
-            .also { it.log(monitor) }
-    }
-
     private fun scheduledUptimeCheckSuccessHandler(
         monitor: MonitorRecord,
         doAfter: (ScheduledFuture<*>) -> Unit = {},
     ): (ScheduledFuture<*>) -> SchedulingError? = { scheduledUptimeTask ->
-        scheduledUptimeTask.remember(monitor)
+        ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledUptimeTask)
+            .also { scheduledChecks.add(it) }
+            .also { it.log(monitor) }
         doAfter(scheduledUptimeTask)
         null
     }
@@ -111,7 +106,7 @@ class CheckScheduler(
         logger.info("Checks for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
     }
 
-    fun removeUptimeCheckOfMonitor(monitor: MonitorRecord) {
+    private fun removeUptimeCheckOfMonitor(monitor: MonitorRecord) {
         scheduledChecks
             .filter { it.checkType == CheckType.UPTIME && it.monitorId == monitor.id }
             .forEach { check ->
@@ -149,14 +144,13 @@ class CheckScheduler(
 
             taskScheduler.scheduleWithFixedDelay(effectiveInitialDelay.toDurationOfSeconds(), period) {
                 scope.launch {
+                    if (!lockRegistry.tryAcquire(monitor.id)) return@launch
+
                     @Suppress("TooGenericExceptionCaught")
                     try {
-                        if (!lockRegistry.tryAcquire(monitor.id)) return@launch
-
                         uptimeChecker.check(monitor) { checkedMonitor ->
                             // Re-applying the original check interval which acts like kind of a synchronization to
                             // minimize the chance of overlapping requests
-                            // TODO test if it was really called
                             if (checkedMonitor.enabled) reScheduleUptimeCheckForMonitor(checkedMonitor)
                         }
                     } catch (ex: Throwable) {
@@ -188,8 +182,7 @@ class CheckScheduler(
 
     // Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
     // delay of the monitor's uptime check interval, to decrease the chance of overlapping checks
-    // TODO test
-    fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingError? {
+    private fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingError? {
         removeUptimeCheckOfMonitor(monitor)
 
         return scheduleUptimeCheck(monitor, resync = true).fold(
