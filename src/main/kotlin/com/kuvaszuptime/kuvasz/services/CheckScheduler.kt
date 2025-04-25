@@ -29,8 +29,11 @@ class CheckScheduler(
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
 ) {
+    private val coroutineExHandler = CoroutineExceptionHandler { _, ex ->
+        logger.warn("Coroutine failed with ${ex::class.simpleName}: ${ex.message}")
+    }
 
-    private val scope = CoroutineScope(dispatcher)
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher + coroutineExHandler)
 
     private val scheduledChecks: MutableList<ScheduledCheck> = mutableListOf()
 
@@ -146,10 +149,10 @@ class CheckScheduler(
 
             taskScheduler.scheduleWithFixedDelay(effectiveInitialDelay.toDurationOfSeconds(), period) {
                 scope.launch {
-                    if (!lockRegistry.tryAcquire(monitor.id)) return@launch
-
                     @Suppress("TooGenericExceptionCaught")
                     try {
+                        if (!lockRegistry.tryAcquire(monitor.id)) return@launch
+
                         uptimeChecker.check(monitor) { checkedMonitor ->
                             // Re-applying the original check interval which acts like kind of a synchronization to
                             // minimize the chance of overlapping requests
