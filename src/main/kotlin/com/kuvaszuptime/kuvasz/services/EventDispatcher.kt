@@ -33,7 +33,6 @@ class EventDispatcher {
     ): Disposable =
         subscribeOn(Schedulers.io())
             .subscribe { event ->
-                // TODO explicitly test if subscription is NOT cancelled in case of an error
                 runCatching { consumer(event) }
                     .exceptionOrNull()
                     ?.let { logger.error("Error while processing a ${T::class.simpleName}", it) }
