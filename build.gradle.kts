@@ -94,6 +94,7 @@ dependencies {
     // Testing
     testImplementation(mn.mockk)
     testImplementation(mn.testcontainers.postgres)
+    testImplementation("org.mock-server:mockserver-netty:5.15.0")
 }
 
 application {
