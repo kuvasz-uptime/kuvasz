@@ -86,7 +86,7 @@ class CheckSchedulerTest(
                     createMonitor(monitorRepository, id = 33333, monitorName = "m2", uptimeCheckInterval = 30)
                 // Make sure that the set up check won't be rescheduled because of a too fast check invocation
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(any(), any(), any()) } coAnswers { delay(10000) }
+                coEvery { uptimeCheckerMock.check(any(), any(), any(), any()) } coAnswers { delay(10000) }
 
                 checkScheduler.initialize()
 
@@ -107,7 +107,7 @@ class CheckSchedulerTest(
             `when`("an uptime check is executed") {
                 val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(monitor, any(), any()) } just Runs
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), any()) } just Runs
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
@@ -118,7 +118,7 @@ class CheckSchedulerTest(
                 then("it should try to acquire a lock for it & release it afterwards") {
                     coVerifyOrder {
                         lockRegistryMock.tryAcquire(monitor.id)
-                        uptimeCheckerMock.check(monitor, any(), any())
+                        uptimeCheckerMock.check(monitor, any(), any(), any())
                         lockRegistryMock.release(monitor.id)
                     }
                 }
@@ -135,7 +135,7 @@ class CheckSchedulerTest(
 
                 then("it should not run the check") {
                     coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
-                    coVerify(inverse = true) { uptimeCheckerMock.check(any(), any(), any()) }
+                    coVerify(inverse = true) { uptimeCheckerMock.check(any(), any(), any(), any()) }
                     coVerify(inverse = true) { lockRegistryMock.release(monitor.id) }
                 }
             }
@@ -143,7 +143,7 @@ class CheckSchedulerTest(
             `when`("an uptime check calls the passed doAfter callback") {
                 val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(monitor, any(), captureLambda()) } coAnswers {
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } coAnswers {
                     lambda<(MonitorRecord) -> Unit>().captured.invoke(monitor)
                 }
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
@@ -157,7 +157,7 @@ class CheckSchedulerTest(
                 then("the next check should be re-scheduled via the check's callback") {
                     coVerifyOrder {
                         lockRegistryMock.tryAcquire(monitor.id)
-                        uptimeCheckerMock.check(monitor, any(), any())
+                        uptimeCheckerMock.check(monitor, any(), any(), any())
                         lockRegistryMock.release(monitor.id)
                     }
                     val checkAfter = checkScheduler.getScheduledChecks().single { it.checkType == CheckType.UPTIME }
@@ -169,7 +169,7 @@ class CheckSchedulerTest(
             `when`("an uptime check throws an exception") {
                 val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(monitor, any(), captureLambda()) } throws Throwable("bad")
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } throws Throwable("bad")
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
@@ -180,7 +180,7 @@ class CheckSchedulerTest(
                 then("the lock should be released anyway") {
                     coVerifyOrder {
                         lockRegistryMock.tryAcquire(monitor.id)
-                        uptimeCheckerMock.check(monitor, any(), any())
+                        uptimeCheckerMock.check(monitor, any(), any(), any())
                         lockRegistryMock.release(monitor.id)
                     }
                 }

@@ -8,13 +8,13 @@ import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
+import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isRedirected
 import com.kuvaszuptime.kuvasz.util.isSuccess
-import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
-import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
@@ -42,7 +42,7 @@ class UptimeChecker(
         private const val RETRY_COUNT = 2L
         private const val RETRY_INITIAL_DELAY = "500ms"
         private const val RETRY_BACKOFF_MULTIPLIER = 3L
-        private const val USER_AGENT = "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz"
+        const val USER_AGENT = "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz"
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
@@ -52,6 +52,7 @@ class UptimeChecker(
     suspend fun check(
         monitor: MonitorRecord,
         uriOverride: URI? = null,
+        visitedUrls: MutableList<URI> = mutableListOf(),
         doAfter: ((monitor: MonitorRecord) -> Unit)? = null,
     ) {
         if (uriOverride == null) {
@@ -60,11 +61,14 @@ class UptimeChecker(
 
         @Suppress("TooGenericExceptionCaught")
         try {
+            val effectiveUrl = uriOverride ?: URI(monitor.url)
+            visitedUrls.add(effectiveUrl)
+
             val start = System.currentTimeMillis()
-            val response = sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
+            val response = sendHttpRequest(monitor, uri = effectiveUrl)
             val latency = (System.currentTimeMillis() - start).toInt()
 
-            handleResponse(monitor, response, latency)
+            handleResponse(monitor, response, latency, visitedUrls)
         } catch (error: Throwable) {
             var clarifiedError = error
             val status = try {
@@ -76,14 +80,7 @@ class UptimeChecker(
                 clarifiedError = HttpClientException(ex.message, ex)
                 null
             }
-            eventDispatcher.dispatch(
-                MonitorDownEvent(
-                    monitor = monitor,
-                    status = status,
-                    error = clarifiedError,
-                    previousEvent = getPreviousEvent(monitor)
-                )
-            )
+            dispatchDownEvent(monitor, status, clarifiedError)
         }
         logger.debug("Uptime check for monitor (${monitor.name}) finished")
         if (doAfter != null) {
@@ -94,12 +91,11 @@ class UptimeChecker(
         }
     }
 
-    // TODO handle redirect locations in a way that we pass in a list of previously
-    //  seen redirects to avoid redirect loops
     private suspend fun handleResponse(
         monitor: MonitorRecord,
-        response: HttpResponse<ByteBuffer<Any>>,
+        response: RawHttpResponse,
         latency: Int,
+        visitedUrls: MutableList<URI>,
     ) {
         if (response.isSuccess()) {
             eventDispatcher.dispatch(
@@ -119,16 +115,13 @@ class UptimeChecker(
                         redirectLocation = redirectionUri
                     )
                 )
-                check(monitor, redirectionUri)
+                if (visitedUrls.contains(redirectionUri)) {
+                    dispatchDownEvent(monitor, response.status, Throwable("Redirect loop detected"))
+                    return
+                }
+                check(monitor, redirectionUri, visitedUrls)
             } else {
-                eventDispatcher.dispatch(
-                    MonitorDownEvent(
-                        monitor = monitor,
-                        status = response.status,
-                        error = Throwable(message = "Invalid redirection without a Location header"),
-                        previousEvent = getPreviousEvent(monitor)
-                    )
-                )
+                dispatchDownEvent(monitor, response.status, Throwable("Invalid redirection without a Location header"))
             }
         } else {
             val message = if (response.isRedirected() && !monitor.followRedirects) {
@@ -136,15 +129,23 @@ class UptimeChecker(
             } else {
                 "The request wasn't successful, but there is no additional information"
             }
-            eventDispatcher.dispatch(
-                MonitorDownEvent(
-                    monitor = monitor,
-                    status = response.status,
-                    error = Throwable(message),
-                    previousEvent = getPreviousEvent(monitor)
-                )
-            )
+            dispatchDownEvent(monitor, response.status, Throwable(message))
         }
+    }
+
+    private fun dispatchDownEvent(
+        monitor: MonitorRecord,
+        status: HttpStatus?,
+        error: Throwable,
+    ) {
+        eventDispatcher.dispatch(
+            MonitorDownEvent(
+                monitor = monitor,
+                status = status,
+                error = error,
+                previousEvent = getPreviousEvent(monitor)
+            )
+        )
     }
 
     @Retryable(
@@ -152,7 +153,7 @@ class UptimeChecker(
         attempts = "$RETRY_COUNT",
         multiplier = "$RETRY_BACKOFF_MULTIPLIER",
     )
-    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpResponse<ByteBuffer<Any>> {
+    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): RawHttpResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val request = HttpRequest
             .create<Any>(

@@ -4,10 +4,9 @@ import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
-import io.reactivex.rxjava3.core.Flowable
 import java.net.URI
 
-typealias RawHttpResponse = Flowable<HttpResponse<ByteBuffer<Any>>>
+typealias RawHttpResponse = HttpResponse<ByteBuffer<Any>>
 
 @Suppress("MagicNumber")
 fun HttpResponse<*>.isSuccess(): Boolean = this.status.code in 200..299
