@@ -60,6 +60,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         monitorDetailsSelect()
             .apply {
                 if (enabledOnly) {
+                    @Suppress("IgnoredReturnValue")
                     where(MONITOR.ENABLED.isTrue)
                 }
             }
