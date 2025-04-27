@@ -1,7 +1,11 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
-import com.kuvaszuptime.kuvasz.models.dto.*
+import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -29,7 +33,9 @@ class MonitorCrudService(
                     p95LatencyInMs = latencies?.p95,
                     p99LatencyInMs = latencies?.p99
                 )
-            } else detailsDto
+            } else {
+                detailsDto
+            }
         }
 
     fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> {

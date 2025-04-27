@@ -25,7 +25,6 @@ plugins {
     id("nu.studer.jooq")
     id("com.palantir.git-version")
     id("com.github.ben-manes.versions")
-    id("org.jlleitschuh.gradle.ktlint")
     id("org.flywaydb.flyway")
     id("com.gradleup.shadow")
 }
@@ -51,6 +50,7 @@ micronaut {
 
 val jooqPluginVersion: String by project
 val simpleJavaMailVersion = "8.12.6"
+val detektVersion: String by project
 
 dependencies {
 
@@ -95,6 +95,7 @@ dependencies {
     testImplementation(mn.mockk)
     testImplementation(mn.testcontainers.postgres)
     testImplementation("org.mock-server:mockserver-netty:5.15.0")
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
 }
 
 application {
@@ -108,7 +109,7 @@ jacoco {
 tasks.jacocoTestReport {
     reports {
         xml.required.set(true)
-        xml.outputLocation.set(File("$buildDir/reports/jacoco/report.xml"))
+        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/report.xml"))
         html.required.set(true)
         csv.required.set(false)
     }
@@ -142,18 +143,6 @@ tasks.named("check") {
     dependsOn("jacocoTestCoverageVerification")
 }
 
-detekt {
-    source = files(
-        "src/main/kotlin",
-        "src/test/kotlin"
-    )
-}
-
-ktlint {
-    version.set("0.43.2")
-    disabledRules.set(setOf("no-wildcard-imports"))
-}
-
 tasks.named("build") {
     dependsOn("detekt")
 }
@@ -177,7 +166,7 @@ tasks.withType<JavaExec> {
     jvmArgs(
         "-Xms64M",
         "-Xmx128M",
-        "-Dlogback.configurationFile=logback-dev.xml"
+        "-Dlogback.configurationFile=logback-dev.xml",
     )
     systemProperty("micronaut.environments", "dev")
 }
@@ -211,7 +200,7 @@ jib {
 
 val updateApiDoc by tasks.registering(type = Copy::class) {
     dependsOn("kaptKotlin")
-    from("$buildDir/tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml")
+    from(layout.buildDirectory.file("tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml"))
     into("$projectDir/docs/api-doc")
 }
 

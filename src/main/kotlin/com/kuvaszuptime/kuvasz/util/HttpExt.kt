@@ -34,4 +34,6 @@ fun HttpResponse<*>.getRedirectionUri(originalUrl: String): URI? =
                     URI(originalUrl).resolve(locationHeader)
                 }
             }
-    } else null
+    } else {
+        null
+    }

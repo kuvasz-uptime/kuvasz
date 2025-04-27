@@ -17,7 +17,10 @@ import io.micronaut.core.util.StringUtils
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.exception.DataAccessException
-import org.jooq.impl.DSL.*
+import org.jooq.impl.DSL.avg
+import org.jooq.impl.DSL.inline
+import org.jooq.impl.DSL.round
+import org.jooq.impl.DSL.`when`
 import org.jooq.impl.SQLDataType
 import java.math.BigDecimal
 
@@ -156,7 +159,9 @@ class MonitorRepository(private val dslContext: DSLContext) {
         return Either.Left(
             if (persistenceError is DuplicationError) {
                 MonitorDuplicatedError()
-            } else persistenceError
+            } else {
+                persistenceError
+            }
         )
     }
 }

@@ -27,7 +27,7 @@ import kotlinx.coroutines.reactive.awaitSingle
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
-import java.util.*
+import java.util.Optional
 
 @Singleton
 class UptimeChecker(
@@ -164,8 +164,9 @@ class UptimeChecker(
             .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
             .header(HttpHeaders.USER_AGENT, USER_AGENT)
             .apply {
-                if (monitor.forceNoCache)
+                if (monitor.forceNoCache) {
                     header(HttpHeaders.CACHE_CONTROL, "no-cache")
+                }
             }
 
         return httpClient.exchange(request).awaitSingle()

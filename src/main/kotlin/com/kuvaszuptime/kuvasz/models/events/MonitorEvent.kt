@@ -38,7 +38,9 @@ sealed class UptimeMonitorEvent : MonitorEvent() {
         previousEvent?.let { previousEvent ->
             if (statusNotEquals(previousEvent)) {
                 previousEvent.startedAt.diffToDuration(dispatchedAt)
-            } else null
+            } else {
+                null
+            }
         }
 
     fun runWhenStateChanges(toRun: (UptimeMonitorEvent) -> Unit) =
@@ -81,7 +83,9 @@ data class MonitorDownEvent(
         val sanitizedError = error.message?.sanitizeMessage()
         val structuredError = if (status != null) {
             "${status.code} ${status.reason}"
-        } else sanitizedError
+        } else {
+            sanitizedError
+        }
 
         return StructuredMonitorDownMessage(
             summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
@@ -113,7 +117,9 @@ sealed class SSLMonitorEvent : MonitorEvent() {
         previousEvent?.let { previousEvent ->
             if (statusNotEquals(previousEvent)) {
                 previousEvent.startedAt.diffToDuration(dispatchedAt)
-            } else null
+            } else {
+                null
+            }
         }
 
     fun getPreviousStatusString(): String = previousEvent?.status?.name.orEmpty()
@@ -180,7 +186,9 @@ private fun String.sanitizeMessage(): String {
     val sanitized = removeControlChars()
     return if (sanitized.length > ERROR_MAX_LENGTH) {
         "${sanitized.take(ERROR_MAX_LENGTH)} ... [REDACTED]"
-    } else sanitized
+    } else {
+        sanitized
+    }
 }
 
 /**
