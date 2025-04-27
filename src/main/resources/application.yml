@@ -57,7 +57,6 @@ datasources:
     password: ${DATABASE_PASSWORD}
     driverClassName: 'org.postgresql.Driver'
     schema: 'kuvasz'
-    maxLifetime: 100000
     maximumPoolSize: 10
 ---
 flyway:

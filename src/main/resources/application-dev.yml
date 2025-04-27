@@ -31,7 +31,8 @@ smtp-config:
   host: ${SMTP_HOST:`sandbox.smtp.mailtrap.io`}
   port: ${SMTP_PORT:`465`}
 ---
-#logger:
-#  levels:
+logger:
+  levels:
 #    io.micronaut.http.client: TRACE
 #    org.jooq: DEBUG
+    com.kuvaszuptime: DEBUG

@@ -16,14 +16,8 @@ fun DataAccessException.toPersistenceError(): PersistenceError =
         if (message.contains("duplicate key")) DuplicationError() else PersistenceError(message)
     } ?: PersistenceError(message)
 
-inline fun <R : TableRecord<R>, reified O> InsertResultStep<R>.fetchOneIntoOrThrow(): O =
-    fetchOne()?.into(O::class.java) ?: throw NoDataFoundException()
-
 fun <R : TableRecord<R>> InsertResultStep<R>.fetchOneOrThrow(): R =
     fetchOne() ?: throw NoDataFoundException()
-
-inline fun <R : TableRecord<R>, reified O> UpdateResultStep<R>.fetchOneIntoOrThrow(): O =
-    fetchOne()?.into(O::class.java) ?: throw NoDataFoundException()
 
 fun <R : TableRecord<R>> UpdateResultStep<R>.fetchOneOrThrow(): R =
     fetchOne() ?: throw NoDataFoundException()

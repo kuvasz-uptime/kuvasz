@@ -40,3 +40,9 @@ services:
       TELEGRAM_API_TOKEN: ''
       TELEGRAM_CHAT_ID: ''
       ENABLE_PAGERDUTY_EVENT_HANDLER: 'false'
+      MICRONAUT_CONFIG_FILES: '/kuvasz.yml'
+    configs:
+      - kuvasz.yml
+configs:
+  kuvasz.yml:
+    file: ./kuvasz.yml

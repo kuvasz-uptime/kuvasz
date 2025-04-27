@@ -14,8 +14,9 @@ class SSLValidator {
 
     @Suppress("TooGenericExceptionCaught")
     fun validate(url: URL): Either<SSLValidationError, CertificateInfo> {
+        var conn: HttpsURLConnection? = null
         return try {
-            val conn = url.openConnection() as HttpsURLConnection
+            conn = url.openConnection() as HttpsURLConnection
             conn.connect()
 
             conn.serverCertificates.filterIsInstance<X509Certificate>().firstOrNull()?.let { cert ->
@@ -23,6 +24,8 @@ class SSLValidator {
             } ?: Either.Left(SSLValidationError("There were no matching CN for the given host"))
         } catch (e: Throwable) {
             Either.Left(SSLValidationError(e.message))
+        } finally {
+            conn?.disconnect()
         }
     }
 }

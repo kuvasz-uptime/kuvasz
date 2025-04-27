@@ -4,16 +4,17 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.models.toMicronautHttpMethod
+import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord
+import com.kuvaszuptime.kuvasz.util.RawHttpResponse
 import com.kuvaszuptime.kuvasz.util.getRedirectionUri
 import com.kuvaszuptime.kuvasz.util.isRedirected
 import com.kuvaszuptime.kuvasz.util.isSuccess
-import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
-import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
@@ -33,29 +34,41 @@ class UptimeChecker(
     @Client(configuration = HttpCheckerClientConfiguration::class)
     private val httpClient: HttpClient,
     private val eventDispatcher: EventDispatcher,
-    private val uptimeEventRepository: UptimeEventRepository
+    private val uptimeEventRepository: UptimeEventRepository,
+    private val monitorRepository: MonitorRepository,
 ) {
 
     companion object {
-        private const val RETRY_COUNT = 3L
+        private const val RETRY_COUNT = 2L
+        private const val RETRY_INITIAL_DELAY = "500ms"
+        private const val RETRY_BACKOFF_MULTIPLIER = 3L
+        const val USER_AGENT = "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz"
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
 
-    suspend fun check(monitor: MonitorRecord, uriOverride: URI? = null) {
-        val previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
+    private fun getPreviousEvent(monitor: MonitorRecord): UptimeEventRecord? =
+        uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
 
+    suspend fun check(
+        monitor: MonitorRecord,
+        uriOverride: URI? = null,
+        visitedUrls: MutableList<URI> = mutableListOf(),
+        doAfter: ((monitor: MonitorRecord) -> Unit)? = null,
+    ) {
         if (uriOverride == null) {
             logger.info("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
         }
 
         @Suppress("TooGenericExceptionCaught")
-
         try {
+            val effectiveUrl = uriOverride ?: URI(monitor.url)
+            visitedUrls.add(effectiveUrl)
+
             val start = System.currentTimeMillis()
-            val response = sendHttpRequest(monitor, uri = uriOverride ?: URI(monitor.url))
+            val response = sendHttpRequest(monitor, uri = effectiveUrl)
             val latency = (System.currentTimeMillis() - start).toInt()
 
-            handleResponse(monitor, response, latency, previousEvent)
+            handleResponse(monitor, response, latency, visitedUrls)
         } catch (error: Throwable) {
             var clarifiedError = error
             val status = try {
@@ -67,24 +80,22 @@ class UptimeChecker(
                 clarifiedError = HttpClientException(ex.message, ex)
                 null
             }
-            eventDispatcher.dispatch(
-                MonitorDownEvent(
-                    monitor = monitor,
-                    status = status,
-                    error = clarifiedError,
-                    previousEvent = previousEvent
-                )
-            )
+            dispatchDownEvent(monitor, status, clarifiedError)
+        }
+        logger.debug("Uptime check for monitor (${monitor.name}) finished")
+        if (doAfter != null) {
+            monitorRepository.findById(monitor.id)?.let { upToDateMonitor ->
+                logger.debug("Calling doAfter() hook on monitor with name [${upToDateMonitor.name}]")
+                doAfter(upToDateMonitor)
+            }
         }
     }
 
-    // TODO handle redirect locations in a way that we pass in a list of previously
-    //  seen redirects to avoid redirect loops
     private suspend fun handleResponse(
         monitor: MonitorRecord,
-        response: HttpResponse<ByteBuffer<Any>>,
+        response: RawHttpResponse,
         latency: Int,
-        previousEvent: UptimeEventRecord?
+        visitedUrls: MutableList<URI>,
     ) {
         if (response.isSuccess()) {
             eventDispatcher.dispatch(
@@ -92,7 +103,7 @@ class UptimeChecker(
                     monitor = monitor,
                     status = response.status,
                     latency = latency,
-                    previousEvent = previousEvent
+                    previousEvent = getPreviousEvent(monitor),
                 )
             )
         } else if (response.isRedirected() && monitor.followRedirects) {
@@ -104,16 +115,13 @@ class UptimeChecker(
                         redirectLocation = redirectionUri
                     )
                 )
-                check(monitor, redirectionUri)
+                if (visitedUrls.contains(redirectionUri)) {
+                    dispatchDownEvent(monitor, response.status, Throwable("Redirect loop detected"))
+                    return
+                }
+                check(monitor, redirectionUri, visitedUrls)
             } else {
-                eventDispatcher.dispatch(
-                    MonitorDownEvent(
-                        monitor = monitor,
-                        status = response.status,
-                        error = Throwable(message = "Invalid redirection without a Location header"),
-                        previousEvent = previousEvent
-                    )
-                )
+                dispatchDownEvent(monitor, response.status, Throwable("Invalid redirection without a Location header"))
             }
         } else {
             val message = if (response.isRedirected() && !monitor.followRedirects) {
@@ -121,19 +129,31 @@ class UptimeChecker(
             } else {
                 "The request wasn't successful, but there is no additional information"
             }
-            eventDispatcher.dispatch(
-                MonitorDownEvent(
-                    monitor = monitor,
-                    status = response.status,
-                    error = Throwable(message),
-                    previousEvent = previousEvent
-                )
-            )
+            dispatchDownEvent(monitor, response.status, Throwable(message))
         }
     }
 
-    @Retryable(delay = "5s", attempts = "$RETRY_COUNT", multiplier = "2")
-    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpResponse<ByteBuffer<Any>> {
+    private fun dispatchDownEvent(
+        monitor: MonitorRecord,
+        status: HttpStatus?,
+        error: Throwable,
+    ) {
+        eventDispatcher.dispatch(
+            MonitorDownEvent(
+                monitor = monitor,
+                status = status,
+                error = error,
+                previousEvent = getPreviousEvent(monitor)
+            )
+        )
+    }
+
+    @Retryable(
+        delay = RETRY_INITIAL_DELAY,
+        attempts = "$RETRY_COUNT",
+        multiplier = "$RETRY_BACKOFF_MULTIPLIER",
+    )
+    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): RawHttpResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val request = HttpRequest
             .create<Any>(
@@ -142,8 +162,7 @@ class UptimeChecker(
             )
             .header(HttpHeaders.ACCEPT, "*/*")
             .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
-            // TODO move it to const and make it overridable
-            .header(HttpHeaders.USER_AGENT, "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz")
+            .header(HttpHeaders.USER_AGENT, USER_AGENT)
             .apply {
                 if (monitor.forceNoCache)
                     header(HttpHeaders.CACHE_CONTROL, "no-cache")

@@ -67,6 +67,8 @@ abstract class RTCMessageEventHandler(
                 if (ex is HttpClientResponseException) {
                     val responseBody = ex.response.getBody(String::class.java)
                     logger.error("The message cannot be sent to your configured webhook: $responseBody")
+                } else {
+                    logger.error("The message cannot be sent to your configured webhook: ${ex.message}")
                 }
             }
         )

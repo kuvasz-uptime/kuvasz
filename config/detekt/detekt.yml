@@ -174,8 +174,8 @@ complexity:
     thresholdInInterfaces: 11
     thresholdInObjects: 11
     thresholdInEnums: 11
-    ignoreDeprecated: false
-    ignorePrivate: false
+    ignoreDeprecated: true
+    ignorePrivate: true
     ignoreOverridden: false
 
 coroutines:
@@ -673,7 +673,7 @@ style:
   UnnecessaryInnerClass:
     active: false
   UnnecessaryLet:
-    active: true
+    active: false
   UnnecessaryParentheses:
     active: true
     allowForUnclearPrecedence: true
