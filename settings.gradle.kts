@@ -14,7 +14,7 @@ pluginManagement {
         id("io.micronaut.minimal.application") version micronautGradlePluginVersion
         id("io.micronaut.docker") version micronautGradlePluginVersion
 
-        id("io.gitlab.arturbosch.detekt") version "1.22.0"
+        id("io.gitlab.arturbosch.detekt") version "1.23.8"
         id("com.google.cloud.tools.jib") version "3.4.5"
         id("nu.studer.jooq") version jooqPluginVersion
         id("com.palantir.git-version") version "3.2.0"
