@@ -54,6 +54,7 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
             ).from(LATENCY_LOG)
                 .apply {
                     if (monitorId != null) {
+                        @Suppress("IgnoredReturnValue")
                         where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
                     }
                 }

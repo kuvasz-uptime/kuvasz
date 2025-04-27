@@ -50,7 +50,7 @@ micronaut {
 }
 
 val jooqPluginVersion: String by project
-val simpleJavaMailVersion = "8.12.5"
+val simpleJavaMailVersion = "8.12.6"
 
 dependencies {
 
