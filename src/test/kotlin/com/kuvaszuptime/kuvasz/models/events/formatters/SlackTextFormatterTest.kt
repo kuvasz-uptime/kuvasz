@@ -4,7 +4,11 @@ import com.kuvaszuptime.kuvasz.enums.SslStatus
 import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.*
+import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.tables.records.UptimeEventRecord

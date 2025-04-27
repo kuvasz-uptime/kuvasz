@@ -5,7 +5,12 @@ import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord
 import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.jooq.impl.DSL.*
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.min
+import org.jooq.impl.DSL.percentRank
+import org.jooq.impl.DSL.round
+import org.jooq.impl.DSL.selectDistinct
+import org.jooq.impl.DSL.table
 import java.time.OffsetDateTime
 
 @Singleton

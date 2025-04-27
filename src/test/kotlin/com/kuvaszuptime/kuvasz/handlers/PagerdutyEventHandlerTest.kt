@@ -4,7 +4,11 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.*
+import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyEventAction
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
@@ -23,7 +27,11 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import io.mockk.*
+import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import io.reactivex.rxjava3.core.Single
 import org.jooq.DSLContext
 

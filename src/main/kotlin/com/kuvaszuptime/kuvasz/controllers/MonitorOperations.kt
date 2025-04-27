@@ -1,7 +1,19 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.dto.*
-import io.micronaut.http.annotation.*
+import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
+import io.micronaut.http.annotation.Body
+import io.micronaut.http.annotation.Delete
+import io.micronaut.http.annotation.Get
+import io.micronaut.http.annotation.Patch
+import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.Put
+import io.micronaut.http.annotation.QueryValue
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 

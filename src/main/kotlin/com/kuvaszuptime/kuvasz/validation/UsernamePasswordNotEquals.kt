@@ -5,7 +5,7 @@ import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
 import jakarta.validation.Constraint
-import java.util.*
+import java.util.Locale
 
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [])

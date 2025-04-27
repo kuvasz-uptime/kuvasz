@@ -11,7 +11,13 @@ import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Named
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
@@ -138,8 +144,9 @@ class CheckScheduler(
             // Spreading the first checks a little bit to prevent flooding the HTTP Client after startup
             val effectiveInitialDelay = if (resync) {
                 monitor.uptimeCheckInterval
-            } else
+            } else {
                 (1..monitor.uptimeCheckInterval).random()
+            }
             val period = monitor.uptimeCheckInterval.toDurationOfSeconds()
 
             taskScheduler.scheduleWithFixedDelay(effectiveInitialDelay.toDurationOfSeconds(), period) {

@@ -17,7 +17,12 @@ import io.kotest.matchers.shouldNotBe
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.coVerifyOrder
+import io.mockk.just
+import io.mockk.mockk
 import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 

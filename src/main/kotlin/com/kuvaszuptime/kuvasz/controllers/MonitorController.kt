@@ -2,7 +2,13 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.*
+import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
