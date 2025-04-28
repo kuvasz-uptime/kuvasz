@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "12348:5432"
+      - "5432:5432"
     volumes:
       - ./pgdata:/var/lib/postgresql/data
   kuvasz:
@@ -15,13 +15,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      ADMIN_USER: AdminUser
-      ADMIN_PASSWORD: ThisShouldBeVeryVerySecure
       DATABASE_HOST: postgres16
-      DATABASE_PORT: 5432
-      DATABASE_NAME: postgres
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
+      ADMIN_USER: AdminUser
+      ADMIN_PASSWORD: ThisShouldBeVeryVerySecure
       JWT_SIGNATURE_SECRET: ThisOneShouldBeVeryRandomAsWell
       ENABLE_AUTH: 'false'
       ENABLE_LOG_EVENT_HANDLER: 'true'
@@ -40,9 +38,12 @@ services:
       TELEGRAM_API_TOKEN: ''
       TELEGRAM_CHAT_ID: ''
       ENABLE_PAGERDUTY_EVENT_HANDLER: 'false'
-      MICRONAUT_CONFIG_FILES: '/kuvasz.yml'
+      MICRONAUT_CONFIG_FILES: '/kuvasz.yml,/application-dev.yml'
     configs:
       - kuvasz.yml
+      - application-dev.yml
 configs:
   kuvasz.yml:
     file: ./kuvasz.yml
+  application-dev.yml:
+    file: ./application-dev.yml
