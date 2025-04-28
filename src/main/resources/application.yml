@@ -3,6 +3,9 @@ micronaut:
   application:
     name: kuvasz
   security:
+    endpoints:
+      login:
+        path: /api/v1/login
     enabled: ${ENABLE_AUTH:`true`}
     authentication: bearer
     token:
@@ -15,9 +18,9 @@ micronaut:
           refresh-token:
             enabled: false
     intercept-url-map:
-      - pattern: /health
+      - pattern: /api/v1/health
         access: isAnonymous()
-      - pattern: /info
+      - pattern: /api/v1/info
         access: isAnonymous()
       - pattern: /swagger-ui/**
         access: isAnonymous()
@@ -43,6 +46,7 @@ micronaut:
         num-threads: 4
         prefer-native-transport: false
 endpoints:
+  all.path: /api/v1/
   health:
     enabled: true
     sensitive: false

@@ -28,7 +28,7 @@ class AuthenticationTest(
         given("a public endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.toBlocking().exchange<Any>("/health")
+                val response = client.toBlocking().exchange<Any>("/api/v1/health")
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
                 }
@@ -38,7 +38,7 @@ class AuthenticationTest(
 
             `when`("the user provides the right credentials") {
                 val credentials = generateCredentials(authConfig, valid = true)
-                val request = HttpRequest.POST("/login", credentials)
+                val request = HttpRequest.POST("/api/v1/login", credentials)
                 val response = client.toBlocking().exchange(request, BearerAccessRefreshToken::class.java)
                 val token = response.body()!!
                 val parsedJwt = JWTParser.parse(token.accessToken)
@@ -52,7 +52,7 @@ class AuthenticationTest(
 
             `when`("a user provides bad credentials") {
                 val credentials = generateCredentials(authConfig, valid = false)
-                val request = HttpRequest.POST("/login", credentials)
+                val request = HttpRequest.POST("/api/v1/login", credentials)
                 val exception = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange(request, BearerAccessRefreshToken::class.java)
                 }
@@ -65,7 +65,7 @@ class AuthenticationTest(
 
             `when`("an anonymous user calls it") {
                 val exception = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any>("/monitors")
+                    client.toBlocking().exchange<Any>("/api/v1/monitors")
                 }
                 then("it should return 401") {
                     exception.status shouldBe HttpStatus.UNAUTHORIZED
@@ -74,11 +74,11 @@ class AuthenticationTest(
 
             `when`("a user provides the right credentials") {
                 val credentials = generateCredentials(authConfig, valid = true)
-                val loginRequest = HttpRequest.POST("/login", credentials)
+                val loginRequest = HttpRequest.POST("/api/v1/login", credentials)
                 val loginResponse = client.toBlocking().exchange(loginRequest, BearerAccessRefreshToken::class.java)
                 val token = loginResponse.body()!!
 
-                val request = HttpRequest.GET<Any>("/monitors").bearerAuth(token.accessToken)
+                val request = HttpRequest.GET<Any>("/api/v1/monitors").bearerAuth(token.accessToken)
                 val response = client.toBlocking().exchange<Any, Any>(request)
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
@@ -98,7 +98,7 @@ class DisabledAuthenticationTest(
         given("a public endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.toBlocking().exchange<Any>("/health")
+                val response = client.toBlocking().exchange<Any>("/api/v1/health")
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
                 }
@@ -108,7 +108,7 @@ class DisabledAuthenticationTest(
 
             `when`("the user provides the right credentials") {
                 val credentials = generateCredentials(authConfig, valid = true)
-                val request = HttpRequest.POST("/login", credentials)
+                val request = HttpRequest.POST("/api/v1/login", credentials)
 
                 val exception = shouldThrow<HttpClientResponseException> {
                     client.toBlocking().exchange(request, Any::class.java)
@@ -122,7 +122,7 @@ class DisabledAuthenticationTest(
         given("an authenticated endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.toBlocking().exchange<Any>("/monitors")
+                val response = client.toBlocking().exchange<Any>("/api/v1/monitors")
 
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK

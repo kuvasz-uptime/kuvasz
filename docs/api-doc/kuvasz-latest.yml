@@ -12,7 +12,7 @@ tags:
 - name: Management operations
 - name: Monitor operations
 paths:
-  /monitors:
+  /api/v1/monitors:
     get:
       tags:
       - Monitor operations
@@ -61,7 +61,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
-  /monitors/{monitorId}:
+  /api/v1/monitors/{monitorId}:
     get:
       tags:
       - Monitor operations
@@ -151,7 +151,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
-  /monitors/{monitorId}/pagerduty-integration-key:
+  /api/v1/monitors/{monitorId}/pagerduty-integration-key:
     put:
       tags:
       - Monitor operations
@@ -214,7 +214,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - bearerAuth: []
-  /monitors/{monitorId}/ssl-events:
+  /api/v1/monitors/{monitorId}/ssl-events:
     get:
       tags:
       - Monitor operations
@@ -238,7 +238,7 @@ paths:
                   $ref: "#/components/schemas/SSLEventDto"
       security:
       - bearerAuth: []
-  /monitors/{monitorId}/uptime-events:
+  /api/v1/monitors/{monitorId}/uptime-events:
     get:
       tags:
       - Monitor operations
@@ -262,7 +262,7 @@ paths:
                   $ref: "#/components/schemas/UptimeEventDto"
       security:
       - bearerAuth: []
-  /login:
+  /api/v1/login:
     post:
       tags:
       - Security operations
@@ -286,7 +286,7 @@ paths:
                 $ref: "#/components/schemas/BearerAccessRefreshToken"
         "401":
           description: Unauthorized
-  /health:
+  /api/v1/health:
     get:
       tags:
       - Management operations
@@ -307,7 +307,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResult"
-  /info:
+  /api/v1/info:
     get:
       tags:
       - Management operations

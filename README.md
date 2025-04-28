@@ -58,7 +58,7 @@ At this point you shouldn't see any error in your logs, so you're able to create
 If you have a valid access token, then creating a monitor and scheduling an uptime check for it, is simple like that:
 
 ```shell
-curl --location --request POST 'https://your.host:8080/monitors/' \
+curl --location --request POST 'https://your.host:8080/api/v1/monitors/' \
 --header 'Authorization: Bearer YourAccessToken' \
 --header 'Content-Type: application/json' \
 --data-raw '{
