@@ -9,7 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.client.annotation.Client
 
-@Client("/monitors")
+@Client("/api/v1/monitors")
 interface MonitorClient : MonitorOperations {
     override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto
 

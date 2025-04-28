@@ -38,7 +38,7 @@ You have to set up two things in Kuvasz in order to make the integration work:
 **Providing a key when you create your monitor:**
 
 ```shell
-curl --location --request POST 'https://your.kuvasz.host:8080/monitors/' \
+curl --location --request POST 'https://your.kuvasz.host:8080/api/v1/monitors/' \
 --header 'Authorization: Bearer YourKuvaszAccessToken' \
 --header 'Content-Type: application/json' \
 --data-raw '{
@@ -52,7 +52,7 @@ curl --location --request POST 'https://your.kuvasz.host:8080/monitors/' \
 **Adding/updating a key for an existing monitor:**
 
 ```shell
-curl --location --request PUT 'https://your.kuvasz.host:8080/monitors/4/pagerduty-integration-key' \
+curl --location --request PUT 'https://your.kuvasz.host:8080/api/v1/monitors/4/pagerduty-integration-key' \
 --header 'Authorization: Bearer YourKuvaszAccessToken' \
 --header 'Content-Type: application/json' \
 --data-raw '{
@@ -65,7 +65,7 @@ curl --location --request PUT 'https://your.kuvasz.host:8080/monitors/4/pagerdut
 If you want to disable a monitor's integration with PagerDuty, you can just simply delete the integration key of it with an API call like that:
 
 ```shell
-curl --location --request DELETE 'https://your.kuvasz.host:8080/monitors/4/pagerduty-integration-key' \
+curl --location --request DELETE 'https://your.kuvasz.host:8080/api/v1/monitors/4/pagerduty-integration-key' \
 --header 'Authorization: Bearer YourKuvaszAccessToken'
 ```
 

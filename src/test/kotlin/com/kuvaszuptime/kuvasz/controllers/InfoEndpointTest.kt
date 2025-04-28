@@ -13,7 +13,7 @@ class InfoEndpointTest(
     {
         given("the /info endpoint") {
             `when`("it has been called") {
-                val response = client.toBlocking().retrieve("/info")
+                val response = client.toBlocking().retrieve("/api/v1/info")
                 then("it should return information about the event handlers") {
                     response shouldContain "log-event-handler.enabled"
                     response shouldContain "smtp-event-handler.enabled"

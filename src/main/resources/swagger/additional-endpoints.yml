@@ -3,7 +3,7 @@ info:
   title: kuvasz
   version: latest
 paths:
-  /login:
+  /api/v1/login:
     post:
       tags:
         - Security operations
@@ -26,7 +26,7 @@ paths:
                 $ref: '#/components/schemas/BearerAccessRefreshToken'
         "401":
           description: Unauthorized
-  /health:
+  /api/v1/health:
     get:
       tags:
         - Management operations
@@ -47,7 +47,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResult'
-  /info:
+  /api/v1/info:
     get:
       tags:
         - Management operations

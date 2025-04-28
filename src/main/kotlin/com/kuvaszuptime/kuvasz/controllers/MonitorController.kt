@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 
-@Controller("/monitors", produces = [MediaType.APPLICATION_JSON])
+@Controller("/api/v1/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
 @Tag(name = "Monitor operations")
 @SecurityRequirement(name = "bearerAuth")
