@@ -6,6 +6,7 @@ import java.time.OffsetDateTime
 
 @Introspected
 data class UptimeEventDto(
+    val id: Long,
     val status: UptimeStatus,
     val error: String?,
     val startedAt: OffsetDateTime,

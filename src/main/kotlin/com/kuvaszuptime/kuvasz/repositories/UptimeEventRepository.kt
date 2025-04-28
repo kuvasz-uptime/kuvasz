@@ -64,11 +64,12 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
 
     fun getEventsByMonitorId(monitorId: Long): List<UptimeEventDto> = dslContext
         .select(
-            UPTIME_EVENT.STATUS.`as`("status"),
-            UPTIME_EVENT.ERROR.`as`("error"),
-            UPTIME_EVENT.STARTED_AT.`as`("startedAt"),
-            UPTIME_EVENT.ENDED_AT.`as`("endedAt"),
-            UPTIME_EVENT.UPDATED_AT.`as`("updatedAt")
+            UPTIME_EVENT.ID.`as`(UptimeEventDto::id.name),
+            UPTIME_EVENT.STATUS.`as`(UptimeEventDto::status.name),
+            UPTIME_EVENT.ERROR.`as`(UptimeEventDto::error.name),
+            UPTIME_EVENT.STARTED_AT.`as`(UptimeEventDto::startedAt.name),
+            UPTIME_EVENT.ENDED_AT.`as`(UptimeEventDto::endedAt.name),
+            UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventDto::updatedAt.name),
         )
         .from(UPTIME_EVENT)
         .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))

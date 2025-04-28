@@ -20,11 +20,13 @@ import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -721,6 +723,7 @@ class MonitorControllerTest(
                 then("it should return its uptime events") {
                     val response = monitorClient.getUptimeEvents(monitorId = monitor.id)
                     response shouldHaveSize 2
+                    response.forAll { it.id.shouldBeGreaterThan(0) }
                     response.forOne { it.status shouldBe UptimeStatus.UP }
                     response.forOne { it.status shouldBe UptimeStatus.DOWN }
                 }
@@ -776,6 +779,7 @@ class MonitorControllerTest(
                 then("it should return its SSL events") {
                     val response = monitorClient.getSSLEvents(monitorId = monitor.id)
                     response shouldHaveSize 2
+                    response.forAll { it.id.shouldBeGreaterThan(0) }
                     response.forOne { it.status shouldBe SslStatus.VALID }
                     response.forOne { it.status shouldBe SslStatus.INVALID }
                 }

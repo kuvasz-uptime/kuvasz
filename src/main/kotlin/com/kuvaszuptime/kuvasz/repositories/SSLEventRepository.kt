@@ -60,11 +60,12 @@ class SSLEventRepository(private val dslContext: DSLContext) {
 
     fun getEventsByMonitorId(monitorId: Long): List<SSLEventDto> = dslContext
         .select(
-            SSL_EVENT.STATUS.`as`("status"),
-            SSL_EVENT.ERROR.`as`("error"),
-            SSL_EVENT.STARTED_AT.`as`("startedAt"),
-            SSL_EVENT.ENDED_AT.`as`("endedAt"),
-            SSL_EVENT.UPDATED_AT.`as`("updatedAt")
+            SSL_EVENT.ID.`as`(SSLEventDto::id.name),
+            SSL_EVENT.STATUS.`as`(SSLEventDto::status.name),
+            SSL_EVENT.ERROR.`as`(SSLEventDto::error.name),
+            SSL_EVENT.STARTED_AT.`as`(SSLEventDto::startedAt.name),
+            SSL_EVENT.ENDED_AT.`as`(SSLEventDto::endedAt.name),
+            SSL_EVENT.UPDATED_AT.`as`(SSLEventDto::updatedAt.name),
         )
         .from(SSL_EVENT)
         .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
