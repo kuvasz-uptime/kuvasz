@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -48,12 +50,18 @@ abstract class RTCMessageEventHandler(
 
     private fun UptimeMonitorEvent.handle() =
         this.runWhenStateChanges { event ->
+            if (this is MonitorUpEvent && previousEvent == null) {
+                return@runWhenStateChanges
+            }
             val message = formatter.toFormattedMessage(event)
             messageService.sendMessage(message).handleResponse()
         }
 
     private fun SSLMonitorEvent.handle() =
         this.runWhenStateChanges { event ->
+            if (this is SSLValidEvent && previousEvent == null) {
+                return@runWhenStateChanges
+            }
             val message = formatter.toFormattedMessage(event)
             messageService.sendMessage(message).handleResponse()
         }
@@ -64,12 +72,12 @@ abstract class RTCMessageEventHandler(
                 logger.debug("The message to your configured webhook has been successfully sent")
             },
             { ex ->
-                if (ex is HttpClientResponseException) {
-                    val responseBody = ex.response.getBody(String::class.java)
-                    logger.error("The message cannot be sent to your configured webhook: $responseBody")
+                val message = if (ex is HttpClientResponseException) {
+                    ex.response.getBody(String::class.java).orElse("Empty response")
                 } else {
-                    logger.error("The message cannot be sent to your configured webhook: ${ex.message}")
+                    ex.message
                 }
+                logger.error("The message cannot be sent to your configured webhook: $message")
             }
         )
 }

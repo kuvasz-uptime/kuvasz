@@ -66,17 +66,11 @@ class SMTPEventHandlerTest(
                     latency = 1000,
                     previousEvent = null
                 )
-                val expectedEmail = emailFactory.fromMonitorEvent(event)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send an email about the event") {
-                    val slot = slot<Email>()
-
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is UP"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                then("it should not send an email about the event") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
                 }
             }
 
@@ -112,7 +106,6 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = emailFactory.fromMonitorEvent(firstEvent)
 
                 val secondEvent = MonitorUpEvent(
                     monitor = monitor,
@@ -122,14 +115,8 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
-
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldContain "Latency: 1000ms"
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is UP"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                then("it should not send out any email about them") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
                 }
             }
 
@@ -219,20 +206,15 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = emailFactory.fromMonitorEvent(firstEvent)
                 val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
 
-                then("it should send two different emails about them") {
-                    val emailsSent = mutableListOf<Email>()
+                then("it should send an email only about the down event") {
+                    val emailSent = slot<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldContain "Latency: 1000ms"
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is UP"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is DOWN"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
+                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
+                    emailSent.captured.subject shouldContain "is DOWN"
+                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
                 }
             }
         }
@@ -245,17 +227,11 @@ class SMTPEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                val expectedEmail = emailFactory.fromMonitorEvent(event)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send an email about the event") {
-                    val slot = slot<Email>()
-
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "has a VALID"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                then("it should not send an email about the event") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
                 }
             }
 
@@ -289,7 +265,6 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = emailFactory.fromMonitorEvent(firstEvent)
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
@@ -298,14 +273,8 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
-
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.plainText shouldNotContain OffsetDateTime.MAX.toString()
-                    slot.captured.subject shouldContain "has a VALID"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                then("it should not send an email about the events") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
                 }
             }
 
@@ -389,19 +358,15 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = emailFactory.fromMonitorEvent(firstEvent)
                 val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
 
-                then("it should send two different emails about them") {
-                    val emailsSent = mutableListOf<Email>()
+                then("it should send an email, only about the invalidity") {
+                    val emailSent = slot<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "has a VALID"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "has an INVALID"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
+                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
+                    emailSent.captured.subject shouldContain "has an INVALID"
+                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
                 }
             }
 
@@ -473,19 +438,15 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = emailFactory.fromMonitorEvent(firstEvent)
                 val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
 
-                then("it should send two different emails about them") {
-                    val emailsSent = mutableListOf<Email>()
+                then("it should send an email, only about the expiration") {
+                    val emailSent = slot<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "has a VALID"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "will expire soon"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
+                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
+                    emailSent.captured.subject shouldContain "will expire soon"
+                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
                 }
             }
         }
