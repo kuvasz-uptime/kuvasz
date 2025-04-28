@@ -23,7 +23,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     /**
      * Setter for <code>kuvasz.latency_log.id</code>.
      */
-    public LatencyLogRecord setId(Integer value) {
+    public LatencyLogRecord setId(Long value) {
         set(0, value);
         return this;
     }
@@ -31,14 +31,14 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     /**
      * Getter for <code>kuvasz.latency_log.id</code>.
      */
-    public Integer getId() {
-        return (Integer) get(0);
+    public Long getId() {
+        return (Long) get(0);
     }
 
     /**
      * Setter for <code>kuvasz.latency_log.monitor_id</code>.
      */
-    public LatencyLogRecord setMonitorId(Integer value) {
+    public LatencyLogRecord setMonitorId(Long value) {
         set(1, value);
         return this;
     }
@@ -46,8 +46,8 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     /**
      * Getter for <code>kuvasz.latency_log.monitor_id</code>.
      */
-    public Integer getMonitorId() {
-        return (Integer) get(1);
+    public Long getMonitorId() {
+        return (Long) get(1);
     }
 
     /**
@@ -85,7 +85,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<Integer> key() {
+    public Record1<Long> key() {
         return (Record1) super.key();
     }
 
@@ -103,7 +103,7 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
     /**
      * Create a detached, initialised LatencyLogRecord
      */
-    public LatencyLogRecord(Integer id, Integer monitorId, Integer latency, OffsetDateTime createdAt) {
+    public LatencyLogRecord(Long id, Long monitorId, Integer latency, OffsetDateTime createdAt) {
         super(LatencyLog.LATENCY_LOG);
 
         setId(id);

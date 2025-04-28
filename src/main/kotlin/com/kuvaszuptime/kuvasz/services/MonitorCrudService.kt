@@ -25,7 +25,7 @@ class MonitorCrudService(
     private val dslContext: DSLContext,
 ) {
 
-    fun getMonitorDetails(monitorId: Int): MonitorDetailsDto? =
+    fun getMonitorDetails(monitorId: Long): MonitorDetailsDto? =
         monitorRepository.getMonitorWithDetails(monitorId)?.let { detailsDto ->
             if (detailsDto.latencyHistoryEnabled) {
                 val latencies = latencyLogRepository.getLatencyPercentiles(detailsDto.id).firstOrNull()
@@ -64,13 +64,13 @@ class MonitorCrudService(
             }
         )
 
-    fun deleteMonitorById(monitorId: Int): Unit =
+    fun deleteMonitorById(monitorId: Long): Unit =
         monitorRepository.findById(monitorId)?.let { monitor ->
             monitorRepository.deleteById(monitor.id)
             checkScheduler.removeChecksOfMonitor(monitor)
         } ?: throw MonitorNotFoundError(monitorId)
 
-    fun updateMonitor(monitorId: Int, monitorUpdateDto: MonitorUpdateDto): MonitorRecord =
+    fun updateMonitor(monitorId: Long, monitorUpdateDto: MonitorUpdateDto): MonitorRecord =
         try {
             dslContext.transactionResult { config ->
                 monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
@@ -121,7 +121,7 @@ class MonitorCrudService(
             }
         )
 
-    fun updatePagerdutyIntegrationKey(monitorId: Int, integrationKey: String?): MonitorRecord =
+    fun updatePagerdutyIntegrationKey(monitorId: Long, integrationKey: String?): MonitorRecord =
         dslContext.transactionResult { config ->
             monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
                 val updatedMonitor = existingMonitor.setPagerdutyIntegrationKey(integrationKey)
@@ -129,12 +129,12 @@ class MonitorCrudService(
             }
         } ?: throw MonitorNotFoundError(monitorId)
 
-    fun getUptimeEventsByMonitorId(monitorId: Int): List<UptimeEventDto> =
+    fun getUptimeEventsByMonitorId(monitorId: Long): List<UptimeEventDto> =
         monitorRepository.findById(monitorId)?.let { _ ->
             uptimeEventRepository.getEventsByMonitorId(monitorId)
         } ?: throw MonitorNotFoundError(monitorId)
 
-    fun getSSLEventsByMonitorId(monitorId: Int): List<SSLEventDto> =
+    fun getSSLEventsByMonitorId(monitorId: Long): List<SSLEventDto> =
         monitorRepository.findById(monitorId)?.let { _ ->
             sslEventRepository.getEventsByMonitorId(monitorId)
         } ?: throw MonitorNotFoundError(monitorId)

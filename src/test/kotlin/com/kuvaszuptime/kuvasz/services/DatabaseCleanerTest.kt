@@ -148,7 +148,7 @@ class DatabaseCleanerTest(
         }
     }
 
-    private fun insertLatencyLogRecord(monitorId: Int, createdAt: OffsetDateTime) = dslContext
+    private fun insertLatencyLogRecord(monitorId: Long, createdAt: OffsetDateTime) = dslContext
         .insertInto(LATENCY_LOG)
         .set(
             LatencyLogRecord()

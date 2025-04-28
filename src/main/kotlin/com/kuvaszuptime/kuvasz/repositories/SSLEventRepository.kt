@@ -28,13 +28,13 @@ class SSLEventRepository(private val dslContext: DSLContext) {
             .execute()
     }
 
-    fun getPreviousEventByMonitorId(monitorId: Int): SslEventRecord? = dslContext
+    fun getPreviousEventByMonitorId(monitorId: Long): SslEventRecord? = dslContext
         .selectFrom(SSL_EVENT)
         .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
         .and(SSL_EVENT.ENDED_AT.isNull)
         .fetchOne()
 
-    fun endEventById(eventId: Int, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
+    fun endEventById(eventId: Long, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
         .update(SSL_EVENT)
         .set(SSL_EVENT.ENDED_AT, endedAt)
         .set(SSL_EVENT.UPDATED_AT, endedAt)
@@ -47,18 +47,18 @@ class SSLEventRepository(private val dslContext: DSLContext) {
         .and(SSL_EVENT.ENDED_AT.lessThan(limit))
         .execute()
 
-    fun updateEventUpdatedAt(eventId: Int, updatedAt: OffsetDateTime) = dslContext
+    fun updateEventUpdatedAt(eventId: Long, updatedAt: OffsetDateTime) = dslContext
         .update(SSL_EVENT)
         .set(SSL_EVENT.UPDATED_AT, updatedAt)
         .where(SSL_EVENT.ID.eq(eventId))
         .execute()
 
-    fun fetchByMonitorId(monitorId: Int): List<SslEventRecord> = dslContext
+    fun fetchByMonitorId(monitorId: Long): List<SslEventRecord> = dslContext
         .selectFrom(SSL_EVENT)
         .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun getEventsByMonitorId(monitorId: Int): List<SSLEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long): List<SSLEventDto> = dslContext
         .select(
             SSL_EVENT.STATUS.`as`("status"),
             SSL_EVENT.ERROR.`as`("error"),

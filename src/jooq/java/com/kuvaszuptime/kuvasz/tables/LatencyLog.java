@@ -63,12 +63,12 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     /**
      * The column <code>kuvasz.latency_log.id</code>.
      */
-    public final TableField<LatencyLogRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
+    public final TableField<LatencyLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
 
     /**
      * The column <code>kuvasz.latency_log.monitor_id</code>.
      */
-    public final TableField<LatencyLogRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<LatencyLogRecord, Long> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.latency_log.latency</code>. Lateny in ms
@@ -153,8 +153,8 @@ public class LatencyLog extends TableImpl<LatencyLogRecord> {
     }
 
     @Override
-    public Identity<LatencyLogRecord, Integer> getIdentity() {
-        return (Identity<LatencyLogRecord, Integer>) super.getIdentity();
+    public Identity<LatencyLogRecord, Long> getIdentity() {
+        return (Identity<LatencyLogRecord, Long>) super.getIdentity();
     }
 
     @Override

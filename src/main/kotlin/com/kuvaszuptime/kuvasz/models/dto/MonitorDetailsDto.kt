@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 
 @Introspected
 data class MonitorDetailsDto(
-    val id: Int,
+    val id: Long,
     val name: String,
     val url: URI,
     val uptimeCheckInterval: Int,

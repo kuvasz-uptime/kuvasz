@@ -39,7 +39,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         SSL_EVENT.ERROR
     )
 
-    fun findById(monitorId: Int, ctx: DSLContext = dslContext): MonitorRecord? = ctx
+    fun findById(monitorId: Long, ctx: DSLContext = dslContext): MonitorRecord? = ctx
         .selectFrom(MONITOR)
         .where(MONITOR.ID.eq(monitorId))
         .fetchOne()
@@ -54,7 +54,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .where(MONITOR.ENABLED.eq(enabled))
         .fetch()
 
-    fun deleteById(monitorId: Int): Int = dslContext
+    fun deleteById(monitorId: Long): Int = dslContext
         .deleteFrom(MONITOR)
         .where(MONITOR.ID.eq(monitorId))
         .execute()
@@ -70,7 +70,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
             .groupBy(detailsGroupByFields)
             .fetchInto(MonitorDetailsDto::class.java)
 
-    fun getMonitorWithDetails(monitorId: Int): MonitorDetailsDto? =
+    fun getMonitorWithDetails(monitorId: Long): MonitorDetailsDto? =
         monitorDetailsSelect()
             .where(MONITOR.ID.eq(monitorId))
             .groupBy(detailsGroupByFields)

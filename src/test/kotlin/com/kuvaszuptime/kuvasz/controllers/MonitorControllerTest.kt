@@ -35,6 +35,7 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import kotlinx.coroutines.reactive.awaitFirst
 
 @Suppress("LongParameterList")
 @MicronautTest
@@ -209,7 +210,7 @@ class MonitorControllerTest(
 
             `when`("there is no monitor with the given ID in the database") {
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any>("/api/v1/monitors/1232132432")
+                    client.exchange("/api/v1/monitors/1232132432").awaitFirst()
                 }
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
@@ -315,7 +316,7 @@ class MonitorControllerTest(
                 val firstCreatedMonitor = monitorClient.createMonitor(firstMonitor)
                 val secondRequest = HttpRequest.POST("/api/v1/monitors", secondMonitor)
                 val secondResponse = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<MonitorCreateDto, Any>(secondRequest)
+                    client.exchange(secondRequest).awaitFirst()
                 }
 
                 then("it should return a 409") {
@@ -336,7 +337,7 @@ class MonitorControllerTest(
                 )
                 val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<MonitorCreateDto, Any>(request)
+                    client.exchange(request).awaitFirst()
                 }
 
                 then("it should return a 400") {
@@ -354,13 +355,13 @@ class MonitorControllerTest(
                 )
                 val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<MonitorCreateDto, Any>(request)
+                    client.exchange(request).awaitFirst()
                 }
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     exceptionToMessage(response) shouldContain
-                        "uptimeCheckInterval: must be greater than or equal to 60"
+                            "uptimeCheckInterval: must be greater than or equal to 60"
                 }
             }
         }
@@ -376,7 +377,7 @@ class MonitorControllerTest(
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/${createdMonitor.id}")
-                val response = client.toBlocking().exchange<Any, Any>(deleteRequest)
+                val response = client.exchange(deleteRequest).awaitFirst()
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)
 
                 then("it should delete the monitor and also remove the checks of it") {
@@ -390,7 +391,7 @@ class MonitorControllerTest(
             `when`("it is called with a non existing monitor ID") {
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/123232")
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any, Any>(deleteRequest)
+                    client.exchange(deleteRequest).awaitFirst()
                 }
 
                 then("it should return a 404") {
@@ -554,9 +555,9 @@ class MonitorControllerTest(
                     followRedirects = null,
                 )
                 val updateRequest =
-                    HttpRequest.PATCH<MonitorUpdateDto>("/api/v1/monitors/${firstCreatedMonitor.id}", updateDto)
+                    HttpRequest.PATCH("/api/v1/monitors/${firstCreatedMonitor.id}", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)
+                    client.exchange(updateRequest).awaitFirst()
                 }
                 val monitorInDb = monitorRepository.findById(firstCreatedMonitor.id)!!
 
@@ -578,9 +579,9 @@ class MonitorControllerTest(
                     forceNoCache = null,
                     followRedirects = null,
                 )
-                val updateRequest = HttpRequest.PATCH<MonitorUpdateDto>("/api/v1/monitors/123232", updateDto)
+                val updateRequest = HttpRequest.PATCH("/api/v1/monitors/123232", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<MonitorUpdateDto, Any>(updateRequest)
+                    client.exchange(updateRequest).awaitFirst()
                 }
 
                 then("it should return a 404") {
@@ -602,7 +603,7 @@ class MonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest =
                     HttpRequest.DELETE<Any>("/api/v1/monitors/${createdMonitor.id}/pagerduty-integration-key")
-                val response = client.toBlocking().exchange<Any, Any>(deleteRequest)
+                val response = client.exchange(deleteRequest).awaitFirst()
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)
 
                 then("it should delete the integration key of the given monitor") {
@@ -614,7 +615,7 @@ class MonitorControllerTest(
             `when`("it is called with a non existing monitor ID") {
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/123232/pagerduty-integration-key")
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any, Any>(deleteRequest)
+                    client.exchange(deleteRequest).awaitFirst()
                 }
 
                 then("it should return a 404") {
@@ -675,12 +676,12 @@ class MonitorControllerTest(
             `when`("it is called with a non existing monitor ID") {
                 val updateDto = PagerdutyKeyUpdateDto("something")
                 val updateRequest =
-                    HttpRequest.PUT<PagerdutyKeyUpdateDto>(
+                    HttpRequest.PUT(
                         "/api/v1/monitors/123232/pagerduty-integration-key",
                         updateDto
                     )
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<PagerdutyKeyUpdateDto, Any>(updateRequest)
+                    client.exchange(updateRequest).awaitFirst()
                 }
 
                 then("it should return a 404") {
@@ -736,7 +737,7 @@ class MonitorControllerTest(
 
             `when`("there is no monitor with the given ID in the database") {
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any>("/api/v1/monitors/1232132432/uptime-events")
+                    client.exchange("/api/v1/monitors/1232132432/uptime-events").awaitFirst()
                 }
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
@@ -772,7 +773,7 @@ class MonitorControllerTest(
                     endedAt = null
                 )
 
-                then("it should return its uptime events") {
+                then("it should return its SSL events") {
                     val response = monitorClient.getSSLEvents(monitorId = monitor.id)
                     response shouldHaveSize 2
                     response.forOne { it.status shouldBe SslStatus.VALID }
@@ -791,7 +792,7 @@ class MonitorControllerTest(
 
             `when`("there is no monitor with the given ID in the database") {
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any>("/api/v1/monitors/1232132432/ssl-events")
+                    client.exchange("/api/v1/monitors/1232132432/ssl-events").awaitFirst()
                 }
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND

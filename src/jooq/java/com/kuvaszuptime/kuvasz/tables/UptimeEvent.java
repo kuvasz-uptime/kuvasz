@@ -64,12 +64,12 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     /**
      * The column <code>kuvasz.uptime_event.id</code>.
      */
-    public final TableField<UptimeEventRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
+    public final TableField<UptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
 
     /**
      * The column <code>kuvasz.uptime_event.monitor_id</code>.
      */
-    public final TableField<UptimeEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<UptimeEventRecord, Long> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.uptime_event.status</code>. Status of the event
@@ -171,8 +171,8 @@ public class UptimeEvent extends TableImpl<UptimeEventRecord> {
     }
 
     @Override
-    public Identity<UptimeEventRecord, Integer> getIdentity() {
-        return (Identity<UptimeEventRecord, Integer>) super.getIdentity();
+    public Identity<UptimeEventRecord, Long> getIdentity() {
+        return (Identity<UptimeEventRecord, Long>) super.getIdentity();
     }
 
     @Override

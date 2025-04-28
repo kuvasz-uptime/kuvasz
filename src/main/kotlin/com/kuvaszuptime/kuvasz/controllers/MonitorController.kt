@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
@@ -59,7 +60,7 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getMonitorDetails(monitorId: Int): MonitorDetailsDto =
+    override fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
         monitorCrudService.getMonitorDetails(monitorId) ?: throw MonitorNotFoundError(monitorId)
 
     @Status(HttpStatus.CREATED)
@@ -94,7 +95,7 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun deleteMonitor(monitorId: Int) = monitorCrudService.deleteMonitorById(monitorId)
+    override fun deleteMonitor(monitorId: Long) = monitorCrudService.deleteMonitorById(monitorId)
 
     @ApiResponses(
         ApiResponse(
@@ -114,7 +115,7 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun updateMonitor(monitorId: Int, @Valid monitorUpdateDto: MonitorUpdateDto): MonitorDto {
+    override fun updateMonitor(monitorId: Long, @Valid monitorUpdateDto: MonitorUpdateDto): MonitorDto {
         val updatedMonitor = monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
         return MonitorDto.fromMonitorRecord(updatedMonitor)
     }
@@ -137,7 +138,7 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun upsertPagerdutyIntegrationKey(monitorId: Int, @Valid upsertDto: PagerdutyKeyUpdateDto): MonitorDto {
+    override fun upsertPagerdutyIntegrationKey(monitorId: Long, @Valid upsertDto: PagerdutyKeyUpdateDto): MonitorDto {
         val updatedMonitor = monitorCrudService.updatePagerdutyIntegrationKey(
             monitorId,
             upsertDto.pagerdutyIntegrationKey,
@@ -158,7 +159,7 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun deletePagerdutyIntegrationKey(monitorId: Int) {
+    override fun deletePagerdutyIntegrationKey(monitorId: Long) {
         monitorCrudService.updatePagerdutyIntegrationKey(monitorId, null)
     }
 
@@ -170,7 +171,7 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getUptimeEvents(monitorId: Int): List<UptimeEventDto> =
+    override fun getUptimeEvents(monitorId: Long): List<UptimeEventDto> =
         monitorCrudService.getUptimeEventsByMonitorId(monitorId)
 
     @ApiResponses(
@@ -181,5 +182,23 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getSSLEvents(monitorId: Int): List<SSLEventDto> = monitorCrudService.getSSLEventsByMonitorId(monitorId)
+    override fun getSSLEvents(monitorId: Long): List<SSLEventDto> =
+        monitorCrudService.getSSLEventsByMonitorId(monitorId)
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+            content = [Content(schema = Schema(implementation = MonitorStatsDto::class))]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    @ExecuteOn(TaskExecutors.IO)
+    override fun getMonitorStats(monitorId: Long): MonitorStatsDto {
+        TODO("Not yet implemented")
+    }
 }

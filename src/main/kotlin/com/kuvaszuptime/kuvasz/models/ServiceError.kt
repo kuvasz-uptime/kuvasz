@@ -8,7 +8,7 @@ data class ServiceError(
 )
 
 class MonitorNotFoundError(
-    private val monitorId: Int,
+    private val monitorId: Long,
     override val message: String? = "There is no monitor with ID: $monitorId"
 ) : Throwable()
 

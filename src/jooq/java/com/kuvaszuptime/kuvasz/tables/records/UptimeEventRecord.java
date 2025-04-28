@@ -24,7 +24,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     /**
      * Setter for <code>kuvasz.uptime_event.id</code>.
      */
-    public UptimeEventRecord setId(Integer value) {
+    public UptimeEventRecord setId(Long value) {
         set(0, value);
         return this;
     }
@@ -32,14 +32,14 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     /**
      * Getter for <code>kuvasz.uptime_event.id</code>.
      */
-    public Integer getId() {
-        return (Integer) get(0);
+    public Long getId() {
+        return (Long) get(0);
     }
 
     /**
      * Setter for <code>kuvasz.uptime_event.monitor_id</code>.
      */
-    public UptimeEventRecord setMonitorId(Integer value) {
+    public UptimeEventRecord setMonitorId(Long value) {
         set(1, value);
         return this;
     }
@@ -47,8 +47,8 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     /**
      * Getter for <code>kuvasz.uptime_event.monitor_id</code>.
      */
-    public Integer getMonitorId() {
-        return (Integer) get(1);
+    public Long getMonitorId() {
+        return (Long) get(1);
     }
 
     /**
@@ -135,7 +135,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<Integer> key() {
+    public Record1<Long> key() {
         return (Record1) super.key();
     }
 
@@ -153,7 +153,7 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
     /**
      * Create a detached, initialised UptimeEventRecord
      */
-    public UptimeEventRecord(Integer id, Integer monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
+    public UptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
         super(UptimeEvent.UPTIME_EVENT);
 
         setId(id);
