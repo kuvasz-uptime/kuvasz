@@ -166,9 +166,8 @@ tasks.withType<JavaExec> {
     jvmArgs(
         "-Xms64M",
         "-Xmx128M",
-        "-Dlogback.configurationFile=logback-dev.xml",
     )
-    systemProperty("micronaut.environments", "dev")
+    systemProperty("micronaut.config.files", file("localdev/application-dev.yml"))
 }
 
 tasks.withType<ShadowJar> {
@@ -204,7 +203,7 @@ val updateApiDoc by tasks.registering(type = Copy::class) {
     into("$projectDir/docs/api-doc")
 }
 
-val dbUrl = "jdbc:postgresql://localhost:12348/postgres"
+val dbUrl = "jdbc:postgresql://localhost:5432/postgres"
 val dbUser = "postgres"
 val dbPassword = System.getenv("DB_PASSWORD") ?: "postgres"
 val dbSchema = "kuvasz"

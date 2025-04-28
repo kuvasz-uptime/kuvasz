@@ -2,16 +2,9 @@
 micronaut:
   security:
     enabled: false
-    token:
-      jwt:
-        signatures:
-          secret:
-            generator:
-              secret: devSecretItsVeryVerySecretSecret
 ---
 datasources:
   default:
-    url: jdbc:postgresql://localhost:12348/postgres
     username: 'postgres'
     password: 'postgres'
 ---
@@ -33,6 +26,5 @@ smtp-config:
 ---
 logger:
   levels:
-#    io.micronaut.http.client: TRACE
-#    org.jooq: DEBUG
-    com.kuvaszuptime: DEBUG
+    #    io.micronaut.http.client: TRACE
+    org.jooq: DEBUG
