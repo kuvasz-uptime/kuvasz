@@ -77,11 +77,8 @@ class TelegramEventHandlerTest(
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send a message about the event") {
-                    val slot = slot<String>()
-
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is UP (200)"
+                then("it should not send a message about the event") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
                 }
             }
 
@@ -125,11 +122,8 @@ class TelegramEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send only one notification about them") {
-                    val slot = slot<String>()
-
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Latency: 1000ms"
+                then("it should not send any notification about them") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
                 }
             }
 
@@ -211,13 +205,11 @@ class TelegramEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<String>()
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<String>()
 
-                    verify(exactly = 2) { apiServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0] shouldContain "Latency: 1000ms"
-                    notificationsSent[0] shouldContain "is UP (200)"
-                    notificationsSent[1] shouldContain "is DOWN (500)"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(notificationSent)) }
+                    notificationSent.captured shouldContain "is DOWN (500)"
                 }
             }
         }
@@ -234,12 +226,8 @@ class TelegramEventHandlerTest(
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send a webhook message about the event") {
-                    val slot = slot<String>()
-
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain
-                        "Your site \"${monitor.name}\" (${monitor.url}) has a VALID certificate"
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
                 }
             }
 
@@ -281,11 +269,8 @@ class TelegramEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send only one notification about them") {
-                    val slot = slot<String>()
-
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldNotContain OffsetDateTime.MAX.toString()
+                then("it should not send any notification about them") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
                 }
             }
 
@@ -360,12 +345,11 @@ class TelegramEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<String>()
+                then("it should send only one notification, about the invalid event") {
+                    val notificationSent = slot<String>()
 
-                    verify(exactly = 2) { apiServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0] shouldContain "has a VALID certificate"
-                    notificationsSent[1] shouldContain "has an INVALID certificate"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(notificationSent)) }
+                    notificationSent.captured shouldContain "has an INVALID certificate"
                 }
             }
 
@@ -433,12 +417,11 @@ class TelegramEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<String>()
+                then("it should send only one notification, about the expiration") {
+                    val notificationSent = slot<String>()
 
-                    verify(exactly = 2) { apiServiceSpy.sendMessage(capture(notificationsSent)) }
-                    notificationsSent[0] shouldContain "has a VALID certificate"
-                    notificationsSent[1] shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(notificationSent)) }
+                    notificationSent.captured shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
                 }
             }
         }

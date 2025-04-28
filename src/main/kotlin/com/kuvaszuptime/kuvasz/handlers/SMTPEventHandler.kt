@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.config.handlers.SMTPEventHandlerConfig
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.SMTPMailer
@@ -51,10 +53,20 @@ class SMTPEventHandler(
     }
 
     private fun UptimeMonitorEvent.handle() {
-        runWhenStateChanges { smtpMailer.sendAsync(emailFactory.fromMonitorEvent(it)) }
+        runWhenStateChanges { event ->
+            if (this is MonitorUpEvent && previousEvent == null) {
+                return@runWhenStateChanges
+            }
+            smtpMailer.sendAsync(emailFactory.fromMonitorEvent(event))
+        }
     }
 
     private fun SSLMonitorEvent.handle() {
-        runWhenStateChanges { smtpMailer.sendAsync(emailFactory.fromMonitorEvent(it)) }
+        runWhenStateChanges { event ->
+            if (this is SSLValidEvent && previousEvent == null) {
+                return@runWhenStateChanges
+            }
+            smtpMailer.sendAsync(emailFactory.fromMonitorEvent(event))
+        }
     }
 }

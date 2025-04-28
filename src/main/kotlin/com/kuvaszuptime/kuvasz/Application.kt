@@ -13,8 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
     info = Info(
         title = "kuvasz",
         version = "latest",
-        description = "Kuvasz [pronounce as 'koovas'] is an open-source uptime and SSL monitoring service, " +
-                "built in Kotlin",
+        description = "Kuvasz [pronounce as 'koovas'] is an open-source uptime and SSL monitoring service",
         contact = Contact(
             url = "https://github.com/kuvasz-uptime/kuvasz"
         )
