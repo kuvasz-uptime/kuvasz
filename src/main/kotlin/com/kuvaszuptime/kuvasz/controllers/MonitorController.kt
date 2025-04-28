@@ -198,6 +198,7 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
+    @Suppress("NotImplementedDeclaration")
     override fun getMonitorStats(monitorId: Long): MonitorStatsDto {
         TODO("Not yet implemented")
     }

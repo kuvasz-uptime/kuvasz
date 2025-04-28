@@ -5,6 +5,7 @@ import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest
 class InfoEndpointTest(
@@ -13,7 +14,7 @@ class InfoEndpointTest(
     {
         given("the /info endpoint") {
             `when`("it has been called") {
-                val response = client.toBlocking().retrieve("/api/v1/info")
+                val response = client.retrieve("/api/v1/info").awaitFirst()
                 then("it should return information about the event handlers") {
                     response shouldContain "log-event-handler.enabled"
                     response shouldContain "smtp-event-handler.enabled"
