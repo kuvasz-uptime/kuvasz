@@ -8,12 +8,6 @@ import io.kotest.data.table
 import io.kotest.matchers.booleans.shouldBeTrue
 import java.net.URL
 
-/**
- * FIXME
- * The commented lines are broken, because badssl.com has some issues with their certificates for a while now.
- * Since the logic behind wasn't changed since it's broke, we can assume that SSL check still works, but better stay
- * on the safe side and fix this test later
- */
 class SSLValidatorTest : StringSpec(
     {
         val validator = SSLValidator()
@@ -21,15 +15,26 @@ class SSLValidatorTest : StringSpec(
         "validate should return the right result" {
             table(
                 headers("url", "isValid"),
+                row("https://github.com", true),
+                row("https://google.com", true),
+                row("https://amazon.com", true),
+                row("https://akobor.me", true),
+
+                row("https://test-ev-rsa.ssl.com/", true),
+                row("https://test-dv-rsa.ssl.com/", true),
+                row("https://test-ev-ecc.ssl.com/", true),
+                row("https://test-dv-ecc.ssl.com/", true),
+
                 row("https://sha256.badssl.com/", true),
-//                row("https://sha384.badssl.com/", true),
-//                row("https://sha512.badssl.com/", true),
                 row("https://ecc256.badssl.com/", true),
                 row("https://ecc384.badssl.com/", true),
                 row("https://rsa2048.badssl.com/", true),
                 row("https://rsa4096.badssl.com/", true),
-//                row("https://rsa8192.badssl.com/", true),
-//                row("https://extended-validation.badssl.com/", true),
+
+                row("https://expired-rsa-dv.ssl.com", false),
+                row("https://expired-rsa-ev.ssl.com", false),
+                row("https://expired-ecc-dv.ssl.com", false),
+                row("https://expired-ecc-ev.ssl.com", false),
 
                 row("https://expired.badssl.com/", false),
                 row("https://wrong.host.badssl.com/", false),
