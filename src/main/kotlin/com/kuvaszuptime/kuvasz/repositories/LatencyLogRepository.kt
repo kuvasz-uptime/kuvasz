@@ -1,16 +1,19 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import com.kuvaszuptime.kuvasz.models.dto.LatencyLogDto
 import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord
 import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.impl.DSL.avg
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.min
 import org.jooq.impl.DSL.percentRank
 import org.jooq.impl.DSL.round
 import org.jooq.impl.DSL.selectDistinct
 import org.jooq.impl.DSL.table
+import java.math.BigDecimal
 import java.time.OffsetDateTime
 
 @Singleton
@@ -31,10 +34,32 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
             .execute()
     }
 
-    fun fetchByMonitorId(monitorId: Long): List<LatencyLogRecord> = dslContext
-        .selectFrom(LATENCY_LOG)
+    fun fetchLatestByMonitorId(
+        monitorId: Long,
+        limit: Int? = null,
+    ): List<LatencyLogDto> = dslContext
+        .select(
+            LATENCY_LOG.ID.`as`(LatencyLogDto::id.name),
+            LATENCY_LOG.LATENCY.`as`(LatencyLogDto::latencyInMs.name),
+            LATENCY_LOG.CREATED_AT.`as`(LatencyLogDto::createdAt.name)
+        )
+        .from(LATENCY_LOG)
         .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
-        .fetch()
+        .apply {
+            if (limit != null) {
+                @Suppress("IgnoredReturnValue")
+                limit(limit)
+            }
+        }
+        .orderBy(LATENCY_LOG.CREATED_AT.desc(), LATENCY_LOG.ID.desc())
+        .fetchInto(LatencyLogDto::class.java)
+
+    fun getAverageByMonitorId(monitorId: Long): BigDecimal? = dslContext
+        .select(avg(LATENCY_LOG.LATENCY))
+        .from(LATENCY_LOG)
+        .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
+        .fetchOne()
+        ?.value1()
 
     fun deleteLogsBeforeDate(limit: OffsetDateTime) = dslContext
         .delete(LATENCY_LOG)

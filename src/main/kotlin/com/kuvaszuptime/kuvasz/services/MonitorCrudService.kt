@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.exception.DataAccessException
+import java.math.RoundingMode
 
 @Singleton
 class MonitorCrudService(
@@ -25,30 +27,11 @@ class MonitorCrudService(
     private val dslContext: DSLContext,
 ) {
 
-    fun getMonitorDetails(monitorId: Long): MonitorDetailsDto? =
-        monitorRepository.getMonitorWithDetails(monitorId)?.let { detailsDto ->
-            if (detailsDto.latencyHistoryEnabled) {
-                val latencies = latencyLogRepository.getLatencyPercentiles(detailsDto.id).firstOrNull()
-                detailsDto.copy(
-                    p95LatencyInMs = latencies?.p95,
-                    p99LatencyInMs = latencies?.p99
-                )
-            } else {
-                detailsDto
-            }
-        }
+    fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
+        monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundError(monitorId)
 
-    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> {
-        val latencies = latencyLogRepository.getLatencyPercentiles()
-
-        return monitorRepository.getMonitorsWithDetails(enabledOnly).map { detailsDto ->
-            val matchingLatency = latencies.find { it.monitorId == detailsDto.id }
-            detailsDto.copy(
-                p95LatencyInMs = matchingLatency?.p95,
-                p99LatencyInMs = matchingLatency?.p99
-            )
-        }
-    }
+    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(enabledOnly)
 
     fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord =
         monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord()).fold(
@@ -65,27 +48,29 @@ class MonitorCrudService(
         )
 
     fun deleteMonitorById(monitorId: Long): Unit =
-        monitorRepository.findById(monitorId)?.let { monitor ->
-            monitorRepository.deleteById(monitor.id)
-            checkScheduler.removeChecksOfMonitor(monitor)
-        } ?: throw MonitorNotFoundError(monitorId)
+        monitorRepository.findById(monitorId)
+            .orThrowNotFound(monitorId)
+            .let { monitor ->
+                monitorRepository.deleteById(monitor.id)
+                checkScheduler.removeChecksOfMonitor(monitor)
+            }
 
     fun updateMonitor(monitorId: Long, monitorUpdateDto: MonitorUpdateDto): MonitorRecord =
         try {
             dslContext.transactionResult { config ->
                 monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
-                    val updatedMonitor = prepareUpdatePojo(monitorUpdateDto, existingMonitor)
+                    val updatedMonitor = prepareUpdatedRecord(monitorUpdateDto, existingMonitor)
 
                     updatedMonitor.saveAndReschedule(existingMonitor, config.dsl())
                 }
-            } ?: throw MonitorNotFoundError(monitorId)
+            }.orThrowNotFound(monitorId)
         } catch (ex: DataAccessException) {
             // Cause is encapsulated in the DataAccessException inside a transaction, so we need to unwrap it again here
             // because we're interested in the DuplicationErrors on the call site
             throw ex.cause ?: ex
         }
 
-    private fun prepareUpdatePojo(monitorUpdateDto: MonitorUpdateDto, existingMonitor: MonitorRecord) =
+    private fun prepareUpdatedRecord(monitorUpdateDto: MonitorUpdateDto, existingMonitor: MonitorRecord) =
         MonitorRecord().apply {
             id = existingMonitor.id
             name = monitorUpdateDto.name ?: existingMonitor.name
@@ -127,15 +112,53 @@ class MonitorCrudService(
                 val updatedMonitor = existingMonitor.setPagerdutyIntegrationKey(integrationKey)
                 updatedMonitor.saveAndReschedule(existingMonitor, config.dsl())
             }
-        } ?: throw MonitorNotFoundError(monitorId)
+        }.orThrowNotFound(monitorId)
 
     fun getUptimeEventsByMonitorId(monitorId: Long): List<UptimeEventDto> =
-        monitorRepository.findById(monitorId)?.let { _ ->
-            uptimeEventRepository.getEventsByMonitorId(monitorId)
-        } ?: throw MonitorNotFoundError(monitorId)
+        monitorRepository.findById(monitorId)
+            .orThrowNotFound(monitorId)
+            .let { monitor ->
+                uptimeEventRepository.getEventsByMonitorId(monitor.id)
+            }
 
     fun getSSLEventsByMonitorId(monitorId: Long): List<SSLEventDto> =
-        monitorRepository.findById(monitorId)?.let { _ ->
-            sslEventRepository.getEventsByMonitorId(monitorId)
-        } ?: throw MonitorNotFoundError(monitorId)
+        monitorRepository.findById(monitorId)
+            .orThrowNotFound(monitorId)
+            .let { monitor ->
+                sslEventRepository.getEventsByMonitorId(monitor.id)
+            }
+
+    fun getMonitorStats(monitorId: Long, latencyLogLimit: Int): MonitorStatsDto =
+        monitorRepository.findById(monitorId)
+            .orThrowNotFound(monitorId)
+            .let { monitor ->
+                val statsDto = MonitorStatsDto(
+                    id = monitor.id,
+                    latencyHistoryEnabled = monitor.latencyHistoryEnabled,
+                    averageLatencyInMs = null,
+                    p95LatencyInMs = null,
+                    p99LatencyInMs = null,
+                    latencyLogs = emptyList()
+                )
+                if (!monitor.latencyHistoryEnabled) {
+                    return statsDto
+                }
+
+                val latencies = latencyLogRepository.getLatencyPercentiles(monitor.id).firstOrNull()
+                val averageLatency = latencyLogRepository.getAverageByMonitorId(monitor.id)
+                    ?.setScale(0, RoundingMode.HALF_UP)
+                    ?.toInt()
+                statsDto.copy(
+                    averageLatencyInMs = averageLatency,
+                    p95LatencyInMs = latencies?.p95,
+                    p99LatencyInMs = latencies?.p99,
+                    latencyLogs = latencyLogRepository.fetchLatestByMonitorId(
+                        monitorId = monitor.id,
+                        limit = latencyLogLimit,
+                    )
+                )
+            }
+
+    private fun MonitorRecord?.orThrowNotFound(monitorId: Long): MonitorRecord =
+        this ?: throw MonitorNotFoundError(monitorId)
 }

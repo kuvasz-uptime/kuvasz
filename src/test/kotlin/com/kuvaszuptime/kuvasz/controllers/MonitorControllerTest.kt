@@ -53,9 +53,6 @@ class MonitorControllerTest(
         given("MonitorController's getMonitorsWithDetails() endpoint") {
             `when`("there is a monitor in the database") {
                 val monitor = createMonitor(monitorRepository, pagerdutyIntegrationKey = "something")
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
                     dslContext,
@@ -80,9 +77,6 @@ class MonitorControllerTest(
                     responseItem.url.toString() shouldBe monitor.url
                     responseItem.enabled shouldBe monitor.enabled
                     responseItem.enabled shouldBe monitor.sslCheckEnabled
-                    responseItem.averageLatencyInMs shouldBe 800
-                    responseItem.p95LatencyInMs shouldBe 1200
-                    responseItem.p99LatencyInMs shouldBe 1200
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
                     responseItem.uptimeStatusStartedAt shouldBe now
                     responseItem.uptimeError shouldBe null
@@ -104,6 +98,7 @@ class MonitorControllerTest(
                 createMonitor(monitorRepository, enabled = false, monitorName = "name1")
                 val enabledMonitor = createMonitor(monitorRepository, id = 11111, monitorName = "name2")
                 val response = monitorClient.getMonitorsWithDetails(enabledOnly = true)
+
                 then("it should not return disabled monitor") {
                     response shouldHaveSize 1
                     val responseItem = response.first()
@@ -112,7 +107,6 @@ class MonitorControllerTest(
                     responseItem.url.toString() shouldBe enabledMonitor.url
                     responseItem.enabled shouldBe enabledMonitor.enabled
                     responseItem.sslCheckEnabled shouldBe enabledMonitor.sslCheckEnabled
-                    responseItem.averageLatencyInMs shouldBe null
                     responseItem.uptimeStatus shouldBe null
                     responseItem.sslStatus shouldBe null
                     responseItem.createdAt shouldBe enabledMonitor.createdAt
@@ -142,9 +136,6 @@ class MonitorControllerTest(
                     forceNoCache = false,
                     followRedirects = false,
                 )
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
                     dslContext,
@@ -167,7 +158,6 @@ class MonitorControllerTest(
                     response.url.toString() shouldBe monitor.url
                     response.enabled shouldBe monitor.enabled
                     response.sslCheckEnabled shouldBe monitor.sslCheckEnabled
-                    response.averageLatencyInMs shouldBe 800
                     response.uptimeStatus shouldBe UptimeStatus.UP
                     response.createdAt shouldBe monitor.createdAt
                     response.lastUptimeCheck shouldBe now
@@ -180,12 +170,100 @@ class MonitorControllerTest(
                     response.latencyHistoryEnabled shouldBe true
                     response.forceNoCache shouldBe false
                     response.followRedirects shouldBe false
-                    response.p95LatencyInMs shouldNotBe null
-                    response.p99LatencyInMs shouldNotBe null
                 }
             }
 
-            `when`("there is a monitor with the given ID in the database - latency history disabled") {
+            `when`("there is no monitor with the given ID in the database") {
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v1/monitors/1232132432").awaitFirst()
+                }
+                then("it should return a 404") {
+                    response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
+
+        given("MonitorController's getMonitorStats() endpoint") {
+
+            `when`("latency history enabled, latency records are present") {
+                val monitor = createMonitor(
+                    monitorRepository,
+                    pagerdutyIntegrationKey = "something",
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = true,
+                    forceNoCache = false,
+                    followRedirects = false,
+                )
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+
+                then("it should return the correct stats") {
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = null)
+                    response.id shouldBe monitor.id
+                    response.latencyHistoryEnabled shouldBe true
+                    response.averageLatencyInMs shouldBe 800
+                    response.p95LatencyInMs shouldBe 1200
+                    response.p99LatencyInMs shouldBe 1200
+                    response.latencyLogs.shouldNotBeEmpty()
+                    // Latency logs should be sorted by their creation in descending order
+                    response.latencyLogs[0].id shouldBeGreaterThan response.latencyLogs[1].id
+                    response.latencyLogs[1].id shouldBeGreaterThan response.latencyLogs[2].id
+                }
+            }
+
+            `when`("latency history enabled, records are present, explicit limit is set") {
+                val monitor = createMonitor(
+                    monitorRepository,
+                    pagerdutyIntegrationKey = "something",
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = true,
+                    forceNoCache = false,
+                    followRedirects = false,
+                )
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 100)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 200)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 500)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 400)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 300)
+
+                then("it should limit the number of logs") {
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = 3)
+                    response.id shouldBe monitor.id
+                    response.latencyHistoryEnabled shouldBe true
+                    response.averageLatencyInMs shouldBe 300
+                    response.p95LatencyInMs shouldBe 500
+                    response.p99LatencyInMs shouldBe 500
+
+                    response.latencyLogs shouldHaveSize 3
+                    response.latencyLogs[0].latencyInMs shouldBe 300
+                    response.latencyLogs[1].latencyInMs shouldBe 400
+                    response.latencyLogs[2].latencyInMs shouldBe 500
+                }
+            }
+
+            `when`("latency history enabled, but no records") {
+                val monitor = createMonitor(
+                    monitorRepository,
+                    pagerdutyIntegrationKey = "something",
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = true,
+                    forceNoCache = false,
+                    followRedirects = false,
+                )
+
+                then("it should return null for the latency stats and an empty list for the logs") {
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = null)
+                    response.id shouldBe monitor.id
+                    response.latencyHistoryEnabled shouldBe true
+                    response.averageLatencyInMs shouldBe null
+                    response.p95LatencyInMs shouldBe null
+                    response.p99LatencyInMs shouldBe null
+                    response.latencyLogs.shouldBeEmpty()
+                }
+            }
+
+            `when`("latency history disabled") {
                 val monitor = createMonitor(
                     monitorRepository,
                     pagerdutyIntegrationKey = "something",
@@ -200,19 +278,20 @@ class MonitorControllerTest(
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
 
-                then("it should return it, but without latency info") {
-                    val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
+                then("it should return null for the latency stats and an empty list for the logs") {
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = null)
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe false
                     response.averageLatencyInMs shouldBe null
                     response.p95LatencyInMs shouldBe null
                     response.p99LatencyInMs shouldBe null
+                    response.latencyLogs.shouldBeEmpty()
                 }
             }
 
             `when`("there is no monitor with the given ID in the database") {
                 val response = shouldThrow<HttpClientResponseException> {
-                    client.exchange("/api/v1/monitors/1232132432").awaitFirst()
+                    client.exchange("/api/v1/monitors/1232132432/stats").awaitFirst()
                 }
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
@@ -511,7 +590,7 @@ class MonitorControllerTest(
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 latencyLogRepository.insertLatencyForMonitor(createdMonitor.id, 1200)
-                latencyLogRepository.fetchByMonitorId(createdMonitor.id).shouldNotBeEmpty()
+                latencyLogRepository.fetchLatestByMonitorId(createdMonitor.id).shouldNotBeEmpty()
 
                 val updateDto = MonitorUpdateDto(
                     name = null,
@@ -527,7 +606,7 @@ class MonitorControllerTest(
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
 
                 then("it should remove the existing latency log records as well") {
-                    latencyLogRepository.fetchByMonitorId(createdMonitor.id).shouldBeEmpty()
+                    latencyLogRepository.fetchLatestByMonitorId(createdMonitor.id).shouldBeEmpty()
                 }
             }
 

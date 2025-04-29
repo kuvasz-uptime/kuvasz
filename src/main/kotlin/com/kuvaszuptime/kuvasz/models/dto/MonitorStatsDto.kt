@@ -6,6 +6,7 @@ import java.time.OffsetDateTime
 @Introspected
 data class MonitorStatsDto(
     val id: Long,
+    val latencyHistoryEnabled: Boolean,
     val averageLatencyInMs: Int?,
     val p95LatencyInMs: Int?,
     val p99LatencyInMs: Int?,

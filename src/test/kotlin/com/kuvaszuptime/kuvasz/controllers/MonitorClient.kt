@@ -30,5 +30,5 @@ interface MonitorClient : MonitorOperations {
 
     override fun getSSLEvents(monitorId: Long): List<SSLEventDto>
 
-    override fun getMonitorStats(monitorId: Long): MonitorStatsDto
+    override fun getMonitorStats(monitorId: Long, latencyLogLimit: Int?): MonitorStatsDto
 }

@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
@@ -61,7 +60,7 @@ class MonitorController(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
-        monitorCrudService.getMonitorDetails(monitorId) ?: throw MonitorNotFoundError(monitorId)
+        monitorCrudService.getMonitorDetails(monitorId)
 
     @Status(HttpStatus.CREATED)
     @ApiResponses(
@@ -198,8 +197,16 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    @Suppress("NotImplementedDeclaration")
-    override fun getMonitorStats(monitorId: Long): MonitorStatsDto {
-        TODO("Not yet implemented")
+    override fun getMonitorStats(
+        monitorId: Long,
+        @QueryValue latencyLogLimit: Int?,
+    ): MonitorStatsDto =
+        monitorCrudService.getMonitorStats(
+            monitorId = monitorId,
+            latencyLogLimit = latencyLogLimit ?: LATENCY_LOG_LIMIT_DEFAULT
+        )
+
+    companion object {
+        private const val LATENCY_LOG_LIMIT_DEFAULT = 100
     }
 }

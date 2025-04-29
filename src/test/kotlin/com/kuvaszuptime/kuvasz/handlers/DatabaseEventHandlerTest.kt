@@ -67,7 +67,7 @@ class DatabaseEventHandlerTest(
 
                 then("it should insert a new UptimeEvent record with status UP and a LatencyLog record") {
                     val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
-                    val expectedLatencyRecord = latencyLogRepository.fetchByMonitorId(event.monitor.id).single()
+                    val expectedLatencyRecord = latencyLogRepository.fetchLatestByMonitorId(event.monitor.id).single()
 
                     verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
                     verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any(), any()) }
@@ -82,7 +82,7 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
-                    expectedLatencyRecord.latency shouldBe event.latency
+                    expectedLatencyRecord.latencyInMs shouldBe event.latency
                 }
             }
 
@@ -100,7 +100,7 @@ class DatabaseEventHandlerTest(
                 then("it should NOT save the latency log record") {
 
                     uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
-                    latencyLogRepository.fetchByMonitorId(monitor.id).shouldBeEmpty()
+                    latencyLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
 
                     verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
                     verify(exactly = 0) { latencyLogRepositorySpy.insertLatencyForMonitor(any(), any()) }
@@ -151,7 +151,8 @@ class DatabaseEventHandlerTest(
 
                 then("it should not insert a new UptimeEvent record but should create a LatencyLog record") {
                     val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                    val latencyRecords = latencyLogRepository.fetchByMonitorId(monitor.id).sortedBy { it.createdAt }
+                    val latencyRecords =
+                        latencyLogRepository.fetchLatestByMonitorId(monitor.id).sortedBy { it.createdAt }
 
                     verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
                     verify(exactly = 0) {
@@ -166,8 +167,8 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
                     latencyRecords shouldHaveSize 2
-                    latencyRecords[0].latency shouldBe firstEvent.latency
-                    latencyRecords[1].latency shouldBe secondEvent.latency
+                    latencyRecords[0].latencyInMs shouldBe firstEvent.latency
+                    latencyRecords[1].latencyInMs shouldBe secondEvent.latency
                 }
             }
 
@@ -192,7 +193,7 @@ class DatabaseEventHandlerTest(
 
                 then("it should create a new UptimeEvent and a LatencyLog record, and end the previous one") {
                     val uptimeRecords = uptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
-                    val latencyRecord = latencyLogRepository.fetchByMonitorId(monitor.id).single()
+                    val latencyRecord = latencyLogRepository.fetchLatestByMonitorId(monitor.id).single()
 
                     verifyOrder {
                         uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -211,7 +212,7 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[1].status shouldBe UptimeStatus.UP
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
-                    latencyRecord.latency shouldBe secondEvent.latency
+                    latencyRecord.latencyInMs shouldBe secondEvent.latency
                 }
             }
 
@@ -236,7 +237,7 @@ class DatabaseEventHandlerTest(
 
                 then("it should create a new UptimeEvent record and end the previous one") {
                     val uptimeRecords = uptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
-                    val latencyRecord = latencyLogRepository.fetchByMonitorId(monitor.id).single()
+                    val latencyRecord = latencyLogRepository.fetchLatestByMonitorId(monitor.id).single()
 
                     verifyOrder {
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, firstEvent.latency)
@@ -256,7 +257,7 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[1].error shouldBe "Reason: 500 Internal Server Error"
-                    latencyRecord.latency shouldBe firstEvent.latency
+                    latencyRecord.latencyInMs shouldBe firstEvent.latency
                 }
             }
 

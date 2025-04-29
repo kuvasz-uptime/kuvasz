@@ -62,5 +62,10 @@ interface MonitorOperations {
 
     @Operation(summary = "Returns the stats of the given monitor")
     @Get("/{monitorId}/stats")
-    fun getMonitorStats(monitorId: Long): MonitorStatsDto
+    fun getMonitorStats(
+        monitorId: Long,
+        @QueryValue
+        @Parameter(required = false)
+        latencyLogLimit: Int?,
+    ): MonitorStatsDto
 }
