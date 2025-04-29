@@ -24,7 +24,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Setter for <code>kuvasz.monitor.id</code>.
      */
-    public MonitorRecord setId(Integer value) {
+    public MonitorRecord setId(Long value) {
         set(0, value);
         return this;
     }
@@ -32,8 +32,8 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Getter for <code>kuvasz.monitor.id</code>.
      */
-    public Integer getId() {
-        return (Integer) get(0);
+    public Long getId() {
+        return (Long) get(0);
     }
 
     /**
@@ -225,7 +225,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<Integer> key() {
+    public Record1<Long> key() {
         return (Record1) super.key();
     }
 
@@ -243,7 +243,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Integer id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, String pagerdutyIntegrationKey, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod) {
+    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, String pagerdutyIntegrationKey, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod) {
         super(Monitor.MONITOR);
 
         setId(id);

@@ -24,7 +24,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     /**
      * Setter for <code>kuvasz.ssl_event.id</code>.
      */
-    public SslEventRecord setId(Integer value) {
+    public SslEventRecord setId(Long value) {
         set(0, value);
         return this;
     }
@@ -32,14 +32,14 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     /**
      * Getter for <code>kuvasz.ssl_event.id</code>.
      */
-    public Integer getId() {
-        return (Integer) get(0);
+    public Long getId() {
+        return (Long) get(0);
     }
 
     /**
      * Setter for <code>kuvasz.ssl_event.monitor_id</code>.
      */
-    public SslEventRecord setMonitorId(Integer value) {
+    public SslEventRecord setMonitorId(Long value) {
         set(1, value);
         return this;
     }
@@ -47,8 +47,8 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     /**
      * Getter for <code>kuvasz.ssl_event.monitor_id</code>.
      */
-    public Integer getMonitorId() {
-        return (Integer) get(1);
+    public Long getMonitorId() {
+        return (Long) get(1);
     }
 
     /**
@@ -135,7 +135,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<Integer> key() {
+    public Record1<Long> key() {
         return (Record1) super.key();
     }
 
@@ -153,7 +153,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     /**
      * Create a detached, initialised SslEventRecord
      */
-    public SslEventRecord(Integer id, Integer monitorId, SslStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
+    public SslEventRecord(Long id, Long monitorId, SslStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
         super(SslEvent.SSL_EVENT);
 
         setId(id);

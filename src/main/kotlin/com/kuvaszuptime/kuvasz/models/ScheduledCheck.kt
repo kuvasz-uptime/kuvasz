@@ -4,7 +4,7 @@ import java.util.concurrent.ScheduledFuture
 
 data class ScheduledCheck(
     val checkType: CheckType,
-    val monitorId: Int,
+    val monitorId: Long,
     val task: ScheduledFuture<*>
 )
 

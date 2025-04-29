@@ -6,6 +6,7 @@ import java.time.OffsetDateTime
 
 @Introspected
 data class SSLEventDto(
+    val id: Long,
     val status: SslStatus,
     val error: String?,
     val startedAt: OffsetDateTime,

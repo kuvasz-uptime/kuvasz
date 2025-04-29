@@ -64,7 +64,7 @@ public class Monitor extends TableImpl<MonitorRecord> {
     /**
      * The column <code>kuvasz.monitor.id</code>.
      */
-    public final TableField<MonitorRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
+    public final TableField<MonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
 
     /**
      * The column <code>kuvasz.monitor.name</code>. Monitor's name
@@ -196,8 +196,8 @@ public class Monitor extends TableImpl<MonitorRecord> {
     }
 
     @Override
-    public Identity<MonitorRecord, Integer> getIdentity() {
-        return (Identity<MonitorRecord, Integer>) super.getIdentity();
+    public Identity<MonitorRecord, Long> getIdentity() {
+        return (Identity<MonitorRecord, Long>) super.getIdentity();
     }
 
     @Override

@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 
 @Introspected
 data class MonitorDetailsDto(
-    val id: Int,
+    val id: Long,
     val name: String,
     val url: URI,
     val uptimeCheckInterval: Int,
@@ -25,9 +25,6 @@ data class MonitorDetailsDto(
     val lastSSLCheck: OffsetDateTime?,
     val uptimeError: String?,
     val sslError: String?,
-    val averageLatencyInMs: Int?,
-    val p95LatencyInMs: Int?,
-    val p99LatencyInMs: Int?,
     val pagerdutyKeyPresent: Boolean,
     val requestMethod: HttpMethod,
     val latencyHistoryEnabled: Boolean,

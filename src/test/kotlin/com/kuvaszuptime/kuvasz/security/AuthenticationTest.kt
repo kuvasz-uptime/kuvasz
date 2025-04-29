@@ -17,6 +17,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.security.token.render.BearerAccessRefreshToken
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest
 @Property(name = "micronaut.security.enabled", value = "true")
@@ -28,7 +29,7 @@ class AuthenticationTest(
         given("a public endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.toBlocking().exchange<Any>("/api/v1/health")
+                val response = client.exchange("/api/v1/health").awaitFirst()
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
                 }
@@ -39,9 +40,10 @@ class AuthenticationTest(
             `when`("the user provides the right credentials") {
                 val credentials = generateCredentials(authConfig, valid = true)
                 val request = HttpRequest.POST("/api/v1/login", credentials)
-                val response = client.toBlocking().exchange(request, BearerAccessRefreshToken::class.java)
+                val response = client.exchange(request, BearerAccessRefreshToken::class.java).awaitFirst()
                 val token = response.body()!!
                 val parsedJwt = JWTParser.parse(token.accessToken)
+
                 then("it should return a signed access token for the given user") {
                     response.status shouldBe HttpStatus.OK
                     token.username shouldBe credentials.username
@@ -54,8 +56,9 @@ class AuthenticationTest(
                 val credentials = generateCredentials(authConfig, valid = false)
                 val request = HttpRequest.POST("/api/v1/login", credentials)
                 val exception = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, BearerAccessRefreshToken::class.java)
+                    client.exchange(request, BearerAccessRefreshToken::class.java).awaitFirst()
                 }
+
                 then("it should return 401") {
                     exception.status shouldBe HttpStatus.UNAUTHORIZED
                 }
@@ -65,7 +68,7 @@ class AuthenticationTest(
 
             `when`("an anonymous user calls it") {
                 val exception = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange<Any>("/api/v1/monitors")
+                    client.exchange("/api/v1/monitors").awaitFirst()
                 }
                 then("it should return 401") {
                     exception.status shouldBe HttpStatus.UNAUTHORIZED
@@ -75,11 +78,11 @@ class AuthenticationTest(
             `when`("a user provides the right credentials") {
                 val credentials = generateCredentials(authConfig, valid = true)
                 val loginRequest = HttpRequest.POST("/api/v1/login", credentials)
-                val loginResponse = client.toBlocking().exchange(loginRequest, BearerAccessRefreshToken::class.java)
+                val loginResponse = client.exchange(loginRequest, BearerAccessRefreshToken::class.java).awaitFirst()
                 val token = loginResponse.body()!!
 
                 val request = HttpRequest.GET<Any>("/api/v1/monitors").bearerAuth(token.accessToken)
-                val response = client.toBlocking().exchange<Any, Any>(request)
+                val response = client.exchange(request).awaitFirst()
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
                 }
@@ -98,7 +101,7 @@ class DisabledAuthenticationTest(
         given("a public endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.toBlocking().exchange<Any>("/api/v1/health")
+                val response = client.exchange("/api/v1/health").awaitFirst()
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
                 }
@@ -111,7 +114,7 @@ class DisabledAuthenticationTest(
                 val request = HttpRequest.POST("/api/v1/login", credentials)
 
                 val exception = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, Any::class.java)
+                    client.exchange(request, Any::class.java).awaitFirst()
                 }
 
                 then("it should return 404") {
@@ -122,7 +125,7 @@ class DisabledAuthenticationTest(
         given("an authenticated endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.toBlocking().exchange<Any>("/api/v1/monitors")
+                val response = client.exchange("/api/v1/monitors").awaitFirst()
 
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK

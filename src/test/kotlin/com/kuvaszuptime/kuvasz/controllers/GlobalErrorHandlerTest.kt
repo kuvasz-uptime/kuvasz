@@ -22,6 +22,7 @@ import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest
 class GlobalErrorHandlerTest(
@@ -33,10 +34,11 @@ class GlobalErrorHandlerTest(
 
         `when`("it is called with an invalid JSON") {
 
-            val request = HttpRequest.POST<String>("/api/v1/monitors", "not-a-json")
+            val request = HttpRequest.POST("/api/v1/monitors", "not-a-json")
             val exception = shouldThrow<HttpClientResponseException> {
-                client.toBlocking()
+                client
                     .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .awaitFirst()
             }
 
             then("should return a 400 with the correct error message") {
@@ -50,10 +52,11 @@ class GlobalErrorHandlerTest(
         `when`("it is called with a JSON that contains a non-convertible property") {
 
             val request =
-                HttpRequest.POST<String>("/api/v1/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
+                HttpRequest.POST("/api/v1/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
             val exception = shouldThrow<HttpClientResponseException> {
-                client.toBlocking()
+                client
                     .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .awaitFirst()
             }
 
             then("should return a 400 with the correct error message") {
@@ -78,8 +81,8 @@ class GlobalErrorHandlerTest(
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .toBlocking()
                     .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .awaitFirst()
             }
 
             then("should return a 500 with the correct error message") {
@@ -104,8 +107,8 @@ class GlobalErrorHandlerTest(
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .toBlocking()
                     .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .awaitFirst()
             }
             then("should return a 500 with the correct error message") {
                 exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
@@ -128,8 +131,8 @@ class GlobalErrorHandlerTest(
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .toBlocking()
                     .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .awaitFirst()
             }
 
             then("should return a 409 with the correct error message") {

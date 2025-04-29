@@ -29,18 +29,18 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
             .execute()
     }
 
-    fun fetchByMonitorId(monitorId: Int): List<UptimeEventRecord> = dslContext
+    fun fetchByMonitorId(monitorId: Long): List<UptimeEventRecord> = dslContext
         .selectFrom(UPTIME_EVENT)
         .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun getPreviousEventByMonitorId(monitorId: Int): UptimeEventRecord? = dslContext
+    fun getPreviousEventByMonitorId(monitorId: Long): UptimeEventRecord? = dslContext
         .selectFrom(UPTIME_EVENT)
         .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .and(UPTIME_EVENT.ENDED_AT.isNull)
         .fetchOne()
 
-    fun endEventById(eventId: Int, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
+    fun endEventById(eventId: Long, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
         .update(UPTIME_EVENT)
         .set(UPTIME_EVENT.ENDED_AT, endedAt)
         .set(UPTIME_EVENT.UPDATED_AT, endedAt)
@@ -53,22 +53,23 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
         .and(UPTIME_EVENT.ENDED_AT.lessThan(limit))
         .execute()
 
-    fun updateEventUpdatedAt(eventId: Int, updatedAt: OffsetDateTime) = dslContext
+    fun updateEventUpdatedAt(eventId: Long, updatedAt: OffsetDateTime) = dslContext
         .update(UPTIME_EVENT)
         .set(UPTIME_EVENT.UPDATED_AT, updatedAt)
         .where(UPTIME_EVENT.ID.eq(eventId))
         .execute()
 
-    fun isMonitorUp(monitorId: Int): Boolean =
+    fun isMonitorUp(monitorId: Long): Boolean =
         getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: false
 
-    fun getEventsByMonitorId(monitorId: Int): List<UptimeEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long): List<UptimeEventDto> = dslContext
         .select(
-            UPTIME_EVENT.STATUS.`as`("status"),
-            UPTIME_EVENT.ERROR.`as`("error"),
-            UPTIME_EVENT.STARTED_AT.`as`("startedAt"),
-            UPTIME_EVENT.ENDED_AT.`as`("endedAt"),
-            UPTIME_EVENT.UPDATED_AT.`as`("updatedAt")
+            UPTIME_EVENT.ID.`as`(UptimeEventDto::id.name),
+            UPTIME_EVENT.STATUS.`as`(UptimeEventDto::status.name),
+            UPTIME_EVENT.ERROR.`as`(UptimeEventDto::error.name),
+            UPTIME_EVENT.STARTED_AT.`as`(UptimeEventDto::startedAt.name),
+            UPTIME_EVENT.ENDED_AT.`as`(UptimeEventDto::endedAt.name),
+            UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventDto::updatedAt.name),
         )
         .from(UPTIME_EVENT)
         .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))

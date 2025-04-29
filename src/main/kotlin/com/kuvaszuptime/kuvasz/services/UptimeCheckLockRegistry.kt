@@ -8,9 +8,9 @@ import org.slf4j.LoggerFactory
 @Singleton
 class UptimeCheckLockRegistry {
     private val mutex = Mutex()
-    private val activeMonitors = mutableSetOf<Int>()
+    private val activeMonitors = mutableSetOf<Long>()
 
-    suspend fun tryAcquire(monitorId: Int): Boolean = mutex.withLock {
+    suspend fun tryAcquire(monitorId: Long): Boolean = mutex.withLock {
         if (activeMonitors.contains(monitorId)) {
             logger.debug("Uptime check for monitor with ID: $monitorId is already running, failed to acquire lock")
             false
@@ -21,7 +21,7 @@ class UptimeCheckLockRegistry {
         }
     }
 
-    suspend fun release(monitorId: Int) = mutex.withLock {
+    suspend fun release(monitorId: Long) = mutex.withLock {
         activeMonitors.remove(monitorId)
         logger.debug("Uptime check for monitor with ID: $monitorId is completed, released lock")
     }

@@ -473,7 +473,7 @@ class UptimeCheckerE2ETest(
                     .withStatusCode(HttpStatus.OK.code)
             )
 
-            var doAfterCalledWithMonitorId: Int = -1
+            var doAfterCalledWithMonitorId: Long = -1
 
             uptimeChecker.check(monitor) { doAfterCalledWithMonitorId = it.id }
 

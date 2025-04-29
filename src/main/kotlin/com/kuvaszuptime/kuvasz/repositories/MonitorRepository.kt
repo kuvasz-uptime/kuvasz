@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.models.DuplicationError
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedError
 import com.kuvaszuptime.kuvasz.models.PersistenceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.UptimeEvent.UPTIME_EVENT
@@ -17,12 +16,7 @@ import io.micronaut.core.util.StringUtils
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.exception.DataAccessException
-import org.jooq.impl.DSL.avg
-import org.jooq.impl.DSL.inline
-import org.jooq.impl.DSL.round
 import org.jooq.impl.DSL.`when`
-import org.jooq.impl.SQLDataType
-import java.math.BigDecimal
 
 @Singleton
 class MonitorRepository(private val dslContext: DSLContext) {
@@ -39,7 +33,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         SSL_EVENT.ERROR
     )
 
-    fun findById(monitorId: Int, ctx: DSLContext = dslContext): MonitorRecord? = ctx
+    fun findById(monitorId: Long, ctx: DSLContext = dslContext): MonitorRecord? = ctx
         .selectFrom(MONITOR)
         .where(MONITOR.ID.eq(monitorId))
         .fetchOne()
@@ -54,7 +48,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .where(MONITOR.ENABLED.eq(enabled))
         .fetch()
 
-    fun deleteById(monitorId: Int): Int = dslContext
+    fun deleteById(monitorId: Long): Int = dslContext
         .deleteFrom(MONITOR)
         .where(MONITOR.ID.eq(monitorId))
         .execute()
@@ -70,7 +64,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
             .groupBy(detailsGroupByFields)
             .fetchInto(MonitorDetailsDto::class.java)
 
-    fun getMonitorWithDetails(monitorId: Int): MonitorDetailsDto? =
+    fun getMonitorWithDetails(monitorId: Long): MonitorDetailsDto? =
         monitorDetailsSelect()
             .where(MONITOR.ID.eq(monitorId))
             .groupBy(detailsGroupByFields)
@@ -134,12 +128,6 @@ class MonitorRepository(private val dslContext: DSLContext) {
             SSL_EVENT.UPDATED_AT.`as`(MonitorDetailsDto::lastSSLCheck.name),
             UPTIME_EVENT.ERROR.`as`(MonitorDetailsDto::uptimeError.name),
             SSL_EVENT.ERROR.`as`(MonitorDetailsDto::sslError.name),
-            `when`(MONITOR.LATENCY_HISTORY_ENABLED.isTrue, round(avg(LATENCY_LOG.LATENCY), -1))
-                .otherwise(inline(null, BigDecimal::class.java))
-                .`as`(MonitorDetailsDto::averageLatencyInMs.name),
-            // p95 and p99 latency are added later, they're always null here
-            inline(null, SQLDataType.INTEGER).`as`(MonitorDetailsDto::p95LatencyInMs.name),
-            inline(null, SQLDataType.INTEGER).`as`(MonitorDetailsDto::p99LatencyInMs.name),
             `when`(
                 MONITOR.PAGERDUTY_INTEGRATION_KEY.isNull.or(MONITOR.PAGERDUTY_INTEGRATION_KEY.eq("")),
                 StringUtils.FALSE
@@ -152,7 +140,6 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .from(MONITOR)
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
         .leftJoin(SSL_EVENT).on(MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
-        .leftJoin(LATENCY_LOG).on(MONITOR.ID.eq(LATENCY_LOG.MONITOR_ID))
 
     private fun DataAccessException.handle(): Either<PersistenceError, Nothing> {
         val persistenceError = toPersistenceError()

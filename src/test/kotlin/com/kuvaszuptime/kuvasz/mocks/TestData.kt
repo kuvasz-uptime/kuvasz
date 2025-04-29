@@ -18,7 +18,7 @@ import java.time.OffsetDateTime
 @Suppress("LongParameterList")
 fun createMonitor(
     repository: MonitorRepository,
-    id: Int = 99999,
+    id: Long = 99999,
     enabled: Boolean = true,
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
@@ -49,7 +49,7 @@ fun createMonitor(
 
 fun createUptimeEventRecord(
     dslContext: DSLContext,
-    monitorId: Int,
+    monitorId: Long,
     status: UptimeStatus = UptimeStatus.UP,
     startedAt: OffsetDateTime,
     endedAt: OffsetDateTime?
@@ -67,7 +67,7 @@ fun createUptimeEventRecord(
 
 fun createSSLEventRecord(
     dslContext: DSLContext,
-    monitorId: Int,
+    monitorId: Long,
     status: SslStatus = SslStatus.VALID,
     startedAt: OffsetDateTime,
     endedAt: OffsetDateTime?

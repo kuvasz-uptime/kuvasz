@@ -64,12 +64,12 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     /**
      * The column <code>kuvasz.ssl_event.id</code>.
      */
-    public final TableField<SslEventRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
+    public final TableField<SslEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
 
     /**
      * The column <code>kuvasz.ssl_event.monitor_id</code>.
      */
-    public final TableField<SslEventRecord, Integer> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<SslEventRecord, Long> MONITOR_ID = createField(DSL.name("monitor_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.ssl_event.status</code>. Status of the event
@@ -171,8 +171,8 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     }
 
     @Override
-    public Identity<SslEventRecord, Integer> getIdentity() {
-        return (Identity<SslEventRecord, Integer>) super.getIdentity();
+    public Identity<SslEventRecord, Long> getIdentity() {
+        return (Identity<SslEventRecord, Long>) super.getIdentity();
     }
 
     @Override

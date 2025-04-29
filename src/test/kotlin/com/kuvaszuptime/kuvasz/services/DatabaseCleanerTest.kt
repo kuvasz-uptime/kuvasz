@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.LatencyLog.LATENCY_LOG
 import com.kuvaszuptime.kuvasz.tables.records.LatencyLogRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -82,8 +83,7 @@ class DatabaseCleanerTest(
                 databaseCleaner.cleanObsoleteData()
 
                 then("it should not delete it") {
-                    val latencyLogRecords = latencyLogRepository.fetchByMonitorId(monitor.id)
-                    latencyLogRecords shouldHaveSize 1
+                    latencyLogRepository.fetchLatestByMonitorId(monitor.id) shouldHaveSize 1
                 }
             }
 
@@ -93,8 +93,7 @@ class DatabaseCleanerTest(
                 databaseCleaner.cleanObsoleteData()
 
                 then("it should delete it") {
-                    val latencyLogRecords = latencyLogRepository.fetchByMonitorId(monitor.id)
-                    latencyLogRecords shouldHaveSize 0
+                    latencyLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
                 }
             }
 
@@ -148,7 +147,7 @@ class DatabaseCleanerTest(
         }
     }
 
-    private fun insertLatencyLogRecord(monitorId: Int, createdAt: OffsetDateTime) = dslContext
+    private fun insertLatencyLogRecord(monitorId: Long, createdAt: OffsetDateTime) = dslContext
         .insertInto(LATENCY_LOG)
         .set(
             LatencyLogRecord()
