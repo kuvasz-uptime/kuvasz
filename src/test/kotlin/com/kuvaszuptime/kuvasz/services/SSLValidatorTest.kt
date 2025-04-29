@@ -30,6 +30,7 @@ class SSLValidatorTest : StringSpec(
                 row("https://rsa2048.badssl.com/", true),
                 row("https://rsa4096.badssl.com/", true),
 
+                row("http://test-ev-rsa.ssl.com/", false),
                 row("https://expired-rsa-dv.ssl.com", false),
                 row("https://expired-rsa-ev.ssl.com", false),
                 row("https://expired-ecc-dv.ssl.com", false),
