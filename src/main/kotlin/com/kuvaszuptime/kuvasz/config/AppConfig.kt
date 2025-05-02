@@ -16,4 +16,12 @@ class AppConfig {
 
     @Min(MIN_RETENTION_DAYS)
     var dataRetentionDays: Int = DEFAULT_RETENTION_DAYS
+
+    private var isExternalWriteDisabled = false
+
+    fun disableExternalWrite() {
+        isExternalWriteDisabled = true
+    }
+
+    fun isExternalWriteDisabled() = isExternalWriteDisabled
 }

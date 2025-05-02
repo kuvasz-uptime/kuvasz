@@ -60,6 +60,8 @@ dependencies {
     kapt(mn.micronaut.security.annotations)
     kapt(mn.micronaut.validation.processor)
     runtimeOnly(mn.jackson.module.kotlin)
+    implementation(mn.micronaut.kotlin.runtime)
+    implementation(mn.micronaut.jackson.databind)
     runtimeOnly(mn.snakeyaml)
     implementation(mn.micronaut.validation)
     implementation(mn.logback.classic)

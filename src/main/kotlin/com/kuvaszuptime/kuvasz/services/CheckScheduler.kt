@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.config.MonitorConfig
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -26,6 +28,7 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 @Context
+@Suppress("LongParameterList")
 class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,
@@ -33,6 +36,8 @@ class CheckScheduler(
     private val sslChecker: SSLChecker,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
+    private val yamlMonitorConfigs: List<MonitorConfig>,
+    private val appConfig: AppConfig,
 ) {
     private val coroutineExHandler = CoroutineExceptionHandler { _, ex ->
         logger.warn("Coroutine failed with ${ex::class.simpleName}: ${ex.message}")
@@ -51,6 +56,19 @@ class CheckScheduler(
 
     @PostConstruct
     fun initialize() {
+        if (yamlMonitorConfigs.isNotEmpty()) {
+            appConfig.disableExternalWrite()
+            logger.info(
+                "Disabled external modifications of monitors, because a YAML config was found. " +
+                    "Loading monitors from YAML config..."
+            )
+
+            yamlMonitorConfigs.forEach {
+                // TODO upsert the monitor into the database
+                println(it)
+            }
+            // TODO remove all monitors from DB that are not in the yaml config
+        }
         monitorRepository.fetchByEnabled(true).forEach { createChecksForMonitor(it) }
     }
 
