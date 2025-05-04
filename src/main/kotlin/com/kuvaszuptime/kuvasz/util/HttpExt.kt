@@ -2,8 +2,10 @@ package com.kuvaszuptime.kuvasz.util
 
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
+import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
+import io.micronaut.views.htmx.http.HtmxRequestHeaders
 import java.net.URI
 
 typealias RawHttpResponse = HttpResponse<ByteBuffer<Any>>
@@ -37,3 +39,5 @@ fun HttpResponse<*>.getRedirectionUri(originalUrl: String): URI? =
     } else {
         null
     }
+
+fun HttpRequest<*>.isHtmxRequest(): Boolean = this.headers.contains(HtmxRequestHeaders.HX_REQUEST)

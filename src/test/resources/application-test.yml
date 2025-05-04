@@ -6,16 +6,12 @@ micronaut:
         signatures:
           secret:
             generator:
-              secret: testSecretItsVeryVerySecretSecret
+              secret: ${random.uuid2}
     enabled: false
 ---
 datasources:
   default:
     maximumPoolSize: 3
----
-admin-auth:
-  username: test-user
-  password: test-pass-test-pass-test-pass
 ---
 handler-config:
   smtp-event-handler:

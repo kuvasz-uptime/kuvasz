@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import io.gitlab.arturbosch.detekt.Detekt
 
 buildscript {
     val jooqVersion: String by project
@@ -27,6 +28,7 @@ plugins {
     id("com.github.ben-manes.versions")
     id("org.flywaydb.flyway")
     id("com.gradleup.shadow")
+    id("com.github.gmazzo.buildconfig")
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
@@ -65,6 +67,10 @@ dependencies {
     implementation(mn.micronaut.rxjava3)
     implementation(mn.micronaut.retry)
     implementation(mn.micronaut.security.jwt)
+    implementation(mn.micronaut.views.thymeleaf)
+    implementation(mn.micronaut.views.htmx)
+    implementation("org.thymeleaf.extras:thymeleaf-extras-java8time:3.0.4.RELEASE")
+    implementation("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0")
 
     // OpenAPI
     kapt(mn.micronaut.openapi)
@@ -147,6 +153,10 @@ tasks.named("build") {
     dependsOn("detekt")
 }
 
+tasks.withType<Detekt>().configureEach {
+    exclude("/com/kuvaszuptime/kuvasz/buildconfig")
+}
+
 tasks.withType<Test> {
     systemProperty("micronaut.environments", "test")
     finalizedBy("jacocoTestReport")
@@ -159,6 +169,8 @@ extensions.findByType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension>
 }
 
 allOpen {
+    annotation("io.micronaut.aop.Around")
+    annotation("io.micronaut.http.annotation.Controller")
     annotation("jakarta.inject.Singleton")
 }
 
@@ -252,4 +264,9 @@ flyway {
     password = dbPassword
     schemas = arrayOf(dbSchema)
     driver = dbDriver
+}
+
+buildConfig {
+    packageName("com.kuvaszuptime.kuvasz.buildconfig")
+    buildConfigField("APP_VERSION", provider { gitVersion() })
 }

@@ -3,29 +3,6 @@ info:
   title: kuvasz
   version: latest
 paths:
-  /api/v1/login:
-    post:
-      tags:
-        - Security operations
-      summary: Login endpoint
-      description: After a successful login it returns a valid access token that you should use in your authenticated request
-      operationId: login
-      parameters: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserNamePasswordCredentials'
-        required: true
-      responses:
-        "200":
-          description: Successful login
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BearerAccessRefreshToken'
-        "401":
-          description: Unauthorized
   /api/v1/health:
     get:
       tags:
@@ -78,25 +55,6 @@ components:
           type: string
         password:
           type: string
-    BearerAccessRefreshToken:
-      type: object
-      properties:
-        username:
-          type: string
-        roles:
-          type: array
-          items:
-            type: string
-            example: "ROLE_ADMIN"
-        access_token:
-          type: string
-        token_type:
-          type: string
-          example: "Bearer"
-        expires_in:
-          type: number
-          format: int32
-          example: 3600
     HealthResult:
       type: object
       properties:

@@ -3,17 +3,32 @@ micronaut:
   application:
     name: kuvasz
   security:
+    redirect:
+      forbidden:
+        enabled: false
+      unauthorized:
+        enabled: false
+      login-success: /
+      login-failure: /login?error=true
+      logout: /
+    authentication: cookie
     endpoints:
       login:
-        path: /api/v1/login
+        path: /auth/login
+        enabled: true
+      logout:
+        enabled: true
+        path: /auth/logout
+        get-allowed: true
     enabled: ${ENABLE_AUTH:`true`}
-    authentication: bearer
     token:
+      cookie:
+        cookie-max-age: ${AUTH_MAX_AGE:`7d`}
       jwt:
         signatures:
           secret:
             generator:
-              secret: ${JWT_SIGNATURE_SECRET}
+              secret: ${random.uuid2}
         generator:
           refresh-token:
             enabled: false
@@ -26,13 +41,15 @@ micronaut:
         access: isAnonymous()
       - pattern: /swagger/**
         access: isAnonymous()
-      - pattern: /**
+      - pattern: /api/**
         access:
-          - ROLE_ADMIN
+          - ROLE_API
+      - pattern: /auth/login
+        method: POST
+        access: isAnonymous()
+      - pattern: /**
+        access: isAnonymous()
   router:
-    versioning:
-      enabled: true
-      default-version: 1
     static-resources:
       swagger:
         paths: classpath:META-INF/swagger
@@ -40,6 +57,9 @@ micronaut:
       swagger-ui:
         paths: classpath:META-INF/swagger/views/swagger-ui
         mapping: /swagger-ui/**
+      public:
+        paths: classpath:public
+        mapping: /public/**
   netty:
     event-loops:
       uptime-check:
@@ -69,7 +89,7 @@ flyway:
       enabled: true
 ---
 jackson:
-  bean-introspection-module: true
+  bean-introspection-module: false
   serialization-inclusion: always
   serialization:
     - WRITE_DATES_AS_TIMESTAMPS: false
@@ -102,6 +122,7 @@ handler-config:
 admin-auth:
   username: ${ADMIN_USER}
   password: ${ADMIN_PASSWORD}
+  api-key: ${ADMIN_API_KEY}
 ---
 smtp-config:
   host: ${SMTP_HOST}

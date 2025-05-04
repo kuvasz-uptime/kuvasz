@@ -1,7 +1,14 @@
 ---
 micronaut:
   security:
-    enabled: false
+    enabled: true
+    token:
+      jwt:
+        signatures:
+          secret:
+            generator:
+              # Providing a hard-coded secret to prevent logouts in localdev env
+              secret: cd961db8-54a1-4c09-b608-e528db09f74f
 ---
 datasources:
   default:
@@ -19,6 +26,7 @@ handler-config:
 admin-auth:
   username: user
   password: pass3j4hkhk23hk23k232hk3h232
+  api-key: 3hjlkh23k2h3k2h3k2h3k2h3k2h3k2h3
 ---
 smtp-config:
   host: ${SMTP_HOST:`sandbox.smtp.mailtrap.io`}
@@ -26,5 +34,6 @@ smtp-config:
 ---
 logger:
   levels:
-    #    io.micronaut.http.client: TRACE
-    org.jooq: DEBUG
+#    io.micronaut.http.client: TRACE
+#    org.jooq: DEBUG
+#    io.micronaut.security: DEBUG

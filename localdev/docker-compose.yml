@@ -18,10 +18,6 @@ services:
       DATABASE_HOST: postgres16
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
-      ADMIN_USER: AdminUser
-      ADMIN_PASSWORD: ThisShouldBeVeryVerySecure
-      JWT_SIGNATURE_SECRET: ThisOneShouldBeVeryRandomAsWell
-      ENABLE_AUTH: 'false'
       ENABLE_LOG_EVENT_HANDLER: 'true'
       ENABLE_SMTP_EVENT_HANDLER: 'false'
       SMTP_HOST: 'sandbox.smtp.mailtrap.io'
@@ -42,6 +38,8 @@ services:
     configs:
       - kuvasz.yml
       - application-dev.yml
+    depends_on:
+      - postgres-16
 configs:
   kuvasz.yml:
     file: ./kuvasz.yml

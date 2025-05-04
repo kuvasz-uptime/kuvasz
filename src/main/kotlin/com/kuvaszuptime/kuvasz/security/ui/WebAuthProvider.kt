@@ -1,6 +1,8 @@
-package com.kuvaszuptime.kuvasz.security
+package com.kuvaszuptime.kuvasz.security.ui
 
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
+import com.kuvaszuptime.kuvasz.security.Role
+import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpRequest
 import io.micronaut.security.authentication.AuthenticationRequest
 import io.micronaut.security.authentication.AuthenticationResponse
@@ -12,7 +14,8 @@ import jakarta.inject.Singleton
 import org.reactivestreams.Publisher
 
 @Singleton
-class AdminAuthProvider(private val authConfig: AdminAuthConfig) : HttpRequestReactiveAuthenticationProvider<Any> {
+@Requires(property = "micronaut.security.enabled", value = "true")
+class WebAuthProvider(private val authConfig: AdminAuthConfig) : HttpRequestReactiveAuthenticationProvider<Any> {
 
     override fun authenticate(
         requestContext: HttpRequest<Any>?,
@@ -26,7 +29,7 @@ class AdminAuthProvider(private val authConfig: AdminAuthConfig) : HttpRequestRe
                     emitter.onNext(
                         AuthenticationResponse.success(
                             authenticationRequest.identity as String,
-                            listOf(Role.ADMIN.alias)
+                            listOf(Role.WEB.alias, Role.API.alias)
                         )
                     )
                     emitter.onComplete()

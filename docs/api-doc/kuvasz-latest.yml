@@ -33,7 +33,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/MonitorDetailsDto"
       security:
-      - bearerAuth: []
+      - apiKey: []
     post:
       tags:
       - Monitor operations
@@ -59,7 +59,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
       security:
-      - bearerAuth: []
+      - apiKey: []
   /api/v1/monitors/{monitorId}:
     get:
       tags:
@@ -87,7 +87,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
       security:
-      - bearerAuth: []
+      - apiKey: []
     delete:
       tags:
       - Monitor operations
@@ -110,7 +110,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
       security:
-      - bearerAuth: []
+      - apiKey: []
     patch:
       tags:
       - Monitor operations
@@ -149,7 +149,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
       security:
-      - bearerAuth: []
+      - apiKey: []
   /api/v1/monitors/{monitorId}/pagerduty-integration-key:
     put:
       tags:
@@ -189,7 +189,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
       security:
-      - bearerAuth: []
+      - apiKey: []
     delete:
       tags:
       - Monitor operations
@@ -212,7 +212,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
       security:
-      - bearerAuth: []
+      - apiKey: []
   /api/v1/monitors/{monitorId}/ssl-events:
     get:
       tags:
@@ -236,7 +236,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SSLEventDto"
       security:
-      - bearerAuth: []
+      - apiKey: []
   /api/v1/monitors/{monitorId}/stats:
     get:
       tags:
@@ -270,7 +270,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
       security:
-      - bearerAuth: []
+      - apiKey: []
   /api/v1/monitors/{monitorId}/uptime-events:
     get:
       tags:
@@ -294,31 +294,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/UptimeEventDto"
       security:
-      - bearerAuth: []
-  /api/v1/login:
-    post:
-      tags:
-      - Security operations
-      summary: Login endpoint
-      description: After a successful login it returns a valid access token that you
-        should use in your authenticated request
-      operationId: login
-      parameters: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UserNamePasswordCredentials"
-        required: true
-      responses:
-        "200":
-          description: Successful login
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BearerAccessRefreshToken"
-        "401":
-          description: Unauthorized
+      - apiKey: []
   /api/v1/health:
     get:
       tags:
@@ -365,25 +341,6 @@ paths:
                   pagerduty-event-handler.enabled: true
 components:
   schemas:
-    BearerAccessRefreshToken:
-      type: object
-      properties:
-        username:
-          type: string
-        roles:
-          type: array
-          items:
-            type: string
-            example: ROLE_ADMIN
-        access_token:
-          type: string
-        token_type:
-          type: string
-          example: Bearer
-        expires_in:
-          type: number
-          format: int32
-          example: 3600
     HealthResult:
       type: object
       properties:
@@ -735,7 +692,7 @@ components:
         password:
           type: string
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    apiKey:
+      type: apiKey
+      name: X-API-KEY
+      in: header
