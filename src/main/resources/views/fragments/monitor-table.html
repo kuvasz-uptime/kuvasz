@@ -1,0 +1,29 @@
+<div class="table-responsive">
+    <table id="monitor-table" class="table table-vcenter card-table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Last check</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${monitors}">
+            <td th:text="${m.name}">Monitor Name</td>
+            <td>
+            <span th:if="${m.enabled} == true"
+                  th:classappend="${m.uptimeStatus.literal} == 'UP'? 'status-green' : 'status-red'" class="status">
+                <span class="status-dot status-dot-animated"></span>
+                <span th:text="${m.uptimeStatus.literal}"></span>
+            </span>
+            <span th:if="${m.enabled} == false" class="status status-gray">
+                <span class="status-dot"></span>
+                Paused
+            </span>
+            </td>
+            <td th:text="${#temporals.format(m.lastUptimeCheck, 'yyyy/MM/dd HH:mm')}">Last check</td>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

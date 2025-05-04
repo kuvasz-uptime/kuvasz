@@ -57,6 +57,9 @@ micronaut:
       swagger-ui:
         paths: classpath:META-INF/swagger/views/swagger-ui
         mapping: /swagger-ui/**
+      public:
+        paths: classpath:public
+        mapping: /public/**
   netty:
     event-loops:
       uptime-check:
