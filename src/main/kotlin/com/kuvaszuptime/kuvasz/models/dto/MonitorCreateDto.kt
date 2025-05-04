@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Pattern
 
 @Introspected
 data class MonitorCreateDto(
+    @get:NotNull
     @get:NotBlank
     val name: String,
     @get:NotNull

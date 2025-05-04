@@ -27,10 +27,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 
-@Controller("/api/v1/monitors", produces = [MediaType.APPLICATION_JSON])
+const val API_V1_PREFIX = "/api/v1"
+
+@Controller("$API_V1_PREFIX/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
 @Tag(name = "Monitor operations")
-@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(name = "apiKey")
 class MonitorController(
     private val monitorCrudService: MonitorCrudService
 ) : MonitorOperations {

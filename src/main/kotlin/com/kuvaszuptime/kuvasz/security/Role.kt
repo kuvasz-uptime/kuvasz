@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.security
 
 enum class Role(val alias: String) {
-    ADMIN("ROLE_ADMIN")
+    WEB("ROLE_WEB"),
+    API("ROLE_API"),
 }
