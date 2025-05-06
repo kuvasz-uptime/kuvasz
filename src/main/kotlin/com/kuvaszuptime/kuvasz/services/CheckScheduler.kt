@@ -66,12 +66,12 @@ class CheckScheduler(
 
     private fun scheduledUptimeCheckSuccessHandler(
         monitor: MonitorRecord,
-        doAfter: (ScheduledFuture<*>) -> Unit = {},
+        doAfter: () -> Unit = {},
     ): (ScheduledFuture<*>) -> SchedulingError? = { scheduledUptimeTask ->
         ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledUptimeTask)
             .also { scheduledChecks.add(it) }
             .also { it.log(monitor) }
-        doAfter(scheduledUptimeTask)
+        doAfter()
         null
     }
 
@@ -84,7 +84,7 @@ class CheckScheduler(
 
     fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? =
         scheduleUptimeCheck(monitor, resync = false).fold(
-            onSuccess = scheduledUptimeCheckSuccessHandler(monitor) { _ ->
+            onSuccess = scheduledUptimeCheckSuccessHandler(monitor) {
                 if (monitor.sslCheckEnabled) {
                     scheduleSSLCheck(monitor).fold(
                         { scheduledSSLTask ->
@@ -165,7 +165,8 @@ class CheckScheduler(
                         // the accidental cancellation of the parent coroutine
                         logger.error(
                             "An unexpected error happened during the uptime check of a " +
-                                "monitor (${monitor.name}): ${ex.message}"
+                                "monitor (${monitor.name}): ${ex.message}",
+                            ex,
                         )
                     } finally {
                         withContext(NonCancellable) {

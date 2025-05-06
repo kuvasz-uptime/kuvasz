@@ -22,8 +22,6 @@ micronaut:
         get-allowed: true
     enabled: ${ENABLE_AUTH:`true`}
     token:
-      cookie:
-        cookie-max-age: ${AUTH_MAX_AGE:`7d`}
       jwt:
         signatures:
           secret:

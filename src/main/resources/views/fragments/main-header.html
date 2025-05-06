@@ -25,23 +25,17 @@
                 </div>
             </div>
             <div class="nav-item d-md-flex">
-                <a href="#" class="nav-link px-0 hide-theme-dark" data-bs-toggle="tooltip"
-                   data-bs-placement="bottom" aria-label="Enable dark mode"
-                   data-bs-original-title="Enable dark mode" onclick="setTheme('dark')">
+                <a href="#" class="nav-link px-0 hide-theme-dark" aria-label="Enable dark mode"
+                   onclick="setTheme('dark')">
                     <svg th:replace="~{fragments/icons :: dark-mode}"></svg>
                 </a>
-                <a href="#" id="light-mode-toggle" class="nav-link px-0 hide-theme-light" data-bs-toggle="tooltip"
-                   data-bs-placement="bottom" aria-label="Enable light mode"
-                   data-bs-original-title="Enable light mode" onclick="setTheme('light')">
+                <a href="#" id="light-mode-toggle" class="nav-link px-0 hide-theme-light"
+                   aria-label="Enable light mode" onclick="setTheme('light')">
                     <svg th:replace="~{fragments/icons :: light-mode}"></svg>
                 </a>
             </div>
             <div th:if="${isAuthenticated && isAuthEnabled}" class="nav-item ms-3">
-                <a href="/auth/logout" class="btn btn-primary btn-icon"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="bottom" aria-label="Sign out"
-                   data-bs-original-title="Sign out"
-                   rel="noreferrer">
+                <a href="/auth/logout" class="btn btn-primary btn-icon" aria-label="Sign out" rel="noreferrer">
                     <svg th:replace="~{fragments/icons :: logout-outline}"></svg>
                 </a>
             </div>
