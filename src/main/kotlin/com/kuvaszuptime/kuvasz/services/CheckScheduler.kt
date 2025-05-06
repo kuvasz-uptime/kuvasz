@@ -165,7 +165,8 @@ class CheckScheduler(
                         // the accidental cancellation of the parent coroutine
                         logger.error(
                             "An unexpected error happened during the uptime check of a " +
-                                "monitor (${monitor.name}): ${ex.message}", ex
+                                "monitor (${monitor.name}): ${ex.message}",
+                            ex,
                         )
                     } finally {
                         withContext(NonCancellable) {
