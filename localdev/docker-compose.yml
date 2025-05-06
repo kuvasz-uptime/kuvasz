@@ -5,6 +5,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      TZ: 'Europe/Vienna'
     ports:
       - "5432:5432"
     volumes:
@@ -15,6 +16,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      TZ: 'Europe/Vienna'
       DATABASE_HOST: postgres16
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
