@@ -13,6 +13,8 @@ import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Error
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.QueryValue
+import io.micronaut.scheduling.TaskExecutors
+import io.micronaut.scheduling.annotation.ExecuteOn
 import io.micronaut.views.ModelAndView
 import io.micronaut.views.View
 import io.micronaut.views.htmx.http.HtmxResponseHeaders
@@ -50,6 +52,7 @@ class WebUIController(
 
     @Get(MONITOR_TABLE_FRAGMENT_PATH)
     @WebSecured
+    @ExecuteOn(TaskExecutors.IO)
     fun monitorTable() = ModelAndView(
         "fragments/monitor-table",
         mutableMapOf(

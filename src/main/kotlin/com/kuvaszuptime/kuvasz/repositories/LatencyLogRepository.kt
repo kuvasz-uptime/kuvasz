@@ -7,13 +7,8 @@ import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.avg
-import org.jooq.impl.DSL.field
-import org.jooq.impl.DSL.min
-import org.jooq.impl.DSL.percentRank
+import org.jooq.impl.DSL.percentileCont
 import org.jooq.impl.DSL.round
-import org.jooq.impl.DSL.selectDistinct
-import org.jooq.impl.DSL.table
-import java.math.BigDecimal
 import java.time.OffsetDateTime
 
 @Singleton
@@ -54,13 +49,6 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
         .orderBy(LATENCY_LOG.CREATED_AT.desc(), LATENCY_LOG.ID.desc())
         .fetchInto(LatencyLogDto::class.java)
 
-    fun getAverageByMonitorId(monitorId: Long): BigDecimal? = dslContext
-        .select(avg(LATENCY_LOG.LATENCY))
-        .from(LATENCY_LOG)
-        .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
-        .fetchOne()
-        ?.value1()
-
     fun deleteLogsBeforeDate(limit: OffsetDateTime) = dslContext
         .delete(LATENCY_LOG)
         .where(LATENCY_LOG.CREATED_AT.lessThan(limit))
@@ -71,41 +59,25 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
         .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
         .execute()
 
-    // Well well, that's not so performant in case of a really huge dataset. Definitely something that should be
-    // improved in the future.
-    fun getLatencyPercentiles(monitorId: Long? = null): List<PercentileResult> = dslContext
-        .with("percentiles").`as`(
-            selectDistinct(
-                LATENCY_LOG.MONITOR_ID.`as`("monitor_id"),
-                round(LATENCY_LOG.LATENCY, -1).`as`("latency"),
-                percentRank().over()
-                    .partitionBy(LATENCY_LOG.MONITOR_ID).orderBy(round(LATENCY_LOG.LATENCY, -1))
-                    .`as`("percentile")
-            ).from(LATENCY_LOG)
-                .apply {
-                    if (monitorId != null) {
-                        @Suppress("IgnoredReturnValue")
-                        where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
-                    }
-                }
-        )
+    fun getLatencyMetrics(monitorId: Long): LatencyMetricResult? = dslContext
         .select(
-            field("p1.monitor_id").`as`("monitorId"),
-            min(field("p1.latency", Int::class.java)).`as`("p95"),
-            min(field("p2.latency", Int::class.java)).`as`("p99")
+            LATENCY_LOG.MONITOR_ID.`as`(LatencyMetricResult::monitorId.name),
+            round(avg(LATENCY_LOG.LATENCY)).cast(Int::class.java).`as`(LatencyMetricResult::avg.name),
+            round(percentileCont(P95).withinGroupOrderBy(LATENCY_LOG.LATENCY)).cast(Int::class.java)
+                .`as`(LatencyMetricResult::p95.name),
+            round(percentileCont(P99).withinGroupOrderBy(LATENCY_LOG.LATENCY)).cast(Int::class.java)
+                .`as`(LatencyMetricResult::p99.name)
         )
-        .from(table("percentiles").`as`("p1"))
-        .join(table("percentiles").`as`("p2"))
-        .on(field("p1.monitor_id", Long::class.java).eq(field("p2.monitor_id", Long::class.java)))
-        .where(field("p1.percentile", Double::class.java).greaterOrEqual(P95))
-        .and(field("p2.percentile", Double::class.java).greaterOrEqual(P99))
-        .groupBy(field("p1.monitor_id"))
-        .fetchInto(PercentileResult::class.java)
+        .from(LATENCY_LOG)
+        .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
+        .groupBy(LATENCY_LOG.MONITOR_ID)
+        .fetchOneInto(LatencyMetricResult::class.java)
 }
 
 @Introspected
-data class PercentileResult(
+data class LatencyMetricResult(
     val monitorId: Long,
+    val avg: Int?,
     val p95: Int?,
     val p99: Int?
 )

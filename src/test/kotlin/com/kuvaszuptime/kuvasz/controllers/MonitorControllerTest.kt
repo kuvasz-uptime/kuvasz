@@ -203,8 +203,8 @@ class MonitorControllerTest(
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
                     response.averageLatencyInMs shouldBe 800
-                    response.p95LatencyInMs shouldBe 1200
-                    response.p99LatencyInMs shouldBe 1200
+                    response.p95LatencyInMs shouldBe 1140
+                    response.p99LatencyInMs shouldBe 1188
                     response.latencyLogs.shouldNotBeEmpty()
                     // Latency logs should be sorted by their creation in descending order
                     response.latencyLogs[0].id shouldBeGreaterThan response.latencyLogs[1].id
@@ -232,8 +232,8 @@ class MonitorControllerTest(
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
                     response.averageLatencyInMs shouldBe 300
-                    response.p95LatencyInMs shouldBe 500
-                    response.p99LatencyInMs shouldBe 500
+                    response.p95LatencyInMs shouldBe 480
+                    response.p99LatencyInMs shouldBe 496
 
                     response.latencyLogs shouldHaveSize 3
                     response.latencyLogs[0].latencyInMs shouldBe 300

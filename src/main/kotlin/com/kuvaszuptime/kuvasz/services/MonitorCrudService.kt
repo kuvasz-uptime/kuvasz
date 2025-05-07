@@ -15,7 +15,6 @@ import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.exception.DataAccessException
-import java.math.RoundingMode
 
 @Singleton
 class MonitorCrudService(
@@ -144,14 +143,11 @@ class MonitorCrudService(
                     return statsDto
                 }
 
-                val latencies = latencyLogRepository.getLatencyPercentiles(monitor.id).firstOrNull()
-                val averageLatency = latencyLogRepository.getAverageByMonitorId(monitor.id)
-                    ?.setScale(0, RoundingMode.HALF_UP)
-                    ?.toInt()
+                val metrics = latencyLogRepository.getLatencyMetrics(monitor.id)
                 statsDto.copy(
-                    averageLatencyInMs = averageLatency,
-                    p95LatencyInMs = latencies?.p95,
-                    p99LatencyInMs = latencies?.p99,
+                    averageLatencyInMs = metrics?.avg,
+                    p95LatencyInMs = metrics?.p95,
+                    p99LatencyInMs = metrics?.p99,
                     latencyLogs = latencyLogRepository.fetchLatestByMonitorId(
                         monitorId = monitor.id,
                         limit = latencyLogLimit,
