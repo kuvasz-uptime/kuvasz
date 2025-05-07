@@ -11,10 +11,14 @@
         <tr th:each="m : ${monitors}">
             <td th:text="${m.name}">Monitor Name</td>
             <td>
-            <span th:if="${m.enabled} == true"
+            <span th:if="${m.enabled} == true and ${m.uptimeStatus} != null"
                   th:classappend="${m.uptimeStatus.literal} == 'UP'? 'status-green' : 'status-red'" class="status">
                 <span class="status-dot status-dot-animated"></span>
                 <span th:text="${m.uptimeStatus.literal}"></span>
+            </span>
+            <span th:if="${m.enabled} == true and ${m.uptimeStatus} == null" class="status status-yellow">
+                <span class="status-dot status-dot-animated"></span>
+                In Progress
             </span>
             <span th:if="${m.enabled} == false" class="status status-gray">
                 <span class="status-dot"></span>
