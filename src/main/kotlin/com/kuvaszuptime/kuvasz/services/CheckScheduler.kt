@@ -113,12 +113,12 @@ class CheckScheduler(
     }
 
     private fun removeUptimeCheckOfMonitor(monitor: MonitorRecord) {
+        val matcher: (check: ScheduledCheck) -> Boolean =
+            { it.checkType == CheckType.UPTIME && it.monitorId == monitor.id }
         scheduledChecks
-            .filter { it.checkType == CheckType.UPTIME && it.monitorId == monitor.id }
-            .forEach { check ->
-                check.task.cancel(false)
-                scheduledChecks.remove(check)
-            }
+            .toList()
+            .forEach { check -> if (matcher(check)) check.task.cancel(false) }
+        scheduledChecks.removeAll(matcher)
     }
 
     fun removeAllChecks() {
