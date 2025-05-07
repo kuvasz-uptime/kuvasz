@@ -22,6 +22,9 @@ micronaut:
         get-allowed: true
     enabled: ${ENABLE_AUTH:`true`}
     token:
+      generator:
+        access-token:
+          expiration: ${AUTH_MAX_AGE:`86400`}
       jwt:
         signatures:
           secret:
@@ -132,4 +135,4 @@ smtp-config:
 logger:
   levels:
     org.jooq: ERROR
-    io.netty.channel.AbstractChannelHandlerContext: ERROR
+    io.netty.channel: ERROR
