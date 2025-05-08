@@ -203,7 +203,18 @@ jib {
         tags = setOf("latest")
     }
     container {
-        environment = mapOf("JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx128M")
+        environment = mapOf(
+            "JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx128M",
+            "MICRONAUT_CONFIG_FILES" to "/config/kuvasz.yml"
+        )
+    }
+    extraDirectories {
+        paths {
+            path {
+                setFrom("docker/bootstrap")
+                into = "/"
+            }
+        }
     }
 }
 

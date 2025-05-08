@@ -36,14 +36,7 @@ services:
       TELEGRAM_API_TOKEN: ''
       TELEGRAM_CHAT_ID: ''
       ENABLE_PAGERDUTY_EVENT_HANDLER: 'false'
-      MICRONAUT_CONFIG_FILES: '/kuvasz.yml,/application-dev.yml'
-    configs:
-      - kuvasz.yml
-      - application-dev.yml
+    volumes:
+      - ./application-dev.yml:/config/kuvasz.yml
     depends_on:
       - postgres-16
-configs:
-  kuvasz.yml:
-    file: ./kuvasz.yml
-  application-dev.yml:
-    file: ./application-dev.yml
