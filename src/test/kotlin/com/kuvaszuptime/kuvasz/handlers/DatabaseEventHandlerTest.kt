@@ -113,7 +113,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
-                    error = Throwable()
+                    error = Exception()
                 )
                 eventDispatcher.dispatch(event)
 
@@ -178,7 +178,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
-                    error = Throwable()
+                    error = Exception()
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
@@ -230,7 +230,7 @@ class DatabaseEventHandlerTest(
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    error = Throwable(),
+                    error = Exception(),
                     previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -267,7 +267,7 @@ class DatabaseEventHandlerTest(
                     monitor = monitor,
                     status = null,
                     previousEvent = null,
-                    error = Throwable("error".repeat(200))
+                    error = Exception("error".repeat(200))
                 )
                 eventDispatcher.dispatch(event)
 

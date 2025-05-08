@@ -79,7 +79,7 @@ class PagerdutyEventHandlerTest(
                 val event = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    error = Throwable(),
+                    error = Exception(),
                     previousEvent = null
                 )
                 mockSuccessfulTriggerResponse()
@@ -127,7 +127,7 @@ class PagerdutyEventHandlerTest(
                 val firstEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    error = Throwable("First error"),
+                    error = Exception("First error"),
                     previousEvent = null
                 )
                 mockSuccessfulTriggerResponse()
@@ -137,7 +137,7 @@ class PagerdutyEventHandlerTest(
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.NOT_FOUND,
-                    error = Throwable("Second error"),
+                    error = Exception("Second error"),
                     previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -156,7 +156,7 @@ class PagerdutyEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
-                    error = Throwable()
+                    error = Exception()
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -198,7 +198,7 @@ class PagerdutyEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = firstUptimeRecord,
-                    error = Throwable()
+                    error = Exception()
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(secondEvent)
@@ -217,7 +217,7 @@ class PagerdutyEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
-                    error = Throwable()
+                    error = Exception()
                 )
                 eventDispatcher.dispatch(event)
 
@@ -453,7 +453,7 @@ class PagerdutyEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
-                    error = Throwable()
+                    error = Exception()
                 )
                 mockErrorTriggerResponse()
 

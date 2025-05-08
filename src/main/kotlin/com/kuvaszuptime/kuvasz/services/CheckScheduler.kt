@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.CheckType
-import com.kuvaszuptime.kuvasz.models.ScheduledCheck
 import com.kuvaszuptime.kuvasz.models.SchedulingError
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
@@ -22,6 +21,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
@@ -40,102 +40,134 @@ class CheckScheduler(
 
     private val scope = CoroutineScope(SupervisorJob() + dispatcher + coroutineExHandler)
 
-    private val scheduledChecks: MutableList<ScheduledCheck> = mutableListOf()
+    private val scheduledUptimeChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> =
+        ConcurrentHashMap()
+    private val scheduledSSLChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> =
+        ConcurrentHashMap()
+
+    private fun ScheduledFuture<*>?.gracefulCancel() {
+        this?.cancel(false)
+    }
 
     @PostConstruct
     fun initialize() {
         monitorRepository.fetchByEnabled(true).forEach { createChecksForMonitor(it) }
     }
 
-    fun getScheduledChecks() = scheduledChecks
+    fun getScheduledUptimeChecks() = scheduledUptimeChecks.toMap()
+    fun getScheduledSSLChecks() = scheduledSSLChecks.toMap()
 
-    @Suppress("UnusedPrivateMember") // False-positive
-    private fun ScheduledCheck.log(monitor: MonitorRecord) {
+    private fun logCreated(monitor: MonitorRecord, checkType: CheckType, task: ScheduledFuture<*>) {
         val estimatedNextCheckEpoch = System.currentTimeMillis() + task.getDelay(TimeUnit.MILLISECONDS)
-        val estimatedNextCheck =
-            Instant.ofEpochMilli(estimatedNextCheckEpoch).atOffset(ZoneOffset.UTC)
+        val estimatedNextCheck = Instant.ofEpochMilli(estimatedNextCheckEpoch).atOffset(ZoneOffset.UTC)
         logger.info(
             "${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully. " +
                 "Next check will happen around: $estimatedNextCheck"
         )
     }
 
-    private fun Throwable.log(checkType: CheckType, monitor: MonitorRecord) {
-        logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: $message")
+    private fun logError(monitor: MonitorRecord, checkType: CheckType, ex: Throwable) {
+        logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${ex.message}")
     }
 
-    private fun scheduledUptimeCheckSuccessHandler(
+    private fun scheduledUptimeCheckSuccessHandler(monitor: MonitorRecord, doAfter: () -> Unit = {}) =
+        scheduledCheckSuccessHandler(CheckType.UPTIME, monitor, doAfter)
+
+    private fun scheduledSSLCheckSuccessHandler(monitor: MonitorRecord, doAfter: () -> Unit = {}) =
+        scheduledCheckSuccessHandler(CheckType.SSL, monitor, doAfter)
+
+    /**
+     * Handles the success of a scheduled check. It cancels the previous check (just in case) and registers the new one.
+     *
+     * @param checkType The type of the check (UPTIME or SSL).
+     * @param monitor The monitor for which the check was scheduled.
+     * @param doAfter An optional callback to be executed after the check is successfully registered.
+     */
+    private fun scheduledCheckSuccessHandler(
+        checkType: CheckType,
         monitor: MonitorRecord,
-        doAfter: () -> Unit = {},
+        doAfter: () -> Unit,
     ): (ScheduledFuture<*>) -> SchedulingError? = { scheduledUptimeTask ->
-        ScheduledCheck(checkType = CheckType.UPTIME, monitorId = monitor.id, task = scheduledUptimeTask)
-            .also { scheduledChecks.add(it) }
-            .also { it.log(monitor) }
+        monitor.cancelCheck(checkType)
+        monitor.registerCheck(checkType, scheduledUptimeTask)
+        logCreated(monitor, checkType, scheduledUptimeTask)
         doAfter()
         null
     }
 
-    private fun scheduledUptimeCheckErrorHandler(
+    private fun MonitorRecord.registerCheck(checkType: CheckType, task: ScheduledFuture<*>) {
+        when (checkType) {
+            CheckType.UPTIME -> scheduledUptimeChecks[this.id] = task
+            CheckType.SSL -> scheduledSSLChecks[this.id] = task
+        }
+    }
+
+    private fun MonitorRecord.cancelCheck(checkType: CheckType) {
+        when (checkType) {
+            CheckType.UPTIME -> scheduledUptimeChecks[this.id].gracefulCancel()
+            CheckType.SSL -> scheduledSSLChecks[this.id].gracefulCancel()
+        }
+    }
+
+    private fun scheduledUptimeCheckErrorHandler(monitor: MonitorRecord) =
+        scheduledCheckErrorHandler(CheckType.UPTIME, monitor)
+
+    private fun scheduledSSLCheckErrorHandler(monitor: MonitorRecord) =
+        scheduledCheckErrorHandler(CheckType.SSL, monitor)
+
+    private fun scheduledCheckErrorHandler(
+        checkType: CheckType,
         monitor: MonitorRecord,
     ): (Throwable) -> SchedulingError? = { error ->
-        error.log(CheckType.UPTIME, monitor)
+        logError(monitor, checkType, error)
         SchedulingError(error.message)
     }
 
+    /**
+     * (Re)Creates the checks (uptime + SSL) of a monitor. Relevant when a monitor is created or updated.
+     */
     fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? =
         scheduleUptimeCheck(monitor, resync = false).fold(
-            onSuccess = scheduledUptimeCheckSuccessHandler(monitor) {
-                if (monitor.sslCheckEnabled) {
-                    scheduleSSLCheck(monitor).fold(
-                        { scheduledSSLTask ->
-                            ScheduledCheck(checkType = CheckType.SSL, monitorId = monitor.id, task = scheduledSSLTask)
-                                .also { scheduledChecks.add(it) }
-                                .also { it.log(monitor) }
-                        },
-                        { error ->
-                            error.log(CheckType.SSL, monitor)
-                            SchedulingError(error.message)
-                        }
-                    )
+            onSuccess = scheduledUptimeCheckSuccessHandler(
+                monitor,
+                doAfter = {
+                    // If the monitor is enabled, we need to take care of the SSL check as well
+                    if (monitor.sslCheckEnabled) {
+                        scheduleSSLCheck(monitor).fold(
+                            onSuccess = scheduledSSLCheckSuccessHandler(monitor),
+                            onFailure = scheduledSSLCheckErrorHandler(monitor)
+                        )
+                    }
                 }
-            },
-            onFailure = scheduledUptimeCheckErrorHandler(monitor)
+            ),
+            onFailure = scheduledCheckErrorHandler(CheckType.UPTIME, monitor)
         )
 
+    /**
+     * Removes the checks (uptime + SSL) of a monitor from the scheduler.
+     * Relevant when a monitor is disabled or deleted.
+     */
     fun removeChecksOfMonitor(monitor: MonitorRecord) {
-        scheduledChecks.forEach { check ->
-            if (check.monitorId == monitor.id) {
-                check.task.cancel(false)
-            }
-        }
-        scheduledChecks.removeAll { it.monitorId == monitor.id }
+        monitor.cancelCheck(CheckType.UPTIME)
+        scheduledUptimeChecks.remove(monitor.id)
+        monitor.cancelCheck(CheckType.SSL)
+        scheduledSSLChecks.remove(monitor.id)
         logger.info("Checks for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
     }
 
-    private fun removeUptimeCheckOfMonitor(monitor: MonitorRecord) {
-        val matcher: (check: ScheduledCheck) -> Boolean =
-            { it.checkType == CheckType.UPTIME && it.monitorId == monitor.id }
-        scheduledChecks
-            .toList()
-            .forEach { check -> if (matcher(check)) check.task.cancel(false) }
-        scheduledChecks.removeAll(matcher)
-    }
-
+    /**
+     * Removes all the checks from the scheduler.
+     */
     fun removeAllChecks() {
-        scheduledChecks.forEach { check ->
-            check.task.cancel(false)
-        }
-        scheduledChecks.clear()
+        scheduledUptimeChecks.forEach { it.value.gracefulCancel() }
+        scheduledUptimeChecks.clear()
+        scheduledSSLChecks.forEach { it.value.gracefulCancel() }
+        scheduledSSLChecks.clear()
     }
 
-    fun updateChecksForMonitor(
-        existingMonitor: MonitorRecord,
-        updatedMonitor: MonitorRecord
-    ): SchedulingError? {
-        removeChecksOfMonitor(existingMonitor)
-        return createChecksForMonitor(updatedMonitor)
-    }
-
+    /**
+     * Takes care of the actual scheduling of the uptime check
+     */
     private fun scheduleUptimeCheck(
         monitor: MonitorRecord,
         resync: Boolean,
@@ -160,7 +192,7 @@ class CheckScheduler(
                             // minimize the chance of overlapping requests
                             if (checkedMonitor.enabled) reScheduleUptimeCheckForMonitor(checkedMonitor)
                         }
-                    } catch (ex: Throwable) {
+                    } catch (ex: Exception) {
                         // Better to catch and swallow everything that wasn't caught before to prevent
                         // the accidental cancellation of the parent coroutine
                         logger.error(
@@ -177,6 +209,9 @@ class CheckScheduler(
             }
         }
 
+    /**
+     * Takes care of the actual scheduling of the SSL check
+     */
     private fun scheduleSSLCheck(monitor: MonitorRecord): Result<ScheduledFuture<*>> =
         runCatching {
             val initialDelay = Duration.ofSeconds(
@@ -188,16 +223,15 @@ class CheckScheduler(
             }
         }
 
-    // Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
-    // delay of the monitor's uptime check interval, to decrease the chance of overlapping checks
-    private fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingError? {
-        removeUptimeCheckOfMonitor(monitor)
-
-        return scheduleUptimeCheck(monitor, resync = true).fold(
+    /**
+     * Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
+     * delay of the monitor's uptime check interval, to decrease the chance of overlapping checks
+     */
+    private fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingError? =
+        scheduleUptimeCheck(monitor, resync = true).fold(
             onSuccess = scheduledUptimeCheckSuccessHandler(monitor),
             onFailure = scheduledUptimeCheckErrorHandler(monitor),
         )
-    }
 
     companion object {
         private const val SSL_CHECK_INITIAL_DELAY_MIN_SECONDS = 60L

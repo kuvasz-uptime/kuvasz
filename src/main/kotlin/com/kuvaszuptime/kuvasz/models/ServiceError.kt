@@ -10,11 +10,11 @@ data class ServiceError(
 class MonitorNotFoundError(
     private val monitorId: Long,
     override val message: String? = "There is no monitor with ID: $monitorId"
-) : Throwable()
+) : Exception()
 
 open class PersistenceError(
     override val message: String? = "Something bad happened in the database :("
-) : Throwable()
+) : Exception()
 
 open class DuplicationError(
     override val message: String? = "The given resource already exists"
@@ -26,4 +26,4 @@ class MonitorDuplicatedError(
 
 class SchedulingError(
     override val message: String? = "Scheduling checks for the monitor did not succeed"
-) : Throwable()
+) : Exception()

@@ -69,11 +69,11 @@ class UptimeChecker(
             val latency = (System.currentTimeMillis() - start).toInt()
 
             handleResponse(monitor, response, latency, visitedUrls)
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             var clarifiedError = error
             val status = try {
                 (error as? HttpClientResponseException)?.status
-            } catch (ex: Throwable) {
+            } catch (ex: Exception) {
                 // Invalid status codes (e.g. 498) are throwing an IllegalArgumentException for example
                 // Better to have an explicit error, because the status won't be visible later, so it would be
                 // harder for the users to figure out what was failing during the check
@@ -116,12 +116,12 @@ class UptimeChecker(
                     )
                 )
                 if (visitedUrls.contains(redirectionUri)) {
-                    dispatchDownEvent(monitor, response.status, Throwable("Redirect loop detected"))
+                    dispatchDownEvent(monitor, response.status, Exception("Redirect loop detected"))
                     return
                 }
                 check(monitor, redirectionUri, visitedUrls)
             } else {
-                dispatchDownEvent(monitor, response.status, Throwable("Invalid redirection without a Location header"))
+                dispatchDownEvent(monitor, response.status, Exception("Invalid redirection without a Location header"))
             }
         } else {
             val message = if (response.isRedirected() && !monitor.followRedirects) {
@@ -129,14 +129,14 @@ class UptimeChecker(
             } else {
                 "The request wasn't successful, but there is no additional information"
             }
-            dispatchDownEvent(monitor, response.status, Throwable(message))
+            dispatchDownEvent(monitor, response.status, Exception(message))
         }
     }
 
     private fun dispatchDownEvent(
         monitor: MonitorRecord,
         status: HttpStatus?,
-        error: Throwable,
+        error: Exception,
     ) {
         eventDispatcher.dispatch(
             MonitorDownEvent(

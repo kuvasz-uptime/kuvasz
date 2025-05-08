@@ -2,17 +2,14 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.kotest.inspectors.forExactly
-import io.kotest.inspectors.forNone
-import io.kotest.inspectors.forOne
-import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.longs.shouldBeInRange
-import io.kotest.matchers.shouldBe
+import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldNotBe
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
@@ -41,31 +38,36 @@ class CheckSchedulerTest(
                 checkScheduler.initialize()
 
                 then("it should schedule the check for it") {
-                    val expectedChecks = checkScheduler.getScheduledChecks().filter { it.monitorId == monitor.id }
-                    expectedChecks shouldHaveSize 2
-                    expectedChecks.forOne { it.checkType shouldBe CheckType.UPTIME }
-                    expectedChecks.forExactly(2) { it.task.isCancelled shouldBe false }
-                    expectedChecks.forExactly(2) { it.task.isDone shouldBe false }
+                    with(checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()) {
+                        isCancelled.shouldBeFalse()
+                        isDone.shouldBeFalse()
+                    }
+                    with(checkScheduler.getScheduledSSLChecks()[monitor.id].shouldNotBeNull()) {
+                        isCancelled.shouldBeFalse()
+                        isDone.shouldBeFalse()
+                    }
                 }
             }
 
             `when`("there is an enabled but unschedulable monitor in the database and initialize has been called") {
-                val monitor = createMonitor(monitorRepository, id = 88888, uptimeCheckInterval = 0)
+                createMonitor(monitorRepository, id = 88888, uptimeCheckInterval = 0)
 
                 checkScheduler.initialize()
 
                 then("it should not schedule the check for it") {
-                    checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe monitor.id }
+                    checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
+                    checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
                 }
             }
 
             `when`("there is a disabled monitor in the database and initialize has been called") {
-                val monitor = createMonitor(monitorRepository, id = 11111, enabled = false)
+                createMonitor(monitorRepository, id = 11111, enabled = false)
 
                 checkScheduler.initialize()
 
                 then("it should not schedule the check for it") {
-                    checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe monitor.id }
+                    checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
+                    checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
                 }
             }
 
@@ -78,9 +80,8 @@ class CheckSchedulerTest(
                 checkScheduler.initialize()
 
                 then("it should schedule only the uptime check for it") {
-                    val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == monitor.id }
-                    checks shouldHaveSize 1
-                    checks[0].checkType shouldBe CheckType.UPTIME
+                    checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
+                    checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
                 }
             }
 
@@ -89,22 +90,18 @@ class CheckSchedulerTest(
                     createMonitor(monitorRepository, id = 22222, monitorName = "m1", uptimeCheckInterval = 1000)
                 val monitor2 =
                     createMonitor(monitorRepository, id = 33333, monitorName = "m2", uptimeCheckInterval = 30)
-                // Make sure that the set up check won't be rescheduled because of a too fast check invocation
+                // Make sure that the set-up check won't be rescheduled because of a too fast check invocation
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(any(), any(), any(), any()) } coAnswers { delay(10000) }
 
                 checkScheduler.initialize()
 
                 then("it should spread the first checks a little bit") {
-                    val expectedChecks = checkScheduler.getScheduledChecks().filter { it.checkType == CheckType.UPTIME }
-                    expectedChecks shouldHaveSize 2
-                    expectedChecks.forExactly(1) { firstMonitor ->
-                        firstMonitor.task.getDelay(TimeUnit.SECONDS) shouldBeInRange 0L..1000
-                        firstMonitor.monitorId shouldBe monitor1.id
+                    with(checkScheduler.getScheduledUptimeChecks()[monitor1.id].shouldNotBeNull()) {
+                        getDelay(TimeUnit.SECONDS) shouldBeInRange 0L..1000
                     }
-                    expectedChecks.forExactly(1) { secondMonitor ->
-                        secondMonitor.task.getDelay(TimeUnit.SECONDS) shouldBeInRange 0L..30
-                        secondMonitor.monitorId shouldBe monitor2.id
+                    with(checkScheduler.getScheduledUptimeChecks()[monitor2.id].shouldNotBeNull()) {
+                        getDelay(TimeUnit.SECONDS) shouldBeInRange 0L..30
                     }
                 }
             }
@@ -156,7 +153,7 @@ class CheckSchedulerTest(
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
 
                 checkScheduler.initialize()
-                val checkBefore = checkScheduler.getScheduledChecks().single { it.checkType == CheckType.UPTIME }
+                val checkBefore = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
                 delay(4000) // Wait for the check to be executed
 
                 then("the next check should be re-scheduled via the check's callback") {
@@ -165,16 +162,15 @@ class CheckSchedulerTest(
                         uptimeCheckerMock.check(monitor, any(), any(), any())
                         lockRegistryMock.release(monitor.id)
                     }
-                    val checkAfter = checkScheduler.getScheduledChecks().single { it.checkType == CheckType.UPTIME }
+                    val checkAfter = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
                     checkAfter.hashCode() shouldNotBe checkBefore.hashCode()
-                    checkAfter.monitorId shouldBe checkBefore.monitorId
                 }
             }
 
             `when`("an uptime check throws an exception") {
                 val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } throws Throwable("bad")
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } throws Exception("bad")
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs

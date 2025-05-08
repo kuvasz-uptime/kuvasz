@@ -67,7 +67,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets a MonitorDownEvent without a status") {
-                val event = MonitorDownEvent(monitor, null, Throwable("uptime error"), null)
+                val event = MonitorDownEvent(monitor, null, Exception("uptime error"), null)
 
                 then("it should use the error message as a reason") {
                     val expectedMessage =
@@ -77,7 +77,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets a MonitorDownEvent without a previousEvent") {
-                val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Throwable("uptime error"), null)
+                val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Exception("uptime error"), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -91,7 +91,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 val event = MonitorDownEvent(
                     monitor,
                     HttpStatus.BAD_REQUEST,
-                    Throwable("uptime error"),
+                    Exception("uptime error"),
                     previousEvent
                 )
 
@@ -108,7 +108,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 val event = MonitorDownEvent(
                     monitor,
                     HttpStatus.BAD_REQUEST,
-                    Throwable("uptime error"),
+                    Exception("uptime error"),
                     previousEvent
                 )
 
