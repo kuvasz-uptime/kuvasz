@@ -83,6 +83,18 @@ class WebUIAuthenticationTest(
         }
     }
 
+    "already authenticated request against /login should be redirected to /" {
+        val jwt = getValidJWT(client, authConfig)
+        val request = HttpRequest.GET<Any>("/login").header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+        val response = client.exchange(request).awaitFirst()
+
+        response.status shouldBe HttpStatus.SEE_OTHER
+        response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
+            locationHeader shouldBe "/"
+        }
+    }
+
     "anonymous HTMX requests should be redirected to the login page with a 204 and a specific header" {
         val request = HttpRequest.GET<Any>("/").header(HtmxRequestHeaders.HX_REQUEST, "true")
         val response = client.exchange(request).awaitFirst()

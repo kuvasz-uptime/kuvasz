@@ -2,34 +2,15 @@ package com.kuvaszuptime.kuvasz.services.ui
 
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.models.ui.ViewParams
-import io.micronaut.context.event.BeanCreatedEvent
-import io.micronaut.context.event.BeanCreatedEventListener
 import io.micronaut.http.HttpRequest
 import io.micronaut.security.utils.SecurityService
 import io.micronaut.views.ModelAndView
 import io.micronaut.views.model.ViewModelProcessor
 import jakarta.inject.Singleton
-import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect
-import org.thymeleaf.TemplateEngine
-import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
 import kotlin.jvm.optionals.getOrNull
 
 /**
- * This class is responsible for configuring the Thymeleaf template engine.
- * It adds the LayoutDialect and Java8TimeDialect to the template engine.
- */
-@Singleton
-class TemplateListener : BeanCreatedEventListener<TemplateEngine> {
-    override fun onCreated(event: BeanCreatedEvent<TemplateEngine>): TemplateEngine {
-        val builder = event.bean
-        builder.addDialect(LayoutDialect())
-        builder.addDialect(Java8TimeDialect())
-        return builder
-    }
-}
-
-/**
- * A custom ViewModelProcessor that adds non-trivial data to the model of the views.
+ * A custom ViewModelProcessor that adds global variables to the model of the views.
  */
 @Singleton
 class HydratorViewModelProcessor(private val securityService: SecurityService?) : ViewModelProcessor<ViewParams> {

@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
-import com.kuvaszuptime.kuvasz.models.DuplicationError
-import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedError
-import com.kuvaszuptime.kuvasz.models.PersistenceError
+import com.kuvaszuptime.kuvasz.models.DuplicationException
+import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
+import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
@@ -70,7 +70,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
             .groupBy(detailsGroupByFields)
             .fetchOneInto(MonitorDetailsDto::class.java)
 
-    fun returningInsert(monitor: MonitorRecord): Either<PersistenceError, MonitorRecord> =
+    fun returningInsert(monitor: MonitorRecord): Either<PersistenceException, MonitorRecord> =
         try {
             Either.Right(
                 dslContext
@@ -86,7 +86,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
     fun returningUpdate(
         updatedMonitor: MonitorRecord,
         txCtx: DSLContext = dslContext,
-    ): Either<PersistenceError, MonitorRecord> =
+    ): Either<PersistenceException, MonitorRecord> =
         try {
             Either.Right(
                 txCtx
@@ -141,11 +141,11 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
         .leftJoin(SSL_EVENT).on(MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
 
-    private fun DataAccessException.handle(): Either<PersistenceError, Nothing> {
+    private fun DataAccessException.handle(): Either<PersistenceException, Nothing> {
         val persistenceError = toPersistenceError()
         return Either.Left(
-            if (persistenceError is DuplicationError) {
-                MonitorDuplicatedError()
+            if (persistenceError is DuplicationException) {
+                MonitorDuplicatedException()
             } else {
                 persistenceError
             }

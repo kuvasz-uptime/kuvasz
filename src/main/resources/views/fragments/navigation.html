@@ -1,7 +1,4 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<body>
-<header th:fragment="navbar" class="navbar-expand-md">
+<header class="navbar-expand-md">
     <div class="collapse navbar-collapse" id="navbar-menu">
         <div class="navbar">
             <div class="container-xl">
@@ -12,7 +9,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="/">
                                     <span class="nav-link-icon d-lg-inline-block">
-                                        <svg th:replace="~{fragments/icons :: dashboard-outline}"></svg>
+                                        {% include "icons/dashboard-outline.html" %}
                                     </span>
                                     <span class="nav-link-title"> Dashboard </span>
                                 </a>
@@ -20,7 +17,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="/monitors">
                                     <span class="nav-link-icon d-lg-inline-block">
-                                        <svg th:replace="~{fragments/icons :: binoculars}"></svg>
+                                        {% include "icons/binoculars.html" %}
                                     </span>
                                     <span class="nav-link-title"> Monitors </span>
                                 </a>
@@ -33,7 +30,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="https://github.com/kuvasz-uptime/kuvasz/wiki" target="_blank">
                                     <span class="nav-link-icon d-lg-inline-block">
-                                        <svg th:replace="~{fragments/icons :: book}"></svg>
+                                        {% include "icons/book.html" %}
                                   </span>
                                     <span class="nav-link-title"> Docs </span>
                                 </a>
@@ -45,4 +42,3 @@
         </div>
     </div>
 </header>
-</body>

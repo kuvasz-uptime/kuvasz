@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.models.MonitorNotFoundError
+import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
@@ -27,7 +27,7 @@ class MonitorCrudService(
 ) {
 
     fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
-        monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundError(monitorId)
+        monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
 
     fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabledOnly)
@@ -157,5 +157,5 @@ class MonitorCrudService(
             }
 
     private fun MonitorRecord?.orThrowNotFound(monitorId: Long): MonitorRecord =
-        this ?: throw MonitorNotFoundError(monitorId)
+        this ?: throw MonitorNotFoundException(monitorId)
 }

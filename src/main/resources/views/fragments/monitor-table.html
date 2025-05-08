@@ -8,26 +8,28 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="m : ${monitors}">
-            <td th:text="${m.name}">Monitor Name</td>
+        {% for m in monitors%}
+        <tr>
+            <td>{{ m.name }}</td>
             <td>
-            <span th:if="${m.enabled} == true and ${m.uptimeStatus} != null"
-                  th:classappend="${m.uptimeStatus.literal} == 'UP'? 'status-green' : 'status-red'" class="status">
-                <span class="status-dot status-dot-animated"></span>
-                <span th:text="${m.uptimeStatus.literal}"></span>
-            </span>
-            <span th:if="${m.enabled} == true and ${m.uptimeStatus} == null" class="status status-yellow">
-                <span class="status-dot status-dot-animated"></span>
-                In Progress
-            </span>
-            <span th:if="${m.enabled} == false" class="status status-gray">
-                <span class="status-dot"></span>
-                Paused
-            </span>
+                {% if m.enabled and m.uptimeStatus is not null %}
+                <span class="status {% if m.uptimeStatus.literal == 'UP' %} status-green {% else %} status-red {% endif %}">
+                    <span class="status-dot status-dot-animated"></span>{{ m.uptimeStatus.literal }}
+                </span>
+                {% elseif m.enabled and m.uptimeStatus is null %}
+                <span class="status status-yellow">
+                    <span class="status-dot status-dot-animated"></span>In Progress
+                </span>
+                {% elseif not m.enabled %}
+                <span class="status status-gray">
+                    <span class="status-dot"></span>Paused
+                </span>
+                {% endif %}
             </td>
-            <td th:text="${#temporals.format(m.lastUptimeCheck, 'yyyy/MM/dd HH:mm')}">Last check</td>
+            <td>{{ m.lastUptimeCheck | date("yyyy/MM/dd HH:mm") }}</td>
             </td>
         </tr>
+        {% endfor %}
         </tbody>
     </table>
 </div>

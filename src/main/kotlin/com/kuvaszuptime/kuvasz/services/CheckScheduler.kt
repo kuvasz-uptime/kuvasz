@@ -1,10 +1,11 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.CheckType
-import com.kuvaszuptime.kuvasz.models.SchedulingError
+import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
+import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import io.micronaut.context.annotation.Context
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -20,7 +21,6 @@ import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -59,7 +59,7 @@ class CheckScheduler(
 
     private fun logCreated(monitor: MonitorRecord, checkType: CheckType, task: ScheduledFuture<*>) {
         val estimatedNextCheckEpoch = System.currentTimeMillis() + task.getDelay(TimeUnit.MILLISECONDS)
-        val estimatedNextCheck = Instant.ofEpochMilli(estimatedNextCheckEpoch).atOffset(ZoneOffset.UTC)
+        val estimatedNextCheck = Instant.ofEpochMilli(estimatedNextCheckEpoch).toOffsetDateTime()
         logger.info(
             "${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully. " +
                 "Next check will happen around: $estimatedNextCheck"
@@ -87,7 +87,7 @@ class CheckScheduler(
         checkType: CheckType,
         monitor: MonitorRecord,
         doAfter: () -> Unit,
-    ): (ScheduledFuture<*>) -> SchedulingError? = { scheduledUptimeTask ->
+    ): (ScheduledFuture<*>) -> SchedulingException? = { scheduledUptimeTask ->
         monitor.cancelCheck(checkType)
         monitor.registerCheck(checkType, scheduledUptimeTask)
         logCreated(monitor, checkType, scheduledUptimeTask)
@@ -118,15 +118,15 @@ class CheckScheduler(
     private fun scheduledCheckErrorHandler(
         checkType: CheckType,
         monitor: MonitorRecord,
-    ): (Throwable) -> SchedulingError? = { error ->
+    ): (Throwable) -> SchedulingException? = { error ->
         logError(monitor, checkType, error)
-        SchedulingError(error.message)
+        SchedulingException(error.message)
     }
 
     /**
      * (Re)Creates the checks (uptime + SSL) of a monitor. Relevant when a monitor is created or updated.
      */
-    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingError? =
+    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingException? =
         scheduleUptimeCheck(monitor, resync = false).fold(
             onSuccess = scheduledUptimeCheckSuccessHandler(
                 monitor,
@@ -227,7 +227,7 @@ class CheckScheduler(
      * Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
      * delay of the monitor's uptime check interval, to decrease the chance of overlapping checks
      */
-    private fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingError? =
+    private fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingException? =
         scheduleUptimeCheck(monitor, resync = true).fold(
             onSuccess = scheduledUptimeCheckSuccessHandler(monitor),
             onFailure = scheduledUptimeCheckErrorHandler(monitor),

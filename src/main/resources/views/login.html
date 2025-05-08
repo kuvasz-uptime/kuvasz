@@ -1,56 +1,49 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout}">
-<head>
-    <title>Login</title>
-</head>
-<body>
-<div layout:fragment="page-title"></div>
+{% extends "layout.html" %}
 
-<div layout:fragment="content">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
-                <div class="login-card">
-                    <div class="card">
-                        <div class="card-body">
-                            <h2 class="card-title text-center mb-4">Sign in</h2>
-                            <!-- Display error message if login fails -->
-                            <div th:if="${loginErrorMessage}"
-                                 class="alert alert-important alert-danger alert-dismissible"
-                                 role="alert">
-                                <div class="alert-icon">
-                                    <svg th:replace="~{fragments/icons :: circle-exclamation}"></svg>
-                                </div>
-                                <div>
-                                    <h4 th:text="${loginErrorMessage}" class="alert-heading"></h4>
-                                </div>
-                                <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="login-card">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Sign in</h2>
+                        <!-- Display error message if login fails -->
+                        {% if loginErrorMessage is not empty %}
+                        <div class="alert alert-important alert-danger alert-dismissible"
+                             role="alert">
+                            <div class="alert-icon">
+                                {% include "icons/circle-exclamation.html" %}
                             </div>
-                            <!-- Login form -->
-                            <form th:action="@{/auth/login}" method="post">
-                                <div class="mb-3">
-                                    <label class="form-label">Username</label>
-                                    <input type="text" class="form-control" name="username" placeholder="Enter username"
-                                           required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Password</label>
-                                    <input type="password" class="form-control" name="password"
-                                           placeholder="Enter password"
-                                           required>
-                                </div>
-                                <div class="form-footer">
-                                    <button type="submit" class="btn btn-primary w-100">Sign in</button>
-                                </div>
-                            </form>
+                            <div>
+                                <h4 class="alert-heading">{{ loginErrorMessage }}</h4>
+                            </div>
+                            <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                         </div>
+                        {% endif %}
+                        <!-- Login form -->
+                        <form action="/auth/login" method="post">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" name="username" placeholder="Enter username"
+                                       required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" name="password"
+                                       placeholder="Enter password"
+                                       required>
+                            </div>
+                            <div class="form-footer">
+                                <button type="submit" class="btn btn-primary w-100">Sign in</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-</body>
-</html>
+{% endblock %}

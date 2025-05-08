@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
+import com.kuvaszuptime.kuvasz.models.RedirectLoopException
+import com.kuvaszuptime.kuvasz.models.UnknownUptimeCheckException
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
@@ -116,12 +119,12 @@ class UptimeChecker(
                     )
                 )
                 if (visitedUrls.contains(redirectionUri)) {
-                    dispatchDownEvent(monitor, response.status, Exception("Redirect loop detected"))
+                    dispatchDownEvent(monitor, response.status, RedirectLoopException())
                     return
                 }
                 check(monitor, redirectionUri, visitedUrls)
             } else {
-                dispatchDownEvent(monitor, response.status, Exception("Invalid redirection without a Location header"))
+                dispatchDownEvent(monitor, response.status, InvalidRedirectionException())
             }
         } else {
             val message = if (response.isRedirected() && !monitor.followRedirects) {
@@ -129,7 +132,7 @@ class UptimeChecker(
             } else {
                 "The request wasn't successful, but there is no additional information"
             }
-            dispatchDownEvent(monitor, response.status, Exception(message))
+            dispatchDownEvent(monitor, response.status, UnknownUptimeCheckException(message))
         }
     }
 
