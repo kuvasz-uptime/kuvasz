@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.models.ui.ViewParams
 import com.kuvaszuptime.kuvasz.models.ui.emptyViewParams
+import com.kuvaszuptime.kuvasz.security.ui.AlreadyLoggedInError
+import com.kuvaszuptime.kuvasz.security.ui.UnauthorizedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthError
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
@@ -46,6 +48,7 @@ class WebUIController(
 
     @View("login")
     @Get(LOGIN_PATH)
+    @UnauthorizedOnly
     fun login(@QueryValue error: Boolean?): ViewParams = emptyViewParams().apply {
         if (error == true) this["loginErrorMessage"] = LOGIN_ERROR_MESSAGE
     }
@@ -72,4 +75,9 @@ class WebUIController(
         } else {
             HttpResponse.seeOther<Any>(LOGIN_PATH.toUri())
         }
+
+    @Error
+    @Suppress("UnusedParameter")
+    fun alreadyLoggedInError(request: HttpRequest<*>, authError: AlreadyLoggedInError): HttpResponse<*> =
+        HttpResponse.seeOther<Any>(DASHBOARD_PATH.toUri())
 }

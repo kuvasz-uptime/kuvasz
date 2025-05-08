@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 /**
@@ -10,6 +11,10 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
  * Classic UI tests should be added with a different approach once when the UI is more mature and changes less.
  * Currently, the only endpoint that is "stable" in terms of functionality and features is the /login endpoint.
  */
+@Property(name = "micronaut.security.enabled", value = "true")
+@Property(name = "admin-auth.api-key", value = "test-api-key-fjklafdjkldsfjdsklfds")
+@Property(name = "admin-auth.username", value = "test-username")
+@Property(name = "admin-auth.password", value = "test-password-fdsjkfldsjfkdls")
 @MicronautTest(startApplication = false)
 class WebUIControllerTest(controller: WebUIController) : BehaviorSpec({
 
