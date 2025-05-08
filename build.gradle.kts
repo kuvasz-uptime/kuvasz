@@ -50,9 +50,16 @@ micronaut {
     }
 }
 
+kapt {
+    arguments {
+        arg("micronaut.openapi.project.dir", projectDir.toString())
+    }
+}
+
 val jooqPluginVersion: String by project
 val simpleJavaMailVersion = "8.12.6"
 val detektVersion: String by project
+val jooqVersion: String by project
 
 dependencies {
 
@@ -81,6 +88,8 @@ dependencies {
     implementation(mn.micronaut.flyway)
     implementation(mn.micronaut.jdbc.hikari)
     implementation(mn.micronaut.jooq)
+    implementation("org.jooq:jooq-kotlin:$jooqVersion")
+    implementation("org.jooq:jooq-postgres-extensions:$jooqVersion")
     implementation(mn.postgresql)
     jooqGenerator(mn.postgresql)
     implementation("nu.studer:gradle-jooq-plugin:$jooqPluginVersion")

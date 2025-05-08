@@ -398,26 +398,26 @@ components:
           format: int32
         enabled:
           type: boolean
-          nullable: true
+          default: true
         sslCheckEnabled:
           type: boolean
-          nullable: true
+          default: false
         pagerdutyIntegrationKey:
           type: string
           nullable: true
         requestMethod:
-          nullable: true
           allOf:
           - $ref: "#/components/schemas/HttpMethod"
+          default: GET
         latencyHistoryEnabled:
           type: boolean
-          nullable: true
+          default: true
         forceNoCache:
           type: boolean
-          nullable: true
+          default: true
         followRedirects:
           type: boolean
-          nullable: true
+          default: true
     MonitorDetailsDto:
       required:
       - createdAt
@@ -684,13 +684,6 @@ components:
       enum:
       - UP
       - DOWN
-    UserNamePasswordCredentials:
-      type: object
-      properties:
-        username:
-          type: string
-        password:
-          type: string
   securitySchemes:
     apiKey:
       type: apiKey
