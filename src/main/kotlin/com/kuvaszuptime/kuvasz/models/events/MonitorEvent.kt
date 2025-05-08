@@ -73,7 +73,7 @@ data class MonitorUpEvent(
 data class MonitorDownEvent(
     override val monitor: MonitorRecord,
     val status: HttpStatus?,
-    val error: Throwable,
+    val error: Exception,
     override val previousEvent: UptimeEventRecord?
 ) : UptimeMonitorEvent() {
 

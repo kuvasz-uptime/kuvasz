@@ -32,7 +32,7 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
         try {
             mailerClient.testConnection()
             logger.info("SMTP connection to ${smtpMailerConfig.host} has been set up successfully")
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             logger.error("Connection to ${smtpMailerConfig.host} cannot be set up")
             throw e
         }

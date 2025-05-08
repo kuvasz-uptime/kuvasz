@@ -91,10 +91,11 @@ class UptimeCheckerTest(
                 val monitor = createMonitor(monitorRepository, url = "http://this-should-not.exist")
                 val subscriber = TestSubscriber<MonitorDownEvent>()
                 eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+                mockHttpResponse(uptimeCheckerSpy, HttpStatus.GATEWAY_TIMEOUT)
 
                 then("it should dispatch a MonitorDownEvent") {
                     uptimeCheckerSpy.check(monitor)
-                    val expectedEvent = subscriber.awaitCount(1).values().first()
+                    val expectedEvent = subscriber.values().first()
 
                     subscriber.awaitCount(1)
                     expectedEvent.monitor.id shouldBe monitor.id

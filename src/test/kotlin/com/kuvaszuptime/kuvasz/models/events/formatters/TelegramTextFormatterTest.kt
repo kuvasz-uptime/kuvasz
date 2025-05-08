@@ -67,7 +67,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets a MonitorDownEvent without a previousEvent") {
-                val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Throwable("uptime error"), null)
+                val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Exception("uptime error"), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -81,7 +81,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                 val event = MonitorDownEvent(
                     monitor,
                     HttpStatus.BAD_REQUEST,
-                    Throwable("uptime error"),
+                    Exception("uptime error"),
                     previousEvent
                 )
 
@@ -98,7 +98,7 @@ class TelegramTextFormatterTest : BehaviorSpec(
                 val event = MonitorDownEvent(
                     monitor,
                     HttpStatus.BAD_REQUEST,
-                    Throwable("uptime error"),
+                    Exception("uptime error"),
                     previousEvent
                 )
 

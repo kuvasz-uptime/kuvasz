@@ -33,19 +33,19 @@ class GlobalErrorHandler {
 
     @Suppress("UNUSED_PARAMETER")
     @Error(global = true)
-    fun error(request: HttpRequest<*>, throwable: ValidationException): HttpResponse<ServiceError> =
-        HttpResponse.badRequest(ServiceError(throwable.message))
+    fun error(request: HttpRequest<*>, exception: ValidationException): HttpResponse<ServiceError> =
+        HttpResponse.badRequest(ServiceError(exception.message))
 
     @Suppress("UNUSED_PARAMETER")
     @Error(global = true)
-    fun error(request: HttpRequest<*>, throwable: ConversionErrorException): HttpResponse<ServiceError> {
-        val message = "Failed to convert argument: ${throwable.argument}"
+    fun error(request: HttpRequest<*>, exception: ConversionErrorException): HttpResponse<ServiceError> {
+        val message = "Failed to convert argument: ${exception.argument}"
         return HttpResponse.badRequest(ServiceError(message))
     }
 
     @Suppress("UNUSED_PARAMETER")
     @Error(global = true)
-    fun error(request: HttpRequest<*>, throwable: JsonParseException): HttpResponse<ServiceError> {
+    fun error(request: HttpRequest<*>, exception: JsonParseException): HttpResponse<ServiceError> {
         val message = "Can't parse the JSON in the payload"
         return HttpResponse.badRequest(ServiceError(message))
     }

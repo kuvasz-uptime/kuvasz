@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
@@ -21,12 +20,12 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.inspectors.forAll
-import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
+import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -331,9 +330,8 @@ class MonitorControllerTest(
                     monitorInDb.followRedirects shouldBe true
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
 
-                    checkScheduler.getScheduledChecks()
-                        .filter { it.monitorId == createdMonitor.id }
-                        .forOne { it.checkType shouldBe CheckType.UPTIME }
+                    checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
+                    checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
                 }
             }
 
@@ -375,9 +373,8 @@ class MonitorControllerTest(
                     monitorInDb.followRedirects shouldBe false
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
 
-                    checkScheduler.getScheduledChecks()
-                        .filter { it.monitorId == createdMonitor.id }
-                        .shouldBeEmpty()
+                    checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
+                    checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
                 }
             }
 
@@ -404,8 +401,7 @@ class MonitorControllerTest(
                     secondResponse.status shouldBe HttpStatus.CONFLICT
                     val monitorsInDb = monitorRepository.findByName(firstCreatedMonitor.name)
                     monitorsInDb.shouldNotBeNull()
-                    checkScheduler.getScheduledChecks().filter { it.monitorId == firstCreatedMonitor.id }
-                        .forOne { it.checkType shouldBe CheckType.UPTIME }
+                    checkScheduler.getScheduledUptimeChecks()[firstCreatedMonitor.id].shouldNotBeNull()
                 }
             }
 
@@ -465,7 +461,8 @@ class MonitorControllerTest(
                     response.status shouldBe HttpStatus.NO_CONTENT
                     monitorInDb shouldBe null
 
-                    checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe createdMonitor.id }
+                    checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
+                    checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
                 }
             }
 
@@ -493,9 +490,8 @@ class MonitorControllerTest(
                     pagerdutyIntegrationKey = "something"
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
-                val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
-                checks.forOne { it.checkType shouldBe CheckType.UPTIME }
-                checks.forOne { it.checkType shouldBe CheckType.SSL }
+                checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
+                checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
 
                 val updateDto = MonitorUpdateDto(
                     name = "updated_test_monitor",
@@ -529,8 +525,8 @@ class MonitorControllerTest(
                     monitorInDb.followRedirects shouldNotBe createdMonitor.followRedirects
                     monitorInDb.followRedirects shouldBe updateDto.followRedirects
 
-                    val updatedChecks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
-                    updatedChecks.shouldBeEmpty()
+                    checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
+                    checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
                 }
             }
 
@@ -543,7 +539,8 @@ class MonitorControllerTest(
                     pagerdutyIntegrationKey = "something"
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
-                checkScheduler.getScheduledChecks().forNone { it.monitorId shouldBe createdMonitor.id }
+                checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
+                checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
 
                 val updateDto = MonitorUpdateDto(
                     name = null,
@@ -573,9 +570,8 @@ class MonitorControllerTest(
                     monitorInDb.forceNoCache shouldBe updateDto.forceNoCache
                     monitorInDb.followRedirects shouldBe updateDto.followRedirects
 
-                    val checks = checkScheduler.getScheduledChecks().filter { it.monitorId == createdMonitor.id }
-                    checks.forOne { it.checkType shouldBe CheckType.UPTIME }
-                    checks.forOne { it.checkType shouldBe CheckType.SSL }
+                    checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
+                    checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
                 }
             }
 

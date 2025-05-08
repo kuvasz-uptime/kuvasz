@@ -82,7 +82,7 @@ class SlackEventHandlerTest(
                 val event = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    error = Throwable(),
+                    error = Exception(),
                     previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
@@ -127,7 +127,7 @@ class SlackEventHandlerTest(
                 val firstEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    error = Throwable("First error"),
+                    error = Exception("First error"),
                     previousEvent = null
                 )
                 mockSuccessfulHttpResponse()
@@ -137,7 +137,7 @@ class SlackEventHandlerTest(
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.NOT_FOUND,
-                    error = Throwable("Second error"),
+                    error = Exception("Second error"),
                     previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -156,7 +156,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
-                    error = Throwable()
+                    error = Exception()
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
@@ -196,7 +196,7 @@ class SlackEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = firstUptimeRecord,
-                    error = Throwable()
+                    error = Exception()
                 )
                 eventDispatcher.dispatch(secondEvent)
 

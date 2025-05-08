@@ -79,7 +79,7 @@ class SMTPEventHandlerTest(
                 val event = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    error = Throwable(),
+                    error = Exception(),
                     previousEvent = null
                 )
                 val expectedEmail = emailFactory.fromMonitorEvent(event)
@@ -125,7 +125,7 @@ class SMTPEventHandlerTest(
                 val firstEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
-                    error = Throwable("First error"),
+                    error = Exception("First error"),
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
@@ -135,7 +135,7 @@ class SMTPEventHandlerTest(
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.GATEWAY_TIMEOUT,
-                    error = Throwable("Second error"),
+                    error = Exception("Second error"),
                     previousEvent = firstUptimeRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -157,7 +157,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
-                    error = Throwable()
+                    error = Exception()
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
@@ -202,7 +202,7 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = firstUptimeRecord,
-                    error = Throwable()
+                    error = Exception()
                 )
                 eventDispatcher.dispatch(secondEvent)
 

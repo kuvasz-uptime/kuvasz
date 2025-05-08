@@ -121,7 +121,7 @@ class SSLValidator {
         } catch (e: SocketTimeoutException) {
             logger.debug("Timeout connecting to or reading from {}: {}", url, e.message)
             return Either.Left(SSLValidationError("Connection timed out (${e.message})"))
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             val errorMessage = e.message ?: "Unknown error"
             logger.error("Unexpected error during SSL validation for {}: {}", url, errorMessage)
             return Either.Left(SSLValidationError("An unexpected error occurred: $errorMessage"))

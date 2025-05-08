@@ -94,11 +94,12 @@ class MonitorCrudService(
             { persistenceError -> throw persistenceError },
             { updatedMonitor ->
                 if (updatedMonitor.enabled) {
-                    checkScheduler.updateChecksForMonitor(existingMonitor, updatedMonitor)?.let { throw it }
+                    checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
                 } else {
                     checkScheduler.removeChecksOfMonitor(existingMonitor)
                 }
-                if (!this.latencyHistoryEnabled && existingMonitor.latencyHistoryEnabled) {
+                // If the latency history is disabled, we need to delete all the existing logs
+                if (!updatedMonitor.latencyHistoryEnabled && existingMonitor.latencyHistoryEnabled) {
                     latencyLogRepository.deleteAllByMonitorId(existingMonitor.id)
                 }
                 updatedMonitor
