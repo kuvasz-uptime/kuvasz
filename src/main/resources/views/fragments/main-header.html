@@ -1,7 +1,4 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<body>
-<header th:fragment="main-header" class="navbar navbar-expand-md d-print-none">
+<header class="navbar navbar-expand-md d-print-none">
     <div class="container-xl">
         <!-- BEGIN NAVBAR TOGGLER -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
@@ -20,27 +17,27 @@
                 <div class="btn-list">
                     <a href="https://github.com/kuvasz-uptime/kuvasz" class="btn btn-icon" target="_blank"
                        rel="noreferrer">
-                        <svg th:replace="~{fragments/icons :: brand-github}"></svg>
+                        {% include "icons/brand-github.html" %}
                     </a>
                 </div>
             </div>
             <div class="nav-item d-md-flex">
                 <a href="#" class="nav-link px-0 hide-theme-dark" aria-label="Enable dark mode"
                    onclick="setTheme('dark')">
-                    <svg th:replace="~{fragments/icons :: dark-mode}"></svg>
+                    {% include "icons/dark-mode.html" %}
                 </a>
                 <a href="#" id="light-mode-toggle" class="nav-link px-0 hide-theme-light"
                    aria-label="Enable light mode" onclick="setTheme('light')">
-                    <svg th:replace="~{fragments/icons :: light-mode}"></svg>
+                    {% include "icons/light-mode.html" %}
                 </a>
             </div>
-            <div th:if="${isAuthenticated && isAuthEnabled}" class="nav-item ms-3">
+            {% if isAuthenticated and isAuthEnabled %}
+            <div class="nav-item ms-3">
                 <a href="/auth/logout" class="btn btn-primary btn-icon" aria-label="Sign out" rel="noreferrer">
-                    <svg th:replace="~{fragments/icons :: logout-outline}"></svg>
+                    {% include "icons/logout-outline.html" %}
                 </a>
             </div>
+            {% endif %}
         </div>
     </div>
 </header>
-</body>
-</html>

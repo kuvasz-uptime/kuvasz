@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title layout:title-pattern="$CONTENT_TITLE | $LAYOUT_TITLE">Kuvasz</title>
+    <title>{% block title %}{% endblock %} | Kuvasz Uptime</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
@@ -17,14 +16,15 @@
         })();
     </script>
     <!-- Tabler CSS from CDN -->
-    <link rel="stylesheet" th:href="@{https://cdn.jsdelivr.net/npm/@tabler/core@1.2.0/dist/css/tabler.min.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.2.0/dist/css/tabler.min.css">
 </head>
 <body>
 <div class="page">
-    <div th:replace="~{fragments/main-header :: main-header}"></div>
-    <div th:if="${isAuthenticated}">
-        <div th:replace="~{fragments/navigation :: navbar}"></div>
-    </div>
+    {% include "fragments/main-header.html" %}
+
+    {% if isAuthenticated %}
+    {% include "fragments/navigation.html" %}
+    {% endif %}
 
     <div class="page-wrapper">
         <!-- BEGIN PAGE HEADER -->
@@ -33,9 +33,8 @@
                 <div class="row g-2 align-items-center">
                     <div class="col">
                         <!-- Page pre-title -->
-                        <div layout:fragment="page-title">
-                            Should be replaced by the title of the page
-                        </div>
+                        {% block pageTitle %}{% endblock %}
+
                     </div>
                 </div>
             </div>
@@ -44,24 +43,22 @@
         <!-- BEGIN PAGE BODY -->
         <div class="page-body">
             <div class="container-xl">
-                <div layout:fragment="content">
-                    Should be replaced by the content of the page
-                </div>
+                {% block content %}{% endblock %}
             </div>
         </div>
         <!-- END PAGE BODY -->
         <!--  BEGIN FOOTER  -->
-        <div th:replace="~{fragments/footer :: footer}"></div>
+        {% include "fragments/footer.html" %}
         <!--  END FOOTER  -->
     </div>
 </div>
 
 <!-- Tabler JS from CDN -->
-<script th:src="@{https://cdn.jsdelivr.net/npm/@tabler/core@1.2.0/dist/js/tabler.min.js}"></script>
-<script th:src="@{https://unpkg.com/htmx.org@2.0.4}"></script>
-<script th:src="@{/public/js/kuvasz.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.2.0/dist/js/tabler.min.js"></script>
+<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<script src="/public/js/kuvasz.js"></script>
 
 <!-- Custom JS -->
-<div layout:fragment="customScripts"></div>
+{% block customScripts %}{% endblock %}
 </body>
 </html>

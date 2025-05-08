@@ -1,19 +1,12 @@
-<!DOCTYPE html>
-<html
-        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-        layout:decorate="~{layout}">
-<head>
-    <title>Dashboard</title>
-</head>
-<body>
-<div layout:fragment="page-title">
-    <div class="page-pretitle">Overview</div>
-    <h2 class="page-title">Dashboard</h2>
-</div>
+{% extends "layout.html" %}
 
-<div layout:fragment="content">
-    <h3>Coming soon...</h3>
-</div>
+{% block title %}Dashboard{% endblock %}
 
-</body>
-</html>
+{% block pageTitle %}
+<div class="page-pretitle">Overview</div>
+<h2 class="page-title">Dashboard</h2>
+{% endblock %}
+
+{% block content %}
+<h3>Coming soon...</h3>
+{% endblock %}

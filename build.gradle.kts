@@ -67,10 +67,8 @@ dependencies {
     implementation(mn.micronaut.rxjava3)
     implementation(mn.micronaut.retry)
     implementation(mn.micronaut.security.jwt)
-    implementation(mn.micronaut.views.thymeleaf)
+    implementation(mn.micronaut.views.pebble)
     implementation(mn.micronaut.views.htmx)
-    implementation("org.thymeleaf.extras:thymeleaf-extras-java8time:3.0.4.RELEASE")
-    implementation("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0")
 
     // OpenAPI
     kapt(mn.micronaut.openapi)

@@ -1,22 +1,16 @@
-<!DOCTYPE html>
-<html
-        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-        layout:decorate="~{layout}">
-<head>
-    <title>Monitors</title>
-</head>
-<body>
-<div layout:fragment="page-title">
-    <div class="page-pretitle">Overview</div>
-    <h2 class="page-title">Monitors</h2>
-</div>
+{% extends "layout.html" %}
 
-<div layout:fragment="content">
-    <div id="dashboard-monitor-table"
-         hx-get="/fragments/monitor-table"
-         hx-trigger="load, every 5s">
-        <div class="spinner-grow htmx-indicator" role="status"></div>
-    </div>
+{% block title %}Monitors{% endblock %}
+
+{% block pageTitle %}
+<div class="page-pretitle">Overview</div>
+<h2 class="page-title">Monitors</h2>
+{% endblock %}
+
+{% block content %}
+<div id="dashboard-monitor-table"
+     hx-get="/fragments/monitor-table"
+     hx-trigger="load, every 5s">
+    <div class="spinner-grow htmx-indicator" role="status"></div>
 </div>
-</body>
-</html>
+{% endblock %}
