@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.SchedulingError
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
+import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import io.micronaut.context.annotation.Context
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -59,7 +60,7 @@ class CheckScheduler(
 
     private fun logCreated(monitor: MonitorRecord, checkType: CheckType, task: ScheduledFuture<*>) {
         val estimatedNextCheckEpoch = System.currentTimeMillis() + task.getDelay(TimeUnit.MILLISECONDS)
-        val estimatedNextCheck = Instant.ofEpochMilli(estimatedNextCheckEpoch).atOffset(ZoneOffset.UTC)
+        val estimatedNextCheck = Instant.ofEpochMilli(estimatedNextCheckEpoch).toOffsetDateTime()
         logger.info(
             "${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully. " +
                 "Next check will happen around: $estimatedNextCheck"
