@@ -34,4 +34,4 @@ class WebSecuredInterceptor(
     }
 }
 
-class WebAuthError : RuntimeException()
+class WebAuthError : Exception()

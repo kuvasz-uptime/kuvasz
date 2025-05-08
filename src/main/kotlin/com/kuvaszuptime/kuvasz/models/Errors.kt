@@ -7,23 +7,37 @@ data class ServiceError(
     val message: String? = "Something bad happened :("
 )
 
-class MonitorNotFoundError(
+class MonitorNotFoundException(
     private val monitorId: Long,
     override val message: String? = "There is no monitor with ID: $monitorId"
 ) : Exception()
 
-open class PersistenceError(
+open class PersistenceException(
     override val message: String? = "Something bad happened in the database :("
 ) : Exception()
 
-open class DuplicationError(
+open class DuplicationException(
     override val message: String? = "The given resource already exists"
-) : PersistenceError()
+) : PersistenceException()
 
-class MonitorDuplicatedError(
+class MonitorDuplicatedException(
     override val message: String? = "There is already a monitor with the given name"
-) : DuplicationError()
+) : DuplicationException()
 
-class SchedulingError(
+class SchedulingException(
     override val message: String? = "Scheduling checks for the monitor did not succeed"
 ) : Exception()
+
+sealed class UptimeCheckException : Exception()
+
+class RedirectLoopException(
+    override val message: String? = "Redirect loop detected"
+) : UptimeCheckException()
+
+class InvalidRedirectionException(
+    override val message: String? = "Invalid redirection without a Location header"
+) : UptimeCheckException()
+
+class UnknownUptimeCheckException(
+    override val message: String?,
+) : UptimeCheckException()

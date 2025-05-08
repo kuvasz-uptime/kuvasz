@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.DuplicationError
-import com.kuvaszuptime.kuvasz.models.PersistenceError
-import com.kuvaszuptime.kuvasz.models.SchedulingError
+import com.kuvaszuptime.kuvasz.models.DuplicationException
+import com.kuvaszuptime.kuvasz.models.PersistenceException
+import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
@@ -77,7 +77,7 @@ class GlobalErrorHandlerTest(
             )
             val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
 
-            every { crudServiceMock.createMonitor(any()) } throws PersistenceError("This is an error message")
+            every { crudServiceMock.createMonitor(any()) } throws PersistenceException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
@@ -103,7 +103,7 @@ class GlobalErrorHandlerTest(
             )
             val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
 
-            every { crudServiceMock.createMonitor(any()) } throws SchedulingError("This is an error message")
+            every { crudServiceMock.createMonitor(any()) } throws SchedulingException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
@@ -127,7 +127,7 @@ class GlobalErrorHandlerTest(
             )
             val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
 
-            every { crudServiceMock.createMonitor(any()) } throws DuplicationError("This is an error message")
+            every { crudServiceMock.createMonitor(any()) } throws DuplicationException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
