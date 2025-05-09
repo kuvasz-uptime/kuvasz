@@ -4,7 +4,7 @@ If you are interested in contributing to the project and are looking for issues 
 
 ## JDK Setup
 
-Kuvasz currently requires JDK 17
+Kuvasz currently requires JDK 21
 
 ## IDE Setup
 

@@ -18,13 +18,14 @@ import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.QOM.ForeignKeyRule;
 
 
 /**
  * A class modelling foreign key relationships and constraints of tables in
  * kuvasz.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Keys {
 
     // -------------------------------------------------------------------------
@@ -43,7 +44,7 @@ public class Keys {
     // FOREIGN KEY definitions
     // -------------------------------------------------------------------------
 
-    public static final ForeignKey<LatencyLogRecord, MonitorRecord> LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY = Internal.createForeignKey(LatencyLog.LATENCY_LOG, DSL.name("latency_log_monitor_id_fkey"), new TableField[] { LatencyLog.LATENCY_LOG.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { Monitor.MONITOR.ID }, true);
-    public static final ForeignKey<SslEventRecord, MonitorRecord> SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_monitor_id_fkey"), new TableField[] { SslEvent.SSL_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { Monitor.MONITOR.ID }, true);
-    public static final ForeignKey<UptimeEventRecord, MonitorRecord> UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(UptimeEvent.UPTIME_EVENT, DSL.name("uptime_event_monitor_id_fkey"), new TableField[] { UptimeEvent.UPTIME_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { Monitor.MONITOR.ID }, true);
+    public static final ForeignKey<LatencyLogRecord, MonitorRecord> LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY = Internal.createForeignKey(LatencyLog.LATENCY_LOG, DSL.name("latency_log_monitor_id_fkey"), new TableField[] { LatencyLog.LATENCY_LOG.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { Monitor.MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
+    public static final ForeignKey<SslEventRecord, MonitorRecord> SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_monitor_id_fkey"), new TableField[] { SslEvent.SSL_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { Monitor.MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
+    public static final ForeignKey<UptimeEventRecord, MonitorRecord> UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(UptimeEvent.UPTIME_EVENT, DSL.name("uptime_event_monitor_id_fkey"), new TableField[] { UptimeEvent.UPTIME_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { Monitor.MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
 }
