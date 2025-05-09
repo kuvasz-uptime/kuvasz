@@ -13,7 +13,7 @@ import com.kuvaszuptime.kuvasz.tables.UptimeEvent;
 /**
  * Convenience access to all tables in kuvasz.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
 
     /**

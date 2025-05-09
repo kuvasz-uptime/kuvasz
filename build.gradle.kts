@@ -34,7 +34,11 @@ plugins {
 val gitVersion: groovy.lang.Closure<String> by extra
 version = gitVersion()
 group = "com.kuvaszuptime.kuvasz"
-val javaTargetVersion = "17"
+val javaTargetVersion = "21"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+}
 
 repositories {
     gradlePluginPortal()
@@ -60,6 +64,8 @@ val jooqPluginVersion: String by project
 val simpleJavaMailVersion = "8.12.6"
 val detektVersion: String by project
 val jooqVersion: String by project
+val kotlinVersion: String by project
+val kotlinCoroutinesVersion: String by project
 
 dependencies {
 
@@ -95,11 +101,11 @@ dependencies {
     implementation("nu.studer:gradle-jooq-plugin:$jooqPluginVersion")
 
     // Kotlin
-    implementation(mn.kotlin.stdlib.jdk8)
-    implementation(mn.kotlin.reflect)
-    implementation(mn.kotlinx.coroutines.core)
-    implementation(mn.kotlinx.coroutines.reactive)
     implementation(mn.micronaut.kotlin.extension.functions)
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinCoroutinesVersion")
     implementation("io.arrow-kt:arrow-core-data:0.12.1")
 
     // Mailer
@@ -107,7 +113,7 @@ dependencies {
     implementation("org.simplejavamail:simple-java-mail:$simpleJavaMailVersion")
 
     // Testing
-    testImplementation(mn.mockk)
+    testImplementation("io.mockk:mockk:1.14.2")
     testImplementation(mn.testcontainers.postgres)
     testImplementation("org.mock-server:mockserver-netty:5.15.0")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
@@ -118,7 +124,7 @@ application {
 }
 
 jacoco {
-    toolVersion = "0.8.8"
+    toolVersion = "0.8.13"
 }
 
 tasks.jacocoTestReport {

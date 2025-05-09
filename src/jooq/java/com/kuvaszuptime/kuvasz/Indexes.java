@@ -17,7 +17,7 @@ import org.jooq.impl.Internal;
 /**
  * A class modelling indexes of tables in kuvasz.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Indexes {
 
     // -------------------------------------------------------------------------
