@@ -159,4 +159,6 @@ class MonitorCrudService(
 
     private fun MonitorRecord?.orThrowNotFound(monitorId: Long): MonitorRecord =
         this ?: throw MonitorNotFoundException(monitorId)
+
+    fun getMonitorsExport(): List<MonitorRecord> = monitorRepository.fetchAll()
 }

@@ -19,19 +19,8 @@ import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL.`when`
 
 @Singleton
+@Suppress("TooManyFunctions")
 class MonitorRepository(private val dslContext: DSLContext) {
-
-    private val detailsGroupByFields = listOf(
-        MONITOR.ID,
-        UPTIME_EVENT.STATUS,
-        UPTIME_EVENT.STARTED_AT,
-        UPTIME_EVENT.UPDATED_AT,
-        UPTIME_EVENT.ERROR,
-        SSL_EVENT.STATUS,
-        SSL_EVENT.STARTED_AT,
-        SSL_EVENT.UPDATED_AT,
-        SSL_EVENT.ERROR
-    )
 
     fun findById(monitorId: Long, ctx: DSLContext = dslContext): MonitorRecord? = ctx
         .selectFrom(MONITOR)
@@ -42,6 +31,10 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .selectFrom(MONITOR)
         .where(MONITOR.NAME.eq(name))
         .fetchOne()
+
+    fun fetchAll(): List<MonitorRecord> = dslContext
+        .selectFrom(MONITOR)
+        .fetch()
 
     fun fetchByEnabled(enabled: Boolean): List<MonitorRecord> = dslContext
         .selectFrom(MONITOR)
@@ -61,13 +54,11 @@ class MonitorRepository(private val dslContext: DSLContext) {
                     where(MONITOR.ENABLED.isTrue)
                 }
             }
-            .groupBy(detailsGroupByFields)
             .fetchInto(MonitorDetailsDto::class.java)
 
     fun getMonitorWithDetails(monitorId: Long): MonitorDetailsDto? =
         monitorDetailsSelect()
             .where(MONITOR.ID.eq(monitorId))
-            .groupBy(detailsGroupByFields)
             .fetchOneInto(MonitorDetailsDto::class.java)
 
     fun returningInsert(monitor: MonitorRecord): Either<PersistenceException, MonitorRecord> =
@@ -141,6 +132,9 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
         .leftJoin(SSL_EVENT).on(MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
 
+    /**
+     * Converts a DataAccessException to a PersistenceException by matching duplication errors.
+     */
     private fun DataAccessException.handle(): Either<PersistenceException, Nothing> {
         val persistenceError = toPersistenceError()
         return Either.Left(

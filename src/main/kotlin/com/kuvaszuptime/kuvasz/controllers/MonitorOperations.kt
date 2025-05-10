@@ -15,6 +15,7 @@ import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
+import io.micronaut.http.server.types.files.SystemFile
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 
@@ -68,4 +69,8 @@ interface MonitorOperations {
         @Parameter(required = false)
         latencyLogLimit: Int?,
     ): MonitorStatsDto
+
+    @Operation(summary = "Returns the export of all monitors in YAML format")
+    @Get("/export")
+    fun getMonitorsExport(): SystemFile
 }

@@ -20,42 +20,51 @@ import jakarta.validation.ValidationException
 class GlobalErrorHandler {
 
     @Error(global = true)
-    fun error(request: HttpRequest<*>, ex: MonitorNotFoundException): HttpResponse<ServiceError> {
+    fun notFoundExceptionHandler(request: HttpRequest<*>, ex: MonitorNotFoundException): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.notFound(error)
     }
 
     @Error(global = true)
-    fun error(request: HttpRequest<*>, ex: DuplicationException): HttpResponse<ServiceError> {
+    fun duplicationExceptionHandler(request: HttpRequest<*>, ex: DuplicationException): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.status<ServiceError>(HttpStatus.CONFLICT).body(error)
     }
 
     @Error(global = true)
-    fun error(request: HttpRequest<*>, ex: ValidationException): HttpResponse<ServiceError> =
+    fun validationExceptionHandler(request: HttpRequest<*>, ex: ValidationException): HttpResponse<ServiceError> =
         HttpResponse.badRequest(ServiceError(ex.message))
 
     @Error(global = true)
-    fun error(request: HttpRequest<*>, ex: ConversionErrorException): HttpResponse<ServiceError> {
+    fun conversionExceptionHandler(request: HttpRequest<*>, ex: ConversionErrorException): HttpResponse<ServiceError> {
         val message = "Failed to convert argument: ${ex.argument}"
         return HttpResponse.badRequest(ServiceError(message))
     }
 
     @Error(global = true)
-    fun error(request: HttpRequest<*>, ex: JsonParseException): HttpResponse<ServiceError> {
+    fun jsonParseExceptionHandler(request: HttpRequest<*>, ex: JsonParseException): HttpResponse<ServiceError> {
         val message = "Can't parse the JSON in the payload"
         return HttpResponse.badRequest(ServiceError(message))
     }
 
     @Error(global = true)
-    fun error(request: HttpRequest<*>, ex: PersistenceException): HttpResponse<ServiceError> {
+    fun persistenceExceptionHandler(request: HttpRequest<*>, ex: PersistenceException): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.status<ServiceError>(HttpStatus.INTERNAL_SERVER_ERROR).body(error)
     }
 
     @Error(global = true)
-    fun error(request: HttpRequest<*>, ex: SchedulingException): HttpResponse<ServiceError> {
+    fun schedulingErrorHandler(request: HttpRequest<*>, ex: SchedulingException): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.status<ServiceError>(HttpStatus.INTERNAL_SERVER_ERROR).body(error)
+    }
+
+    @Error(global = true)
+    fun readOnlyMonitorExceptionHandler(
+        request: HttpRequest<*>,
+        ex: ReadOnlyMonitorException
+    ): HttpResponse<ServiceError> {
+        val error = ServiceError(ex.message)
+        return HttpResponse.status<ServiceError>(HttpStatus.METHOD_NOT_ALLOWED).body(error)
     }
 }

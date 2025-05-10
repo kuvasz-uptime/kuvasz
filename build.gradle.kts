@@ -72,7 +72,8 @@ dependencies {
     // Micronaut
     kapt(mn.micronaut.security.annotations)
     kapt(mn.micronaut.validation.processor)
-    runtimeOnly(mn.jackson.module.kotlin)
+    implementation(mn.jackson.module.kotlin)
+    implementation(mn.jackson.dataformat.yaml)
     implementation(mn.micronaut.kotlin.runtime)
     implementation(mn.micronaut.jackson.databind)
     runtimeOnly(mn.snakeyaml)
@@ -173,7 +174,6 @@ tasks.withType<Detekt>().configureEach {
 }
 
 tasks.withType<Test> {
-    systemProperty("micronaut.environments", "test")
     finalizedBy("jacocoTestReport")
 }
 

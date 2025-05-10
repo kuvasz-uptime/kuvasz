@@ -8,10 +8,15 @@ import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
 
 // TODO validate separately
-@EachProperty("monitors", list = true)
+@EachProperty(MonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
 @Suppress("ComplexInterface")
 interface MonitorConfig : MonitorCreatorLike {
+
+    companion object {
+        const val CONFIG_PREFIX = "monitors"
+    }
+
     override val name: String
     override val url: String
     override val uptimeCheckInterval: Int
