@@ -7,7 +7,6 @@ import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
 
-// TODO validate separately
 @EachProperty(MonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
 @Suppress("ComplexInterface")

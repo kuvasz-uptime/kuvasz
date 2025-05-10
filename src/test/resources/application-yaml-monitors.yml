@@ -1,4 +1,3 @@
----
 monitors:
   - name: test1
     url: http://example.com

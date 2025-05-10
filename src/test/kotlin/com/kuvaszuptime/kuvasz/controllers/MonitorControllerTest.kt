@@ -917,7 +917,7 @@ class MonitorControllerTest(
                         this shouldContain Regex("filename=\"kuvasz-monitors-export-\\d+\\.yml\"")
                     }
                     response.headers[HttpHeaders.CONTENT_TYPE] shouldBe MediaType.APPLICATION_YAML
-                    
+
                     val exportedMonitorsRaw = mapper.readTree(responseBody)["monitors"].shouldNotBeNull()
                     val parsedMonitors =
                         mapper.convertValue<List<MonitorExportDto>>(exportedMonitorsRaw).shouldNotBeEmpty()
