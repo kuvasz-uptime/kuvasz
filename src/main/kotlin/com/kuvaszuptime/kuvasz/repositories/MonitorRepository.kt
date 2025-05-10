@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import io.micronaut.core.util.StringUtils
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL.`when`
 
@@ -46,12 +47,15 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .where(MONITOR.ID.eq(monitorId))
         .execute()
 
-    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
+    @Suppress("IgnoredReturnValue")
+    fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
                 if (enabledOnly) {
-                    @Suppress("IgnoredReturnValue")
                     where(MONITOR.ENABLED.isTrue)
+                }
+                if (sortedBy != null) {
+                    orderBy(sortedBy)
                 }
             }
             .fetchInto(MonitorDetailsDto::class.java)

@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.security.ui.UnauthorizedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthError
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
+import com.kuvaszuptime.kuvasz.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.util.isHtmxRequest
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.http.HttpRequest
@@ -59,7 +60,7 @@ class WebUIController(
     fun monitorTable() = ModelAndView(
         "fragments/monitor-table",
         mutableMapOf(
-            "monitors" to monitorCrudService.getMonitorsWithDetails(enabledOnly = false)
+            "monitors" to monitorCrudService.getMonitorsWithDetails(enabledOnly = false, sortedBy = MONITOR.NAME.asc())
         )
     )
 

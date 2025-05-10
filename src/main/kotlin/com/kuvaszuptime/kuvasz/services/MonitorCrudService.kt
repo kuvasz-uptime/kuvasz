@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 
 @Singleton
@@ -30,8 +31,8 @@ class MonitorCrudService(
     fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
         monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
 
-    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabledOnly)
+    fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(enabledOnly, sortedBy)
 
     fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord =
         monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord()).fold(
