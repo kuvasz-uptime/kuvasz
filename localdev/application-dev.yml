@@ -34,8 +34,8 @@ smtp-config:
 ---
 logger:
   levels:
-    #    io.micronaut.http.client: TRACE
-    org.jooq: DEBUG
+#    io.micronaut.http.client: TRACE
+#    org.jooq: DEBUG
 ---
 monitors:
   - name: test1

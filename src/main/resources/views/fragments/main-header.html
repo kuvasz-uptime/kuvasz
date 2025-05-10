@@ -13,14 +13,15 @@
         </div>
         <!-- END NAVBAR LOGO -->
         <div class="navbar-nav flex-row order-md-last">
-            <div class="nav-item d-none d-md-flex me-3">
-                <div class="btn-list">
-                    <a href="https://github.com/kuvasz-uptime/kuvasz" class="btn btn-icon" target="_blank"
-                       rel="noreferrer">
-                        {% include "icons/brand-github.html" %}
-                    </a>
+            {% if isReadOnlyMode %}
+            <div class="nav-item d-md-flex me-3">
+                <div class="btn btn-icon px-0" data-bs-toggle="tooltip"
+                     data-bs-placement="bottom"
+                     title="Kuvasz is in read-only mode, because the monitors were configured via YAML. You can only view the monitors, but not edit or delete them.">
+                    {% include "icons/lock-cog.html" %}
                 </div>
             </div>
+            {% endif %}
             <div class="nav-item d-md-flex">
                 <a href="#" class="nav-link px-0 hide-theme-dark" aria-label="Enable dark mode"
                    onclick="setTheme('dark')">
