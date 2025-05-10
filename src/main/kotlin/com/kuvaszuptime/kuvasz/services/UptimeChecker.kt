@@ -59,7 +59,7 @@ class UptimeChecker(
         doAfter: ((monitor: MonitorRecord) -> Unit)? = null,
     ) {
         if (uriOverride == null) {
-            logger.info("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
+            logger.debug("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
         }
 
         @Suppress("TooGenericExceptionCaught")
