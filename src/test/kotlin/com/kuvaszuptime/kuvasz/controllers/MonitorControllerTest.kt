@@ -1,5 +1,9 @@
 package com.kuvaszuptime.kuvasz.controllers
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
+import com.fasterxml.jackson.module.kotlin.convertValue
+import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.enums.SslStatus
@@ -8,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
@@ -30,8 +35,10 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -95,7 +102,7 @@ class MonitorControllerTest(
 
             `when`("enabledOnly parameter is set to true") {
                 createMonitor(monitorRepository, enabled = false, monitorName = "name1")
-                val enabledMonitor = createMonitor(monitorRepository, id = 11111, monitorName = "name2")
+                val enabledMonitor = createMonitor(monitorRepository, monitorName = "name2")
                 val response = monitorClient.getMonitorsWithDetails(enabledOnly = true)
 
                 then("it should not return disabled monitor") {
@@ -771,7 +778,7 @@ class MonitorControllerTest(
             `when`("there is a monitor with the given ID in the database with uptime events") {
                 val monitor = createMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
+                    createMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
                     dslContext,
@@ -827,7 +834,7 @@ class MonitorControllerTest(
             `when`("there is a monitor with the given ID in the database with SSL events") {
                 val monitor = createMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
+                    createMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createSSLEventRecord(
                     dslContext,
@@ -875,6 +882,83 @@ class MonitorControllerTest(
                 }
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
+
+        given("MonitorController's getMonitorsExport() endpoint") {
+            val mapper = YAMLMapper()
+                .registerModules(kotlinModule())
+                .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+
+            `when`("there are monitors in the database") {
+                val monitor = createMonitor(
+                    monitorRepository,
+                    pagerdutyIntegrationKey = "something",
+                    monitorName = "irrelevant",
+                )
+                val monitor2 = createMonitor(
+                    monitorRepository,
+                    enabled = false,
+                    uptimeCheckInterval = 23234,
+                    monitorName = "irrelevant2",
+                )
+                val request = HttpRequest.GET<Any>("/api/v1/monitors/export").accept(MediaType.APPLICATION_YAML)
+
+                then("it should export them in YAML format") {
+                    val response = client.exchange(request).awaitFirst()
+                    val responseBody = response.getBody(ByteArray::class.java).get()
+
+                    response.status shouldBe HttpStatus.OK
+                    with(response.headers[HttpHeaders.CONTENT_DISPOSITION]) {
+                        this shouldContain "attachment;"
+                        this shouldContain Regex("filename=\"kuvasz-monitors-export-\\d+\\.yml\"")
+                    }
+                    response.headers[HttpHeaders.CONTENT_TYPE] shouldBe MediaType.APPLICATION_YAML
+
+                    val exportedMonitorsRaw = mapper.readTree(responseBody)["monitors"].shouldNotBeNull()
+                    val parsedMonitors =
+                        mapper.convertValue<List<MonitorExportDto>>(exportedMonitorsRaw).shouldNotBeEmpty()
+
+                    parsedMonitors.size shouldBe 2
+                    parsedMonitors.forOne { firstMonitor ->
+                        firstMonitor.name shouldBe monitor.name
+                        firstMonitor.url shouldBe monitor.url
+                        firstMonitor.uptimeCheckInterval shouldBe monitor.uptimeCheckInterval
+                        firstMonitor.enabled shouldBe monitor.enabled
+                        firstMonitor.sslCheckEnabled shouldBe monitor.sslCheckEnabled
+                        firstMonitor.pagerdutyIntegrationKey shouldBe monitor.pagerdutyIntegrationKey
+                        firstMonitor.requestMethod shouldBe monitor.requestMethod
+                        firstMonitor.latencyHistoryEnabled shouldBe monitor.latencyHistoryEnabled
+                        firstMonitor.forceNoCache shouldBe monitor.forceNoCache
+                        firstMonitor.followRedirects shouldBe monitor.followRedirects
+                    }
+                    parsedMonitors.forOne { secondMonitor ->
+                        secondMonitor.name shouldBe monitor2.name
+                        secondMonitor.url shouldBe monitor2.url
+                        secondMonitor.uptimeCheckInterval shouldBe monitor2.uptimeCheckInterval
+                        secondMonitor.enabled shouldBe monitor2.enabled
+                        secondMonitor.sslCheckEnabled shouldBe monitor2.sslCheckEnabled
+                        secondMonitor.pagerdutyIntegrationKey shouldBe null
+                        secondMonitor.requestMethod shouldBe monitor2.requestMethod
+                        secondMonitor.latencyHistoryEnabled shouldBe monitor2.latencyHistoryEnabled
+                        secondMonitor.forceNoCache shouldBe monitor2.forceNoCache
+                        secondMonitor.followRedirects shouldBe monitor2.followRedirects
+                    }
+                }
+            }
+
+            `when`("there are no monitors in the database") {
+
+                val request = HttpRequest.GET<Any>("/api/v1/monitors/export").accept(MediaType.APPLICATION_YAML)
+
+                then("it should export an empty monitors list in YAML format") {
+                    val response = client.exchange(request).awaitFirst()
+                    val responseBody = response.getBody(ByteArray::class.java).get()
+
+                    response.status shouldBe HttpStatus.OK
+                    val exportedMonitorsRaw = mapper.readTree(responseBody)["monitors"].shouldNotBeNull()
+                    mapper.convertValue<List<MonitorExportDto>>(exportedMonitorsRaw).shouldBeEmpty()
                 }
             }
         }

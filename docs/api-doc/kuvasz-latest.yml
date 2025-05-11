@@ -58,6 +58,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+  /api/v1/monitors/export:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns the export of all monitors in YAML format
+      operationId: getMonitorsExport
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/x-yaml: {}
       security:
       - apiKey: []
   /api/v1/monitors/{monitorId}:
@@ -109,6 +129,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
     patch:
@@ -144,6 +171,13 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
           content:
             application/json:
               schema:
@@ -188,6 +222,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
     delete:
@@ -207,6 +248,13 @@ paths:
           description: Successful deletion
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
           content:
             application/json:
               schema:
@@ -398,26 +446,26 @@ components:
           format: int32
         enabled:
           type: boolean
-          nullable: true
+          default: true
         sslCheckEnabled:
           type: boolean
-          nullable: true
+          default: false
         pagerdutyIntegrationKey:
           type: string
           nullable: true
         requestMethod:
-          nullable: true
           allOf:
           - $ref: "#/components/schemas/HttpMethod"
+          default: GET
         latencyHistoryEnabled:
           type: boolean
-          nullable: true
+          default: true
         forceNoCache:
           type: boolean
-          nullable: true
+          default: true
         followRedirects:
           type: boolean
-          nullable: true
+          default: true
     MonitorDetailsDto:
       required:
       - createdAt
@@ -684,13 +732,6 @@ components:
       enum:
       - UP
       - DOWN
-    UserNamePasswordCredentials:
-      type: object
-      properties:
-        username:
-          type: string
-        password:
-          type: string
   securitySchemes:
     apiKey:
       type: apiKey

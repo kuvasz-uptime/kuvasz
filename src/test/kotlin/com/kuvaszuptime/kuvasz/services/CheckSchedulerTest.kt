@@ -50,7 +50,7 @@ class CheckSchedulerTest(
             }
 
             `when`("there is an enabled but unschedulable monitor in the database and initialize has been called") {
-                createMonitor(monitorRepository, id = 88888, uptimeCheckInterval = 0)
+                createMonitor(monitorRepository, uptimeCheckInterval = 0)
 
                 checkScheduler.initialize()
 
@@ -61,7 +61,7 @@ class CheckSchedulerTest(
             }
 
             `when`("there is a disabled monitor in the database and initialize has been called") {
-                createMonitor(monitorRepository, id = 11111, enabled = false)
+                createMonitor(monitorRepository, enabled = false)
 
                 checkScheduler.initialize()
 
@@ -87,9 +87,9 @@ class CheckSchedulerTest(
 
             `when`("it initializes the uptime checks") {
                 val monitor1 =
-                    createMonitor(monitorRepository, id = 22222, monitorName = "m1", uptimeCheckInterval = 1000)
+                    createMonitor(monitorRepository, monitorName = "m1", uptimeCheckInterval = 1000)
                 val monitor2 =
-                    createMonitor(monitorRepository, id = 33333, monitorName = "m2", uptimeCheckInterval = 30)
+                    createMonitor(monitorRepository, monitorName = "m2", uptimeCheckInterval = 30)
                 // Make sure that the set-up check won't be rescheduled because of a too fast check invocation
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(any(), any(), any(), any()) } coAnswers { delay(10000) }

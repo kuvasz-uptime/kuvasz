@@ -1,0 +1,24 @@
+monitors:
+  - name: test1
+    url: http://example.com
+    uptime-check-interval: 120
+    enabled: false
+    ssl-check-enabled: true
+    pagerduty-integration-key: 1234567890abcdef
+    request-method: HEAD
+    latency-history-enabled: false
+    force-no-cache: false
+    follow-redirects: false
+  - name: test2
+    url: http://example.org
+    uptime-check-interval: 60
+  - name: test3
+    url: http://example.net
+    uptime-check-interval: 120
+    enabled: true
+    ssl-check-enabled: true
+    pagerduty-integration-key: null
+    request-method: GET
+    latency-history-enabled: true
+    force-no-cache: false
+    follow-redirects: true

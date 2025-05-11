@@ -1,0 +1,4 @@
+monitors:
+  - name: irrelevant
+    url: 2hjk32
+    uptime-check-interval: 120

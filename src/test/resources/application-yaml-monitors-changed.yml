@@ -1,0 +1,16 @@
+monitors:
+  - name: test1
+    url: http://example.com
+    uptime-check-interval: 120
+    enabled: true
+    ssl-check-enabled: true
+    request-method: HEAD
+    latency-history-enabled: false
+    force-no-cache: false
+    follow-redirects: false
+  - name: test2
+    url: http://example.org
+    uptime-check-interval: 60
+  - name: test4
+    url: http://example.io
+    uptime-check-interval: 300

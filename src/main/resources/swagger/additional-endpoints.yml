@@ -48,13 +48,6 @@ paths:
                   pagerduty-event-handler.enabled: true
 components:
   schemas:
-    UserNamePasswordCredentials:
-      type: object
-      properties:
-        username:
-          type: string
-        password:
-          type: string
     HealthResult:
       type: object
       properties:

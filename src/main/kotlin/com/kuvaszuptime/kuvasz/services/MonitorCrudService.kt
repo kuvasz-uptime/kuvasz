@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
+import com.kuvaszuptime.kuvasz.models.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 
 @Singleton
@@ -29,8 +31,8 @@ class MonitorCrudService(
     fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
         monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
 
-    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabledOnly)
+    fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(enabledOnly, sortedBy)
 
     fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord =
         monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord()).fold(
@@ -72,7 +74,8 @@ class MonitorCrudService(
     private fun prepareUpdatedRecord(monitorUpdateDto: MonitorUpdateDto, existingMonitor: MonitorRecord) =
         MonitorRecord().apply {
             id = existingMonitor.id
-            name = monitorUpdateDto.name ?: existingMonitor.name
+            // Because using @NotBlank on a nullable property doesn't work, need to sanitize the name here
+            name = monitorUpdateDto.name?.ifBlank { null } ?: existingMonitor.name
             url = monitorUpdateDto.url ?: existingMonitor.url
             uptimeCheckInterval =
                 monitorUpdateDto.uptimeCheckInterval ?: existingMonitor.uptimeCheckInterval
@@ -158,4 +161,6 @@ class MonitorCrudService(
 
     private fun MonitorRecord?.orThrowNotFound(monitorId: Long): MonitorRecord =
         this ?: throw MonitorNotFoundException(monitorId)
+
+    fun getMonitorsExport(): List<MonitorRecord> = monitorRepository.fetchAll()
 }

@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
+import com.kuvaszuptime.kuvasz.Keys.UNIQUE_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
@@ -15,23 +16,13 @@ import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import io.micronaut.core.util.StringUtils
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL.`when`
 
 @Singleton
+@Suppress("TooManyFunctions")
 class MonitorRepository(private val dslContext: DSLContext) {
-
-    private val detailsGroupByFields = listOf(
-        MONITOR.ID,
-        UPTIME_EVENT.STATUS,
-        UPTIME_EVENT.STARTED_AT,
-        UPTIME_EVENT.UPDATED_AT,
-        UPTIME_EVENT.ERROR,
-        SSL_EVENT.STATUS,
-        SSL_EVENT.STARTED_AT,
-        SSL_EVENT.UPDATED_AT,
-        SSL_EVENT.ERROR
-    )
 
     fun findById(monitorId: Long, ctx: DSLContext = dslContext): MonitorRecord? = ctx
         .selectFrom(MONITOR)
@@ -43,6 +34,10 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .where(MONITOR.NAME.eq(name))
         .fetchOne()
 
+    fun fetchAll(): List<MonitorRecord> = dslContext
+        .selectFrom(MONITOR)
+        .fetch()
+
     fun fetchByEnabled(enabled: Boolean): List<MonitorRecord> = dslContext
         .selectFrom(MONITOR)
         .where(MONITOR.ENABLED.eq(enabled))
@@ -53,21 +48,22 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .where(MONITOR.ID.eq(monitorId))
         .execute()
 
-    fun getMonitorsWithDetails(enabledOnly: Boolean): List<MonitorDetailsDto> =
+    @Suppress("IgnoredReturnValue")
+    fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
                 if (enabledOnly) {
-                    @Suppress("IgnoredReturnValue")
                     where(MONITOR.ENABLED.isTrue)
                 }
+                if (sortedBy != null) {
+                    orderBy(sortedBy)
+                }
             }
-            .groupBy(detailsGroupByFields)
             .fetchInto(MonitorDetailsDto::class.java)
 
     fun getMonitorWithDetails(monitorId: Long): MonitorDetailsDto? =
         monitorDetailsSelect()
             .where(MONITOR.ID.eq(monitorId))
-            .groupBy(detailsGroupByFields)
             .fetchOneInto(MonitorDetailsDto::class.java)
 
     fun returningInsert(monitor: MonitorRecord): Either<PersistenceException, MonitorRecord> =
@@ -110,6 +106,31 @@ class MonitorRepository(private val dslContext: DSLContext) {
             e.handle()
         }
 
+    /**
+     * Inserts a new monitor or updates an existing one if the name already exists.
+     */
+    fun upsert(monitor: MonitorRecord): MonitorRecord {
+        return dslContext.transactionResult { config ->
+            val ctx = config.dsl()
+            ctx.insertInto(MONITOR)
+                .set(monitor)
+                .onConflictOnConstraint(UNIQUE_MONITOR_NAME)
+                .doUpdate()
+                .setNonKeyToExcluded()
+                .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
+                .returning(MONITOR.asterisk())
+                .fetchOneOrThrow()
+        }
+    }
+
+    /**
+     * Deletes all monitors except the ones with the given IDs.
+     */
+    fun deleteAllExcept(ignoredIds: List<Long>): Int = dslContext
+        .deleteFrom(MONITOR)
+        .where(MONITOR.ID.notIn(ignoredIds))
+        .execute()
+
     private fun monitorDetailsSelect() = dslContext
         .select(
             MONITOR.ID.`as`(MonitorDetailsDto::id.name),
@@ -141,6 +162,9 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
         .leftJoin(SSL_EVENT).on(MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
 
+    /**
+     * Converts a DataAccessException to a PersistenceException by matching duplication errors.
+     */
     private fun DataAccessException.handle(): Either<PersistenceException, Nothing> {
         val persistenceError = toPersistenceError()
         return Either.Left(

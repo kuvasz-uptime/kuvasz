@@ -3,8 +3,26 @@
 {% block title %}Monitors{% endblock %}
 
 {% block pageTitle %}
-<div class="page-pretitle">Overview</div>
-<h2 class="page-title">Monitors</h2>
+<div class="row align-items-center">
+    <div class="col">
+        <div class="page-pretitle">Overview</div>
+        <h2 class="page-title">Monitors</h2>
+    </div>
+    <div class="col-auto ms-auto">
+        <div class="btn-list">
+            <div class="dropdown">
+                <a href="#" class="btn dropdown-toggle" data-bs-toggle="dropdown">
+                    {% include "icons/settings.html" %}
+                </a>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="/api/v1/monitors/export" download>
+                        {% include "icons/download.html" %}
+                        Download backup as YAML</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block content %}
