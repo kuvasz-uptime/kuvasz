@@ -18,7 +18,6 @@ import java.time.OffsetDateTime
 @Suppress("LongParameterList")
 fun createMonitor(
     repository: MonitorRepository,
-    id: Long = 99999,
     enabled: Boolean = true,
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
@@ -31,7 +30,6 @@ fun createMonitor(
     followRedirects: Boolean = true,
 ): MonitorRecord {
     val monitor = MonitorRecord()
-        .setId(id)
         .setName(monitorName)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setUrl(url)

@@ -102,7 +102,7 @@ class MonitorControllerTest(
 
             `when`("enabledOnly parameter is set to true") {
                 createMonitor(monitorRepository, enabled = false, monitorName = "name1")
-                val enabledMonitor = createMonitor(monitorRepository, id = 11111, monitorName = "name2")
+                val enabledMonitor = createMonitor(monitorRepository, monitorName = "name2")
                 val response = monitorClient.getMonitorsWithDetails(enabledOnly = true)
 
                 then("it should not return disabled monitor") {
@@ -778,7 +778,7 @@ class MonitorControllerTest(
             `when`("there is a monitor with the given ID in the database with uptime events") {
                 val monitor = createMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
+                    createMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
                     dslContext,
@@ -834,7 +834,7 @@ class MonitorControllerTest(
             `when`("there is a monitor with the given ID in the database with SSL events") {
                 val monitor = createMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, id = monitor.id + 1, monitorName = "another_monitor")
+                    createMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createSSLEventRecord(
                     dslContext,
@@ -894,13 +894,11 @@ class MonitorControllerTest(
             `when`("there are monitors in the database") {
                 val monitor = createMonitor(
                     monitorRepository,
-                    id = 123,
                     pagerdutyIntegrationKey = "something",
                     monitorName = "irrelevant",
                 )
                 val monitor2 = createMonitor(
                     monitorRepository,
-                    id = 2312,
                     enabled = false,
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
