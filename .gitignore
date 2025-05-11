@@ -13,3 +13,4 @@ out/
 .classpath
 tmp
 .kotlin
+.tool-versions

@@ -203,7 +203,7 @@ tasks.withType<ShadowJar> {
 
 jib {
     from {
-        image = "bellsoft/liberica-runtime-container:jre-17-cds-slim-musl"
+        image = "bellsoft/liberica-runtime-container:jre-21-cds-slim-musl"
         platforms {
             platform {
                 os = "linux"
