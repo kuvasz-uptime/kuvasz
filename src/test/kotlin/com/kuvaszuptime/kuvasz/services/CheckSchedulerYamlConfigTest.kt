@@ -36,16 +36,6 @@ class CheckSchedulerYamlConfigTest : StringSpec({
     val monitorsAfterTheFirstStep = mutableListOf<MonitorRecord>()
     val monitorsAfterTheSecondStep = mutableListOf<MonitorRecord>()
 
-    /**
-     * Executing one-off database operations in a separate app context to be able to do things against the DB
-     * independently of the running application
-     */
-    fun runWithDb(block: DSLContext.() -> Unit) {
-        val ephemeralAppContext = ApplicationContext.run()
-        ephemeralAppContext.getBean<DSLContext>().block()
-        ephemeralAppContext.stop()
-    }
-
     afterTest {
         // Stopping the app context after each test, so we can practically simulate the app restart
         appContext?.stop()
@@ -55,7 +45,9 @@ class CheckSchedulerYamlConfigTest : StringSpec({
     afterSpec {
         // Doing a final manual cleanup after all tests to make sure that we don't leave any data behind that would
         // influence the consecutive tests
-        runWithDb { resetDatabase() }
+        val ephemeralAppContext = ApplicationContext.run()
+        ephemeralAppContext.getBean<DSLContext>().resetDatabase()
+        ephemeralAppContext.stop()
     }
 
     fun getCheckScheduler() = appContext?.getBean<CheckScheduler>().shouldNotBeNull()
