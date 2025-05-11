@@ -42,7 +42,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
         }
 
-        `when`("url is not a vadlid URL") {
+        `when`("url is not a valid URL") {
             val exception = shouldThrow<BeanInstantiationException> {
                 ApplicationContext.run("monitor-invalid-url")
             }

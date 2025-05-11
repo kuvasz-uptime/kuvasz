@@ -74,7 +74,8 @@ class MonitorCrudService(
     private fun prepareUpdatedRecord(monitorUpdateDto: MonitorUpdateDto, existingMonitor: MonitorRecord) =
         MonitorRecord().apply {
             id = existingMonitor.id
-            name = monitorUpdateDto.name ?: existingMonitor.name
+            // Because using @NotBlank on a nullable property doesn't work, need to sanitize the name here
+            name = monitorUpdateDto.name?.ifBlank { null } ?: existingMonitor.name
             url = monitorUpdateDto.url ?: existingMonitor.url
             uptimeCheckInterval =
                 monitorUpdateDto.uptimeCheckInterval ?: existingMonitor.uptimeCheckInterval
