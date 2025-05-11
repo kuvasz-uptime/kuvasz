@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
+import com.kuvaszuptime.kuvasz.Keys.UNIQUE_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
@@ -104,6 +105,31 @@ class MonitorRepository(private val dslContext: DSLContext) {
         } catch (e: DataAccessException) {
             e.handle()
         }
+
+    /**
+     * Inserts a new monitor or updates an existing one if the name already exists.
+     */
+    fun upsert(monitor: MonitorRecord): MonitorRecord {
+        return dslContext.transactionResult { config ->
+            val ctx = config.dsl()
+            ctx.insertInto(MONITOR)
+                .set(monitor)
+                .onConflictOnConstraint(UNIQUE_MONITOR_NAME)
+                .doUpdate()
+                .setNonKeyToExcluded()
+                .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
+                .returning(MONITOR.asterisk())
+                .fetchOneOrThrow()
+        }
+    }
+
+    /**
+     * Deletes all monitors except the ones with the given IDs.
+     */
+    fun deleteAllExcept(ignoredIds: List<Long>): Int = dslContext
+        .deleteFrom(MONITOR)
+        .where(MONITOR.ID.notIn(ignoredIds))
+        .execute()
 
     private fun monitorDetailsSelect() = dslContext
         .select(

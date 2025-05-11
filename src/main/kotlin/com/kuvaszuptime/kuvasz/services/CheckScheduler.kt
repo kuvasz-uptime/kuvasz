@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.MonitorConfig
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
+import com.kuvaszuptime.kuvasz.models.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
@@ -54,21 +55,39 @@ class CheckScheduler(
         this?.cancel(false)
     }
 
-    @PostConstruct
-    fun initialize() {
+    /**
+     * Processes the YAML monitor configs. If any YAML config is found, it disables external modifications of monitors
+     */
+    private fun processYamlMonitorConfigs() {
         if (yamlMonitorConfigs.isNotEmpty()) {
             appConfig.disableExternalWrite()
             logger.info(
-                "Disabled external modifications of monitors, because a YAML config was found. " +
+                "Disabled external modifications of monitors, because a YAML monitor config was found. " +
                     "Loading monitors from YAML config..."
             )
-
-            yamlMonitorConfigs.forEach {
-                // TODO upsert the monitor into the database
-                println(it)
+            val upsertedMonitorIds = yamlMonitorConfigs.map { yamlMonitor ->
+                // Upserting the monitor from the YAML config
+                monitorRepository.upsert(yamlMonitor.toMonitorRecord()).id
             }
-            // TODO remove all monitors from DB that are not in the yaml config
+            logger.info("Loaded ${yamlMonitorConfigs.size} monitors from YAML config")
+
+            // Removing all monitors that are not in the YAML config
+            val deletedCnt = monitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds)
+            logger.info("Deleted $deletedCnt monitors that were not in the YAML config")
+        } else {
+            logger.info(
+                "No YAML monitor config was found. " +
+                    "External modifications of monitors are enabled. Loading monitors from DB..."
+            )
         }
+    }
+
+    @PostConstruct
+    fun initialize() {
+        // Parsing & processing the YAML monitor configs as they have a higher priority than the DB ones
+        processYamlMonitorConfigs()
+
+        // Scheduling the uptime checks for the enabled monitors
         monitorRepository.fetchByEnabled(true).forEach { createChecksForMonitor(it) }
     }
 

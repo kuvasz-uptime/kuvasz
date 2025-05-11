@@ -12,8 +12,12 @@ abstract class DatabaseBehaviorSpec(body: BehaviorSpec.() -> Unit = {}) : Behavi
     lateinit var dslContext: DSLContext
 
     override suspend fun afterContainer(testCase: TestCase, result: TestResult) {
-        Kuvasz.KUVASZ.tables.forEach { table ->
-            dslContext.deleteFrom(table).execute()
-        }
+        dslContext.resetDatabase()
+    }
+}
+
+fun DSLContext.resetDatabase() {
+    Kuvasz.KUVASZ.tables.forEach { table ->
+        this.deleteFrom(table).execute()
     }
 }

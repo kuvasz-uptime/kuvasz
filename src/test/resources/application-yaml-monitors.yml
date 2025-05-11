@@ -12,3 +12,13 @@ monitors:
   - name: test2
     url: http://example.org
     uptime-check-interval: 60
+  - name: test3
+    url: http://example.net
+    uptime-check-interval: 120
+    enabled: true
+    ssl-check-enabled: true
+    pagerduty-integration-key: null
+    request-method: GET
+    latency-history-enabled: true
+    force-no-cache: false
+    follow-redirects: true
