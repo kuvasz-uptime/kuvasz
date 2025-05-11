@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
+import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -69,23 +71,22 @@ class MonitorConfigValidationTest : BehaviorSpec({
  *
  * It extends a DatabaseBehaviorSpec to delete the inserted monitor properly to not affect other tests
  */
-@MicronautTest(startApplication = false)
-class MonitorConfigDefaultValuesTest : DatabaseBehaviorSpec({
+@MicronautTest(startApplication = false, environments = ["monitor-without-defaults"])
+class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : DatabaseBehaviorSpec({
 
     given("a MonitorConfig bean") {
 
         `when`("not all the properties are explicitly set in the YAML") {
-            val config = ApplicationContext.run("monitor-without-defaults")
 
             then("it should fall back to the right default values") {
-                val monitorConfig = config.getBean(MonitorConfig::class.java)
-                monitorConfig.enabled shouldBe true
-                monitorConfig.sslCheckEnabled shouldBe false
-                monitorConfig.requestMethod shouldBe HttpMethod.GET
+                val monitorConfig = applicationContext.getBean<MonitorConfig>()
+                monitorConfig.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
+                monitorConfig.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
+                monitorConfig.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
                 monitorConfig.pagerdutyIntegrationKey shouldBe null
-                monitorConfig.latencyHistoryEnabled shouldBe true
-                monitorConfig.forceNoCache shouldBe true
-                monitorConfig.followRedirects shouldBe true
+                monitorConfig.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
+                monitorConfig.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
+                monitorConfig.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
             }
         }
     }
