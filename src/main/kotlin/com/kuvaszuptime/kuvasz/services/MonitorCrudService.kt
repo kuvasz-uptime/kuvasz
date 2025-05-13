@@ -1,5 +1,11 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.convertValue
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
@@ -12,8 +18,12 @@ import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.tables.Monitor.MONITOR
+import com.kuvaszuptime.kuvasz.tables.pojos.Monitor
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
+import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
+import jakarta.validation.ValidationException
 import org.jooq.DSLContext
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
@@ -26,7 +36,14 @@ class MonitorCrudService(
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
+    private val validator: Validator,
 ) {
+
+    private val objectMapper: ObjectMapper = jacksonObjectMapper()
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .registerModules(JavaTimeModule())
+
+    private val readOnlyMonitorFieldNames = setOf(MONITOR.ID.name, MONITOR.CREATED_AT.name, MONITOR.UPDATED_AT.name)
 
     fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
         monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
@@ -56,37 +73,34 @@ class MonitorCrudService(
                 checkScheduler.removeChecksOfMonitor(monitor)
             }
 
-    fun updateMonitor(monitorId: Long, monitorUpdateDto: MonitorUpdateDto): MonitorRecord =
+    fun updateMonitor(monitorId: Long, updates: ObjectNode): MonitorRecord =
         try {
             dslContext.transactionResult { config ->
                 monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
-                    val updatedMonitor = prepareUpdatedRecord(monitorUpdateDto, existingMonitor)
+                    val toUpdate = existingMonitor.into(Monitor::class.java)
+                    val filteredUpdates = updates.fieldNames().asSequence()
+                        .filterNot { it in readOnlyMonitorFieldNames }
+                        .fold(objectMapper.createObjectNode()) { acc, fieldName ->
+                            acc.set(fieldName, updates.get(fieldName))
+                        }
+                    val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
 
-                    updatedMonitor.saveAndReschedule(existingMonitor, config.dsl())
+                    objectMapper.convertValue<MonitorUpdateDto>(updatedMonitor).let { toValidate ->
+                        val errors = validator.validate(toValidate)
+                        if (errors.isNotEmpty()) {
+                            throw ValidationException(
+                                "Validation failed: ${errors.joinToString { "${it.propertyPath}: ${it.message}" }}"
+                            )
+                        }
+                    }
+
+                    MonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, config.dsl())
                 }
             }.orThrowNotFound(monitorId)
         } catch (ex: DataAccessException) {
             // Cause is encapsulated in the DataAccessException inside a transaction, so we need to unwrap it again here
             // because we're interested in the DuplicationErrors on the call site
             throw ex.cause ?: ex
-        }
-
-    private fun prepareUpdatedRecord(monitorUpdateDto: MonitorUpdateDto, existingMonitor: MonitorRecord) =
-        MonitorRecord().apply {
-            id = existingMonitor.id
-            // Because using @NotBlank on a nullable property doesn't work, need to sanitize the name here
-            name = monitorUpdateDto.name?.ifBlank { null } ?: existingMonitor.name
-            url = monitorUpdateDto.url ?: existingMonitor.url
-            uptimeCheckInterval =
-                monitorUpdateDto.uptimeCheckInterval ?: existingMonitor.uptimeCheckInterval
-            enabled = monitorUpdateDto.enabled ?: existingMonitor.enabled
-            sslCheckEnabled = monitorUpdateDto.sslCheckEnabled ?: existingMonitor.sslCheckEnabled
-            pagerdutyIntegrationKey = existingMonitor.pagerdutyIntegrationKey
-            requestMethod = monitorUpdateDto.requestMethod ?: existingMonitor.requestMethod
-            latencyHistoryEnabled =
-                monitorUpdateDto.latencyHistoryEnabled ?: existingMonitor.latencyHistoryEnabled
-            forceNoCache = monitorUpdateDto.forceNoCache ?: existingMonitor.forceNoCache
-            followRedirects = monitorUpdateDto.followRedirects ?: existingMonitor.followRedirects
         }
 
     private fun MonitorRecord.saveAndReschedule(

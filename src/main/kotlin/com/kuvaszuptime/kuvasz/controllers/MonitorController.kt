@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.config.MonitorConfig
@@ -10,7 +11,6 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
@@ -147,8 +147,8 @@ class MonitorController(
     )
     @ExecuteOn(TaskExecutors.IO)
     @ReadOnlyIfYaml
-    override fun updateMonitor(monitorId: Long, @Valid monitorUpdateDto: MonitorUpdateDto): MonitorDto {
-        val updatedMonitor = monitorCrudService.updateMonitor(monitorId, monitorUpdateDto)
+    override fun updateMonitor(monitorId: Long, updates: ObjectNode): MonitorDto {
+        val updatedMonitor = monitorCrudService.updateMonitor(monitorId, updates)
         return MonitorDto.fromMonitorRecord(updatedMonitor)
     }
 

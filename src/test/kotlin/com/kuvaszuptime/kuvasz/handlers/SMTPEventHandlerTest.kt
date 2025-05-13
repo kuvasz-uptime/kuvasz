@@ -32,7 +32,6 @@ import org.jooq.DSLContext
 import org.simplejavamail.api.email.Email
 import java.time.OffsetDateTime
 
-@Suppress("LongParameterList")
 @MicronautTest(startApplication = false)
 class SMTPEventHandlerTest(
     private val monitorRepository: MonitorRepository,

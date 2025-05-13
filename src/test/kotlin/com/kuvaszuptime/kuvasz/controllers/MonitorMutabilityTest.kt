@@ -38,7 +38,8 @@ class MonitorMutabilityTest(
         requestMethod = com.kuvaszuptime.kuvasz.enums.HttpMethod.HEAD,
         latencyHistoryEnabled = null,
         forceNoCache = null,
-        followRedirects = null
+        followRedirects = null,
+        pagerdutyIntegrationKey = null,
     )
     val pagerdutyIntegrationKeyDto = PagerdutyKeyUpdateDto(
         pagerdutyIntegrationKey = "jfdklsfds"

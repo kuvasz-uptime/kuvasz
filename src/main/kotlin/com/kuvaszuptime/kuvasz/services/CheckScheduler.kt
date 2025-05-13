@@ -29,7 +29,6 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 @Context
-@Suppress("LongParameterList")
 class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,

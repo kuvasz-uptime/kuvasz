@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
@@ -18,6 +19,9 @@ import io.micronaut.http.annotation.QueryValue
 import io.micronaut.http.server.types.files.SystemFile
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 
 interface MonitorOperations {
 
@@ -41,9 +45,12 @@ interface MonitorOperations {
     @Delete("/{monitorId}")
     fun deleteMonitor(monitorId: Long)
 
-    @Operation(summary = "Updates a monitor by ID")
+    @Operation(
+        summary = "Updates a monitor by ID",
+        requestBody = RequestBody(content = [Content(schema = Schema(implementation = MonitorUpdateDto::class))])
+    )
     @Patch("/{monitorId}")
-    fun updateMonitor(monitorId: Long, @Body monitorUpdateDto: MonitorUpdateDto): MonitorDto
+    fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): MonitorDto
 
     @Operation(summary = "Updates or creates a Pagerduty integration key for the given monitor")
     @Put("/{monitorId}/pagerduty-integration-key")
