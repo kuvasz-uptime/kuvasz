@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
-import java.net.URL
+import java.net.URI
 
 @Singleton
 class SSLChecker(
@@ -25,7 +25,7 @@ class SSLChecker(
     fun check(monitor: MonitorRecord) {
         if (uptimeEventRepository.isMonitorUp(monitor.id)) {
             val previousEvent = sslEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
-            sslValidator.validate(URL(monitor.url)).fold(
+            sslValidator.validate(URI(monitor.url).toURL()).fold(
                 { error ->
                     eventDispatcher.dispatch(
                         SSLInvalidEvent(
