@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.controllers
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.annotation.Body
@@ -13,11 +13,13 @@ import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.Post
-import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.http.server.types.files.SystemFile
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 
 interface MonitorOperations {
 
@@ -41,17 +43,12 @@ interface MonitorOperations {
     @Delete("/{monitorId}")
     fun deleteMonitor(monitorId: Long)
 
-    @Operation(summary = "Updates a monitor by ID")
+    @Operation(
+        summary = "Updates a monitor by ID",
+        requestBody = RequestBody(content = [Content(schema = Schema(implementation = MonitorUpdateDto::class))])
+    )
     @Patch("/{monitorId}")
-    fun updateMonitor(monitorId: Long, @Body monitorUpdateDto: MonitorUpdateDto): MonitorDto
-
-    @Operation(summary = "Updates or creates a Pagerduty integration key for the given monitor")
-    @Put("/{monitorId}/pagerduty-integration-key")
-    fun upsertPagerdutyIntegrationKey(monitorId: Long, @Body upsertDto: PagerdutyKeyUpdateDto): MonitorDto
-
-    @Operation(summary = "Deletes the Pagerduty integration key of the given monitor")
-    @Delete("/{monitorId}/pagerduty-integration-key")
-    fun deletePagerdutyIntegrationKey(monitorId: Long)
+    fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): MonitorDto
 
     @Operation(summary = "Returns the uptime events of the given monitor")
     @Get("/{monitorId}/uptime-events")

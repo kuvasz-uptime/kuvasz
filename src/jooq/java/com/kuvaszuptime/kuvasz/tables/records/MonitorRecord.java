@@ -261,4 +261,28 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         setRequestMethod(requestMethod);
         resetTouchedOnNotNull();
     }
+
+    /**
+     * Create a detached, initialised MonitorRecord
+     */
+    public MonitorRecord(com.kuvaszuptime.kuvasz.tables.pojos.Monitor value) {
+        super(Monitor.MONITOR);
+
+        if (value != null) {
+            setId(value.getId());
+            setName(value.getName());
+            setUrl(value.getUrl());
+            setUptimeCheckInterval(value.getUptimeCheckInterval());
+            setEnabled(value.getEnabled());
+            setCreatedAt(value.getCreatedAt());
+            setUpdatedAt(value.getUpdatedAt());
+            setSslCheckEnabled(value.getSslCheckEnabled());
+            setPagerdutyIntegrationKey(value.getPagerdutyIntegrationKey());
+            setLatencyHistoryEnabled(value.getLatencyHistoryEnabled());
+            setFollowRedirects(value.getFollowRedirects());
+            setForceNoCache(value.getForceNoCache());
+            setRequestMethod(value.getRequestMethod());
+            resetTouchedOnNotNull();
+        }
+    }
 }

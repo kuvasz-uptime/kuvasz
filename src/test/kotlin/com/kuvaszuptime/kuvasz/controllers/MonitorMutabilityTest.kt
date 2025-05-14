@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.controllers
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.data.forAll
@@ -29,20 +29,7 @@ class MonitorMutabilityTest(
         url = "https://example.com",
         uptimeCheckInterval = 5149,
     )
-    val monitorUpdateDto = MonitorUpdateDto(
-        name = "jkflds",
-        url = null,
-        uptimeCheckInterval = null,
-        enabled = null,
-        sslCheckEnabled = null,
-        requestMethod = com.kuvaszuptime.kuvasz.enums.HttpMethod.HEAD,
-        latencyHistoryEnabled = null,
-        forceNoCache = null,
-        followRedirects = null
-    )
-    val pagerdutyIntegrationKeyDto = PagerdutyKeyUpdateDto(
-        pagerdutyIntegrationKey = "jfdklsfds"
-    )
+    val monitorUpdateDto = JsonNodeFactory.instance.objectNode().putNull(MonitorUpdateDto::pagerdutyIntegrationKey.name)
 
     "all the API endpoints that mutate monitors should return a 405 if the monitors are configured via YAML" {
 
@@ -51,8 +38,6 @@ class MonitorMutabilityTest(
             row("/api/v1/monitors", HttpMethod.POST, monitorCreateDto),
             row("/api/v1/monitors/1", HttpMethod.DELETE, null),
             row("/api/v1/monitors/1", HttpMethod.PATCH, monitorUpdateDto),
-            row("/api/v1/monitors/1/pagerduty-integration-key", HttpMethod.PUT, pagerdutyIntegrationKeyDto),
-            row("/api/v1/monitors/1/pagerduty-integration-key", HttpMethod.DELETE, null),
         ).forAll { url, method, testBody ->
             val request = HttpRequest.create<Any>(method, url).apply { testBody?.let { body(it) } }
             val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }

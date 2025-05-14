@@ -20,7 +20,7 @@ interface MonitorCreatorLike {
     @get:NotNull
     @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL)
     val uptimeCheckInterval: Int
-    val enabled: Boolean?
+    val enabled: Boolean
     val sslCheckEnabled: Boolean
     val pagerdutyIntegrationKey: String?
     val requestMethod: HttpMethod

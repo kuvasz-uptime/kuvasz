@@ -37,7 +37,7 @@ class GlobalErrorHandler {
 
     @Error(global = true)
     fun conversionExceptionHandler(request: HttpRequest<*>, ex: ConversionErrorException): HttpResponse<ServiceError> {
-        val message = "Failed to convert argument: ${ex.argument}"
+        val message = "Failed to convert argument: ${ex.message}"
         return HttpResponse.badRequest(ServiceError(message))
     }
 

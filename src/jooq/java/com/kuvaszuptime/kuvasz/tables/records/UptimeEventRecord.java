@@ -165,4 +165,22 @@ public class UptimeEventRecord extends UpdatableRecordImpl<UptimeEventRecord> {
         setUpdatedAt(updatedAt);
         resetTouchedOnNotNull();
     }
+
+    /**
+     * Create a detached, initialised UptimeEventRecord
+     */
+    public UptimeEventRecord(com.kuvaszuptime.kuvasz.tables.pojos.UptimeEvent value) {
+        super(UptimeEvent.UPTIME_EVENT);
+
+        if (value != null) {
+            setId(value.getId());
+            setMonitorId(value.getMonitorId());
+            setStatus(value.getStatus());
+            setError(value.getError());
+            setStartedAt(value.getStartedAt());
+            setEndedAt(value.getEndedAt());
+            setUpdatedAt(value.getUpdatedAt());
+            resetTouchedOnNotNull();
+        }
+    }
 }

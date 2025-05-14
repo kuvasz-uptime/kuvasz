@@ -112,4 +112,19 @@ public class LatencyLogRecord extends UpdatableRecordImpl<LatencyLogRecord> {
         setCreatedAt(createdAt);
         resetTouchedOnNotNull();
     }
+
+    /**
+     * Create a detached, initialised LatencyLogRecord
+     */
+    public LatencyLogRecord(com.kuvaszuptime.kuvasz.tables.pojos.LatencyLog value) {
+        super(LatencyLog.LATENCY_LOG);
+
+        if (value != null) {
+            setId(value.getId());
+            setMonitorId(value.getMonitorId());
+            setLatency(value.getLatency());
+            setCreatedAt(value.getCreatedAt());
+            resetTouchedOnNotNull();
+        }
+    }
 }

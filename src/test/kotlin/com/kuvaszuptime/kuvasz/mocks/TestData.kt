@@ -15,7 +15,6 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
 
-@Suppress("LongParameterList")
 fun createMonitor(
     repository: MonitorRepository,
     enabled: Boolean = true,

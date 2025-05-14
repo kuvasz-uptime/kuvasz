@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.kotlinModule
@@ -14,11 +15,11 @@ import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
+import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
@@ -45,7 +46,6 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
-@Suppress("LongParameterList")
 @MicronautTest
 class MonitorControllerTest(
     @Client("/") private val client: HttpClient,
@@ -487,50 +487,51 @@ class MonitorControllerTest(
 
         given("MonitorController's updateMonitor() endpoint") {
 
-            `when`("it is called with an existing monitor ID and a valid DTO to disable the monitor") {
+            `when`("it is called with an existing monitor ID and a valid DTO to update all of the values") {
                 val createDto = MonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = true,
                     sslCheckEnabled = true,
-                    pagerdutyIntegrationKey = "something"
+                    pagerdutyIntegrationKey = "something",
+                    followRedirects = true,
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = true,
+                    forceNoCache = true,
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                 checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
 
-                val updateDto = MonitorUpdateDto(
-                    name = "updated_test_monitor",
-                    url = "https://updated-url.com",
-                    uptimeCheckInterval = 5000,
-                    enabled = false,
-                    sslCheckEnabled = false,
-                    requestMethod = HttpMethod.HEAD,
-                    latencyHistoryEnabled = false,
-                    forceNoCache = false,
-                    followRedirects = false,
-                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::enabled.name, false)
+                    .put(MonitorUpdateDto::sslCheckEnabled.name, false)
+                    .put(MonitorUpdateDto::requestMethod.name, "GET")
+                    .put(MonitorUpdateDto::latencyHistoryEnabled.name, false)
+                    .put(MonitorUpdateDto::forceNoCache.name, false)
+                    .put(MonitorUpdateDto::followRedirects.name, false)
+                    .putNull(MonitorUpdateDto::pagerdutyIntegrationKey.name)
+                    .put(MonitorUpdateDto::name.name, "updated_test_monitor")
+                    .put(MonitorUpdateDto::url.name, "https://updated-url.com")
+                    .put(MonitorUpdateDto::uptimeCheckInterval.name, "5000")
+
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
                 then("it should update the monitor and remove the checks of it") {
-                    monitorInDb.name shouldBe updateDto.name
-                    monitorInDb.url shouldBe updateDto.url
-                    monitorInDb.uptimeCheckInterval shouldBe updateDto.uptimeCheckInterval
-                    monitorInDb.enabled shouldBe updateDto.enabled
-                    monitorInDb.sslCheckEnabled shouldBe updateDto.sslCheckEnabled
+                    monitorInDb.name shouldBe "updated_test_monitor"
+                    monitorInDb.url shouldBe "https://updated-url.com"
+                    monitorInDb.uptimeCheckInterval shouldBe 5000
+                    monitorInDb.enabled shouldBe false
+                    monitorInDb.sslCheckEnabled shouldBe false
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
-                    monitorInDb.pagerdutyIntegrationKey shouldBe createDto.pagerdutyIntegrationKey
-                    monitorInDb.requestMethod shouldNotBe createdMonitor.requestMethod
-                    monitorInDb.requestMethod shouldBe updateDto.requestMethod
-                    monitorInDb.latencyHistoryEnabled shouldNotBe createdMonitor.latencyHistoryEnabled
-                    monitorInDb.latencyHistoryEnabled shouldBe updateDto.latencyHistoryEnabled
-                    monitorInDb.forceNoCache shouldNotBe createdMonitor.forceNoCache
-                    monitorInDb.forceNoCache shouldBe updateDto.forceNoCache
-                    monitorInDb.followRedirects shouldNotBe createdMonitor.followRedirects
-                    monitorInDb.followRedirects shouldBe updateDto.followRedirects
+                    monitorInDb.pagerdutyIntegrationKey shouldBe null // <- "Deleting" a nullable prop should work!
+                    monitorInDb.requestMethod shouldBe HttpMethod.GET
+                    monitorInDb.latencyHistoryEnabled shouldBe false
+                    monitorInDb.forceNoCache shouldBe false
+                    monitorInDb.followRedirects shouldBe false
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -549,33 +550,27 @@ class MonitorControllerTest(
                 checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                 checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
 
-                val updateDto = MonitorUpdateDto(
-                    name = null,
-                    url = null,
-                    uptimeCheckInterval = null,
-                    enabled = true,
-                    sslCheckEnabled = true,
-                    requestMethod = HttpMethod.HEAD,
-                    latencyHistoryEnabled = false,
-                    forceNoCache = false,
-                    followRedirects = false,
-                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::enabled.name, true)
+                    .put(MonitorUpdateDto::sslCheckEnabled.name, true)
+                    .put(MonitorUpdateDto::requestMethod.name, "HEAD")
+                    .put(MonitorUpdateDto::latencyHistoryEnabled.name, false)
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
-                then("it should update the monitor and create the checks of it") {
+                then("it should update the monitor and create the checks of it and update only the present props") {
                     monitorInDb.name shouldBe createdMonitor.name
                     monitorInDb.url shouldBe createdMonitor.url
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
-                    monitorInDb.enabled shouldBe updateDto.enabled
-                    monitorInDb.sslCheckEnabled shouldBe updateDto.sslCheckEnabled
+                    monitorInDb.enabled shouldBe true
+                    monitorInDb.sslCheckEnabled shouldBe true
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
                     monitorInDb.pagerdutyIntegrationKey shouldBe createDto.pagerdutyIntegrationKey
-                    monitorInDb.requestMethod shouldBe updateDto.requestMethod
-                    monitorInDb.latencyHistoryEnabled shouldBe updateDto.latencyHistoryEnabled
-                    monitorInDb.forceNoCache shouldBe updateDto.forceNoCache
-                    monitorInDb.followRedirects shouldBe updateDto.followRedirects
+                    monitorInDb.requestMethod shouldBe HttpMethod.HEAD
+                    monitorInDb.latencyHistoryEnabled shouldBe false
+                    monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
+                    monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
@@ -595,17 +590,8 @@ class MonitorControllerTest(
                 latencyLogRepository.insertLatencyForMonitor(createdMonitor.id, 1200)
                 latencyLogRepository.fetchLatestByMonitorId(createdMonitor.id).shouldNotBeEmpty()
 
-                val updateDto = MonitorUpdateDto(
-                    name = null,
-                    url = null,
-                    uptimeCheckInterval = null,
-                    enabled = null,
-                    sslCheckEnabled = null,
-                    requestMethod = null,
-                    latencyHistoryEnabled = false,
-                    forceNoCache = null,
-                    followRedirects = null,
-                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::latencyHistoryEnabled.name, false)
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
 
                 then("it should remove the existing latency log records as well") {
@@ -627,17 +613,8 @@ class MonitorControllerTest(
                 )
                 val secondCreatedMonitor = monitorClient.createMonitor(secondCreateDto)
 
-                val updateDto = MonitorUpdateDto(
-                    name = secondCreatedMonitor.name,
-                    url = null,
-                    uptimeCheckInterval = null,
-                    enabled = null,
-                    sslCheckEnabled = null,
-                    requestMethod = null,
-                    latencyHistoryEnabled = null,
-                    forceNoCache = null,
-                    followRedirects = null,
-                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::name.name, secondCreatedMonitor.name)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${firstCreatedMonitor.id}", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
@@ -651,119 +628,107 @@ class MonitorControllerTest(
                 }
             }
 
-            `when`("it is called with a non existing monitor ID") {
-                val updateDto = MonitorUpdateDto(
-                    name = null,
-                    url = null,
-                    uptimeCheckInterval = null,
-                    enabled = null,
-                    sslCheckEnabled = null,
-                    requestMethod = null,
-                    latencyHistoryEnabled = null,
-                    forceNoCache = null,
-                    followRedirects = null,
+            `when`("it is called with a blank name") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
                 )
-                val updateRequest = HttpRequest.PATCH("/api/v1/monitors/123232", updateDto)
-                val response = shouldThrow<HttpClientResponseException> {
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::name.name, "\n")
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
-                then("it should return a 404") {
-                    response.status shouldBe HttpStatus.NOT_FOUND
-                }
-            }
-        }
-
-        given("MonitorController's deletePagerdutyIntegrationKey() endpoint") {
-
-            `when`("it is called with an existing monitor ID") {
-                val monitorToCreate = MonitorCreateDto(
-                    name = "test_monitor",
-                    url = "https://valid-url.com",
-                    uptimeCheckInterval = 6000,
-                    enabled = true,
-                    pagerdutyIntegrationKey = "something"
-                )
-                val createdMonitor = monitorClient.createMonitor(monitorToCreate)
-                val deleteRequest =
-                    HttpRequest.DELETE<Any>("/api/v1/monitors/${createdMonitor.id}/pagerduty-integration-key")
-                val response = client.exchange(deleteRequest).awaitFirst()
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)
-
-                then("it should delete the integration key of the given monitor") {
-                    response.status shouldBe HttpStatus.NO_CONTENT
-                    monitorInDb!!.pagerdutyIntegrationKey shouldBe null
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain "Validation failed: name: must not be blank"
+                    monitorInDb.name shouldBe createdMonitor.name
                 }
             }
 
-            `when`("it is called with a non existing monitor ID") {
-                val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/123232/pagerduty-integration-key")
-                val response = shouldThrow<HttpClientResponseException> {
-                    client.exchange(deleteRequest).awaitFirst()
-                }
-
-                then("it should return a 404") {
-                    response.status shouldBe HttpStatus.NOT_FOUND
-                }
-            }
-        }
-
-        given("MonitorController's upsertPagerdutyIntegrationKey() endpoint") {
-
-            `when`("it is called with an existing monitor ID and an integration key") {
+            `when`("it is called with a null on a property that is non-nullable") {
                 val createDto = MonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
-                    uptimeCheckInterval = 6000,
-                    enabled = true,
-                    sslCheckEnabled = true,
-                    pagerdutyIntegrationKey = "originalKey"
+                    uptimeCheckInterval = 6000
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
-                val updateDto = PagerdutyKeyUpdateDto(
-                    pagerdutyIntegrationKey = "updatedKey"
-                )
-                val updatedMonitor = monitorClient.upsertPagerdutyIntegrationKey(createdMonitor.id, updateDto)
-                val updatedMonitorInDb = monitorRepository.findById(createdMonitor.id)!!
-
-                then("it should update the integration key") {
-                    createdMonitor.pagerdutyKeyPresent shouldBe true
-                    updatedMonitor.pagerdutyKeyPresent shouldBe true
-                    updatedMonitorInDb.pagerdutyIntegrationKey shouldBe updateDto.pagerdutyIntegrationKey
-                }
-            }
-
-            `when`("it is called with an existing monitor, without an integration key") {
-                val createDto = MonitorCreateDto(
-                    name = "test_monitor",
-                    url = "https://valid-url.com",
-                    uptimeCheckInterval = 6000,
-                    enabled = true,
-                    sslCheckEnabled = true
-                )
-                val createdMonitor = monitorClient.createMonitor(createDto)
-
-                val updateDto = PagerdutyKeyUpdateDto(
-                    pagerdutyIntegrationKey = "updatedKey"
-                )
-                val updatedMonitor = monitorClient.upsertPagerdutyIntegrationKey(createdMonitor.id, updateDto)
-                val updatedMonitorInDb = monitorRepository.findById(createdMonitor.id)!!
-
-                then("it should create the integration key") {
-                    createdMonitor.pagerdutyKeyPresent shouldBe false
-                    updatedMonitor.pagerdutyKeyPresent shouldBe true
-                    updatedMonitorInDb.pagerdutyIntegrationKey shouldBe updateDto.pagerdutyIntegrationKey
-                }
-            }
-
-            `when`("it is called with a non existing monitor ID") {
-                val updateDto = PagerdutyKeyUpdateDto("something")
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .putNull(MonitorUpdateDto::enabled.name)
                 val updateRequest =
-                    HttpRequest.PUT(
-                        "/api/v1/monitors/123232/pagerduty-integration-key",
-                        updateDto
-                    )
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain "Validation failed: enabled: must not be null"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with a too short uptime check interval") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::uptimeCheckInterval.name, 59)
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: uptimeCheckInterval: must be greater than or equal to 60"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with an invalid URL") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::url.name, "h34l/2683")
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain "Validation failed: url: must match"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with a non existing monitor ID") {
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::enabled.name, false)
+                val updateRequest = HttpRequest.PATCH("/api/v1/monitors/123232", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
@@ -954,7 +919,7 @@ class MonitorControllerTest(
 
                 then("it should export an empty monitors list in YAML format") {
                     val response = client.exchange(request).awaitFirst()
-                    val responseBody = response.getBody(ByteArray::class.java).get()
+                    val responseBody = response.getBodyAs<ByteArray>()
 
                     response.status shouldBe HttpStatus.OK
                     val exportedMonitorsRaw = mapper.readTree(responseBody)["monitors"].shouldNotBeNull()

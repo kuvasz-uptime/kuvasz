@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.PagerdutyAPIClient
+import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -65,7 +66,7 @@ class PagerdutyEventHandler(
             },
             { ex ->
                 if (ex is HttpClientResponseException) {
-                    val responseBody = ex.response.getBody(String::class.java)
+                    val responseBody = ex.response.getBodyAs<String>()
                     logger.error("The event cannot be sent to Pagerduty: $responseBody")
                 }
             }

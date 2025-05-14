@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
         )
     ),
     tags = [
-        Tag(name = "Security operations"),
         Tag(name = "Management operations"),
         Tag(name = "Monitor operations")
     ]

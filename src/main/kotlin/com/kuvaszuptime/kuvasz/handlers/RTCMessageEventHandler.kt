@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.TextMessageService
+import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
@@ -73,7 +74,7 @@ abstract class RTCMessageEventHandler(
             },
             { ex ->
                 val message = if (ex is HttpClientResponseException) {
-                    ex.response.getBody(String::class.java).orElse("Empty response")
+                    ex.response.getBodyAs<String>() ?: "Empty response"
                 } else {
                     ex.message
                 }

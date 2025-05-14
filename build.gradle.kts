@@ -74,6 +74,7 @@ dependencies {
     kapt(mn.micronaut.validation.processor)
     implementation(mn.jackson.module.kotlin)
     implementation(mn.jackson.dataformat.yaml)
+    implementation(mn.jackson.datatype.jsr310)
     implementation(mn.micronaut.kotlin.runtime)
     implementation(mn.micronaut.jackson.databind)
     runtimeOnly(mn.snakeyaml)
@@ -272,6 +273,7 @@ jooq {
                         isDeprecated = false
                         isValidationAnnotations = false
                         isFluentSetters = true
+                        isPojos = true
                     }
                     target.apply {
                         directory = "src/jooq/java"

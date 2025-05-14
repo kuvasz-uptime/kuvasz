@@ -7,7 +7,6 @@ info:
     url: https://github.com/kuvasz-uptime/kuvasz
   version: latest
 tags:
-- name: Security operations
 - name: Management operations
 - name: Monitor operations
 paths:
@@ -169,83 +168,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      security:
-      - apiKey: []
-  /api/v1/monitors/{monitorId}/pagerduty-integration-key:
-    put:
-      tags:
-      - Monitor operations
-      summary: Updates or creates a Pagerduty integration key for the given monitor
-      operationId: upsertPagerdutyIntegrationKey
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PagerdutyKeyUpdateDto"
-        required: true
-      responses:
-        "200":
-          description: Successful update or create
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MonitorDto"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      security:
-      - apiKey: []
-    delete:
-      tags:
-      - Monitor operations
-      summary: Deletes the Pagerduty integration key of the given monitor
-      operationId: deletePagerdutyIntegrationKey
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "204":
-          description: Successful deletion
         "404":
           description: Not found
           content:
@@ -623,44 +545,38 @@ components:
       type: object
       properties:
         name:
+          minLength: 1
           type: string
-          nullable: true
+          nullable: false
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
-          nullable: true
+          nullable: false
         uptimeCheckInterval:
           minimum: 60
           type: integer
           format: int32
-          nullable: true
+          nullable: false
         enabled:
           type: boolean
-          nullable: true
+          nullable: false
         sslCheckEnabled:
           type: boolean
-          nullable: true
+          nullable: false
         requestMethod:
+          $ref: "#/components/schemas/HttpMethod"
+        pagerdutyIntegrationKey:
+          type: string
           nullable: true
-          allOf:
-          - $ref: "#/components/schemas/HttpMethod"
         latencyHistoryEnabled:
           type: boolean
-          nullable: true
+          nullable: false
         forceNoCache:
           type: boolean
-          nullable: true
+          nullable: false
         followRedirects:
           type: boolean
-          nullable: true
-    PagerdutyKeyUpdateDto:
-      required:
-      - pagerdutyIntegrationKey
-      type: object
-      properties:
-        pagerdutyIntegrationKey:
-          minLength: 1
-          type: string
+          nullable: false
     SSLEventDto:
       required:
       - id

@@ -1,11 +1,10 @@
 package com.kuvaszuptime.kuvasz.controllers
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.MediaType
@@ -23,11 +22,7 @@ interface MonitorClient : MonitorOperations {
 
     override fun deleteMonitor(monitorId: Long)
 
-    override fun updateMonitor(monitorId: Long, monitorUpdateDto: MonitorUpdateDto): MonitorDto
-
-    override fun upsertPagerdutyIntegrationKey(monitorId: Long, upsertDto: PagerdutyKeyUpdateDto): MonitorDto
-
-    override fun deletePagerdutyIntegrationKey(monitorId: Long)
+    override fun updateMonitor(monitorId: Long, updates: ObjectNode): MonitorDto
 
     override fun getUptimeEvents(monitorId: Long): List<UptimeEventDto>
 
