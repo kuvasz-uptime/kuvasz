@@ -123,14 +123,6 @@ class MonitorCrudService(
             }
         )
 
-    fun updatePagerdutyIntegrationKey(monitorId: Long, integrationKey: String?): MonitorRecord =
-        dslContext.transactionResult { config ->
-            monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
-                val updatedMonitor = existingMonitor.setPagerdutyIntegrationKey(integrationKey)
-                updatedMonitor.saveAndReschedule(existingMonitor, config.dsl())
-            }
-        }.orThrowNotFound(monitorId)
-
     fun getUptimeEventsByMonitorId(monitorId: Long): List<UptimeEventDto> =
         monitorRepository.findById(monitorId)
             .orThrowNotFound(monitorId)

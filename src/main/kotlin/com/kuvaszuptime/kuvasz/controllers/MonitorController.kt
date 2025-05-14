@@ -11,7 +11,6 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.PagerdutyKeyUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
@@ -150,61 +149,6 @@ class MonitorController(
     override fun updateMonitor(monitorId: Long, updates: ObjectNode): MonitorDto {
         val updatedMonitor = monitorCrudService.updateMonitor(monitorId, updates)
         return MonitorDto.fromMonitorRecord(updatedMonitor)
-    }
-
-    @ApiResponses(
-        ApiResponse(
-            responseCode = "200",
-            description = "Successful update or create",
-            content = [Content(schema = Schema(implementation = MonitorDto::class))]
-        ),
-        ApiResponse(
-            responseCode = "400",
-            description = "Bad request",
-            content = [Content(schema = Schema(implementation = ServiceError::class))]
-        ),
-        ApiResponse(
-            responseCode = "404",
-            description = "Not found",
-            content = [Content(schema = Schema(implementation = ServiceError::class))]
-        ),
-        ApiResponse(
-            responseCode = "405",
-            description = "Monitors are in read-only mode, because they are loaded from a YAML config file",
-            content = [Content(schema = Schema(implementation = ServiceError::class))]
-        )
-    )
-    @ExecuteOn(TaskExecutors.IO)
-    @ReadOnlyIfYaml
-    override fun upsertPagerdutyIntegrationKey(monitorId: Long, @Valid upsertDto: PagerdutyKeyUpdateDto): MonitorDto {
-        val updatedMonitor = monitorCrudService.updatePagerdutyIntegrationKey(
-            monitorId,
-            upsertDto.pagerdutyIntegrationKey,
-        )
-        return MonitorDto.fromMonitorRecord(updatedMonitor)
-    }
-
-    @Status(HttpStatus.NO_CONTENT)
-    @ApiResponses(
-        ApiResponse(
-            responseCode = "204",
-            description = "Successful deletion"
-        ),
-        ApiResponse(
-            responseCode = "404",
-            description = "Not found",
-            content = [Content(schema = Schema(implementation = ServiceError::class))]
-        ),
-        ApiResponse(
-            responseCode = "405",
-            description = "Monitors are in read-only mode, because they are loaded from a YAML config file",
-            content = [Content(schema = Schema(implementation = ServiceError::class))]
-        )
-    )
-    @ExecuteOn(TaskExecutors.IO)
-    @ReadOnlyIfYaml
-    override fun deletePagerdutyIntegrationKey(monitorId: Long) {
-        monitorCrudService.updatePagerdutyIntegrationKey(monitorId, null)
     }
 
     @ApiResponses(

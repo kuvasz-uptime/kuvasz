@@ -7,6 +7,7 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.views.htmx.http.HtmxRequestHeaders
 import java.net.URI
+import kotlin.jvm.optionals.getOrNull
 
 typealias RawHttpResponse = HttpResponse<ByteBuffer<Any>>
 
@@ -41,3 +42,5 @@ fun HttpResponse<*>.getRedirectionUri(originalUrl: String): URI? =
     }
 
 fun HttpRequest<*>.isHtmxRequest(): Boolean = this.headers.contains(HtmxRequestHeaders.HX_REQUEST)
+
+inline fun <reified T : Any> HttpResponse<*>.getBodyAs(): T? = getBody(T::class.java).getOrNull()

@@ -7,8 +7,10 @@ import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
+import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.core.type.Argument
@@ -44,7 +46,7 @@ class GlobalErrorHandlerTest(
             then("should return a 400 with the correct error message") {
 
                 exception.status shouldBe HttpStatus.BAD_REQUEST
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                val responseBody = exception.response.getBodyAs<ServiceError>().shouldNotBeNull()
                 responseBody.message shouldBe "Invalid JSON"
             }
         }
@@ -62,7 +64,7 @@ class GlobalErrorHandlerTest(
             then("should return a 400 with the correct error message") {
 
                 exception.status shouldBe HttpStatus.BAD_REQUEST
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                val responseBody = exception.response.getBodyAs<ServiceError>().shouldNotBeNull()
                 responseBody.message shouldStartWith "Failed to convert argument:"
             }
         }
@@ -88,7 +90,7 @@ class GlobalErrorHandlerTest(
             then("should return a 500 with the correct error message") {
 
                 exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                val responseBody = exception.response.getBodyAs<ServiceError>().shouldNotBeNull()
                 responseBody.message shouldBe "This is an error message"
             }
         }
@@ -112,7 +114,7 @@ class GlobalErrorHandlerTest(
             }
             then("should return a 500 with the correct error message") {
                 exception.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                val responseBody = exception.response.getBodyAs<ServiceError>().shouldNotBeNull()
                 responseBody.message shouldBe "This is an error message"
             }
         }
@@ -138,7 +140,7 @@ class GlobalErrorHandlerTest(
             then("should return a 409 with the correct error message") {
 
                 exception.status shouldBe HttpStatus.CONFLICT
-                val responseBody = exception.response.getBody(ServiceError::class.java).get()
+                val responseBody = exception.response.getBodyAs<ServiceError>().shouldNotBeNull()
                 responseBody.message shouldBe "This is an error message"
             }
         }

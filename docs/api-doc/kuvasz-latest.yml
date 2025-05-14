@@ -183,83 +183,6 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
-  /api/v1/monitors/{monitorId}/pagerduty-integration-key:
-    put:
-      tags:
-      - Monitor operations
-      summary: Updates or creates a Pagerduty integration key for the given monitor
-      operationId: upsertPagerdutyIntegrationKey
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PagerdutyKeyUpdateDto"
-        required: true
-      responses:
-        "200":
-          description: Successful update or create
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MonitorDto"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      security:
-      - apiKey: []
-    delete:
-      tags:
-      - Monitor operations
-      summary: Deletes the Pagerduty integration key of the given monitor
-      operationId: deletePagerdutyIntegrationKey
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "204":
-          description: Successful deletion
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      security:
-      - apiKey: []
   /api/v1/monitors/{monitorId}/ssl-events:
     get:
       tags:
@@ -654,14 +577,6 @@ components:
         followRedirects:
           type: boolean
           nullable: false
-    PagerdutyKeyUpdateDto:
-      required:
-      - pagerdutyIntegrationKey
-      type: object
-      properties:
-        pagerdutyIntegrationKey:
-          minLength: 1
-          type: string
     SSLEventDto:
       required:
       - id
