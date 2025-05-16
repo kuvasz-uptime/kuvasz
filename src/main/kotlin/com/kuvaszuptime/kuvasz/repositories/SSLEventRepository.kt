@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.repositories
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.WithCertInfo
 import com.kuvaszuptime.kuvasz.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.tables.records.SslEventRecord
 import jakarta.inject.Singleton
@@ -21,6 +22,10 @@ class SSLEventRepository(private val dslContext: DSLContext) {
 
         if (event is SSLInvalidEvent) {
             eventToInsert.error = event.error.message
+        }
+
+        if (event is WithCertInfo) {
+            eventToInsert.sslExpiryDate = event.certInfo.validTo
         }
 
         ctx.insertInto(SSL_EVENT)
@@ -47,9 +52,15 @@ class SSLEventRepository(private val dslContext: DSLContext) {
         .and(SSL_EVENT.ENDED_AT.lessThan(limit))
         .execute()
 
-    fun updateEventUpdatedAt(eventId: Long, updatedAt: OffsetDateTime) = dslContext
+    @Suppress("IgnoredReturnValue")
+    fun updateEvent(eventId: Long, newEvent: SSLMonitorEvent) = dslContext
         .update(SSL_EVENT)
-        .set(SSL_EVENT.UPDATED_AT, updatedAt)
+        .set(SSL_EVENT.UPDATED_AT, newEvent.dispatchedAt)
+        .apply {
+            if (newEvent is WithCertInfo) {
+                set(SSL_EVENT.SSL_EXPIRY_DATE, newEvent.certInfo.validTo)
+            }
+        }
         .where(SSL_EVENT.ID.eq(eventId))
         .execute()
 

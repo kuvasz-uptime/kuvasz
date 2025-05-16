@@ -151,10 +151,10 @@ class SSLCheckerTest(
             }
 
             `when`("it checks a monitor that has a cert that expires soon") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(monitorRepository, sslExpiryThreshold = 15)
                 val subscriber = TestSubscriber<SSLWillExpireEvent>()
                 eventDispatcher.subscribeToSSLWillExpireEvents { it.forwardToSubscriber(subscriber) }
-                val validTo = getCurrentTimestamp().minusDays(29)
+                val validTo = getCurrentTimestamp().plusDays(14)
                 mockValidationResult(
                     status = SslStatus.WILL_EXPIRE,
                     validTo = validTo
@@ -193,6 +193,6 @@ class SSLCheckerTest(
     }
 
     private fun mockIsMonitorUpResult(result: Boolean) {
-        every { uptimeEventRepository.isMonitorUp(any()) } returns result
+        every { uptimeEventRepository.isMonitorUp(any(), nullAsUp = true) } returns result
     }
 }

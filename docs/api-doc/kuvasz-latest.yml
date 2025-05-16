@@ -388,6 +388,11 @@ components:
         followRedirects:
           type: boolean
           default: true
+        sslExpiryThreshold:
+          minimum: 0
+          type: integer
+          format: int32
+          default: 30
     MonitorDetailsDto:
       required:
       - createdAt
@@ -400,6 +405,7 @@ components:
       - pagerdutyKeyPresent
       - requestMethod
       - sslCheckEnabled
+      - sslExpiryThreshold
       - uptimeCheckInterval
       - url
       type: object
@@ -466,6 +472,13 @@ components:
           type: boolean
         followRedirects:
           type: boolean
+        sslExpiryThreshold:
+          type: integer
+          format: int32
+        sslValidUntil:
+          type: string
+          format: date-time
+          nullable: true
     MonitorDto:
       required:
       - createdAt
@@ -478,6 +491,7 @@ components:
       - pagerdutyKeyPresent
       - requestMethod
       - sslCheckEnabled
+      - sslExpiryThreshold
       - uptimeCheckInterval
       - url
       type: object
@@ -506,6 +520,9 @@ components:
           type: boolean
         followRedirects:
           type: boolean
+        sslExpiryThreshold:
+          type: integer
+          format: int32
         createdAt:
           type: string
           format: date-time
@@ -576,6 +593,10 @@ components:
           nullable: false
         followRedirects:
           type: boolean
+          nullable: false
+        sslExpiryThreshold:
+          type: integer
+          format: int32
           nullable: false
     SSLEventDto:
       required:

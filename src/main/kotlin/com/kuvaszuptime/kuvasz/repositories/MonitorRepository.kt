@@ -148,6 +148,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
             SSL_EVENT.STATUS.`as`(MonitorDetailsDto::sslStatus.name),
             SSL_EVENT.STARTED_AT.`as`(MonitorDetailsDto::sslStatusStartedAt.name),
             SSL_EVENT.UPDATED_AT.`as`(MonitorDetailsDto::lastSSLCheck.name),
+            SSL_EVENT.SSL_EXPIRY_DATE.`as`(MonitorDetailsDto::sslValidUntil.name),
             UPTIME_EVENT.ERROR.`as`(MonitorDetailsDto::uptimeError.name),
             SSL_EVENT.ERROR.`as`(MonitorDetailsDto::sslError.name),
             `when`(

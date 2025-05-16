@@ -81,7 +81,7 @@ class SSLValidator {
         }
 
         var conn: HttpsURLConnection? = null
-        try {
+        return try {
             // Establish Connection & Initial Handshake
             conn = url.openConnection() as HttpsURLConnection
             conn.connectTimeout = CONNECT_TIMEOUT_MS
@@ -96,14 +96,14 @@ class SSLValidator {
             val serverCertsRaw = conn.serverCertificates
             if (serverCertsRaw.isNullOrEmpty()) {
                 logger.debug("No server certificates received from: {}", url)
-                return Either.Left(SSLValidationError("Server did not return any certificates"))
+                Either.Left(SSLValidationError("Server did not return any certificates"))
             }
 
             val serverCertsX509 = serverCertsRaw.mapNotNull { it as? X509Certificate }
             // Ensure all certificates were of the expected type
             if (serverCertsX509.size != serverCertsRaw.size) {
-                logger.error("Received non-X509 certificates in the chain from {}", url)
-                return Either.Left(SSLValidationError("Certificate chain contains non-X509 certificates"))
+                logger.debug("Received non-X509 certificates in the chain from {}", url)
+                Either.Left(SSLValidationError("Certificate chain contains non-X509 certificates"))
             }
 
             return serverCertsX509.validate(url)
@@ -114,17 +114,17 @@ class SSLValidator {
             val errorMessage = e.message ?: "Unknown handshake error"
             logger.debug("Initial SSL Handshake failed for {}: {}", url, errorMessage)
             val causeMessage = e.cause?.message?.let { " (Cause: $it)" }.orEmpty()
-            return Either.Left(SSLValidationError("SSL Handshake failed: $errorMessage$causeMessage"))
+            Either.Left(SSLValidationError("SSL Handshake failed: $errorMessage$causeMessage"))
         } catch (e: UnknownHostException) {
             logger.debug("Unknown host for {}: {}", url, e.message)
-            return Either.Left(SSLValidationError("Unknown host: ${e.message}"))
+            Either.Left(SSLValidationError("Unknown host: ${e.message}"))
         } catch (e: SocketTimeoutException) {
             logger.debug("Timeout connecting to or reading from {}: {}", url, e.message)
-            return Either.Left(SSLValidationError("Connection timed out (${e.message})"))
+            Either.Left(SSLValidationError("Connection timed out (${e.message})"))
         } catch (e: Exception) {
             val errorMessage = e.message ?: "Unknown error"
             logger.error("Unexpected error during SSL validation for {}: {}", url, errorMessage)
-            return Either.Left(SSLValidationError("An unexpected error occurred: $errorMessage"))
+            Either.Left(SSLValidationError("An unexpected error occurred: $errorMessage"))
         } finally {
             conn?.disconnect()
         }
@@ -134,7 +134,7 @@ class SSLValidator {
      * Performs explicit chain validation using CertPathValidator
      */
     @Suppress("TooGenericExceptionCaught", "ReturnCount")
-    private fun List<X509Certificate>.validate(url: URL): Either<SSLValidationError, CertificateInfo> {
+    private fun List<X509Certificate>.validate(url: URL): Either<SSLValidationError, CertificateInfo> =
         try {
             val certPath: CertPath = certFactory.generateCertPath(this)
             logger.debug(
@@ -147,6 +147,16 @@ class SSLValidator {
             // Throws CertPathValidatorException if the chain is invalid
             certPathValidator.validate(certPath, pkixParams)
             logger.debug("Certificate chain validation successful for {}", url)
+
+            // Chain Validation Successful: Extract Info from End-Entity Certificate
+            // The server's own certificate is the first one in the validated chain.
+            val endEntityCert = this.first()
+
+            Either.Right(
+                CertificateInfo(
+                    validTo = endEntityCert.notAfter.toOffsetDateTime(),
+                )
+            )
         } catch (e: CertPathValidatorException) {
             // Chain validation failed
             logger.debug("Certificate chain validation failed for {}: {}", url, e.message)
@@ -157,7 +167,7 @@ class SSLValidator {
             } else {
                 "N/A"
             }
-            return Either.Left(
+            Either.Left(
                 SSLValidationError(
                     "Certificate chain validation failed: ${reason ?: "Unknown reason"} " +
                         "(Certificate index: $errorIndex, $failedCertSubject). Details: ${e.message}"
@@ -165,10 +175,10 @@ class SSLValidator {
             )
         } catch (e: NoSuchAlgorithmException) {
             logger.error("Chain validation setup failed for {}: Algorithm not found ({})", url, e.message, e)
-            return Either.Left(SSLValidationError("Certificate validation setup failed (Algorithm): ${e.message}"))
+            Either.Left(SSLValidationError("Certificate validation setup failed (Algorithm): ${e.message}"))
         } catch (e: InvalidAlgorithmParameterException) {
             logger.error("Chain validation setup failed for {}: Invalid parameters ({})", url, e.message, e)
-            return Either.Left(SSLValidationError("Certificate validation setup failed (Parameters): ${e.message}"))
+            Either.Left(SSLValidationError("Certificate validation setup failed (Parameters): ${e.message}"))
         } catch (e: CertificateException) { // Catch CertificateFactory or CertPath generation issues
             logger.error(
                 "Chain validation setup failed for {}: Certificate processing error ({})",
@@ -176,20 +186,9 @@ class SSLValidator {
                 e.message,
                 e
             )
-            return Either.Left(SSLValidationError("Certificate processing error: ${e.message}"))
+            Either.Left(SSLValidationError("Certificate processing error: ${e.message}"))
         } catch (e: Exception) { // Catch other potential errors during validation setup (e.g., KeyStoreException)
             logger.error("Unexpected error during chain validation setup for {}: {}", url, e.message, e)
-            return Either.Left(SSLValidationError("Unexpected error during certificate processing: ${e.message}"))
+            Either.Left(SSLValidationError("Unexpected error during certificate processing: ${e.message}"))
         }
-
-        // Chain Validation Successful: Extract Info from End-Entity Certificate
-        // The server's own certificate is the first one in the validated chain.
-        val endEntityCert = this.first()
-
-        return Either.Right(
-            CertificateInfo(
-                validTo = endEntityCert.notAfter.toOffsetDateTime(),
-            )
-        )
-    }
 }

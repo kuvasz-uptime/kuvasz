@@ -18,12 +18,8 @@ class SSLChecker(
     private val sslEventRepository: SSLEventRepository
 ) {
 
-    companion object {
-        private const val EXPIRY_THRESHOLD_DAYS = 30L
-    }
-
     fun check(monitor: MonitorRecord) {
-        if (uptimeEventRepository.isMonitorUp(monitor.id)) {
+        if (uptimeEventRepository.isMonitorUp(monitor.id, nullAsUp = true)) {
             val previousEvent = sslEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
             sslValidator.validate(URI(monitor.url).toURL()).fold(
                 { error ->
@@ -36,7 +32,8 @@ class SSLChecker(
                     )
                 },
                 { certInfo ->
-                    if (certInfo.validTo.isBefore(getCurrentTimestamp().plusDays(EXPIRY_THRESHOLD_DAYS))) {
+                    val expiryThresholdDays = monitor.sslExpiryThreshold.toLong()
+                    if (certInfo.validTo.isBefore(getCurrentTimestamp().plusDays(expiryThresholdDays))) {
                         eventDispatcher.dispatch(
                             SSLWillExpireEvent(
                                 monitor = monitor,

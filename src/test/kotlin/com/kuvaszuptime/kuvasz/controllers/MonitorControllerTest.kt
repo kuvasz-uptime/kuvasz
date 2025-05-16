@@ -97,6 +97,8 @@ class MonitorControllerTest(
                     responseItem.latencyHistoryEnabled shouldBe true
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
+                    responseItem.sslExpiryThreshold shouldBe monitor.sslExpiryThreshold
+                    responseItem.sslValidUntil shouldBe null
                 }
             }
 
@@ -121,6 +123,8 @@ class MonitorControllerTest(
                     responseItem.latencyHistoryEnabled shouldBe true
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
+                    responseItem.sslExpiryThreshold shouldBe enabledMonitor.sslExpiryThreshold
+                    responseItem.sslValidUntil shouldBe null
                 }
             }
 
@@ -141,6 +145,7 @@ class MonitorControllerTest(
                     latencyHistoryEnabled = true,
                     forceNoCache = false,
                     followRedirects = false,
+                    sslExpiryThreshold = 15,
                 )
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
@@ -150,11 +155,13 @@ class MonitorControllerTest(
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
+                val sslExpiryDate = getCurrentTimestamp().plusDays(60)
                 createSSLEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
-                    endedAt = null
+                    endedAt = null,
+                    sslExpiryDate = sslExpiryDate,
                 )
 
                 then("it should return it") {
@@ -176,6 +183,8 @@ class MonitorControllerTest(
                     response.latencyHistoryEnabled shouldBe true
                     response.forceNoCache shouldBe false
                     response.followRedirects shouldBe false
+                    response.sslExpiryThreshold shouldBe 15
+                    response.sslValidUntil shouldBe sslExpiryDate
                 }
             }
 
@@ -336,6 +345,8 @@ class MonitorControllerTest(
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe true
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+                    monitorInDb.sslExpiryThreshold shouldBe 30
+                    monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -353,7 +364,8 @@ class MonitorControllerTest(
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = false,
                     forceNoCache = false,
-                    followRedirects = false
+                    followRedirects = false,
+                    sslExpiryThreshold = 20,
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -379,6 +391,8 @@ class MonitorControllerTest(
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe false
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+                    monitorInDb.sslExpiryThreshold shouldBe 20
+                    monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -448,6 +462,26 @@ class MonitorControllerTest(
                         "uptimeCheckInterval: must be greater than or equal to 60"
                 }
             }
+
+            `when`("it is called with an invalid SSL expiry threshold") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    sslExpiryThreshold = -1
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain
+                        "sslExpiryThreshold: must be greater than or equal to 0"
+                }
+            }
         }
 
         given("MonitorController's deleteMonitor() endpoint") {
@@ -499,6 +533,7 @@ class MonitorControllerTest(
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
                     forceNoCache = true,
+                    sslExpiryThreshold = 10,
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
@@ -515,6 +550,7 @@ class MonitorControllerTest(
                     .put(MonitorUpdateDto::name.name, "updated_test_monitor")
                     .put(MonitorUpdateDto::url.name, "https://updated-url.com")
                     .put(MonitorUpdateDto::uptimeCheckInterval.name, "5000")
+                    .put(MonitorUpdateDto::sslExpiryThreshold.name, "20")
 
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
@@ -532,6 +568,7 @@ class MonitorControllerTest(
                     monitorInDb.latencyHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe false
                     monitorInDb.followRedirects shouldBe false
+                    monitorInDb.sslExpiryThreshold shouldBe 20
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -571,6 +608,7 @@ class MonitorControllerTest(
                     monitorInDb.latencyHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+                    monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
@@ -867,6 +905,7 @@ class MonitorControllerTest(
                     enabled = false,
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
+                    sslExpiryThreshold = 15,
                 )
                 val request = HttpRequest.GET<Any>("/api/v1/monitors/export").accept(MediaType.APPLICATION_YAML)
 
@@ -897,6 +936,7 @@ class MonitorControllerTest(
                         firstMonitor.latencyHistoryEnabled shouldBe monitor.latencyHistoryEnabled
                         firstMonitor.forceNoCache shouldBe monitor.forceNoCache
                         firstMonitor.followRedirects shouldBe monitor.followRedirects
+                        firstMonitor.sslExpiryThreshold shouldBe monitor.sslExpiryThreshold
                     }
                     parsedMonitors.forOne { secondMonitor ->
                         secondMonitor.name shouldBe monitor2.name
@@ -909,6 +949,7 @@ class MonitorControllerTest(
                         secondMonitor.latencyHistoryEnabled shouldBe monitor2.latencyHistoryEnabled
                         secondMonitor.forceNoCache shouldBe monitor2.forceNoCache
                         secondMonitor.followRedirects shouldBe monitor2.followRedirects
+                        secondMonitor.sslExpiryThreshold shouldBe monitor2.sslExpiryThreshold
                     }
                 }
             }

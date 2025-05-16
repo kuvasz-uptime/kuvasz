@@ -30,4 +30,6 @@ data class MonitorDetailsDto(
     val latencyHistoryEnabled: Boolean,
     val forceNoCache: Boolean,
     val followRedirects: Boolean,
+    val sslExpiryThreshold: Int,
+    val sslValidUntil: OffsetDateTime?,
 )

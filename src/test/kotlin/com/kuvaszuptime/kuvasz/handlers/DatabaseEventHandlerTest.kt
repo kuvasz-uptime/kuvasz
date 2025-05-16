@@ -301,6 +301,7 @@ class DatabaseEventHandlerTest(
                     expectedSSLRecord.startedAt shouldBe event.dispatchedAt
                     expectedSSLRecord.endedAt shouldBe null
                     expectedSSLRecord.updatedAt shouldBe event.dispatchedAt
+                    expectedSSLRecord.sslExpiryDate shouldBe event.certInfo.validTo
                 }
             }
 
@@ -324,6 +325,7 @@ class DatabaseEventHandlerTest(
                     expectedSSLRecord.endedAt shouldBe null
                     expectedSSLRecord.updatedAt shouldBe event.dispatchedAt
                     expectedSSLRecord.error shouldBe "ssl error"
+                    expectedSSLRecord.sslExpiryDate shouldBe null
                 }
             }
 
@@ -339,7 +341,7 @@ class DatabaseEventHandlerTest(
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
-                    certInfo = generateCertificateInfo(),
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.plusDays(5)),
                     previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -353,6 +355,7 @@ class DatabaseEventHandlerTest(
                     expectedSSLRecord.status shouldBe SslStatus.VALID
                     expectedSSLRecord.endedAt shouldBe null
                     expectedSSLRecord.updatedAt shouldBe secondEvent.dispatchedAt
+                    expectedSSLRecord.sslExpiryDate shouldBe secondEvent.certInfo.validTo
                 }
             }
 
@@ -385,9 +388,11 @@ class DatabaseEventHandlerTest(
                     sslRecords[0].status shouldBe SslStatus.INVALID
                     sslRecords[0].endedAt shouldBe secondEvent.dispatchedAt
                     sslRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    sslRecords[0].sslExpiryDate shouldBe null
                     sslRecords[1].status shouldBe SslStatus.VALID
                     sslRecords[1].endedAt shouldBe null
                     sslRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    sslRecords[1].sslExpiryDate shouldBe secondEvent.certInfo.validTo
                 }
             }
 
@@ -420,9 +425,11 @@ class DatabaseEventHandlerTest(
                     sslRecords[0].status shouldBe SslStatus.VALID
                     sslRecords[0].endedAt shouldBe secondEvent.dispatchedAt
                     sslRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    sslRecords[0].sslExpiryDate shouldBe firstEvent.certInfo.validTo
                     sslRecords[1].status shouldBe SslStatus.INVALID
                     sslRecords[1].endedAt shouldBe null
                     sslRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    sslRecords[1].sslExpiryDate shouldBe null
                 }
             }
 
@@ -445,6 +452,7 @@ class DatabaseEventHandlerTest(
                     expectedSSLRecord.startedAt shouldBe event.dispatchedAt
                     expectedSSLRecord.endedAt shouldBe null
                     expectedSSLRecord.updatedAt shouldBe event.dispatchedAt
+                    expectedSSLRecord.sslExpiryDate shouldBe event.certInfo.validTo
                 }
             }
 
@@ -474,6 +482,7 @@ class DatabaseEventHandlerTest(
                     expectedSSLRecord.status shouldBe SslStatus.WILL_EXPIRE
                     expectedSSLRecord.endedAt shouldBe null
                     expectedSSLRecord.updatedAt shouldBe secondEvent.dispatchedAt
+                    expectedSSLRecord.sslExpiryDate shouldBe secondEvent.certInfo.validTo
                 }
             }
 
@@ -489,7 +498,7 @@ class DatabaseEventHandlerTest(
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
-                    certInfo = generateCertificateInfo(),
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.minusDays(10)),
                     previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -506,9 +515,11 @@ class DatabaseEventHandlerTest(
                     sslRecords[0].status shouldBe SslStatus.VALID
                     sslRecords[0].endedAt shouldBe secondEvent.dispatchedAt
                     sslRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    sslRecords[0].sslExpiryDate shouldBe firstEvent.certInfo.validTo
                     sslRecords[1].status shouldBe SslStatus.WILL_EXPIRE
                     sslRecords[1].endedAt shouldBe null
                     sslRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    sslRecords[1].sslExpiryDate shouldBe secondEvent.certInfo.validTo
                 }
             }
         }

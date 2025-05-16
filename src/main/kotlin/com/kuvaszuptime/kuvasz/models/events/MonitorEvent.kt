@@ -134,11 +134,15 @@ sealed class SSLMonitorEvent : MonitorEvent() {
     private fun statusEquals(previousEvent: SslEventRecord) = sslStatus == previousEvent.status
 }
 
+interface WithCertInfo {
+    val certInfo: CertificateInfo
+}
+
 data class SSLValidEvent(
     override val monitor: MonitorRecord,
-    val certInfo: CertificateInfo,
+    override val certInfo: CertificateInfo,
     override val previousEvent: SslEventRecord?
-) : SSLMonitorEvent() {
+) : SSLMonitorEvent(), WithCertInfo {
 
     override val sslStatus = SslStatus.VALID
 
@@ -169,9 +173,9 @@ data class SSLInvalidEvent(
 
 data class SSLWillExpireEvent(
     override val monitor: MonitorRecord,
-    val certInfo: CertificateInfo,
+    override val certInfo: CertificateInfo,
     override val previousEvent: SslEventRecord?
-) : SSLMonitorEvent() {
+) : SSLMonitorEvent(), WithCertInfo {
 
     override val sslStatus = SslStatus.WILL_EXPIRE
 
