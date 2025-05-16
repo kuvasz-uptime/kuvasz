@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.tables.records.MonitorRecord
 import io.kotest.core.test.TestCase
@@ -9,6 +10,7 @@ import io.kotest.core.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldNotBe
 import io.micronaut.test.annotation.MockBean
@@ -21,6 +23,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.delay
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 @MicronautTest(startApplication = false)
@@ -184,6 +187,41 @@ class CheckSchedulerTest(
                         uptimeCheckerMock.check(monitor, any(), any(), any())
                         lockRegistryMock.release(monitor.id)
                     }
+                }
+            }
+
+            `when`("the getNextCheck() method is called, but no check is scheduled for the given monitor") {
+                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 10, sslCheckEnabled = true)
+                checkScheduler.initialize()
+
+                then("it should return null") {
+                    checkScheduler.getNextCheck(CheckType.UPTIME, monitor.id + 100).shouldBeNull()
+                    checkScheduler.getNextCheck(CheckType.SSL, monitor.id + 100).shouldBeNull()
+                }
+            }
+
+            `when`("the getNextCheck() method is called, and there are scheduled checks for the monitor") {
+                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 100, sslCheckEnabled = true)
+                checkScheduler.initialize()
+
+                then("it should return them correctly") {
+                    val nextUptimeCheck =
+                        checkScheduler.getNextCheck(CheckType.UPTIME, monitor.id).shouldNotBeNull().toEpochSecond()
+                    val nextSSLCheck =
+                        checkScheduler.getNextCheck(CheckType.SSL, monitor.id).shouldNotBeNull().toEpochSecond()
+                    val expectedNextUptimeCheck = checkScheduler
+                        .getScheduledUptimeChecks()[monitor.id]
+                        .shouldNotBeNull()
+                        .getDelay(TimeUnit.SECONDS)
+                        .let { Instant.now().epochSecond + it }
+                    val expectedNextSSLCheck = checkScheduler
+                        .getScheduledSSLChecks()[monitor.id]
+                        .shouldNotBeNull()
+                        .getDelay(TimeUnit.SECONDS)
+                        .let { Instant.now().epochSecond + it }
+
+                    nextUptimeCheck shouldBeInRange expectedNextUptimeCheck - 1..expectedNextUptimeCheck + 1
+                    nextSSLCheck shouldBeInRange expectedNextSSLCheck - 1..expectedNextSSLCheck + 1
                 }
             }
         }

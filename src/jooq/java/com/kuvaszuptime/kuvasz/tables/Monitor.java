@@ -128,6 +128,11 @@ public class Monitor extends TableImpl<MonitorRecord> {
      */
     public final TableField<MonitorRecord, HttpMethod> REQUEST_METHOD = createField(DSL.name("request_method"), SQLDataType.VARCHAR.nullable(false).defaultValue(DSL.field(DSL.raw("'GET'::kuvasz.http_method"), SQLDataType.VARCHAR)).asEnumDataType(HttpMethod.class), this, "");
 
+    /**
+     * The column <code>kuvasz.monitor.ssl_expiry_threshold</code>.
+     */
+    public final TableField<MonitorRecord, Integer> SSL_EXPIRY_THRESHOLD = createField(DSL.name("ssl_expiry_threshold"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field(DSL.raw("30"), SQLDataType.INTEGER)), this, "");
+
     private Monitor(Name alias, Table<MonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -130,6 +130,21 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
         return (OffsetDateTime) get(6);
     }
 
+    /**
+     * Setter for <code>kuvasz.ssl_event.ssl_expiry_date</code>.
+     */
+    public SslEventRecord setSslExpiryDate(OffsetDateTime value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.ssl_event.ssl_expiry_date</code>.
+     */
+    public OffsetDateTime getSslExpiryDate() {
+        return (OffsetDateTime) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -153,7 +168,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
     /**
      * Create a detached, initialised SslEventRecord
      */
-    public SslEventRecord(Long id, Long monitorId, SslStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
+    public SslEventRecord(Long id, Long monitorId, SslStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt, OffsetDateTime sslExpiryDate) {
         super(SslEvent.SSL_EVENT);
 
         setId(id);
@@ -163,6 +178,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+        setSslExpiryDate(sslExpiryDate);
         resetTouchedOnNotNull();
     }
 
@@ -180,6 +196,7 @@ public class SslEventRecord extends UpdatableRecordImpl<SslEventRecord> {
             setStartedAt(value.getStartedAt());
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setSslExpiryDate(value.getSslExpiryDate());
             resetTouchedOnNotNull();
         }
     }

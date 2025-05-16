@@ -20,9 +20,11 @@ data class MonitorDetailsDto(
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
+    val nextUptimeCheck: OffsetDateTime? = null,
     val sslStatus: SslStatus?,
     val sslStatusStartedAt: OffsetDateTime?,
     val lastSSLCheck: OffsetDateTime?,
+    val nextSSLCheck: OffsetDateTime? = null,
     val uptimeError: String?,
     val sslError: String?,
     val pagerdutyKeyPresent: Boolean,
@@ -30,4 +32,6 @@ data class MonitorDetailsDto(
     val latencyHistoryEnabled: Boolean,
     val forceNoCache: Boolean,
     val followRedirects: Boolean,
+    val sslExpiryThreshold: Int,
+    val sslValidUntil: OffsetDateTime?,
 )

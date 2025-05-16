@@ -18,6 +18,7 @@ data class MonitorDto(
     val latencyHistoryEnabled: Boolean,
     val forceNoCache: Boolean,
     val followRedirects: Boolean,
+    val sslExpiryThreshold: Int,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime?
 ) {
@@ -35,8 +36,9 @@ data class MonitorDto(
                 latencyHistoryEnabled = record.latencyHistoryEnabled,
                 forceNoCache = record.forceNoCache,
                 followRedirects = record.followRedirects,
+                sslExpiryThreshold = record.sslExpiryThreshold,
                 createdAt = record.createdAt,
-                updatedAt = record.updatedAt
+                updatedAt = record.updatedAt,
             )
     }
 }

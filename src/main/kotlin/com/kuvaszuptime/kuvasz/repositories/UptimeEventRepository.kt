@@ -13,6 +13,8 @@ import java.time.OffsetDateTime
 @Singleton
 class UptimeEventRepository(private val dslContext: DSLContext) {
 
+    private fun MonitorDownEvent.getPersistableError() = toStructuredMessage().error
+
     fun insertFromMonitorEvent(event: UptimeMonitorEvent, ctx: DSLContext = dslContext) {
         val eventToInsert = UptimeEventRecord()
             .setMonitorId(event.monitor.id)
@@ -21,7 +23,7 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
             .setUpdatedAt(event.dispatchedAt)
 
         if (event is MonitorDownEvent) {
-            eventToInsert.error = event.toStructuredMessage().error
+            eventToInsert.error = event.getPersistableError()
         }
 
         ctx.insertInto(UPTIME_EVENT)
@@ -53,14 +55,20 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
         .and(UPTIME_EVENT.ENDED_AT.lessThan(limit))
         .execute()
 
-    fun updateEventUpdatedAt(eventId: Long, updatedAt: OffsetDateTime) = dslContext
+    @Suppress("IgnoredReturnValue")
+    fun updateEvent(eventId: Long, newEvent: UptimeMonitorEvent) = dslContext
         .update(UPTIME_EVENT)
-        .set(UPTIME_EVENT.UPDATED_AT, updatedAt)
+        .set(UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
+        .apply {
+            if (newEvent is MonitorDownEvent) {
+                set(UPTIME_EVENT.ERROR, newEvent.getPersistableError())
+            }
+        }
         .where(UPTIME_EVENT.ID.eq(eventId))
         .execute()
 
-    fun isMonitorUp(monitorId: Long): Boolean =
-        getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: false
+    fun isMonitorUp(monitorId: Long, nullAsUp: Boolean = false): Boolean =
+        getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: nullAsUp
 
     fun getEventsByMonitorId(monitorId: Long): List<UptimeEventDto> = dslContext
         .select(

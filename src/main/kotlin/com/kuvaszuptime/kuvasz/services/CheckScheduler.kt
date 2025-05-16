@@ -24,6 +24,7 @@ import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
+import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -94,9 +95,8 @@ class CheckScheduler(
     fun getScheduledSSLChecks() = scheduledSSLChecks.toMap()
 
     private fun logCreated(monitor: MonitorRecord, checkType: CheckType, task: ScheduledFuture<*>) {
-        val estimatedNextCheckEpoch = System.currentTimeMillis() + task.getDelay(TimeUnit.MILLISECONDS)
-        val estimatedNextCheck = Instant.ofEpochMilli(estimatedNextCheckEpoch).toOffsetDateTime()
-        logger.info(
+        val estimatedNextCheck = task.getNextCheck()
+        logger.debug(
             "${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully. " +
                 "Next check will happen around: $estimatedNextCheck"
         )
@@ -268,6 +268,22 @@ class CheckScheduler(
             onSuccess = scheduledUptimeCheckSuccessHandler(monitor),
             onFailure = scheduledUptimeCheckErrorHandler(monitor),
         )
+
+    /**
+     * Calculates the time of the next check for a given monitor and check type.
+     */
+    fun getNextCheck(checkType: CheckType, monitorId: Long): OffsetDateTime? {
+        val scheduledTask = when (checkType) {
+            CheckType.UPTIME -> scheduledUptimeChecks[monitorId]
+            CheckType.SSL -> scheduledSSLChecks[monitorId]
+        }
+        return scheduledTask?.getNextCheck()
+    }
+
+    private fun ScheduledFuture<*>.getNextCheck(): OffsetDateTime {
+        val nextCheckEpoch = System.currentTimeMillis() + this.getDelay(TimeUnit.MILLISECONDS)
+        return Instant.ofEpochMilli(nextCheckEpoch).toOffsetDateTime()
+    }
 
     companion object {
         private const val SSL_CHECK_INITIAL_DELAY_MIN_SECONDS = 60L

@@ -38,4 +38,7 @@ interface MonitorConfig : MonitorCreatorLike {
 
     @get:Bindable(defaultValue = MonitorDefaults.FOLLOW_REDIRECTS.toString())
     override val followRedirects: Boolean
+
+    @get:Bindable(defaultValue = MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS.toString())
+    override val sslExpiryThreshold: Int
 }

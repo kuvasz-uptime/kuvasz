@@ -98,6 +98,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
                     .set(MONITOR.FOLLOW_REDIRECTS, updatedMonitor.followRedirects)
                     .set(MONITOR.LATENCY_HISTORY_ENABLED, updatedMonitor.latencyHistoryEnabled)
                     .set(MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
+                    .set(MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
                     .where(MONITOR.ID.eq(updatedMonitor.id))
                     .returning(MONITOR.asterisk())
                     .fetchOneOrThrow<MonitorRecord>()
@@ -147,6 +148,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
             SSL_EVENT.STATUS.`as`(MonitorDetailsDto::sslStatus.name),
             SSL_EVENT.STARTED_AT.`as`(MonitorDetailsDto::sslStatusStartedAt.name),
             SSL_EVENT.UPDATED_AT.`as`(MonitorDetailsDto::lastSSLCheck.name),
+            SSL_EVENT.SSL_EXPIRY_DATE.`as`(MonitorDetailsDto::sslValidUntil.name),
             UPTIME_EVENT.ERROR.`as`(MonitorDetailsDto::uptimeError.name),
             SSL_EVENT.ERROR.`as`(MonitorDetailsDto::sslError.name),
             `when`(
@@ -156,7 +158,8 @@ class MonitorRepository(private val dslContext: DSLContext) {
             MONITOR.LATENCY_HISTORY_ENABLED.`as`(MonitorDetailsDto::latencyHistoryEnabled.name),
             MONITOR.FORCE_NO_CACHE.`as`(MonitorDetailsDto::forceNoCache.name),
             MONITOR.FOLLOW_REDIRECTS.`as`(MonitorDetailsDto::followRedirects.name),
-            MONITOR.REQUEST_METHOD.`as`(MonitorDetailsDto::requestMethod.name)
+            MONITOR.REQUEST_METHOD.`as`(MonitorDetailsDto::requestMethod.name),
+            MONITOR.SSL_EXPIRY_THRESHOLD.`as`(MonitorDetailsDto::sslExpiryThreshold.name),
         )
         .from(MONITOR)
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))

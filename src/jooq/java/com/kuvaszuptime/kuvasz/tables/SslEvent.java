@@ -98,6 +98,11 @@ public class SslEvent extends TableImpl<SslEventRecord> {
      */
     public final TableField<SslEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
 
+    /**
+     * The column <code>kuvasz.ssl_event.ssl_expiry_date</code>.
+     */
+    public final TableField<SslEventRecord, OffsetDateTime> SSL_EXPIRY_DATE = createField(DSL.name("ssl_expiry_date"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "");
+
     private SslEvent(Name alias, Table<SslEventRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -16,6 +16,7 @@ data class MonitorExportDto(
     val requestMethod: HttpMethod,
     val followRedirects: Boolean,
     val forceNoCache: Boolean,
+    val sslExpiryThreshold: Int,
 ) {
     companion object {
         fun fromMonitorRecord(record: MonitorRecord): MonitorExportDto {
@@ -29,7 +30,8 @@ data class MonitorExportDto(
                 pagerdutyIntegrationKey = record.pagerdutyIntegrationKey,
                 requestMethod = record.requestMethod,
                 followRedirects = record.followRedirects,
-                forceNoCache = record.forceNoCache
+                forceNoCache = record.forceNoCache,
+                sslExpiryThreshold = record.sslExpiryThreshold,
             )
         }
     }

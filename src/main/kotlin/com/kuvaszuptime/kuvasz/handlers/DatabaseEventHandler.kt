@@ -80,7 +80,7 @@ class DatabaseEventHandler(
                     "[${currentEvent.monitor.name}] The status of the previous event is the same as the current " +
                         "event. Updating the updatedAt timestamp of the previous event."
                 )
-                uptimeEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
+                uptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
             }
         } ?: run {
             logger.debug("A previous event was not found for [${currentEvent.monitor.name}], creating a new one")
@@ -96,7 +96,7 @@ class DatabaseEventHandler(
                     sslEventRepository.insertFromMonitorEvent(currentEvent, config.dsl())
                 }
             } else {
-                sslEventRepository.updateEventUpdatedAt(previousEvent.id, currentEvent.dispatchedAt)
+                sslEventRepository.updateEvent(previousEvent.id, currentEvent)
             }
         } ?: sslEventRepository.insertFromMonitorEvent(currentEvent)
     }

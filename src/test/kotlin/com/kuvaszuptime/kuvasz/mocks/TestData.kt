@@ -27,6 +27,7 @@ fun createMonitor(
     latencyHistoryEnabled: Boolean = true,
     forceNoCache: Boolean = true,
     followRedirects: Boolean = true,
+    sslExpiryThreshold: Int = 30,
 ): MonitorRecord {
     val monitor = MonitorRecord()
         .setName(monitorName)
@@ -41,6 +42,7 @@ fun createMonitor(
         .setLatencyHistoryEnabled(latencyHistoryEnabled)
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
+        .setSslExpiryThreshold(sslExpiryThreshold)
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 
@@ -67,7 +69,8 @@ fun createSSLEventRecord(
     monitorId: Long,
     status: SslStatus = SslStatus.VALID,
     startedAt: OffsetDateTime,
-    endedAt: OffsetDateTime?
+    endedAt: OffsetDateTime?,
+    sslExpiryDate: OffsetDateTime? = null,
 ) = dslContext
     .insertInto(SSL_EVENT)
     .set(
@@ -77,6 +80,7 @@ fun createSSLEventRecord(
             .setStartedAt(startedAt)
             .setUpdatedAt(endedAt ?: startedAt)
             .setEndedAt(endedAt)
+            .setSslExpiryDate(sslExpiryDate)
     )
     .execute()
 

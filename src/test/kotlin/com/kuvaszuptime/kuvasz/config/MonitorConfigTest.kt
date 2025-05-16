@@ -62,6 +62,16 @@ class MonitorConfigValidationTest : BehaviorSpec({
                     "MonitorConfig.getUptimeCheckInterval - must be greater than or equal to 60"
             }
         }
+
+        `when`("sslExpiryThreshold is less than 0 day") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-negative-ssl-expiry-threshold")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "MonitorConfig.getSslExpiryThreshold - must be greater than or equal to 0"
+            }
+        }
     }
 })
 
@@ -87,6 +97,7 @@ class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : D
                 monitorConfig.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
                 monitorConfig.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
                 monitorConfig.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
+                monitorConfig.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
             }
         }
     }

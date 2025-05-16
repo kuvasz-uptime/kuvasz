@@ -86,6 +86,7 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             firstMonitor.latencyHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
+            firstMonitor.sslExpiryThreshold shouldBe 0
 
             scheduledUptimeChecks[firstMonitor.id].shouldBeNull()
             scheduledSSLChecks[firstMonitor.id].shouldBeNull()
@@ -102,6 +103,7 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             secondMonitor.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
             secondMonitor.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
+            secondMonitor.sslExpiryThreshold shouldBe 10
 
             scheduledUptimeChecks[secondMonitor.id].shouldNotBeNull()
             scheduledSSLChecks[secondMonitor.id].shouldBeNull()
@@ -118,6 +120,7 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             thirdMonitor.latencyHistoryEnabled shouldBe true
             thirdMonitor.forceNoCache shouldBe false
             thirdMonitor.followRedirects shouldBe true
+            thirdMonitor.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
 
             scheduledUptimeChecks[thirdMonitor.id].shouldNotBeNull()
             scheduledSSLChecks[thirdMonitor.id].shouldNotBeNull()
@@ -171,6 +174,7 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             firstMonitor.latencyHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
+            firstMonitor.sslExpiryThreshold shouldBe 15
             firstMonitor.updatedAt shouldBeAfter firstMonitor.createdAt
 
             scheduledUptimeChecks[firstMonitor.id].shouldNotBeNull()

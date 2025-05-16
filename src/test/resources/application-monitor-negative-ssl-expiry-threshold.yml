@@ -1,0 +1,5 @@
+monitors:
+  - name: irrelevant
+    url: http://example.com
+    uptime-check-interval: 60
+    ssl-expiry-threshold: -1

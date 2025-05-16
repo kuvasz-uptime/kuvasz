@@ -220,6 +220,21 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         return (HttpMethod) get(12);
     }
 
+    /**
+     * Setter for <code>kuvasz.monitor.ssl_expiry_threshold</code>.
+     */
+    public MonitorRecord setSslExpiryThreshold(Integer value) {
+        set(13, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.ssl_expiry_threshold</code>.
+     */
+    public Integer getSslExpiryThreshold() {
+        return (Integer) get(13);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -243,7 +258,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, String pagerdutyIntegrationKey, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod) {
+    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, String pagerdutyIntegrationKey, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold) {
         super(Monitor.MONITOR);
 
         setId(id);
@@ -259,6 +274,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         setFollowRedirects(followRedirects);
         setForceNoCache(forceNoCache);
         setRequestMethod(requestMethod);
+        setSslExpiryThreshold(sslExpiryThreshold);
         resetTouchedOnNotNull();
     }
 
@@ -282,6 +298,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
             setFollowRedirects(value.getFollowRedirects());
             setForceNoCache(value.getForceNoCache());
             setRequestMethod(value.getRequestMethod());
+            setSslExpiryThreshold(value.getSslExpiryThreshold());
             resetTouchedOnNotNull();
         }
     }

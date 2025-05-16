@@ -12,6 +12,7 @@ object MonitorDefaults {
     const val LATENCY_HISTORY_ENABLED = true
     const val FORCE_NO_CACHE = true
     const val FOLLOW_REDIRECTS = true
+    const val SSL_EXPIRY_THRESHOLD_DAYS = 30
 }
 
 @Introspected
@@ -33,4 +34,6 @@ data class MonitorCreateDto(
     override val forceNoCache: Boolean = MonitorDefaults.FORCE_NO_CACHE,
     @Schema(required = false, defaultValue = "true")
     override val followRedirects: Boolean = MonitorDefaults.FOLLOW_REDIRECTS,
+    @Schema(required = false, defaultValue = "30")
+    override val sslExpiryThreshold: Int = MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS,
 ) : MonitorCreatorLike
