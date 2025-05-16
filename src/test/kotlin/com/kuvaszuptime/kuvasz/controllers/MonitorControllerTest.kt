@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
@@ -185,6 +186,24 @@ class MonitorControllerTest(
                     response.followRedirects shouldBe false
                     response.sslExpiryThreshold shouldBe 15
                     response.sslValidUntil shouldBe sslExpiryDate
+                }
+            }
+
+            `when`("there is a scheduled monitor") {
+                val monitor = MonitorCreateDto(
+                    name = "test",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 60000,
+                    sslCheckEnabled = true,
+                )
+                val createdMonitor = monitorClient.createMonitor(monitor)
+
+                then("it should return the right values for the next scheduled checks") {
+                    val response = monitorClient.getMonitorDetails(monitorId = createdMonitor.id)
+                    response.nextUptimeCheck.shouldNotBeNull().toEpochSecond() shouldBe
+                        checkScheduler.getNextCheck(CheckType.UPTIME, response.id)?.toEpochSecond()
+                    response.nextSSLCheck.shouldNotBeNull().toEpochSecond() shouldBe
+                        checkScheduler.getNextCheck(CheckType.SSL, response.id)?.toEpochSecond()
                 }
             }
 

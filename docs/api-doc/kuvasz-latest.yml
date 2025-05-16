@@ -444,6 +444,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        nextUptimeCheck:
+          type: string
+          format: date-time
+          nullable: true
         sslStatus:
           nullable: true
           allOf:
@@ -453,6 +457,10 @@ components:
           format: date-time
           nullable: true
         lastSSLCheck:
+          type: string
+          format: date-time
+          nullable: true
+        nextSSLCheck:
           type: string
           format: date-time
           nullable: true

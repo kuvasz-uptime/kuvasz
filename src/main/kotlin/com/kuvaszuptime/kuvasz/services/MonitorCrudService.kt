@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
@@ -46,10 +47,18 @@ class MonitorCrudService(
     private val readOnlyMonitorFieldNames = setOf(MONITOR.ID.name, MONITOR.CREATED_AT.name, MONITOR.UPDATED_AT.name)
 
     fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
-        monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
+        monitorRepository.getMonitorWithDetails(monitorId)?.copy(
+            nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
+            nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
+        ) ?: throw MonitorNotFoundException(monitorId)
 
     fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabledOnly, sortedBy)
+        monitorRepository.getMonitorsWithDetails(enabledOnly, sortedBy).map { detailsDto ->
+            detailsDto.copy(
+                nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
+                nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
+            )
+        }
 
     fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord =
         monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord()).fold(
