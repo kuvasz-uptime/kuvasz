@@ -82,6 +82,22 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 )
             }
         }
+
+        `when`("sslExpiryThreshold is less than 0 days") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                sslExpiryThreshold = -1,
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "sslExpiryThreshold",
+                    message = "must be greater than or equal to 0"
+                )
+            }
+        }
     }
 })
 
@@ -102,6 +118,7 @@ class MonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
             dto.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
             dto.pagerdutyIntegrationKey shouldBe null
+            dto.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
         }
     }
 })

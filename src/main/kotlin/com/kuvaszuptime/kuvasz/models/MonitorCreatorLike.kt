@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.PositiveOrZero
 
 @Suppress("ComplexInterface")
 interface MonitorCreatorLike {
@@ -27,6 +28,10 @@ interface MonitorCreatorLike {
     val latencyHistoryEnabled: Boolean
     val forceNoCache: Boolean
     val followRedirects: Boolean
+
+    @get:NotNull
+    @get:PositiveOrZero
+    val sslExpiryThreshold: Int
 }
 
 fun MonitorCreatorLike.toMonitorRecord(): MonitorRecord =
@@ -41,3 +46,4 @@ fun MonitorCreatorLike.toMonitorRecord(): MonitorRecord =
         .setLatencyHistoryEnabled(latencyHistoryEnabled)
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
+        .setSslExpiryThreshold(sslExpiryThreshold)

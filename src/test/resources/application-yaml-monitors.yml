@@ -9,9 +9,11 @@ monitors:
     latency-history-enabled: false
     force-no-cache: false
     follow-redirects: false
+    ssl-expiry-threshold: 0
   - name: test2
     url: http://example.org
     uptime-check-interval: 60
+    ssl-expiry-threshold: 10
   - name: test3
     url: http://example.net
     uptime-check-interval: 120

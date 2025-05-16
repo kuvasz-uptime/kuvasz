@@ -27,6 +27,7 @@ fun createMonitor(
     latencyHistoryEnabled: Boolean = true,
     forceNoCache: Boolean = true,
     followRedirects: Boolean = true,
+    sslExpiryThreshold: Int = 30,
 ): MonitorRecord {
     val monitor = MonitorRecord()
         .setName(monitorName)
@@ -41,6 +42,7 @@ fun createMonitor(
         .setLatencyHistoryEnabled(latencyHistoryEnabled)
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
+        .setSslExpiryThreshold(sslExpiryThreshold)
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 

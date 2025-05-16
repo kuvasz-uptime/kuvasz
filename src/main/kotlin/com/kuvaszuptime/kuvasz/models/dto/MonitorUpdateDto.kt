@@ -44,4 +44,7 @@ data class MonitorUpdateDto(
     @get:NotNull
     @field:Schema(required = false, nullable = false)
     val followRedirects: Boolean?,
+    @get:NotNull
+    @field:Schema(required = false, nullable = false)
+    val sslExpiryThreshold: Int?,
 )
