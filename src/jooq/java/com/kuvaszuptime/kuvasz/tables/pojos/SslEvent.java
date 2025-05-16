@@ -25,6 +25,7 @@ public class SslEvent implements Serializable {
     private OffsetDateTime startedAt;
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
+    private OffsetDateTime sslExpiryDate;
 
     public SslEvent() {}
 
@@ -36,6 +37,7 @@ public class SslEvent implements Serializable {
         this.startedAt = value.startedAt;
         this.endedAt = value.endedAt;
         this.updatedAt = value.updatedAt;
+        this.sslExpiryDate = value.sslExpiryDate;
     }
 
     public SslEvent(
@@ -45,7 +47,8 @@ public class SslEvent implements Serializable {
         String error,
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        OffsetDateTime sslExpiryDate
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -54,6 +57,7 @@ public class SslEvent implements Serializable {
         this.startedAt = startedAt;
         this.endedAt = endedAt;
         this.updatedAt = updatedAt;
+        this.sslExpiryDate = sslExpiryDate;
     }
 
     /**
@@ -165,6 +169,21 @@ public class SslEvent implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.ssl_event.ssl_expiry_date</code>.
+     */
+    public OffsetDateTime getSslExpiryDate() {
+        return this.sslExpiryDate;
+    }
+
+    /**
+     * Setter for <code>kuvasz.ssl_event.ssl_expiry_date</code>.
+     */
+    public SslEvent setSslExpiryDate(OffsetDateTime sslExpiryDate) {
+        this.sslExpiryDate = sslExpiryDate;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -216,6 +235,12 @@ public class SslEvent implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.sslExpiryDate == null) {
+            if (other.sslExpiryDate != null)
+                return false;
+        }
+        else if (!this.sslExpiryDate.equals(other.sslExpiryDate))
+            return false;
         return true;
     }
 
@@ -230,6 +255,7 @@ public class SslEvent implements Serializable {
         result = prime * result + ((this.startedAt == null) ? 0 : this.startedAt.hashCode());
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.sslExpiryDate == null) ? 0 : this.sslExpiryDate.hashCode());
         return result;
     }
 
@@ -244,6 +270,7 @@ public class SslEvent implements Serializable {
         sb.append(", ").append(startedAt);
         sb.append(", ").append(endedAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(sslExpiryDate);
 
         sb.append(")");
         return sb.toString();

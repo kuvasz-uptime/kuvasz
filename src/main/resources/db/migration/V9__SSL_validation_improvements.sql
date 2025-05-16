@@ -1,0 +1,5 @@
+ALTER TABLE monitor
+    ADD COLUMN ssl_expiry_threshold INTEGER NOT NULL DEFAULT 30;
+
+ALTER TABLE ssl_event
+    ADD COLUMN ssl_expiry_date TIMESTAMP WITH TIME ZONE DEFAULT NULL;

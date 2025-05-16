@@ -31,6 +31,7 @@ public class Monitor implements Serializable {
     private Boolean followRedirects;
     private Boolean forceNoCache;
     private HttpMethod requestMethod;
+    private Integer sslExpiryThreshold;
 
     public Monitor() {}
 
@@ -48,6 +49,7 @@ public class Monitor implements Serializable {
         this.followRedirects = value.followRedirects;
         this.forceNoCache = value.forceNoCache;
         this.requestMethod = value.requestMethod;
+        this.sslExpiryThreshold = value.sslExpiryThreshold;
     }
 
     public Monitor(
@@ -63,7 +65,8 @@ public class Monitor implements Serializable {
         Boolean latencyHistoryEnabled,
         Boolean followRedirects,
         Boolean forceNoCache,
-        HttpMethod requestMethod
+        HttpMethod requestMethod,
+        Integer sslExpiryThreshold
     ) {
         this.id = id;
         this.name = name;
@@ -78,6 +81,7 @@ public class Monitor implements Serializable {
         this.followRedirects = followRedirects;
         this.forceNoCache = forceNoCache;
         this.requestMethod = requestMethod;
+        this.sslExpiryThreshold = sslExpiryThreshold;
     }
 
     /**
@@ -279,6 +283,21 @@ public class Monitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.monitor.ssl_expiry_threshold</code>.
+     */
+    public Integer getSslExpiryThreshold() {
+        return this.sslExpiryThreshold;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.ssl_expiry_threshold</code>.
+     */
+    public Monitor setSslExpiryThreshold(Integer sslExpiryThreshold) {
+        this.sslExpiryThreshold = sslExpiryThreshold;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -366,6 +385,12 @@ public class Monitor implements Serializable {
         }
         else if (!this.requestMethod.equals(other.requestMethod))
             return false;
+        if (this.sslExpiryThreshold == null) {
+            if (other.sslExpiryThreshold != null)
+                return false;
+        }
+        else if (!this.sslExpiryThreshold.equals(other.sslExpiryThreshold))
+            return false;
         return true;
     }
 
@@ -386,6 +411,7 @@ public class Monitor implements Serializable {
         result = prime * result + ((this.followRedirects == null) ? 0 : this.followRedirects.hashCode());
         result = prime * result + ((this.forceNoCache == null) ? 0 : this.forceNoCache.hashCode());
         result = prime * result + ((this.requestMethod == null) ? 0 : this.requestMethod.hashCode());
+        result = prime * result + ((this.sslExpiryThreshold == null) ? 0 : this.sslExpiryThreshold.hashCode());
         return result;
     }
 
@@ -406,6 +432,7 @@ public class Monitor implements Serializable {
         sb.append(", ").append(followRedirects);
         sb.append(", ").append(forceNoCache);
         sb.append(", ").append(requestMethod);
+        sb.append(", ").append(sslExpiryThreshold);
 
         sb.append(")");
         return sb.toString();
