@@ -56,7 +56,8 @@
 <!-- Tabler JS from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.2.0/dist/js/tabler.min.js"></script>
 <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-<script src="/public/js/kuvasz.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="/public/js/kuvasz.js?cb={{ appVersion }}"></script>
 
 <!-- Custom JS -->
 {% block customScripts %}{% endblock %}
