@@ -239,7 +239,7 @@ jib {
 val updateApiDoc by tasks.registering(type = Copy::class) {
     dependsOn("kaptKotlin")
     from(layout.buildDirectory.file("tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml"))
-    into("$projectDir/docs/api-doc")
+    into("$projectDir/docs/docs")
 }
 
 val dbUrl = "jdbc:postgresql://localhost:5432/postgres"
