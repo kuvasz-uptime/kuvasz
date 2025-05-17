@@ -1,0 +1,684 @@
+openapi: 3.0.1
+info:
+  title: kuvasz
+  description: "Kuvasz [pronounce as 'koovas'] is an open-source uptime and SSL monitoring\
+    \ service"
+  contact:
+    url: https://github.com/kuvasz-uptime/kuvasz
+  version: latest
+tags:
+- name: Management operations
+- name: Monitor operations
+paths:
+  /api/v1/monitors:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns all monitors with their details
+      operationId: getMonitorsWithDetails
+      parameters:
+      - name: enabledOnly
+        in: query
+        schema:
+          type: boolean
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonitorDetailsDto"
+      security:
+      - apiKey: []
+    post:
+      tags:
+      - Monitor operations
+      summary: Creates a monitor
+      operationId: createMonitor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MonitorCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+  /api/v1/monitors/export:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns the export of all monitors in YAML format
+      operationId: getMonitorsExport
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/x-yaml: {}
+      security:
+      - apiKey: []
+  /api/v1/monitors/{monitorId}:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns a monitor's details
+      operationId: getMonitorDetails
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitorDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+    delete:
+      tags:
+      - Monitor operations
+      summary: Deletes a monitor by ID
+      operationId: deleteMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+    patch:
+      tags:
+      - Monitor operations
+      summary: Updates a monitor by ID
+      operationId: updateMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MonitorUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+  /api/v1/monitors/{monitorId}/ssl-events:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns the SSL events of the given monitor
+      operationId: getSSLEvents
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SSLEventDto"
+      security:
+      - apiKey: []
+  /api/v1/monitors/{monitorId}/stats:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns the stats of the given monitor
+      operationId: getMonitorStats
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: latencyLogLimit
+        in: query
+        schema:
+          type: integer
+          format: int32
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitorStatsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+  /api/v1/monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - Monitor operations
+      summary: Returns the uptime events of the given monitor
+      operationId: getUptimeEvents
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UptimeEventDto"
+      security:
+      - apiKey: []
+  /api/v1/health:
+    get:
+      tags:
+      - Management operations
+      summary: Health endpoint
+      description: Returns the current status of the application
+      operationId: health
+      parameters: []
+      responses:
+        "200":
+          description: Service is UP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResult"
+        "503":
+          description: Service is DOWN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResult"
+  /api/v1/info:
+    get:
+      tags:
+      - Management operations
+      summary: Info endpoint
+      description: "Returns info about the application (e.g. which handlers are enabled,\
+        \ etc.)"
+      operationId: info
+      parameters: []
+      responses:
+        "200":
+          description: The standard response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfoResult"
+              example:
+                handlers:
+                  log-event-handler.enabled: true
+                  smtp-event-handler.enabled: false
+                  slack-event-handler.enabled: true
+                  telegram-event-handler.enabled: true
+                  pagerduty-event-handler.enabled: true
+components:
+  schemas:
+    HealthResult:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - UNKNOWN
+    HttpMethod:
+      type: string
+      description: This class is generated by jOOQ.
+      enum:
+      - GET
+      - HEAD
+    InfoResult:
+      type: object
+      properties:
+        handlers:
+          type: object
+    LatencyLogDto:
+      required:
+      - createdAt
+      - id
+      - latencyInMs
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        latencyInMs:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+    MonitorCreateDto:
+      required:
+      - name
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+        url:
+          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+          type: string
+        uptimeCheckInterval:
+          minimum: 60
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+          default: true
+        sslCheckEnabled:
+          type: boolean
+          default: false
+        pagerdutyIntegrationKey:
+          type: string
+          nullable: true
+        requestMethod:
+          allOf:
+          - $ref: "#/components/schemas/HttpMethod"
+          default: GET
+        latencyHistoryEnabled:
+          type: boolean
+          default: true
+        forceNoCache:
+          type: boolean
+          default: true
+        followRedirects:
+          type: boolean
+          default: true
+        sslExpiryThreshold:
+          minimum: 0
+          type: integer
+          format: int32
+          default: 30
+    MonitorDetailsDto:
+      required:
+      - createdAt
+      - enabled
+      - followRedirects
+      - forceNoCache
+      - id
+      - latencyHistoryEnabled
+      - name
+      - pagerdutyKeyPresent
+      - requestMethod
+      - sslCheckEnabled
+      - sslExpiryThreshold
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        uptimeCheckInterval:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        sslCheckEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          format: date-time
+          nullable: true
+        nextUptimeCheck:
+          type: string
+          format: date-time
+          nullable: true
+        sslStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SslStatus"
+        sslStatusStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastSSLCheck:
+          type: string
+          format: date-time
+          nullable: true
+        nextSSLCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          nullable: true
+        sslError:
+          type: string
+          nullable: true
+        pagerdutyKeyPresent:
+          type: boolean
+        requestMethod:
+          $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+        forceNoCache:
+          type: boolean
+        followRedirects:
+          type: boolean
+        sslExpiryThreshold:
+          type: integer
+          format: int32
+        sslValidUntil:
+          type: string
+          format: date-time
+          nullable: true
+    MonitorDto:
+      required:
+      - createdAt
+      - enabled
+      - followRedirects
+      - forceNoCache
+      - id
+      - latencyHistoryEnabled
+      - name
+      - pagerdutyKeyPresent
+      - requestMethod
+      - sslCheckEnabled
+      - sslExpiryThreshold
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        url:
+          type: string
+        uptimeCheckInterval:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        sslCheckEnabled:
+          type: boolean
+        pagerdutyKeyPresent:
+          type: boolean
+        requestMethod:
+          $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+        forceNoCache:
+          type: boolean
+        followRedirects:
+          type: boolean
+        sslExpiryThreshold:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    MonitorStatsDto:
+      required:
+      - id
+      - latencyHistoryEnabled
+      - latencyLogs
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        latencyHistoryEnabled:
+          type: boolean
+        averageLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        p95LatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        p99LatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        latencyLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/LatencyLogDto"
+    MonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          nullable: false
+        url:
+          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+          type: string
+          nullable: false
+        uptimeCheckInterval:
+          minimum: 60
+          type: integer
+          format: int32
+          nullable: false
+        enabled:
+          type: boolean
+          nullable: false
+        sslCheckEnabled:
+          type: boolean
+          nullable: false
+        requestMethod:
+          $ref: "#/components/schemas/HttpMethod"
+        pagerdutyIntegrationKey:
+          type: string
+          nullable: true
+        latencyHistoryEnabled:
+          type: boolean
+          nullable: false
+        forceNoCache:
+          type: boolean
+          nullable: false
+        followRedirects:
+          type: boolean
+          nullable: false
+        sslExpiryThreshold:
+          type: integer
+          format: int32
+          nullable: false
+    SSLEventDto:
+      required:
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/SslStatus"
+        error:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    ServiceError:
+      type: object
+      properties:
+        message:
+          type: string
+          nullable: true
+    SslStatus:
+      type: string
+      description: This class is generated by jOOQ.
+      enum:
+      - VALID
+      - INVALID
+      - WILL_EXPIRE
+    UptimeEventDto:
+      required:
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    UptimeStatus:
+      type: string
+      description: This class is generated by jOOQ.
+      enum:
+      - UP
+      - DOWN
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      name: X-API-KEY
+      in: header
