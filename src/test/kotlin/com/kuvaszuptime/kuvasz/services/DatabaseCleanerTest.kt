@@ -18,7 +18,8 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
-@Property(name = "app-config.data-retention-days", value = "7")
+@Property(name = "app-config.uptime-data-retention-days", value = "7")
+@Property(name = "app-config.latency-data-retention-days", value = "5")
 class DatabaseCleanerTest(
     private val uptimeEventRepository: UptimeEventRepository,
     private val latencyLogRepository: LatencyLogRepository,
@@ -89,7 +90,7 @@ class DatabaseCleanerTest(
 
             `when`("there is a LATENCY_LOG record with a creation date less than retention limit") {
                 val monitor = createMonitor(monitorRepository)
-                insertLatencyLogRecord(monitor.id, getCurrentTimestamp().minusDays(8))
+                insertLatencyLogRecord(monitor.id, getCurrentTimestamp().minusDays(6))
                 databaseCleaner.cleanObsoleteData()
 
                 then("it should delete it") {
