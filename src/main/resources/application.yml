@@ -101,7 +101,8 @@ jooq:
       sql-dialect: POSTGRES
 ---
 app-config:
-  data-retention-days: ${DATA_RETENTION_DAYS:`30`}
+  uptime-data-retention-days: ${UPTIME_DATA_RETENTION_DAYS:`365`}
+  latency-data-retention-days: ${LATENCY_DATA_RETENTION_DAYS:`7`}
 ---
 handler-config:
   log-event-handler:
