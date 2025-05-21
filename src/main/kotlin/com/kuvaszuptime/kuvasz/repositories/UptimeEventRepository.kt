@@ -70,7 +70,8 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
     fun isMonitorUp(monitorId: Long, nullAsUp: Boolean = false): Boolean =
         getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: nullAsUp
 
-    fun getEventsByMonitorId(monitorId: Long): List<UptimeEventDto> = dslContext
+    @Suppress("IgnoredReturnValue")
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<UptimeEventDto> = dslContext
         .select(
             UPTIME_EVENT.ID.`as`(UptimeEventDto::id.name),
             UPTIME_EVENT.STATUS.`as`(UptimeEventDto::status.name),
@@ -82,5 +83,10 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
         .from(UPTIME_EVENT)
         .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .orderBy(UPTIME_EVENT.STARTED_AT.desc())
+        .apply {
+            if (limit != null) {
+                limit(limit)
+            }
+        }
         .fetchInto(UptimeEventDto::class.java)
 }

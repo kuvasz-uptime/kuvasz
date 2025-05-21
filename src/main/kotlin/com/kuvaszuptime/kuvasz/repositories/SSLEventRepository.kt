@@ -69,7 +69,8 @@ class SSLEventRepository(private val dslContext: DSLContext) {
         .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun getEventsByMonitorId(monitorId: Long): List<SSLEventDto> = dslContext
+    @Suppress("IgnoredReturnValue")
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<SSLEventDto> = dslContext
         .select(
             SSL_EVENT.ID.`as`(SSLEventDto::id.name),
             SSL_EVENT.STATUS.`as`(SSLEventDto::status.name),
@@ -82,5 +83,10 @@ class SSLEventRepository(private val dslContext: DSLContext) {
         .from(SSL_EVENT)
         .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
         .orderBy(SSL_EVENT.STARTED_AT.desc())
+        .apply {
+            if (limit != null) {
+                limit(limit)
+            }
+        }
         .fetchInto(SSLEventDto::class.java)
 }
