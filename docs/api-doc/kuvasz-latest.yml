@@ -625,6 +625,10 @@ components:
         startedAt:
           type: string
           format: date-time
+        sslValidUntil:
+          type: string
+          format: date-time
+          nullable: true
         endedAt:
           type: string
           format: date-time

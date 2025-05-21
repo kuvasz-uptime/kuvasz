@@ -75,6 +75,7 @@ class SSLEventRepository(private val dslContext: DSLContext) {
             SSL_EVENT.STATUS.`as`(SSLEventDto::status.name),
             SSL_EVENT.ERROR.`as`(SSLEventDto::error.name),
             SSL_EVENT.STARTED_AT.`as`(SSLEventDto::startedAt.name),
+            SSL_EVENT.SSL_EXPIRY_DATE.`as`(SSLEventDto::sslValidUntil.name),
             SSL_EVENT.ENDED_AT.`as`(SSLEventDto::endedAt.name),
             SSL_EVENT.UPDATED_AT.`as`(SSLEventDto::updatedAt.name),
         )

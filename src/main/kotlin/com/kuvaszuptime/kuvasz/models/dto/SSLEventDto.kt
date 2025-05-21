@@ -10,6 +10,7 @@ data class SSLEventDto(
     val status: SslStatus,
     val error: String?,
     val startedAt: OffsetDateTime,
+    val sslValidUntil: OffsetDateTime?,
     val endedAt: OffsetDateTime?,
     val updatedAt: OffsetDateTime
 )

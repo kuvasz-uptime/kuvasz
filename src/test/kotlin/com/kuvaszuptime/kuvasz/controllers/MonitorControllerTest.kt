@@ -867,6 +867,7 @@ class MonitorControllerTest(
                     monitorId = monitor.id,
                     startedAt = now,
                     status = SslStatus.VALID,
+                    sslExpiryDate = now.plusDays(40),
                     endedAt = null
                 )
                 createSSLEventRecord(
@@ -888,7 +889,10 @@ class MonitorControllerTest(
                     val response = monitorClient.getSSLEvents(monitorId = monitor.id)
                     response shouldHaveSize 2
                     response.forAll { it.id.shouldBeGreaterThan(0) }
-                    response.forOne { it.status shouldBe SslStatus.VALID }
+                    response.forOne { validEvent ->
+                        validEvent.status shouldBe SslStatus.VALID
+                        validEvent.sslValidUntil shouldBe now.plusDays(40)
+                    }
                     response.forOne { it.status shouldBe SslStatus.INVALID }
                 }
             }

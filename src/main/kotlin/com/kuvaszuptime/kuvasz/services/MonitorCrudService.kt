@@ -133,18 +133,18 @@ class MonitorCrudService(
             }
         )
 
-    fun getUptimeEventsByMonitorId(monitorId: Long): List<UptimeEventDto> =
+    fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<UptimeEventDto> =
         monitorRepository.findById(monitorId)
             .orThrowNotFound(monitorId)
             .let { monitor ->
-                uptimeEventRepository.getEventsByMonitorId(monitor.id)
+                uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
-    fun getSSLEventsByMonitorId(monitorId: Long): List<SSLEventDto> =
+    fun getSSLEventsByMonitorId(monitorId: Long, limit: Int? = null): List<SSLEventDto> =
         monitorRepository.findById(monitorId)
             .orThrowNotFound(monitorId)
             .let { monitor ->
-                sslEventRepository.getEventsByMonitorId(monitor.id)
+                sslEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
     fun getMonitorStats(monitorId: Long, period: Duration): MonitorStatsDto =
