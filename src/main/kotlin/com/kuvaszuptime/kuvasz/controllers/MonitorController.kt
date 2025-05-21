@@ -33,6 +33,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import java.io.File
+import java.time.Duration
 import java.time.Instant
 
 const val API_V1_PREFIX = "/api/v1"
@@ -188,12 +189,14 @@ class MonitorController(
     @ExecuteOn(TaskExecutors.IO)
     override fun getMonitorStats(
         monitorId: Long,
-        @QueryValue latencyLogLimit: Int?,
-    ): MonitorStatsDto =
-        monitorCrudService.getMonitorStats(
+        @QueryValue period: Duration?,
+    ): MonitorStatsDto {
+        val effectivePeriod = period ?: Duration.ofDays(STATS_PERIOD_DEFAULT_DAYS)
+        return monitorCrudService.getMonitorStats(
             monitorId = monitorId,
-            latencyLogLimit = latencyLogLimit ?: LATENCY_LOG_LIMIT_DEFAULT
+            period = effectivePeriod,
         )
+    }
 
     @ApiResponses(
         ApiResponse(
@@ -216,7 +219,7 @@ class MonitorController(
     }
 
     companion object {
-        private const val LATENCY_LOG_LIMIT_DEFAULT = 100
+        private const val STATS_PERIOD_DEFAULT_DAYS = 1L
         private const val EXPORT_FILE_NAME_PREFIX = "kuvasz-monitors-export-"
         private const val EXPORT_FILE_EXTENSION = ".yml"
     }

@@ -28,6 +28,7 @@ import jakarta.validation.ValidationException
 import org.jooq.DSLContext
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
+import java.time.Duration
 
 @Singleton
 class MonitorCrudService(
@@ -146,7 +147,7 @@ class MonitorCrudService(
                 sslEventRepository.getEventsByMonitorId(monitor.id)
             }
 
-    fun getMonitorStats(monitorId: Long, latencyLogLimit: Int): MonitorStatsDto =
+    fun getMonitorStats(monitorId: Long, period: Duration): MonitorStatsDto =
         monitorRepository.findById(monitorId)
             .orThrowNotFound(monitorId)
             .let { monitor ->
@@ -162,15 +163,12 @@ class MonitorCrudService(
                     return statsDto
                 }
 
-                val metrics = latencyLogRepository.getLatencyMetrics(monitor.id)
+                val metrics = latencyLogRepository.getLatencyMetrics(monitor.id, period)
                 statsDto.copy(
                     averageLatencyInMs = metrics?.avg,
                     p95LatencyInMs = metrics?.p95,
                     p99LatencyInMs = metrics?.p99,
-                    latencyLogs = latencyLogRepository.fetchLatestByMonitorId(
-                        monitorId = monitor.id,
-                        limit = latencyLogLimit,
-                    )
+                    latencyLogs = latencyLogRepository.fetchLatestByMonitorId(monitor.id, period)
                 )
             }
 

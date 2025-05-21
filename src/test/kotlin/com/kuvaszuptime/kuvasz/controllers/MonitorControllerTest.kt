@@ -46,6 +46,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
+import java.time.Duration
 
 @MicronautTest
 class MonitorControllerTest(
@@ -228,21 +229,24 @@ class MonitorControllerTest(
                     forceNoCache = false,
                     followRedirects = false,
                 )
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 1200)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
+                latencyLogRepository.insertLatencyForMonitor(monitorId = monitor.id, latency = 1200)
+                latencyLogRepository.insertLatencyForMonitor(monitorId = monitor.id, latency = 600)
+                latencyLogRepository.insertLatencyForMonitor(
+                    monitorId = monitor.id,
+                    latency = 600,
+                    createdAt = getCurrentTimestamp().minusHours(25),
+                )
 
-                then("it should return the correct stats") {
-                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = null)
+                then("it should return the correct stats, by default from the last 1 day") {
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, period = null)
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
-                    response.averageLatencyInMs shouldBe 800
-                    response.p95LatencyInMs shouldBe 1140
-                    response.p99LatencyInMs shouldBe 1188
-                    response.latencyLogs.shouldNotBeEmpty()
+                    response.averageLatencyInMs shouldBe 900
+                    response.p95LatencyInMs shouldBe 1170
+                    response.p99LatencyInMs shouldBe 1194
+                    response.latencyLogs.shouldHaveSize(2)
                     // Latency logs should be sorted by their creation in descending order
                     response.latencyLogs[0].id shouldBeGreaterThan response.latencyLogs[1].id
-                    response.latencyLogs[1].id shouldBeGreaterThan response.latencyLogs[2].id
                 }
             }
 
@@ -257,22 +261,22 @@ class MonitorControllerTest(
                 )
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 100)
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 200)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 500)
-                latencyLogRepository.insertLatencyForMonitor(monitor.id, 400)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 500, getCurrentTimestamp().minusMinutes(5))
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 400, getCurrentTimestamp().minusDays(1))
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 300)
 
-                then("it should limit the number of logs") {
-                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = 3)
+                then("it should take only the fresh records into consideration") {
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, period = Duration.ofMinutes(4))
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
-                    response.averageLatencyInMs shouldBe 300
-                    response.p95LatencyInMs shouldBe 480
-                    response.p99LatencyInMs shouldBe 496
+                    response.averageLatencyInMs shouldBe 200
+                    response.p95LatencyInMs shouldBe 290
+                    response.p99LatencyInMs shouldBe 298
 
                     response.latencyLogs shouldHaveSize 3
                     response.latencyLogs[0].latencyInMs shouldBe 300
-                    response.latencyLogs[1].latencyInMs shouldBe 400
-                    response.latencyLogs[2].latencyInMs shouldBe 500
+                    response.latencyLogs[1].latencyInMs shouldBe 200
+                    response.latencyLogs[2].latencyInMs shouldBe 100
                 }
             }
 
@@ -287,7 +291,7 @@ class MonitorControllerTest(
                 )
 
                 then("it should return null for the latency stats and an empty list for the logs") {
-                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = null)
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, period = null)
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
                     response.averageLatencyInMs shouldBe null
@@ -313,7 +317,7 @@ class MonitorControllerTest(
                 latencyLogRepository.insertLatencyForMonitor(monitor.id, 600)
 
                 then("it should return null for the latency stats and an empty list for the logs") {
-                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, latencyLogLimit = null)
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, period = null)
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe false
                     response.averageLatencyInMs shouldBe null

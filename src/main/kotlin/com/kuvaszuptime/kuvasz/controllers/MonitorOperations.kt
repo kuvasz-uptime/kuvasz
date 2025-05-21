@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
+import java.time.Duration
 
 interface MonitorOperations {
 
@@ -63,8 +64,11 @@ interface MonitorOperations {
     fun getMonitorStats(
         monitorId: Long,
         @QueryValue
-        @Parameter(required = false)
-        latencyLogLimit: Int?,
+        @Parameter(
+            required = false,
+            schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 1d")
+        )
+        period: Duration?,
     ): MonitorStatsDto
 
     @Operation(summary = "Returns the export of all monitors in YAML format")

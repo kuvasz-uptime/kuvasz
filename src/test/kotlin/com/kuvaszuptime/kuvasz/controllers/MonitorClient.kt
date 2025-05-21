@@ -11,6 +11,7 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Produces
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.server.types.files.SystemFile
+import java.time.Duration
 
 @Client("/api/v1/monitors")
 interface MonitorClient : MonitorOperations {
@@ -28,7 +29,7 @@ interface MonitorClient : MonitorOperations {
 
     override fun getSSLEvents(monitorId: Long): List<SSLEventDto>
 
-    override fun getMonitorStats(monitorId: Long, latencyLogLimit: Int?): MonitorStatsDto
+    override fun getMonitorStats(monitorId: Long, period: Duration?): MonitorStatsDto
 
     @Produces(MediaType.APPLICATION_YAML)
     override fun getMonitorsExport(): SystemFile

@@ -220,11 +220,11 @@ paths:
         schema:
           type: integer
           format: int64
-      - name: latencyLogLimit
+      - name: period
         in: query
         schema:
-          type: integer
-          format: int32
+          type: string
+          description: "A Java Duration string, default 1d"
           nullable: true
       responses:
         "200":
