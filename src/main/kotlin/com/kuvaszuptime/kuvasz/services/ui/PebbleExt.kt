@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.ui
 
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.micronaut.context.event.BeanCreatedEvent
 import io.micronaut.context.event.BeanCreatedEventListener
 import io.pebbletemplates.pebble.PebbleEngine
@@ -21,7 +22,10 @@ class PebbleEngineExtender : BeanCreatedEventListener<PebbleEngine> {
 }
 
 object PebbleExtension : AbstractExtension() {
-    override fun getFilters(): Map<String, Filter> = mapOf("timeago" to TimeAgoFilter)
+    override fun getFilters(): Map<String, Filter> = mapOf(
+        "timeago" to TimeAgoFilter,
+        "interval" to IntervalFilter,
+    )
 }
 
 object TimeAgoFilter : Filter {
@@ -29,7 +33,7 @@ object TimeAgoFilter : Filter {
 
     override fun apply(
         input: Any?,
-        args: MutableMap<String, Any>?,
+        args: Map<String, Any>?,
         self: PebbleTemplate?,
         context: EvaluationContext?,
         lineNumber: Int
@@ -39,4 +43,25 @@ object TimeAgoFilter : Filter {
         } else {
             null
         }
+}
+
+object IntervalFilter : Filter {
+    private const val UNTIL_KEY = "until"
+
+    override fun getArgumentNames(): List<String> = listOf(UNTIL_KEY)
+
+    override fun apply(
+        input: Any?,
+        args: Map<String, Any>?,
+        self: PebbleTemplate?,
+        context: EvaluationContext?,
+        lineNumber: Int,
+    ): String? {
+        val until = args?.get(UNTIL_KEY) ?: getCurrentTimestamp()
+        return if (input != null && input is OffsetDateTime && until is OffsetDateTime) {
+            IntervalTransformer.transform(input, until)
+        } else {
+            null
+        }
+    }
 }

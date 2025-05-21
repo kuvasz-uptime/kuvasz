@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.ui
 
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import java.time.Duration
 import java.time.OffsetDateTime
 import kotlin.math.abs
@@ -15,7 +16,7 @@ object TimeAgoTransformer {
     private const val SECONDS_IN_YEAR = SECONDS_IN_DAY * 365 // Approximation
 
     @Suppress("CyclomaticComplexMethod")
-    fun transform(dateTime: OffsetDateTime, reference: OffsetDateTime = OffsetDateTime.now()): String {
+    fun transform(dateTime: OffsetDateTime, reference: OffsetDateTime = getCurrentTimestamp()): String {
         val seconds = Duration.between(dateTime, reference).seconds
         val isNegative = seconds < 0
         val absSeconds = abs(seconds)
