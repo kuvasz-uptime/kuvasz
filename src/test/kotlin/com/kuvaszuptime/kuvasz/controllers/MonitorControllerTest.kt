@@ -471,7 +471,7 @@ class MonitorControllerTest(
                 val monitorToCreate = MonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
-                    uptimeCheckInterval = 59,
+                    uptimeCheckInterval = 4,
                     enabled = true
                 )
                 val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
@@ -482,7 +482,7 @@ class MonitorControllerTest(
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     exceptionToMessage(response) shouldContain
-                        "uptimeCheckInterval: must be greater than or equal to 60"
+                        "uptimeCheckInterval: must be greater than or equal to 5"
                 }
             }
 
@@ -746,7 +746,7 @@ class MonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::uptimeCheckInterval.name, 59)
+                    .put(MonitorUpdateDto::uptimeCheckInterval.name, 4)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
                 val ex = shouldThrow<HttpClientResponseException> {
@@ -757,7 +757,7 @@ class MonitorControllerTest(
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
                     ex.response.getBodyAs<String>() shouldContain
-                        "Validation failed: uptimeCheckInterval: must be greater than or equal to 60"
+                        "Validation failed: uptimeCheckInterval: must be greater than or equal to 5"
                     monitorInDb.name shouldBe createdMonitor.name
                 }
             }

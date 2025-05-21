@@ -363,7 +363,7 @@ components:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
         uptimeCheckInterval:
-          minimum: 60
+          minimum: 5
           type: integer
           format: int32
         enabled:
@@ -578,7 +578,7 @@ components:
           type: string
           nullable: false
         uptimeCheckInterval:
-          minimum: 60
+          minimum: 5
           type: integer
           format: int32
           nullable: false

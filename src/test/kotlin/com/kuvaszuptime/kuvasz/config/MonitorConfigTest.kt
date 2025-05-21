@@ -59,7 +59,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUptimeCheckInterval - must be greater than or equal to 60"
+                    "MonitorConfig.getUptimeCheckInterval - must be greater than or equal to 5"
             }
         }
 

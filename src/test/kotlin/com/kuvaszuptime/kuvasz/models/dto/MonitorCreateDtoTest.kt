@@ -72,13 +72,13 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             val dto = MonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
-                uptimeCheckInterval = 59,
+                uptimeCheckInterval = 4,
             )
 
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "uptimeCheckInterval",
-                    message = "must be greater than or equal to 60"
+                    message = "must be greater than or equal to 5"
                 )
             }
         }
