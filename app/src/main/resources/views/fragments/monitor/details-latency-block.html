@@ -1,0 +1,214 @@
+<div x-data="latencyBlock()"
+     @monitor-disabled.window="isAutoRefreshEnabled = false">
+    <div class="row row-cards mb-3">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="subheader">Average</div>
+                    <div class="h4 m-0" x-text="lastResponse?.averageLatencyInMs + ' ms'"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="subheader">P95</div>
+                    <div class="h4 m-0" x-text="lastResponse?.p95LatencyInMs + ' ms'"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="subheader">P99</div>
+                    <div class="h4 m-0" x-text="lastResponse?.p99LatencyInMs + ' ms'"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cards mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent measurements</h3>
+                    <div class="card-actions btn-actions">
+                        <label class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" x-model="isAutoRefreshEnabled">
+                            <span class="form-check-label">{% include "icons/refresh"%}</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title"></h3>
+                    <div id="monitor-details-latency-chart" style="min-height: 240px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function latencyBlock() {
+      return {
+        isMonitorEnabled: {{ monitor.enabled }},
+        chart: null,
+        previousData: null,
+        endpointUrl: '/api/v1/monitors/{{ monitor.id }}/stats?period=3h',
+        pollInterval: {{ monitor.uptimeCheckInterval * 1000 }},
+        isAutoRefreshEnabled: false,
+        intervalId: null,
+        lastResponse: null,
+
+        init() {
+          this.initializeChart();
+          this.startPolling();
+          if (!this.isAutoRefreshEnabled) {
+            this.stopPolling();
+          }
+          this.$watch('isAutoRefreshEnabled', (value) => {
+            console.debug('Auto-refresh setting changed:', value);
+            if (value) {
+              this.startPolling();
+            } else {
+              this.stopPolling();
+            }
+          });
+        },
+
+        startPolling() {
+          this.pollEndpoint();
+          this.intervalId = setInterval(() => this.pollEndpoint(), this.pollInterval);
+        },
+
+        stopPolling() {
+          if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+          }
+        },
+
+        initializeChart() {
+          const options = {
+              chart: {
+                type: "area",
+                fontFamily: "inherit",
+                height: 240,
+                parentHeightOffset: 0,
+                toolbar: {
+                  show: false,
+                },
+                animations: {
+                  enabled: false,
+                },
+              },
+              dataLabels: {
+                enabled: false,
+              },
+              fill: {
+                colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 16%)", "color-mix(in srgb, transparent, var(--tblr-primary) 16%)"],
+                type: "solid",
+              },
+              stroke: {
+                width: 2,
+                lineCap: "round",
+                curve: "smooth",
+              },
+              series: [],
+              tooltip: {
+                enabled: true,
+                x: {
+                  format: "yyyy/MM/dd HH:mm:ss",
+                },
+                y: {
+                  formatter: function (val) {
+                    return val + " ms";
+                  },
+                },
+                theme: "dark",
+              },
+              grid: {
+                padding: {
+                  top: -20,
+                  right: 0,
+                  left: -4,
+                  bottom: -4,
+                },
+                strokeDashArray: 4,
+              },
+              xaxis: {
+                labels: {
+                  padding: 0,
+                  datetimeUTC: false
+                },
+                tooltip: {
+                  enabled: false,
+                },
+                axisBorder: {
+                  show: false,
+                },
+                type: "datetime",
+              },
+              yaxis: {
+                labels: {
+                  padding: 4,
+                },
+              },
+              labels: [],
+              colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 100%)"],
+              legend: {
+                show: false,
+              },
+            };
+          this.chart = new ApexCharts(document.getElementById("monitor-details-latency-chart"), options);
+          this.chart.render();
+        },
+
+        async pollEndpoint() {
+          try {
+            const response = await fetch(this.endpointUrl);
+            if (!response.ok) {
+              console.error('Error fetching data:', response.status);
+              return;
+            }
+            const rawData = await response.json();
+            this.lastResponse = rawData;
+            const transformedData = this.transformData(rawData);
+
+            if (!this.previousData || JSON.stringify(transformedData) !== JSON.stringify(this.previousData)) {
+              this.updateChart(transformedData);
+              this.previousData = transformedData;
+            }
+          } catch (error) {
+            console.error('Error during polling:', error);
+          }
+        },
+
+        transformData(rawData) {
+          const newLabels = [];
+          const newData = [];
+
+          rawData.latencyLogs.forEach(item => {
+            newLabels.push(new Date(item.createdAt).toString());
+            newData.push(parseInt(item.latencyInMs));
+          });
+
+          return {
+            labels: newLabels,
+            series: [{
+              name: 'Latency',
+              data: newData,
+            }],
+          };
+        },
+
+        updateChart(newData) {
+        console.debug('Updating chart with new data:', newData);
+          this.chart.updateOptions({
+            labels: newData.labels,
+            series: newData.series,
+          });
+        },
+      };
+    }
+</script>

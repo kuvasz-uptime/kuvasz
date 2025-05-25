@@ -1,0 +1,54 @@
+<div id="monitor-details-uptime-summary" class="row row-cards mb-3" hx-swap-oob="true">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-status-start
+            {% if not monitor.enabled %}
+            bg-cyan
+            {% elseif monitor.uptimeStatus is null %}
+            bg-warning
+            {% elseif monitor.uptimeStatus.literal == 'UP' %}
+            bg-success
+            {% elseif monitor.uptimeStatus.literal == 'DOWN' %}
+            bg-danger
+            {% endif %}"></div>
+            <div class="card-body">
+                {% if monitor.enabled %}
+                {% if monitor.uptimeStatusStartedAt is not null %}
+                <div class="subheader">Currently {{ monitor.uptimeStatus.literal }} for</div>
+                <div class="h4 m-0">{{ monitor.uptimeStatusStartedAt | interval }}</div>
+                {% else %}
+                <div class="subheader">Monitor was just created</div>
+                <div class="h4 m-0">Waiting for the first check</div>
+                {% endif %}
+                {% else %}
+                <div class="subheader">Current uptime status</div>
+                <div class="h4 m-0">Monitor is paused</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Last check</div>
+                {% if monitor.lastUptimeCheck is not null %}
+                <div class="h4 m-0">{{ monitor.lastUptimeCheck | timeago }}</div>
+                {% else %}
+                <div class="h4 m-0">Waiting for the first check</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Next check</div>
+                {% if monitor.enabled %}
+                <div class="h4 m-0">{{ monitor.nextUptimeCheck | timeago }}</div>
+                {% else %}
+                <div class="h4 m-0">Monitor is paused</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

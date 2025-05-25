@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} | Kuvasz Uptime</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
+    <link rel="manifest" href="/public/site.webmanifest">
+    <script src="/public/ext/js/apexcharts.min.js"></script>
+
+    <script>
+        // Setting the theme based on user preference eagerly
+        (function() {
+            const savedTheme = localStorage.getItem('kuvasz-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
+    <!-- Tabler CSS from CDN -->
+    <link rel="stylesheet" href="/public/ext/css/tabler.min.css">
+    <link rel="stylesheet" href="/public/ext/css/tabler-vendors.min.css">
+</head>
+<body>
+<div class="page">
+    {% include "fragments/layout/main-header" %}
+
+    {% if isAuthenticated %}
+    {% include "fragments/layout/navigation" %}
+    {% endif %}
+
+    <div class="page-wrapper">
+        <!-- BEGIN PAGE HEADER -->
+        <div class="page-header d-print-none">
+            {% block pageTitle %}{% endblock %}
+        </div>
+        <!-- END PAGE HEADER -->
+        <!-- BEGIN PAGE BODY -->
+        <div class="page-body">
+            <div class="container-xl">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+        <!-- END PAGE BODY -->
+        <!--  BEGIN FOOTER  -->
+        {% include "fragments/layout/footer" %}
+        <!--  END FOOTER  -->
+    </div>
+</div>
+
+<!-- Tabler JS from CDN -->
+<script src="/public/ext/js/tabler.min.js"></script>
+<script src="/public/ext/js/htmx.2.0.4.min.js"></script>
+<script src="/public/ext/js/alpine.3.min.js"></script>
+<script src="/public/js/kuvasz.js?cb={{ appVersion }}"></script>
+
+<!-- Custom JS -->
+{% block customScripts %}{% endblock %}
+</body>
+</html>

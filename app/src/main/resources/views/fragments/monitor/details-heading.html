@@ -1,0 +1,28 @@
+{% import "fragments/monitor/uptime-status-badge" %}
+{% import "fragments/monitor/ssl-status-badge" %}
+
+<div id="monitor-heading"
+     class="col-auto"
+     hx-get="/fragments/monitors/{{ monitor.id }}/details-heading"
+     hx-trigger="every 15s, refresh-monitor-heading"
+     hx-on:htmx:after-swap="reInitTooltips()">
+    <div class="row g-3 align-items-center">
+        <div class="col-auto">
+            {{ uptimeStatusOfMonitor(monitor = monitor, withBadge = false, withTooltip = false) }}
+        </div>
+        <div class="col">
+            <div class="page-pretitle text-wrap text-break">{{ monitor.url | raw | abbreviate(255) }}</div>
+            <h2 class="page-title text-wrap text-break">{{ monitor.name | abbreviate(100) }}</h2>
+            <div class="text-secondary">
+                <ul class="list-inline mt-1 mb-0">
+                    <a class="list-inline-item align-middle" href="#monitor-details-ssl-summary">
+                        {{ sslStatusOfMonitor(monitor = monitor, withTooltip = false) }}
+                    </a>
+                    <li class="list-inline-item align-middle">
+                        Checked every {{ monitor.uptimeCheckInterval }} seconds
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

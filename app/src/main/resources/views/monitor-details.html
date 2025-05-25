@@ -1,0 +1,107 @@
+{% extends "layout" %}
+{% import "fragments/monitor/uptime-status-badge" %}
+{% import "fragments/monitor/ssl-status-badge" %}
+{% import "fragments/monitor/delete-monitor-modal" %}
+
+{% block title %}{{ monitor.name | abbreviate(50) }}{% endblock %}
+
+{% block pageTitle %}
+<div class="container"
+     x-data="{
+            monitorId: {{ monitor.id }},
+            isMonitorEnabled: {{ monitor.enabled }},
+            isRequestLoading: false,
+            toggleMonitor() {
+                this.isRequestLoading = true;
+                fetch('/api/v1/monitors/' + this.monitorId, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled: !this.isMonitorEnabled })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        this.isRequestLoading = false;
+                        this.isMonitorEnabled = !this.isMonitorEnabled;
+
+                        // Sending an event to other components to know about the state change
+                        this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
+                        console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
+
+                        // Dispatch an event for htmx to refresh the monitor heading
+                        refreshMonitorHeading();
+                    } else {
+                        console.error('Error toggling monitor:', response.statusText);
+                        alert('An error occurred while toggling the monitor, refer to the console for more details');
+                        this.isRequestLoading = false;
+                    }
+                })
+                .catch(error => {
+                    this.isRequestLoading = false;
+                    console.error('Error toggling monitor:', error);
+                    alert('An error occurred while toggling the monitor. Please try again.');
+                })
+            },
+            deleteMonitor() {
+                this.isRequestLoading = true;
+                fetch('/api/v1/monitors/' + this.monitorId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Navigate back to the monitors list
+                        window.location.href = '/monitors';
+                    } else {
+                        this.isRequestLoading = false;
+                        console.error('Error deleting monitor:', response.statusText);
+                        alert('An error occurred while deleting the monitor, refer to the console for more details');
+                    }
+                })
+            }
+        }">
+    <div class="row g-3 align-items-center">
+        <!--MONITOR_HEADING_START-->
+        {% include 'fragments/monitor/details-heading' %}
+        <!--MONITOR_HEADING_END-->
+        <!--MONITOR_ACTIONS_START -->
+        <div class="col-md-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <button class="btn btn-icon" :disabled="isRequestLoading" @click="toggleMonitor()">
+                    <template x-if="isMonitorEnabled">
+                        {% include "icons/pause" %}
+                    </template>
+                    <template x-if="!isMonitorEnabled">
+                        {% include "icons/play" %}
+                    </template>
+                </button>
+                <button class="btn">
+                    {% include "icons/settings" %}
+                    Configure
+                </button>
+                <button class="btn btn-icon text-red" :disabled="isRequestLoading" data-bs-toggle="modal"
+                        data-bs-target="#delete-monitor-modal-{{ monitor.id }}">
+                    {% include "icons/trash" %}
+                </button>
+                {{ deleteMonitorModal(id = monitor.id, name = monitor.name) }}
+            </div>
+        </div>
+        <!--MONITOR_ACTIONS_END-->
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include 'fragments/monitor/details-content' %}
+{% endblock %}
+
+{% block customScripts %}
+<script>
+    function refreshMonitorHeading() {
+        sendHtmxEvent('#monitor-heading','refresh-monitor-heading');
+    }
+</script>
+{% endblock %}

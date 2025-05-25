@@ -1,0 +1,57 @@
+{% macro uptimeStatusOfMonitor(monitor, withBadge, withTooltip) %}
+{% if withBadge %}
+{% set statusType = 'status' %}
+{% else %}
+{% set statusType = 'status-indicator' %}
+{% endif %}
+
+{% macro renderStatus(withBadge, label, animated = true) %}
+{% if withBadge %}
+<span class="status-dot {% if animated %}status-dot-animated{% endif %}"></span>
+<span class="d-none d-md-inline">{{ label }}</span>
+{% else %}
+<span class="status-indicator-circle"></span>
+<span class="status-indicator-circle"></span>
+<span class="status-indicator-circle"></span>
+{% endif %}
+{% endmacro %}
+
+{% if monitor.enabled and monitor.uptimeStatus is not null %}
+{% if monitor.uptimeStatus.literal == 'UP' %}
+<span class="{{ statusType }} status-green {% if not withBadge %}status-indicator-animated{% endif %}">
+    {{ renderStatus(withBadge, monitor.uptimeStatus.literal) }}
+</span>
+{% else %}
+<span class="{{ statusType }} status-red {% if not withBadge %}status-indicator-animated{% endif %}"
+      {% if withTooltip %}
+      data-bs-toggle="tooltip"
+      data-bs-placement="bottom"
+      title="{{ monitor.uptimeError | default('Unknown error') }}"
+      {% endif %}
+>
+    {{ renderStatus(withBadge, monitor.uptimeStatus.literal) }}
+</span>
+{% endif %}
+{% elseif monitor.enabled and monitor.uptimeStatus is null %}
+<span class="{{ statusType }} status-yellow {% if not withBadge %}status-indicator-animated{% endif %}">
+    {{ renderStatus(withBadge, 'In Progress') }}
+</span>
+{% elseif not monitor.enabled %}
+<span class="{{ statusType }} status-cyan">
+    {{ renderStatus(withBadge, 'Paused', animated = false) }}
+</span>
+{% endif %}
+{% endmacro %}
+
+{% macro uptimeStatusOfEvent(event) %}
+<span class="status {% if event.status.literal == 'UP' %} status-green {% else %} status-red {% endif %}"
+      {% if event.error is not null %}
+      data-bs-toggle="tooltip"
+      data-bs-placement="bottom"
+      title="{{ event.error }}"
+      {% endif %}
+>
+    <span class="status-dot"></span>
+    <span class="d-none d-md-inline">{{ event.status.literal }}</span>
+</span>
+{% endmacro %}

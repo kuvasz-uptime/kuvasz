@@ -1,0 +1,28 @@
+<div id="monitor-details-content">
+    <h2>Uptime</h2>
+    {% include 'fragments/monitor/details-uptime-summary' %}
+    <h3>Recent Events</h3>
+    <div id="monitor-details-uptime-events"
+         class="row row-cards mb-3"
+         hx-get="/fragments/monitors/{{ monitor.id }}/details-uptime-events"
+         hx-trigger="load, every 15s"
+         hx-on:htmx:after-swap="reInitTooltips()"
+         hx-swap="innerHTML">
+    </div>
+    {% if monitor.latencyHistoryEnabled %}
+    <h2>Latency</h2>
+    {% include 'fragments/monitor/details-latency-block' %}
+    {% endif %}
+    {% if monitor.sslCheckEnabled %}
+    <h2>SSL</h2>
+    {% include 'fragments/monitor/details-ssl-summary' %}
+    <h3>Recent Events</h3>
+    <div id="monitor-details-ssl-events"
+         class="row row-cards mb-3"
+         hx-get="/fragments/monitors/{{ monitor.id }}/details-ssl-events"
+         hx-trigger="load, every 15s"
+         hx-on:htmx:after-swap="reInitTooltips()"
+         hx-swap="innerHTML">
+    </div>
+    {% endif %}
+</div>
