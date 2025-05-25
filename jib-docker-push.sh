@@ -11,4 +11,4 @@
 export PATH=$PATH:/usr/local/bin
 
 # Build & push the Docker image using Jib
-./gradlew jib
+./gradlew app:jib
