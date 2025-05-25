@@ -25,6 +25,7 @@ jobs:
           ${{ runner.os }}-gradle-
     - name: Run Gradle check
       run: ./gradlew check --info
+      # TODO use v5 and explicitly specify the report location
     - name: Codecov
       uses: codecov/codecov-action@v3
       with:

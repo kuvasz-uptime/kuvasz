@@ -1,5 +1,7 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 import io.gitlab.arturbosch.detekt.Detekt
+import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 buildscript {
     val jooqVersion: String by project
@@ -8,293 +10,102 @@ buildscript {
             useVersion(jooqVersion)
         }
     }
-    val flywayPluginVersion: String by project
-    dependencies {
-        classpath("org.flywaydb:flyway-database-postgresql:$flywayPluginVersion")
-    }
 }
 
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("org.jetbrains.kotlin.kapt")
-    id("org.jetbrains.kotlin.plugin.allopen")
-    id("io.gitlab.arturbosch.detekt")
-    id("jacoco")
-    id("io.micronaut.minimal.application")
-    id("io.micronaut.docker")
-    id("com.google.cloud.tools.jib")
-    id("nu.studer.jooq")
+    kotlin("jvm") apply false
+    id("io.gitlab.arturbosch.detekt") apply false
+    id("org.jetbrains.kotlinx.kover")
     id("com.palantir.git-version")
-    id("com.github.ben-manes.versions")
-    id("org.flywaydb.flyway")
-    id("com.gradleup.shadow")
-    id("com.github.gmazzo.buildconfig")
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
 version = gitVersion()
-group = "com.kuvaszuptime.kuvasz"
 val javaTargetVersion = "21"
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-}
-
-repositories {
-    gradlePluginPortal()
-    mavenCentral()
-}
-
-micronaut {
-    runtime("netty")
-    testRuntime("kotest5")
-    processing {
-        incremental(true)
-        annotations("com.kuvaszuptime.kuvasz.*")
+/**
+ * This setup (together with the "kover()" dependency configurations below) will create a merged test coverage report
+ */
+kover {
+    reports {
+        total {
+            filters {
+                excludes {
+                    classes("*ApplicationKt*")
+                    packages("com.kuvaszuptime.kuvasz.jooq")
+                }
+            }
+            html { onCheck = false }
+        }
     }
 }
 
-kapt {
-    arguments {
-        arg("micronaut.openapi.project.dir", projectDir.toString())
+kover {
+    reports {
+        total {
+            verify {
+                onCheck = true
+                rule {
+                    bound {
+                        minValue = 90
+                        coverageUnits = CoverageUnit.INSTRUCTION
+                    }
+                }
+            }
+        }
     }
 }
-
-val jooqPluginVersion: String by project
-val simpleJavaMailVersion = "8.12.6"
-val detektVersion: String by project
-val jooqVersion: String by project
-val kotlinVersion: String by project
-val kotlinCoroutinesVersion: String by project
 
 dependencies {
-
-    // Micronaut
-    kapt(mn.micronaut.security.annotations)
-    kapt(mn.micronaut.validation.processor)
-    implementation(mn.jackson.module.kotlin)
-    implementation(mn.jackson.dataformat.yaml)
-    implementation(mn.jackson.datatype.jsr310)
-    implementation(mn.micronaut.kotlin.runtime)
-    implementation(mn.micronaut.jackson.databind)
-    runtimeOnly(mn.snakeyaml)
-    implementation(mn.micronaut.validation)
-    implementation(mn.logback.classic)
-    implementation(mn.micronaut.http.client)
-    implementation(mn.micronaut.rxjava3)
-    implementation(mn.micronaut.retry)
-    implementation(mn.micronaut.security.jwt)
-    implementation(mn.micronaut.views.pebble)
-    implementation(mn.micronaut.views.htmx)
-
-    // OpenAPI
-    kapt(mn.micronaut.openapi)
-    implementation(mn.swagger.annotations)
-
-    // DB & jOOQ & Flyway
-    runtimeOnly(mn.flyway.postgresql)
-    implementation(mn.micronaut.flyway)
-    implementation(mn.micronaut.jdbc.hikari)
-    implementation(mn.micronaut.jooq)
-    implementation("org.jooq:jooq-kotlin:$jooqVersion")
-    implementation("org.jooq:jooq-postgres-extensions:$jooqVersion")
-    implementation(mn.postgresql)
-    jooqGenerator(mn.postgresql)
-    implementation("nu.studer:gradle-jooq-plugin:$jooqPluginVersion")
-
-    // Kotlin
-    implementation(mn.micronaut.kotlin.extension.functions)
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinCoroutinesVersion")
-    implementation("io.arrow-kt:arrow-core-data:0.12.1")
-
-    // Mailer
-    implementation("org.simplejavamail:batch-module:$simpleJavaMailVersion")
-    implementation("org.simplejavamail:simple-java-mail:$simpleJavaMailVersion")
-
-    // Testing
-    testImplementation("io.mockk:mockk:1.14.2")
-    testImplementation(mn.testcontainers.postgres)
-    testImplementation("org.mock-server:mockserver-netty:5.15.0")
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
+    kover(project(":app"))
+    kover(project(":model"))
+    kover(project(":shared"))
+    kover(project(":ui"))
 }
 
-application {
-    mainClass.set("com.kuvaszuptime.kuvasz.Application")
-}
+/**
+ * Returns the module name honoring java package name conventions. For example: kuvasz.app, kuvasz.model.
+ * Required by tasks like `detektAll`.
+ *
+ * Copied over from `name.remal.check-updates` plugin (it got abandoned)
+ */
+val Project.javaModuleName: String
+    get() {
+        val projectId = "${this.group}.${this.name}"
+            .splitToSequence('.', ':')
+            .filter(CharSequence::isNotEmpty)
+            .joinToString(".")
 
-jacoco {
-    toolVersion = "0.8.13"
-}
+        val javaPackageNameProhibitedChars = Regex("[^.\\w]") // special chars
+        val javaPackageNameProhibitedCharsAfterDot = Regex("\\.([^A-Za-z_])") // number after dot
 
-tasks.jacocoTestReport {
-    reports {
-        xml.required.set(true)
-        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/report.xml"))
-        html.required.set(true)
-        csv.required.set(false)
+        return projectId
+            .replace(javaPackageNameProhibitedChars, "_")
+            .replace(javaPackageNameProhibitedCharsAfterDot, "._$1")
     }
-    classDirectories.setFrom(
-        fileTree("build/classes/kotlin/main") {
-            exclude("com/kuvaszuptime/kuvasz/Application.class")
-        }
-    )
-}
 
-tasks.jacocoTestCoverageVerification {
-    classDirectories.setFrom(
-        fileTree("build/classes/kotlin/main") {
-            exclude("com/kuvaszuptime/kuvasz/Application.class")
-        }
-    )
-    violationRules {
-        rule {
-            limit {
-                counter = "INSTRUCTION"
-                value = "COVEREDRATIO"
-                minimum = BigDecimal.valueOf(0.9)
+/**
+ *  Groups together all the known Detekt tasks
+ */
+tasks.register("detektAll", type = Detekt::class) {
+    val includedTasks = setOf("detekt", "detektMain", "detektTest")
+    subprojects.forEach { project ->
+        project.getAllTasks(true).values.flatten().forEach { task ->
+            if (includedTasks.contains(task.name)) {
+                val projectName = task.project.javaModuleName.removePrefix("kuvasz.").replace(".", ":")
+                dependsOn("$projectName:${task.name}")
             }
         }
     }
 }
 
-tasks.named("check") {
-    dependsOn("detektMain")
-    dependsOn("detektTest")
-    dependsOn("jacocoTestCoverageVerification")
-}
+subprojects {
+    version = rootProject.version
 
-tasks.named("build") {
-    dependsOn("detekt")
-}
-
-tasks.withType<Detekt>().configureEach {
-    exclude("/com/kuvaszuptime/kuvasz/buildconfig")
-}
-
-tasks.withType<Test> {
-    finalizedBy("jacocoTestReport")
-}
-
-extensions.findByType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension>()?.apply {
-    jvmToolchain {
-        this.languageVersion.set(JavaLanguageVersion.of(javaTargetVersion))
-    }
-}
-
-allOpen {
-    annotation("io.micronaut.aop.Around")
-    annotation("io.micronaut.http.annotation.Controller")
-    annotation("jakarta.inject.Singleton")
-}
-
-tasks.withType<JavaExec> {
-    jvmArgs(
-        "-Xms64M",
-        "-Xmx128M",
-    )
-    systemProperty("micronaut.config.files", file("localdev/application-dev.yml"))
-}
-
-tasks.withType<ShadowJar> {
-    mergeServiceFiles()
-}
-
-jib {
-    from {
-        image = "bellsoft/liberica-runtime-container:jre-21-cds-slim-musl"
-        platforms {
-            platform {
-                os = "linux"
-                architecture = "amd64"
-            }
-            platform {
-                os = "linux"
-                architecture = "arm64"
-            }
+    // ensure that java 21 is used in all kotlin projects
+    extensions.findByType<KotlinJvmProjectExtension>()?.apply {
+        jvmToolchain {
+            this.languageVersion.set(JavaLanguageVersion.of(javaTargetVersion))
         }
     }
-    to {
-        image = "kuvaszmonitoring/kuvasz:$version"
-        tags = setOf("latest")
-    }
-    container {
-        environment = mapOf(
-            "JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx128M",
-            "MICRONAUT_CONFIG_FILES" to "/config/kuvasz.yml"
-        )
-    }
-    extraDirectories {
-        paths {
-            path {
-                setFrom("docker/bootstrap")
-                into = "/"
-            }
-        }
-    }
-}
-
-val updateApiDoc by tasks.registering(type = Copy::class) {
-    dependsOn("kaptKotlin")
-    from(layout.buildDirectory.file("tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml"))
-    into("$projectDir/docs/api-doc")
-}
-
-val dbUrl = "jdbc:postgresql://localhost:5432/postgres"
-val dbUser = "postgres"
-val dbPassword = System.getenv("DB_PASSWORD") ?: "postgres"
-val dbSchema = "kuvasz"
-val dbDriver = "org.postgresql.Driver"
-
-jooq {
-    val jooqVersion: String by project
-    version.set(jooqVersion)
-
-    configurations {
-        create("main") {
-            generateSchemaSourceOnCompilation.set(false)
-
-            jooqConfiguration.apply {
-                jdbc.apply {
-                    driver = dbDriver
-                    url = dbUrl
-                    user = dbUser
-                    password = dbPassword
-                }
-                generator.apply {
-                    database.apply {
-                        inputSchema = dbSchema
-                        isOutputSchemaToDefault = false
-                        excludes = "flyway_schema_history"
-                    }
-                    generate.apply {
-                        isDeprecated = false
-                        isValidationAnnotations = false
-                        isFluentSetters = true
-                        isPojos = true
-                    }
-                    target.apply {
-                        directory = "src/jooq/java"
-                        packageName = "com.kuvaszuptime.kuvasz"
-                    }
-                }
-            }
-        }
-    }
-}
-
-flyway {
-    cleanDisabled = false
-    url = dbUrl
-    user = dbUser
-    password = dbPassword
-    schemas = arrayOf(dbSchema)
-    driver = dbDriver
-}
-
-buildConfig {
-    packageName("com.kuvaszuptime.kuvasz.buildconfig")
-    buildConfigField("APP_VERSION", provider { gitVersion() })
 }
