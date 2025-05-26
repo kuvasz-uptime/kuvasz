@@ -22,7 +22,6 @@ plugins {
     id("org.flywaydb.flyway")
     id("com.gradleup.shadow")
     id("com.github.gmazzo.buildconfig")
-    id("org.gradlewebtools.minify")
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra

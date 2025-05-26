@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.kotlinx.kover")
     id("io.gitlab.arturbosch.detekt")
+    id("org.gradlewebtools.minify")
 }
 
 dependencies {
@@ -18,4 +19,15 @@ dependencies {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+}
+
+minification {
+    js {
+        srcDir = project.file("src/main/resources/js")
+        dstDir = project.file("src/main/resources/public/dist/js")
+    }
+}
+
+tasks.processResources {
+    dependsOn(tasks.named("jsMinify"))
 }

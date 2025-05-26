@@ -84,3 +84,66 @@ function monitorList(monitorId, isMonitorEnabled) {
         }
     }
 }
+
+function monitorDetails(monitorId, isMonitorEnabled) {
+    return {
+        monitorId,
+        isMonitorEnabled,
+        isRequestLoading: false,
+        toggleMonitor() {
+            this.isRequestLoading = true;
+            fetch('/api/v1/monitors/' + this.monitorId, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ enabled: !this.isMonitorEnabled })
+            }).then(response => {
+                if (response.ok) {
+                    this.isRequestLoading = false;
+                    this.isMonitorEnabled = !this.isMonitorEnabled;
+                    this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
+                    console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
+                    refreshMonitorDetailStatus();
+                } else {
+                    console.error('Error toggling monitor:', response.statusText);
+                    alert('An error occurred while toggling the monitor, refer to the console for more details');
+                    this.isRequestLoading = false;
+                }
+            })
+                .catch(error => {
+                    this.isRequestLoading = false;
+                    console.error('Error toggling monitor:', error);
+                    alert('An error occurred while toggling the monitor. Please try again.');
+                })
+        },
+        deleteMonitor() {
+            this.isRequestLoading = true;
+            fetch('/api/v1/monitors/' + this.monitorId, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/monitors';
+                    } else {
+                        this.isRequestLoading = false;
+                        console.error('Error deleting monitor:', response.statusText);
+                        alert('An error occurred while deleting the monitor, refer to the console for more details');
+                    }
+                })
+        }
+    }
+}
+
+// Refreshes the monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
+function refreshMonitorDetailStatus() {
+    sendHtmxEvent('#monitor-detail-heading','refresh-monitor-detail-status');
+}
+
+// Refreshes the monitor list by triggering an HTMX event
+function refreshMonitorList() {
+    sendHtmxEvent('#monitors-list','refresh-monitor-list');
+}
