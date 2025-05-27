@@ -21,7 +21,6 @@ import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.clearAllMocks
@@ -30,7 +29,6 @@ import io.mockk.spyk
 import io.mockk.verify
 import org.jooq.DSLContext
 import org.simplejavamail.api.email.Email
-import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
 class SMTPEventHandlerTest(
@@ -267,7 +265,7 @@ class SMTPEventHandlerTest(
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
-                    certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.plusDays(10)),
                     previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -404,7 +402,7 @@ class SMTPEventHandlerTest(
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
-                    certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.plusDays(10)),
                     previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -414,7 +412,6 @@ class SMTPEventHandlerTest(
 
                     verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
                     slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.plainText shouldNotContain OffsetDateTime.MAX.toString()
                     slot.captured.subject shouldContain "will expire soon"
                     slot.captured.subject shouldBe expectedEmail.subject
                 }

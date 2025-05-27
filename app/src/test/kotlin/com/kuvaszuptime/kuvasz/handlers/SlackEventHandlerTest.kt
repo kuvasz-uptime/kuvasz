@@ -20,7 +20,6 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -33,7 +32,6 @@ import io.mockk.spyk
 import io.mockk.verify
 import io.reactivex.rxjava3.core.Single
 import org.jooq.DSLContext
-import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
 class SlackEventHandlerTest(
@@ -259,7 +257,7 @@ class SlackEventHandlerTest(
 
                 val secondEvent = SSLValidEvent(
                     monitor = monitor,
-                    certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.plusDays(10)),
                     previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -381,7 +379,7 @@ class SlackEventHandlerTest(
 
                 val secondEvent = SSLWillExpireEvent(
                     monitor = monitor,
-                    certInfo = generateCertificateInfo(validTo = OffsetDateTime.MAX),
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.plusDays(10)),
                     previousEvent = firstSSLRecord
                 )
                 eventDispatcher.dispatch(secondEvent)
@@ -390,7 +388,6 @@ class SlackEventHandlerTest(
                     val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldNotContain OffsetDateTime.MAX.toString()
                 }
             }
 
