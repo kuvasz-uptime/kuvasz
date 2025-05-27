@@ -67,7 +67,6 @@ dependencies {
     implementation(mn.micronaut.rxjava3)
     implementation(mn.micronaut.retry)
     implementation(mn.micronaut.security.jwt)
-    implementation(mn.micronaut.views.pebble)
     implementation(mn.micronaut.views.htmx)
 
     // OpenAPI
