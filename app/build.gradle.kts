@@ -187,9 +187,10 @@ buildConfig {
     buildConfigField("APP_VERSION", provider { gitVersion() })
 }
 
-minification {
-    js {
-        srcDir = project.file("src/main/resources/js")
-        dstDir = project.file("build/resources/main/public/dist/js")
+// Importing the public resources (JS, CSS) from the UI module
+tasks.processResources {
+    dependsOn(":ui:jsMinify")
+    from("$rootDir/ui/src/main/resources/public") {
+        into("public")
     }
 }
