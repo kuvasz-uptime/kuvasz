@@ -24,7 +24,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: Run detekt
-      run: ./gradlew detektAll --info
+      run: ./gradlew detektAll
     - name: Run check
       run: ./gradlew check --info
     - name: Generate code coverage report for Codecov
