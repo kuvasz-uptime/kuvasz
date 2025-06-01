@@ -122,6 +122,7 @@ complexity:
       - 'run'
       - 'use'
       - 'with'
+    excludes: [ '**/com/kuvaszuptime/kuvasz/ui/**' ]
   LabeledExpression:
     active: false
     ignoredLabels: []
@@ -132,6 +133,7 @@ complexity:
   LongMethod:
     active: true
     threshold: 60
+    excludes: [ '**/com/kuvaszuptime/kuvasz/ui/**' ]
   LongParameterList:
     active: false
     functionThreshold: 6
@@ -169,7 +171,7 @@ complexity:
     ignoreStringsRegex: '$^'
   TooManyFunctions:
     active: true
-    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/controllers/**' ]
+    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/controllers/**', '**/com/kuvaszuptime/kuvasz/ui/**' ]
     thresholdInFiles: 11
     thresholdInClasses: 11
     thresholdInInterfaces: 11
@@ -651,6 +653,7 @@ style:
     excludeImportStatements: true
     excludeCommentStatements: false
     excludeRawStrings: true
+    excludes: [ '**/com/kuvaszuptime/kuvasz/ui/**' ]
   MayBeConst:
     active: true
   ModifierOrder:
@@ -797,6 +800,8 @@ style:
     active: true
     excludeImports:
       - 'java.util.*'
+      - 'kotlinx.html.*'
+      - 'com.kuvaszuptime.kuvasz.ui.*'
 
 formatting:
   active: true
@@ -962,7 +967,7 @@ formatting:
     autoCorrect: true
   NoWildcardImports:
     active: true
-    packagesToUseImportOnDemandProperty: 'java.util.*,kotlinx.android.synthetic.**'
+    packagesToUseImportOnDemandProperty: 'java.util.*,kotlinx.android.synthetic.**,com.kuvaszuptime.kuvasz.ui.**,kotlinx.html.**'
   NullableTypeSpacing:
     active: true
     autoCorrect: true
