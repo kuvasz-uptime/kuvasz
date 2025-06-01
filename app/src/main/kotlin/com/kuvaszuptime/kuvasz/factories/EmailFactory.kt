@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.factories
 
 import com.kuvaszuptime.kuvasz.config.handlers.EmailEventHandlerConfig
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -30,9 +31,9 @@ class EmailFactory(private val config: EmailEventHandlerConfig) {
 
     private fun SSLMonitorEvent.getSubject(): String {
         val statusString = when (sslStatus) {
-            SslStatus.VALID -> "has a VALID certificate"
-            SslStatus.INVALID -> "has an INVALID certificate"
-            SslStatus.WILL_EXPIRE -> "has a certificate that will expire soon"
+            SslStatus.VALID -> Messages.hasAValidCertificate()
+            SslStatus.INVALID -> Messages.hasAnInvalidCertificate()
+            SslStatus.WILL_EXPIRE -> Messages.hasAnExpiringCertificate()
         }
 
         return "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${monitor.url} $statusString"

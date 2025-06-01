@@ -42,7 +42,7 @@ import java.time.Duration as JavaDuration
 fun getCurrentTimestamp(): OffsetDateTime = OffsetDateTime.now(ZoneId.systemDefault())
 
 fun Duration?.toDurationString(): String? = this?.toComponents { days, hours, minutes, seconds, _ ->
-    "$days day(s), $hours hour(s), $minutes minute(s), $seconds second(s)"
+    Messages.durationParts(days, hours, minutes, seconds)
 }
 
 fun Int.toDurationOfSeconds(): java.time.Duration = java.time.Duration.ofSeconds(toLong())

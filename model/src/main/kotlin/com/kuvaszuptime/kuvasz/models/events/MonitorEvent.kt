@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.events
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
@@ -64,9 +65,9 @@ data class MonitorUpEvent(
 
     override fun toStructuredMessage() =
         StructuredMonitorUpMessage(
-            summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is UP (${status.code})",
-            latency = "Latency: ${latency}ms",
-            previousDownTime = getEndedEventDuration().toDurationString()?.let { "Was down for $it" }
+            summary = Messages.yourMonitorIsUp(monitor.name, monitor.url, status.code),
+            latency = Messages.latencyIs(latency),
+            previousDownTime = getEndedEventDuration().toDurationString()?.let { Messages.wasDownFor(it) }
         )
 }
 
@@ -88,10 +89,13 @@ data class MonitorDownEvent(
         }
 
         return StructuredMonitorDownMessage(
-            summary = "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN" +
+            summary = Messages.yourMonitorIsDown(
+                monitor.name,
+                monitor.url,
                 status?.let { " (" + it.code + ")" }.orEmpty(),
-            error = "Reason: $structuredError",
-            previousUpTime = getEndedEventDuration().toDurationString()?.let { "Was up for $it" }
+            ),
+            error = Messages.reasonExplanation(structuredError.orEmpty()),
+            previousUpTime = getEndedEventDuration().toDurationString()?.let { Messages.wasUpFor(it) }
         )
     }
 }
@@ -102,7 +106,7 @@ data class RedirectEvent(
 ) : MonitorEvent() {
 
     override fun toStructuredMessage() = StructuredRedirectMessage(
-        summary = "Request to \"${monitor.name}\" (${monitor.url}) has been redirected to $redirectLocation",
+        summary = Messages.requestHasBeenRedirected(monitor.name, monitor.url, redirectLocation),
     )
 }
 
@@ -148,9 +152,9 @@ data class SSLValidEvent(
 
     override fun toStructuredMessage() =
         StructuredSSLValidMessage(
-            summary = "Your site \"${monitor.name}\" (${monitor.url}) has a VALID certificate",
+            summary = Messages.yourSiteHasAValidCert(monitor.name, monitor.url),
             previousInvalidEvent = getEndedEventDuration().toDurationString()
-                ?.let { "Was ${getPreviousStatusString()} for $it" }
+                ?.let { Messages.wasXForY(getPreviousStatusString(), it) }
         )
 }
 
@@ -164,10 +168,10 @@ data class SSLInvalidEvent(
 
     override fun toStructuredMessage() =
         StructuredSSLInvalidMessage(
-            summary = "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate",
-            error = "Reason: ${error.message?.sanitizeMessage()}",
+            summary = Messages.yourSiteHasAnInvalidCert(monitor.name, monitor.url),
+            error = Messages.reasonExplanation(error.message?.sanitizeMessage().orEmpty()),
             previousValidEvent = getEndedEventDuration().toDurationString()
-                ?.let { "Was ${getPreviousStatusString()} for $it" }
+                ?.let { Messages.wasXForY(getPreviousStatusString(), it) }
         )
 }
 
@@ -181,8 +185,8 @@ data class SSLWillExpireEvent(
 
     override fun toStructuredMessage() =
         StructuredSSLWillExpireMessage(
-            summary = "Your SSL certificate for ${monitor.url} will expire soon",
-            validUntil = "Expiry date: ${certInfo.validTo}"
+            summary = Messages.yourCertWillExpireSoon(monitor.url),
+            validUntil = Messages.expiryDate(certInfo.validTo)
         )
 }
 
