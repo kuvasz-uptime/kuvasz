@@ -1,8 +1,9 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.shouldBe
+import com.kuvaszuptime.kuvasz.i18n.Messages
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
@@ -17,28 +18,28 @@ class WebUILoginControllerTest(controller: WebUIController) : DatabaseBehaviorSp
 
         `when`("it is called without ?error") {
 
-            val viewParams = controller.login(null)
+            val html = controller.login(null)
 
             then("it should not add the error message to the model") {
-                viewParams["loginErrorMessage"].shouldBeNull()
+                html shouldNotContain Messages.invalidCredentials()
             }
         }
 
         `when`("it is called with ?error=false") {
 
-            val viewParams = controller.login(false)
+            val html = controller.login(false)
 
-            then("it should add the error message to the model") {
-                viewParams["loginErrorMessage"].shouldBeNull()
+            then("it should not add the error message to the model") {
+                html shouldNotContain Messages.invalidCredentials()
             }
         }
 
         `when`("it is called with ?error=true") {
 
-            val viewParams = controller.login(true)
+            val html = controller.login(true)
 
             then("it should add the error message to the model") {
-                viewParams["loginErrorMessage"] shouldBe "Invalid username or password"
+                html shouldContain Messages.invalidCredentials()
             }
         }
     }

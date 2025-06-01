@@ -1,6 +1,5 @@
-package com.kuvaszuptime.kuvasz.utils
+package com.kuvaszuptime.kuvasz.util
 
-import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import kotlin.time.DurationUnit

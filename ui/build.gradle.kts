@@ -8,10 +8,15 @@ plugins {
 dependencies {
     implementation(project(":model"))
     implementation(project(":shared"))
+
     compileOnly(libs.jooq.kotlin)
     compileOnly(libs.i18n4k)
 
     implementation(libs.kotlinx.html.jvm)
+    implementation(libs.kotlin.htmx)
+    implementation(mn.jackson.core)
+    implementation(mn.jackson.module.kotlin)
+    implementation(mn.jackson.datatype.jsr310)
 
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(mn.kotest.assertions.core.jvm)
