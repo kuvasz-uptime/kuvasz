@@ -10,6 +10,7 @@ plugins {
 dependencies {
 
     implementation(project(":shared"))
+    compileOnly(libs.i18n4k)
 
     // Micronaut
     implementation(mn.micronaut.core)

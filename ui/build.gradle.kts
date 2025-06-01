@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":model"))
     implementation(project(":shared"))
     compileOnly(libs.jooq.kotlin)
+    compileOnly(libs.i18n4k)
 
     implementation(libs.kotlinx.html.jvm)
 

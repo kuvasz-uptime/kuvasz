@@ -94,6 +94,10 @@ dependencies {
     implementation(libs.simplejavamail)
     implementation(libs.simplejavamail.batchmodule)
 
+    // i18n
+    compileOnly(libs.i18n4k)
+    testCompileOnly(libs.i18n4k)
+
     // Testing
     testImplementation(libs.mockk)
     testImplementation(mn.testcontainers.postgres)
