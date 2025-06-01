@@ -23,11 +23,16 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
-    - name: Run Gradle check
+    - name: Run detekt
+      run: ./gradlew detektAll --info
+    - name: Run check
       run: ./gradlew check --info
-      # TODO use v5 and explicitly specify the report location
+    - name: Generate code coverage report for Codecov
+      run: ./gradlew koverXmlReport
+      # TODO migrate to v5
     - name: Codecov
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
+        files: ./build/reports/kover/report.xml
         fail_ci_if_error: false
