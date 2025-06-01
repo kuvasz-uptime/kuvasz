@@ -14,6 +14,7 @@ class AppConfig {
         private const val MIN_LATENCY_RETENTION_DAYS = 1L
         private const val DEFAULT_UPTIME_RETENTION_DAYS = 365
         private const val DEFAULT_LATENCY_RETENTION_DAYS = 7
+        private const val DEFAULT_LANGUAGE = "en"
     }
 
     @Min(MIN_UPTIME_RETENTION_DAYS)
@@ -21,6 +22,8 @@ class AppConfig {
 
     @Min(MIN_LATENCY_RETENTION_DAYS)
     var latencyDataRetentionDays: Int = DEFAULT_LATENCY_RETENTION_DAYS
+
+    var language: String = DEFAULT_LANGUAGE
 
     private var isExternalWriteDisabled = false
 

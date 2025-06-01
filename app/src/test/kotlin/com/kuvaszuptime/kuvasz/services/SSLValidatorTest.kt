@@ -1,12 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
 import io.kotest.data.table
 import io.kotest.matchers.booleans.shouldBeTrue
-import java.net.URL
 
 class SSLValidatorTest : StringSpec(
     {
@@ -44,7 +44,7 @@ class SSLValidatorTest : StringSpec(
                 row("https://no-subject.badssl.com/", false),
                 row("https://incomplete-chain.badssl.com/", false)
             ).forAll { url, isValid ->
-                val result = validator.validate(URL(url))
+                val result = validator.validate(url.toUri().toURL())
 
                 (if (isValid) result.isRight() else result.isLeft()).shouldBeTrue()
             }

@@ -107,6 +107,7 @@ jooq:
 app-config:
   uptime-data-retention-days: ${UPTIME_DATA_RETENTION_DAYS:`365`}
   latency-data-retention-days: ${LATENCY_DATA_RETENTION_DAYS:`7`}
+  language: ${LANGUAGE:`en`}
 ---
 handler-config:
   log-event-handler:
