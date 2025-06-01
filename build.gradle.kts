@@ -59,7 +59,6 @@ dependencies {
     kover(project(":app"))
     kover(project(":model"))
     kover(project(":shared"))
-    kover(project(":ui"))
 }
 
 /**
