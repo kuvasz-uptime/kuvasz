@@ -6,6 +6,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables.records;
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.jooq.tables.Monitor;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.time.OffsetDateTime;
 
@@ -146,25 +147,10 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Setter for <code>kuvasz.monitor.pagerduty_integration_key</code>.
-     */
-    public MonitorRecord setPagerdutyIntegrationKey(String value) {
-        set(8, value);
-        return this;
-    }
-
-    /**
-     * Getter for <code>kuvasz.monitor.pagerduty_integration_key</code>.
-     */
-    public String getPagerdutyIntegrationKey() {
-        return (String) get(8);
-    }
-
-    /**
      * Setter for <code>kuvasz.monitor.latency_history_enabled</code>.
      */
     public MonitorRecord setLatencyHistoryEnabled(Boolean value) {
-        set(9, value);
+        set(8, value);
         return this;
     }
 
@@ -172,14 +158,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
      * Getter for <code>kuvasz.monitor.latency_history_enabled</code>.
      */
     public Boolean getLatencyHistoryEnabled() {
-        return (Boolean) get(9);
+        return (Boolean) get(8);
     }
 
     /**
      * Setter for <code>kuvasz.monitor.follow_redirects</code>.
      */
     public MonitorRecord setFollowRedirects(Boolean value) {
-        set(10, value);
+        set(9, value);
         return this;
     }
 
@@ -187,14 +173,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
      * Getter for <code>kuvasz.monitor.follow_redirects</code>.
      */
     public Boolean getFollowRedirects() {
-        return (Boolean) get(10);
+        return (Boolean) get(9);
     }
 
     /**
      * Setter for <code>kuvasz.monitor.force_no_cache</code>.
      */
     public MonitorRecord setForceNoCache(Boolean value) {
-        set(11, value);
+        set(10, value);
         return this;
     }
 
@@ -202,14 +188,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
      * Getter for <code>kuvasz.monitor.force_no_cache</code>.
      */
     public Boolean getForceNoCache() {
-        return (Boolean) get(11);
+        return (Boolean) get(10);
     }
 
     /**
      * Setter for <code>kuvasz.monitor.request_method</code>.
      */
     public MonitorRecord setRequestMethod(HttpMethod value) {
-        set(12, value);
+        set(11, value);
         return this;
     }
 
@@ -217,14 +203,14 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
      * Getter for <code>kuvasz.monitor.request_method</code>.
      */
     public HttpMethod getRequestMethod() {
-        return (HttpMethod) get(12);
+        return (HttpMethod) get(11);
     }
 
     /**
      * Setter for <code>kuvasz.monitor.ssl_expiry_threshold</code>.
      */
     public MonitorRecord setSslExpiryThreshold(Integer value) {
-        set(13, value);
+        set(12, value);
         return this;
     }
 
@@ -232,7 +218,22 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
      * Getter for <code>kuvasz.monitor.ssl_expiry_threshold</code>.
      */
     public Integer getSslExpiryThreshold() {
-        return (Integer) get(13);
+        return (Integer) get(12);
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.integrations</code>.
+     */
+    public MonitorRecord setIntegrations(IntegrationID[] value) {
+        set(13, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.integrations</code>.
+     */
+    public IntegrationID[] getIntegrations() {
+        return (IntegrationID[]) get(13);
     }
 
     // -------------------------------------------------------------------------
@@ -258,7 +259,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, String pagerdutyIntegrationKey, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold) {
+    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations) {
         super(Monitor.MONITOR);
 
         setId(id);
@@ -269,12 +270,12 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
         setSslCheckEnabled(sslCheckEnabled);
-        setPagerdutyIntegrationKey(pagerdutyIntegrationKey);
         setLatencyHistoryEnabled(latencyHistoryEnabled);
         setFollowRedirects(followRedirects);
         setForceNoCache(forceNoCache);
         setRequestMethod(requestMethod);
         setSslExpiryThreshold(sslExpiryThreshold);
+        setIntegrations(integrations);
         resetTouchedOnNotNull();
     }
 
@@ -293,12 +294,12 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
             setSslCheckEnabled(value.getSslCheckEnabled());
-            setPagerdutyIntegrationKey(value.getPagerdutyIntegrationKey());
             setLatencyHistoryEnabled(value.getLatencyHistoryEnabled());
             setFollowRedirects(value.getFollowRedirects());
             setForceNoCache(value.getForceNoCache());
             setRequestMethod(value.getRequestMethod());
             setSslExpiryThreshold(value.getSslExpiryThreshold());
+            setIntegrations(value.getIntegrations());
             resetTouchedOnNotNull();
         }
     }

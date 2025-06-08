@@ -15,7 +15,6 @@ class SMTPMailerConfigTest : BehaviorSpec(
                 val properties = PropertySource.of(
                     "test",
                     mapOf(
-                        "handler-config.smtp-event-handler.enabled" to "true",
                         "smtp-config.host" to "localhost",
                         "smtp-config.port" to "123"
                     )

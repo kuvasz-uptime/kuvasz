@@ -5,9 +5,11 @@ package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 
 
 /**
@@ -26,12 +28,12 @@ public class Monitor implements Serializable {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private Boolean sslCheckEnabled;
-    private String pagerdutyIntegrationKey;
     private Boolean latencyHistoryEnabled;
     private Boolean followRedirects;
     private Boolean forceNoCache;
     private HttpMethod requestMethod;
     private Integer sslExpiryThreshold;
+    private IntegrationID[] integrations;
 
     public Monitor() {}
 
@@ -44,12 +46,12 @@ public class Monitor implements Serializable {
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
         this.sslCheckEnabled = value.sslCheckEnabled;
-        this.pagerdutyIntegrationKey = value.pagerdutyIntegrationKey;
         this.latencyHistoryEnabled = value.latencyHistoryEnabled;
         this.followRedirects = value.followRedirects;
         this.forceNoCache = value.forceNoCache;
         this.requestMethod = value.requestMethod;
         this.sslExpiryThreshold = value.sslExpiryThreshold;
+        this.integrations = value.integrations;
     }
 
     public Monitor(
@@ -61,12 +63,12 @@ public class Monitor implements Serializable {
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         Boolean sslCheckEnabled,
-        String pagerdutyIntegrationKey,
         Boolean latencyHistoryEnabled,
         Boolean followRedirects,
         Boolean forceNoCache,
         HttpMethod requestMethod,
-        Integer sslExpiryThreshold
+        Integer sslExpiryThreshold,
+        IntegrationID[] integrations
     ) {
         this.id = id;
         this.name = name;
@@ -76,12 +78,12 @@ public class Monitor implements Serializable {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.sslCheckEnabled = sslCheckEnabled;
-        this.pagerdutyIntegrationKey = pagerdutyIntegrationKey;
         this.latencyHistoryEnabled = latencyHistoryEnabled;
         this.followRedirects = followRedirects;
         this.forceNoCache = forceNoCache;
         this.requestMethod = requestMethod;
         this.sslExpiryThreshold = sslExpiryThreshold;
+        this.integrations = integrations;
     }
 
     /**
@@ -209,21 +211,6 @@ public class Monitor implements Serializable {
     }
 
     /**
-     * Getter for <code>kuvasz.monitor.pagerduty_integration_key</code>.
-     */
-    public String getPagerdutyIntegrationKey() {
-        return this.pagerdutyIntegrationKey;
-    }
-
-    /**
-     * Setter for <code>kuvasz.monitor.pagerduty_integration_key</code>.
-     */
-    public Monitor setPagerdutyIntegrationKey(String pagerdutyIntegrationKey) {
-        this.pagerdutyIntegrationKey = pagerdutyIntegrationKey;
-        return this;
-    }
-
-    /**
      * Getter for <code>kuvasz.monitor.latency_history_enabled</code>.
      */
     public Boolean getLatencyHistoryEnabled() {
@@ -298,6 +285,21 @@ public class Monitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.monitor.integrations</code>.
+     */
+    public IntegrationID[] getIntegrations() {
+        return this.integrations;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.integrations</code>.
+     */
+    public Monitor setIntegrations(IntegrationID[] integrations) {
+        this.integrations = integrations;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -355,12 +357,6 @@ public class Monitor implements Serializable {
         }
         else if (!this.sslCheckEnabled.equals(other.sslCheckEnabled))
             return false;
-        if (this.pagerdutyIntegrationKey == null) {
-            if (other.pagerdutyIntegrationKey != null)
-                return false;
-        }
-        else if (!this.pagerdutyIntegrationKey.equals(other.pagerdutyIntegrationKey))
-            return false;
         if (this.latencyHistoryEnabled == null) {
             if (other.latencyHistoryEnabled != null)
                 return false;
@@ -391,6 +387,12 @@ public class Monitor implements Serializable {
         }
         else if (!this.sslExpiryThreshold.equals(other.sslExpiryThreshold))
             return false;
+        if (this.integrations == null) {
+            if (other.integrations != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.integrations, other.integrations))
+            return false;
         return true;
     }
 
@@ -406,12 +408,12 @@ public class Monitor implements Serializable {
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.sslCheckEnabled == null) ? 0 : this.sslCheckEnabled.hashCode());
-        result = prime * result + ((this.pagerdutyIntegrationKey == null) ? 0 : this.pagerdutyIntegrationKey.hashCode());
         result = prime * result + ((this.latencyHistoryEnabled == null) ? 0 : this.latencyHistoryEnabled.hashCode());
         result = prime * result + ((this.followRedirects == null) ? 0 : this.followRedirects.hashCode());
         result = prime * result + ((this.forceNoCache == null) ? 0 : this.forceNoCache.hashCode());
         result = prime * result + ((this.requestMethod == null) ? 0 : this.requestMethod.hashCode());
         result = prime * result + ((this.sslExpiryThreshold == null) ? 0 : this.sslExpiryThreshold.hashCode());
+        result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         return result;
     }
 
@@ -427,12 +429,12 @@ public class Monitor implements Serializable {
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(sslCheckEnabled);
-        sb.append(", ").append(pagerdutyIntegrationKey);
         sb.append(", ").append(latencyHistoryEnabled);
         sb.append(", ").append(followRedirects);
         sb.append(", ").append(forceNoCache);
         sb.append(", ").append(requestMethod);
         sb.append(", ").append(sslExpiryThreshold);
+        sb.append(", ").append(Arrays.deepToString(integrations));
 
         sb.append(")");
         return sb.toString();

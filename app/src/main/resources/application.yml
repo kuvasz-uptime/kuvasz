@@ -128,13 +128,6 @@ admin-auth:
   password: ${ADMIN_PASSWORD}
   api-key: ${ADMIN_API_KEY}
 ---
-smtp-config:
-  host: ${SMTP_HOST}
-  port: ${SMTP_PORT}
-  username: ${SMTP_USERNAME:``}
-  password: ${SMTP_PASSWORD:``}
-  transport-strategy: ${SMTP_TRANSPORT_STRATEGY:`SMTP_TLS`}
----
 logger:
   levels:
     org.jooq: ERROR

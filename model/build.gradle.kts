@@ -1,3 +1,6 @@
+import org.jooq.meta.kotlin.forcedType
+import org.jooq.meta.kotlin.forcedTypes
+
 plugins {
     kotlin("jvm")
     id("org.jetbrains.kotlin.kapt")
@@ -65,6 +68,15 @@ jooq {
                         inputSchema = localDbSchema
                         isOutputSchemaToDefault = false
                         excludes = "flyway_schema_history"
+
+                        forcedTypes {
+                            forcedType {
+                                userType = "com.kuvaszuptime.kuvasz.models.handlers.IntegrationID[]"
+                                converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter"
+                                isGenericConverter = false
+                                includeExpression = "MONITOR.INTEGRATIONS"
+                            }
+                        }
                     }
                     generate.apply {
                         isDeprecated = false

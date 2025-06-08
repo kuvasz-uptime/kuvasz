@@ -6,11 +6,13 @@ package com.kuvaszuptime.kuvasz.jooq.tables;
 
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
+import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.jooq.tables.LatencyLog.LatencyLogPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SslEventPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.UptimeEvent.UptimeEventPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -104,11 +106,6 @@ public class Monitor extends TableImpl<MonitorRecord> {
     public final TableField<MonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
     /**
-     * The column <code>kuvasz.monitor.pagerduty_integration_key</code>.
-     */
-    public final TableField<MonitorRecord, String> PAGERDUTY_INTEGRATION_KEY = createField(DSL.name("pagerduty_integration_key"), SQLDataType.VARCHAR, this, "");
-
-    /**
      * The column <code>kuvasz.monitor.latency_history_enabled</code>.
      */
     public final TableField<MonitorRecord, Boolean> LATENCY_HISTORY_ENABLED = createField(DSL.name("latency_history_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
@@ -132,6 +129,11 @@ public class Monitor extends TableImpl<MonitorRecord> {
      * The column <code>kuvasz.monitor.ssl_expiry_threshold</code>.
      */
     public final TableField<MonitorRecord, Integer> SSL_EXPIRY_THRESHOLD = createField(DSL.name("ssl_expiry_threshold"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field(DSL.raw("30"), SQLDataType.INTEGER)), this, "");
+
+    /**
+     * The column <code>kuvasz.monitor.integrations</code>.
+     */
+    public final TableField<MonitorRecord, IntegrationID[]> INTEGRATIONS = createField(DSL.name("integrations"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "", new TextArrayToIntegrationIdArrayConverter());
 
     private Monitor(Name alias, Table<MonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
