@@ -14,6 +14,7 @@ class AppBootstrapper(
     private val appConfig: AppConfig,
     private val monitorRepository: MonitorRepository,
     private val integrationRepository: IntegrationRepository,
+    private val checkScheduler: CheckScheduler,
 ) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
@@ -22,6 +23,7 @@ class AppBootstrapper(
     fun bootstrap() {
         processYamlMonitorConfigs()
         sanitizeIntegrationsOfMonitors()
+        checkScheduler.initialize()
     }
 
     /**

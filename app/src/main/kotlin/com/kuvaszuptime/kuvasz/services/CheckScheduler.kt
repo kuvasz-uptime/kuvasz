@@ -6,12 +6,10 @@ import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
-import io.micronaut.context.annotation.Context
-import io.micronaut.context.annotation.Requires
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
-import jakarta.annotation.PostConstruct
 import jakarta.inject.Named
+import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -27,8 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
-@Context
-@Requires(bean = AppBootstrapper::class)
+@Singleton
 class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,
@@ -50,7 +47,6 @@ class CheckScheduler(
         this?.cancel(false)
     }
 
-    @PostConstruct
     fun initialize() {
         // Scheduling the uptime checks for the enabled monitors
         monitorRepository.fetchByEnabled(enabled = true).forEach { createChecksForMonitor(it) }
