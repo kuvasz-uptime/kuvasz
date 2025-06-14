@@ -8,6 +8,8 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.ServiceError
+import com.kuvaszuptime.kuvasz.models.handlers.InvalidIntegrationIDException
+import com.kuvaszuptime.kuvasz.validation.NonExistingIntegrationIdException
 import io.micronaut.core.convert.exceptions.ConversionErrorException
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -66,5 +68,23 @@ class GlobalErrorHandler {
     ): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.status<ServiceError>(HttpStatus.METHOD_NOT_ALLOWED).body(error)
+    }
+
+    @Error(global = true)
+    fun nonExistingIntegrationExceptionHandler(
+        request: HttpRequest<*>,
+        ex: NonExistingIntegrationIdException
+    ): HttpResponse<ServiceError> {
+        val error = ServiceError(ex.message)
+        return HttpResponse.status<ServiceError>(HttpStatus.BAD_REQUEST).body(error)
+    }
+
+    @Error(global = true)
+    fun invalidIntegrationIDExceptionHandler(
+        request: HttpRequest<*>,
+        ex: InvalidIntegrationIDException
+    ): HttpResponse<ServiceError> {
+        val error = ServiceError(ex.message)
+        return HttpResponse.status<ServiceError>(HttpStatus.BAD_REQUEST).body(error)
     }
 }

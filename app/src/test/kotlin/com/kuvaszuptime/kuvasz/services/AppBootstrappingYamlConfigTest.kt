@@ -5,9 +5,12 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.testutils.getBean
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -17,7 +20,9 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.ApplicationContext
+import io.micronaut.context.exceptions.BeanInstantiationException
 import kotlinx.coroutines.delay
 import org.jooq.DSLContext
 
@@ -29,7 +34,7 @@ import org.jooq.DSLContext
  *
  * So take care when dealing with it, because it might break other tests too if not handled properly
  */
-class CheckSchedulerYamlConfigTest : StringSpec({
+class AppBootstrappingYamlConfigTest : StringSpec({
 
     var appContext: ApplicationContext? = null
 
@@ -60,7 +65,7 @@ class CheckSchedulerYamlConfigTest : StringSpec({
      * no matter what happened before.
      */
     fun executeAndAssertTheFirstStep() {
-        appContext = ApplicationContext.run("test", "yaml-monitors")
+        appContext = ApplicationContext.run("test", "yaml-monitors", "full-integrations-setup")
         val checkScheduler = getCheckScheduler()
         val monitorRepository = getMonitorRepository()
 
@@ -81,7 +86,6 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             firstMonitor.uptimeCheckInterval shouldBe 120
             firstMonitor.enabled shouldBe false
             firstMonitor.sslCheckEnabled shouldBe true
-            firstMonitor.pagerdutyIntegrationKey shouldBe "1234567890abcdef"
             firstMonitor.requestMethod shouldBe HttpMethod.HEAD
             firstMonitor.latencyHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
@@ -98,13 +102,14 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             secondMonitor.uptimeCheckInterval shouldBe 60
             secondMonitor.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
             secondMonitor.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
-            secondMonitor.pagerdutyIntegrationKey shouldBe null
             secondMonitor.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
             secondMonitor.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
             secondMonitor.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
             secondMonitor.sslExpiryThreshold shouldBe 10
-
+            secondMonitor.integrations shouldBe arrayOf(
+                IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")
+            )
             scheduledUptimeChecks[secondMonitor.id].shouldNotBeNull()
             scheduledSSLChecks[secondMonitor.id].shouldBeNull()
         }
@@ -115,7 +120,6 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             thirdMonitor.uptimeCheckInterval shouldBe 120
             thirdMonitor.enabled shouldBe true
             thirdMonitor.sslCheckEnabled shouldBe true
-            thirdMonitor.pagerdutyIntegrationKey shouldBe null
             thirdMonitor.requestMethod shouldBe HttpMethod.GET
             thirdMonitor.latencyHistoryEnabled shouldBe true
             thirdMonitor.forceNoCache shouldBe false
@@ -169,7 +173,6 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             firstMonitor.uptimeCheckInterval shouldBe 120
             firstMonitor.enabled shouldBe true
             firstMonitor.sslCheckEnabled shouldBe true
-            firstMonitor.pagerdutyIntegrationKey shouldBe null
             firstMonitor.requestMethod shouldBe HttpMethod.HEAD
             firstMonitor.latencyHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
@@ -189,7 +192,6 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             secondMonitor.uptimeCheckInterval shouldBe 60
             secondMonitor.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
             secondMonitor.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
-            secondMonitor.pagerdutyIntegrationKey shouldBe null
             secondMonitor.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
             secondMonitor.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
@@ -208,7 +210,6 @@ class CheckSchedulerYamlConfigTest : StringSpec({
             thirdMonitor.uptimeCheckInterval shouldBe 300
             thirdMonitor.enabled shouldBe true
             thirdMonitor.sslCheckEnabled shouldBe false
-            thirdMonitor.pagerdutyIntegrationKey shouldBe null
             thirdMonitor.requestMethod shouldBe HttpMethod.GET
             thirdMonitor.latencyHistoryEnabled shouldBe true
             thirdMonitor.forceNoCache shouldBe true
@@ -265,5 +266,17 @@ class CheckSchedulerYamlConfigTest : StringSpec({
      */
     "4. step: the initial YAML config is used again" {
         executeAndAssertTheFirstStep()
+    }
+
+    /**
+     * This test simulates a case where the YAML config is used, but one of the integrations is not present in the
+     * integrations' config. In this case the app should throw an exception, and should not start up.
+     */
+    "5. step: the app started with some monitors in the YAML, but there is a non-existing integration on one of them" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            ApplicationContext.run("test", "yaml-monitors-missing-integration", "full-integrations-setup")
+        }
+
+        ex.message shouldContain "Non-existing integration ID found: slack:non-existing."
     }
 })

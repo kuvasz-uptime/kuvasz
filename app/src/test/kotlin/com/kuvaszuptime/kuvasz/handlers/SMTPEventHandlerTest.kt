@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.config.handlers.SMTPEventHandlerConfig
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
@@ -11,14 +10,22 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.SMTPMailer
+import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.inspectors.forAll
+import io.kotest.inspectors.forNone
+import io.kotest.inspectors.forOne
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.HttpStatus
@@ -30,20 +37,24 @@ import io.mockk.verify
 import org.jooq.DSLContext
 import org.simplejavamail.api.email.Email
 
-@MicronautTest(startApplication = false)
+@SMTPTest
+@MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class SMTPEventHandlerTest(
     private val monitorRepository: MonitorRepository,
     private val uptimeEventRepository: UptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     latencyLogRepository: LatencyLogRepository,
-    smtpEventHandlerConfig: SMTPEventHandlerConfig,
     smtpMailer: SMTPMailer,
     dslContext: DSLContext,
+    integrationRepository: IntegrationRepository,
+    emailNotificationConfigs: List<EmailNotificationConfig>,
 ) : DatabaseBehaviorSpec() {
     init {
         val eventDispatcher = EventDispatcher()
-        val emailFactory = EmailFactory(smtpEventHandlerConfig)
         val mailerSpy = spyk(smtpMailer, recordPrivateCalls = true)
+        val globalEmailConfig = emailNotificationConfigs.first { it.global }
+        val otherEmailConfig = emailNotificationConfigs.first { !it.global && it.enabled }
+        val disabledEmailConfig = emailNotificationConfigs.first { !it.enabled }
 
         DatabaseEventHandler(
             eventDispatcher,
@@ -52,7 +63,7 @@ class SMTPEventHandlerTest(
             sslEventRepository,
             dslContext,
         )
-        SMTPEventHandler(smtpEventHandlerConfig, mailerSpy, eventDispatcher)
+        SMTPEventHandler(mailerSpy, eventDispatcher, integrationRepository)
 
         given("the SMTPEventHandler - UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
@@ -72,24 +83,48 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(
+                    repository = monitorRepository,
+                    integrations = listOf(
+                        globalEmailConfig.id,
+                        otherEmailConfig.id,
+                        disabledEmailConfig.id,
+                    ),
+                )
                 val event = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Exception(),
                     previousEvent = null
                 )
-                val expectedEmail = emailFactory.fromMonitorEvent(event)
+                // Email text and subject are not config specific
+                val expectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(event)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send an email about the event") {
-                    val slot = slot<Email>()
+                then("it should send an email about the event to every enabled integration") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.forAll { email ->
+                        // Email text and subject are not config specific
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldBe expectedEmail.subject
+                        email.subject shouldContain "is DOWN"
+                    }
+                    sentEmails.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
+                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
+                    }
+                    sentEmails.forOne { fromOtherConfig ->
+                        fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                    }
+                    sentEmails.forNone { fromDisabledConfig ->
+                        fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
+                            disabledEmailConfig.fromAddress
+                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                    }
                 }
             }
 
@@ -127,7 +162,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = emailFactory.fromMonitorEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(firstEvent)
 
                 val secondEvent = MonitorDownEvent(
                     monitor = monitor,
@@ -167,8 +202,8 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = emailFactory.fromMonitorEvent(firstEvent)
-                val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(firstEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(secondEvent)
 
                 then("it should send two different emails about them") {
                     val emailsSent = mutableListOf<Email>()
@@ -203,7 +238,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(secondEvent)
 
                 then("it should send an email only about the down event") {
                     val emailSent = slot<Email>()
@@ -233,23 +268,47 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(
+                    repository = monitorRepository,
+                    integrations = listOf(
+                        globalEmailConfig.id,
+                        otherEmailConfig.id,
+                        disabledEmailConfig.id,
+                    )
+                )
                 val event = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
                     error = SSLValidationError("ssl error")
                 )
-                val expectedEmail = emailFactory.fromMonitorEvent(event)
+                // Email text and subject are not config specific
+                val expectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(event)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send an email about the event") {
-                    val slot = slot<Email>()
+                then("it should send an email about the event to every enabled integrations") {
+                    val slot = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "has an INVALID"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(slot)) }
+                    slot.forAll { email ->
+                        // Email text and subject are not config specific
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldBe expectedEmail.subject
+                        email.subject shouldContain "has an INVALID"
+                    }
+                    slot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
+                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
+                    }
+                    slot.forOne { fromOtherConfig ->
+                        fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                    }
+                    slot.forNone { fromDisabledConfig ->
+                        fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
+                            disabledEmailConfig.fromAddress
+                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                    }
                 }
             }
 
@@ -284,7 +343,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(firstEvent)
 
-                val expectedEmail = emailFactory.fromMonitorEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
@@ -322,8 +381,8 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = emailFactory.fromMonitorEvent(firstEvent)
-                val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(firstEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(secondEvent)
 
                 then("it should send two different emails about them") {
                     val emailsSent = mutableListOf<Email>()
@@ -355,7 +414,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(secondEvent)
 
                 then("it should send an email, only about the invalidity") {
                     val emailSent = slot<Email>()
@@ -374,7 +433,7 @@ class SMTPEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                val expectedEmail = emailFactory.fromMonitorEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(event)
 
                 eventDispatcher.dispatch(event)
 
@@ -397,7 +456,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(firstEvent)
 
-                val expectedEmail = emailFactory.fromMonitorEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
@@ -434,7 +493,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val secondExpectedEmail = emailFactory.fromMonitorEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromMonitorEvent(secondEvent)
 
                 then("it should send an email, only about the expiration") {
                     val emailSent = slot<Email>()

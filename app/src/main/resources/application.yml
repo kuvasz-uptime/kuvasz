@@ -109,19 +109,6 @@ app-config:
 handler-config:
   log-event-handler:
     enabled: ${ENABLE_LOG_EVENT_HANDLER:`true`}
-  smtp-event-handler:
-    enabled: ${ENABLE_SMTP_EVENT_HANDLER:`false`}
-    from: ${SMTP_FROM_ADDRESS}
-    to: ${SMTP_TO_ADDRESS}
-  slack-event-handler:
-    enabled: ${ENABLE_SLACK_EVENT_HANDLER:`false`}
-    webhook-url: ${SLACK_WEBHOOK_URL}
-  telegram-event-handler:
-    enabled: ${ENABLE_TELEGRAM_EVENT_HANDLER:`false`}
-    token: ${TELEGRAM_API_TOKEN}
-    chat-id: ${TELEGRAM_CHAT_ID}
-  pagerduty-event-handler:
-    enabled: ${ENABLE_PAGERDUTY_EVENT_HANDLER:`false`}
 ---
 admin-auth:
   username: ${ADMIN_USER}

@@ -1,0 +1,14 @@
+monitors:
+  - name: test1
+    url: http://example.com
+    uptime-check-interval: 120
+    enabled: false
+    ssl-check-enabled: true
+    pagerduty-integration-key: 1234567890abcdef
+    request-method: HEAD
+    latency-history-enabled: false
+    force-no-cache: false
+    follow-redirects: false
+    ssl-expiry-threshold: 0
+    integrations:
+      - slack:non-existing

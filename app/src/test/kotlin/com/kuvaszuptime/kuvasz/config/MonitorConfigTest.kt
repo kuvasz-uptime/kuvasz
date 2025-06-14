@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.ApplicationContext
@@ -93,11 +94,11 @@ class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : D
                 monitorConfig.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
                 monitorConfig.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
                 monitorConfig.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
-                monitorConfig.pagerdutyIntegrationKey shouldBe null
                 monitorConfig.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
                 monitorConfig.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
                 monitorConfig.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
                 monitorConfig.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
+                monitorConfig.integrations.shouldBeNull()
             }
         }
     }

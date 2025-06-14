@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -22,18 +23,17 @@ fun createMonitor(
     uptimeCheckInterval: Int = 30000,
     monitorName: String = "testMonitor",
     url: String = "http://irrelevant.com",
-    pagerdutyIntegrationKey: String? = null,
     requestMethod: HttpMethod = HttpMethod.GET,
     latencyHistoryEnabled: Boolean = true,
     forceNoCache: Boolean = true,
     followRedirects: Boolean = true,
     sslExpiryThreshold: Int = 30,
+    integrations: List<IntegrationID> = emptyList(),
 ): MonitorRecord {
     val monitor = MonitorRecord()
         .setName(monitorName)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setUrl(url)
-        .setPagerdutyIntegrationKey(pagerdutyIntegrationKey)
         .setEnabled(enabled)
         .setRequestMethod(requestMethod)
         .setSslCheckEnabled(sslCheckEnabled)
@@ -43,6 +43,7 @@ fun createMonitor(
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
         .setSslExpiryThreshold(sslExpiryThreshold)
+        .setIntegrations(integrations.toTypedArray())
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 

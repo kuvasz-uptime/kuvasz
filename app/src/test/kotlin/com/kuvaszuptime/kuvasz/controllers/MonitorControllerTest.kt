@@ -2,8 +2,10 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
@@ -13,9 +15,12 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
+import com.kuvaszuptime.kuvasz.models.dto.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
@@ -29,6 +34,7 @@ import io.kotest.core.test.TestResult
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
@@ -48,7 +54,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
 
-@MicronautTest
+@MicronautTest(environments = ["full-integrations-setup"])
 class MonitorControllerTest(
     @Client("/") private val client: HttpClient,
     private val monitorClient: MonitorClient,
@@ -57,10 +63,21 @@ class MonitorControllerTest(
     private val checkScheduler: CheckScheduler,
 ) : DatabaseBehaviorSpec() {
 
+    private val mapper = jacksonObjectMapper()
+
     init {
         given("MonitorController's getMonitorsWithDetails() endpoint") {
             `when`("there is a monitor in the database") {
-                val monitor = createMonitor(monitorRepository, pagerdutyIntegrationKey = "something")
+                val setUpIntegrations = listOf(
+                    IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.TELEGRAM, "global"),
+                    IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                )
+                val monitor = createMonitor(
+                    monitorRepository,
+                    integrations = setUpIntegrations
+                )
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
                     dslContext,
@@ -94,13 +111,67 @@ class MonitorControllerTest(
                     responseItem.sslStatusStartedAt shouldBe now
                     responseItem.lastSSLCheck shouldBe now
                     responseItem.sslError shouldBe null
-                    responseItem.pagerdutyKeyPresent shouldBe true
                     responseItem.requestMethod shouldBe HttpMethod.GET
                     responseItem.latencyHistoryEnabled shouldBe true
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
                     responseItem.sslExpiryThreshold shouldBe monitor.sslExpiryThreshold
                     responseItem.sslValidUntil shouldBe null
+
+                    // Integrations
+                    responseItem.integrations shouldContainExactlyInAnyOrder setUpIntegrations
+                    responseItem.effectiveIntegrations shouldContainExactlyInAnyOrder setOf(
+                        IntegrationDetailsDto(
+                            id = "slack:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.SLACK,
+                            global = false,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "email:disabled",
+                            enabled = false,
+                            name = "disabled",
+                            type = IntegrationType.EMAIL,
+                            global = false,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "telegram:global",
+                            enabled = true,
+                            name = "global",
+                            type = IntegrationType.TELEGRAM,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "pagerduty:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.PAGERDUTY,
+                            global = false,
+                        ),
+                        // Implicit globals should be included too
+                        IntegrationDetailsDto(
+                            id = "email:Global-343",
+                            enabled = true,
+                            name = "Global-343",
+                            type = IntegrationType.EMAIL,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "slack:Global2",
+                            enabled = true,
+                            name = "Global2",
+                            type = IntegrationType.SLACK,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "pagerduty:global",
+                            enabled = true,
+                            name = "global",
+                            type = IntegrationType.PAGERDUTY,
+                            global = true,
+                        ),
+                    )
                 }
             }
 
@@ -120,7 +191,6 @@ class MonitorControllerTest(
                     responseItem.uptimeStatus shouldBe null
                     responseItem.sslStatus shouldBe null
                     responseItem.createdAt shouldBe enabledMonitor.createdAt
-                    responseItem.pagerdutyKeyPresent shouldBe false
                     responseItem.requestMethod shouldBe HttpMethod.GET
                     responseItem.latencyHistoryEnabled shouldBe true
                     responseItem.forceNoCache shouldBe true
@@ -140,14 +210,20 @@ class MonitorControllerTest(
 
         given("MonitorController's getMonitorDetails() endpoint") {
             `when`("there is a monitor with the given ID in the database") {
+                val setUpIntegrations = listOf(
+                    IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.TELEGRAM, "global"),
+                    IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                )
                 val monitor = createMonitor(
                     monitorRepository,
-                    pagerdutyIntegrationKey = "something",
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
                     forceNoCache = false,
                     followRedirects = false,
                     sslExpiryThreshold = 15,
+                    integrations = setUpIntegrations,
                 )
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
@@ -180,13 +256,67 @@ class MonitorControllerTest(
                     response.sslStatusStartedAt shouldBe now
                     response.lastSSLCheck shouldBe now
                     response.sslError shouldBe null
-                    response.pagerdutyKeyPresent shouldBe true
                     response.requestMethod shouldBe HttpMethod.HEAD
                     response.latencyHistoryEnabled shouldBe true
                     response.forceNoCache shouldBe false
                     response.followRedirects shouldBe false
                     response.sslExpiryThreshold shouldBe 15
                     response.sslValidUntil shouldBe sslExpiryDate
+
+                    // Integrations
+                    response.integrations shouldContainExactlyInAnyOrder setUpIntegrations
+                    response.effectiveIntegrations shouldContainExactlyInAnyOrder setOf(
+                        IntegrationDetailsDto(
+                            id = "slack:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.SLACK,
+                            global = false,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "email:disabled",
+                            enabled = false,
+                            name = "disabled",
+                            type = IntegrationType.EMAIL,
+                            global = false,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "telegram:global",
+                            enabled = true,
+                            name = "global",
+                            type = IntegrationType.TELEGRAM,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "pagerduty:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.PAGERDUTY,
+                            global = false,
+                        ),
+                        // Implicit globals should be included too
+                        IntegrationDetailsDto(
+                            id = "email:Global-343",
+                            enabled = true,
+                            name = "Global-343",
+                            type = IntegrationType.EMAIL,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "slack:Global2",
+                            enabled = true,
+                            name = "Global2",
+                            type = IntegrationType.SLACK,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "pagerduty:global",
+                            enabled = true,
+                            name = "global",
+                            type = IntegrationType.PAGERDUTY,
+                            global = true,
+                        ),
+                    )
                 }
             }
 
@@ -223,7 +353,6 @@ class MonitorControllerTest(
             `when`("latency history enabled, latency records are present") {
                 val monitor = createMonitor(
                     monitorRepository,
-                    pagerdutyIntegrationKey = "something",
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
                     forceNoCache = false,
@@ -253,7 +382,6 @@ class MonitorControllerTest(
             `when`("latency history enabled, records are present, explicit limit is set") {
                 val monitor = createMonitor(
                     monitorRepository,
-                    pagerdutyIntegrationKey = "something",
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
                     forceNoCache = false,
@@ -283,7 +411,6 @@ class MonitorControllerTest(
             `when`("latency history enabled, but no records") {
                 val monitor = createMonitor(
                     monitorRepository,
-                    pagerdutyIntegrationKey = "something",
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
                     forceNoCache = false,
@@ -304,7 +431,6 @@ class MonitorControllerTest(
             `when`("latency history disabled") {
                 val monitor = createMonitor(
                     monitorRepository,
-                    pagerdutyIntegrationKey = "something",
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = false,
                     forceNoCache = false,
@@ -358,8 +484,6 @@ class MonitorControllerTest(
                     monitorInDb.sslCheckEnabled shouldBe false
                     monitorInDb.sslCheckEnabled shouldBe createdMonitor.sslCheckEnabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
-                    monitorInDb.pagerdutyIntegrationKey shouldBe null
-                    monitorInDb.pagerdutyIntegrationKey shouldBe monitorToCreate.pagerdutyIntegrationKey
                     monitorInDb.requestMethod shouldBe HttpMethod.GET
                     monitorInDb.requestMethod shouldBe createdMonitor.requestMethod
                     monitorInDb.latencyHistoryEnabled shouldBe true
@@ -370,6 +494,7 @@ class MonitorControllerTest(
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
                     monitorInDb.sslExpiryThreshold shouldBe 30
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
+                    monitorInDb.integrations.shouldNotBeNull().shouldBeEmpty()
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -377,18 +502,24 @@ class MonitorControllerTest(
             }
 
             `when`("it is called with a valid DTO - explicit parameters") {
+                val setUpIntegrations = listOf(
+                    IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.TELEGRAM, "global"),
+                    IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                )
                 val monitorToCreate = MonitorCreateDto(
                     name = "test_monitor2",
                     url = "https://valid-url2.com",
                     uptimeCheckInterval = 65,
                     enabled = false,
                     sslCheckEnabled = true,
-                    pagerdutyIntegrationKey = "something",
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = false,
                     forceNoCache = false,
                     followRedirects = false,
                     sslExpiryThreshold = 20,
+                    integrations = setUpIntegrations.map { it.toString() },
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -405,7 +536,6 @@ class MonitorControllerTest(
                     monitorInDb.sslCheckEnabled shouldBe true
                     monitorInDb.sslCheckEnabled shouldBe createdMonitor.sslCheckEnabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
-                    monitorInDb.pagerdutyIntegrationKey shouldBe "something"
                     monitorInDb.requestMethod shouldBe HttpMethod.HEAD
                     monitorInDb.requestMethod shouldBe createdMonitor.requestMethod
                     monitorInDb.latencyHistoryEnabled shouldBe false
@@ -416,6 +546,8 @@ class MonitorControllerTest(
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
                     monitorInDb.sslExpiryThreshold shouldBe 20
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
+                    monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
+                        setUpIntegrations.toTypedArray()
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -505,6 +637,46 @@ class MonitorControllerTest(
                         "sslExpiryThreshold: must be greater than or equal to 0"
                 }
             }
+
+            `when`("it is called with an invalid integration name") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    integrations = listOf("invalid-integration")
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain
+                        "Invalid integration ID format: invalid-integration. Expected format is 'type:name'"
+                }
+            }
+
+            `when`("it is called with a non-existing integration") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    integrations = listOf("email:non-existing-integration")
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain
+                        "Non-existing integration ID found: email:non-existing-integration."
+                }
+            }
         }
 
         given("MonitorController's deleteMonitor() endpoint") {
@@ -545,23 +717,28 @@ class MonitorControllerTest(
         given("MonitorController's updateMonitor() endpoint") {
 
             `when`("it is called with an existing monitor ID and a valid DTO to update all of the values") {
+                val setUpIntegrations = listOf(
+                    IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.TELEGRAM, "global"),
+                    IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                )
                 val createDto = MonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = true,
                     sslCheckEnabled = true,
-                    pagerdutyIntegrationKey = "something",
                     followRedirects = true,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
                     forceNoCache = true,
                     sslExpiryThreshold = 10,
+                    integrations = setUpIntegrations.map { it.toString() },
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                 checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
-
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(MonitorUpdateDto::enabled.name, false)
                     .put(MonitorUpdateDto::sslCheckEnabled.name, false)
@@ -569,11 +746,17 @@ class MonitorControllerTest(
                     .put(MonitorUpdateDto::latencyHistoryEnabled.name, false)
                     .put(MonitorUpdateDto::forceNoCache.name, false)
                     .put(MonitorUpdateDto::followRedirects.name, false)
-                    .putNull(MonitorUpdateDto::pagerdutyIntegrationKey.name)
                     .put(MonitorUpdateDto::name.name, "updated_test_monitor")
                     .put(MonitorUpdateDto::url.name, "https://updated-url.com")
                     .put(MonitorUpdateDto::uptimeCheckInterval.name, "5000")
                     .put(MonitorUpdateDto::sslExpiryThreshold.name, "20")
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::integrations.name,
+                        mapper
+                            .createArrayNode()
+                            .add("slack:test_implicitly_enabled")
+                            .add("telegram:disabled")
+                    )
 
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
@@ -586,12 +769,16 @@ class MonitorControllerTest(
                     monitorInDb.sslCheckEnabled shouldBe false
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
-                    monitorInDb.pagerdutyIntegrationKey shouldBe null // <- "Deleting" a nullable prop should work!
                     monitorInDb.requestMethod shouldBe HttpMethod.GET
                     monitorInDb.latencyHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe false
                     monitorInDb.followRedirects shouldBe false
                     monitorInDb.sslExpiryThreshold shouldBe 20
+                    monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
+                        arrayOf(
+                            IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                            IntegrationID(IntegrationType.TELEGRAM, "disabled"),
+                        )
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -604,7 +791,6 @@ class MonitorControllerTest(
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = false,
-                    pagerdutyIntegrationKey = "something"
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
@@ -626,7 +812,6 @@ class MonitorControllerTest(
                     monitorInDb.sslCheckEnabled shouldBe true
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
-                    monitorInDb.pagerdutyIntegrationKey shouldBe createDto.pagerdutyIntegrationKey
                     monitorInDb.requestMethod shouldBe HttpMethod.HEAD
                     monitorInDb.latencyHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
@@ -660,6 +845,68 @@ class MonitorControllerTest(
                 }
             }
 
+            `when`("it is called to remove all the set up integrations") {
+                val setUpIntegrations = listOf(
+                    IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.TELEGRAM, "global"),
+                    IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                )
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    sslCheckEnabled = true,
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = true,
+                    forceNoCache = true,
+                    followRedirects = true,
+                    sslExpiryThreshold = 10,
+                    integrations = setUpIntegrations.map { it.toString() },
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set<ObjectNode>(MonitorUpdateDto::integrations.name, mapper.createArrayNode())
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+
+                then("it should remove all the integrations") {
+                    monitorInDb.integrations.shouldNotBeNull().shouldBeEmpty()
+                }
+            }
+
+            `when`("integrations are omitted") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    sslCheckEnabled = true,
+                    requestMethod = HttpMethod.HEAD,
+                    latencyHistoryEnabled = true,
+                    forceNoCache = true,
+                    followRedirects = true,
+                    sslExpiryThreshold = 10,
+                    integrations = listOf(
+                        IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled").toString(),
+                    ),
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::name.name, "updated_test_monitor")
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should not change the integrations") {
+                    monitorInDb.name shouldBe "updated_test_monitor"
+                    monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
+                        arrayOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"))
+                }
+            }
+
             `when`("it is called with an existing monitor ID but there is an other monitor with the given name") {
                 val firstCreateDto = MonitorCreateDto(
                     name = "test_monitor",
@@ -681,7 +928,7 @@ class MonitorControllerTest(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(firstCreatedMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(firstCreatedMonitor.id).shouldNotBeNull()
 
                 then("it should return a 409") {
                     response.status shouldBe HttpStatus.CONFLICT
@@ -704,7 +951,7 @@ class MonitorControllerTest(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -728,7 +975,7 @@ class MonitorControllerTest(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -752,7 +999,7 @@ class MonitorControllerTest(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -777,7 +1024,7 @@ class MonitorControllerTest(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -796,6 +1043,61 @@ class MonitorControllerTest(
 
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("it is called with an invalid integration name") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::integrations.name,
+                        mapper.createArrayNode().add("invalid-integration")
+                    )
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain "Invalid JSON"
+                    monitorInDb.integrations shouldContainExactlyInAnyOrder createdMonitor.integrations.toTypedArray()
+                }
+            }
+
+            `when`("it is called with a non-existing integration") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::integrations.name,
+                        mapper.createArrayNode().add("email:non-existing-integration")
+                    )
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain
+                        "Non-existing integration ID found: email:non-existing-integration."
+                    monitorInDb.integrations shouldContainExactlyInAnyOrder createdMonitor.integrations.toTypedArray()
                 }
             }
         }
@@ -924,7 +1226,6 @@ class MonitorControllerTest(
             `when`("there are monitors in the database") {
                 val monitor = createMonitor(
                     monitorRepository,
-                    pagerdutyIntegrationKey = "something",
                     monitorName = "irrelevant",
                 )
                 val monitor2 = createMonitor(
@@ -958,7 +1259,6 @@ class MonitorControllerTest(
                         firstMonitor.uptimeCheckInterval shouldBe monitor.uptimeCheckInterval
                         firstMonitor.enabled shouldBe monitor.enabled
                         firstMonitor.sslCheckEnabled shouldBe monitor.sslCheckEnabled
-                        firstMonitor.pagerdutyIntegrationKey shouldBe monitor.pagerdutyIntegrationKey
                         firstMonitor.requestMethod shouldBe monitor.requestMethod
                         firstMonitor.latencyHistoryEnabled shouldBe monitor.latencyHistoryEnabled
                         firstMonitor.forceNoCache shouldBe monitor.forceNoCache
@@ -971,7 +1271,6 @@ class MonitorControllerTest(
                         secondMonitor.uptimeCheckInterval shouldBe monitor2.uptimeCheckInterval
                         secondMonitor.enabled shouldBe monitor2.enabled
                         secondMonitor.sslCheckEnabled shouldBe monitor2.sslCheckEnabled
-                        secondMonitor.pagerdutyIntegrationKey shouldBe null
                         secondMonitor.requestMethod shouldBe monitor2.requestMethod
                         secondMonitor.latencyHistoryEnabled shouldBe monitor2.latencyHistoryEnabled
                         secondMonitor.forceNoCache shouldBe monitor2.forceNoCache

@@ -1,15 +1,13 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.config.MonitorConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
-import com.kuvaszuptime.kuvasz.models.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import io.micronaut.context.annotation.Context
+import io.micronaut.context.annotation.Requires
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import jakarta.annotation.PostConstruct
@@ -30,6 +28,7 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 @Context
+@Requires(bean = AppBootstrapper::class)
 class CheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: MonitorRepository,
@@ -37,8 +36,6 @@ class CheckScheduler(
     private val sslChecker: SSLChecker,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
-    private val yamlMonitorConfigs: List<MonitorConfig>,
-    private val appConfig: AppConfig,
 ) {
     private val coroutineExHandler = CoroutineExceptionHandler { _, ex ->
         logger.warn("Coroutine failed with ${ex::class.simpleName}: ${ex.message}")
@@ -46,49 +43,17 @@ class CheckScheduler(
 
     private val scope = CoroutineScope(SupervisorJob() + dispatcher + coroutineExHandler)
 
-    private val scheduledUptimeChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> =
-        ConcurrentHashMap()
-    private val scheduledSSLChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> =
-        ConcurrentHashMap()
+    private val scheduledUptimeChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> = ConcurrentHashMap()
+    private val scheduledSSLChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> = ConcurrentHashMap()
 
     private fun ScheduledFuture<*>?.gracefulCancel() {
         this?.cancel(false)
     }
 
-    /**
-     * Processes the YAML monitor configs. If any YAML config is found, it disables external modifications of monitors
-     */
-    private fun processYamlMonitorConfigs() {
-        if (yamlMonitorConfigs.isNotEmpty()) {
-            appConfig.disableExternalWrite()
-            logger.info(
-                "Disabled external modifications of monitors, because a YAML monitor config was found. " +
-                    "Loading monitors from YAML config..."
-            )
-            val upsertedMonitorIds = yamlMonitorConfigs.map { yamlMonitor ->
-                // Upserting the monitor from the YAML config
-                monitorRepository.upsert(yamlMonitor.toMonitorRecord()).id
-            }
-            logger.info("Loaded ${yamlMonitorConfigs.size} monitors from YAML config")
-
-            // Removing all monitors that are not in the YAML config
-            val deletedCnt = monitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds)
-            logger.info("Deleted $deletedCnt monitors that were not in the YAML config")
-        } else {
-            logger.info(
-                "No YAML monitor config was found. " +
-                    "External modifications of monitors are enabled. Loading monitors from DB..."
-            )
-        }
-    }
-
     @PostConstruct
     fun initialize() {
-        // Parsing & processing the YAML monitor configs as they have a higher priority than the DB ones
-        processYamlMonitorConfigs()
-
         // Scheduling the uptime checks for the enabled monitors
-        monitorRepository.fetchByEnabled(true).forEach { createChecksForMonitor(it) }
+        monitorRepository.fetchByEnabled(enabled = true).forEach { createChecksForMonitor(it) }
     }
 
     fun getScheduledUptimeChecks() = scheduledUptimeChecks.toMap()

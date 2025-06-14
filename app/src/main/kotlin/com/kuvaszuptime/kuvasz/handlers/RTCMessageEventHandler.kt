@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.TextMessageService
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -15,8 +16,9 @@ import org.slf4j.Logger
 
 abstract class RTCMessageEventHandler(
     private val eventDispatcher: EventDispatcher,
-    private val messageService: TextMessageService
-) {
+    private val messageService: TextMessageService,
+    integrationRepository: IntegrationRepository,
+) : AbstractIntegrationProvider(integrationRepository) {
 
     internal abstract val logger: Logger
 
@@ -55,7 +57,9 @@ abstract class RTCMessageEventHandler(
                 return@runWhenStateChanges
             }
             val message = formatter.toFormattedMessage(event)
-            messageService.sendMessage(message).handleResponse()
+            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+                messageService.sendMessage(target, message).handleResponse()
+            }
         }
 
     private fun SSLMonitorEvent.handle() =
@@ -64,7 +68,9 @@ abstract class RTCMessageEventHandler(
                 return@runWhenStateChanges
             }
             val message = formatter.toFormattedMessage(event)
-            messageService.sendMessage(message).handleResponse()
+            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+                messageService.sendMessage(target, message).handleResponse()
+            }
         }
 
     private fun Single<String>.handleResponse(): Disposable =

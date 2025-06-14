@@ -117,7 +117,6 @@ class MonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
             dto.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
             dto.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
-            dto.pagerdutyIntegrationKey shouldBe null
             dto.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
         }
     }

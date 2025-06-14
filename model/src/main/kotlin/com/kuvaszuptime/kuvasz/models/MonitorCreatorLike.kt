@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -23,7 +24,6 @@ interface MonitorCreatorLike {
     val uptimeCheckInterval: Int
     val enabled: Boolean
     val sslCheckEnabled: Boolean
-    val pagerdutyIntegrationKey: String?
     val requestMethod: HttpMethod
     val latencyHistoryEnabled: Boolean
     val forceNoCache: Boolean
@@ -32,18 +32,20 @@ interface MonitorCreatorLike {
     @get:NotNull
     @get:PositiveOrZero
     val sslExpiryThreshold: Int
+
+    val integrations: List<String>?
 }
 
-fun MonitorCreatorLike.toMonitorRecord(): MonitorRecord =
+fun MonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): MonitorRecord =
     MonitorRecord()
         .setName(name)
         .setUrl(url)
         .setEnabled(enabled)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setSslCheckEnabled(sslCheckEnabled)
-        .setPagerdutyIntegrationKey(pagerdutyIntegrationKey)
         .setRequestMethod(requestMethod)
         .setLatencyHistoryEnabled(latencyHistoryEnabled)
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
         .setSslExpiryThreshold(sslExpiryThreshold)
+        .setIntegrations(validatedIntegrations.toTypedArray())

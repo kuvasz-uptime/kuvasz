@@ -1,32 +1,36 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.config.handlers.SMTPEventHandlerConfig
+import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.SMTPMailer
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory
 
 @Context
-@Requires(property = "handler-config.smtp-event-handler.enabled", value = "true")
+@Requires(beans = [SMTPMailerConfig::class, EmailNotificationConfig::class])
 class SMTPEventHandler(
-    smtpEventHandlerConfig: SMTPEventHandlerConfig,
     private val smtpMailer: SMTPMailer,
-    private val eventDispatcher: EventDispatcher
-) {
+    private val eventDispatcher: EventDispatcher,
+    integrationRepository: IntegrationRepository,
+) : AbstractIntegrationProvider(integrationRepository) {
     companion object {
         private val logger = LoggerFactory.getLogger(SMTPEventHandler::class.java)
     }
 
-    private val emailFactory = EmailFactory(smtpEventHandlerConfig)
+    override val integrationType = IntegrationType.EMAIL
 
     init {
         subscribeToEvents()
+        logger.info("SMTPEventHandler has been successfully initialized")
     }
 
     private fun subscribeToEvents() {
@@ -57,7 +61,10 @@ class SMTPEventHandler(
             if (this is MonitorUpEvent && previousEvent == null) {
                 return@runWhenStateChanges
             }
-            smtpMailer.sendAsync(emailFactory.fromMonitorEvent(event))
+            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+                val emailFactory = EmailFactory(target as EmailNotificationConfig)
+                smtpMailer.sendAsync(emailFactory.fromMonitorEvent(event))
+            }
         }
     }
 
@@ -66,7 +73,10 @@ class SMTPEventHandler(
             if (this is SSLValidEvent && previousEvent == null) {
                 return@runWhenStateChanges
             }
-            smtpMailer.sendAsync(emailFactory.fromMonitorEvent(event))
+            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+                val emailFactory = EmailFactory(target as EmailNotificationConfig)
+                smtpMailer.sendAsync(emailFactory.fromMonitorEvent(event))
+            }
         }
     }
 }

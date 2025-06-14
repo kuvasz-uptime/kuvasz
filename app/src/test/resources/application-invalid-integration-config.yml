@@ -1,0 +1,7 @@
+integrations:
+  slack:
+    - name: valid_integration_name
+      webhook-url: ''
+    - name: Global2
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/YYYYYYYYYY
+      global: true

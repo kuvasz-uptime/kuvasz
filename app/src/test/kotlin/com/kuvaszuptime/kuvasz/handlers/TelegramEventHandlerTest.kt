@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.config.handlers.TelegramEventHandlerConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
@@ -10,16 +9,21 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.TelegramAPIClient
 import com.kuvaszuptime.kuvasz.services.TelegramAPIService
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.inspectors.forAll
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
@@ -34,23 +38,21 @@ import io.mockk.verify
 import io.reactivex.rxjava3.core.Single
 import org.jooq.DSLContext
 
-@MicronautTest(startApplication = false)
+@MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class TelegramEventHandlerTest(
     private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
-    private val sslEventRepository: SSLEventRepository,
+    uptimeEventRepository: UptimeEventRepository,
+    sslEventRepository: SSLEventRepository,
     latencyLogRepository: LatencyLogRepository,
     dslContext: DSLContext,
+    telegramNotificationConfigs: List<TelegramNotificationConfig>,
+    integrationRepository: IntegrationRepository,
 ) : DatabaseBehaviorSpec() {
     private val mockClient = mockk<TelegramAPIClient>()
 
     init {
         val eventDispatcher = EventDispatcher()
-        val eventHandlerConfig = TelegramEventHandlerConfig().apply {
-            token = "my_token"
-            chatId = "@channel"
-        }
-        val telegramAPIService = TelegramAPIService(eventHandlerConfig, mockClient)
+        val telegramAPIService = TelegramAPIService(mockClient)
         val apiServiceSpy = spyk(telegramAPIService, recordPrivateCalls = true)
 
         DatabaseEventHandler(
@@ -60,7 +62,11 @@ class TelegramEventHandlerTest(
             sslEventRepository,
             dslContext,
         )
-        TelegramEventHandler(apiServiceSpy, eventDispatcher)
+        TelegramEventHandler(apiServiceSpy, eventDispatcher, integrationRepository)
+
+        val globalTelegramConfig = telegramNotificationConfigs.first { it.global }
+        val otherTelegramConfig = telegramNotificationConfigs.first { !it.global && it.enabled }
+        val disabledTelegramConfig = telegramNotificationConfigs.first { !it.enabled }
 
         given("the TelegramEventHandler") {
             `when`("it receives a MonitorUpEvent and There is no previous event for the monitor") {
@@ -71,32 +77,49 @@ class TelegramEventHandlerTest(
                     latency = 1000,
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(event)
 
                 then("it should not send a message about the event") {
-                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
                 }
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(
+                    repository = monitorRepository,
+                    integrations = listOf(
+                        globalTelegramConfig.id,
+                        otherTelegramConfig.id,
+                        disabledTelegramConfig.id,
+                    )
+                )
                 val event = MonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Exception(),
-                    previousEvent = null
+                    previousEvent = null,
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                mockSuccessfulHttpResponse(otherTelegramConfig.apiToken)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send a message about the event") {
-                    val slot = slot<String>()
+                then("it should send a message about the event to every enabled integrations") {
+                    val slot = mutableListOf<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is DOWN"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(otherTelegramConfig, capture(slot)) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(disabledTelegramConfig, any()) }
+
+                    slot.forAll { message ->
+                        message shouldContain "Your monitor \"testMonitor\" (http://irrelevant.com) is DOWN"
+                    }
+
+                    verify {
+                        mockClient.sendMessage(globalTelegramConfig.apiToken, any())
+                        mockClient.sendMessage(otherTelegramConfig.apiToken, any())
+                    }
                 }
             }
 
@@ -108,7 +131,6 @@ class TelegramEventHandlerTest(
                     latency = 1000,
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -121,7 +143,7 @@ class TelegramEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should not send any notification about them") {
-                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
                 }
             }
 
@@ -133,7 +155,7 @@ class TelegramEventHandlerTest(
                     error = Exception("First error"),
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -148,7 +170,7 @@ class TelegramEventHandlerTest(
                 then("it should send only one notification about them") {
                     val slot = slot<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
                     slot.captured shouldContain "(500)"
                 }
             }
@@ -161,7 +183,7 @@ class TelegramEventHandlerTest(
                     previousEvent = null,
                     error = Exception()
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -176,7 +198,7 @@ class TelegramEventHandlerTest(
                 then("it should send two different notifications about them") {
                     val notificationsSent = mutableListOf<String>()
 
-                    verify(exactly = 2) { apiServiceSpy.sendMessage(capture(notificationsSent)) }
+                    verify(exactly = 2) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationsSent)) }
                     notificationsSent[0] shouldContain "is DOWN (500)"
                     notificationsSent[1] shouldContain "Latency: 1000ms"
                     notificationsSent[1] shouldContain "is UP (200)"
@@ -191,7 +213,7 @@ class TelegramEventHandlerTest(
                     latency = 1000,
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -206,7 +228,7 @@ class TelegramEventHandlerTest(
                 then("it should send only one notification, about the down event") {
                     val notificationSent = slot<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(notificationSent)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationSent)) }
                     notificationSent.captured shouldContain "is DOWN (500)"
                 }
             }
@@ -220,32 +242,46 @@ class TelegramEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
                 }
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createMonitor(
+                    monitorRepository,
+                    integrations = listOf(
+                        globalTelegramConfig.id,
+                        otherTelegramConfig.id,
+                        disabledTelegramConfig.id,
+                    )
+                )
                 val event = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
                     error = SSLValidationError("ssl error")
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                mockSuccessfulHttpResponse(otherTelegramConfig.apiToken)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send a webhook message about the event") {
-                    val slot = slot<String>()
+                then("it should send a webhook message about the event to every enabled integrations") {
+                    val slot = mutableListOf<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
-                    slot.captured shouldContain
-                        "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate"
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(otherTelegramConfig, capture(slot)) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(disabledTelegramConfig, any()) }
+                    slot.forAll { message ->
+                        message shouldContain "Your site \"testMonitor\" (${monitor.url}) has an INVALID certificate"
+                    }
+                    verify {
+                        mockClient.sendMessage(globalTelegramConfig.apiToken, any())
+                        mockClient.sendMessage(otherTelegramConfig.apiToken, any())
+                    }
                 }
             }
 
@@ -256,7 +292,7 @@ class TelegramEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -268,7 +304,7 @@ class TelegramEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should not send any notification about them") {
-                    verify(inverse = true) { apiServiceSpy.sendMessage(any()) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
                 }
             }
 
@@ -279,7 +315,7 @@ class TelegramEventHandlerTest(
                     previousEvent = null,
                     error = SSLValidationError("ssl error1")
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -293,7 +329,7 @@ class TelegramEventHandlerTest(
                 then("it should send only one notification about them") {
                     val slot = slot<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
                     slot.captured shouldContain "ssl error1"
                 }
             }
@@ -305,7 +341,7 @@ class TelegramEventHandlerTest(
                     previousEvent = null,
                     error = SSLValidationError("ssl error1")
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -319,7 +355,7 @@ class TelegramEventHandlerTest(
                 then("it should send two different notifications about them") {
                     val notificationsSent = mutableListOf<String>()
 
-                    verify(exactly = 2) { apiServiceSpy.sendMessage(capture(notificationsSent)) }
+                    verify(exactly = 2) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationsSent)) }
                     notificationsSent[0] shouldContain "has an INVALID certificate"
                     notificationsSent[1] shouldContain "has a VALID certificate"
                 }
@@ -332,7 +368,7 @@ class TelegramEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -346,7 +382,7 @@ class TelegramEventHandlerTest(
                 then("it should send only one notification, about the invalid event") {
                     val notificationSent = slot<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(notificationSent)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationSent)) }
                     notificationSent.captured shouldContain "has an INVALID certificate"
                 }
             }
@@ -358,14 +394,14 @@ class TelegramEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
 
                 eventDispatcher.dispatch(event)
 
-                then("it should send a webhook message about the event") {
+                then("it should send a notification about the event") {
                     val slot = slot<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
                     slot.captured shouldContain
                         "Your SSL certificate for ${monitor.url} will expire soon"
                 }
@@ -373,12 +409,13 @@ class TelegramEventHandlerTest(
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
                 val monitor = createMonitor(monitorRepository)
+                val originalValidTo = getCurrentTimestamp()
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
-                    certInfo = generateCertificateInfo(),
+                    certInfo = generateCertificateInfo(validTo = originalValidTo),
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -392,18 +429,19 @@ class TelegramEventHandlerTest(
                 then("it should send only one notification about them") {
                     val slot = slot<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
+                    slot.captured shouldContain originalValidTo.toString()
                 }
             }
 
-            `when`("it receives an SSLWillExpireEvent and there is a previous event with different status") {
+            `when`("it receives an SSLWillExpireEvent and there is a previous event with a VALID status") {
                 val monitor = createMonitor(monitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                mockSuccessfulHttpResponse()
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
@@ -417,7 +455,7 @@ class TelegramEventHandlerTest(
                 then("it should send only one notification, about the expiration") {
                     val notificationSent = slot<String>()
 
-                    verify(exactly = 1) { apiServiceSpy.sendMessage(capture(notificationSent)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationSent)) }
                     notificationSent.captured shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
                 }
             }
@@ -446,15 +484,15 @@ class TelegramEventHandlerTest(
         super.afterTest(testCase, result)
     }
 
-    private fun mockSuccessfulHttpResponse() {
+    private fun mockSuccessfulHttpResponse(apiToken: String) {
         every {
-            mockClient.sendMessage(any())
+            mockClient.sendMessage(apiToken, any())
         } returns Single.just("ok")
     }
 
     private fun mockHttpErrorResponse() {
         every {
-            mockClient.sendMessage(any())
+            mockClient.sendMessage(any(), any())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )

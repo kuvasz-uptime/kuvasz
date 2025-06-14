@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 
 @Introspected
@@ -12,11 +13,11 @@ data class MonitorExportDto(
     val enabled: Boolean,
     val sslCheckEnabled: Boolean,
     val latencyHistoryEnabled: Boolean,
-    val pagerdutyIntegrationKey: String?,
     val requestMethod: HttpMethod,
     val followRedirects: Boolean,
     val forceNoCache: Boolean,
     val sslExpiryThreshold: Int,
+    val integrations: Set<IntegrationID>,
 ) {
     companion object {
         fun fromMonitorRecord(record: MonitorRecord): MonitorExportDto {
@@ -27,11 +28,11 @@ data class MonitorExportDto(
                 enabled = record.enabled,
                 sslCheckEnabled = record.sslCheckEnabled,
                 latencyHistoryEnabled = record.latencyHistoryEnabled,
-                pagerdutyIntegrationKey = record.pagerdutyIntegrationKey,
                 requestMethod = record.requestMethod,
                 followRedirects = record.followRedirects,
                 forceNoCache = record.forceNoCache,
                 sslExpiryThreshold = record.sslExpiryThreshold,
+                integrations = record.integrations.toSet(),
             )
         }
     }

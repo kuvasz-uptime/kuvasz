@@ -1,0 +1,43 @@
+integrations:
+  slack:
+    - name: test_implicitly_enabled
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX
+    - name: Global2
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/YYYYYYYYYY
+      global: true
+    - name: disabled
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/ZZZZZZZZZZ
+      enabled: false
+  email:
+    - name: test_implicitly_enabled
+      from-address: noreply@other.dev
+      to-address: foo@bar.com
+    - name: Global-343
+      from-address: foo@bar.com
+      to-address: blabla@example.com
+      global: true
+    - name: disabled
+      from-address: jkfds@jklfds.com
+      to-address: irrelevant@jfdalk.com
+      enabled: false
+  pagerduty:
+    - name: test_implicitly_enabled
+      integration-key: 1234567890abcdef1234567890abcdef
+    - name: global
+      integration-key: abcdef1234567890abcdef1234567890
+      global: true
+    - name: disabled
+      integration-key: fedcba0987654321fedcba0987654321
+      enabled: false
+  telegram:
+    - name: test_implicitly_enabled
+      api-token: 123456789:ABCdefGhIJKlmnoPQRstuVWXyZ
+      chat-id: -1001234567890
+    - name: global
+      api-token: ABCdefGhIJKlmnoPQRstuVWXyZ123456789
+      chat-id: -1000987654321
+      global: true
+    - name: disabled
+      api-token: 0987654321zyxwvutsrqponmlkjihgfedcba
+      chat-id: -1001122334455
+      enabled: false

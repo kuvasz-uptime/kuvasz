@@ -10,15 +10,15 @@ import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
-import io.micronaut.core.util.StringUtils
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
-import org.jooq.impl.DSL.`when`
+import org.jooq.impl.DSL
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -93,12 +93,12 @@ class MonitorRepository(private val dslContext: DSLContext) {
                     .set(MONITOR.ENABLED, updatedMonitor.enabled)
                     .set(MONITOR.SSL_CHECK_ENABLED, updatedMonitor.sslCheckEnabled)
                     .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
-                    .set(MONITOR.PAGERDUTY_INTEGRATION_KEY, updatedMonitor.pagerdutyIntegrationKey)
                     .set(MONITOR.REQUEST_METHOD, updatedMonitor.requestMethod)
                     .set(MONITOR.FOLLOW_REDIRECTS, updatedMonitor.followRedirects)
                     .set(MONITOR.LATENCY_HISTORY_ENABLED, updatedMonitor.latencyHistoryEnabled)
                     .set(MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
                     .set(MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
+                    .set(MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                     .where(MONITOR.ID.eq(updatedMonitor.id))
                     .returning(MONITOR.asterisk())
                     .fetchOneOrThrow<MonitorRecord>()
@@ -110,24 +110,28 @@ class MonitorRepository(private val dslContext: DSLContext) {
     /**
      * Inserts a new monitor or updates an existing one if the name already exists.
      */
-    fun upsert(monitor: MonitorRecord): MonitorRecord {
-        return dslContext.transactionResult { config ->
-            val ctx = config.dsl()
-            ctx.insertInto(MONITOR)
-                .set(monitor)
-                .onConflictOnConstraint(UNIQUE_MONITOR_NAME)
-                .doUpdate()
-                .setNonKeyToExcluded()
-                .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
-                .returning(MONITOR.asterisk())
-                .fetchOneOrThrow()
-        }
+    fun upsert(monitor: MonitorRecord, txCtx: DSLContext = this.dslContext): MonitorRecord = txCtx
+        .insertInto(MONITOR)
+        .set(monitor)
+        .onConflictOnConstraint(UNIQUE_MONITOR_NAME)
+        .doUpdate()
+        .setNonKeyToExcluded()
+        .set(MONITOR.UPDATED_AT, getCurrentTimestamp())
+        .returning(MONITOR.asterisk())
+        .fetchOneOrThrow()
+
+    fun updateIntegrations(monitorId: Long, newIntegrations: Array<IntegrationID>) {
+        dslContext
+            .update(MONITOR)
+            .set(MONITOR.INTEGRATIONS, newIntegrations)
+            .where(MONITOR.ID.eq(monitorId))
+            .execute()
     }
 
     /**
      * Deletes all monitors except the ones with the given IDs.
      */
-    fun deleteAllExcept(ignoredIds: List<Long>): Int = dslContext
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): Int = txCtx
         .deleteFrom(MONITOR)
         .where(MONITOR.ID.notIn(ignoredIds))
         .execute()
@@ -151,15 +155,13 @@ class MonitorRepository(private val dslContext: DSLContext) {
             SSL_EVENT.SSL_EXPIRY_DATE.`as`(MonitorDetailsDto::sslValidUntil.name),
             UPTIME_EVENT.ERROR.`as`(MonitorDetailsDto::uptimeError.name),
             SSL_EVENT.ERROR.`as`(MonitorDetailsDto::sslError.name),
-            `when`(
-                MONITOR.PAGERDUTY_INTEGRATION_KEY.isNull.or(MONITOR.PAGERDUTY_INTEGRATION_KEY.eq("")),
-                StringUtils.FALSE
-            ).otherwise(StringUtils.TRUE).`as`(MonitorDetailsDto::pagerdutyKeyPresent.name),
             MONITOR.LATENCY_HISTORY_ENABLED.`as`(MonitorDetailsDto::latencyHistoryEnabled.name),
             MONITOR.FORCE_NO_CACHE.`as`(MonitorDetailsDto::forceNoCache.name),
             MONITOR.FOLLOW_REDIRECTS.`as`(MonitorDetailsDto::followRedirects.name),
             MONITOR.REQUEST_METHOD.`as`(MonitorDetailsDto::requestMethod.name),
             MONITOR.SSL_EXPIRY_THRESHOLD.`as`(MonitorDetailsDto::sslExpiryThreshold.name),
+            DSL.array(arrayOf<String>()).`as`(MonitorDetailsDto::effectiveIntegrations.name),
+            MONITOR.INTEGRATIONS.`as`(MonitorDetailsDto::integrations.name),
         )
         .from(MONITOR)
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))

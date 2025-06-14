@@ -2,9 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
-import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.serde.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -262,58 +260,7 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                         classes(MB_3)
                         +Messages.integrationsLabel()
                     }
-                    div {
-                        classes(MB_3)
-                        label {
-                            classes(FORM_LABEL)
-                            +Messages.pagerdutyIntegrationKeyLabel()
-                            span {
-                                classes(MS_2)
-                                tooltip(
-                                    title = Messages.pagerdutyIntegrationKeyDescription(),
-                                    location = TooltipLocation.RIGHT
-                                )
-                                icon(Icon.INFO_CIRCLE)
-                            }
-                        }
-                        div {
-                            classes(ROW, G_2)
-                            div {
-                                classes(CSSClass.COL)
-                                input(type = InputType.text) {
-                                    classes(FORM_CONTROL)
-                                    name = "monitor-pagerdutyIntegrationKey-input"
-                                    xBindDisabled("isPDKeyInputDisabled")
-                                    xModel("pdIntegrationKey")
-                                }
-                            }
-                            div {
-                                classes(COL_AUTO)
-                                templateTag {
-                                    xIf("wasPDIntegrationKeyPresent && isPDKeyInputDisabled")
-                                    compactIconButton(Icon.EDIT) {
-                                        xOnClick("enablePDIntegrationKeyInput()")
-                                    }
-//                                    button {
-//                                        classes(BTN, BTN_ICON)
-//                                        xOnClick("enablePDIntegrationKeyInput()")
-//                                        icon(Icon.EDIT)
-//                                    }
-                                }
-                                templateTag {
-                                    xIf("wasPDIntegrationKeyPresent && isPDKeyInputDisabled && pdIntegrationKey")
-                                    compactIconButton(Icon.TRASH, classes = setOf(BTN_OUTLINE_DANGER, MS_2)) {
-                                        xOnClick("deletePDIntegrationKey()")
-                                    }
-//                                    button {
-//                                        classes(BTN, BTN_ICON, BTN_OUTLINE_DANGER, MS_2)
-//                                        xOnClick("deletePDIntegrationKey()")
-//                                        icon(Icon.TRASH)
-//                                    }
-                                }
-                            }
-                        }
-                    }
+                    // TODO
                 }
 
                 // Modal footer

@@ -286,29 +286,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResult"
-  /api/v1/info:
-    get:
-      tags:
-      - Management operations
-      summary: Info endpoint
-      description: "Returns info about the application (e.g. which handlers are enabled,\
-        \ etc.)"
-      operationId: info
-      parameters: []
-      responses:
-        "200":
-          description: The standard response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InfoResult"
-              example:
-                handlers:
-                  log-event-handler.enabled: true
-                  smtp-event-handler.enabled: false
-                  slack-event-handler.enabled: true
-                  telegram-event-handler.enabled: true
-                  pagerduty-event-handler.enabled: true
 components:
   schemas:
     HealthResult:
@@ -327,11 +304,32 @@ components:
       enum:
       - GET
       - HEAD
-    InfoResult:
+    IntegrationDetailsDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
       type: object
       properties:
-        handlers:
-          type: object
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+        enabled:
+          type: boolean
+        global:
+          type: boolean
+    IntegrationType:
+      type: string
+      enum:
+      - EMAIL
+      - PAGERDUTY
+      - SLACK
+      - TELEGRAM
     LatencyLogDto:
       required:
       - createdAt
@@ -371,9 +369,6 @@ components:
         sslCheckEnabled:
           type: boolean
           default: false
-        pagerdutyIntegrationKey:
-          type: string
-          nullable: true
         requestMethod:
           allOf:
           - $ref: "#/components/schemas/HttpMethod"
@@ -392,16 +387,22 @@ components:
           type: integer
           format: int32
           default: 30
+        integrations:
+          type: array
+          nullable: true
+          items:
+            type: string
     MonitorDetailsDto:
       required:
       - createdAt
+      - effectiveIntegrations
       - enabled
       - followRedirects
       - forceNoCache
       - id
+      - integrations
       - latencyHistoryEnabled
       - name
-      - pagerdutyKeyPresent
       - requestMethod
       - sslCheckEnabled
       - sslExpiryThreshold
@@ -469,8 +470,6 @@ components:
         sslError:
           type: string
           nullable: true
-        pagerdutyKeyPresent:
-          type: boolean
         requestMethod:
           $ref: "#/components/schemas/HttpMethod"
         latencyHistoryEnabled:
@@ -486,6 +485,16 @@ components:
           type: string
           format: date-time
           nullable: true
+        integrations:
+          type: array
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        effectiveIntegrations:
+          type: array
+          items:
+            $ref: "#/components/schemas/IntegrationDetailsDto"
     MonitorDto:
       required:
       - createdAt
@@ -493,9 +502,9 @@ components:
       - followRedirects
       - forceNoCache
       - id
+      - integrations
       - latencyHistoryEnabled
       - name
-      - pagerdutyKeyPresent
       - requestMethod
       - sslCheckEnabled
       - sslExpiryThreshold
@@ -517,8 +526,6 @@ components:
           type: boolean
         sslCheckEnabled:
           type: boolean
-        pagerdutyKeyPresent:
-          type: boolean
         requestMethod:
           $ref: "#/components/schemas/HttpMethod"
         latencyHistoryEnabled:
@@ -530,6 +537,12 @@ components:
         sslExpiryThreshold:
           type: integer
           format: int32
+        integrations:
+          type: array
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
         createdAt:
           type: string
           format: date-time
@@ -589,9 +602,6 @@ components:
           nullable: false
         requestMethod:
           $ref: "#/components/schemas/HttpMethod"
-        pagerdutyIntegrationKey:
-          type: string
-          nullable: true
         latencyHistoryEnabled:
           type: boolean
           nullable: false
@@ -605,6 +615,13 @@ components:
           type: integer
           format: int32
           nullable: false
+        integrations:
+          type: array
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
     SSLEventDto:
       required:
       - id

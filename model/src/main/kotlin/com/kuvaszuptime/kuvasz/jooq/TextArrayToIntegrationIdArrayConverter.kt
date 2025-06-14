@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.jooq
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import org.jooq.Converter
 
+@Suppress("UseOrEmpty")
 class TextArrayToIntegrationIdArrayConverter :
     Converter<Array<String>, Array<IntegrationID>> {
 

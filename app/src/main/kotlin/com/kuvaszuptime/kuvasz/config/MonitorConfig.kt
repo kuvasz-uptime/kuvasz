@@ -19,7 +19,6 @@ interface MonitorConfig : MonitorCreatorLike {
     override val name: String
     override val url: String
     override val uptimeCheckInterval: Int
-    override val pagerdutyIntegrationKey: String?
 
     @get:Bindable(defaultValue = MonitorDefaults.MONITOR_ENABLED.toString())
     override val enabled: Boolean
@@ -41,4 +40,6 @@ interface MonitorConfig : MonitorCreatorLike {
 
     @get:Bindable(defaultValue = MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS.toString())
     override val sslExpiryThreshold: Int
+
+    override val integrations: List<String>?
 }

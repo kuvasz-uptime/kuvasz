@@ -1,0 +1,8 @@
+integrations:
+  pagerduty:
+    - name: test
+      integration-key: 1234567890abcdef1234567890abcdef
+    - name: test
+      integration-key: abcdef1234567890abcdef1234567890
+      global: true
+      enabled: false

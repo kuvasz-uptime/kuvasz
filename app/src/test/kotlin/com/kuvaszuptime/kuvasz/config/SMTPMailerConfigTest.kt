@@ -21,7 +21,7 @@ class SMTPMailerConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        ApplicationContext.run(properties, "full-integrations-setup")
                     }
                     exceptionToMessage(exception) shouldContain "Error when trying to open connection to the server"
                 }

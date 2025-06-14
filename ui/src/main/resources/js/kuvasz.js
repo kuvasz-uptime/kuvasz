@@ -333,15 +333,15 @@ const isValidUrl = (url) => {
 }
 
 const upsertMonitorForm = (monitor, errorMessages) => {
-    const wasPDIntegrationKeyPresent = monitor?.pagerdutyKeyPresent === true;
-    const pdKeyPlaceHolder = '************';
+//    const wasPDIntegrationKeyPresent = monitor?.pagerdutyKeyPresent === true;
+//    const pdKeyPlaceHolder = '************';
     const originalMonitor = monitor || null;
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
         isUpdate: !!monitor,
-        pdKeyPlaceHolder,
-        wasPDIntegrationKeyPresent,
+//        pdKeyPlaceHolder,
+//        wasPDIntegrationKeyPresent,
 
         init() {
             this.resetState();
@@ -358,9 +358,9 @@ const upsertMonitorForm = (monitor, errorMessages) => {
             this.forceNoCache = (originalMonitor?.forceNoCache != null ? originalMonitor?.forceNoCache : true);
             this.followRedirects = (originalMonitor?.followRedirects != null ? originalMonitor?.followRedirects : true);
             this.requestMethod = originalMonitor?.requestMethod || 'GET';
-            this.pdIntegrationKey = wasPDIntegrationKeyPresent ? pdKeyPlaceHolder : '';
-            this.isPDKeyInputDisabled = wasPDIntegrationKeyPresent;
-            this.updatePDIntegrationKey = !wasPDIntegrationKeyPresent;
+//            this.pdIntegrationKey = wasPDIntegrationKeyPresent ? pdKeyPlaceHolder : '';
+//            this.isPDKeyInputDisabled = wasPDIntegrationKeyPresent;
+//            this.updatePDIntegrationKey = !wasPDIntegrationKeyPresent;
             this.errors = {};
         },
 
@@ -416,15 +416,15 @@ const upsertMonitorForm = (monitor, errorMessages) => {
             this.upsertMonitor();
         },
 
-        enablePDIntegrationKeyInput() {
-            this.deletePDIntegrationKey();
-            this.isPDKeyInputDisabled = false;
-        },
-
-        deletePDIntegrationKey() {
-            this.pdIntegrationKey = null;
-            this.updatePDIntegrationKey = true;
-        },
+//        enablePDIntegrationKeyInput() {
+//            this.deletePDIntegrationKey();
+//            this.isPDKeyInputDisabled = false;
+//        },
+//
+//        deletePDIntegrationKey() {
+//            this.pdIntegrationKey = null;
+//            this.updatePDIntegrationKey = true;
+//        },
 
         async upsertMonitor() {
             try {
@@ -443,10 +443,10 @@ const upsertMonitorForm = (monitor, errorMessages) => {
                 if (!this.isUpdate) {
                     body.enabled = true; // Default enabled, can be paused later
                 }
-                if (this.updatePDIntegrationKey) {
-                    const sanitizedKey = this.pdIntegrationKey?.trim();
-                    body.pagerdutyIntegrationKey = sanitizedKey ? sanitizedKey : null;
-                }
+//                if (this.updatePDIntegrationKey) {
+//                    const sanitizedKey = this.pdIntegrationKey?.trim();
+//                    body.pagerdutyIntegrationKey = sanitizedKey ? sanitizedKey : null;
+//                }
 
                 console.debug('Submitting monitor form with data:', body);
 

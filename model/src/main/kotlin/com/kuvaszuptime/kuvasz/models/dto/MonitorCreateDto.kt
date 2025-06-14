@@ -24,8 +24,6 @@ data class MonitorCreateDto(
     override val enabled: Boolean = MonitorDefaults.MONITOR_ENABLED,
     @Schema(required = false, defaultValue = "false")
     override val sslCheckEnabled: Boolean = MonitorDefaults.SSL_CHECK_ENABLED,
-    @Schema(required = false)
-    override val pagerdutyIntegrationKey: String? = null,
     @Schema(required = false, defaultValue = "GET")
     override val requestMethod: HttpMethod = HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD),
     @Schema(required = false, defaultValue = "true")
@@ -36,4 +34,6 @@ data class MonitorCreateDto(
     override val followRedirects: Boolean = MonitorDefaults.FOLLOW_REDIRECTS,
     @Schema(required = false, defaultValue = "30")
     override val sslExpiryThreshold: Int = MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS,
+    @Schema(required = false)
+    override val integrations: List<String>? = emptyList(),
 ) : MonitorCreatorLike

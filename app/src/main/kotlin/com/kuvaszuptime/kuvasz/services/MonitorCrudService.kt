@@ -22,6 +22,7 @@ import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import jakarta.validation.ValidationException
@@ -39,6 +40,8 @@ class MonitorCrudService(
     private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
     private val validator: Validator,
+    private val integrationIdValidator: IntegrationIdValidator,
+    private val integrationRepository: IntegrationRepository,
 ) {
 
     private val objectMapper: ObjectMapper = jacksonObjectMapper()
@@ -47,22 +50,31 @@ class MonitorCrudService(
 
     private val readOnlyMonitorFieldNames = setOf(MONITOR.ID.name, MONITOR.CREATED_AT.name, MONITOR.UPDATED_AT.name)
 
-    fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
-        monitorRepository.getMonitorWithDetails(monitorId)?.copy(
+    fun getMonitorDetails(monitorId: Long): MonitorDetailsDto {
+        val monitorFromRepo =
+            monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
+        return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
             nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
-        ) ?: throw MonitorNotFoundException(monitorId)
+            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo).toSet()
+        )
+    }
 
     fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabledOnly, sortedBy).map { detailsDto ->
             detailsDto.copy(
                 nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
                 nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
+                effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto).toSet()
             )
         }
 
-    fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord =
-        monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord()).fold(
+    fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord {
+        // Validate the raw integrations from the DTO
+        val validatedIntegrations =
+            integrationIdValidator.validateIntegrationIds(monitorCreateDto.integrations.orEmpty())
+
+        return monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord(validatedIntegrations)).fold(
             { persistenceError -> throw persistenceError },
             { insertedMonitor ->
                 if (insertedMonitor.enabled) {
@@ -74,6 +86,7 @@ class MonitorCrudService(
                 insertedMonitor
             }
         )
+    }
 
     fun deleteMonitorById(monitorId: Long): Unit =
         monitorRepository.findById(monitorId)
@@ -103,6 +116,8 @@ class MonitorCrudService(
                             )
                         }
                     }
+                    // Validate the raw integrations from the DTO
+                    updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
 
                     MonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, config.dsl())
                 }

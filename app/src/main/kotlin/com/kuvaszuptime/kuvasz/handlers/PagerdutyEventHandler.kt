@@ -8,11 +8,14 @@ import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.PagerdutyAPIClient
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.context.annotation.Context
@@ -23,18 +26,22 @@ import io.reactivex.rxjava3.disposables.Disposable
 import org.slf4j.LoggerFactory
 
 @Context
-@Requires(property = "handler-config.pagerduty-event-handler.enabled", value = "true")
+@Requires(bean = PagerdutyConfig::class)
 class PagerdutyEventHandler(
     private val eventDispatcher: EventDispatcher,
-    private val apiClient: PagerdutyAPIClient
-) {
+    private val apiClient: PagerdutyAPIClient,
+    integrationRepository: IntegrationRepository,
+) : AbstractIntegrationProvider(integrationRepository) {
     companion object {
         private val logger = LoggerFactory.getLogger(PagerdutyEventHandler::class.java)
     }
 
     init {
         subscribeToEvents()
+        logger.info("PagerDuty event handler has been initialized")
     }
+
+    override val integrationType: IntegrationType = IntegrationType.PAGERDUTY
 
     private fun subscribeToEvents() {
         eventDispatcher.subscribeToMonitorUpEvents { event ->
@@ -79,17 +86,28 @@ class PagerdutyEventHandler(
         get() = "kuvasz_ssl_${monitor.id}"
 
     private fun UptimeMonitorEvent.handle() {
-        if (monitor.pagerdutyIntegrationKey != null) {
-            runWhenStateChanges { event ->
-                when (event) {
-                    is MonitorUpEvent -> {
-                        if (previousEvent != null) {
-                            val request = event.toResolveRequest(deduplicationKey)
+        runWhenStateChanges { event ->
+            val integrations = filterTargetConfigs(event.monitor.integrations)
+                .map { (it as PagerdutyConfig).integrationKey }
+            when (event) {
+                is MonitorUpEvent -> {
+                    if (previousEvent != null) {
+                        integrations.forEach { integrationKey ->
+                            val request = createResolveRequest(
+                                serviceKey = integrationKey,
+                                deduplicationKey = deduplicationKey
+                            )
                             apiClient.resolveAlert(request).handleResponse()
                         }
                     }
-                    is MonitorDownEvent -> {
-                        val request = event.toTriggerRequest(deduplicationKey)
+                }
+
+                is MonitorDownEvent -> {
+                    integrations.forEach { integrationKey ->
+                        val request = event.toTriggerRequest(
+                            serviceKey = integrationKey,
+                            deduplicationKey = deduplicationKey
+                        )
                         apiClient.triggerAlert(request).handleResponse()
                     }
                 }
@@ -98,21 +116,39 @@ class PagerdutyEventHandler(
     }
 
     private fun SSLMonitorEvent.handle() {
-        if (monitor.pagerdutyIntegrationKey != null) {
-            runWhenStateChanges { event ->
-                when (event) {
-                    is SSLValidEvent -> {
-                        if (previousEvent != null) {
-                            val request = event.toResolveRequest(deduplicationKey)
+        runWhenStateChanges { event ->
+            val integrations = filterTargetConfigs(event.monitor.integrations)
+                .map { (it as PagerdutyConfig).integrationKey }
+            when (event) {
+                is SSLValidEvent -> {
+                    if (previousEvent != null) {
+                        integrations.forEach { integrationKey ->
+                            val request = createResolveRequest(
+                                serviceKey = integrationKey,
+                                deduplicationKey = deduplicationKey
+                            )
                             apiClient.resolveAlert(request).handleResponse()
                         }
                     }
-                    is SSLInvalidEvent -> {
-                        val request = event.toTriggerRequest(deduplicationKey)
+                }
+
+                is SSLInvalidEvent -> {
+                    integrations.forEach { integrationKey ->
+                        val request = event.toTriggerRequest(
+                            serviceKey = integrationKey,
+                            deduplicationKey = deduplicationKey
+                        )
                         apiClient.triggerAlert(request).handleResponse()
                     }
-                    is SSLWillExpireEvent -> {
-                        val request = event.toTriggerRequest(deduplicationKey, PagerdutySeverity.WARNING)
+                }
+
+                is SSLWillExpireEvent -> {
+                    integrations.forEach { integrationKey ->
+                        val request = event.toTriggerRequest(
+                            serviceKey = integrationKey,
+                            deduplicationKey = deduplicationKey,
+                            severity = PagerdutySeverity.WARNING
+                        )
                         apiClient.triggerAlert(request).handleResponse()
                     }
                 }
@@ -121,11 +157,12 @@ class PagerdutyEventHandler(
     }
 
     private fun MonitorEvent.toTriggerRequest(
+        serviceKey: String,
         deduplicationKey: String,
         severity: PagerdutySeverity = PagerdutySeverity.CRITICAL
     ) =
         PagerdutyTriggerRequest(
-            routingKey = monitor.pagerdutyIntegrationKey,
+            routingKey = serviceKey,
             dedupKey = deduplicationKey,
             payload = PagerdutyTriggerPayload(
                 summary = toStructuredMessage().summary,
@@ -134,9 +171,9 @@ class PagerdutyEventHandler(
             )
         )
 
-    private fun MonitorEvent.toResolveRequest(deduplicationKey: String) =
+    private fun createResolveRequest(serviceKey: String, deduplicationKey: String) =
         PagerdutyResolveRequest(
-            routingKey = monitor.pagerdutyIntegrationKey,
+            routingKey = serviceKey,
             dedupKey = deduplicationKey
         )
 }

@@ -19,7 +19,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
-@MicronautTest(environments = ["test", "yaml-monitors"])
+@MicronautTest(environments = ["test", "yaml-monitors", "full-integrations-setup"])
 class MonitorMutabilityTest(
     @Client("/") private val client: HttpClient,
 ) : StringSpec({
@@ -29,7 +29,7 @@ class MonitorMutabilityTest(
         url = "https://example.com",
         uptimeCheckInterval = 5149,
     )
-    val monitorUpdateDto = JsonNodeFactory.instance.objectNode().putNull(MonitorUpdateDto::pagerdutyIntegrationKey.name)
+    val monitorUpdateDto = JsonNodeFactory.instance.objectNode().put(MonitorUpdateDto::enabled.name, false)
 
     "all the API endpoints that mutate monitors should return a 405 if the monitors are configured via YAML" {
 

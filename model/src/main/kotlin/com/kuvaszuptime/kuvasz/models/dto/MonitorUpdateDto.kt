@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Min
@@ -33,8 +34,6 @@ data class MonitorUpdateDto(
     @get:NotNull
     @field:Schema(required = false, nullable = false)
     val requestMethod: HttpMethod?,
-    @field:Schema(required = false, nullable = true)
-    val pagerdutyIntegrationKey: String?,
     @get:NotNull
     @field:Schema(required = false, nullable = false)
     val latencyHistoryEnabled: Boolean?,
@@ -47,4 +46,6 @@ data class MonitorUpdateDto(
     @get:NotNull
     @field:Schema(required = false, nullable = false)
     val sslExpiryThreshold: Int?,
+    @field:Schema(required = false, nullable = true)
+    val integrations: Set<IntegrationID>?,
 )

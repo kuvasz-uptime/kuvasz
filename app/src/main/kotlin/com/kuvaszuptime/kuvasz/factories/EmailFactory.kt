@@ -1,16 +1,16 @@
 package com.kuvaszuptime.kuvasz.factories
 
-import com.kuvaszuptime.kuvasz.config.handlers.EmailEventHandlerConfig
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
+import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.email.EmailBuilder
 
-class EmailFactory(private val config: EmailEventHandlerConfig) {
+class EmailFactory(private val config: EmailNotificationConfig) {
 
     private val formatter = PlainTextMessageFormatter
 
@@ -42,6 +42,6 @@ class EmailFactory(private val config: EmailEventHandlerConfig) {
     private fun createEmailBase() =
         EmailBuilder
             .startingBlank()
-            .to(config.to, config.to)
-            .from(config.from, config.from)
+            .to(config.toAddress, config.toAddress)
+            .from(config.fromAddress, config.fromAddress)
 }
