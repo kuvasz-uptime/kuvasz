@@ -15,7 +15,7 @@ fun renderMonitorsPage(globals: AppGlobals) =
     withLayout(
         globals,
         title = Messages.monitors(),
-        pageTitle = { monitorsHeader(isReadOnlyMode = globals.isReadOnlyMode) }
+        pageTitle = { monitorsHeader(globals) }
     ) {
         div {
             classes(ROW, ROW_CARDS)
@@ -46,7 +46,7 @@ fun renderMonitorsPage(globals: AppGlobals) =
         }
     }
 
-internal fun HtmlBlockTag.monitorsHeader(isReadOnlyMode: Boolean) {
+internal fun HtmlBlockTag.monitorsHeader(globals: AppGlobals) {
     val createModalId = "create-monitor-modal"
     div {
         classes(CONTAINER_XL)
@@ -71,7 +71,7 @@ internal fun HtmlBlockTag.monitorsHeader(isReadOnlyMode: Boolean) {
                         classes(COL_AUTO, MS_AUTO)
                         div {
                             classes(BTN_LIST)
-                            if (!isReadOnlyMode) {
+                            if (!globals.isReadOnlyMode) {
                                 compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY)) {
                                     modalOpener(createModalId)
                                 }
@@ -99,8 +99,8 @@ internal fun HtmlBlockTag.monitorsHeader(isReadOnlyMode: Boolean) {
                 }
             }
         }
-        if (!isReadOnlyMode) {
-            monitorCreateUpdateModal(modalId = createModalId, monitor = null, readOnly = false)
+        if (!globals.isReadOnlyMode) {
+            monitorCreateUpdateModal(modalId = createModalId, monitor = null, globals)
         }
     }
 }

@@ -15,13 +15,16 @@ fun renderMonitorDetailsPage(globals: AppGlobals, monitor: MonitorDetailsDto): S
     return withLayout(
         globals,
         title = monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH),
-        pageTitle = { monitorDetailsHeader(monitor, globals.isReadOnlyMode) }
+        pageTitle = { monitorDetailsHeader(monitor, globals) }
     ) {
         monitorDetailsContent(monitor)
     }
 }
 
-internal fun HtmlBlockTag.monitorDetailsHeader(monitor: MonitorDetailsDto, isReadOnlyMode: Boolean) {
+internal fun HtmlBlockTag.monitorDetailsHeader(
+    monitor: MonitorDetailsDto,
+    globals: AppGlobals,
+) {
     val deleteModalId = "delete-monitor-modal-${monitor.id}"
     val updateModalId = "update-monitor-modal-${monitor.id}"
 
@@ -36,7 +39,7 @@ internal fun HtmlBlockTag.monitorDetailsHeader(monitor: MonitorDetailsDto, isRea
                 classes(COL_MD_AUTO, MS_AUTO, D_PRINT_NONE)
                 div {
                     classes(BTN_LIST)
-                    if (!isReadOnlyMode) {
+                    if (!globals.isReadOnlyMode) {
                         button {
                             classes(BTN, BTN_ICON)
                             xBindDisabled("isRequestLoading")
@@ -51,7 +54,7 @@ internal fun HtmlBlockTag.monitorDetailsHeader(monitor: MonitorDetailsDto, isRea
                             }
                         }
                     }
-                    if (!isReadOnlyMode) {
+                    if (!globals.isReadOnlyMode) {
                         buttonWithIcon(Icon.SETTINGS, Messages.configure()) {
                             modalOpener(updateModalId)
                         }
@@ -65,7 +68,7 @@ internal fun HtmlBlockTag.monitorDetailsHeader(monitor: MonitorDetailsDto, isRea
                             modalOpener(updateModalId)
                         }
                     }
-                    monitorCreateUpdateModal(updateModalId, monitor, readOnly = isReadOnlyMode)
+                    monitorCreateUpdateModal(updateModalId, monitor, globals)
                 }
             }
         }

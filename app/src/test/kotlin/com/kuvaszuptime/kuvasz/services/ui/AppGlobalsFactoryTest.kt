@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -88,6 +89,11 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             then("it should return the correctly hydrated view model with integrations") {
                 globals.configuredIntegrations shouldBe configuredIntegrationsMock
                 globals.enabledIntegrations shouldBe enabledIntegrationsMock
+                globals.configuredIntegrationsByType shouldBe configuredIntegrationsMock
+                    .values
+                    .groupBy { it.type }
+                    .mapValues { (_, configs) -> configs.toSet() }
+                    .toMap()
             }
         }
     }

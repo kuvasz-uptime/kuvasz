@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Factory
@@ -25,5 +26,11 @@ class AppGlobalsFactory {
         locale = Locale.of(appConfig.language),
         configuredIntegrations = integrationRepository.configuredIntegrations,
         enabledIntegrations = integrationRepository.enabledIntegrations,
+        configuredIntegrationsByType = integrationRepository
+            .configuredIntegrations
+            .values
+            .groupBy { it.type }
+            .mapValues { (_, configs) -> configs.toSet() }
+            .toMap(),
     )
 }
