@@ -18,9 +18,11 @@ internal fun FlowContent.validatedInput(
     disabledIf: String? = null,
     isNumber: Boolean = false,
 ) {
+    val inputName = "monitor-$propName-input"
     label {
         val labelClasses = mutableSetOf(FORM_LABEL).addIf(required, REQUIRED)
         classes(labelClasses)
+        htmlFor = inputName
         if (required) required()
         +label
         if (!description.isNullOrEmpty()) {
@@ -36,7 +38,8 @@ internal fun FlowContent.validatedInput(
     }
     input(type = InputType.text) {
         classes(FORM_CONTROL)
-        name = "monitor-$propName-input"
+        id = inputName
+        name = inputName
         placeholder?.let { this.placeholder = it }
         xBindClass("errors.$propName ? 'is-invalid' : ''")
         onInput?.let { xOnInput(it) }
@@ -56,12 +59,14 @@ internal fun FlowContent.toggleSwitch(
     propName: String,
     label: String,
     description: String? = null,
+    isDisabled: Boolean = false,
 ) {
     label {
         classes(FORM_CHECK, FORM_SWITCH)
-        input(type = InputType.checkBox) {
+        input(type = InputType.checkBox, name = propName) {
             classes(FORM_CHECK_INPUT)
             xModel(propName)
+            if (isDisabled) disabled = true
         }
         span {
             classes(FORM_CHECK_LABEL)
@@ -80,7 +85,7 @@ internal fun FlowContent.toggleSwitch(
     }
 }
 
-internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: MonitorDetailsDto?) {
+internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: MonitorDetailsDto?, readOnly: Boolean) {
     val serializedMonitor: String? = monitor?.let { objectMapper.writeValueAsString(it) }
     val serializedErrorMessages = objectMapper.writeValueAsString(
         mapOf(
@@ -115,6 +120,8 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                         classes(MODAL_TITLE)
                         if (monitor == null) {
                             +Messages.createNewMonitor()
+                        } else if (readOnly) {
+                            +Messages.configurationOf(monitor.name)
                         } else {
                             +Messages.updateMonitor(monitor.name)
                         }
@@ -140,6 +147,7 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                             placeholder = Messages.monitorNamePlaceholder(),
                             required = true,
                             onInput = "validateName()",
+                            disabledIf = "$readOnly",
                         )
                     }
                     // URL
@@ -151,6 +159,7 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                             placeholder = Messages.monitorUrlPlaceholder(),
                             required = true,
                             onInput = "validateUrl()",
+                            disabledIf = "$readOnly",
                         )
                     }
                     // Uptime Check Interval
@@ -162,6 +171,7 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                             placeholder = null,
                             required = true,
                             onInput = "validateUptimeCheckInterval()",
+                            disabledIf = "$readOnly",
                         )
                     }
                     // HTTP Method (GET, HEAD, etc.)
@@ -178,6 +188,7 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                                     classes(FORM_SELECTGROUP_INPUT)
                                     value = "GET"
                                     xModel("requestMethod")
+                                    if (readOnly) disabled = true
                                 }
                                 span {
                                     classes(FORM_SELECTGROUP_LABEL)
@@ -190,6 +201,7 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                                     classes(FORM_SELECTGROUP_INPUT)
                                     value = "HEAD"
                                     xModel("requestMethod")
+                                    if (readOnly) disabled = true
                                 }
                                 span {
                                     classes(FORM_SELECTGROUP_LABEL)
@@ -209,7 +221,8 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                     toggleSwitch(
                         propName = "sslCheckEnabled",
                         label = Messages.enabled(),
-                        description = Messages.sslCheckSwitchDescription()
+                        description = Messages.sslCheckSwitchDescription(),
+                        isDisabled = readOnly,
                     )
                     validatedInput(
                         propName = "sslExpiryThreshold",
@@ -218,7 +231,7 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                         placeholder = null,
                         required = true,
                         onInput = "validateSslExpiryThreshold()",
-                        disabledIf = "!sslCheckEnabled",
+                        disabledIf = "$readOnly || !sslCheckEnabled",
                     )
                 }
                 // Advanced Settings
@@ -233,7 +246,8 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                         toggleSwitch(
                             propName = "latencyHistoryEnabled",
                             label = Messages.latencyHistorySwitchLabel(),
-                            description = Messages.latencyHistorySwitchDescription()
+                            description = Messages.latencyHistorySwitchDescription(),
+                            isDisabled = readOnly,
                         )
                     }
                     div {
@@ -241,7 +255,8 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                         toggleSwitch(
                             propName = "followRedirects",
                             label = Messages.followRedirectsSwitchLabel(),
-                            description = Messages.followRedirectsSwitchDescription()
+                            description = Messages.followRedirectsSwitchDescription(),
+                            isDisabled = readOnly,
                         )
                     }
                     div {
@@ -249,7 +264,8 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                         toggleSwitch(
                             propName = "forceNoCache",
                             label = Messages.forceNoCacheSwitchLabel(),
-                            description = Messages.forceNoCacheSwitchDescription()
+                            description = Messages.forceNoCacheSwitchDescription(),
+                            isDisabled = readOnly,
                         )
                     }
                 }
@@ -269,14 +285,20 @@ internal fun FlowContent.monitorCreateUpdateModal(modalId: String, monitor: Moni
                     a(href = "#") {
                         classes(BTN, BTN_LINK, LINK_SECONDARY)
                         modalCloser()
-                        +Messages.cancel()
+                        if (readOnly) {
+                            +Messages.close()
+                        } else {
+                            +Messages.cancel()
+                        }
                     }
-                    button {
-                        classes(BTN, BTN_PRIMARY, MS_AUTO)
-                        xBindDisabled("hasNonNullValue(errors) || isRequestLoading")
-                        xOnClick("submitForm()")
-                        icon(Icon.FLOPPY)
-                        +Messages.save()
+                    if (!readOnly) {
+                        button {
+                            classes(BTN, BTN_PRIMARY, MS_AUTO)
+                            xBindDisabled("hasNonNullValue(errors) || isRequestLoading")
+                            xOnClick("submitForm()")
+                            icon(Icon.FLOPPY)
+                            +Messages.save()
+                        }
                     }
                 }
             }

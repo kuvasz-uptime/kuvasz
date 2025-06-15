@@ -100,7 +100,7 @@ internal fun HtmlBlockTag.monitorsHeader(isReadOnlyMode: Boolean) {
             }
         }
         if (!isReadOnlyMode) {
-            monitorCreateUpdateModal(modalId = createModalId, monitor = null)
+            monitorCreateUpdateModal(modalId = createModalId, monitor = null, readOnly = false)
         }
     }
 }

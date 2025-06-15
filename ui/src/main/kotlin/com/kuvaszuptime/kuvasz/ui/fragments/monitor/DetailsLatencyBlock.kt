@@ -100,7 +100,7 @@ internal fun FlowContent.detailsLatencyBlock(monitor: MonitorDetailsDto) {
                             classes(CARD_ACTIONS, BTN_ACTIONS)
                             label {
                                 classes(FORM_CHECK, FORM_SWITCH, MB_0)
-                                input(type = InputType.checkBox) {
+                                input(type = InputType.checkBox, name = "autoRefreshToggle") {
                                     classes(FORM_CHECK_INPUT)
                                     xModel("isAutoRefreshEnabled")
                                 }

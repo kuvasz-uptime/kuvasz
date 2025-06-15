@@ -31,11 +31,12 @@ internal fun HtmlBlockTag.monitorDetailsHeader(monitor: MonitorDetailsDto, isRea
         div {
             classes(ROW, G_3, ALIGN_ITEMS_CENTER)
             monitorDetailsHeading(monitor)
-            if (!isReadOnlyMode) {
+
+            div {
+                classes(COL_MD_AUTO, MS_AUTO, D_PRINT_NONE)
                 div {
-                    classes(COL_MD_AUTO, MS_AUTO, D_PRINT_NONE)
-                    div {
-                        classes(BTN_LIST)
+                    classes(BTN_LIST)
+                    if (!isReadOnlyMode) {
                         button {
                             classes(BTN, BTN_ICON)
                             xBindDisabled("isRequestLoading")
@@ -49,6 +50,8 @@ internal fun HtmlBlockTag.monitorDetailsHeader(monitor: MonitorDetailsDto, isRea
                                 icon(Icon.PLAY)
                             }
                         }
+                    }
+                    if (!isReadOnlyMode) {
                         buttonWithIcon(Icon.SETTINGS, Messages.configure()) {
                             modalOpener(updateModalId)
                         }
@@ -57,8 +60,12 @@ internal fun HtmlBlockTag.monitorDetailsHeader(monitor: MonitorDetailsDto, isRea
                             modalOpener(deleteModalId)
                         }
                         deleteMonitorModal(deleteModalId, monitor.name)
-                        monitorCreateUpdateModal(updateModalId, monitor)
+                    } else {
+                        buttonWithIcon(Icon.EYE, Messages.configuration()) {
+                            modalOpener(updateModalId)
+                        }
                     }
+                    monitorCreateUpdateModal(updateModalId, monitor, readOnly = isReadOnlyMode)
                 }
             }
         }
