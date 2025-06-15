@@ -10,7 +10,11 @@
     </appender>
 
     <!-- Need to be configured here, because the logger config in application.yml is evaluated later-->
-    <logger name="org.jooq.Constants" level="WARN"/>
+    <logger name="org.jooq" level="ERROR"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="org.flywaydb" level="WARN"/>
+    <logger name="io.micronaut.flyway" level="WARN"/>
+    <logger name="io.micronaut.logging" level="WARN"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

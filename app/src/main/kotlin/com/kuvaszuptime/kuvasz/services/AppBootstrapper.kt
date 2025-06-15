@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.MonitorConfig
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -24,6 +25,7 @@ class AppBootstrapper(
         processYamlMonitorConfigs()
         sanitizeIntegrationsOfMonitors()
         checkScheduler.initialize()
+        logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
     }
 
     /**
