@@ -34,7 +34,7 @@ internal fun FlowContent.loginForm(loginErrorMessage: String?) {
                             // Display error message if login fails
                             if (!loginErrorMessage.isNullOrEmpty()) {
                                 div {
-                                    classes(ALERT, ALERT_IMPORTANT, ALERT_DANGER, ALERT_DISMISSIBLE)
+                                    classes(ALERT, ALERT_DANGER, ALERT_DISMISSIBLE)
                                     attributes["role"] = "alert"
                                     div {
                                         classes(ALERT_ICON)
