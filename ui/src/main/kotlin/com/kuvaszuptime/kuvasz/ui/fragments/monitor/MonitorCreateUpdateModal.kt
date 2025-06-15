@@ -305,7 +305,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                             }
                             div {
                                 // Render each integration as a checkbox
-                                integrations.forEach { integration ->
+                                integrations.sortedBy { it.name }.forEach { integration ->
                                     label {
                                         classes(FORM_CHECK, FORM_CHECK_INLINE)
                                         input(type = InputType.checkBox) {
