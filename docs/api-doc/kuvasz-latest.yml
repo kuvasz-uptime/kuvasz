@@ -566,6 +566,18 @@ components:
           type: integer
           format: int32
           nullable: true
+        minLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        maxLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        p90LatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
         p95LatencyInMs:
           type: integer
           format: int32

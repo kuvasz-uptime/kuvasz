@@ -371,6 +371,9 @@ class MonitorControllerTest(
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
                     response.averageLatencyInMs shouldBe 900
+                    response.minLatencyInMs shouldBe 600
+                    response.maxLatencyInMs shouldBe 1200
+                    response.p90LatencyInMs shouldBe 1140
                     response.p95LatencyInMs shouldBe 1170
                     response.p99LatencyInMs shouldBe 1194
                     response.latencyLogs.shouldHaveSize(2)
@@ -398,6 +401,9 @@ class MonitorControllerTest(
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
                     response.averageLatencyInMs shouldBe 200
+                    response.minLatencyInMs shouldBe 100
+                    response.maxLatencyInMs shouldBe 300
+                    response.p90LatencyInMs shouldBe 280
                     response.p95LatencyInMs shouldBe 290
                     response.p99LatencyInMs shouldBe 298
 
@@ -422,6 +428,9 @@ class MonitorControllerTest(
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
                     response.averageLatencyInMs shouldBe null
+                    response.minLatencyInMs shouldBe null
+                    response.maxLatencyInMs shouldBe null
+                    response.p90LatencyInMs shouldBe null
                     response.p95LatencyInMs shouldBe null
                     response.p99LatencyInMs shouldBe null
                     response.latencyLogs.shouldBeEmpty()
@@ -447,6 +456,9 @@ class MonitorControllerTest(
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe false
                     response.averageLatencyInMs shouldBe null
+                    response.minLatencyInMs shouldBe null
+                    response.maxLatencyInMs shouldBe null
+                    response.p90LatencyInMs shouldBe null
                     response.p95LatencyInMs shouldBe null
                     response.p99LatencyInMs shouldBe null
                     response.latencyLogs.shouldBeEmpty()

@@ -8,6 +8,8 @@ import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.avg
+import org.jooq.impl.DSL.max
+import org.jooq.impl.DSL.min
 import org.jooq.impl.DSL.percentileCont
 import org.jooq.impl.DSL.round
 import java.time.Duration
@@ -17,6 +19,7 @@ import java.time.OffsetDateTime
 class LatencyLogRepository(private val dslContext: DSLContext) {
 
     companion object {
+        private const val P90 = .90
         private const val P95 = .95
         private const val P99 = .99
     }
@@ -68,6 +71,10 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
             .select(
                 LATENCY_LOG.MONITOR_ID.`as`(LatencyMetricResult::monitorId.name),
                 round(avg(LATENCY_LOG.LATENCY)).cast(Int::class.java).`as`(LatencyMetricResult::avg.name),
+                min(LATENCY_LOG.LATENCY).`as`(LatencyMetricResult::min.name),
+                max(LATENCY_LOG.LATENCY).`as`(LatencyMetricResult::max.name),
+                round(percentileCont(P90).withinGroupOrderBy(LATENCY_LOG.LATENCY)).cast(Int::class.java)
+                    .`as`(LatencyMetricResult::p90.name),
                 round(percentileCont(P95).withinGroupOrderBy(LATENCY_LOG.LATENCY)).cast(Int::class.java)
                     .`as`(LatencyMetricResult::p95.name),
                 round(percentileCont(P99).withinGroupOrderBy(LATENCY_LOG.LATENCY)).cast(Int::class.java)
@@ -85,6 +92,9 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
 data class LatencyMetricResult(
     val monitorId: Long,
     val avg: Int?,
+    val min: Int?,
+    val max: Int?,
+    val p90: Int?,
     val p95: Int?,
-    val p99: Int?
+    val p99: Int?,
 )

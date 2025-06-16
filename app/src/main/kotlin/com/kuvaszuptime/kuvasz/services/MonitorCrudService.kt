@@ -170,6 +170,9 @@ class MonitorCrudService(
                     id = monitor.id,
                     latencyHistoryEnabled = monitor.latencyHistoryEnabled,
                     averageLatencyInMs = null,
+                    minLatencyInMs = null,
+                    maxLatencyInMs = null,
+                    p90LatencyInMs = null,
                     p95LatencyInMs = null,
                     p99LatencyInMs = null,
                     latencyLogs = emptyList()
@@ -181,6 +184,9 @@ class MonitorCrudService(
                 val metrics = latencyLogRepository.getLatencyMetrics(monitor.id, period)
                 statsDto.copy(
                     averageLatencyInMs = metrics?.avg,
+                    minLatencyInMs = metrics?.min,
+                    maxLatencyInMs = metrics?.max,
+                    p90LatencyInMs = metrics?.p90,
                     p95LatencyInMs = metrics?.p95,
                     p99LatencyInMs = metrics?.p99,
                     latencyLogs = latencyLogRepository.fetchLatestByMonitorId(monitor.id, period)
