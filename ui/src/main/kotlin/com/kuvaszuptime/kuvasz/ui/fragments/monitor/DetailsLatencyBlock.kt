@@ -7,6 +7,29 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
+private fun FlowContent.latencyMetricCard(propertyName: String, label: String) {
+    templateTag {
+        xIf("$propertyName != null")
+        div {
+            classes(COL_MD_2, COL_SM_4, COL_6)
+            div {
+                classes(CARD)
+                div {
+                    classes(CARD_BODY)
+                    div {
+                        classes(SUBHEADER)
+                        +label
+                    }
+                    h4 {
+                        classes(M_0)
+                        xText("$propertyName + ' ms'")
+                    }
+                }
+            }
+        }
+    }
+}
+
 internal fun FlowContent.detailsLatencyBlock(monitor: MonitorDetailsDto) {
     div {
         xData(
@@ -22,66 +45,12 @@ internal fun FlowContent.detailsLatencyBlock(monitor: MonitorDetailsDto) {
 
         div {
             classes(ROW, ROW_CARDS, MB_3)
-            templateTag {
-                xIf("lastResponse?.averageLatencyInMs != null")
-                div {
-                    classes(COL_MD_4)
-                    div {
-                        classes(CARD)
-                        div {
-                            classes(CARD_BODY)
-                            div {
-                                classes(SUBHEADER)
-                                +Messages.latencyAverage()
-                            }
-                            h4 {
-                                classes(M_0)
-                                xText("lastResponse?.averageLatencyInMs + ' ms'")
-                            }
-                        }
-                    }
-                }
-            }
-            templateTag {
-                xIf("lastResponse?.p95LatencyInMs != null")
-                div {
-                    classes(COL_MD_4)
-                    div {
-                        classes(CARD)
-                        div {
-                            classes(CARD_BODY)
-                            div {
-                                classes(SUBHEADER)
-                                +"P95"
-                            }
-                            h4 {
-                                classes(M_0)
-                                xText("lastResponse?.p95LatencyInMs + ' ms'")
-                            }
-                        }
-                    }
-                }
-            }
-            templateTag {
-                xIf("lastResponse?.p99LatencyInMs != null")
-                div {
-                    classes(COL_MD_4)
-                    div {
-                        classes(CARD)
-                        div {
-                            classes(CARD_BODY)
-                            div {
-                                classes(SUBHEADER)
-                                +"P99"
-                            }
-                            h4 {
-                                classes(M_0)
-                                xText("lastResponse?.p99LatencyInMs + ' ms'")
-                            }
-                        }
-                    }
-                }
-            }
+            latencyMetricCard(propertyName = "lastResponse?.averageLatencyInMs", label = Messages.latencyAverage())
+            latencyMetricCard(propertyName = "lastResponse?.minLatencyInMs", label = "Min")
+            latencyMetricCard(propertyName = "lastResponse?.maxLatencyInMs", label = "Max")
+            latencyMetricCard(propertyName = "lastResponse?.p90LatencyInMs", label = "P90")
+            latencyMetricCard(propertyName = "lastResponse?.p95LatencyInMs", label = "P95")
+            latencyMetricCard(propertyName = "lastResponse?.p99LatencyInMs", label = "P99")
         }
 
         div {
