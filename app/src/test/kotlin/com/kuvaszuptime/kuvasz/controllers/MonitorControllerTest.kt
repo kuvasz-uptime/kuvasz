@@ -19,11 +19,13 @@ import com.kuvaszuptime.kuvasz.models.dto.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
+import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -50,7 +52,12 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.test.annotation.MockBean
+import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
 
@@ -61,6 +68,7 @@ class MonitorControllerTest(
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler,
+    private val statCalculator: StatCalculator,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
@@ -1500,10 +1508,71 @@ class MonitorControllerTest(
                 }
             }
         }
+
+        given("the getMonitoringStats() endpoint") {
+
+            val monitoringStatsDtoStub = MonitoringStatsDto(
+                actual = MonitoringStatsDto.ActualMonitoringStats(
+                    uptimeStats = MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                        total = 10000,
+                        down = 8185,
+                        up = 3535,
+                        paused = 7157,
+                        inProgress = 6139,
+                        lastIncident = getCurrentTimestamp()
+                    ),
+                    sslStats = MonitoringStatsDto.ActualMonitoringStats.SslStats(
+                        invalid = 6381,
+                        valid = 8827,
+                        willExpire = 4208,
+                        inProgress = 4622
+                    )
+                ),
+                history = MonitoringStatsDto.HistoricalMonitoringStats(
+                    uptimeStats = MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
+                        incidents = 7630,
+                        affectedMonitors = 8313,
+                        uptimeRatio = 0.12343784
+                    )
+                )
+
+            )
+
+            `when`("it's called without an explicit period") {
+
+                val statCalculatorMock = getMock(statCalculator)
+                every { statCalculatorMock.calculateOverallStats(any()) } returns monitoringStatsDtoStub
+
+                val response = monitorClient.getMonitoringStats(period = null)
+
+                then("it should delegate to the StatCalculator with the default period and return the stats") {
+                    response.shouldNotBeNull()
+
+                    verify(exactly = 1) { statCalculatorMock.calculateOverallStats(Duration.ofHours(168)) }
+                }
+            }
+
+            `when`("it's called with an explicit period") {
+
+                val statCalculatorMock = getMock(statCalculator)
+                every { statCalculatorMock.calculateOverallStats(any()) } returns monitoringStatsDtoStub
+
+                val response = monitorClient.getMonitoringStats(period = Duration.ofDays(1))
+
+                then("it should delegate to the StatCalculator with the default period and return the stats") {
+                    response.shouldNotBeNull()
+
+                    verify(exactly = 1) { statCalculatorMock.calculateOverallStats(Duration.ofDays(1)) }
+                }
+            }
+        }
     }
 
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         checkScheduler.removeAllChecks()
         super.afterTest(testCase, result)
     }
+
+    @MockBean(StatCalculator::class)
+    fun mockStatCalculator() = mockk<StatCalculator>()
 }

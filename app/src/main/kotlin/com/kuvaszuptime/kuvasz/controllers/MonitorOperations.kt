@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.annotation.Body
@@ -82,4 +83,15 @@ interface MonitorOperations {
     @Operation(summary = "Returns the export of all monitors in YAML format")
     @Get("/export/yaml")
     fun getYamlMonitorsExport(): SystemFile
+
+    @Operation(summary = "Returns the overall, cumulative stats of all monitors")
+    @Get("/stats")
+    fun getMonitoringStats(
+        @QueryValue
+        @Parameter(
+            required = false,
+            schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 7d")
+        )
+        period: Duration?,
+    ): MonitoringStatsDto
 }

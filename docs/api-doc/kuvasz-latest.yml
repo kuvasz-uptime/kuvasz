@@ -93,6 +93,28 @@ paths:
             application/x-yaml: {}
       security:
       - apiKey: []
+  /api/v1/monitors/stats:
+    get:
+      tags:
+      - Monitor operations
+      summary: "Returns the overall, cumulative stats of all monitors"
+      operationId: getMonitoringStats
+      parameters:
+      - name: period
+        in: query
+        schema:
+          type: string
+          description: "A Java Duration string, default 7d"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitoringStatsDto"
+      security:
+      - apiKey: []
   /api/v1/monitors/{monitorId}:
     get:
       tags:
@@ -648,6 +670,97 @@ components:
             type: string
             description: "A unique identifier for an integration, formatted as 'type:name'."
             example: email:my-email-integration
+    MonitoringStatsDto:
+      required:
+      - actual
+      - history
+      type: object
+      properties:
+        actual:
+          $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats"
+        history:
+          $ref: "#/components/schemas/MonitoringStatsDto.HistoricalMonitoringStats"
+    MonitoringStatsDto.ActualMonitoringStats:
+      required:
+      - sslStats
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
+        sslStats:
+          $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats.SslStats"
+    MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
+      required:
+      - down
+      - inProgress
+      - paused
+      - total
+      - up
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int32
+        down:
+          type: integer
+          format: int32
+        up:
+          type: integer
+          format: int32
+        paused:
+          type: integer
+          format: int32
+        inProgress:
+          type: integer
+          format: int32
+        lastIncident:
+          type: string
+          format: date-time
+          nullable: true
+    MonitoringStatsDto.ActualMonitoringStats.SslStats:
+      required:
+      - inProgress
+      - invalid
+      - valid
+      - willExpire
+      type: object
+      properties:
+        invalid:
+          type: integer
+          format: int32
+        valid:
+          type: integer
+          format: int32
+        willExpire:
+          type: integer
+          format: int32
+        inProgress:
+          type: integer
+          format: int32
+    MonitoringStatsDto.HistoricalMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          $ref: "#/components/schemas/MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats"
+    MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats:
+      required:
+      - affectedMonitors
+      - incidents
+      type: object
+      properties:
+        incidents:
+          type: integer
+          format: int32
+        affectedMonitors:
+          type: integer
+          format: int32
+        uptimeRatio:
+          type: number
+          format: double
+          nullable: true
     SSLEventDto:
       required:
       - id

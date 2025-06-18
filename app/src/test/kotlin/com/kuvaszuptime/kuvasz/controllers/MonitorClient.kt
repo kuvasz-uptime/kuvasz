@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.client.annotation.Client
@@ -33,4 +34,6 @@ interface MonitorClient : MonitorOperations {
     override fun getSSLEvents(monitorId: Long): List<SSLEventDto>
 
     override fun getMonitorStats(monitorId: Long, period: Duration?): MonitorStatsDto
+
+    override fun getMonitoringStats(period: Duration?): MonitoringStatsDto
 }

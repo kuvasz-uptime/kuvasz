@@ -75,10 +75,7 @@ class WebUIController(
     @Produces(MediaType.TEXT_HTML)
     fun monitorTable(): String {
         val isReadOnlyMode = appConfig.isExternalWriteDisabled()
-        val monitors = monitorCrudService.getMonitorsWithDetails(
-            enabledOnly = false,
-            sortedBy = MONITOR.NAME.asc()
-        )
+        val monitors = monitorCrudService.getMonitorsWithDetails(sortedBy = MONITOR.NAME.asc())
 
         return renderMonitorList(monitors, isReadOnlyMode)
     }
