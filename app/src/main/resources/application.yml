@@ -102,13 +102,10 @@ jooq:
       sql-dialect: POSTGRES
 ---
 app-config:
-  uptime-data-retention-days: ${UPTIME_DATA_RETENTION_DAYS:`365`}
+  event-data-retention-days: ${EVENT_DATA_RETENTION_DAYS:`365`}
   latency-data-retention-days: ${LATENCY_DATA_RETENTION_DAYS:`7`}
+  log-event-handler: ${ENABLE_LOG_EVENT_HANDLER:`true`}
   language: ${LANGUAGE:`en`}
----
-handler-config:
-  log-event-handler:
-    enabled: ${ENABLE_LOG_EVENT_HANDLER:`true`}
 ---
 admin-auth:
   username: ${ADMIN_USER}

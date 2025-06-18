@@ -11,11 +11,11 @@ import io.micronaut.context.exceptions.BeanInstantiationException
 class AppConfigTest : BehaviorSpec(
     {
         given("an AppConfig bean") {
-            `when`("there is an uptime-data-retention-days parameter with a null value") {
+            `when`("there is an event-data-retention-days parameter with a null value") {
                 val properties = PropertySource.of(
                     "test",
                     mapOf(
-                        "app-config.uptime-data-retention-days" to "null",
+                        "app-config.event-data-retention-days" to "null",
                         "app-config.latency-data-retention-days" to 7,
                     )
                 )
@@ -24,15 +24,15 @@ class AppConfigTest : BehaviorSpec(
                         ApplicationContext.run(properties)
                     }
                     exceptionToMessage(exception) shouldContain
-                        "Error resolving property value [app-config.uptime-data-retention-days]"
+                        "Error resolving property value [app-config.event-data-retention-days]"
                 }
             }
 
-            `when`("there is an uptime-data-retention-days parameter with an exceptionally low value") {
+            `when`("there is an event-data-retention-days parameter with an exceptionally low value") {
                 val properties = PropertySource.of(
                     "test",
                     mapOf(
-                        "app-config.uptime-data-retention-days" to "0",
+                        "app-config.event-data-retention-days" to "0",
                         "app-config.latency-data-retention-days" to 7,
                     )
                 )
@@ -48,7 +48,7 @@ class AppConfigTest : BehaviorSpec(
                 val properties = PropertySource.of(
                     "test",
                     mapOf(
-                        "app-config.uptime-data-retention-days" to 7,
+                        "app-config.event-data-retention-days" to 7,
                         "app-config.latency-data-retention-days" to "null"
                     )
                 )
@@ -65,7 +65,7 @@ class AppConfigTest : BehaviorSpec(
                 val properties = PropertySource.of(
                     "test",
                     mapOf(
-                        "app-config.uptime-data-retention-days" to 7,
+                        "app-config.event-data-retention-days" to 7,
                         "app-config.latency-data-retention-days" to "0"
                     )
                 )

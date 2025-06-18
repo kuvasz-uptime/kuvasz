@@ -10,7 +10,7 @@ import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory
 
 @Context
-@Requires(property = "handler-config.log-event-handler.enabled", value = "true")
+@Requires(property = "app-config.log-event-handler", value = "true")
 class LogEventHandler(eventDispatcher: EventDispatcher) {
     companion object {
         private val logger = LoggerFactory.getLogger(LogEventHandler::class.java)

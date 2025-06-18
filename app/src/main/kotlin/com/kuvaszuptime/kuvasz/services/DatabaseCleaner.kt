@@ -26,11 +26,11 @@ class DatabaseCleaner(
     @Scheduled(cron = "0 2 * * *")
     @Requires(notEnv = [Environment.TEST])
     fun cleanObsoleteData() {
-        val uptimeLimit = getCurrentTimestamp().minusDays(appConfig.uptimeDataRetentionDays.toLong())
+        val eventLimit = getCurrentTimestamp().minusDays(appConfig.eventDataRetentionDays.toLong())
         val latencyLimit = getCurrentTimestamp().minusDays(appConfig.latencyDataRetentionDays.toLong())
 
-        val deletedUptimeEvents = uptimeEventRepository.deleteEventsBeforeDate(uptimeLimit)
-        val deletedSSLEvents = sslEventRepository.deleteEventsBeforeDate(uptimeLimit)
+        val deletedUptimeEvents = uptimeEventRepository.deleteEventsBeforeDate(eventLimit)
+        val deletedSSLEvents = sslEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedLatencyLogs = latencyLogRepository.deleteLogsBeforeDate(latencyLimit)
 
         logger.info("$deletedUptimeEvents UPTIME_EVENT record has been deleted")
