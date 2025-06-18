@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.config.MonitorConfig
+import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
@@ -58,8 +60,16 @@ class MonitorController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getMonitorsWithDetails(@QueryValue enabledOnly: Boolean?): List<MonitorDetailsDto> =
-        monitorCrudService.getMonitorsWithDetails(enabledOnly ?: false)
+    override fun getMonitorsWithDetails(
+        @QueryValue enabled: Boolean?,
+        @QueryValue uptimeStatus: List<UptimeStatus>?,
+        @QueryValue sslStatus: List<SslStatus>?,
+    ): List<MonitorDetailsDto> =
+        monitorCrudService.getMonitorsWithDetails(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus.orEmpty(),
+            sslStatus = sslStatus.orEmpty(),
+        )
 
     @ApiResponses(
         ApiResponse(
@@ -206,6 +216,7 @@ class MonitorController(
         )
     )
     @Produces(MediaType.APPLICATION_YAML)
+    @ExecuteOn(TaskExecutors.IO)
     override fun getYamlMonitorsExport(): SystemFile {
         val file = File.createTempFile("temp", EXPORT_FILE_NAME_PREFIX)
         val export = mapOf(

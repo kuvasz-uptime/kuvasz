@@ -15,13 +15,14 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.nulls.shouldNotBeNull
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
+import java.util.UUID
 
 fun createMonitor(
     repository: MonitorRepository,
     enabled: Boolean = true,
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
-    monitorName: String = "testMonitor",
+    monitorName: String = UUID.randomUUID().toString(),
     url: String = "http://irrelevant.com",
     requestMethod: HttpMethod = HttpMethod.GET,
     latencyHistoryEnabled: Boolean = true,
@@ -52,7 +53,7 @@ fun createUptimeEventRecord(
     monitorId: Long,
     status: UptimeStatus = UptimeStatus.UP,
     startedAt: OffsetDateTime,
-    endedAt: OffsetDateTime?
+    endedAt: OffsetDateTime?,
 ) = dslContext
     .insertInto(UPTIME_EVENT)
     .set(

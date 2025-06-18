@@ -17,11 +17,25 @@ paths:
       summary: Returns all monitors with their details
       operationId: getMonitorsWithDetails
       parameters:
-      - name: enabledOnly
+      - name: enabled
         in: query
         schema:
           type: boolean
           nullable: true
+      - name: uptimeStatus
+        in: query
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: sslStatus
+        in: query
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/SslStatus"
       responses:
         "200":
           description: Successful query

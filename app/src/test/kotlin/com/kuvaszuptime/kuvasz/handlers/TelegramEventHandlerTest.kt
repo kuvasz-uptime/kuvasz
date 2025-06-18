@@ -88,6 +88,7 @@ class TelegramEventHandlerTest(
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
                 val monitor = createMonitor(
                     repository = monitorRepository,
+                    monitorName = "testMonitor",
                     integrations = listOf(
                         globalTelegramConfig.id,
                         otherTelegramConfig.id,
@@ -253,6 +254,7 @@ class TelegramEventHandlerTest(
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
                 val monitor = createMonitor(
                     monitorRepository,
+                    monitorName = "testMonitor",
                     integrations = listOf(
                         globalTelegramConfig.id,
                         otherTelegramConfig.id,

@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_MONITOR_NAME
+import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.UptimeEvent.UPTIME_EVENT
@@ -49,21 +51,24 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
+    fun getMonitorsWithDetails(
+        enabled: Boolean? = null,
+        uptimeStatus: List<UptimeStatus> = emptyList(),
+        sslStatus: List<SslStatus> = emptyList(),
+        sortedBy: SortField<*>? = null,
+    ): List<MonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
-                if (enabledOnly) {
-                    where(MONITOR.ENABLED.isTrue)
-                }
-                if (sortedBy != null) {
-                    orderBy(sortedBy)
-                }
+                enabled?.let { and(MONITOR.ENABLED.eq(it)) }
+                uptimeStatus.takeIf { it.isNotEmpty() }?.let { and(UPTIME_EVENT.STATUS.`in`(it)) }
+                sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
+                sortedBy?.let { orderBy(it) }
             }
             .fetchInto(MonitorDetailsDto::class.java)
 
     fun getMonitorWithDetails(monitorId: Long): MonitorDetailsDto? =
         monitorDetailsSelect()
-            .where(MONITOR.ID.eq(monitorId))
+            .and(MONITOR.ID.eq(monitorId))
             .fetchOneInto(MonitorDetailsDto::class.java)
 
     fun returningInsert(monitor: MonitorRecord): Either<PersistenceException, MonitorRecord> =
@@ -166,6 +171,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         .from(MONITOR)
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))
         .leftJoin(SSL_EVENT).on(MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
+        .where(DSL.trueCondition())
 
     /**
      * Converts a DataAccessException to a PersistenceException by matching duplication errors.

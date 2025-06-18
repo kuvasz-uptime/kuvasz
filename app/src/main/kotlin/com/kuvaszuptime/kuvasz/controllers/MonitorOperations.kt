@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
@@ -29,7 +31,13 @@ interface MonitorOperations {
     fun getMonitorsWithDetails(
         @QueryValue
         @Parameter(required = false)
-        enabledOnly: Boolean?
+        enabled: Boolean?,
+        @QueryValue
+        @Parameter(required = false)
+        uptimeStatus: List<UptimeStatus>?,
+        @QueryValue
+        @Parameter(required = false)
+        sslStatus: List<SslStatus>?
     ): List<MonitorDetailsDto>
 
     @Operation(summary = "Returns a monitor's details")

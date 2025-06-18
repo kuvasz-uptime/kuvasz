@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.Monitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
@@ -60,8 +62,13 @@ class MonitorCrudService(
         )
     }
 
-    fun getMonitorsWithDetails(enabledOnly: Boolean, sortedBy: SortField<*>? = null): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabledOnly, sortedBy).map { detailsDto ->
+    fun getMonitorsWithDetails(
+        enabled: Boolean? = null,
+        uptimeStatus: List<UptimeStatus> = emptyList(),
+        sslStatus: List<SslStatus> = emptyList(),
+        sortedBy: SortField<*>? = null,
+    ): List<MonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sortedBy).map { detailsDto ->
             detailsDto.copy(
                 nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
                 nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
