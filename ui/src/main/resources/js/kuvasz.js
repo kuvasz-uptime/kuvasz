@@ -156,6 +156,11 @@ const refreshMonitorList = () => {
     sendHtmxEvent('#monitors-list', 'refresh-monitor-list');
 };
 
+// Refreshes the dashboard by triggering an HTMX event
+const refreshDashboard = () => {
+    sendHtmxEvent('#monitoring-dashboard', 'refresh-dashboard');
+};
+
 const latencyBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel) => {
     return {
         isMonitorEnabled,

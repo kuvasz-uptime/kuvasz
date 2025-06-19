@@ -72,7 +72,14 @@ internal fun HtmlBlockTag.monitorsHeader(globals: AppGlobals) {
                         div {
                             classes(BTN_LIST)
                             if (!globals.isReadOnlyMode) {
-                                compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY)) {
+                                buttonWithIcon(
+                                    icon = Icon.PLUS,
+                                    label = Messages.addNewMonitor(),
+                                    classes = setOf(BTN_PRIMARY, D_NONE, D_MD_BLOCK)
+                                ) {
+                                    modalOpener(createModalId)
+                                }
+                                compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY, D_MD_NONE)) {
                                     modalOpener(createModalId)
                                 }
                             }

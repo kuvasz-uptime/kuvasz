@@ -33,7 +33,7 @@ fun renderMonitorList(monitors: List<MonitorDetailsDto>, isReadOnlyMode: Boolean
                     }
                     th {
                         classes(D_NONE, D_LG_TABLE_CELL, TEXT_CENTER)
-                        +Messages.nextCheck()
+                        +Messages.nextUptimeCheck()
                     }
                     if (!isReadOnlyMode) {
                         th {

@@ -3,12 +3,16 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.security.ui.AlreadyLoggedInError
 import com.kuvaszuptime.kuvasz.security.ui.UnauthorizedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthError
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
+import com.kuvaszuptime.kuvasz.services.StatCalculator
+import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import com.kuvaszuptime.kuvasz.util.isHtmxRequest
@@ -26,6 +30,7 @@ import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.micronaut.views.htmx.http.HtmxResponseHeaders
 import io.swagger.v3.oas.annotations.Hidden
+import java.time.Duration
 
 @Controller("/")
 @Hidden
@@ -33,6 +38,7 @@ class WebUIController(
     private val monitorCrudService: MonitorCrudService,
     private val appConfig: AppConfig,
     private val appGlobals: AppGlobals,
+    private val statCalculator: StatCalculator,
 ) {
 
     companion object {
@@ -40,12 +46,34 @@ class WebUIController(
         const val LOGIN_PATH = "/login"
         private const val SSL_EVENTS_COUNT = 5
         private const val UPTIME_EVENTS_COUNT = 5
+        private const val DASHBOARD_STATS_PERIOD_DEFAULT_DAYS = 7L
     }
 
     @Get(DASHBOARD_PATH)
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
+    @ExecuteOn(TaskExecutors.IO)
     fun dashboard() = renderDashboard(appGlobals)
+
+    @Get("/fragments/monitors/stats")
+    @WebSecured
+    @ExecuteOn(TaskExecutors.IO)
+    @Produces(MediaType.TEXT_HTML)
+    fun monitoringStats(): String {
+        val period = Duration.ofDays(DASHBOARD_STATS_PERIOD_DEFAULT_DAYS)
+
+        return renderMonitoringStats(
+            monitoringStats = statCalculator.calculateOverallStats(period),
+            downMonitors = monitorCrudService.getMonitorsWithDetails(
+                enabled = true,
+                uptimeStatus = listOf(UptimeStatus.DOWN),
+            ),
+            problematicSslMonitors = monitorCrudService.getMonitorsWithDetails(
+                enabled = true,
+                sslStatus = listOf(SslStatus.INVALID, SslStatus.WILL_EXPIRE),
+            )
+        )
+    }
 
     @Get("/monitors")
     @WebSecured
