@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
+import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
 import com.kuvaszuptime.kuvasz.security.ui.AlreadyLoggedInError
 import com.kuvaszuptime.kuvasz.security.ui.UnauthorizedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthError
@@ -39,6 +40,7 @@ class WebUIController(
     private val appConfig: AppConfig,
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
+    private val settingsRepository: SettingsRepository,
 ) {
 
     companion object {
@@ -138,6 +140,12 @@ class WebUIController(
         renderSSLEvents(
             events = monitorCrudService.getSSLEventsByMonitorId(monitorId, SSL_EVENTS_COUNT)
         )
+
+    @Get("/settings")
+    @WebSecured
+    @Produces(MediaType.TEXT_HTML)
+    @ExecuteOn(TaskExecutors.IO)
+    fun settings() = renderSettings(appGlobals, settingsRepository.getSettings())
 
     /**
      * Handles authentication errors by redirecting to the login page

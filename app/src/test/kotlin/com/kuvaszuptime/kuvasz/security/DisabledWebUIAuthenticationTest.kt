@@ -36,6 +36,7 @@ class DisabledWebUIAuthenticationTest(
             row("/fragments/monitors/${monitor.id}/details-uptime-events"),
             row("/fragments/monitors/${monitor.id}/details-ssl-events"),
             row("/fragments/monitors/stats"),
+            row("/settings"),
         ).forAll { url ->
             val response = client.exchange(url).awaitFirst()
 

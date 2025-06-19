@@ -37,6 +37,12 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     externalLink = false
                                 )
                                 navItem(
+                                    label = Messages.settings(),
+                                    icon = Icon.SETTINGS,
+                                    link = "/settings",
+                                    externalLink = false
+                                )
+                                navItem(
                                     label = Messages.docs(),
                                     icon = Icon.BOOK,
                                     link = "https://github.com/kuvasz-uptime/kuvasz/wiki",
