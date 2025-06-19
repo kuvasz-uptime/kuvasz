@@ -25,6 +25,8 @@ class AppConfig {
 
     var language: String = DEFAULT_LANGUAGE
 
+    var logEventHandler: Boolean = false
+
     private var isExternalWriteDisabled = false
 
     fun disableExternalWrite() {

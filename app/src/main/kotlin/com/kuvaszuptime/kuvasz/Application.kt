@@ -22,7 +22,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
     ),
     tags = [
         Tag(name = "Management operations"),
-        Tag(name = "Monitor operations")
+        Tag(name = "Monitor operations"),
+        Tag(name = "Settings operations"),
     ]
 )
 @SecuritySchemes(
