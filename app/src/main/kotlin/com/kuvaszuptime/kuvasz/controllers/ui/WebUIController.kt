@@ -72,6 +72,7 @@ class WebUIController(
             ),
             problematicSslMonitors = monitorCrudService.getMonitorsWithDetails(
                 enabled = true,
+                sslCheckEnabled = true,
                 sslStatus = listOf(SslStatus.INVALID, SslStatus.WILL_EXPIRE),
             )
         )
