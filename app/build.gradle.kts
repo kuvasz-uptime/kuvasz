@@ -168,7 +168,7 @@ jib {
 val updateApiDoc by tasks.registering(type = Copy::class) {
     dependsOn("kaptKotlin")
     from(layout.buildDirectory.file("tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml"))
-    into("$rootDir/docs/api-doc")
+    into("$rootDir/docs/docs")
 }
 
 val localDbUrl: String by project
