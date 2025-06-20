@@ -9,6 +9,7 @@ info:
 tags:
 - name: Management operations
 - name: Monitor operations
+- name: Settings operations
 paths:
   /api/v1/monitors:
     get:
@@ -299,6 +300,21 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/UptimeEventDto"
+      security:
+      - apiKey: []
+  /api/v1/settings:
+    get:
+      tags:
+      - Settings operations
+      summary: Returns the current settings of the application
+      operationId: getSettings
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsDto"
       security:
       - apiKey: []
   /api/v1/health:
@@ -749,6 +765,7 @@ components:
       required:
       - affectedMonitors
       - incidents
+      - totalDowntimeSeconds
       type: object
       properties:
         incidents:
@@ -761,6 +778,9 @@ components:
           type: number
           format: double
           nullable: true
+        totalDowntimeSeconds:
+          type: integer
+          format: int64
     SSLEventDto:
       required:
       - id
@@ -797,6 +817,189 @@ components:
         message:
           type: string
           nullable: true
+    SettingsDto:
+      required:
+      - app
+      - authentication
+      - integrations
+      type: object
+      properties:
+        authentication:
+          $ref: "#/components/schemas/SettingsDto.AuthenticationSettingsDto"
+        app:
+          $ref: "#/components/schemas/SettingsDto.AppSettingsDto"
+        integrations:
+          $ref: "#/components/schemas/SettingsDto.IntegrationSettingsDto"
+    SettingsDto.AppSettingsDto:
+      required:
+      - eventDataRetentionDays
+      - eventLoggingEnabled
+      - language
+      - latencyDataRetentionDays
+      - readOnlyMode
+      - version
+      type: object
+      properties:
+        version:
+          type: string
+        eventDataRetentionDays:
+          type: integer
+          format: int32
+        latencyDataRetentionDays:
+          type: integer
+          format: int32
+        language:
+          type: string
+        eventLoggingEnabled:
+          type: boolean
+        readOnlyMode:
+          type: boolean
+    SettingsDto.AuthenticationSettingsDto:
+      required:
+      - accessTokenMaxAge
+      - enabled
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        accessTokenMaxAge:
+          type: integer
+          format: int64
+    SettingsDto.EmailNotificationConfigDto:
+      required:
+      - enabled
+      - fromAddress
+      - global
+      - id
+      - name
+      - toAddress
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+        enabled:
+          type: boolean
+        global:
+          type: boolean
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+    SettingsDto.IntegrationSettingsDto:
+      required:
+      - email
+      - pagerduty
+      - slack
+      - telegram
+      type: object
+      properties:
+        smtp:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.SmtpConfigDto"
+        slack:
+          type: array
+          items:
+            $ref: "#/components/schemas/SettingsDto.SlackNotificationConfigDto"
+        pagerduty:
+          type: array
+          items:
+            $ref: "#/components/schemas/SettingsDto.PagerdutyConfigDto"
+        email:
+          type: array
+          items:
+            $ref: "#/components/schemas/SettingsDto.EmailNotificationConfigDto"
+        telegram:
+          type: array
+          items:
+            $ref: "#/components/schemas/SettingsDto.TelegramNotificationConfigDto"
+    SettingsDto.PagerdutyConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+        enabled:
+          type: boolean
+        global:
+          type: boolean
+    SettingsDto.SlackNotificationConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+        enabled:
+          type: boolean
+        global:
+          type: boolean
+    SettingsDto.SmtpConfigDto:
+      required:
+      - host
+      - port
+      - transportStrategy
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+          format: int32
+        transportStrategy:
+          type: string
+    SettingsDto.TelegramNotificationConfigDto:
+      required:
+      - chatId
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+        enabled:
+          type: boolean
+        global:
+          type: boolean
+        chatId:
+          type: string
     SslStatus:
       type: string
       enum:
