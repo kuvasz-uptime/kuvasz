@@ -102,7 +102,8 @@ class StatCalculator(
                 historicalUptimeSeconds.toDouble() / (historicalUptimeSeconds + historicalDowntimeSeconds)
             } else {
                 null
-            }
+            },
+            totalDowntimeSeconds = historicalDowntimeSeconds,
         )
     }
 }

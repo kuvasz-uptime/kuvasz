@@ -1532,10 +1532,10 @@ class MonitorControllerTest(
                     uptimeStats = MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
                         incidents = 7630,
                         affectedMonitors = 8313,
-                        uptimeRatio = 0.12343784
+                        uptimeRatio = 0.12343784,
+                        totalDowntimeSeconds = 123456789L,
                     )
                 )
-
             )
 
             `when`("it's called without an explicit period") {

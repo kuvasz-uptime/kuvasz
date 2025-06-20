@@ -185,6 +185,7 @@ class StatCalculatorTest(
                 stats.history.uptimeStats.incidents shouldBe 0
                 stats.history.uptimeStats.affectedMonitors shouldBe 0
                 stats.history.uptimeStats.uptimeRatio shouldBe 1.0 // Only UP event in the period
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 0L // No DOWN events in the period
             }
         }
 
@@ -281,6 +282,7 @@ class StatCalculatorTest(
 
                 stats.history.uptimeStats.incidents shouldBe 1 // Only the downMonitor has an incident
                 stats.history.uptimeStats.affectedMonitors shouldBe 1
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 // 5 days in seconds
             }
         }
 
@@ -322,6 +324,7 @@ class StatCalculatorTest(
                 stats.history.uptimeStats.incidents shouldBe 0
                 stats.history.uptimeStats.affectedMonitors shouldBe 0
                 stats.history.uptimeStats.uptimeRatio shouldBe null
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 0L
             }
         }
 
@@ -371,6 +374,8 @@ class StatCalculatorTest(
 
                 // 5 days UP + 5 days DOWN for monitor1, 1 day UP + 2 days DOWN for monitor2
                 stats.history.uptimeStats.uptimeRatio shouldBe 6.toDouble() / 13
+                // 5 days + 2 days in seconds
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 + 2 * 24 * 60 * 60
                 stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
             }
         }

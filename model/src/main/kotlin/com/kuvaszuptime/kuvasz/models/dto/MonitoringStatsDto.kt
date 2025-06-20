@@ -36,6 +36,7 @@ data class MonitoringStatsDto(
             val incidents: Int,
             val affectedMonitors: Int,
             val uptimeRatio: Double?,
+            val totalDowntimeSeconds: Long,
         )
     }
 }
