@@ -84,10 +84,14 @@ fun renderMonitoringStats(
                 text = uptimeRatioText,
                 secondaryText = Messages.uptimeRatio(),
             )
+            val totalDowntimeText = monitoringStats.history.uptimeStats.totalDowntimeSeconds
+                .takeIf { it > 0 }
+                ?.formatAsInterval()
+                ?: "-"
             statCard(
                 icon = Icon.SUM,
                 iconBackground = BG_RED_LT,
-                text = monitoringStats.history.uptimeStats.totalDowntimeSeconds.formatAsInterval(),
+                text = totalDowntimeText,
                 secondaryText = Messages.totalDowntime(),
             )
             // Down monitors table
