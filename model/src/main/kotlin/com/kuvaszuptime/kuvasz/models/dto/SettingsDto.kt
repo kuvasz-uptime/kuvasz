@@ -32,10 +32,18 @@ data class SettingsDto(
 
     @Introspected
     data class IntegrationSettingsDto(
+        val smtp: SmtpConfigDto?,
         val slack: List<SlackNotificationConfigDto>,
         val pagerduty: List<PagerdutyConfigDto>,
         val email: List<EmailNotificationConfigDto>,
         val telegram: List<TelegramNotificationConfigDto>,
+    )
+
+    @Introspected
+    data class SmtpConfigDto(
+        val host: String,
+        val port: Int,
+        val transportStrategy: String,
     )
 
     interface IntegrationConfigDto {

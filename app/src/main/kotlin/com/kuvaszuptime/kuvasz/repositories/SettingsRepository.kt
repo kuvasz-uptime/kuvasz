@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
@@ -19,6 +20,7 @@ class SettingsRepository(
     private val integrationRepository: IntegrationRepository,
     private val appGlobals: AppGlobals,
     private val appConfig: AppConfig,
+    private val smtpMailerConfig: SMTPMailerConfig?,
 ) {
 
     @field:Property(name = "micronaut.security.token.generator.access-token.expiration")
@@ -39,6 +41,13 @@ class SettingsRepository(
                 readOnlyMode = appConfig.isExternalWriteDisabled(),
             ),
             integrations = SettingsDto.IntegrationSettingsDto(
+                smtp = smtpMailerConfig?.let { smtpConfig ->
+                    SettingsDto.SmtpConfigDto(
+                        host = smtpConfig.host.orEmpty(),
+                        port = smtpConfig.port ?: 0,
+                        transportStrategy = smtpConfig.transportStrategy.toString()
+                    )
+                },
                 slack = getIntegrationConfigs<SlackNotificationConfig, SettingsDto.SlackNotificationConfigDto>
                 { id, config ->
                     SettingsDto.SlackNotificationConfigDto(id, config)

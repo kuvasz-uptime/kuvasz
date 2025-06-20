@@ -4,14 +4,18 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = ["full-integrations-setup", "yaml-monitors"])
+@SMTPTest
 @Property(name = "micronaut.security.token.generator.access-token.expiration", value = "3600")
 @Property(name = "app-config.event-data-retention-days", value = "5")
 @Property(name = "app-config.latency-data-retention-days", value = "6")
@@ -139,6 +143,11 @@ class SettingsControllerTest(settingsClient: SettingsClient, appGlobals: AppGlob
                             disabled.global shouldBe false
                             disabled.chatId shouldBe "-1001122334455"
                         }
+                    }
+                    with(smtp.shouldNotBeNull()) {
+                        host shouldBe "localhost"
+                        port shouldBeGreaterThan 0
+                        transportStrategy shouldBe "SMTP"
                     }
                 }
             }
