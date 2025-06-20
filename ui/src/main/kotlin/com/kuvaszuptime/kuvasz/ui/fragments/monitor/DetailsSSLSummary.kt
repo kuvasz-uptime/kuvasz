@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
@@ -27,7 +28,16 @@ internal fun FlowContent.detailsSSLSummary(monitor: MonitorDetailsDto) {
             div {
                 classes(CARD)
                 div {
-                    classes(CARD_STATUS_START, getSSLStatusClass(monitor.sslStatus))
+                    classes(CARD_STAMP)
+                    div {
+                        classes(
+                            mutableSetOf(CARD_STAMP_ICON).addIfNotNull(getSSLStatusColor(monitor.sslStatus))
+                        )
+                        icon(getSSLStatusCardIcon(monitor.sslStatus))
+                    }
+                }
+                div {
+                    classes(CARD_STATUS_START, getSSLStatusColor(monitor.sslStatus))
                 }
                 div {
                     classes(CARD_BODY)
@@ -120,10 +130,18 @@ internal fun FlowContent.detailsSSLSummary(monitor: MonitorDetailsDto) {
     }
 }
 
-private fun getSSLStatusClass(status: SslStatus?): CSSClass =
+private fun getSSLStatusColor(status: SslStatus?): CSSClass =
     when (status) {
         SslStatus.WILL_EXPIRE -> BG_WARNING
         SslStatus.VALID -> BG_SUCCESS
         SslStatus.INVALID -> BG_DANGER
         null -> BG_ORANGE
+    }
+
+private fun getSSLStatusCardIcon(status: SslStatus?): Icon =
+    when (status) {
+        SslStatus.WILL_EXPIRE -> Icon.TIMER
+        SslStatus.VALID -> Icon.LOCK_CLOSED
+        SslStatus.INVALID -> Icon.LOCK_OPEN
+        null -> Icon.LOCK_QUESTION
     }

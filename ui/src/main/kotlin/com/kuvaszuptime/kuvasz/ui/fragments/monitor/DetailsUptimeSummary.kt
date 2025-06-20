@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.durationBetween
 import com.kuvaszuptime.kuvasz.util.timeAgo
@@ -26,8 +27,17 @@ fun FlowContent.detailsUptimeSummary(monitor: MonitorDetailsDto) {
             div {
                 classes(CARD)
                 div {
+                    classes(CARD_STAMP)
+                    div {
+                        classes(
+                            mutableSetOf(CARD_STAMP_ICON).addIfNotNull(getUptimeCardStatusClass(monitor))
+                        )
+                        icon(getUptimeCardIcon(monitor))
+                    }
+                }
+                div {
                     classes(
-                        mutableSetOf(CARD_STATUS_START).addIfNotNull(getCardStatusClass(monitor))
+                        mutableSetOf(CARD_STATUS_START).addIfNotNull(getUptimeCardStatusClass(monitor))
                     )
                 }
                 div {
@@ -119,12 +129,21 @@ fun FlowContent.detailsUptimeSummary(monitor: MonitorDetailsDto) {
     }
 }
 
-private fun getCardStatusClass(monitor: MonitorDetailsDto): CSSClass? {
+private fun getUptimeCardStatusClass(monitor: MonitorDetailsDto): CSSClass? {
     return when {
         !monitor.enabled -> BG_CYAN
         monitor.uptimeStatus == null -> BG_WARNING
         monitor.uptimeStatus == UptimeStatus.UP -> BG_SUCCESS
         monitor.uptimeStatus == UptimeStatus.DOWN -> BG_DANGER
         else -> null
+    }
+}
+
+private fun getUptimeCardIcon(monitor: MonitorDetailsDto): Icon {
+    return when {
+        !monitor.enabled -> Icon.HEART_OFF
+        monitor.uptimeStatus == UptimeStatus.UP -> Icon.HEART
+        monitor.uptimeStatus == UptimeStatus.DOWN -> Icon.HEART_BROKEN
+        else -> Icon.HEART
     }
 }

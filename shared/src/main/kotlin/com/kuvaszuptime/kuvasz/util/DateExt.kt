@@ -103,18 +103,35 @@ fun OffsetDateTime.timeAgo(reference: OffsetDateTime = getCurrentTimestamp()): S
 }
 
 /**
- * Calculates the duration between two [OffsetDateTime] instances and formats it as a human-readable string. Alwqys takes
- * only the first two non-zero intervals (days, hours, minutes, seconds) to keep the output concise.
+ * Calculates the duration between two [OffsetDateTime] instances and formats it as a human-readable string.
+ * Always takes only the first two non-zero intervals (days, hours, minutes, seconds) to keep the output concise.
  */
-@Suppress("MaxLineLength", "ArgumentListWrapping")
 fun OffsetDateTime.durationBetween(
     end: OffsetDateTime = getCurrentTimestamp()
 ): String {
     val duration = java.time.Duration.between(this, end).toKotlinDuration()
-    val days = duration.inWholeDays
-    val hours = duration.inWholeHours % HOURS_IN_A_DAY
-    val minutes = duration.inWholeMinutes % MINUTES_IN_AN_HOUR
-    val seconds = duration.inWholeSeconds % SECONDS_IN_A_MINUTE
+    return duration.formatAsInterval()
+}
+
+/**
+ * Takes a duration in seconds and formats it as a human-readable string, e.g. "1 day 2 hours". Always takes only the
+ * first two non-zero intervals (days, hours, minutes, seconds) to keep the output concise.
+ */
+fun Long.formatAsInterval(): String {
+    val duration = this.toDuration(DurationUnit.SECONDS)
+    return duration.formatAsInterval()
+}
+
+/**
+ * Takes a duration and formats it as a human-readable string, e.g. "1 day 2 hours". Always takes only the first
+ * two non-zero intervals (days, hours, minutes, seconds) to keep the output concise.
+ */
+@Suppress("MaxLineLength", "ArgumentListWrapping")
+private fun Duration.formatAsInterval(): String {
+    val days = this.inWholeDays
+    val hours = this.inWholeHours % HOURS_IN_A_DAY
+    val minutes = this.inWholeMinutes % MINUTES_IN_AN_HOUR
+    val seconds = this.inWholeSeconds % SECONDS_IN_A_MINUTE
 
     return listOfNotNull(
         if (days > 1) Messages.daysInterval(days) else if (days == 1L) Messages.dayInterval(days) else null,

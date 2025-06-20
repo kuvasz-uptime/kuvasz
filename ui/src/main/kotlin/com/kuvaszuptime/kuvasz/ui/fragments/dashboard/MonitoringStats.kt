@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.formatAsInterval
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
@@ -51,6 +52,12 @@ fun renderMonitoringStats(
                 text = monitoringStats.actual.uptimeStats.paused.toString(),
                 secondaryText = Messages.paused(),
             )
+            statCard(
+                icon = Icon.HEART_QUESTION,
+                iconBackground = BG_YELLOW_LT,
+                text = monitoringStats.actual.uptimeStats.inProgress.toString(),
+                secondaryText = Messages.inProgress(),
+            )
             // Historical stats
             h3 {
                 classes(MT_3, MB_0)
@@ -76,6 +83,12 @@ fun renderMonitoringStats(
                 iconBackground = BG_GREEN_LT,
                 text = uptimeRatioText,
                 secondaryText = Messages.uptimeRatio(),
+            )
+            statCard(
+                icon = Icon.SUM,
+                iconBackground = BG_RED_LT,
+                text = monitoringStats.history.uptimeStats.totalDowntimeSeconds.formatAsInterval(),
+                secondaryText = Messages.totalDowntime(),
             )
             // Down monitors table
             h3 {
@@ -129,6 +142,12 @@ fun renderMonitoringStats(
                 text = monitoringStats.actual.sslStats.willExpire.toString(),
                 secondaryText = Messages.expiresSoon(),
             )
+            statCard(
+                icon = Icon.LOCK_QUESTION,
+                iconBackground = BG_ORANGE_LT,
+                text = monitoringStats.actual.sslStats.inProgress.toString(),
+                secondaryText = Messages.inProgress(),
+            )
             // SSL issues table
             h3 {
                 classes(MT_3, MB_0)
@@ -164,28 +183,28 @@ private fun FlowContent.statCard(
     secondaryText: String,
 ) {
     div {
-        classes(COL_MD_4)
+        classes(COL_6, COL_MD_3)
         div {
             classes(CARD, CARD_SM)
             div {
+                classes(CARD_STAMP)
+                div {
+                    classes(CARD_STAMP_ICON, iconBackground)
+                    icon(icon)
+                }
+            }
+            div {
                 classes(CARD_BODY)
                 div {
-                    classes(ROW, ALIGN_ITEMS_CENTER)
-                    div {
-                        classes(COL_AUTO)
-                        span {
-                            classes(iconBackground, AVATAR)
-                            icon(icon)
-                        }
-                    }
+                    classes(ROW, ALIGN_ITEMS_CENTER, TEXT_CENTER)
                     div {
                         classes(CSSClass.COL)
                         div {
-                            classes(FW_BOLDER)
+                            classes(CSSClass.H2)
                             +text
                         }
                         div {
-                            classes(TEXT_SECONDARY)
+                            classes(TEXT_SECONDARY, TEXT_UPPERCASE)
                             +secondaryText
                         }
                     }
