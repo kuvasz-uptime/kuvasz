@@ -37,6 +37,11 @@ paths:
           nullable: true
           items:
             $ref: "#/components/schemas/SslStatus"
+      - name: sslCheckEnabled
+        in: query
+        schema:
+          type: boolean
+          nullable: true
       responses:
         "200":
           description: Successful query

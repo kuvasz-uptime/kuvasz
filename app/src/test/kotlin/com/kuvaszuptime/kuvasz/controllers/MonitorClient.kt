@@ -21,6 +21,7 @@ interface MonitorClient : MonitorOperations {
         enabled: Boolean?,
         uptimeStatus: List<UptimeStatus>?,
         sslStatus: List<SslStatus>?,
+        sslCheckEnabled: Boolean?,
     ): List<MonitorDetailsDto>
 
     override fun createMonitor(monitor: MonitorCreateDto): MonitorDto

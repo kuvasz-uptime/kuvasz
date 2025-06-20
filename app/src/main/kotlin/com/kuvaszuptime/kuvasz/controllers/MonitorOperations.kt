@@ -38,7 +38,10 @@ interface MonitorOperations {
         uptimeStatus: List<UptimeStatus>?,
         @QueryValue
         @Parameter(required = false)
-        sslStatus: List<SslStatus>?
+        sslStatus: List<SslStatus>?,
+        @QueryValue
+        @Parameter(required = false)
+        sslCheckEnabled: Boolean?,
     ): List<MonitorDetailsDto>
 
     @Operation(summary = "Returns a monitor's details")

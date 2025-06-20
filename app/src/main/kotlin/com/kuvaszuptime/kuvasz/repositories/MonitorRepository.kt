@@ -55,6 +55,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sslStatus: List<SslStatus> = emptyList(),
+        sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
     ): List<MonitorDetailsDto> =
         monitorDetailsSelect()
@@ -62,6 +63,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
                 enabled?.let { and(MONITOR.ENABLED.eq(it)) }
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let { and(UPTIME_EVENT.STATUS.`in`(it)) }
                 sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
+                sslCheckEnabled?.let { and(MONITOR.SSL_CHECK_ENABLED.eq(it)) }
                 sortedBy?.let { orderBy(it) }
             }
             .fetchInto(MonitorDetailsDto::class.java)

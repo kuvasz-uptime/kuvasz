@@ -105,6 +105,7 @@ class MonitorControllerTest(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = null,
+                    sslCheckEnabled = null,
                 )
                 then("it should return them") {
                     response shouldHaveSize 1
@@ -194,6 +195,7 @@ class MonitorControllerTest(
                     enabled = true,
                     uptimeStatus = null,
                     sslStatus = null,
+                    sslCheckEnabled = null,
                 )
 
                 then("it should not return disabled monitor") {
@@ -224,6 +226,7 @@ class MonitorControllerTest(
                     enabled = false,
                     uptimeStatus = null,
                     sslStatus = null,
+                    sslCheckEnabled = null,
                 )
 
                 then("it should return only the disabled monitors") {
@@ -268,11 +271,13 @@ class MonitorControllerTest(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = null,
+                    sslCheckEnabled = null,
                 )
                 val downResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = null,
+                    sslCheckEnabled = null,
                 )
 
                 then("it should return only the monitors with the specified uptime status") {
@@ -318,21 +323,25 @@ class MonitorControllerTest(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = listOf(SslStatus.VALID),
+                    sslCheckEnabled = null,
                 )
                 val downInvalidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = listOf(SslStatus.INVALID),
+                    sslCheckEnabled = null,
                 )
                 val upInvalidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = listOf(SslStatus.INVALID),
+                    sslCheckEnabled = null,
                 )
                 val downValidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = listOf(SslStatus.VALID),
+                    sslCheckEnabled = null,
                 )
 
                 then("it should return only the monitors with the specified uptime and SSL status") {
@@ -374,26 +383,55 @@ class MonitorControllerTest(
                     endedAt = null,
                     sslExpiryDate = getCurrentTimestamp().plusDays(10)
                 )
+                val invalidButDisabledMonitor = createMonitor(
+                    monitorRepository,
+                    monitorName = "invalid_but_disabled_ssl_monitor",
+                    sslCheckEnabled = false,
+                    enabled = true
+                )
+                createSSLEventRecord(
+                    dslContext,
+                    monitorId = invalidButDisabledMonitor.id,
+                    startedAt = getCurrentTimestamp(),
+                    status = SslStatus.INVALID,
+                    endedAt = null,
+                    sslExpiryDate = getCurrentTimestamp().minusDays(10)
+                )
 
                 val validResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.VALID),
+                    sslCheckEnabled = null,
                 )
                 val expiredResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.INVALID),
+                    sslCheckEnabled = null,
+                )
+                val expiredSSLCheckEnabledResponse = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    sslStatus = listOf(SslStatus.INVALID),
+                    sslCheckEnabled = true,
                 )
                 val willExpireResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.WILL_EXPIRE),
+                    sslCheckEnabled = null,
                 )
 
                 then("it should return only the monitors with the specified SSL status") {
                     validResponse.single().id shouldBe validMonitor.id
-                    expiredResponse.single().id shouldBe expiredMonitor.id
+
+                    expiredSSLCheckEnabledResponse.single().id shouldBe expiredMonitor.id
+
+                    expiredResponse shouldHaveSize 2
+                    expiredResponse.forOne { it.id shouldBe expiredMonitor.id }
+                    expiredResponse.forOne { it.id shouldBe invalidButDisabledMonitor.id }
+
                     willExpireResponse.single().id shouldBe willExpireMonitor.id
                 }
             }
@@ -403,6 +441,7 @@ class MonitorControllerTest(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = null,
+                    sslCheckEnabled = null,
                 )
                 then("it should return an empty list") {
                     response shouldHaveSize 0

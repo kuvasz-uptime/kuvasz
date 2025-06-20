@@ -67,11 +67,13 @@ class MonitorController(
         @QueryValue enabled: Boolean?,
         @QueryValue uptimeStatus: List<UptimeStatus>?,
         @QueryValue sslStatus: List<SslStatus>?,
+        @QueryValue sslCheckEnabled: Boolean?,
     ): List<MonitorDetailsDto> =
         monitorCrudService.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
             sslStatus = sslStatus.orEmpty(),
+            sslCheckEnabled = sslCheckEnabled,
         )
 
     @ApiResponses(

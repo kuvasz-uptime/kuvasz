@@ -66,15 +66,17 @@ class MonitorCrudService(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sslStatus: List<SslStatus> = emptyList(),
+        sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
     ): List<MonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sortedBy).map { detailsDto ->
-            detailsDto.copy(
-                nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
-                nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
-                effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto).toSet()
-            )
-        }
+        monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sslCheckEnabled, sortedBy)
+            .map { detailsDto ->
+                detailsDto.copy(
+                    nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
+                    nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
+                    effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto).toSet()
+                )
+            }
 
     fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord {
         // Validate the raw integrations from the DTO
