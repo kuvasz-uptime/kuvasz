@@ -62,7 +62,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
             // App settings
             settingsCard(
                 title = Messages.applicationSettings(),
-                icon = Icon.WORLD,
+                icon = Icon.SETTINGS,
             ) {
                 div {
                     classes(DIVIDE_Y)
