@@ -64,9 +64,8 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should dispatch a MonitorUpEvent") {
-                val expectedEvent = subscriber.values().first()
+                val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                subscriber.awaitCount(1)
                 expectedEvent.status shouldBe HttpStatus.OK
                 expectedEvent.monitor.id shouldBe monitor.id
 
@@ -91,9 +90,8 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should dispatch a MonitorUpEvent") {
-                val expectedEvent = subscriber.values().first()
+                val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                subscriber.awaitCount(1)
                 expectedEvent.status shouldBe HttpStatus.OK
                 expectedEvent.monitor.id shouldBe monitor.id
 
@@ -119,9 +117,8 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should use the right Cache-Control header") {
-                val expectedEvent = subscriber.values().first()
+                val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                subscriber.awaitCount(1)
                 expectedEvent.status shouldBe HttpStatus.OK
                 expectedEvent.monitor.id shouldBe monitor.id
 
@@ -148,9 +145,8 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should not use the Cache-Control header") {
-                val expectedEvent = subscriber.values().first()
+                val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                subscriber.awaitCount(1)
                 expectedEvent.status shouldBe HttpStatus.OK
                 expectedEvent.monitor.id shouldBe monitor.id
             }
@@ -192,11 +188,9 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should follow the redirects") {
-                val expectedRedirectEvents = redirectSubscriber.values()
-                val expectedUpEvent = upSubscriber.values().first()
+                val expectedRedirectEvents = redirectSubscriber.awaitCount(2).values()
+                val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
 
-                redirectSubscriber.awaitCount(2)
-                upSubscriber.awaitCount(1)
                 downSubscriber.assertValueCount(0)
 
                 expectedUpEvent.status shouldBe HttpStatus.OK
@@ -248,11 +242,9 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should follow the redirects") {
-                val expectedRedirectEvents = redirectSubscriber.values()
-                val expectedUpEvent = upSubscriber.values().first()
+                val expectedRedirectEvents = redirectSubscriber.awaitCount(2).values()
+                val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
 
-                redirectSubscriber.awaitCount(2)
-                upSubscriber.awaitCount(1)
                 downSubscriber.assertValueCount(0)
 
                 expectedUpEvent.status shouldBe HttpStatus.OK
@@ -298,11 +290,10 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should not follow the redirects and should dispatch a MonitorDownEvent") {
-                val expectedDownEvent = downSubscriber.values().first()
+                val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
 
                 redirectSubscriber.assertValueCount(0)
                 upSubscriber.assertValueCount(0)
-                downSubscriber.awaitCount(1)
 
                 expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                 expectedDownEvent.monitor.id shouldBe monitor.id
@@ -338,11 +329,10 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should dispatch a MonitorDownEvent") {
-                val expectedDownEvent = downSubscriber.values().first()
+                val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
 
                 redirectSubscriber.assertValueCount(0)
                 upSubscriber.assertValueCount(0)
-                downSubscriber.awaitCount(1)
 
                 expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                 expectedDownEvent.monitor.id shouldBe monitor.id
@@ -382,11 +372,9 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should follow the redirect and should dispatch a MonitorDownEvent") {
-                val expectedDownEvent = downSubscriber.values().first()
-                val expectedRedirectEvent = redirectSubscriber.values().first()
+                val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
+                val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
 
-                redirectSubscriber.awaitCount(1)
-                downSubscriber.awaitCount(1)
                 upSubscriber.assertValueCount(0)
 
                 expectedRedirectEvent.monitor.id shouldBe monitor.id
@@ -418,9 +406,8 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should retry the check 3 times in total before it dispatches a MonitorDownEvent") {
-                val expectedEvent = subscriber.values().first()
+                val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                subscriber.awaitCount(1)
                 expectedEvent.status shouldBe HttpStatus.NOT_ACCEPTABLE
                 expectedEvent.monitor.id shouldBe monitor.id
                 expectedEvent.error.message shouldBe "Not Acceptable"
@@ -446,9 +433,8 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should handle the invalid status code gracefully") {
-                val expectedEvent = subscriber.values().first()
+                val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                subscriber.awaitCount(1)
                 expectedEvent.status shouldBe null
                 expectedEvent.monitor.id shouldBe monitor.id
                 expectedEvent.error.message shouldBe "Invalid HTTP status code: 489"
@@ -521,12 +507,10 @@ class UptimeCheckerE2ETest(
             uptimeChecker.check(monitor)
 
             then("it should break the redirect loop and dispatch a MonitorDownEvent") {
-                val expectedRedirectEvents = redirectSubscriber.values()
-                val expectedDownEvent = downSubscriber.values().first()
+                val expectedRedirectEvents = redirectSubscriber.awaitCount(3).values()
+                val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
 
-                redirectSubscriber.awaitCount(3)
                 upSubscriber.assertValueCount(0)
-                downSubscriber.awaitCount(1)
 
                 expectedDownEvent.status shouldBe HttpStatus.TEMPORARY_REDIRECT
                 expectedDownEvent.monitor.id shouldBe monitor.id

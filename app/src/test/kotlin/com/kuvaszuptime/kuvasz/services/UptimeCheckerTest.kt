@@ -12,7 +12,6 @@ import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
@@ -45,9 +44,7 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorUpEvent") {
-                    val expectedEvent = subscriber.values().first()
-
-                    subscriber.awaitCount(1)
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.status shouldBe HttpStatus.OK
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
@@ -62,9 +59,7 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorUpEvent") {
-                    val expectedEvent = subscriber.values().first()
-
-                    subscriber.awaitCount(1)
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.status shouldBe HttpStatus.OK
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
@@ -79,9 +74,7 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorUpEvent") {
-                    val expectedEvent = subscriber.values().first()
-
-                    subscriber.awaitCount(1)
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.status shouldBe HttpStatus.OK
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
@@ -95,9 +88,8 @@ class UptimeCheckerTest(
 
                 then("it should dispatch a MonitorDownEvent") {
                     uptimeCheckerSpy.check(monitor)
-                    val expectedEvent = subscriber.values().first()
 
-                    subscriber.awaitCount(1)
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
             }
@@ -116,11 +108,9 @@ class UptimeCheckerTest(
                     mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
                     uptimeCheckerSpy.check(monitor)
 
-                    val expectedDownEvent = monitorDownSubscriber.values().first()
-                    val expectedUpEvent = monitorUpSubscriber.values().first()
+                    val expectedDownEvent = monitorDownSubscriber.awaitCount(1).values().first()
+                    val expectedUpEvent = monitorUpSubscriber.awaitCount(1).values().first()
 
-                    monitorDownSubscriber.awaitCount(1)
-                    monitorUpSubscriber.awaitCount(1)
                     expectedDownEvent.monitor.id shouldBe monitor.id
                     expectedUpEvent.monitor.id shouldBe monitor.id
                     expectedDownEvent.dispatchedAt shouldBeLessThan expectedUpEvent.dispatchedAt
@@ -141,11 +131,8 @@ class UptimeCheckerTest(
                     mockHttpResponse(uptimeCheckerSpy, HttpStatus.NOT_FOUND)
                     uptimeCheckerSpy.check(monitor)
 
-                    val expectedDownEvent = monitorDownSubscriber.values().first()
-                    val expectedUpEvent = monitorUpSubscriber.values().first()
-
-                    monitorDownSubscriber.awaitCount(1)
-                    monitorUpSubscriber.awaitCount(1)
+                    val expectedDownEvent = monitorDownSubscriber.awaitCount(1).values().first()
+                    val expectedUpEvent = monitorUpSubscriber.awaitCount(1).values().first()
                     expectedDownEvent.monitor.id shouldBe monitor.id
                     expectedUpEvent.monitor.id shouldBe monitor.id
                     expectedDownEvent.dispatchedAt shouldBeGreaterThan expectedUpEvent.dispatchedAt
@@ -161,9 +148,8 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a MonitorDownEvent") {
-                    val expectedEvent = subscriber.values().first()
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
 
-                    subscriber.awaitCount(1)
                     expectedEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                     expectedEvent.monitor.id shouldBe monitor.id
                 }
@@ -184,14 +170,12 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a RedirectEvent and then a MonitorDownEvent") {
-                    val expectedRedirectEvent = redirectSubscriber.values().first()
-                    val expectedDownEvent = monitorDownSubscriber.values().first()
 
-                    redirectSubscriber.awaitCount(1)
+                    val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
                     expectedRedirectEvent.redirectLocation shouldBe redirectLocation.toUri()
                     expectedRedirectEvent.monitor.id shouldBe monitor.id
 
-                    monitorDownSubscriber.awaitCount(1)
+                    val expectedDownEvent = monitorDownSubscriber.awaitCount(1).values().first()
                     expectedDownEvent.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
                     expectedDownEvent.monitor.id shouldBe monitor.id
                 }
@@ -211,10 +195,9 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch ony a MonitorDownEvent") {
-                    redirectSubscriber.values().shouldBeEmpty()
-                    val expectedDownEvent = monitorDownSubscriber.values().first()
+                    redirectSubscriber.assertValueCount(0)
+                    val expectedDownEvent = monitorDownSubscriber.awaitCount(1).values().first()
 
-                    monitorDownSubscriber.awaitCount(1)
                     expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                     expectedDownEvent.error.message shouldBe
                         "The request was redirected, but the followRedirects option is disabled"
@@ -237,14 +220,11 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should dispatch a RedirectEvent and then a MonitorUpEvent") {
-                    val expectedRedirectEvent = redirectSubscriber.values().first()
-                    val expectedUpEvent = monitorUpSubscriber.values().first()
-
-                    redirectSubscriber.awaitCount(1)
+                    val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
                     expectedRedirectEvent.redirectLocation shouldBe redirectLocation.toUri()
                     expectedRedirectEvent.monitor.id shouldBe monitor.id
 
-                    monitorUpSubscriber.awaitCount(1)
+                    val expectedUpEvent = monitorUpSubscriber.awaitCount(1).values().first()
                     expectedUpEvent.status shouldBe HttpStatus.OK
                     expectedUpEvent.monitor.id shouldBe monitor.id
                 }
@@ -266,14 +246,12 @@ class UptimeCheckerTest(
                 uptimeCheckerSpy.check(monitor)
 
                 then("it should use the original URL as the base for the redirect") {
-                    val expectedRedirectEvent = redirectSubscriber.values().first()
-                    val expectedUpEvent = monitorUpSubscriber.values().first()
+                    val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
+                    val expectedUpEvent = monitorUpSubscriber.awaitCount(1).values().first()
 
-                    redirectSubscriber.awaitCount(1)
                     expectedRedirectEvent.redirectLocation shouldBe expectedFinalRedirectLocation
                     expectedRedirectEvent.monitor.id shouldBe monitor.id
 
-                    monitorUpSubscriber.awaitCount(1)
                     expectedUpEvent.status shouldBe HttpStatus.OK
                     expectedUpEvent.monitor.id shouldBe monitor.id
                 }
