@@ -101,6 +101,11 @@ jooq:
     default:
       sql-dialect: POSTGRES
 ---
+logger:
+  levels:
+    io.netty.channel: ERROR
+---
+# Kuvasz specific configurations are starting here
 app-config:
   event-data-retention-days: ${EVENT_DATA_RETENTION_DAYS:`365`}
   latency-data-retention-days: ${LATENCY_DATA_RETENTION_DAYS:`7`}
@@ -111,7 +116,3 @@ admin-auth:
   username: ${ADMIN_USER}
   password: ${ADMIN_PASSWORD}
   api-key: ${ADMIN_API_KEY}
----
-logger:
-  levels:
-    io.netty.channel: ERROR

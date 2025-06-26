@@ -4,7 +4,6 @@ monitors:
     uptime-check-interval: 120
     enabled: false
     ssl-check-enabled: true
-    pagerduty-integration-key: 1234567890abcdef
     request-method: HEAD
     latency-history-enabled: false
     force-no-cache: false
@@ -21,7 +20,6 @@ monitors:
     uptime-check-interval: 120
     enabled: true
     ssl-check-enabled: true
-    pagerduty-integration-key: null
     request-method: GET
     latency-history-enabled: true
     force-no-cache: false
