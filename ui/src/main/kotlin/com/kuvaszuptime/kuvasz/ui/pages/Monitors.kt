@@ -24,20 +24,20 @@ fun renderMonitorsPage(globals: AppGlobals) =
                 div {
                     classes(CARD)
                     div {
-                            hx {
-                                get("/fragments/monitors/list")
-                                trigger {
-                                    load()
-                                    event("refresh-monitor-list")
-                                }
-                                onSwapReinitTooltips()
+                        hx {
+                            get("/fragments/monitors/list")
+                            trigger {
+                                load()
+                                event("refresh-monitor-list")
                             }
-                            id = "monitors-list"
-                            div {
-                                classes(SPINNER_GROW, HTMX_INDICATOR)
-                                attributes["role"] = "status"
-                            }
+                            onSwapReinitTooltips()
                         }
+                        id = "monitors-list"
+                        div {
+                            classes(SPINNER_GROW, HTMX_INDICATOR)
+                            attributes["role"] = "status"
+                        }
+                    }
                 }
             }
         }
