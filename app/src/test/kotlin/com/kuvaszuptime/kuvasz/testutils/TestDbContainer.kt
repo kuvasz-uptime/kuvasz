@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.testutils
 
 import org.testcontainers.containers.PostgreSQLContainer
 
-class TestDbContainer : PostgreSQLContainer<TestDbContainer>("postgres:16") {
+class TestDbContainer : PostgreSQLContainer<TestDbContainer>("postgres:17-alpine") {
     companion object {
         private lateinit var instance: TestDbContainer
 
