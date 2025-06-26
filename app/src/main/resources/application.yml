@@ -3,7 +3,6 @@ micronaut:
   application:
     name: kuvasz
   openapi:
-    views.spec: 'swagger-ui.enabled=true'
     additional:
       files: 'src/main/resources/swagger'
   security:
@@ -42,10 +41,6 @@ micronaut:
         access: isAnonymous()
       - pattern: /api/v1/info
         access: isAnonymous()
-      - pattern: /swagger-ui/**
-        access: isAnonymous()
-      - pattern: /swagger/**
-        access: isAnonymous()
       - pattern: /api/**
         access:
           - ROLE_API
@@ -56,12 +51,6 @@ micronaut:
         access: isAnonymous()
   router:
     static-resources:
-      swagger:
-        paths: classpath:META-INF/swagger
-        mapping: /swagger/**
-      swagger-ui:
-        paths: classpath:META-INF/swagger/views/swagger-ui
-        mapping: /swagger-ui/**
       public:
         paths: classpath:public
         mapping: /public/**

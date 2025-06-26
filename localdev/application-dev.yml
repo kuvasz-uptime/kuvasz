@@ -1,7 +1,36 @@
 ---
 micronaut:
+  openapi:
+    views.spec: 'swagger-ui.enabled=true'
+  router:
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
+      swagger-ui:
+        paths: classpath:META-INF/swagger/views/swagger-ui
+        mapping: /swagger-ui/**
   security:
     enabled: true
+    intercept-url-map:
+      # Unfortunately it's only overridable, but not extendable, therefore we need to redefine the whole map here
+      - pattern: /api/v1/health
+        access: isAnonymous()
+      - pattern: /api/v1/info
+        access: isAnonymous()
+      - pattern: /api/**
+        access:
+          - ROLE_API
+      - pattern: /auth/login
+        method: POST
+        access: isAnonymous()
+      - pattern: /**
+        access: isAnonymous()
+      ## Swagger-UI is only enabled in DEV
+      - pattern: /swagger-ui/**
+        access: isAnonymous()
+      - pattern: /swagger/**
+        access: isAnonymous()
     token:
       jwt:
         signatures:
