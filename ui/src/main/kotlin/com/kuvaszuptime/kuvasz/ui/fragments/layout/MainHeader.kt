@@ -33,7 +33,7 @@ internal fun FlowContent.mainHeader(
             // Navbar logo
             div {
                 classes(NAVBAR_BRAND, NAVBAR_BRAND_AUTODARK, D_NONE_NAVBAR_HORIZONTAL, PE_0, PE_MD_3)
-                a(href = ".") {
+                a(href = "/") {
                     img(src = "/public/kuvasz-avatar.png", alt = "Kuvasz") {
                         classes(ME_3)
                         width = "32"
