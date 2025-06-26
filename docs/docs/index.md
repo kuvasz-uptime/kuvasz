@@ -1,80 +1,86 @@
-# Welcome to MkDocs
+<figure markdown="span">
+  ![Image title](images/kuvasz_big_circle.webp){ width="200" .skip-lb }
+  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service</figcaption>
+</figure>
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+!!! tip "TL;DR"
 
-## Commands
+    Are you looking for a **quick start guide**? You can find it [here](setup/installation.md)!
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+![Kuvasz](images/feature_carousel.webp)
 
-## Project layout
+## Highlights
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+<div class="grid cards" markdown>
 
+-   :green_circle:{ .lg .middle } __Uptime monitoring__
 
-``` yaml
-theme:
-  features:
-    - content.code.annotate # (1)
-```
+    ---
 
-1.  :man_raising_hand: I'm a code annotation! I can contain `code`, __formatted
-    text__, images, ... basically anything that can be written in Markdown.
+    With flexible configuration, adjustable intervals, headers, and more.
 
+    [:octicons-arrow-right-24: Uptime monitoring](features/uptime-monitoring.md)
 
-=== "C"
+-   :lock:{ .lg .middle } __SSL monitoring__
 
-    ``` c
-    #include <stdio.h>
+    ---
 
-    int main(void) {
-      printf("Hello world!\n");
-      return 0;
-    }
-    ```
+    Kuvasz checks your SSL certificates every day, and notifies you before they expire.
 
-=== "C++"
+    [:octicons-arrow-right-24: SSL monitoring](features/ssl-monitoring.md)
 
-    ``` c++
-    #include <iostream>
+-   :electric_plug:{ .lg .middle } __Integrations__
 
-    int main(void) {
-      std::cout << "Hello world!" << std::endl;
-      return 0;
-    }
-    ```
+    ---
 
-Or
+    Supports multiple notification channels, currently including email, Slack, Telegram, and PagerDuty. You can configure the notification channels on a per-monitor basis.
 
-=== "C"
+    [:octicons-arrow-right-24: Integrations](features/integrations.md)
 
-    ``` c
-    #include <stdio.h>
+-   :earth_africa:{ .lg .middle } __API__
 
-    int main(void) {
-      printf("Hello world!\n");
-      return 0;
-    }
-    ```
+    ---
 
-=== "C++"
+    Provides a fully-fledged REST API to manage your monitors, check their status, and more.
 
-    ``` c++
-    #include <iostream>
+    [:octicons-arrow-right-24: API](features/api.md)
 
-    int main(void) {
-      std::cout << "Hello world!" << std::endl;
-      return 0;
-    }
-    ```
+-   :sparkles:{ .lg .middle } __Sleek UI__
 
-!!! tip
+    ---
 
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla et euismod
-    nulla. Curabitur feugiat, tortor non consequat finibus, justo purus auctor
-    massa, nec semper lorem quam in massa.
+    Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.
+
+    [:octicons-arrow-right-24: Web UI](features/ui.md)
+
+-   :free:{ .lg .middle } __Free & Open Source__
+
+    ---
+
+    Kuvasz is licensed under the _Apache License 2.0_, it's free and it always will be.
+
+-  :muscle:{ .lg .middle } __Performance & Robustness__
+
+    ---
+
+    Tested in real-world scenarios, with large numbers of monitors and checks.
+
+    [:octicons-arrow-right-24: Performance](features/performance.md)
+
+-   :woman_cartwheeling:{ .lg .middle } __Flexible Configuration__
+
+    ---
+
+    You can choose how you would like to manage your monitors: on the UI, or via the API, or with a single YAML file.
+
+    [:octicons-arrow-right-24: Flexibility](features/flexibility.md)
+
+</div>
+
+## Where does the name come from?
+
+Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & guard dog. You can read more about them
+on [Wikipedia](https://en.wikipedia.org/wiki/Kuvasz).
+
+## Do you have a question?
+Let's go to the [GitHub discussions](https://github.com/kuvasz-uptime/kuvasz/discussions)!

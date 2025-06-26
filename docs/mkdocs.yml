@@ -1,19 +1,41 @@
 site_name: Kuvasz Uptime
 repo_url: https://github.com/kuvasz-uptime/kuvasz
 theme:
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  icon:
+    tag:
+      min_ver: material/tag
   name: material
   logo: images/kuvasz-logo.png
   favicon: images/favicon.png
   custom_dir: overrides
   features:
-    - navigation.path
-    - navigation.tabs
     - navigation.top
     - search.suggest
     - search.highlight
     - content.code.copy
     - content.code.annotate
     - content.tabs.link
+    - content.tooltips
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -33,7 +55,10 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 plugins:
   - search
-  - render_swagger
+  - redoc-tag
+  - glightbox:
+      skip_classes:
+        - skip-lb
 extra:
   consent:
     title: Cookie consent
@@ -45,6 +70,29 @@ extra:
   analytics:
     provider: google
     property: G-390JFEVMCZ
+  tags:
+    min_ver: Minimum version
+hooks:
+  - overrides/hooks/shortcodes.py
+extra_css:
+  - stylesheets/custom.css
 nav:
-  - Home: index.md
-  - API docs: api_doc.md
+  - Introduction: index.md
+  - Getting Started:
+      - Installation: setup/installation.md
+      - Configuration: setup/configuration.md
+      - Integrations setup: setup/integrations.md
+      - Creating Monitors: setup/creating-monitors.md
+      - Recipes & Examples: setup/examples.md
+  - Features:
+      - Uptime Monitoring: features/uptime-monitoring.md
+      - SSL Monitoring: features/ssl-monitoring.md
+      - Integrations: features/integrations.md
+      - Web UI: features/ui.md
+      - Flexibility: features/flexibility.md
+      - Performance: features/performance.md
+      - API: features/api.md
+  - Localization: localization.md
+  - API docs: api-doc.md
+  - Changelog: changelog.md
+  - Conventions: conventions.md

@@ -1,1 +1,0 @@
-!!swagger kuvasz-latest.yml!!
