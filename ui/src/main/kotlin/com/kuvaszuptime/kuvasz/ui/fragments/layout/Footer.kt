@@ -19,7 +19,7 @@ internal fun FlowContent.footer(appVersion: String) {
                         classes(LIST_INLINE, LIST_INLINE_DOTS, MB_0)
                         listItem(
                             label = Messages.documentation(),
-                            link = "https://github.com/kuvasz-uptime/kuvasz/wiki",
+                            link = "https://kuvasz-uptime.dev",
                             externalLink = true,
                         )
                         listItem(
