@@ -24,8 +24,6 @@ fun renderMonitorsPage(globals: AppGlobals) =
                 div {
                     classes(CARD)
                     div {
-                        classes(CARD_TABLE, TABLE_RESPONSIVE)
-                        div {
                             hx {
                                 get("/fragments/monitors/list")
                                 trigger {
@@ -40,7 +38,6 @@ fun renderMonitorsPage(globals: AppGlobals) =
                                 attributes["role"] = "status"
                             }
                         }
-                    }
                 }
             }
         }
