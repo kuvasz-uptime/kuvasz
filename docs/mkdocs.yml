@@ -36,6 +36,7 @@ theme:
     - content.code.annotate
     - content.tabs.link
     - content.tooltips
+    - announce.dismiss
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -96,3 +97,4 @@ nav:
   - API docs: api-doc.md
   - Changelog: changelog.md
   - Conventions: conventions.md
+copyright: Copyright &copy; 2020 - 2025 Kuvasz Uptime

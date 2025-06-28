@@ -41,3 +41,8 @@
   border-end-end-radius: 2px;
   box-shadow: 0 0 0 1px inset var(--md-accent-fg-color--transparent);
 }
+
+/* Utility classes */
+.align-center {
+  text-align: center;
+}
