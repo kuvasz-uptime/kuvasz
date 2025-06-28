@@ -30,6 +30,7 @@ theme:
   custom_dir: overrides
   features:
     - navigation.top
+    - navigation.footer
     - search.suggest
     - search.highlight
     - content.code.copy
