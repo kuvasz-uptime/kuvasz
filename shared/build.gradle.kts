@@ -15,10 +15,6 @@ dependencies {
     detektPlugins(libs.detekt.formatting)
 }
 
-i18n4k {
-    sourceCodeLocales = listOf("en")
-}
-
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
