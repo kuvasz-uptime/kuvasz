@@ -118,6 +118,7 @@ internal enum class CSSClass(val className: String) {
     HIDE_THEME_DARK("hide-theme-dark"),
     HIDE_THEME_LIGHT("hide-theme-light"),
     HTMX_INDICATOR("htmx-indicator"),
+    ICON_INLINE("icon-inline"),
     INVALID_FEEDBACK("invalid-feedback"),
     JUSTIFY_CONTENT_CENTER("justify-content-center"),
     LINK_SECONDARY("link-secondary"),

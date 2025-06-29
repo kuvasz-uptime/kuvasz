@@ -57,6 +57,12 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                 ul {
                                     classes(NAVBAR_NAV)
                                     navItem(
+                                        label = Messages.sponsor(),
+                                        icon = Icon.HEART,
+                                        link = "https://ko-fi.com/L4L31DH59D",
+                                        externalLink = true,
+                                    )
+                                    navItem(
                                         label = Messages.signOut(),
                                         icon = Icon.LOGOUT_OUTLINE,
                                         link = "/auth/logout",
