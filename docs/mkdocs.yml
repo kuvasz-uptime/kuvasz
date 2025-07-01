@@ -1,4 +1,5 @@
 site_name: Kuvasz Uptime
+site_url: https://kuvasz-uptime.dev
 site_description: Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.
 repo_url: https://github.com/kuvasz-uptime/kuvasz
 theme:
