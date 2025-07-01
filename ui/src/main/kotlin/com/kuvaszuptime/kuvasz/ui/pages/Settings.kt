@@ -135,14 +135,14 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         }
                         integrationsList(settings.integrations.email)
                     }
-                    // Pagerduty integrations
+                    // PagerDuty integrations
                     div {
                         div {
                             classes(FORM_LABEL)
                             icon(Icon.BRAND_PAGERDUTY)
                             span {
                                 classes(MS_2)
-                                +"Pagerduty"
+                                +"PagerDuty"
                             }
                         }
                         integrationsList(settings.integrations.pagerduty)

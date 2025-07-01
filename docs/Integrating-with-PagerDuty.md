@@ -30,43 +30,6 @@ If you need help with this integration, please contact the maintainer of Kuvasz,
 
 ## In Kuvasz
 
-You have to set up two things in Kuvasz in order to make the integration work:
-
-1. Provide an environment variable to the application with the name `ENABLE_PAGERDUTY_EVENT_HANDLER` and a value of `true`. You can read more about the available configuration variables of Kuvasz [here](https://github.com/kuvasz-uptime/kuvasz/wiki/Configuration).
-2. Set your PagerDuty integration key for the desired monitor in one of the following ways:
-
-**Providing a key when you create your monitor:**
-
-```shell
-curl --location --request POST 'https://your.kuvasz.host:8080/api/v1/monitors/' \
---header 'Authorization: Bearer YourKuvaszAccessToken' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "name": "my_first_monitor",
-    "url": "https://website.to.check",
-    "uptimeCheckInterval": 60,
-    "pagerdutyIntegrationKey": "YourSecretIntegrationKeyFromPagerDuty"
-}'
-```
-
-**Adding/updating a key for an existing monitor:**
-
-```shell
-curl --location --request PUT 'https://your.kuvasz.host:8080/api/v1/monitors/4/pagerduty-integration-key' \
---header 'Authorization: Bearer YourKuvaszAccessToken' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "pagerdutyIntegrationKey": "YourSecretIntegrationKeyFromPagerDuty"
-}'
-```
-
-# How to Uninstall
-
-If you want to disable a monitor's integration with PagerDuty, you can just simply delete the integration key of it with an API call like that:
-
-```shell
-curl --location --request DELETE 'https://your.kuvasz.host:8080/api/v1/monitors/4/pagerduty-integration-key' \
---header 'Authorization: Bearer YourKuvaszAccessToken'
-```
-
-Alternatively you can disable the integration between Kuvasz and PagerDuty globally by setting the value of the `ENABLE_PAGERDUTY_EVENT_HANDLER` to `false` (or by omitting it completely, since its default value is `false` too).
+1. To set up _Kuvasz_, follow the installation guide in the [**documentation**](https://kuvasz-uptime.dev/setup/installation/).
+2. Once you have Kuvasz up and running, you need to configure the _PagerDuty_ integration in your _YAML_ configuration file. Please refer to the [**Integrations setup**](https://kuvasz-uptime.dev/setup/integrations#pagerduty) section of the documentation for more information on how to configure _PagerDuty_.
+3. Assuming you have your integration set up, refer to the [Managing monitors](https://kuvasz-uptime.dev/setup/managing-monitors/) section of the documentation to create/update a monitor that uses your brand new _PagerDuty_ integration.
