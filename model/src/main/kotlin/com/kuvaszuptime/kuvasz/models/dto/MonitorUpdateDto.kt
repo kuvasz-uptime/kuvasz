@@ -13,39 +13,39 @@ import jakarta.validation.constraints.Pattern
 
 @Introspected
 data class MonitorUpdateDto(
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.NAME, required = false, nullable = false)
     @get:NotBlank
     @get:NotNull
     val name: String?,
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.URL, required = false, nullable = false)
     @get:Pattern(regexp = URI_REGEX)
     @get:NotNull
     val url: String?,
     @get:Min(MIN_UPTIME_CHECK_INTERVAL)
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = false, nullable = false)
     val uptimeCheckInterval: Int?,
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.ENABLED, required = false, nullable = false)
     val enabled: Boolean?,
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.SSL_CHECK_ENABLED, required = false, nullable = false)
     val sslCheckEnabled: Boolean?,
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.REQUEST_METHOD, required = false, nullable = false)
     val requestMethod: HttpMethod?,
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.LATENCY_HISTORY_ENABLED, required = false, nullable = false)
     val latencyHistoryEnabled: Boolean?,
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.FORCE_NO_CACHE, required = false, nullable = false)
     val forceNoCache: Boolean?,
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.FOLLOW_REDIRECTS, required = false, nullable = false)
     val followRedirects: Boolean?,
     @get:NotNull
-    @field:Schema(required = false, nullable = false)
+    @Schema(description = MonitorDocs.SSL_EXPIRY_THRESHOLD, required = false, nullable = false)
     val sslExpiryThreshold: Int?,
-    @field:Schema(required = false, nullable = true)
+    @Schema(description = MonitorDocs.INTEGRATIONS, required = false, nullable = true)
     val integrations: Set<IntegrationID>?,
 )

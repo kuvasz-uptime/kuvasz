@@ -27,7 +27,7 @@ import java.time.Duration
 
 interface MonitorOperations {
 
-    @Operation(summary = "Returns all monitors with their details")
+    @Operation(summary = "Get all monitors with their details")
     @Get("/")
     fun getMonitorsWithDetails(
         @QueryValue
@@ -44,34 +44,36 @@ interface MonitorOperations {
         sslCheckEnabled: Boolean?,
     ): List<MonitorDetailsDto>
 
-    @Operation(summary = "Returns a monitor's details")
+    @Operation(summary = "Get a monitor's details")
     @Get("/{monitorId}")
     fun getMonitorDetails(monitorId: Long): MonitorDetailsDto
 
-    @Operation(summary = "Creates a monitor")
+    @Operation(summary = "Create a monitor")
     @Post("/")
     fun createMonitor(@Body monitor: MonitorCreateDto): MonitorDto
 
-    @Operation(summary = "Deletes a monitor by ID")
+    @Operation(summary = "Delete a monitor by ID")
     @Delete("/{monitorId}")
     fun deleteMonitor(monitorId: Long)
 
     @Operation(
-        summary = "Updates a monitor by ID",
+        summary = "Update a monitor by ID",
+        description = "Updates the monitor with the given ID. Only fields that are present in the request body " +
+            "will be updated. Fields not present in the request body will remain unchanged.",
         requestBody = RequestBody(content = [Content(schema = Schema(implementation = MonitorUpdateDto::class))])
     )
     @Patch("/{monitorId}")
     fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): MonitorDto
 
-    @Operation(summary = "Returns the uptime events of the given monitor")
+    @Operation(summary = "Get the uptime events of the given monitor")
     @Get("/{monitorId}/uptime-events")
     fun getUptimeEvents(monitorId: Long): List<UptimeEventDto>
 
-    @Operation(summary = "Returns the SSL events of the given monitor")
+    @Operation(summary = "Get the SSL events of the given monitor")
     @Get("/{monitorId}/ssl-events")
     fun getSSLEvents(monitorId: Long): List<SSLEventDto>
 
-    @Operation(summary = "Returns the stats of the given monitor")
+    @Operation(summary = "Get the stats of the given monitor")
     @Get("/{monitorId}/stats")
     fun getMonitorStats(
         monitorId: Long,
@@ -83,11 +85,11 @@ interface MonitorOperations {
         period: Duration?,
     ): MonitorStatsDto
 
-    @Operation(summary = "Returns the export of all monitors in YAML format")
+    @Operation(summary = "Download the export of all monitors in YAML format")
     @Get("/export/yaml")
     fun getYamlMonitorsExport(): SystemFile
 
-    @Operation(summary = "Returns the overall, cumulative stats of all monitors")
+    @Operation(summary = "Get the overall, cumulative stats of all monitors")
     @Get("/stats")
     fun getMonitoringStats(
         @QueryValue

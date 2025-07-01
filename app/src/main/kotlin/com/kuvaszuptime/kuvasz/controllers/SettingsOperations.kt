@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.Operation
 
 interface SettingsOperations {
 
-    @Operation(summary = "Returns the current settings of the application")
+    @Operation(summary = "Get the current settings of the application")
     @Get("/")
     fun getSettings(): SettingsDto
 }

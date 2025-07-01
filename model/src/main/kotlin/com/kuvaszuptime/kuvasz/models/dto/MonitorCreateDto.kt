@@ -17,23 +17,26 @@ object MonitorDefaults {
 
 @Introspected
 data class MonitorCreateDto(
+    @Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,
+    @Schema(description = MonitorDocs.URL, required = true)
     override val url: String,
+    @Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     override val uptimeCheckInterval: Int,
-    @Schema(required = false, defaultValue = "true")
+    @Schema(description = MonitorDocs.ENABLED, defaultValue = "true")
     override val enabled: Boolean = MonitorDefaults.MONITOR_ENABLED,
-    @Schema(required = false, defaultValue = "false")
+    @Schema(description = MonitorDocs.SSL_CHECK_ENABLED, required = false, defaultValue = "false")
     override val sslCheckEnabled: Boolean = MonitorDefaults.SSL_CHECK_ENABLED,
-    @Schema(required = false, defaultValue = "GET")
+    @Schema(description = MonitorDocs.REQUEST_METHOD, required = false, defaultValue = "GET")
     override val requestMethod: HttpMethod = HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD),
-    @Schema(required = false, defaultValue = "true")
+    @Schema(description = MonitorDocs.LATENCY_HISTORY_ENABLED, required = false, defaultValue = "true")
     override val latencyHistoryEnabled: Boolean = MonitorDefaults.LATENCY_HISTORY_ENABLED,
-    @Schema(required = false, defaultValue = "true")
+    @Schema(description = MonitorDocs.FORCE_NO_CACHE, required = false, defaultValue = "true")
     override val forceNoCache: Boolean = MonitorDefaults.FORCE_NO_CACHE,
-    @Schema(required = false, defaultValue = "true")
+    @Schema(description = MonitorDocs.FOLLOW_REDIRECTS, required = false, defaultValue = "true")
     override val followRedirects: Boolean = MonitorDefaults.FOLLOW_REDIRECTS,
-    @Schema(required = false, defaultValue = "30")
+    @Schema(description = MonitorDocs.SSL_EXPIRY_THRESHOLD, required = false, defaultValue = "30")
     override val sslExpiryThreshold: Int = MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS,
-    @Schema(required = false)
+    @Schema(description = MonitorDocs.INTEGRATIONS, required = false)
     override val integrations: List<String>? = emptyList(),
 ) : MonitorCreatorLike
