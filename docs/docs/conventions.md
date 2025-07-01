@@ -20,6 +20,8 @@ Every property has a type, which is usually one of the following:
 - `string` – an arbitrary - string - value
 - `boolean` – a boolean value, which can be `true` or `false`
 - `number` – a numeric value
+- `list` – a list of values
+- `enum` - an enumerated value, which can be one of the predefined values
 
 ### <!-- md:flag experimental --> – Experimental { #experimental data-toc-label="Experimental" }
 
@@ -34,3 +36,6 @@ Some properties can be required, which means you must specify them in your confi
 
 Some properties can be required only if a certain condition is met, for example, if another feature is enabled. 
 You'll find the condition next to the symbol.
+
+### <!-- md:config #config --> – Configuration { #config data-toc-label="Configuration" }
+This symbol indicates that a dedicated configuration section is available for the feature or integration you are reading about.

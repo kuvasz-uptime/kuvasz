@@ -46,3 +46,9 @@
 .align-center {
   text-align: center;
 }
+
+/* Card icon */
+.md-typeset .card-header-icon {
+  vertical-align: top;
+  margin-right: 0.2em;
+}

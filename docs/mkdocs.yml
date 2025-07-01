@@ -1,4 +1,5 @@
 site_name: Kuvasz Uptime
+site_description: Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.
 repo_url: https://github.com/kuvasz-uptime/kuvasz
 theme:
   palette:
@@ -25,7 +26,7 @@ theme:
     tag:
       min_ver: material/tag
   name: material
-  logo: images/kuvasz-logo.png
+  logo: images/kuvasz-logo.webp
   favicon: images/favicon.png
   custom_dir: overrides
   features:
@@ -58,6 +59,7 @@ markdown_extensions:
 plugins:
   - search
   - redoc-tag
+  - social
   - glightbox:
       skip_classes:
         - skip-lb
@@ -72,14 +74,14 @@ nav:
   - Introduction: index.md
   - Getting Started:
       - Installation: setup/installation.md
-      - Configuration: setup/configuration.md
+      - Configure Kuvasz: setup/configuration.md
       - Integrations setup: setup/integrations.md
-      - Creating Monitors: setup/creating-monitors.md
+      - Managing monitors: setup/managing-monitors.md
       - Recipes & Examples: setup/examples.md
   - Features:
-      - Uptime Monitoring: features/uptime-monitoring.md
-      - SSL Monitoring: features/ssl-monitoring.md
-      - Integrations: features/integrations.md
+      - Uptime monitoring: features/uptime-monitoring.md
+      - SSL monitoring: features/ssl-monitoring.md
+      - Notifications: features/notifications.md
       - Web UI: features/ui.md
       - Flexibility: features/flexibility.md
       - Performance: features/performance.md
@@ -88,4 +90,7 @@ nav:
   - API docs: api-doc.md
   - Changelog: changelog.md
   - Conventions: conventions.md
+  - License: https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE
+  - Contributing: https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md
+  - Sponsoring: https://ko-fi.com/kuvasz
 copyright: Copyright &copy; 2020 - 2025 Kuvasz Uptime

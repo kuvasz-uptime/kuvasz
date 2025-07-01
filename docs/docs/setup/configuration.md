@@ -1,8 +1,6 @@
-_Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or via environment variables**. Most of the configuration options are available in both formats, but some are only available in one of them:
+_Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or via environment variables**. Most of the configuration options are available in both formats, but some are only available in one of them.
 
-!!! warning "Integrations can be configured only via the _YAML_ file!"
-
-!!! tip
+!!! info
 
     The _YAML_ configuration file **should be mounted as a volume** in the _Docker_ container under `/config/kuvasz.yml`.
 
@@ -13,8 +11,12 @@ _Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or vi
           kuvasz:
             # ...
             volumes:
-              - ./your-config.yml:/config/kuvasz.yml
+              - /path/to/your/kuvasz.yml:/config/kuvasz.yml
         ```
+
+!!! tip
+
+    If you modify your configuration (via _YAML_ or _ENV_, it doesn't matter), you need to restart the _Kuvasz_ container for the changes to take effect.
 
 ## Authentication
 
@@ -197,6 +199,86 @@ The username to connect to the database. The user **must have the necessary perm
 
 The password of the user above.
 
+## SMTP
+
+!!! tip
+
+    Using an SMTP server is **optional**, it's only needed if you want to use the [**email integration**](../features/notifications.md#email) to send notifications about events.
+
+    The SMTP configuration can be set **only via _YAML_**.
+
+    Be aware that if you include `smtp-config` in your configuration, then you'll **need to provide all the required** properties of it, otherwise _Kuvasz_ won't start.
+
+### Host
+
+<!-- md:version 2.0.0 -->
+<!-- md:required_if `smtp-config` is present -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    smtp-config.host: 'your.smtp.server'
+    ```
+
+The **hostname or IP address** of the SMTP server you want to use for sending emails.
+
+### Port
+
+<!-- md:version 2.0.0 -->
+<!-- md:required_if `smtp-config` is present -->
+<!-- md:type `number` -->
+
+=== "YAML"
+
+    ```yaml
+    smtp-config.port: 465
+    ```
+
+The **port** of the SMTP server you want to use for sending emails.
+
+### Username
+
+<!-- md:version 2.0.0 -->
+<!-- md:default `null` -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    smtp-config.username: YourSMTPUsername
+    ```
+
+The **username** to authenticate with the SMTP server. If your SMTP server doesn't require authentication, you can omit specifying this property, or set it explicitly to `null`.
+
+### Password
+
+<!-- md:version 2.0.0 -->
+<!-- md:default `null` -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    smtp-config.password: YourSMTPPassword
+    ```
+
+The **password** to authenticate with the SMTP server. If your SMTP server doesn't require authentication, you can omit specifying this property, or set it explicitly to `null`.
+
+### Transport strategy
+
+<!-- md:version 2.0.0 -->
+<!-- md:default `SMTP_TLS` -->
+<!-- md:type enum: `SMTP_TLS`, `SMTPS`, `SMTP` -->
+
+=== "YAML"
+
+    ```yaml
+    smtp-config.transport-strategy: SMTP_TLS
+    ```
+
+The **transport strategy** to use for sending emails. The default is `SMTP_TLS`, which uses TLS encryption for the connection. You can also use `SMTPS` (implicit SSL) or `SMTP` (no encryption).
+
 ## Miscellaneous
 
 ### Timezone
@@ -308,15 +390,24 @@ You can find the full configuration example below, which includes all the option
     ```yaml
     micronaut.security.enabled: true
     micronaut.security.token.generator.access-token.expiration: 86400 # 24 hours
+    ---
     admin-auth:
       username: YourSuperSecretUsername
       password: YourSuperSecretPassword
       api-key: ThisShouldBeVeryVerySecureToo
+    ---
     app-config:
       event-data-retention-days: 365 # 1 year
       latency-data-retention-days: 7 # 1 week
       log-event-handler: true
       language: en
+    ---
+    smtp-config:
+      host: 'your.smtp.server'
+      port: 465
+      transport-strategy: SMTP_TLS
+      username: YourSMTPUsername
+      password: YourSMTPPassword
     ```
 
 === "ENV"
