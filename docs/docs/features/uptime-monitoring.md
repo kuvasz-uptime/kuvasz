@@ -25,9 +25,7 @@ _Kuvasz_ monitors your websites and services by **periodically sending requests*
 ## Notable features
 
 - **HTTP(S) monitoring**: Monitor the availability and performance of your websites and services by sending HTTP(S) requests.
-- **Customizable intervals**: Set the frequency of checks with a **fully customizable** interval, ranging from seconds to days.
 - **Response time tracking**: Track the latency of your services by measuring the time it takes to receive a response from them.
-- **Configurable HTTP methods**: Choose between a `GET` or a `HEAD` request to suit your monitoring needs.
 - **Notifications on a per-monitor basis**: Configure different notification channels for each monitor, allowing you to tailor alerts to your specific needs.
 - More to come: _Kuvasz_ is under active development, and more features are planned for the future, such as **response keyword matching**, **POST requests with arbitrary payload**, and more.
 

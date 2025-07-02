@@ -23,7 +23,7 @@
     * `followRedirects`: `true` or `false`. If set to `true`, Kuvasz will follow redirects during uptime checks, and the last, non-redirected URL will be evaluated (default `true`)
     * `sslExpiryThreshold`: The number of days before the SSL certificate expires when a notification should be sent.
 - **Option to disable authentication** (useful in a home-lab, for example) via `ENABLE_AUTH`. `true` or `false`, default `true`
-- **Optimization of the uptime scheduling logic**: the first uptime check will be scheduled randomly between 1 second and the configured interval of the monitor to prevent hitting the HTTP client with a lot of requests right after the startup.
+- **Optimization of the check scheduling logic**: the first uptime check will be scheduled randomly between 1 second and the configured interval of the monitor to prevent hitting the HTTP client with a lot of requests right after the startup.
 - **Optimization of the uptime checker**:
     * Made the error handling more robust by handling exceptions that come from invalid response format (e.g. invalid status code)
     * Increased the client's read timeout to 30s
@@ -45,7 +45,7 @@
 - The integration setup has been completely reworked, making it smarter and more flexible. From now on, you can set up **multiple integrations per type** (Slack, E-mail, etc.) in your YAML config. Then you can make them global (that is in effect for all your monitors without further configuration), or **you can assign them on a per monitor basis**.
 
 ### Chore
-- Removed jOOQ's Pojos, DAOs, and simplified the injection of the DSL context
+- Simplified and streamlined the things around jOOQ
 - Simplified the logging configuration by moving it to Micronaut's own config file
 - Changed the base image to `liberica-runtime-container:jre-17` and reduced the compressed image size by ~23%
 - Build `arm64` images too
