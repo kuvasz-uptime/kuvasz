@@ -1,7 +1,8 @@
 # 
 
 <figure markdown="span">
-  ![Kuvasz banner](images/kuvasz_banner.webp){ width="350" .skip-lb }
+  ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="350" .skip-lb }
+  ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="350" .skip-lb }
   <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service</figcaption>
 <span>
 <a style="display: inline-flex;" href="https://codecov.io/gh/kuvasz-uptime/kuvasz" target="_blank">

@@ -1,4 +1,4 @@
-![Kuvasz](docs/docs/images/kuvasz_banner.webp)
+![Kuvasz](docs/docs/images/kuvasz-banner-light.webp)
 
 [![CI](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml/badge.svg)](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml)
 [![codecov](https://codecov.io/gh/kuvasz-uptime/kuvasz/branch/main/graph/badge.svg?token=67X0CD3CGY)](https://codecov.io/gh/kuvasz-uptime/kuvasz)
