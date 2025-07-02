@@ -8,7 +8,7 @@
 
 ---
 
-## [Documentation](https://kuvasz-uptime.dev)
+## [📖 Documentation](https://kuvasz-uptime.dev)
 
 ## ℹ️  What is Kuvasz?
 
