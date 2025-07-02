@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches: [ main ]
 permissions:
   contents: write
 jobs:
@@ -25,4 +27,6 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install -r requirements.txt
+        working-directory: docs
       - run: mkdocs gh-deploy --force
+        working-directory: docs
