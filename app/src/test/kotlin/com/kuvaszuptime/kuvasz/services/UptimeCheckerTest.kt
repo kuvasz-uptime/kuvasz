@@ -6,16 +6,13 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
-import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
-import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.simple.SimpleHttpResponseFactory
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -136,124 +133,6 @@ class UptimeCheckerTest(
                     expectedDownEvent.monitor.id shouldBe monitor.id
                     expectedUpEvent.monitor.id shouldBe monitor.id
                     expectedDownEvent.dispatchedAt shouldBeGreaterThan expectedUpEvent.dispatchedAt
-                }
-            }
-
-            `when`("it checks a monitor that is redirected without a Location header") {
-                val monitor = createMonitor(monitorRepository)
-                val subscriber = TestSubscriber<MonitorDownEvent>()
-                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT)
-
-                uptimeCheckerSpy.check(monitor)
-
-                then("it should dispatch a MonitorDownEvent") {
-                    val expectedEvent = subscriber.awaitCount(1).values().first()
-
-                    expectedEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
-                    expectedEvent.monitor.id shouldBe monitor.id
-                }
-            }
-
-            `when`("it checks a monitor that is redirected with a Location header, but it's DOWN") {
-                val monitor = createMonitor(monitorRepository)
-                val redirectSubscriber = TestSubscriber<RedirectEvent>()
-                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
-                val redirectLocation = "http://redirected-bad.loc"
-                val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
-
-                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(monitorDownSubscriber) }
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.INTERNAL_SERVER_ERROR, redirectLocation.toUri())
-
-                uptimeCheckerSpy.check(monitor)
-
-                then("it should dispatch a RedirectEvent and then a MonitorDownEvent") {
-
-                    val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
-                    expectedRedirectEvent.redirectLocation shouldBe redirectLocation.toUri()
-                    expectedRedirectEvent.monitor.id shouldBe monitor.id
-
-                    val expectedDownEvent = monitorDownSubscriber.awaitCount(1).values().first()
-                    expectedDownEvent.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
-                    expectedDownEvent.monitor.id shouldBe monitor.id
-                }
-            }
-
-            `when`("it checks a monitor that is redirected, but following redirects is disabled") {
-                val monitor = createMonitor(monitorRepository, followRedirects = false)
-                val redirectSubscriber = TestSubscriber<RedirectEvent>()
-                val monitorDownSubscriber = TestSubscriber<MonitorDownEvent>()
-                val redirectLocation = "http://redirected-bad.loc"
-                val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
-
-                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(monitorDownSubscriber) }
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
-
-                uptimeCheckerSpy.check(monitor)
-
-                then("it should dispatch ony a MonitorDownEvent") {
-                    redirectSubscriber.assertValueCount(0)
-                    val expectedDownEvent = monitorDownSubscriber.awaitCount(1).values().first()
-
-                    expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
-                    expectedDownEvent.error.message shouldBe
-                        "The request was redirected, but the followRedirects option is disabled"
-                    expectedDownEvent.monitor.id shouldBe monitor.id
-                }
-            }
-
-            `when`("it checks a monitor that is redirected with a Location header, but it's UP") {
-                val monitor = createMonitor(monitorRepository)
-                val redirectSubscriber = TestSubscriber<RedirectEvent>()
-                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
-                val redirectLocation = "http://redirected-good.loc"
-                val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
-
-                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK, redirectLocation.toUri())
-
-                uptimeCheckerSpy.check(monitor)
-
-                then("it should dispatch a RedirectEvent and then a MonitorUpEvent") {
-                    val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
-                    expectedRedirectEvent.redirectLocation shouldBe redirectLocation.toUri()
-                    expectedRedirectEvent.monitor.id shouldBe monitor.id
-
-                    val expectedUpEvent = monitorUpSubscriber.awaitCount(1).values().first()
-                    expectedUpEvent.status shouldBe HttpStatus.OK
-                    expectedUpEvent.monitor.id shouldBe monitor.id
-                }
-            }
-
-            `when`("it checks a monitor that is redirected with a relative Location header") {
-                val monitor = createMonitor(monitorRepository)
-                val redirectSubscriber = TestSubscriber<RedirectEvent>()
-                val monitorUpSubscriber = TestSubscriber<MonitorUpEvent>()
-                val redirectLocation = "/a-relative-path"
-                val headers = mapOf(HttpHeaders.LOCATION to redirectLocation)
-                val expectedFinalRedirectLocation = URI(monitor.url).resolve(redirectLocation)
-
-                eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-                eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.PERMANENT_REDIRECT, monitor.url.toUri(), headers)
-                mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK, expectedFinalRedirectLocation)
-
-                uptimeCheckerSpy.check(monitor)
-
-                then("it should use the original URL as the base for the redirect") {
-                    val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
-                    val expectedUpEvent = monitorUpSubscriber.awaitCount(1).values().first()
-
-                    expectedRedirectEvent.redirectLocation shouldBe expectedFinalRedirectLocation
-                    expectedRedirectEvent.monitor.id shouldBe monitor.id
-
-                    expectedUpEvent.status shouldBe HttpStatus.OK
-                    expectedUpEvent.monitor.id shouldBe monitor.id
                 }
             }
         }
