@@ -98,6 +98,11 @@ dependencies {
     compileOnly(libs.i18n4k)
     testCompileOnly(libs.i18n4k)
 
+    // Metrics exporting
+    implementation(mn.micronaut.micrometer.core)
+    implementation(mn.micrometer.core)
+    implementation(mn.micronaut.micrometer.registry.prometheus)
+
     // Testing
     testImplementation(libs.mockk)
     testImplementation(mn.testcontainers.postgres)

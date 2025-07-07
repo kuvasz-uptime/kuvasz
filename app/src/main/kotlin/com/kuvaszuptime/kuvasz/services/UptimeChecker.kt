@@ -1,8 +1,10 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
+import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
 import com.kuvaszuptime.kuvasz.models.UnknownUptimeCheckException
@@ -39,6 +41,7 @@ class UptimeChecker(
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: UptimeEventRepository,
     private val monitorRepository: MonitorRepository,
+    private val metricsExportRegistry: MetricsExportRegistry?, // TODO do it via a handler
 ) {
 
     companion object {
@@ -109,6 +112,7 @@ class UptimeChecker(
                     previousEvent = getPreviousEvent(monitor),
                 )
             )
+            metricsExportRegistry?.updateUptimeStatus(monitor.id, UptimeStatus.UP)
         } else if (response.isRedirected() && monitor.followRedirects) {
             val redirectionUri = response.getRedirectionUri(originalUrl = monitor.url)
             if (redirectionUri != null) {
@@ -149,6 +153,7 @@ class UptimeChecker(
                 previousEvent = getPreviousEvent(monitor)
             )
         )
+        metricsExportRegistry?.updateUptimeStatus(monitor.id, UptimeStatus.DOWN)
     }
 
     @Retryable(

@@ -1,5 +1,10 @@
 ---
 micronaut:
+  metrics:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
   openapi:
     views.spec: 'swagger-ui.enabled=true'
   router:

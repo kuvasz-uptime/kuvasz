@@ -1,5 +1,12 @@
 ---
 micronaut:
+  metrics:
+    export:
+      prometheus:
+        enabled: ${PROMETHEUS_METRICS_EXPORT:`false`}
+        descriptions: true
+        step: PT1M
+    enabled: ${METRICS_EXPORT_ENABLED:`false`}
   application:
     name: kuvasz
   openapi:
@@ -64,6 +71,8 @@ endpoints:
   health:
     enabled: true
     sensitive: false
+  prometheus:
+    sensitive: false # Otherwise it would be protected even if authentication is disabled
 ---
 datasources:
   default:

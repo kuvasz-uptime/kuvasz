@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.MonitorConfig
+import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import io.micronaut.context.annotation.Context
 import jakarta.annotation.PostConstruct
@@ -16,6 +17,7 @@ class AppBootstrapper(
     private val monitorRepository: MonitorRepository,
     private val integrationRepository: IntegrationRepository,
     private val checkScheduler: CheckScheduler,
+    private val metricsExportRegistry: MetricsExportRegistry?,
 ) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
@@ -24,6 +26,7 @@ class AppBootstrapper(
     fun bootstrap() {
         processYamlMonitorConfigs()
         sanitizeIntegrationsOfMonitors()
+        metricsExportRegistry?.initialize()
         checkScheduler.initialize()
         logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
     }
