@@ -1,52 +1,51 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicLong
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
- * A common, Micrometer based registry for all the custom metrics that are exported by the application.
+ * MetricsExportRegistry is responsible for initializing the available metrics exporters.
  */
 @Requires(bean = MeterRegistry::class)
 @Singleton
 class MetricsExportRegistry(
     private val monitorRepository: MonitorRepository,
-    private val meterRegistry: MeterRegistry,
+    private val metricsExporters: List<MetricsExporter>,
 ) {
 
     companion object {
-        private const val MONITOR_UPTIME_STATUS = "monitor.uptime.status"
+        private val logger: Logger = LoggerFactory.getLogger(this::class.java)
     }
-
-    private val uptimeStatusMeters: ConcurrentHashMap<Long, GaugeDefinition> = ConcurrentHashMap()
 
     /**
-     * Reads the actually available monitors from the database and registers their metrics with its initial value
+     * Reads the actually available monitors from the database and initializes the metrics exporters with them
      */
     fun initialize() {
-        monitorRepository.getMonitorsWithDetails(enabled = true).forEach { monitor ->
-            val value = AtomicLong(monitor.uptimeStatus.toLong())
-            val gauge = Gauge.builder(MONITOR_UPTIME_STATUS, value) { it.toDouble() }
-                .tag("url", monitor.url.toString())
-                .tag("name", monitor.name)
-                .register(meterRegistry)
-            uptimeStatusMeters[monitor.id] = GaugeDefinition(id = gauge.id, value = value)
+        val monitors = monitorRepository.getMonitorsWithDetails(enabled = true)
+        metricsExporters.forEach { exporter ->
+            logger.debug("Initializing exporter: ${exporter::class.java.simpleName} for ${monitors.size} monitors")
+            exporter.initialize(monitors)
         }
     }
+}
 
-    fun updateUptimeStatus(monitorId: Long, uptimeStatus: UptimeStatus) {
-        uptimeStatusMeters[monitorId]?.value?.set(uptimeStatus.toLong())
+/**
+ * A marker interface for all metrics exporters.
+ */
+interface MetricsExporter {
+
+    companion object {
+        private const val PREFIX = "kuvasz"
     }
 
-    private fun UptimeStatus?.toLong(): Long =
-        when (this) {
-            UptimeStatus.UP -> 1L
-            UptimeStatus.DOWN -> 0L
-            null -> -1L
-        }
+    val meterName: String
+
+    fun prefixedMeterName(): String = "$PREFIX.$meterName"
+
+    fun initialize(monitors: List<MonitorDetailsDto>)
 }

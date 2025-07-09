@@ -102,6 +102,7 @@ dependencies {
     implementation(mn.micronaut.micrometer.core)
     implementation(mn.micrometer.core)
     implementation(mn.micronaut.micrometer.registry.prometheus)
+    implementation(mn.micronaut.micrometer.registry.otlp)
 
     // Testing
     testImplementation(libs.mockk)
