@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -23,6 +24,7 @@ class EventDispatcher {
     private val sslValidEvents = PublishSubject.create<SSLValidEvent>().toSerialized()
     private val sslWillExpireEvents = PublishSubject.create<SSLWillExpireEvent>().toSerialized()
     private val sslInvalidEvents = PublishSubject.create<SSLInvalidEvent>().toSerialized()
+    private val monitorLifecycleEvents = PublishSubject.create<MonitorLifecycleEvent>().toSerialized()
 
     fun dispatch(event: MonitorEvent) =
         when (event) {
@@ -34,7 +36,11 @@ class EventDispatcher {
             is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
         }
 
-    private inline fun <reified T : MonitorEvent> Subject<T>.safeSubscribeOnIo(
+    fun dispatch(event: MonitorLifecycleEvent) {
+        monitorLifecycleEvents.onNext(event)
+    }
+
+    private inline fun <reified T : Any> Subject<T>.safeSubscribeOnIo(
         crossinline consumer: (T) -> Unit
     ): Disposable =
         subscribeOn(Schedulers.io())
@@ -61,6 +67,9 @@ class EventDispatcher {
 
     fun subscribeToSSLWillExpireEvents(consumer: (SSLWillExpireEvent) -> Unit): Disposable =
         sslWillExpireEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToMonitorLifecycleEvents(consumer: (MonitorLifecycleEvent) -> Unit): Disposable =
+        monitorLifecycleEvents.safeSubscribeOnIo(consumer)
 
     companion object {
         private val logger = LoggerFactory.getLogger(EventDispatcher::class.java)
