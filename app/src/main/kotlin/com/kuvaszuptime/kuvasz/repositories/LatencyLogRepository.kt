@@ -35,18 +35,21 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
             .execute()
     }
 
+    private fun DSLContext.latencyLogDtoSelect(monitorId: Long) =
+        select(
+            LATENCY_LOG.ID.`as`(LatencyLogDto::id.name),
+            LATENCY_LOG.LATENCY.`as`(LatencyLogDto::latencyInMs.name),
+            LATENCY_LOG.CREATED_AT.`as`(LatencyLogDto::createdAt.name)
+        )
+            .from(LATENCY_LOG)
+            .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
+
     @Suppress("IgnoredReturnValue")
     fun fetchLatestByMonitorId(
         monitorId: Long,
         period: Duration? = null,
     ): List<LatencyLogDto> = dslContext
-        .select(
-            LATENCY_LOG.ID.`as`(LatencyLogDto::id.name),
-            LATENCY_LOG.LATENCY.`as`(LatencyLogDto::latencyInMs.name),
-            LATENCY_LOG.CREATED_AT.`as`(LatencyLogDto::createdAt.name)
-        )
-        .from(LATENCY_LOG)
-        .where(LATENCY_LOG.MONITOR_ID.eq(monitorId))
+        .latencyLogDtoSelect(monitorId)
         .apply {
             period?.toSeconds()?.let { thresholdSeconds ->
                 and(LATENCY_LOG.CREATED_AT.greaterOrEqual(getCurrentTimestamp().minusSeconds(thresholdSeconds)))
@@ -54,6 +57,12 @@ class LatencyLogRepository(private val dslContext: DSLContext) {
         }
         .orderBy(LATENCY_LOG.CREATED_AT.desc(), LATENCY_LOG.ID.desc())
         .fetchInto(LatencyLogDto::class.java)
+
+    fun fetchLastByMonitorId(monitorId: Long): LatencyLogDto? = dslContext
+        .latencyLogDtoSelect(monitorId)
+        .orderBy(LATENCY_LOG.CREATED_AT.desc(), LATENCY_LOG.ID.desc())
+        .limit(1)
+        .fetchOneInto(LatencyLogDto::class.java)
 
     fun deleteLogsBeforeDate(limit: OffsetDateTime) = dslContext
         .delete(LATENCY_LOG)
