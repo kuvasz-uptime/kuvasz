@@ -139,6 +139,7 @@ sealed class SSLMonitorEvent : MonitorEvent() {
 }
 
 interface WithCertInfo {
+    val monitor: MonitorRecord
     val certInfo: CertificateInfo
 }
 
