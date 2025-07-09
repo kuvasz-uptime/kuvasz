@@ -13,7 +13,7 @@ import io.micronaut.security.authentication.UsernamePasswordCredentials
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
-@MicronautTest
+@MicronautTest(environments = ["enabled-metrics-all"])
 @Property(name = "micronaut.security.enabled", value = "false")
 class DisabledAuthenticationTest(
     @Client("/") private val client: HttpClient,
@@ -46,10 +46,22 @@ class DisabledAuthenticationTest(
                 }
             }
         }
+
         given("a secured API endpoint") {
 
             `when`("an anonymous user calls it") {
                 val response = client.exchange("/api/v1/monitors").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        given("the /prometheus endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val response = client.exchange("/api/v1/prometheus").awaitFirst()
 
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK

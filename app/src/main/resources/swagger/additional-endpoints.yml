@@ -10,7 +10,7 @@ paths:
       summary: Health endpoint
       description: General health check endpoint
       operationId: health
-      parameters: []
+      parameters: [ ]
       responses:
         "200":
           description: Service is UP
@@ -24,6 +24,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResult'
+  /api/v1/prometheus:
+    get:
+      tags:
+        - Management operations
+      summary: Prometheus metrics endpoint
+      description: Exposes Prometheus metrics for monitoring
+      operationId: prometheusMetrics
+      parameters: [ ]
+      responses:
+        "200":
+          description: Metrics successfully retrieved
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+        - apiKey: [ ]
 components:
   schemas:
     HealthResult:

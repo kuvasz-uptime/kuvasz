@@ -1,0 +1,8 @@
+micronaut.metrics.enabled: true
+micronaut.metrics.export.prometheus.enabled: true
+---
+metrics-exports:
+  uptime-status: true
+  latest-latency: true
+  ssl-status: true
+  ssl-expiry: true

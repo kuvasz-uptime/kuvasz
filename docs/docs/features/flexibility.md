@@ -7,3 +7,11 @@ You can also choose to set up your monitors **initially via the UI**, and then *
 !!! tip 
 
     You can find the monitoring configuration options in the [**Managing monitors**](../setup/managing-monitors.md) section of the documentation.
+
+## Metrics exporters <!-- md:config ../setup/metrics-exporters.md -->
+
+_Kuvasz_ supports **exporting metrics** to _Prometheus_ or to any _OTLP-compatible_ tool, to allow you to integrate with your existing monitoring and alerting systems. This means you can use _Kuvasz_ alongside your preferred observability stack.
+
+!!! tip
+
+    Do you miss a specific exporter? Please [open an issue](https://github.com/kuvasz-uptime/kuvasz/issues/new?template=feature_request.md){target="_blank"}, or consider contributing it yourself! We are always open to new integrations and **would love to see your contribution**.

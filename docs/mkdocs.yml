@@ -82,6 +82,7 @@ nav:
       - Configure Kuvasz: setup/configuration.md
       - Integrations setup: setup/integrations.md
       - Managing monitors: setup/managing-monitors.md
+      - Metrics exporters: setup/metrics-exporters.md
       - Recipes & Examples: setup/examples.md
   - Features:
       - Uptime monitoring: features/uptime-monitoring.md

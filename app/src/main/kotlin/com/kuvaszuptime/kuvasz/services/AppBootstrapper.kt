@@ -24,10 +24,15 @@ class AppBootstrapper(
 
     @PostConstruct
     fun bootstrap() {
+        // Process YAML monitor configs if any are present
         processYamlMonitorConfigs()
+        // Sanitize the configured integrations on the monitors
         sanitizeIntegrationsOfMonitors()
+        // Conditionally initialize the metrics export if enabled
         metricsExportRegistry?.initialize()
+        // Scheduling the initial checks (uptime & SSL)
         checkScheduler.initialize()
+
         logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
     }
 

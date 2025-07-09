@@ -1,12 +1,26 @@
 ---
 micronaut:
   metrics:
+    enabled: ${ENABLE_METRICS_EXPORT:`false`}
     export:
       prometheus:
-        enabled: ${PROMETHEUS_METRICS_EXPORT:`false`}
-        descriptions: true
-        step: PT1M
-    enabled: ${METRICS_EXPORT_ENABLED:`false`}
+        enabled: ${ENABLE_PROMETHEUS_EXPORT:`false`}
+        descriptions: ${ENABLE_PROMETHEUS_DESCRIPTIONS:`true`}
+      otlp:
+        enabled: ${ENABLE_OTLP_EXPORT:`false`}
+        url: ${OTLP_EXPORT_URL:``}
+        headers: ${OTLP_EXPORT_HEADERS:``}
+        step: ${OTLP_EXPORT_STEP:`PT1M`}
+    binders:
+      # Disable the built-in binders to reduce the number of metrics
+      executor.enabled: false
+      files.enabled: false
+      jdbc.enabled: false
+      jvm.enabled: false
+      logback.enabled: false
+      processor.enabled: false
+      uptime.enabled: false
+      web.enabled: false
   application:
     name: kuvasz
   openapi:
@@ -114,3 +128,9 @@ admin-auth:
   username: ${ADMIN_USER}
   password: ${ADMIN_PASSWORD}
   api-key: ${ADMIN_API_KEY}
+---
+metrics-exports:
+  uptime-status: ${ENABLE_UPTIME_STATUS_EXPORT:`false`}
+  latest-latency: ${ENABLE_LATEST_LATENCY_EXPORT:`false`}
+  ssl-status: ${ENABLE_SSL_STATUS_EXPORT:`false`}
+  ssl-expiry: ${ENABLE_SSL_EXPIRY_EXPORT:`false`}

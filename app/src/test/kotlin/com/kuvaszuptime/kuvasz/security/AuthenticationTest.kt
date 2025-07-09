@@ -22,7 +22,7 @@ const val TEST_API_KEY = "Api1234567890123"
 const val TEST_USERNAME = "test-user"
 const val TEST_PASSWORD = "test-pass-test-pass-test-pass"
 
-@MicronautTest
+@MicronautTest(environments = ["enabled-metrics-all"])
 @Property(name = "micronaut.security.enabled", value = "true")
 @Property(name = "admin-auth.api-key", value = TEST_API_KEY)
 @Property(name = "admin-auth.username", value = TEST_USERNAME)
@@ -75,6 +75,7 @@ class AuthenticationTest(
                 }
             }
         }
+
         given("a secured API endpoint") {
 
             `when`("an anonymous user calls it") {
@@ -113,6 +114,27 @@ class AuthenticationTest(
                     .GET<Any>("/api/v1/monitors")
                     .header(HttpHeaders.COOKIE, "JWT=$jwt")
 
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        given("the /prometheus API endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v1/prometheus").awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides the right API key") {
+                val request = HttpRequest.GET<Any>("/api/v1/prometheus").header("X-API-KEY", TEST_API_KEY)
                 val response = client.exchange(request).awaitFirst()
 
                 then("it should return 200") {
