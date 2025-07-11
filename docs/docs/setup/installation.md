@@ -46,7 +46,7 @@ documentation right now to see how you can set up integrations, app-level settin
         ports:
           - "5432:5432"
         volumes:
-          - /path/to/your/pgdata:/var/lib/postgresql/data # (2)!
+          - kuvasz-db-data:/var/lib/postgresql/data # (2)!
       kuvasz:
         image: kuvaszmonitoring/kuvasz:latest
         container_name: kuvasz
@@ -65,10 +65,12 @@ documentation right now to see how you can set up integrations, app-level settin
           - /path/to/your/kuvasz.yml:/config/kuvasz.yml # (6)!
         depends_on:
           - kuvasz-db
+    volumes:
+      kuvasz-db-data:
     ```
 
     1.  Better to use a secure one, it's up to you
-    2.  You can change this to a different path on your machine, but make sure it's writable
+    2.  You can change this to a bind mount on your host, but make sure it's writable
     3.  This is the minimum, tested memory limit
     4.  Use the container name from the PostgreSQL service above
     5.  Use the same user and password as in the PostgreSQL service above
