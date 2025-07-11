@@ -58,7 +58,7 @@ class WebUIAuthenticationTest(
 
     "all the web UI endpoints should be secured - valid API key is used" {
 
-        table(
+        val cases = table(
             headers("url"),
             row("/"),
             row("/monitors"),
@@ -69,8 +69,18 @@ class WebUIAuthenticationTest(
             row("/fragments/monitors/1/details-ssl-events"),
             row("/fragments/monitors/stats"),
             row("/settings"),
-        ).forAll { url ->
+        )
+        cases.forAll { url ->
             val request = HttpRequest.GET<Any>(url).header("X-API-KEY", TEST_API_KEY)
+            val response = client.exchange(request).awaitFirst()
+
+            response.status shouldBe HttpStatus.SEE_OTHER
+            response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
+                locationHeader shouldBe "/login"
+            }
+        }
+        cases.forAll { url ->
+            val request = HttpRequest.GET<Any>(url).bearerAuth(TEST_API_KEY)
             val response = client.exchange(request).awaitFirst()
 
             response.status shouldBe HttpStatus.SEE_OTHER

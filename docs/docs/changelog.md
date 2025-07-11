@@ -11,6 +11,7 @@
     - Latest latency
     - SSL status
     - SSL expiry date
+- **Bearer token authentication**: Added support for [**Bearer token authentication on the API**](features/api.md#authentication), along with the existing API key authentication. This allows you to use the same authentication mechanism as other modern APIs, making it easier to integrate with your existing systems.
 
 ## 2.0.0 <small>2025-07-02</small> { id="2.0.0" data-toc-label="2.0.0" }
 

@@ -12,12 +12,16 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 
 @Controller("$API_V1_PREFIX/settings", produces = [MediaType.APPLICATION_JSON])
 @Validated
 @Tag(name = "Settings operations")
-@SecurityRequirement(name = "apiKey")
+@SecurityRequirements(
+    SecurityRequirement(name = "apiKey"),
+    SecurityRequirement(name = "bearerAuth")
+)
 class SettingsController(private val settingsRepository: SettingsRepository) : SettingsOperations {
 
     @ApiResponses(

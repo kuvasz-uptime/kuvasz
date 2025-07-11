@@ -53,6 +53,7 @@ paths:
                   $ref: "#/components/schemas/MonitorDetailsDto"
       security:
       - apiKey: []
+      - bearerAuth: []
     post:
       tags:
       - Monitor operations
@@ -86,6 +87,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/monitors/export/yaml:
     get:
       tags:
@@ -99,6 +101,7 @@ paths:
             application/x-yaml: {}
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/monitors/stats:
     get:
       tags:
@@ -121,6 +124,7 @@ paths:
                 $ref: "#/components/schemas/MonitoringStatsDto"
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/monitors/{monitorId}:
     get:
       tags:
@@ -149,6 +153,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
+      - bearerAuth: []
     delete:
       tags:
       - Monitor operations
@@ -179,6 +184,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
+      - bearerAuth: []
     patch:
       tags:
       - Monitor operations
@@ -228,6 +234,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/monitors/{monitorId}/ssl-events:
     get:
       tags:
@@ -252,6 +259,7 @@ paths:
                   $ref: "#/components/schemas/SSLEventDto"
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/monitors/{monitorId}/stats:
     get:
       tags:
@@ -286,6 +294,7 @@ paths:
                 $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/monitors/{monitorId}/uptime-events:
     get:
       tags:
@@ -310,6 +319,7 @@ paths:
                   $ref: "#/components/schemas/UptimeEventDto"
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/settings:
     get:
       tags:
@@ -325,6 +335,7 @@ paths:
                 $ref: "#/components/schemas/SettingsDto"
       security:
       - apiKey: []
+      - bearerAuth: []
   /api/v1/health:
     get:
       tags:
@@ -363,6 +374,7 @@ paths:
                 type: string
       security:
       - apiKey: []
+      - bearerAuth: []
 components:
   schemas:
     HealthResult:
@@ -1283,3 +1295,6 @@ components:
       type: apiKey
       name: X-API-KEY
       in: header
+    bearerAuth:
+      type: http
+      scheme: bearer

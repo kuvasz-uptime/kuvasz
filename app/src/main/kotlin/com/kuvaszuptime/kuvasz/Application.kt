@@ -32,6 +32,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
         type = SecuritySchemeType.APIKEY,
         paramName = HeaderApiKeyReader.API_KEY_HEADER_NAME,
         `in` = SecuritySchemeIn.HEADER
+    ),
+    SecurityScheme(
+        name = "bearerAuth",
+        type = SecuritySchemeType.HTTP,
+        scheme = "bearer",
     )
 )
 @Suppress("SpreadOperator")

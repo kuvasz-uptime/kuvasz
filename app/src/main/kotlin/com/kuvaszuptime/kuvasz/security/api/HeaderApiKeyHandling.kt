@@ -25,7 +25,7 @@ class HeaderApiKeyReader : HttpHeaderTokenReader() {
 
 @Singleton
 @Requires(property = "micronaut.security.enabled", value = "true")
-class HeaderApiKeyTokenValidator(
+class ApiKeyTokenValidator(
     private val adminAuthConfig: AdminAuthConfig,
 ) : TokenValidator<HttpRequest<*>?> {
 

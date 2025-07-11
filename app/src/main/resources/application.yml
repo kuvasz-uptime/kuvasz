@@ -46,6 +46,8 @@ micronaut:
         get-allowed: true
     enabled: ${ENABLE_AUTH:`true`}
     token:
+      bearer:
+        enabled: true
       generator:
         access-token:
           expiration: ${AUTH_MAX_AGE:`86400`}

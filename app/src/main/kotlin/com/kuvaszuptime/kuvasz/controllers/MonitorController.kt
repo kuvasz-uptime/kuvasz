@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import java.io.File
@@ -45,7 +46,10 @@ const val API_V1_PREFIX = "/api/v1"
 @Controller("$API_V1_PREFIX/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
 @Tag(name = "Monitor operations")
-@SecurityRequirement(name = "apiKey")
+@SecurityRequirements(
+    SecurityRequirement(name = "apiKey"),
+    SecurityRequirement(name = "bearerAuth")
+)
 class MonitorController(
     private val monitorCrudService: MonitorCrudService,
     private val statCalculator: StatCalculator,

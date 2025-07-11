@@ -6,7 +6,9 @@ Unless you [completely disabled authentication](../setup/configuration.md#authen
 
 !!! info "API key usage"
 
-    The API key should be passed in the `X-API-KEY` header of every request.
+    The API key should be passed in either in the **`X-API-KEY`** header of every request, or as a standard **Bearer token** in the `Authorization` header (e.g. `Authorization: Bearer YourSecureApiKey`).
+
+    **The _Bearer_ token authentication is available from version 2.1.0 onwards.**
 
 ## API documentation
 
