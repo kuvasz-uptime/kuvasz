@@ -88,7 +88,25 @@
 
     [:octicons-arrow-right-24: Flexibility](features/flexibility.md)
 
+-   :cloud:{ .lg .card-header-icon } __Cloud Native__
+
+    ---
+
+    Kuvasz is built with cloud-native principles in mind, distributed as a single Docker image, and only requires a _PostgreSQL_ database to run.
+
+    [:octicons-arrow-right-24: Getting started](setup/installation.md)
+
 </div>
+
+## Don't miss out on the latest updates!
+
+First and foremost, if you want to **stay up-to-date with the latest news**, features, and updates about _Kuvasz_, please consider:
+
+- starring the project on [**GitHub**](https://github.com/kuvasz-uptime/kuvasz){ target="_blank" } and on [**Docker Hub**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz){ target="_blank" }
+- following us on [**X**](https://x.com/KuvaszUptime){ target="_blank" }
+- following us on [**Mastodon**](https://techhub.social/@KuvaszUptime){ target="_blank", rel="me" }
+
+You can also find some occasional updates on my personal blog at [**akobor.me**](https://akobor.me){ target="_blank" }.
 
 ## Where does the name come from?
 
@@ -97,7 +115,7 @@ on [**Wikipedia**](https://en.wikipedia.org/wiki/Kuvasz){ target="_blank" }.
 
 ## Do you like it?
 
-While _Kuvasz_ is free and open-source, it still requires a lot of time and effort to maintain and develop. If you like it, please consider supporting the project by [**starring it on GitHub**](https://github.com/kuvasz-uptime/kuvasz){ target="_blank" }, or by **donating** via Ko-fi:
+While _Kuvasz_ is free and open-source, it still requires a lot of time and effort to maintain and develop. If you like it, please consider **donating** via Ko-fi:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L31DH59D){ target="_blank" }
 

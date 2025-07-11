@@ -32,9 +32,19 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 
 If you want to get started quickly, please refer to the [**Installation guide**](https://kuvasz-uptime.dev/setup/installation/) in the documentation.
 
+## 📣  Don't miss out on the latest updates!
+
+First and foremost, if you want to **stay up-to-date with the latest news**, features, and updates about _Kuvasz_, please consider:
+
+- starring the project on [**GitHub**](https://github.com/kuvasz-uptime/kuvasz) and on [**Docker Hub**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
+- following us on [**X**](https://x.com/KuvaszUptime)
+- following us on [**Mastodon**](https://techhub.social/@KuvaszUptime)
+
+You can also find some occasional updates on my personal blog at [**akobor.me**](https://akobor.me).
+
 ## ☕️ Do you like it?
 
-While _Kuvasz_ is free and open-source, it still requires a lot of time and effort to maintain and develop. If you like it, please consider supporting the project by **starring it on GitHub**, or by **donating** via Ko-fi:
+While _Kuvasz_ is free and open-source, it still **requires a lot of time and effort** to maintain and develop. If you like it, please consider supporting the project by **donating** via Ko-fi:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L31DH59D)
 
