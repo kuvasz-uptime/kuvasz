@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.metrics
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
@@ -10,7 +11,7 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.context.ApplicationContext
 import java.time.OffsetDateTime
 
-class SSLExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expiry") {
+class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expiry") {
 
     init {
         given("an enabled SSL expiry exporter") {
@@ -117,7 +118,7 @@ class SSLExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expiry") {
 
                 // Simulating the events
                 eventDispatcher().dispatch(
-                    SSLValidEvent(
+                    SSLWillExpireEvent(
                         enabledMonitorWithExpiry,
                         CertificateInfo(validTo = firstExpiry.plusDays(2)),
                         firstMonitorPreviousEvent

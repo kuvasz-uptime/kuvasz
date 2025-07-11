@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
@@ -122,7 +123,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                     )
                 )
                 eventDispatcher().dispatch(
-                    SSLValidEvent(
+                    SSLWillExpireEvent(
                         enabledMonitorWithoutStatus,
                         CertificateInfo(validTo = OffsetDateTime.now().plusDays(60).plusDays(4)),
                         null,
