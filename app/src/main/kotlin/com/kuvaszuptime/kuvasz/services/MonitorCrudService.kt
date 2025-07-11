@@ -19,7 +19,6 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
-import com.kuvaszuptime.kuvasz.models.events.MonitorCreateEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.toMonitorRecord
@@ -96,7 +95,6 @@ class MonitorCrudService(
                         throw schedulingError
                     }
                 }
-                eventDispatcher.dispatch(MonitorCreateEvent(insertedMonitor.id))
                 insertedMonitor
             }
         )

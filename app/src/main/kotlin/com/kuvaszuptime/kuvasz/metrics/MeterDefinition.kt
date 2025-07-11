@@ -1,9 +1,8 @@
 package com.kuvaszuptime.kuvasz.metrics
 
 import io.micrometer.core.instrument.Meter
-import java.util.concurrent.atomic.AtomicLong
 
-data class GaugeDefinition(
+data class MeterDefinition<T : Any>(
     val id: Meter.Id,
-    val value: AtomicLong,
+    val value: T,
 )

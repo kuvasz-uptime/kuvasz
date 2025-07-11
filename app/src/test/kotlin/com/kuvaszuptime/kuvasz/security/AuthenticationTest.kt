@@ -22,7 +22,7 @@ const val TEST_API_KEY = "Api1234567890123"
 const val TEST_USERNAME = "test-user"
 const val TEST_PASSWORD = "test-pass-test-pass-test-pass"
 
-@MicronautTest(environments = ["enabled-metrics-all"])
+@MicronautTest(environments = ["enabled-metrics-prometheus"])
 @Property(name = "micronaut.security.enabled", value = "true")
 @Property(name = "admin-auth.api-key", value = TEST_API_KEY)
 @Property(name = "admin-auth.username", value = TEST_USERNAME)

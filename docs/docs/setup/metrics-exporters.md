@@ -56,7 +56,6 @@ This metric is exported as a **gauge** and indicates the current uptime status o
 |---------------------------------------|-------------|
 | UP                                    | 1           |
 | DOWN                                  | 0           |
-| Unknown (waiting for the first check) | -1          |
 
 ### Latest latency
 
@@ -102,7 +101,6 @@ This metric is exported as a **gauge** and indicates the current status of the S
 |---------------------------------------|-------------|
 | VALID, WILL_EXPIRE                    | 1           |
 | INVALID                               | 0           |
-| Unknown (waiting for the first check) | -1          |
 
 ### SSL expiry
 
@@ -178,7 +176,7 @@ The metrics are scrapeable through the **`/api/v1/prometheus`** endpoint, and yo
 kuvasz_monitor_uptime_status{name="nytimes.com",url="https://www.nytimes.com"} 1.0
 kuvasz_monitor_latency_latest_milliseconds{name="nytimes.com",url="https://www.nytimes.com"} 29.0
 kuvasz_monitor_ssl_status{name="nytimes.com",url="https://www.nytimes.com"} 1.0
-kuvasz_monitor_ssl_expiry{name="nytimes.com",url="https://www.nytimes.com"} 1.758828296E9
+kuvasz_monitor_ssl_expiry_seconds{name="nytimes.com",url="https://www.nytimes.com"} 1.758828296E9
 ```
 
 ### Example config
@@ -218,6 +216,10 @@ kuvasz_monitor_ssl_expiry{name="nytimes.com",url="https://www.nytimes.com"} 1.75
 
 The _OpenTelemetry_ exporter is a built-in exporter that allows you to **export your metrics to any compatible tool**, that supports the _OpenTelemetry Protocol (OTLP)_. [**OpenTelemetry**](https://opentelemetry.io){ target="blank" } is a vendor-neutral standard for collecting and exporting telemetry data, and a lot of modern observability tools support it (e.g. _Datadog_, _New Relic_, etc.).
 
+!!!info
+
+    _Kuvasz_ will **automatically report the metrics** to the configured [**endpoint**](#url) at the specified [**frequency**](#step).
+
 ### Settings
 
 #### Enabling the exporter
@@ -255,7 +257,7 @@ The _OpenTelemetry_ exporter is a built-in exporter that allows you to **export 
     OTLP_EXPORT_URL=https://example.host:4318/v1/metrics
     ```
 
-The **URL** of the _OpenTelemetry_ endpoint to which the metrics will be reported.
+The **URL** of the _OpenTelemetry_ endpoint to which the metrics will be reported. It is mandatory to set this, if you've enabled the exporter.
 
 #### Headers
 
@@ -296,17 +298,13 @@ The **headers** to be sent with the metrics export request. This is useful for a
 
 The **frequency** of exporting the metrics to _OpenTelemetry_. The default is **1 minute**. More about ISO-8601 durations [**here**](https://en.wikipedia.org/wiki/ISO_8601#Durations){ target="_blank" }.
 
-### Reporting the metrics
-
-_Kuvasz_ will report the metrics to the configured _OpenTelemetry_ endpoint at the specified frequency. 
-
 ### Example output
 
 ```text
 kuvasz.monitor.ssl.status{name=weather.com,url=https://weather.com} 1
 kuvasz.monitor.latency.latest.milliseconds{name=samsung.com,url=https://www.samsung.com} 183
 kuvasz.monitor.uptime.status{name=google.com,url=https://www.google.com} 1
-kuvasz.monitor.ssl.expiry{name=bbc.com,url=https://www.bbc.com} 1.785147977e+09
+kuvasz.monitor.ssl.expiry.seconds{name=bbc.com,url=https://www.bbc.com} 1.785147977e+09
 ```
 
 ### Example config

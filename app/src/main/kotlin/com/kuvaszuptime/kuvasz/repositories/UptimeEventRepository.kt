@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -19,7 +20,7 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
 
     private fun MonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: UptimeMonitorEvent, ctx: DSLContext = dslContext) {
+    fun insertFromMonitorEvent(event: UptimeMonitorEvent, ctx: DSLContext = dslContext): UptimeEventRecord {
         val eventToInsert = UptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
@@ -30,9 +31,10 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
             eventToInsert.error = event.getPersistableError()
         }
 
-        ctx.insertInto(UPTIME_EVENT)
+        return ctx.insertInto(UPTIME_EVENT)
             .set(eventToInsert)
-            .execute()
+            .returning(UPTIME_EVENT.asterisk())
+            .fetchOneOrThrow<UptimeEventRecord>()
     }
 
     fun fetchByMonitorId(monitorId: Long): List<UptimeEventRecord> = dslContext

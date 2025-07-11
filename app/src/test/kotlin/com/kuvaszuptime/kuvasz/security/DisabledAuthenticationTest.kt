@@ -13,7 +13,7 @@ import io.micronaut.security.authentication.UsernamePasswordCredentials
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
-@MicronautTest(environments = ["enabled-metrics-all"])
+@MicronautTest(environments = ["enabled-metrics-prometheus"])
 @Property(name = "micronaut.security.enabled", value = "false")
 class DisabledAuthenticationTest(
     @Client("/") private val client: HttpClient,

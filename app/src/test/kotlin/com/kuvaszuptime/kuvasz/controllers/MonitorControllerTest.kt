@@ -20,12 +20,15 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.CheckScheduler
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
+import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -58,6 +61,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
 
@@ -69,6 +73,7 @@ class MonitorControllerTest(
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler,
     private val statCalculator: StatCalculator,
+    private val eventDispatcher: EventDispatcher,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
@@ -943,6 +948,9 @@ class MonitorControllerTest(
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/${createdMonitor.id}")
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+
                 val response = client.exchange(deleteRequest).awaitFirst()
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)
 
@@ -952,17 +960,27 @@ class MonitorControllerTest(
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
+
+                    // A delete event should be dispatched
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
+                    expectedEvent.monitorId shouldBe createdMonitor.id
                 }
             }
 
             `when`("it is called with a non existing monitor ID") {
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/123232")
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(deleteRequest).awaitFirst()
                 }
 
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
+
+                    // No delete event should be dispatched
+                    subscriber.assertNoValues()
                 }
             }
         }
@@ -1011,6 +1029,9 @@ class MonitorControllerTest(
                             .add("telegram:disabled")
                     )
 
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
@@ -1035,6 +1056,10 @@ class MonitorControllerTest(
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
+
+                    // An update event should be dispatched
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
+                    expectedEvent.monitorId shouldBe createdMonitor.id
                 }
             }
 
@@ -1225,6 +1250,9 @@ class MonitorControllerTest(
                     .putNull(MonitorUpdateDto::enabled.name)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
@@ -1234,6 +1262,9 @@ class MonitorControllerTest(
                     ex.status shouldBe HttpStatus.BAD_REQUEST
                     ex.response.getBodyAs<String>() shouldContain "Validation failed: enabled: must not be null"
                     monitorInDb.name shouldBe createdMonitor.name
+
+                    // No update event should be dispatched
+                    subscriber.assertNoValues()
                 }
             }
 

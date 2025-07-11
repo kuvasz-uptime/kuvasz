@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.WithCertInfo
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -19,11 +19,11 @@ import java.time.OffsetDateTime
 class SSLCertificateExpiryExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-    monitorRepository: MonitorRepository,
+    private val monitorRepository: MonitorRepository,
 ) : GaugeExporter<OffsetDateTime>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
-        private const val MONITOR_SSL_EXPIRY = "monitor.ssl.expiry"
+        private const val MONITOR_SSL_EXPIRY = "monitor.ssl.expiry.seconds"
     }
 
     override val meterName = MONITOR_SSL_EXPIRY
@@ -39,13 +39,13 @@ class SSLCertificateExpiryExporter(
 
     private fun WithCertInfo.handle() {
         logger.debug("Updating SSL certificate expiry for monitor with ID: ${monitor.id} to ${certInfo.validTo}")
-        updateGauge(monitor.id, certInfo.validTo)
+        upsertMeter(monitor.id, certInfo.validTo)
     }
 
-    override fun filterCondition(monitor: MonitorDetailsDto): Boolean = monitor.enabled && monitor.sslCheckEnabled
+    override fun filterCondition(monitor: MonitorRecord): Boolean = monitor.enabled && monitor.sslCheckEnabled
 
-    override fun transform(valueSource: OffsetDateTime?): Long =
-        valueSource?.toEpochSecond() ?: NA_GAUGE_VALUE
+    override fun transform(valueSource: OffsetDateTime): Long = valueSource.toEpochSecond()
 
-    override fun initialValue(monitor: MonitorDetailsDto): OffsetDateTime? = monitor.sslValidUntil
+    override fun computeInitialValue(monitor: MonitorRecord): OffsetDateTime? =
+        monitorRepository.getMonitorWithDetails(monitor.id)?.sslValidUntil
 }

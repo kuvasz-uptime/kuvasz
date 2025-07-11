@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requires
@@ -26,26 +25,10 @@ class MetricsExportRegistry(
      * Reads the actually available monitors from the database and initializes the metrics exporters with them
      */
     fun initialize() {
-        val monitors = monitorRepository.getMonitorsWithDetails(enabled = true)
+        val monitors = monitorRepository.fetchByEnabled(enabled = true)
         metricsExporters.forEach { exporter ->
             logger.debug("Initializing exporter: ${exporter::class.java.simpleName} for ${monitors.size} monitors")
             exporter.initialize(monitors)
         }
     }
-}
-
-/**
- * A marker interface for all metrics exporters.
- */
-interface MetricsExporter {
-
-    companion object {
-        private const val PREFIX = "kuvasz"
-    }
-
-    val meterName: String
-
-    fun prefixedMeterName(): String = "$PREFIX.$meterName"
-
-    fun initialize(monitors: List<MonitorDetailsDto>)
 }

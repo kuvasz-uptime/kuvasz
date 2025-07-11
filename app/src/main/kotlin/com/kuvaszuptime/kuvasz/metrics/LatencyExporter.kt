@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -37,13 +37,13 @@ class LatencyExporter(
 
     private fun MonitorUpEvent.handle() {
         logger.debug("Updating latency for monitor with ID: ${monitor.id} to $latency")
-        updateGauge(monitor.id, latency)
+        upsertMeter(monitor.id, latency)
     }
 
-    override fun transform(valueSource: Int?): Long = valueSource?.toLong() ?: NA_GAUGE_VALUE
+    override fun transform(valueSource: Int): Long = valueSource.toLong()
 
-    override fun initialValue(monitor: MonitorDetailsDto): Int? =
+    override fun computeInitialValue(monitor: MonitorRecord): Int? =
         latencyLogRepository.fetchLastByMonitorId(monitor.id)?.latencyInMs
 
-    override fun filterCondition(monitor: MonitorDetailsDto): Boolean = monitor.enabled
+    override fun filterCondition(monitor: MonitorRecord): Boolean = monitor.enabled
 }
