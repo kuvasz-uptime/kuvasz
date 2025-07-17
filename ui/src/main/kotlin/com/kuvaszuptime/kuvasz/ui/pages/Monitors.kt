@@ -68,7 +68,7 @@ internal fun HtmlBlockTag.monitorsHeader(globals: AppGlobals) {
                         classes(COL_AUTO, MS_AUTO)
                         div {
                             classes(BTN_LIST)
-                            if (!globals.isReadOnlyMode) {
+                            if (!globals.isReadOnlyMode()) {
                                 buttonWithIcon(
                                     icon = Icon.PLUS,
                                     label = Messages.addNewMonitor(),
@@ -103,7 +103,7 @@ internal fun HtmlBlockTag.monitorsHeader(globals: AppGlobals) {
                 }
             }
         }
-        if (!globals.isReadOnlyMode) {
+        if (!globals.isReadOnlyMode()) {
             monitorCreateUpdateModal(modalId = createModalId, monitor = null, globals)
         }
     }

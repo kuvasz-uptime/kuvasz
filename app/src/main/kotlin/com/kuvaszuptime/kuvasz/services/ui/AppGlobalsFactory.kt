@@ -19,7 +19,7 @@ class AppGlobalsFactory {
         appConfig: AppConfig,
         integrationRepository: IntegrationRepository,
     ) = AppGlobals(
-        isReadOnlyMode = appConfig.isExternalWriteDisabled(),
+        isReadOnlyMode = { appConfig.isExternalWriteDisabled() },
         isAuthenticated = { securityService?.isAuthenticated ?: true },
         isAuthEnabled = securityService != null,
         appVersion = BuildConfig.APP_VERSION,

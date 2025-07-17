@@ -39,7 +39,7 @@ internal fun HtmlBlockTag.monitorDetailsHeader(
                 classes(COL_MD_AUTO, MS_AUTO, D_PRINT_NONE)
                 div {
                     classes(BTN_LIST)
-                    if (!globals.isReadOnlyMode) {
+                    if (!globals.isReadOnlyMode()) {
                         button {
                             classes(BTN, BTN_ICON)
                             xBindDisabled("isRequestLoading")
@@ -54,7 +54,7 @@ internal fun HtmlBlockTag.monitorDetailsHeader(
                             }
                         }
                     }
-                    if (!globals.isReadOnlyMode) {
+                    if (!globals.isReadOnlyMode()) {
                         buttonWithIcon(Icon.SETTINGS, Messages.configure()) {
                             modalOpener(updateModalId)
                         }

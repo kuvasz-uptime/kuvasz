@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -37,7 +36,6 @@ import java.time.Duration
 @Hidden
 class WebUIController(
     private val monitorCrudService: MonitorCrudService,
-    private val appConfig: AppConfig,
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
     private val settingsRepository: SettingsRepository,
@@ -105,10 +103,9 @@ class WebUIController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun monitorTable(): String {
-        val isReadOnlyMode = appConfig.isExternalWriteDisabled()
         val monitors = monitorCrudService.getMonitorsWithDetails(sortedBy = MONITOR.NAME.asc())
 
-        return renderMonitorList(monitors, isReadOnlyMode)
+        return renderMonitorList(monitors, appGlobals.isReadOnlyMode())
     }
 
     @Get("/fragments/monitors/{monitorId}/details-heading")

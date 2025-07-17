@@ -8,7 +8,7 @@ import de.comahe.i18n4k.config.I18n4kConfigDefault
 import de.comahe.i18n4k.i18n4k
 
 data class AppGlobals(
-    val isReadOnlyMode: Boolean,
+    val isReadOnlyMode: () -> Boolean,
     val isAuthenticated: () -> Boolean,
     val isAuthEnabled: Boolean,
     val appVersion: String,

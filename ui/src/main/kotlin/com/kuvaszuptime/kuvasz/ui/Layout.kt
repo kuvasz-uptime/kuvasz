@@ -51,7 +51,7 @@ internal fun withLayout(
                         // Main header
                         val navbarMenuId = "navbar-menu"
                         mainHeader(
-                            isReadOnlyMode = globals.isReadOnlyMode,
+                            isReadOnlyMode = globals.isReadOnlyMode(),
                             isAuthenticated = globals.isAuthenticated(),
                             navbarMenuId = navbarMenuId,
                         )
