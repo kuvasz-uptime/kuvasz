@@ -110,8 +110,8 @@ admin-auth:
   password: YourSuperSecretPassword
   api-key: ThisShouldBeVeryVerySecureToo
 app-config:
-  event-data-retention-days: 365 # 1 year
-  latency-data-retention-days: 7 # 1 week
+  event-data-retention-days: 365
+  latency-data-retention-days: 7
   log-event-handler: true
   language: en
 ---

@@ -16,7 +16,7 @@ _Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or vi
 
 !!! tip
 
-    If you modify your configuration (via _YAML_ or _ENV_, it doesn't matter), you need to restart the _Kuvasz_ container for the changes to take effect.
+    If you modify your configuration (via _YAML_ or _ENV_, it doesn't matter), you need to restart the _Kuvasz_ container for the changes to take effect. In certain cases if you changed an environment variable, **you might need to rebuild the container** as well.
 
 ## Authentication
 
@@ -383,13 +383,32 @@ The language to use. Currently, **only `en` (English) is supported**, but more l
 
 ## Full configuration example
 
-You can find the full configuration example below, which includes all the options mentioned above. You can use it as a starting point for your own configuration.
+You can find the full configuration example below, which includes all the options currently available. You can use it as a starting point for your own configuration.
 
 === "YAML"
 
     ```yaml
-    micronaut.security.enabled: true
-    micronaut.security.token.generator.access-token.expiration: 86400 # 24 hours
+    micronaut:
+      security:
+        enabled: true
+        token.generator.access-token.expiration: 86400 # 24 hours
+      metrics:
+        enabled: true
+        export:
+          otlp:
+            enabled: true
+            url: https://example.host:4318/v1/metrics
+            headers: 'Authorization=Bearer Your-collectors-API-token,key2=value'
+            step: PT1M
+          prometheus:
+            enabled: true
+            descriptions: true
+    ---
+    metrics-exports:
+      uptime-status: true
+      latest-latency: true
+      ssl-status: true
+      ssl-expiry: true
     ---
     admin-auth:
       username: YourSuperSecretUsername
@@ -397,8 +416,8 @@ You can find the full configuration example below, which includes all the option
       api-key: ThisShouldBeVeryVerySecureToo
     ---
     app-config:
-      event-data-retention-days: 365 # 1 year
-      latency-data-retention-days: 7 # 1 week
+      event-data-retention-days: 365
+      latency-data-retention-days: 7
       log-event-handler: true
       language: en
     ---
@@ -423,9 +442,21 @@ You can find the full configuration example below, which includes all the option
     DATABASE_NAME=postgres
     DATABASE_USER=change_me
     DATABASE_PASSWORD=change_me
-    EVENT_DATA_RETENTION_DAYS=365 # 1 year
-    LATENCY_DATA_RETENTION_DAYS=7 # 1 week
+    EVENT_DATA_RETENTION_DAYS=365
+    LATENCY_DATA_RETENTION_DAYS=7
     ENABLE_LOG_EVENT_HANDLER=true
     APP_LANGUAGE=en
     TZ=UTC
+    ENABLE_METRICS_EXPORT=true
+    ENABLE_OTLP_EXPORT=true
+    OTLP_EXPORT_URL=https://example.host:4318/v1/metrics
+    OTLP_EXPORT_HEADERS='Authorization=Bearer Your-collectors-API-token,key2=value'
+    OTLP_EXPORT_STEP=PT1M
+    ENABLE_PROMETHEUS_EXPORT=true
+    ENABLE_PROMETHEUS_DESCRIPTIONS=true
+    # Enable the individual metrics
+    ENABLE_UPTIME_STATUS_EXPORT=true
+    ENABLE_LATEST_LATENCY_EXPORT=true
+    ENABLE_SSL_STATUS_EXPORT=true
+    ENABLE_SSL_EXPIRY_EXPORT=true
     ```
