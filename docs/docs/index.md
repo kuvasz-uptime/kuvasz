@@ -8,7 +8,9 @@
 
 !!! tip "TL;DR"
 
-    Are you looking for a **quick start guide**? You can find it [here](setup/installation.md)!
+    Do you want to try out _Kuvasz_ without installing it? There is a [**live demo**](demo.md) available!
+
+    Are you looking for the **installation guide**? You can find it [**here**](setup/installation.md)!
 
 ![Kuvasz](images/feature_carousel.webp)
 

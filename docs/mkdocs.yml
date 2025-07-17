@@ -77,13 +77,14 @@ extra_css:
   - stylesheets/custom.css
 nav:
   - Introduction: index.md
-  - Getting Started:
+  - Getting started:
       - Installation: setup/installation.md
       - Configure Kuvasz: setup/configuration.md
       - Integrations setup: setup/integrations.md
       - Managing monitors: setup/managing-monitors.md
       - Metrics exporters: setup/metrics-exporters.md
-      - Recipes & Examples: setup/examples.md
+      - Recipes & examples: setup/examples.md
+  - Live demo: demo.md
   - Features:
       - Uptime monitoring: features/uptime-monitoring.md
       - SSL monitoring: features/ssl-monitoring.md
