@@ -2,6 +2,17 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
+## 2.2.0 <small>2025-07-17</small> { id="2.2.0" data-toc-label="2.2.0" }
+
+### Features
+
+- **Metrics exporter settings** are exposed both on the API (under `GET /api/v1/settings`) and on the UI, so you can easily get an overview of the effective configuration.
+- A **live demo** is available at [**demo.kuvasz-uptime.dev**](https://demo.kuvasz-uptime.dev){ target="blank" } where you can try out the latest features of _Kuvasz_ without setting up your own instance. Further details, credentials [**here**](demo.md).
+
+### Fixes
+
+- Fixed the glitch on the UI regarding read-only mode in case the underlying logic was initialized before YAML monitors were loaded. This caused the UI to not show the read-only mode correctly, even though the backend was working as expected.
+
 ## 2.1.0 <small>2025-07-11</small> { id="2.1.0" data-toc-label="2.1.0" }
 
 ### Features
