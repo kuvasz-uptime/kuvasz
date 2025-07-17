@@ -57,7 +57,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
             classes(ROW, ROW_CARDS)
             p {
                 classes(TEXT_SECONDARY)
-                +Messages.settingsDisclaimer()
+                unsafeText(Messages.settingsDisclaimer)
             }
             // App settings
             settingsCard(
@@ -105,15 +105,15 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         div {
                             classes(MT_3)
                             settings.integrations.smtp?.let { smtpConfig ->
-                                settingsLabel(
+                                multiSettingsLabel(
                                     label = Messages.smtpHost(),
                                     value = smtpConfig.host
                                 )
-                                settingsLabel(
+                                multiSettingsLabel(
                                     label = Messages.smtpPort(),
                                     value = smtpConfig.port.toString()
                                 )
-                                settingsLabel(
+                                multiSettingsLabel(
                                     label = Messages.smtpTransportStrategy(),
                                     value = smtpConfig.transportStrategy
                                 )
@@ -175,6 +175,104 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     }
                 }
             }
+            // Exporter settings
+            settingsCard(
+                title = Messages.exporterSettings(),
+                icon = Icon.PACKAGE_EXPORT,
+            ) {
+                div {
+                    classes(DIVIDE_Y)
+                    // Global
+                    settingsToggle(label = Messages.enabled(), checked = settings.metricsExport.exportEnabled)
+                    // Separate meters export settings
+                    div {
+                        div {
+                            classes(FORM_LABEL)
+                            icon(Icon.CLIPBOARD_DATA)
+                            span {
+                                classes(MS_2)
+                                +Messages.meters()
+                            }
+                        }
+                        div {
+                            classes(MT_3)
+                            settings.metricsExport.meters.let { metersConfig ->
+                                div {
+                                    classes(MT_3)
+                                    multiSettingsToggle(
+                                        label = Messages.uptimeStatus(),
+                                        checked = metersConfig.uptimeStatus,
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.latestLatency(),
+                                        checked = metersConfig.latestLatency,
+                                    )
+                                    multiSettingsToggle(label = Messages.sslStatus(), checked = metersConfig.sslStatus)
+                                    multiSettingsToggle(label = Messages.sslExpiry(), checked = metersConfig.sslExpiry)
+                                }
+                            }
+                        }
+                    }
+                    // Prometheus
+                    div {
+                        div {
+                            classes(FORM_LABEL)
+                            icon(Icon.PACKAGE_EXPORT)
+                            span {
+                                classes(MS_2)
+                                +"Prometheus"
+                            }
+                        }
+                        div {
+                            classes(MT_3)
+                            settings.metricsExport.exporters.prometheus.let { prometheusConfig ->
+                                div {
+                                    classes(MT_3)
+                                    multiSettingsToggle(
+                                        label = Messages.enabled(),
+                                        checked = prometheusConfig.enabled,
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.prometheusDescriptions(),
+                                        checked = prometheusConfig.descriptions,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    // OpenTelemetry
+                    div {
+                        div {
+                            classes(FORM_LABEL)
+                            icon(Icon.PACKAGE_EXPORT)
+                            span {
+                                classes(MS_2)
+                                +"OpenTelemetry"
+                            }
+                        }
+                        div {
+                            classes(MT_3)
+                            settings.metricsExport.exporters.openTelemetry.let { otlpConfig ->
+                                div {
+                                    classes(MT_3)
+                                    multiSettingsToggle(
+                                        label = Messages.enabled(),
+                                        checked = otlpConfig.enabled,
+                                    )
+                                    multiSettingsLabel(
+                                        label = Messages.otlpUrl(),
+                                        value = otlpConfig.url,
+                                    )
+                                    multiSettingsLabel(
+                                        label = Messages.otlpStep(),
+                                        value = otlpConfig.step,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -209,10 +307,12 @@ private fun FlowContent.settingsCard(
 private fun FlowContent.settingsToggle(
     label: String,
     checked: Boolean,
+    multi: Boolean = false,
 ) {
     div {
         label {
-            classes(ROW)
+            val effectiveClasses = mutableSetOf(ROW).addIf(multi, MB_2)
+            classes(effectiveClasses)
             span {
                 classes(CSSClass.COL)
                 +label
@@ -236,10 +336,12 @@ private fun FlowContent.settingsToggle(
 private fun FlowContent.settingsLabel(
     label: String,
     value: String,
+    multi: Boolean = false,
 ) {
     div {
         label {
-            classes(ROW)
+            val effectiveClasses = mutableSetOf(ROW).addIf(multi, MB_2)
+            classes(effectiveClasses)
             span {
                 classes(CSSClass.COL)
                 +label
@@ -251,3 +353,9 @@ private fun FlowContent.settingsLabel(
         }
     }
 }
+
+private fun FlowContent.multiSettingsToggle(label: String, checked: Boolean) =
+    settingsToggle(label, checked, multi = true)
+
+private fun FlowContent.multiSettingsLabel(label: String, value: String) =
+    settingsLabel(label, value, multi = true)

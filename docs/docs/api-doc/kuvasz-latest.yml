@@ -1015,6 +1015,7 @@ components:
       - app
       - authentication
       - integrations
+      - metricsExport
       type: object
       properties:
         authentication:
@@ -1029,6 +1030,10 @@ components:
           description: Integration settings
           allOf:
           - $ref: "#/components/schemas/SettingsDto.IntegrationSettingsDto"
+        metricsExport:
+          description: Metrics exporter settings
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto"
     SettingsDto.AppSettingsDto:
       required:
       - eventDataRetentionDays
@@ -1142,6 +1147,87 @@ components:
           description: List of Telegram notification configurations
           items:
             $ref: "#/components/schemas/SettingsDto.TelegramNotificationConfigDto"
+    SettingsDto.MetricsExportSettingsDto:
+      required:
+      - exportEnabled
+      - exporters
+      - meters
+      type: object
+      properties:
+        exportEnabled:
+          type: boolean
+          description: Whether the metrics exporting is generally enabled
+        meters:
+          description: Settings for individual meters
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto.MeterSettingsDto"
+        exporters:
+          description: Settings for individual exporters
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto"
+    SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto:
+      required:
+      - openTelemetry
+      - prometheus
+      type: object
+      properties:
+        prometheus:
+          description: Prometheus exporter settings
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto"
+        openTelemetry:
+          description: OpenTelemetry exporter settings
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto"
+    SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto:
+      required:
+      - enabled
+      - step
+      - url
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the exporter is enabled
+        url:
+          type: string
+          description: The endpoint where the metrics will be published
+        step:
+          type: string
+          description: The step for the metrics reporting as an ISO 8601 duration
+            string
+    SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto:
+      required:
+      - descriptions
+      - enabled
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the exporter is enabled
+        descriptions:
+          type: boolean
+          description: Whether descriptions are included in the export
+    SettingsDto.MetricsExportSettingsDto.MeterSettingsDto:
+      required:
+      - latestLatency
+      - sslExpiry
+      - sslStatus
+      - uptimeStatus
+      type: object
+      properties:
+        sslExpiry:
+          type: boolean
+          description: Whether SSL certificate expiry exporter is enabled
+        latestLatency:
+          type: boolean
+          description: Whether latest latency exporter is enabled
+        uptimeStatus:
+          type: boolean
+          description: Whether monitor status exporter is enabled
+        sslStatus:
+          type: boolean
+          description: Whether SSL status exporter is enabled
     SettingsDto.PagerdutyConfigDto:
       required:
       - enabled

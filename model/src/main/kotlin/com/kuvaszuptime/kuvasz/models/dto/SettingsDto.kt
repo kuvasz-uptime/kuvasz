@@ -17,6 +17,8 @@ data class SettingsDto(
     val app: AppSettingsDto,
     @Schema(description = "Integration settings", required = true)
     val integrations: IntegrationSettingsDto,
+    @Schema(description = "Metrics exporter settings", required = true)
+    val metricsExport: MetricsExportSettingsDto,
 ) {
     @Introspected
     data class AuthenticationSettingsDto(
@@ -168,5 +170,56 @@ data class SettingsDto(
             global = config.global,
             chatId = config.chatId,
         )
+    }
+
+    @Introspected
+    data class MetricsExportSettingsDto(
+        @Schema(description = "Whether the metrics exporting is generally enabled", required = true)
+        val exportEnabled: Boolean,
+        @Schema(description = "Settings for individual meters", required = true)
+        val meters: MeterSettingsDto,
+        @Schema(description = "Settings for individual exporters", required = true)
+        val exporters: ExporterSettingsDto,
+    ) {
+        @Introspected
+        data class MeterSettingsDto(
+            @Schema(description = "Whether SSL certificate expiry exporter is enabled", required = true)
+            val sslExpiry: Boolean,
+            @Schema(description = "Whether latest latency exporter is enabled", required = true)
+            val latestLatency: Boolean,
+            @Schema(description = "Whether monitor status exporter is enabled", required = true)
+            val uptimeStatus: Boolean,
+            @Schema(description = "Whether SSL status exporter is enabled", required = true)
+            val sslStatus: Boolean,
+        )
+
+        @Introspected
+        data class ExporterSettingsDto(
+            @Schema(description = "Prometheus exporter settings", required = true)
+            val prometheus: PrometheusSettingsDto,
+            @Schema(description = "OpenTelemetry exporter settings", required = true)
+            val openTelemetry: OTLPSettingsDto,
+        ) {
+            @Introspected
+            data class PrometheusSettingsDto(
+                @Schema(description = "Whether the exporter is enabled", required = true)
+                val enabled: Boolean,
+                @Schema(description = "Whether descriptions are included in the export", required = true)
+                val descriptions: Boolean,
+            )
+
+            @Introspected
+            data class OTLPSettingsDto(
+                @Schema(description = "Whether the exporter is enabled", required = true)
+                val enabled: Boolean,
+                @Schema(description = "The endpoint where the metrics will be published", required = true)
+                val url: String,
+                @Schema(
+                    description = "The step for the metrics reporting as an ISO 8601 duration string",
+                    required = true
+                )
+                val step: String,
+            )
+        }
     }
 }

@@ -343,3 +343,11 @@ kuvasz.monitor.ssl.expiry.seconds{name=bbc.com,url=https://www.bbc.com} 1.785147
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
     ```
+
+## Checking the configuration on the UI
+
+<!-- md:version 2.2.0 -->
+
+You can check the effective configuration of the metrics exporters on the UI, by navigating to the **Settings** page, where you'll find an overview of all the available settings (except the ones that could contain sensitive data, e.g. the _OpenTelemetry_ report's headers).
+
+![Metrics exporters settings](../images/exporters/settings.webp)

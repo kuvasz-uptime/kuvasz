@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.repositories
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
+import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
 import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
@@ -21,10 +22,16 @@ class SettingsRepository(
     private val appGlobals: AppGlobals,
     private val appConfig: AppConfig,
     private val smtpMailerConfig: SMTPMailerConfig?,
+    private val exportConfig: MetricsExportConfig,
+    private val prometheusSettings: PrometheusSettingsRepository,
+    private val otlpSettings: OTLPSettingsRepository,
 ) {
 
     @field:Property(name = "micronaut.security.token.generator.access-token.expiration")
     protected var accessTokenMaxAge: Long = 0L
+
+    @field:Property(name = "micronaut.metrics.enabled")
+    protected var metricsExportEnabled: Boolean = false
 
     fun getSettings(): SettingsDto =
         SettingsDto(
@@ -64,6 +71,26 @@ class SettingsRepository(
                 { id, config ->
                     SettingsDto.PagerdutyConfigDto(id, config)
                 }
+            ),
+            metricsExport = SettingsDto.MetricsExportSettingsDto(
+                exportEnabled = metricsExportEnabled,
+                meters = SettingsDto.MetricsExportSettingsDto.MeterSettingsDto(
+                    sslExpiry = exportConfig.sslExpiry,
+                    latestLatency = exportConfig.latestLatency,
+                    uptimeStatus = exportConfig.uptimeStatus,
+                    sslStatus = exportConfig.sslStatus,
+                ),
+                exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
+                    prometheus = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(
+                        enabled = prometheusSettings.exportEnabled,
+                        descriptions = prometheusSettings.descriptionsEnabled,
+                    ),
+                    openTelemetry = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto(
+                        enabled = otlpSettings.exportEnabled,
+                        url = otlpSettings.url,
+                        step = otlpSettings.step,
+                    )
+                )
             )
         )
 
@@ -77,4 +104,27 @@ class SettingsRepository(
                 null
             }
         }
+}
+
+@Singleton
+class PrometheusSettingsRepository {
+
+    @field:Property(name = "micronaut.metrics.export.prometheus.enabled")
+    var exportEnabled: Boolean = false
+
+    @field:Property(name = "micronaut.metrics.export.prometheus.descriptions")
+    var descriptionsEnabled: Boolean = false
+}
+
+@Singleton
+class OTLPSettingsRepository {
+
+    @field:Property(name = "micronaut.metrics.export.otlp.enabled")
+    var exportEnabled: Boolean = false
+
+    @field:Property(name = "micronaut.metrics.export.otlp.url")
+    var url: String = ""
+
+    @field:Property(name = "micronaut.metrics.export.otlp.step")
+    var step: String = ""
 }

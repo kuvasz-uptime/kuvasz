@@ -1,0 +1,10 @@
+micronaut.metrics.enabled: true
+micronaut.metrics.export.otlp.enabled: true
+micronaut.metrics.export.otlp.url: http://otel-collector.example:4317
+micronaut.metrics.export.otlp.step: PT30M
+---
+metrics-exports:
+  uptime-status: true
+  latest-latency: true
+  ssl-status: true
+  ssl-expiry: true

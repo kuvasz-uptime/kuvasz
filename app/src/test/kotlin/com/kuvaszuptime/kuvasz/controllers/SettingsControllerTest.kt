@@ -14,7 +14,14 @@ import io.kotest.matchers.string.shouldNotBeEmpty
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
-@MicronautTest(environments = ["full-integrations-setup", "yaml-monitors"])
+@MicronautTest(
+    environments = [
+        "full-integrations-setup",
+        "yaml-monitors",
+        "enabled-metrics-otlp",
+        "enabled-metrics-prometheus",
+    ]
+)
 @SMTPTest
 @Property(name = "micronaut.security.token.generator.access-token.expiration", value = "3600")
 @Property(name = "app-config.event-data-retention-days", value = "5")
@@ -148,6 +155,24 @@ class SettingsControllerTest(settingsClient: SettingsClient, appGlobals: AppGlob
                         host shouldBe "localhost"
                         port shouldBeGreaterThan 0
                         transportStrategy shouldBe "SMTP"
+                    }
+                }
+
+                with(result.metricsExport) {
+                    exportEnabled shouldBe true
+                    meters.sslExpiry shouldBe true
+                    meters.latestLatency shouldBe true
+                    meters.uptimeStatus shouldBe true
+                    meters.sslStatus shouldBe true
+
+                    with(exporters.prometheus) {
+                        enabled shouldBe true
+                        descriptions shouldBe true
+                    }
+                    with(exporters.openTelemetry) {
+                        enabled shouldBe true
+                        url shouldBe "http://otel-collector.example:4317"
+                        step shouldBe "PT30M"
                     }
                 }
             }

@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.utils
 
 import com.kuvaszuptime.kuvasz.ui.*
+import de.comahe.i18n4k.messages.MessageBundleLocalizedString
 import kotlinx.html.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -71,4 +72,8 @@ internal fun A.targetBlank() {
 inline fun FlowContent.templateTag(classes: String? = null, crossinline block: TEMPLATE.() -> Unit = {}) {
     contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
     TEMPLATE(attributesMapOf("class", classes), consumer).visit(block)
+}
+
+internal fun HTMLTag.unsafeText(text: MessageBundleLocalizedString) {
+    unsafe { raw(text.invoke()) }
 }

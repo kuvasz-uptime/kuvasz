@@ -8,8 +8,8 @@ micronaut:
         descriptions: ${ENABLE_PROMETHEUS_DESCRIPTIONS:`true`}
       otlp:
         enabled: ${ENABLE_OTLP_EXPORT:`false`}
-        url: ${OTLP_EXPORT_URL:``}
-        headers: ${OTLP_EXPORT_HEADERS:``}
+        url: ${OTLP_EXPORT_URL}
+        headers: ${OTLP_EXPORT_HEADERS}
         step: ${OTLP_EXPORT_STEP:`PT1M`}
     binders:
       # Disable the built-in binders to reduce the number of metrics
