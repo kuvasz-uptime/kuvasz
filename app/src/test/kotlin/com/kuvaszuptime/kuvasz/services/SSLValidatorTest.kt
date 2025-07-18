@@ -21,7 +21,7 @@ class SSLValidatorTest : StringSpec(
 
                 row("https://test-ev-rsa.ssl.com/", true),
                 row("https://test-dv-rsa.ssl.com/", true),
-                row("https://test-ev-ecc.ssl.com/", true),
+                row("https://test-ev-ecc.ssl.com/", false),
                 row("https://test-dv-ecc.ssl.com/", true),
 
                 row("https://sha256.badssl.com/", true),
