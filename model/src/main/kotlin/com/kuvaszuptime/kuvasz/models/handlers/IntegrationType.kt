@@ -4,7 +4,8 @@ enum class IntegrationType(val identifier: String) {
     EMAIL(EmailNotificationConfig.IDENTIFIER),
     PAGERDUTY(PagerdutyConfig.IDENTIFIER),
     SLACK(SlackNotificationConfig.IDENTIFIER),
-    TELEGRAM(TelegramNotificationConfig.IDENTIFIER);
+    TELEGRAM(TelegramNotificationConfig.IDENTIFIER),
+    DISCORD(DiscordNotificationConfig.IDENTIFIER);
 
     companion object {
         fun fromIdentifier(identifier: String): IntegrationType? =
