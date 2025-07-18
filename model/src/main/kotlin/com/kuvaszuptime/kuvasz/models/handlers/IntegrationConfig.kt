@@ -69,8 +69,8 @@ interface DiscordNotificationConfig : IntegrationConfig {
     @get:NotBlank
     val webhookUrl: String
 
-    @get:NotBlank
-    val apiToken: String
+//    @get:NotBlank
+//    val apiToken: String
 
 
     companion object {
