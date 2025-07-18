@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import io.micronaut.context.annotation.Property
 import jakarta.inject.Singleton
@@ -58,6 +59,10 @@ class SettingsRepository(
                 slack = getIntegrationConfigs<SlackNotificationConfig, SettingsDto.SlackNotificationConfigDto>
                 { id, config ->
                     SettingsDto.SlackNotificationConfigDto(id, config)
+                },
+                discord = getIntegrationConfigs<DiscordNotificationConfig, SettingsDto.DiscordNotificationConfigDto>
+                { id, config ->
+                        SettingsDto.DiscordNotificationConfigDto(id, config)
                 },
                 telegram = getIntegrationConfigs<TelegramNotificationConfig, SettingsDto.TelegramNotificationConfigDto>
                 { id, config ->
