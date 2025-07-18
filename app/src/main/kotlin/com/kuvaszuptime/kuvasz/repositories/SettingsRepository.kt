@@ -5,13 +5,13 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
 import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
+import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import io.micronaut.context.annotation.Property
 import jakarta.inject.Singleton
@@ -62,7 +62,7 @@ class SettingsRepository(
                 },
                 discord = getIntegrationConfigs<DiscordNotificationConfig, SettingsDto.DiscordNotificationConfigDto>
                 { id, config ->
-                        SettingsDto.DiscordNotificationConfigDto(id, config)
+                    SettingsDto.DiscordNotificationConfigDto(id, config)
                 },
                 telegram = getIntegrationConfigs<TelegramNotificationConfig, SettingsDto.TelegramNotificationConfigDto>
                 { id, config ->
@@ -77,27 +77,29 @@ class SettingsRepository(
                     SettingsDto.PagerdutyConfigDto(id, config)
                 }
             ),
-            metricsExport = SettingsDto.MetricsExportSettingsDto(
-                exportEnabled = metricsExportEnabled,
-                meters = SettingsDto.MetricsExportSettingsDto.MeterSettingsDto(
-                    sslExpiry = exportConfig.sslExpiry,
-                    latestLatency = exportConfig.latestLatency,
-                    uptimeStatus = exportConfig.uptimeStatus,
-                    sslStatus = exportConfig.sslStatus,
-                ),
-                exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
-                    prometheus = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(
-                        enabled = prometheusSettings.exportEnabled,
-                        descriptions = prometheusSettings.descriptionsEnabled,
-                    ),
-                    openTelemetry = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto(
-                        enabled = otlpSettings.exportEnabled,
-                        url = otlpSettings.url,
-                        step = otlpSettings.step,
-                    )
-                )
+            metricsExport = metricsExportSettingsDto()
+        )
+
+    private fun metricsExportSettingsDto() = SettingsDto.MetricsExportSettingsDto(
+        exportEnabled = metricsExportEnabled,
+        meters = SettingsDto.MetricsExportSettingsDto.MeterSettingsDto(
+            sslExpiry = exportConfig.sslExpiry,
+            latestLatency = exportConfig.latestLatency,
+            uptimeStatus = exportConfig.uptimeStatus,
+            sslStatus = exportConfig.sslStatus,
+        ),
+        exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
+            prometheus = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(
+                enabled = prometheusSettings.exportEnabled,
+                descriptions = prometheusSettings.descriptionsEnabled,
+            ),
+            openTelemetry = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto(
+                enabled = otlpSettings.exportEnabled,
+                url = otlpSettings.url,
+                step = otlpSettings.step,
             )
         )
+    )
 
     private inline fun <reified C : IntegrationConfig, T> getIntegrationConfigs(
         transform: (IntegrationID, C) -> T

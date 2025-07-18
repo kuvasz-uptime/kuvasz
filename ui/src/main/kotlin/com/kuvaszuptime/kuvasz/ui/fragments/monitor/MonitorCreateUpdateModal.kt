@@ -391,5 +391,4 @@ private val IntegrationType.icon: Icon
         IntegrationType.DISCORD -> Icon.BRAND_DISCORD
         IntegrationType.PAGERDUTY -> Icon.BRAND_PAGERDUTY
         IntegrationType.TELEGRAM -> Icon.BRAND_TELEGRAM
-        
     }

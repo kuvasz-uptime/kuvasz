@@ -65,20 +65,14 @@ interface SlackNotificationConfig : IntegrationConfig {
 @Introspected
 interface DiscordNotificationConfig : IntegrationConfig {
 
-    // webhook or token?
     @get:NotBlank
     val webhookUrl: String
-
-//    @get:NotBlank
-//    val apiToken: String
-
 
     companion object {
         const val IDENTIFIER = "discord"
         const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
     }
 }
-
 
 @EachProperty(TelegramNotificationConfig.CONFIG_PREFIX, list = true)
 @Introspected

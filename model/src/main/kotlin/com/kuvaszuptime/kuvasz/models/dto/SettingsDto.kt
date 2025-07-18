@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
+import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -114,7 +114,7 @@ data class SettingsDto(
         override val enabled: Boolean,
         @Schema(description = IntegrationDocs.GLOBAL, required = true)
         override val global: Boolean
-    ): IntegrationConfigDto {
+    ) : IntegrationConfigDto {
         constructor(integrationID: IntegrationID, config: DiscordNotificationConfig) : this(
             id = integrationID,
             type = integrationID.type,
