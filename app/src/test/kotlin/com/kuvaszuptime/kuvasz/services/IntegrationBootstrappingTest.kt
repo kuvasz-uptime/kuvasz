@@ -28,10 +28,10 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = ApplicationContext.run("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 12
-            enabledIntegrations shouldHaveSize 8
-            enabledIntegrationsByType shouldHaveSize 4
-            globallyEnabledIntegrationsByType shouldHaveSize 4
+            configuredIntegrations shouldHaveSize 15
+            enabledIntegrations shouldHaveSize 10
+            enabledIntegrationsByType shouldHaveSize 5
+            globallyEnabledIntegrationsByType shouldHaveSize 5
 
             // Check that all integrations are loaded correctly
             with(configuredIntegrations) {
@@ -329,10 +329,10 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = ApplicationContext.run("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 12
-            enabledIntegrations shouldHaveSize 6 // Email configs should not be enabled without SMTP config
-            enabledIntegrationsByType shouldHaveSize 3 // Email type should not be present
-            globallyEnabledIntegrationsByType shouldHaveSize 3 // Email type should not be present
+            configuredIntegrations shouldHaveSize 15
+            enabledIntegrations shouldHaveSize 8 // Email configs should not be enabled without SMTP config
+            enabledIntegrationsByType shouldHaveSize 4 // Email type should not be present
+            globallyEnabledIntegrationsByType shouldHaveSize 4 // Email type should not be present
 
             // Check that Email configs are not loaded as enabled
             val implicitlyEnabledId = IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")

@@ -84,6 +84,7 @@ class MonitorControllerTest(
                 val setUpIntegrations = listOf(
                     IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
                     IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
@@ -152,6 +153,13 @@ class MonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "discord:global",
+                            enabled = true,
+                            name = "global",
+                            type = IntegrationType.DISCORD,
+                            global = true,
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -459,6 +467,7 @@ class MonitorControllerTest(
                 val setUpIntegrations = listOf(
                     IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
                     IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
@@ -525,6 +534,13 @@ class MonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "discord:global",
+                            enabled = true,
+                            name = "global",
+                            type = IntegrationType.DISCORD,
+                            global = true,
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
