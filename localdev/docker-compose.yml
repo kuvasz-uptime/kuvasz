@@ -1,32 +1,29 @@
 services:
-  kuvasz-db:
-    image: postgres:17-alpine
-    container_name: kuvaszdb
+  postgres-16:
+    image: postgres:16
+    container_name: postgres16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      TZ: "UTC"
+      TZ: 'Europe/Vienna'
     ports:
       - "5432:5432"
     volumes:
-      - kuvasz-db-data:/var/lib/postgresql/data
+      - ./pgdata:/var/lib/postgresql/data
   kuvasz:
     image: kuvaszmonitoring/kuvasz:latest
-    container_name: kuvasz
-    mem_limit: 384M # optional
+    mem_limit: 384M
     ports:
       - "8080:8080"
     environment:
-      TZ: "UTC"
-      DATABASE_HOST: kuvaszdb
+      TZ: 'Europe/Vienna'
+      DATABASE_HOST: postgres16
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
-      ADMIN_USER: admin # change it
-      ADMIN_PASSWORD: adminsecurepass123 # change it
-      ADMIN_API_KEY: adminapikeysecure456 # change it
+      ENABLE_LOG_EVENT_HANDLER: 'true'
+      UPTIME_DATA_RETENTION_DAYS: 365
+      LATENCY_DATA_RETENTION_DAYS: 30
     volumes:
-      - ./kuvasz.yml:/config/kuvasz.yml
+      - ./application-dev.yml:/config/kuvasz.yml
     depends_on:
-      - kuvasz-db
-volumes:
-  kuvasz-db-data:
+      - postgres-16
