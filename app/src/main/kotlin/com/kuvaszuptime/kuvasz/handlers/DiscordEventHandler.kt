@@ -8,7 +8,6 @@ import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 @Context
