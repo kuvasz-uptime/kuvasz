@@ -161,6 +161,19 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         integrationsList(settings.integrations.slack)
                     }
 
+                    // Discord integrations
+                    div {
+                        div {
+                            classes(FORM_LABEL)
+                            icon(Icon.BRAND_SLACK)
+                            span {
+                                classes(MS_2)
+                                +"Discord"
+                            }
+                        }
+                        integrationsList(settings.integrations.discord)
+                    }
+
                     // Telegram integrations
                     div {
                         div {
