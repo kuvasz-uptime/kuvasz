@@ -388,6 +388,8 @@ private val IntegrationType.icon: Icon
     get() = when (this) {
         IntegrationType.EMAIL -> Icon.ENVELOPE
         IntegrationType.SLACK -> Icon.BRAND_SLACK
+        IntegrationType.DISCORD -> Icon.BRAND_DISCORD
         IntegrationType.PAGERDUTY -> Icon.BRAND_PAGERDUTY
         IntegrationType.TELEGRAM -> Icon.BRAND_TELEGRAM
+        
     }

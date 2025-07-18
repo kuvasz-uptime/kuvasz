@@ -165,7 +165,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     div {
                         div {
                             classes(FORM_LABEL)
-                            icon(Icon.BRAND_SLACK)
+                            icon(Icon.BRAND_DISCORD)
                             span {
                                 classes(MS_2)
                                 +"Discord"
