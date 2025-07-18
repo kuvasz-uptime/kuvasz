@@ -18,7 +18,7 @@ class DiscordEventHandler(
     eventDispatcher: EventDispatcher,
     integrationRepository: IntegrationRepository,
 ) : RTCMessageEventHandler(eventDispatcher, discordWebhookService, integrationRepository) {
-    override val logger = LoggerFactory.getLogger(DiscordEventHandler::class.java),
+    override val logger = LoggerFactory.getLogger(DiscordEventHandler::class.java)
 
     override val formatter = DiscordTextFormatter
 
