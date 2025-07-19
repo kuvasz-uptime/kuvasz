@@ -61,7 +61,6 @@ The _Telegram_ integration allows you to send notifications **to a specific Tele
 
 - Grafana IRM
 - Microsoft Teams
-- Discord
 - Sendable test notifications (e.g. to test if the integration is working)
 
 !!! tip "Do you miss an integration?"
