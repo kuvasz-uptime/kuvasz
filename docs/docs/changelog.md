@@ -2,6 +2,12 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
+## 2.3.0 <small>2025-07-19</small> { id="2.3.0" data-toc-label="2.3.0" }
+
+### Features
+
+- **Discord integration**: Added support for sending notifications to Discord channels via webhooks. Configure Discord integrations in your YAML file and receive real-time alerts about monitor status changes directly in your Discord server.
+
 ## 2.2.0 <small>2025-07-17</small> { id="2.2.0" data-toc-label="2.2.0" }
 
 ### Features
