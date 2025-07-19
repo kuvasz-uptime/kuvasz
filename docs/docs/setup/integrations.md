@@ -109,7 +109,7 @@ The Discord integration allows you to send notifications to a Discord channel **
 
 ### `webhook-url`
 
-<!-- md:version 2.0.0 -->
+<!-- md:version 2.3.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
 
