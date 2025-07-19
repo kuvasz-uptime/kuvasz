@@ -101,6 +101,41 @@ integrations:
     # ... other Slack integrations
 ```
 
+## Discord
+
+**Configuration alias**: `discord`
+
+The Discord integration allows you to send notifications to a Discord channel **via a webhook URL**.
+
+### `webhook-url`
+
+<!-- md:version 2.0.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+
+The webhook URL of the Discord channel where the notifications will be sent. You can create a webhook URL in your Discord server by following these steps:
+
+1. Go to your Discord server settings
+2. Navigate to **Integrations** → **Webhooks**
+3. Click **New Webhook**
+4. Configure the webhook name and select the target channel
+5. Copy the **Webhook URL**
+
+For more information, see the [**official Discord documentation**](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks){target="_blank"}.
+
+---
+
+```yaml title="Discord integration example"
+integrations:
+  discord:
+    - name: discord-example
+      webhook-url: 'https://discord.com/api/webhooks/123456789/abcdef1234567890abcdef1234567890'
+    - name: discord-global
+      webhook-url: 'https://discord.com/api/webhooks/987654321/fedcba0987654321fedcba0987654321'
+      global: true
+    # ... other Discord integrations
+```
+
 ## Email
 
 **Configuration alias**: `email`

@@ -66,6 +66,13 @@ curl -X GET "http://your.kuvasz.host/api/v1/monitors/107" \
       "global": true
     },
     {
+      "id": "discord:discord",
+      "type": "DISCORD", 
+      "name": "discord",
+      "enabled": true,
+      "global": false
+    },
+    {
       "id": "telegram:telegram_test",
       "type": "TELEGRAM",
       "name": "telegram_test",

@@ -131,6 +131,9 @@ integrations:
   slack:
     - name: slack_default
       webhook-url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX'
+  discord:
+    - name: discord
+      webhook-url: https://discord.com/api/webhooks/XXXXXXX/YYYYYYYYY
   email:
     - name: email_implicitly_enabled
       from-address: noreply@kuvasz-uptime.dev

@@ -38,7 +38,7 @@
 
     ---
 
-    Supports multiple notification channels, currently including email, Slack, Telegram, and PagerDuty. You can configure the notification channels on a per-monitor basis.
+    Supports multiple notification channels, currently including email, Slack, Discord, Telegram, and PagerDuty. You can configure the notification channels on a per-monitor basis.
 
     [:octicons-arrow-right-24: Notifications](features/notifications.md)
 

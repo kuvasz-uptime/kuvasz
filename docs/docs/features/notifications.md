@@ -35,6 +35,11 @@ _Slack_ as a notification channel for your monitors. This allows you to receive 
 
 ![Slack notifications](../images/integrations/slack.webp)
 
+## Discord <!-- md:config ../setup/integrations.md#discord -->
+
+The _Discord_ integration allows you to send notifications **to Discord channels**. This allows you to receive notifications about the status of your monitors directly in your Discord channels.
+
+
 ## Email <!-- md:config ../setup/integrations.md#email -->
 
 The email integration lets you to configure an _SMTP_ connection, with which
