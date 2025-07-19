@@ -8,6 +8,15 @@ integrations:
     - name: disabled
       webhook-url: https://hooks.slack.com/services/T00000000/B00000000/ZZZZZZZZZZ
       enabled: false
+  discord:
+    - name: test_implicitly_enabled
+      webhook-url: https://discord.com/api/webhooks/123456789/abcdef1234567890abcdef1234567890
+    - name: global
+      webhook-url: https://discord.com/api/webhooks/987654321/fedcba0987654321fedcba0987654321
+      global: true
+    - name: disabled
+      webhook-url: https://discord.com/api/webhooks/555666777/test_disabled_webhook_token_here
+      enabled: false
   email:
     - name: test_implicitly_enabled
       from-address: noreply@other.dev
