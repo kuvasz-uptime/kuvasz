@@ -32,7 +32,7 @@ pluginManagement {
         id("com.github.gmazzo.buildconfig") version "5.6.7"
         id("org.gradlewebtools.minify") version "2.1.1"
         id("org.jetbrains.kotlinx.kover") version "0.9.1"
-        id("de.comahe.i18n4k") version "0.10.0"
+        id("de.comahe.i18n4k") version "0.11.0"
     }
 }
 
@@ -73,7 +73,7 @@ dependencyResolutionManagement {
             // UI
             library("kotlinx-html-jvm", "org.jetbrains.kotlinx", "kotlinx-html-jvm").version("0.12.0")
             library("kotlin-htmx", "com.iodesystems.kotlin-htmx", "htmx").version("0.0.1")
-            library("i18n4k", "de.comahe.i18n4k", "i18n4k-core-jvm").version("0.10.0")
+            library("i18n4k", "de.comahe.i18n4k", "i18n4k-core-jvm").version("0.11.0")
 
             // jOOQ
             library("jooq-kotlin", "org.jooq", "jooq-kotlin").version(jooqVersion)
