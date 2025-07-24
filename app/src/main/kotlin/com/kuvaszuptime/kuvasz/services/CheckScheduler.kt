@@ -147,7 +147,7 @@ class CheckScheduler(
         scheduledUptimeChecks.remove(monitor.id)
         monitor.cancelCheck(CheckType.SSL)
         scheduledSSLChecks.remove(monitor.id)
-        logger.info("Checks for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
+        logger.debug("Checks for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
     }
 
     /**
