@@ -111,3 +111,8 @@ jooq {
         }
     }
 }
+
+val migrateAndGenerate by tasks.registering {
+    dependsOn("flywayMigrate")
+    dependsOn("generateJooq")
+}
