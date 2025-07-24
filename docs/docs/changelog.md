@@ -2,6 +2,16 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
+## 2.3.1 <small>2025-07-24</small> { id="2.3.1" data-toc-label="2.3.1" }
+
+### Fixes
+
+- Make sure that no deadlocks can occur during the uptime checks by introducing an expiry for every single lock as a fail-safe fallback mechanism
+
+### Chore
+
+- Bumped i18n4k to 0.11.0
+
 ## 2.3.0 <small>2025-07-19</small> { id="2.3.0" data-toc-label="2.3.0" }
 
 ### Features
