@@ -117,9 +117,7 @@ on [**Wikipedia**](https://en.wikipedia.org/wiki/Kuvasz){ target="_blank" }.
 
 ## Do you like it?
 
-While _Kuvasz_ is free and open-source, it still requires a lot of time and effort to maintain and develop. If you like it, please consider **donating** via Ko-fi:
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L31DH59D){ target="_blank" }
+While _Kuvasz_ is free and open-source, it still requires a lot of time and effort to maintain and develop. If you like it, please consider our [**sponsoring**](sponsoring.md) options.
 
 ## Do you have a question?
 Let's go to the [**GitHub discussions**](https://github.com/kuvasz-uptime/kuvasz/discussions){ target="_blank" }!

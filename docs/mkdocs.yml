@@ -99,7 +99,7 @@ nav:
   - Conventions: conventions.md
   - License: https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE
   - Contributing: https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md
-  - Sponsoring: https://ko-fi.com/kuvasz
+  - Sponsoring: sponsoring.md
 copyright: >
   Copyright &copy; 2020 - 2025 Kuvasz Uptime - 
   <a href="#__consent">Change cookie settings</a>

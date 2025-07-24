@@ -51,6 +51,8 @@ While _Kuvasz_ is free and open-source, it still **requires a lot of time and ef
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L31DH59D)
 
+... or by [**sponsoring the project on GitHub**](https://github.com/sponsors/adamkobor/)
+
 ## ⁉️ Do you have a question?
 
 Let's go to the [discussions](https://github.com/kuvasz-uptime/kuvasz/discussions)!
