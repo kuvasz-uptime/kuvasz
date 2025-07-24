@@ -13,10 +13,8 @@ import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
@@ -198,9 +196,7 @@ class CheckScheduler(
                             ex,
                         )
                     } finally {
-                        withContext(NonCancellable) {
-                            lockRegistry.release(monitor.id)
-                        }
+                        lockRegistry.release(monitor.id)
                     }
                 }
             }
