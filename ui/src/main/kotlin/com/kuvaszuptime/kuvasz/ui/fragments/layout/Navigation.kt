@@ -59,7 +59,7 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     navItem(
                                         label = Messages.sponsor(),
                                         icon = Icon.HEART,
-                                        link = "https://ko-fi.com/L4L31DH59D",
+                                        link = "https://kuvasz-uptime.dev/sponsoring/",
                                         externalLink = true,
                                     )
                                     navItem(

@@ -20,7 +20,7 @@ internal fun FlowContent.footer(appVersion: String) {
                         classes(LIST_INLINE, LIST_INLINE_DOTS, MB_0)
                         listItem(
                             label = Messages.sponsor(),
-                            link = "https://ko-fi.com/L4L31DH59D",
+                            link = "https://kuvasz-uptime.dev/sponsoring/",
                             externalLink = true,
                             icon = Icon.HEART,
                         )
