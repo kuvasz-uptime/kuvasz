@@ -1,13 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import io.gitlab.arturbosch.detekt.Detekt
 
-buildscript {
-    val flywayPluginVersion: String by project
-    dependencies {
-        classpath("org.flywaydb:flyway-database-postgresql:$flywayPluginVersion")
-    }
-}
-
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.kotlin.kapt")
@@ -19,7 +12,6 @@ plugins {
     id("com.google.cloud.tools.jib")
     id("com.palantir.git-version")
     id("com.github.ben-manes.versions")
-    id("org.flywaydb.flyway")
     id("com.gradleup.shadow")
     id("com.github.gmazzo.buildconfig")
 }
@@ -74,7 +66,6 @@ dependencies {
     implementation(mn.swagger.annotations)
 
     // DB & jOOQ & Flyway
-    runtimeOnly(mn.flyway.postgresql)
     implementation(mn.micronaut.flyway)
     implementation(mn.micronaut.jdbc.hikari)
     implementation(mn.micronaut.jooq)
@@ -175,21 +166,6 @@ val updateApiDoc by tasks.registering(type = Copy::class) {
     dependsOn("kaptKotlin")
     from(layout.buildDirectory.file("tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml"))
     into("$rootDir/docs/docs/api-doc")
-}
-
-val localDbUrl: String by project
-val localDbUser: String by project
-val localDbPassword: String by project
-val localDbSchema: String by project
-val localDbDriver: String by project
-
-flyway {
-    cleanDisabled = false
-    url = localDbUrl
-    user = localDbUser
-    password = localDbPassword
-    schemas = arrayOf(localDbSchema)
-    driver = localDbDriver
 }
 
 buildConfig {

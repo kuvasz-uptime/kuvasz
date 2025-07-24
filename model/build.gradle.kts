@@ -1,6 +1,13 @@
 import org.jooq.meta.kotlin.forcedType
 import org.jooq.meta.kotlin.forcedTypes
 
+buildscript {
+    val flywayPluginVersion: String by project
+    dependencies {
+        classpath("org.flywaydb:flyway-database-postgresql:$flywayPluginVersion")
+    }
+}
+
 plugins {
     kotlin("jvm")
     id("org.jetbrains.kotlin.kapt")
@@ -8,6 +15,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt")
     id("org.jetbrains.kotlinx.kover")
     id("nu.studer.jooq")
+    id("org.flywaydb.flyway")
 }
 
 dependencies {
@@ -30,6 +38,7 @@ dependencies {
     implementation(libs.jooq.postgres.extensions)
     jooqGenerator(mn.postgresql)
     implementation(libs.jooq.gradle.plugin)
+    runtimeOnly(mn.flyway.postgresql)
 
     // Testing
     testImplementation(mn.micronaut.test.kotest5)
@@ -47,6 +56,15 @@ val localDbUser: String by project
 val localDbPassword: String by project
 val localDbSchema: String by project
 val localDbDriver: String by project
+
+flyway {
+    cleanDisabled = false
+    url = localDbUrl
+    user = localDbUser
+    password = localDbPassword
+    schemas = arrayOf(localDbSchema)
+    driver = localDbDriver
+}
 
 jooq {
     val jooqVersion: String by project
