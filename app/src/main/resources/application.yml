@@ -118,6 +118,7 @@ jooq:
 logger:
   levels:
     io.netty.channel: ERROR
+    io.netty.handler: ERROR
 ---
 # Kuvasz specific configurations are starting here
 app-config:
