@@ -54,11 +54,19 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
         }
 
         div {
-            classes(ROW, ROW_CARDS)
-            p {
-                classes(TEXT_SECONDARY)
-                unsafeText(Messages.settingsDisclaimer)
+            classes(ROW)
+            div {
+                classes(COL_12)
+                p {
+                    classes(TEXT_SECONDARY)
+                    unsafeText(Messages.settingsDisclaimer)
+                }
             }
+        }
+
+        div {
+            classes(ROW, ROW_CARDS)
+            enableMasonry()
             // App settings
             settingsCard(
                 title = Messages.applicationSettings(),

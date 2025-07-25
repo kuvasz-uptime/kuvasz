@@ -82,6 +82,7 @@ internal fun withLayout(
                     script(src = "/public/dist/js/kuvasz.min.js?cb=${globals.appVersion}") {}
                     script(src = "/public/ext/js/htmx.2.0.5.min.js") {}
                     script(src = "/public/ext/js/alpine.3.min.js") {}
+                    script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
 }

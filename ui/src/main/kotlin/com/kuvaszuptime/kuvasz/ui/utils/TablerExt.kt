@@ -40,3 +40,7 @@ internal fun HTMLTag.dataBsToggle(toggle: String) {
 internal fun HTMLTag.dataBsTarget(target: String) {
     attributes["data-bs-target"] = target
 }
+
+internal fun HTMLTag.enableMasonry() {
+    attributes["data-masonry"] = "{\"percentPosition\": true }"
+}
