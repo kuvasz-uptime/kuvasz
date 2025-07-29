@@ -194,7 +194,7 @@ data class SSLWillExpireEvent(
 private fun String.sanitizeMessage(): String {
     val sanitized = removeControlChars()
     return if (sanitized.length > ERROR_MAX_LENGTH) {
-        "${sanitized.take(ERROR_MAX_LENGTH)} ... [REDACTED]"
+        Messages.redacted(sanitized.take(ERROR_MAX_LENGTH))
     } else {
         sanitized
     }

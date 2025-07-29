@@ -275,9 +275,9 @@ class DatabaseEventHandlerTest(
                 then("it should limit the error message to 255 characters and indicate that it was redacted") {
                     val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    expectedUptimeRecord.error shouldHaveLength 255 + 8 + 15 // Prefix + 255 + suffix
+                    expectedUptimeRecord.error shouldHaveLength 255 + 8 + 14 // Prefix + 255 + suffix
                     expectedUptimeRecord.error shouldStartWith "Reason: "
-                    expectedUptimeRecord.error shouldEndWith " ... [REDACTED]"
+                    expectedUptimeRecord.error shouldEndWith "... [REDACTED]"
                 }
             }
         }
