@@ -533,17 +533,17 @@ private fun getRequest(path: String) =
     request()
         .withMethod(HttpMethod.GET.literal)
         .withPath(path)
-        .withHeader(HttpHeaders.USER_AGENT, UptimeChecker.USER_AGENT)
+        .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT)
 
 private fun headRequest(path: String) =
     request()
         .withMethod(HttpMethod.HEAD.literal)
         .withPath(path)
-        .withHeader(HttpHeaders.USER_AGENT, UptimeChecker.USER_AGENT)
+        .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT)
 
 private fun ClientAndServer.verifyRequest(request: HttpRequest, exactly: Int = 1) =
     verify(
         request
-            .withHeader(HttpHeaders.USER_AGENT, UptimeChecker.USER_AGENT),
+            .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT),
         if (exactly == 0) VerificationTimes.never() else VerificationTimes.exactly(exactly)
     )

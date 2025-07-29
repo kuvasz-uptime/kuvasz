@@ -1,28 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
-import com.kuvaszuptime.kuvasz.models.RedirectLoopException
-import com.kuvaszuptime.kuvasz.models.UnknownUptimeCheckException
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
+import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.util.RawHttpResponse
-import com.kuvaszuptime.kuvasz.util.getRedirectionUri
-import com.kuvaszuptime.kuvasz.util.isRedirected
-import com.kuvaszuptime.kuvasz.util.isSuccess
-import io.micronaut.http.HttpHeaders
-import io.micronaut.http.HttpRequest
-import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
-import io.micronaut.http.client.exceptions.HttpClientException
-import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.retry.annotation.Retryable
 import io.micronaut.runtime.ApplicationConfiguration
 import jakarta.inject.Singleton
@@ -36,21 +20,17 @@ import java.util.Optional
 class UptimeChecker(
     @Client(configuration = HttpCheckerClientConfiguration::class)
     private val httpClient: HttpClient,
-    private val eventDispatcher: EventDispatcher,
-    private val uptimeEventRepository: UptimeEventRepository,
     private val monitorRepository: MonitorRepository,
+    private val checkRequestConfigurator: HttpCheckRequestConfigurator,
+    private val checkResponseEvaluator: HttpCheckResponseEvaluator,
 ) {
 
     companion object {
         private const val RETRY_COUNT = 2L
         private const val RETRY_INITIAL_DELAY = "500ms"
         private const val RETRY_BACKOFF_MULTIPLIER = 3L
-        const val USER_AGENT = "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz"
         private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
     }
-
-    private fun getPreviousEvent(monitor: MonitorRecord): UptimeEventRecord? =
-        uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
 
     suspend fun check(
         monitor: MonitorRecord,
@@ -67,23 +47,20 @@ class UptimeChecker(
             val effectiveUrl = uriOverride ?: URI(monitor.url)
             visitedUrls.add(effectiveUrl)
 
-            val start = System.currentTimeMillis()
-            val response = sendHttpRequest(monitor, uri = effectiveUrl)
-            val latency = (System.currentTimeMillis() - start).toInt()
+            val checkResponse = sendHttpRequest(monitor, uri = effectiveUrl)
+            val result = checkResponseEvaluator.evaluateResponse(monitor, checkResponse, visitedUrls)
+            when (result) {
+                is HttpCheckResult.Redirected -> check(monitor, result.redirectionUri, result.visitedUrls)
+                HttpCheckResult.Continue -> {
+                    logger.warn("HTTP uptime check for monitor with ID: ${monitor.id} returned Continue unexpectedly")
+                }
 
-            handleResponse(monitor, response, latency, visitedUrls)
-        } catch (error: Exception) {
-            var clarifiedError = error
-            val status = try {
-                (error as? HttpClientResponseException)?.status
-            } catch (ex: Exception) {
-                // Invalid status codes (e.g. 498) are throwing an IllegalArgumentException for example
-                // Better to have an explicit error, because the status won't be visible later, so it would be
-                // harder for the users to figure out what was failing during the check
-                clarifiedError = HttpClientException(ex.message, ex)
-                null
+                HttpCheckResult.Finished -> {
+                    logger.debug("HTTP uptime check for monitor with ID: ${monitor.id} finished successfully")
+                }
             }
-            dispatchDownEvent(monitor, status, clarifiedError)
+        } catch (error: Exception) {
+            checkResponseEvaluator.evaluateError(monitor, error)
         }
         logger.debug("Uptime check for monitor (${monitor.name}) finished")
         if (doAfter != null) {
@@ -94,85 +71,22 @@ class UptimeChecker(
         }
     }
 
-    private suspend fun handleResponse(
-        monitor: MonitorRecord,
-        response: RawHttpResponse,
-        latency: Int,
-        visitedUrls: MutableList<URI>,
-    ) {
-        if (response.isSuccess()) {
-            eventDispatcher.dispatch(
-                MonitorUpEvent(
-                    monitor = monitor,
-                    status = response.status,
-                    latency = latency,
-                    previousEvent = getPreviousEvent(monitor),
-                )
-            )
-        } else if (response.isRedirected() && monitor.followRedirects) {
-            val redirectionUri = response.getRedirectionUri(originalUrl = monitor.url)
-            if (redirectionUri != null) {
-                eventDispatcher.dispatch(
-                    RedirectEvent(
-                        monitor = monitor,
-                        redirectLocation = redirectionUri
-                    )
-                )
-                if (visitedUrls.contains(redirectionUri)) {
-                    dispatchDownEvent(monitor, response.status, RedirectLoopException())
-                    return
-                }
-                check(monitor, redirectionUri, visitedUrls)
-            } else {
-                dispatchDownEvent(monitor, response.status, InvalidRedirectionException())
-            }
-        } else {
-            val message = if (response.isRedirected() && !monitor.followRedirects) {
-                "The request was redirected, but the followRedirects option is disabled"
-            } else {
-                "The request wasn't successful, but there is no additional information"
-            }
-            dispatchDownEvent(monitor, response.status, UnknownUptimeCheckException(message))
-        }
-    }
-
-    private fun dispatchDownEvent(
-        monitor: MonitorRecord,
-        status: HttpStatus?,
-        error: Exception,
-    ) {
-        eventDispatcher.dispatch(
-            MonitorDownEvent(
-                monitor = monitor,
-                status = status,
-                error = error,
-                previousEvent = getPreviousEvent(monitor)
-            )
-        )
-    }
-
     @Retryable(
         delay = RETRY_INITIAL_DELAY,
         attempts = "$RETRY_COUNT",
         multiplier = "$RETRY_BACKOFF_MULTIPLIER",
     )
-    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): RawHttpResponse {
+    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpCheckResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
-        val request = HttpRequest
-            .create<Any>(
-                monitor.requestMethod.toMicronautHttpMethod(),
-                uri.toString()
-            )
-            .header(HttpHeaders.ACCEPT, "*/*")
-            .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
-            .header(HttpHeaders.USER_AGENT, USER_AGENT)
-            .apply {
-                if (monitor.forceNoCache) {
-                    header(HttpHeaders.CACHE_CONTROL, "no-cache")
-                }
-            }
+        val request = checkRequestConfigurator.fromMonitor(monitor, uri)
+        val start = System.currentTimeMillis()
+        val httpResponse = httpClient.exchange(request).awaitSingle()
+        val latency = (System.currentTimeMillis() - start).toInt()
 
-        return httpClient.exchange(request).awaitSingle()
+        return HttpCheckResponse(
+            httpResponse = httpResponse,
+            latency = latency
+        )
     }
 }
 
@@ -190,12 +104,5 @@ class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpCli
     companion object {
         private const val EVENT_LOOP_GROUP = "uptime-check"
         private const val READ_TIMEOUT_SECONDS = 30L
-    }
-}
-
-private fun HttpMethod.toMicronautHttpMethod(): io.micronaut.http.HttpMethod {
-    return when (this) {
-        HttpMethod.GET -> io.micronaut.http.HttpMethod.GET
-        HttpMethod.HEAD -> io.micronaut.http.HttpMethod.HEAD
     }
 }

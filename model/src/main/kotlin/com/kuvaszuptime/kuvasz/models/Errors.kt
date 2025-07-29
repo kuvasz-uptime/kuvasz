@@ -35,9 +35,10 @@ class RedirectLoopException(
 ) : UptimeCheckException()
 
 class InvalidRedirectionException(
-    override val message: String? = "Invalid redirection without a Location header"
+    override val message: String
 ) : UptimeCheckException()
 
-class UnknownUptimeCheckException(
-    override val message: String?,
+class IneligibleStatusCodeException(
+    val statusCode: Int,
+    override val message: String? = "The status code $statusCode is not eligible for the check"
 ) : UptimeCheckException()

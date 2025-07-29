@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -13,6 +14,7 @@ import io.kotest.core.test.TestResult
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.simple.SimpleHttpResponseFactory
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -150,7 +152,7 @@ class UptimeCheckerTest(
         additionalHeaders: Map<String, String> = emptyMap(),
     ) {
         val response = SimpleHttpResponseFactory()
-            .status<Any>(httpStatus)
+            .status<ByteBuffer<Any>>(httpStatus)
             .headers { headers ->
                 additionalHeaders.forEach { (name, value) ->
                     headers.add(name, value)
@@ -161,6 +163,6 @@ class UptimeCheckerTest(
                 any<MonitorRecord>(),
                 requestUri ?: any<URI>()
             )
-        } returns response
+        } returns HttpCheckResponse(httpResponse = response, latency = 100)
     }
 }
