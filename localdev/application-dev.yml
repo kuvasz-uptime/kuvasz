@@ -65,7 +65,7 @@ logger:
 ---
 monitors:
   - name: test1
-    url: http://example.com
+    url: https://demo.kuvasz-uptime.dev
     uptime-check-interval: 120
     enabled: false
     ssl-check-enabled: true
@@ -74,5 +74,5 @@ monitors:
     force-no-cache: false
     follow-redirects: false
   - name: test2
-    url: http://example.org
+    url: https://kuvasz-uptime.dev
     uptime-check-interval: 60
