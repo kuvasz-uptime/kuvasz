@@ -15,7 +15,6 @@ import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
-import com.kuvaszuptime.kuvasz.util.isHtmxRequest
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -28,6 +27,7 @@ import io.micronaut.http.annotation.Produces
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
+import io.micronaut.views.htmx.http.HtmxRequestHeaders.HX_REQUEST
 import io.micronaut.views.htmx.http.HtmxResponseHeaders
 import io.swagger.v3.oas.annotations.Hidden
 import java.time.Duration
@@ -151,7 +151,7 @@ class WebUIController(
     @Error
     @Suppress("UnusedParameter")
     fun authError(request: HttpRequest<*>, authError: WebAuthError): HttpResponse<*> =
-        if (request.isHtmxRequest()) {
+        if (request.headers.contains(HX_REQUEST)) {
             // HTMX handles redirects differently, need to return a 2xx response with the right header
             HttpResponse.noContent<Any>().header(HtmxResponseHeaders.HX_REDIRECT, LOGIN_PATH)
         } else {
