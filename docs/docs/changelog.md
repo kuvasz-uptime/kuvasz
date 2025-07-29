@@ -2,6 +2,18 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
+## 2.4.0 <small>2025-xx-xx</small> { id="2.4.0" data-toc-label="2.4.0" }
+
+### Features
+
+- **More details** are persisted **about the errors** that occur during the HTTP uptime checks
+- **Re-worked the logic of the HTTP uptime check configuration & evaluation** to make it easier to introduce new configuration & evaluation options in the future
+
+### Fixes
+
+- Translated the "...[REDACTED]" string to make it internationalization friendly
+- **Fixed the latency measurement logic** to not include the time spent on retrying failing HTTP requests
+
 ## 2.3.1 <small>2025-07-25</small> { id="2.3.1" data-toc-label="2.3.1" }
 
 ### Fixes
