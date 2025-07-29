@@ -83,7 +83,13 @@ data class MonitorDownEvent(
     override fun toStructuredMessage(): StructuredMonitorDownMessage {
         val sanitizedError = error.message?.sanitizeMessage()
         val structuredError = if (status != null) {
-            "${status.code} ${status.reason}"
+            "${status.code} ${status.reason}".let { statusFragment ->
+                if (sanitizedError != null) {
+                    "$statusFragment: $sanitizedError"
+                } else {
+                    statusFragment
+                }
+            }
         } else {
             sanitizedError
         }

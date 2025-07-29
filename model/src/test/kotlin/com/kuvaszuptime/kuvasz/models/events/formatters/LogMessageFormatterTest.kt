@@ -84,7 +84,8 @@ class LogMessageFormatterTest : BehaviorSpec({
 
             then("it should return the correct message") {
                 val expectedMessage =
-                    "🚨 Your monitor \"test_monitor\" (https://test.url) is DOWN (400). Reason: 400 Bad Request"
+                    "🚨 Your monitor \"test_monitor\" (https://test.url) is DOWN (400). Reason: 400 Bad Request: " +
+                        "uptime error"
                 formatter.toFormattedMessage(event) shouldBe expectedMessage
             }
         }
@@ -100,7 +101,8 @@ class LogMessageFormatterTest : BehaviorSpec({
 
             then("it should return the correct message") {
                 val expectedMessage =
-                    "🚨 Your monitor \"test_monitor\" (https://test.url) is DOWN (400). Reason: 400 Bad Request"
+                    "🚨 Your monitor \"test_monitor\" (https://test.url) is DOWN (400). Reason: 400 Bad Request: " +
+                        "uptime error"
                 formatter.toFormattedMessage(event) shouldBe expectedMessage
             }
         }
@@ -119,8 +121,8 @@ class LogMessageFormatterTest : BehaviorSpec({
                 val expectedDurationString =
                     previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                 val expectedMessage =
-                    "🚨 Your monitor \"test_monitor\" (https://test.url) is DOWN (400). Reason: 400 Bad Request. " +
-                        "Was up for $expectedDurationString"
+                    "🚨 Your monitor \"test_monitor\" (https://test.url) is DOWN (400). Reason: 400 Bad Request: " +
+                        "uptime error. Was up for $expectedDurationString"
                 formatter.toFormattedMessage(event) shouldBe expectedMessage
             }
         }

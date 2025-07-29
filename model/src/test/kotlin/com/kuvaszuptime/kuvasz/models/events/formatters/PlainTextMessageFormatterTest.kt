@@ -80,7 +80,8 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
                 then("it should return the correct message") {
                     val expectedMessage =
-                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request"
+                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request: " +
+                            "uptime error"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -96,7 +97,8 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
                 then("it should return the correct message") {
                     val expectedMessage =
-                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request"
+                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request: " +
+                            "uptime error"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -115,8 +117,8 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                     val expectedDurationString =
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
-                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request\n" +
-                            "Was up for $expectedDurationString"
+                        "Your monitor \"test_monitor\" (https://test.url) is DOWN (400)\nReason: 400 Bad Request: " +
+                            "uptime error\nWas up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
