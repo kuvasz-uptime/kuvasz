@@ -152,7 +152,7 @@ class UptimeCheckerTest(
         additionalHeaders: Map<String, String> = emptyMap(),
     ) {
         val response = SimpleHttpResponseFactory()
-            .status<ByteBuffer<Any>>(httpStatus)
+            .status<ByteBuffer<*>>(httpStatus)
             .headers { headers ->
                 additionalHeaders.forEach { (name, value) ->
                     headers.add(name, value)

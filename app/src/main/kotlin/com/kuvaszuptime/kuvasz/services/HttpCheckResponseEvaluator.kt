@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.util.isSuccess
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
@@ -187,9 +188,6 @@ class HttpCheckResponseEvaluator(
         )
         return HttpCheckResult.Finished
     }
-
-    @Suppress("MagicNumber")
-    private fun HttpResponse<*>.isSuccess(): Boolean = this.status.code in 200..299
 
     private fun HttpResponse<*>.isRedirected(): Boolean =
         listOf(

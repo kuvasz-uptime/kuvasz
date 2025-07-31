@@ -10,12 +10,14 @@ import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBeUriOf
 import io.kotest.inspectors.forAll
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import org.mockserver.integration.ClientAndServer
+import org.mockserver.model.HttpError
 import org.mockserver.model.HttpRequest
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
@@ -389,7 +391,7 @@ class UptimeCheckerE2ETest(
             }
         }
 
-        `when`("it checks a monitor that is DOWN - valid HTTP status code") {
+        `when`("it checks a monitor that is DOWN - valid client-related HTTP status code") {
             val monitor = createMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
@@ -405,14 +407,86 @@ class UptimeCheckerE2ETest(
 
             uptimeChecker.check(monitor)
 
-            then("it should retry the check 3 times in total before it dispatches a MonitorDownEvent") {
+            then("it should dispatch a MonitorDownEvent") {
                 val expectedEvent = subscriber.awaitCount(1).values().first()
 
                 expectedEvent.status shouldBe HttpStatus.NOT_ACCEPTABLE
                 expectedEvent.monitor.id shouldBe monitor.id
-                expectedEvent.error.message shouldBe "Not Acceptable"
+                expectedEvent.error.message shouldBe "Response status code [406] was unexpected"
+
+                mockServer.verifyRequest(request, exactly = 1)
+            }
+        }
+
+        `when`("it checks a monitor that is DOWN - valid server-related HTTP status code") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.HEAD,
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = headRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.BAD_GATEWAY.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should retry the request 3 times before it dispatches a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.BAD_GATEWAY
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Bad Gateway"
 
                 mockServer.verifyRequest(request, exactly = 3)
+            }
+        }
+
+        `when`("it checks a monitor that drops the connection") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.HEAD,
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = headRequest("/some-path")
+            mockServer.`when`(request).error(HttpError().withDropConnection(true))
+
+            uptimeChecker.check(monitor)
+
+            then("it should retry the check 3 times in total before it dispatches a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                mockServer.verifyRequest(request, exactly = 3)
+
+                expectedEvent.status.shouldBeNull()
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Connection closed before response was received"
+            }
+        }
+
+        `when`("it checks a monitor that is unreachable") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "https://34hkl2jklvd.com/some-path",
+                requestMethod = HttpMethod.HEAD,
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            uptimeChecker.check(monitor)
+
+            then("it should handle the connection the right way") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status.shouldBeNull()
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Connect Error: 34hkl2jklvd.com"
             }
         }
 
@@ -439,7 +513,7 @@ class UptimeCheckerE2ETest(
                 expectedEvent.monitor.id shouldBe monitor.id
                 expectedEvent.error.message shouldBe "Invalid HTTP status code: 489"
 
-                mockServer.verifyRequest(request, exactly = 3)
+                mockServer.verifyRequest(request, exactly = 1)
             }
         }
 

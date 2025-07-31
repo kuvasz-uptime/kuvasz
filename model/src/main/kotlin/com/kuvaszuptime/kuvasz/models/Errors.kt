@@ -40,5 +40,5 @@ class InvalidRedirectionException(
 
 class IneligibleStatusCodeException(
     val statusCode: Int,
-    override val message: String? = "The status code $statusCode is not eligible for the check"
+    override val message: String? = "Response status code [$statusCode] was unexpected"
 ) : UptimeCheckException()
