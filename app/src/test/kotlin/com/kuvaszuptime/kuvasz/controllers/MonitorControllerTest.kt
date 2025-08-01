@@ -1400,6 +1400,26 @@ class MonitorControllerTest(
                     monitorInDb.integrations shouldContainExactlyInAnyOrder createdMonitor.integrations.toTypedArray()
                 }
             }
+            `when`("it is called to update a non-updatable field") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put("createdAt", "2023-01-01T00:00:00Z")
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val response = client.exchange(updateRequest).awaitFirst()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should not update the field and return a 200") {
+                    response.status shouldBe HttpStatus.OK
+                    monitorInDb.createdAt shouldBe createdMonitor.createdAt
+                }
+            }
         }
 
         given("MonitorController's getUptimeEvents() endpoint") {
