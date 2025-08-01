@@ -117,7 +117,9 @@ class WebUIController(
         return buildString {
             append(renderMonitorDetailsHeading(monitor))
             append(renderUptimeSummary(monitor))
-            append(renderSSLSummary(monitor))
+            if (monitor.sslCheckEnabled) {
+                append(renderSSLSummary(monitor))
+            }
         }
     }
 
