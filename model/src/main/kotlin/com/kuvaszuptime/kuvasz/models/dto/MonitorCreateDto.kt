@@ -13,6 +13,8 @@ object MonitorDefaults {
     const val FORCE_NO_CACHE = true
     const val FOLLOW_REDIRECTS = true
     const val SSL_EXPIRY_THRESHOLD_DAYS = 30
+    const val EXPECTED_KEYWORD_CASE_SENSITIVE = false
+    const val EXPECTED_KEYWORD_NEGATED = false
 }
 
 @Introspected
@@ -23,20 +25,58 @@ data class MonitorCreateDto(
     override val url: String,
     @Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     override val uptimeCheckInterval: Int,
-    @Schema(description = MonitorDocs.ENABLED, defaultValue = "true")
+    @Schema(description = MonitorDocs.ENABLED, defaultValue = MonitorDefaults.MONITOR_ENABLED.toString())
     override val enabled: Boolean = MonitorDefaults.MONITOR_ENABLED,
-    @Schema(description = MonitorDocs.SSL_CHECK_ENABLED, required = false, defaultValue = "false")
+    @Schema(
+        description = MonitorDocs.SSL_CHECK_ENABLED,
+        required = false,
+        defaultValue = MonitorDefaults.SSL_CHECK_ENABLED.toString()
+    )
     override val sslCheckEnabled: Boolean = MonitorDefaults.SSL_CHECK_ENABLED,
-    @Schema(description = MonitorDocs.REQUEST_METHOD, required = false, defaultValue = "GET")
+    @Schema(description = MonitorDocs.REQUEST_METHOD, required = false, defaultValue = MonitorDefaults.REQUEST_METHOD)
     override val requestMethod: HttpMethod = HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD),
-    @Schema(description = MonitorDocs.LATENCY_HISTORY_ENABLED, required = false, defaultValue = "true")
+    @Schema(
+        description = MonitorDocs.LATENCY_HISTORY_ENABLED,
+        required = false,
+        defaultValue = MonitorDefaults.LATENCY_HISTORY_ENABLED.toString()
+    )
     override val latencyHistoryEnabled: Boolean = MonitorDefaults.LATENCY_HISTORY_ENABLED,
-    @Schema(description = MonitorDocs.FORCE_NO_CACHE, required = false, defaultValue = "true")
+    @Schema(
+        description = MonitorDocs.FORCE_NO_CACHE,
+        required = false,
+        defaultValue = MonitorDefaults.FORCE_NO_CACHE.toString()
+    )
     override val forceNoCache: Boolean = MonitorDefaults.FORCE_NO_CACHE,
-    @Schema(description = MonitorDocs.FOLLOW_REDIRECTS, required = false, defaultValue = "true")
+    @Schema(
+        description = MonitorDocs.FOLLOW_REDIRECTS,
+        required = false,
+        defaultValue = MonitorDefaults.FOLLOW_REDIRECTS.toString()
+    )
     override val followRedirects: Boolean = MonitorDefaults.FOLLOW_REDIRECTS,
-    @Schema(description = MonitorDocs.SSL_EXPIRY_THRESHOLD, required = false, defaultValue = "30")
+    @Schema(
+        description = MonitorDocs.SSL_EXPIRY_THRESHOLD,
+        required = false,
+        defaultValue = MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS.toString()
+    )
     override val sslExpiryThreshold: Int = MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS,
     @Schema(description = MonitorDocs.INTEGRATIONS, required = false)
     override val integrations: List<String>? = emptyList(),
+    @Schema(description = MonitorDocs.EXPECTED_STATUS_CODES, required = false)
+    override val expectedStatusCodes: List<Int>? = emptyList(),
+    @Schema(description = MonitorDocs.RESPONSE_TIME_THRESHOLD, required = false)
+    override val responseTimeThresholdMillis: Int? = null,
+    @Schema(description = MonitorDocs.EXPECTED_KEYWORD, required = false)
+    override val expectedKeyword: String? = null,
+    @Schema(
+        description = MonitorDocs.EXPECTED_KEYWORD_CASE_SENSITIVE,
+        required = false,
+        defaultValue = MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE.toString(),
+    )
+    override val expectedKeywordCaseSensitive: Boolean = MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE,
+    @Schema(
+        description = MonitorDocs.EXPECTED_KEYWORD_NEGATED,
+        required = false,
+        defaultValue = MonitorDefaults.EXPECTED_KEYWORD_NEGATED.toString(),
+    )
+    override val expectedKeywordNegated: Boolean = MonitorDefaults.EXPECTED_KEYWORD_NEGATED,
 ) : MonitorCreatorLike

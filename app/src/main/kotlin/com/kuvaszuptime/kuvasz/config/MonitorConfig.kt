@@ -42,4 +42,13 @@ interface MonitorConfig : MonitorCreatorLike {
     override val sslExpiryThreshold: Int
 
     override val integrations: List<String>?
+    override val expectedStatusCodes: List<Int>?
+    override val responseTimeThresholdMillis: Int?
+    override val expectedKeyword: String?
+
+    @get:Bindable(defaultValue = MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE.toString())
+    override val expectedKeywordCaseSensitive: Boolean
+
+    @get:Bindable(defaultValue = MonitorDefaults.EXPECTED_KEYWORD_NEGATED.toString())
+    override val expectedKeywordNegated: Boolean
 }

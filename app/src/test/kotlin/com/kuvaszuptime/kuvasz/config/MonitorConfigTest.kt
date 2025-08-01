@@ -73,6 +73,26 @@ class MonitorConfigValidationTest : BehaviorSpec({
                     "MonitorConfig.getSslExpiryThreshold - must be greater than or equal to 0"
             }
         }
+
+        `when`("expectedStatusCodes contains an unsupported status code") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-invalid-status-code")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "getExpectedStatusCodes - All status code needs to be a valid HTTP status code between 100 and 499"
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is invalid") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-invalid-response-time-threshold")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "MonitorConfig.getResponseTimeThresholdMillis - must be less than or equal to 30000"
+            }
+        }
     }
 })
 
@@ -99,6 +119,11 @@ class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : D
                 monitorConfig.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
                 monitorConfig.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
                 monitorConfig.integrations.shouldBeNull()
+                monitorConfig.expectedStatusCodes.shouldBeNull()
+                monitorConfig.responseTimeThresholdMillis.shouldBeNull()
+                monitorConfig.expectedKeyword.shouldBeNull()
+                monitorConfig.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
+                monitorConfig.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
             }
         }
     }

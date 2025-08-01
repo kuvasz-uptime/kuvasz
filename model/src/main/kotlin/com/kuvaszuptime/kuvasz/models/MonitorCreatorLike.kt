@@ -4,10 +4,13 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
+import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 
 @Suppress("ComplexInterface")
@@ -34,6 +37,16 @@ interface MonitorCreatorLike {
     val sslExpiryThreshold: Int
 
     val integrations: List<String>?
+
+    @get:SupportedStatusCodes
+    val expectedStatusCodes: List<Int>?
+
+    @get:Positive
+    @get:Max(Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS)
+    val responseTimeThresholdMillis: Int?
+    val expectedKeyword: String?
+    val expectedKeywordCaseSensitive: Boolean
+    val expectedKeywordNegated: Boolean
 }
 
 fun MonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): MonitorRecord =
@@ -49,3 +62,8 @@ fun MonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setFollowRedirects(followRedirects)
         .setSslExpiryThreshold(sslExpiryThreshold)
         .setIntegrations(validatedIntegrations.toTypedArray())
+        .setExpectedStatusCodes(expectedStatusCodes?.toTypedArray().orEmpty())
+        .setResponseTimeThreshold(responseTimeThresholdMillis)
+        .setExpectedKeyword(expectedKeyword)
+        .setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive)
+        .setExpectedKeywordNegated(expectedKeywordNegated)

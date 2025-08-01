@@ -12,7 +12,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 
     fun Set<ConstraintViolation<MonitorCreateDto>>.shouldHaveSingleError(
         propertyPath: String,
-        message: String
+        message: String,
     ) {
         this.size shouldBe 1
         this.first().let { error ->
@@ -98,6 +98,70 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 )
             }
         }
+
+        `when`("expectedStatusCodes contains a non-supported status code") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                expectedStatusCodes = listOf(500, 200)
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "expectedStatusCodes",
+                    message = "All status code needs to be a valid HTTP status code between 100 and 499"
+                )
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is negative") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                responseTimeThresholdMillis = -100
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "responseTimeThresholdMillis",
+                    message = "must be greater than 0"
+                )
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is 0") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                responseTimeThresholdMillis = 0
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "responseTimeThresholdMillis",
+                    message = "must be greater than 0"
+                )
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is greater than 30000") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                responseTimeThresholdMillis = 30001
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "responseTimeThresholdMillis",
+                    message = "must be less than or equal to 30000"
+                )
+            }
+        }
     }
 })
 
@@ -118,6 +182,12 @@ class MonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
             dto.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
             dto.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
+            dto.integrations shouldBe emptyList()
+            dto.expectedStatusCodes shouldBe emptyList()
+            dto.responseTimeThresholdMillis shouldBe null
+            dto.expectedKeyword shouldBe null
+            dto.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
+            dto.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
         }
     }
 })
