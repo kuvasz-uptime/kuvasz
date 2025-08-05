@@ -28,7 +28,7 @@ pluginManagement {
         id("com.palantir.git-version") version "4.0.0"
         id("com.github.ben-manes.versions") version "0.52.0"
         id("org.flywaydb.flyway") version flywayPluginVersion
-        id("com.gradleup.shadow") version "8.3.8"
+        id("com.gradleup.shadow") version "8.3.9"
         id("com.github.gmazzo.buildconfig") version "5.6.7"
         id("org.gradlewebtools.minify") version "2.1.1"
         id("org.jetbrains.kotlinx.kover") version "0.9.1"
