@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlinx.kover")
     id("io.gitlab.arturbosch.detekt")
     id("de.comahe.i18n4k")
+    id("com.github.ben-manes.versions")
 }
 
 dependencies {

@@ -16,6 +16,7 @@ plugins {
     id("org.jetbrains.kotlinx.kover")
     id("nu.studer.jooq")
     id("org.flywaydb.flyway")
+    id("com.github.ben-manes.versions")
 }
 
 dependencies {

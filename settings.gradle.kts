@@ -86,7 +86,7 @@ dependencyResolutionManagement {
             library("simplejavamail-batchmodule", "org.simplejavamail", "batch-module").versionRef("simpleJavaMail")
 
             // Tests
-            library("mockk", "io.mockk", "mockk").version("1.14.2")
+            library("mockk", "io.mockk", "mockk").version("1.14.5")
             library("mockserver-netty", "org.mock-server", "mockserver-netty").version("5.15.0")
 
             // Misc

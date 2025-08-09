@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlinx.kover")
     id("io.gitlab.arturbosch.detekt")
     id("org.gradlewebtools.minify")
+    id("com.github.ben-manes.versions")
 }
 
 dependencies {
