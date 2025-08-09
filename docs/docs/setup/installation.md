@@ -43,8 +43,6 @@ documentation right now to see how you can set up integrations, app-level settin
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres # (1)!
           TZ: 'UTC' # (7)!
-        ports:
-          - "5432:5432"
         volumes:
           - kuvasz-db-data:/var/lib/postgresql/data # (2)!
       kuvasz:
