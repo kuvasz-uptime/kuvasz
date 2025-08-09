@@ -1,15 +1,25 @@
 ![Kuvasz](docs/docs/images/kuvasz-banner-light.webp)
 
 [![CI](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml/badge.svg)](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml)
+![GitHub known bugs](https://img.shields.io/github/issues-search/kuvasz-uptime/kuvasz?query=is%3Aopen%20label%3Abug&label=known%20bugs&color=red)
 [![codecov](https://codecov.io/gh/kuvasz-uptime/kuvasz/branch/main/graph/badge.svg?token=67X0CD3CGY)](https://codecov.io/gh/kuvasz-uptime/kuvasz)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz?ref=badge_shield)
-[![DockerHub](https://badgen.net/badge/docker/hub/blue?icon=docker)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
+[![Docker Pulls](https://img.shields.io/docker/pulls/kuvaszmonitoring/kuvasz)
+](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=flat&logo=discord&logoColor=white)](https://discord.com/invite/hMkyGPyU32)
 
 ---
 
 ## [📖 Documentation](https://kuvasz-uptime.dev)
 
-## [🛝 Live demo](https://kuvasz-uptime.dev/demo/)
+## 🛝 Live demo
+
+You can try out _Kuvasz_ on the dedicated demo instance under [https://demo.kuvasz-uptime.dev](https://demo.kuvasz-uptime.dev)
+
+Use the following credentials to log in:
+
+- **Username**: `demo`
+- **Password**: `secureDemoPassword`
 
 ## ℹ️  What is Kuvasz?
 
@@ -40,6 +50,7 @@ If you want to get started quickly, please refer to the [**Installation guide**]
 First and foremost, if you want to **stay up-to-date with the latest news**, features, and updates about _Kuvasz_, please consider:
 
 - starring the project on [**GitHub**](https://github.com/kuvasz-uptime/kuvasz) and on [**Docker Hub**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
+- joining our [**Discord server**](https://discord.com/invite/hMkyGPyU32)
 - following us on [**X**](https://x.com/KuvaszUptime)
 - following us on [**Mastodon**](https://techhub.social/@KuvaszUptime)
 
