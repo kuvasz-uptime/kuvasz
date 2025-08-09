@@ -144,6 +144,7 @@ internal enum class CSSClass(val className: String) {
     MODAL_SM("modal-sm"),
     MODAL_STATUS("modal-status"),
     MODAL_TITLE("modal-title"),
+    MS_1("ms-1"),
     MS_2("ms-2"),
     MS_AUTO("ms-auto"),
     MS_LG_AUTO("ms-lg-auto"),

@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
+import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 import kotlinx.html.stream.*
@@ -54,7 +55,17 @@ internal fun FlowContent.monitorDetailsHeading(monitor: MonitorDetailsDto) {
                         }
                         li {
                             classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
-                            +monitor.url.toString().abbreviate(MONITOR_URL_MAX_LENGTH)
+                            monitor.url.toString().let { monitorUrl ->
+                                a(href = monitorUrl) {
+                                    targetBlank()
+                                    classes(LINK_SECONDARY)
+                                    +monitorUrl.abbreviate(MONITOR_URL_MAX_LENGTH)
+                                    span {
+                                        classes(MS_1)
+                                        icon(Icon.EXTERNAL_LINK)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
