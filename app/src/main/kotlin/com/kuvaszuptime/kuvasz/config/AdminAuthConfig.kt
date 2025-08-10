@@ -14,14 +14,14 @@ import jakarta.validation.constraints.Size
 @Introspected
 @Requires(property = "micronaut.security.enabled", value = "true")
 class AdminAuthConfig {
-    @NotBlank
+    @field:NotBlank(message = "Admin username must not be blank")
     var username: String? = null
 
-    @NotBlank
-    @Size(min = 12)
+    @field:NotBlank(message = "Admin password must not be blank")
+    @field:Size(min = 12, message = "Admin password must be at least {min} characters")
     var password: String? = null
 
-    @NotBlank
-    @Size(min = 16)
+    @field:NotBlank(message = "Admin API key must not be blank")
+    @field:Size(min = 16, message = "Admin API key must be at least {min} characters")
     var apiKey: String? = null
 }

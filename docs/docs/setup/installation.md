@@ -105,6 +105,13 @@ documentation right now to see how you can set up integrations, app-level settin
     2.  Optional, but recommended, use your own timezone
     3.  Make sure your config file is readable!
 
+!!! important "Credential requirements"
+
+    - `ADMIN_PASSWORD` must be at least **12 characters** and must **not be equal** to `ADMIN_USER`.
+    - `ADMIN_API_KEY` must be at least **16 characters**.
+
+    See the detailed options in [Configuration](configuration.md#credentials).
+
 !!! tip "Disabling authentication"
 
     If you would like to completely **disable authentication**, you should set the `ENABLE_AUTH` environment variable to `false` and then you can just simply omit `ADMIN_USER`, `ADMIN_PASSWORD`, and `ADMIN_API_KEY`.
