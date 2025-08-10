@@ -26,7 +26,7 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception = shouldThrow<BeanInstantiationException> {
                     ApplicationContext.run(properties)
                 }
-                exceptionToMessage(exception) shouldContain "AdminAuthConfig.p0 - size must be between 12"
+                exceptionToMessage(exception) shouldContain "Admin password must be at least 12 characters"
             }
         }
 
@@ -56,8 +56,8 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception2 = shouldThrow<BeanInstantiationException> {
                     ApplicationContext.run(properties2)
                 }
-                exceptionToMessage(exception1) shouldContain "AdminAuthConfig.p0 - must not be blank"
-                exceptionToMessage(exception2) shouldContain "AdminAuthConfig.p0 - must not be blank"
+                exceptionToMessage(exception1) shouldContain "Admin username must not be blank"
+                exceptionToMessage(exception2) shouldContain "Admin password must not be blank"
             }
         }
 
@@ -75,7 +75,7 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception = shouldThrow<BeanInstantiationException> {
                     ApplicationContext.run(properties)
                 }
-                exceptionToMessage(exception) shouldContain "AdminAuthConfig.p0 - size must be between 16"
+                exceptionToMessage(exception) shouldContain "Admin API key must be at least 16 characters"
             }
         }
 
@@ -105,8 +105,8 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception2 = shouldThrow<BeanInstantiationException> {
                     ApplicationContext.run(properties2)
                 }
-                exceptionToMessage(exception1) shouldContain "AdminAuthConfig.p0 - must not be blank"
-                exceptionToMessage(exception2) shouldContain "AdminAuthConfig.p0 - must not be blank"
+                exceptionToMessage(exception1) shouldContain "Admin API key must not be blank"
+                exceptionToMessage(exception2) shouldContain "Admin API key must not be blank"
             }
         }
 
