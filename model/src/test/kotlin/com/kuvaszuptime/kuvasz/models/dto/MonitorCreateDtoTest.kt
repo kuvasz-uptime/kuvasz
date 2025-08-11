@@ -33,7 +33,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "name",
-                    message = "must not be blank"
+                    message = ValidationMessages.NAME_NOT_BLANK
                 )
             }
         }
@@ -48,7 +48,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "url",
-                    message = "must match \"^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\""
+                    message = ValidationMessages.URL_PATTERN
                 )
             }
         }
@@ -63,12 +63,12 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "url",
-                    message = "must match \"^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\""
+                    message = ValidationMessages.URL_PATTERN
                 )
             }
         }
 
-        `when`("uptimeCheckInterval is less than 60 seconds") {
+        `when`("uptimeCheckInterval is less than 5 seconds") {
             val dto = MonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
@@ -78,7 +78,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "uptimeCheckInterval",
-                    message = "must be greater than or equal to 5"
+                    message = "Uptime check interval must be at least 5 seconds"
                 )
             }
         }
@@ -94,7 +94,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "sslExpiryThreshold",
-                    message = "must be greater than or equal to 0"
+                    message = ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
                 )
             }
         }
@@ -110,7 +110,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "expectedStatusCodes",
-                    message = "All status code needs to be a valid HTTP status code between 100 and 499"
+                    message = ValidationMessages.SUPPORTED_STATUS_CODES
                 )
             }
         }
@@ -126,7 +126,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "responseTimeThresholdMillis",
-                    message = "must be greater than 0"
+                    message = ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
                 )
             }
         }
@@ -142,7 +142,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "responseTimeThresholdMillis",
-                    message = "must be greater than 0"
+                    message = ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
                 )
             }
         }
@@ -158,7 +158,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "responseTimeThresholdMillis",
-                    message = "must be less than or equal to 30000"
+                    message = "Response time threshold must be less than or equal to 30000 milliseconds"
                 )
             }
         }

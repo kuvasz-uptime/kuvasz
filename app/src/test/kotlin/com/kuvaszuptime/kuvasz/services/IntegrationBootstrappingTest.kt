@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -320,7 +321,8 @@ class IntegrationBootstrappingTest : StringSpec({
             ApplicationContext.run("invalid-integration-config")
         }
 
-        ex.message shouldContain "SlackNotificationConfig.getWebhookUrl - must not be blank"
+        ex.message shouldContain "SlackNotificationConfig.getWebhookUrl - " +
+            ValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
 })
 

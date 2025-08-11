@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.validation
 
 import com.kuvaszuptime.kuvasz.models.checks.SupportedExpectedHttpStatusCodes
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
@@ -9,7 +10,7 @@ import jakarta.validation.Constraint
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [])
 annotation class SupportedStatusCodes(
-    val message: String = "All status code needs to be a valid HTTP status code between 100 and 499",
+    val message: String = ValidationMessages.SUPPORTED_STATUS_CODES,
 )
 
 @Factory

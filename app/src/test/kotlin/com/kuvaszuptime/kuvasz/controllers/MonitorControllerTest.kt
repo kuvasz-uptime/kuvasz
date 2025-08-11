@@ -20,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -869,7 +870,7 @@ class MonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "url: must match \"^(https?)"
+                    exceptionToMessage(response) shouldContain ValidationMessages.URL_PATTERN
                 }
             }
 
@@ -887,8 +888,7 @@ class MonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
-                        "uptimeCheckInterval: must be greater than or equal to 5"
+                    exceptionToMessage(response) shouldContain "Uptime check interval must be at least 5 seconds"
                 }
             }
 
@@ -907,8 +907,7 @@ class MonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
-                        "sslExpiryThreshold: must be greater than or equal to 0"
+                    exceptionToMessage(response) shouldContain ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
                 }
             }
 
@@ -1249,7 +1248,8 @@ class MonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
-                    ex.response.getBodyAs<String>() shouldContain "Validation failed: name: must not be blank"
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: name: Monitor name must not be blank"
                     monitorInDb.name shouldBe createdMonitor.name
                 }
             }
@@ -1304,7 +1304,7 @@ class MonitorControllerTest(
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
                     ex.response.getBodyAs<String>() shouldContain
-                        "Validation failed: uptimeCheckInterval: must be greater than or equal to 5"
+                        "Validation failed: uptimeCheckInterval: Uptime check interval must be at least 5 seconds"
                     monitorInDb.name shouldBe createdMonitor.name
                 }
             }
@@ -1328,7 +1328,8 @@ class MonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
-                    ex.response.getBodyAs<String>() shouldContain "Validation failed: url: must match"
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: url: URL must be a valid HTTP(S) URI"
                     monitorInDb.name shouldBe createdMonitor.name
                 }
             }

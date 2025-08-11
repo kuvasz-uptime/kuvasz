@@ -40,7 +40,7 @@ class AppConfigTest : BehaviorSpec(
                     val exception = shouldThrow<BeanInstantiationException> {
                         ApplicationContext.run(properties)
                     }
-                    exceptionToMessage(exception) shouldContain "AppConfig.p0 - must be greater than or equal to 1"
+                    exceptionToMessage(exception) shouldContain "Event data retention must be at least 1 days"
                 }
             }
 
@@ -73,7 +73,7 @@ class AppConfigTest : BehaviorSpec(
                     val exception = shouldThrow<BeanInstantiationException> {
                         ApplicationContext.run(properties)
                     }
-                    exceptionToMessage(exception) shouldContain "AppConfig.p0 - must be greater than or equal to 1"
+                    exceptionToMessage(exception) shouldContain "Latency data retention must be at least 1 days"
                 }
             }
         }

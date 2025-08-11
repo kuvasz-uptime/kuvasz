@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.annotation.Introspected
@@ -14,10 +15,10 @@ import org.simplejavamail.api.mailer.config.TransportStrategy as JavaMailerTrans
 @Introspected
 class SMTPMailerConfig {
 
-    @NotBlank
+    @field:NotBlank(message = ValidationMessages.SMTP_HOST_NOT_BLANK)
     var host: String? = null
 
-    @NotNull
+    @field:NotNull(message = ValidationMessages.SMTP_PORT_NOT_NULL)
     var port: Int? = null
 
     var username: String? = null

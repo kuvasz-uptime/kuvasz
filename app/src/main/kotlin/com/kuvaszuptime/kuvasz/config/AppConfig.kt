@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Context
 import io.micronaut.core.annotation.Introspected
@@ -18,10 +19,10 @@ class AppConfig {
         private const val UPTIME_CHECK_LOCK_TIMEOUT_MS = 300_000L // 5 minutes
     }
 
-    @Min(MIN_EVENT_RETENTION_DAYS)
+    @Min(MIN_EVENT_RETENTION_DAYS, message = ValidationMessages.APP_CONFIG_EVENT_RETENTION_DAYS_MIN)
     var eventDataRetentionDays: Int = DEFAULT_EVENT_RETENTION_DAYS
 
-    @Min(MIN_LATENCY_RETENTION_DAYS)
+    @Min(MIN_LATENCY_RETENTION_DAYS, message = ValidationMessages.APP_CONFIG_LATENCY_RETENTION_DAYS_MIN)
     var latencyDataRetentionDays: Int = DEFAULT_LATENCY_RETENTION_DAYS
 
     var language: String = DEFAULT_LANGUAGE
