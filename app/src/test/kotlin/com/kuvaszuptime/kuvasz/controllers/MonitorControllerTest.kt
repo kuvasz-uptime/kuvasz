@@ -45,6 +45,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -68,7 +69,7 @@ import java.time.Duration
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class MonitorControllerTest(
-    @Client("/") private val client: HttpClient,
+    @param:Client("/") private val client: HttpClient,
     private val monitorClient: MonitorClient,
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
@@ -137,6 +138,11 @@ class MonitorControllerTest(
                     responseItem.followRedirects shouldBe true
                     responseItem.sslExpiryThreshold shouldBe monitor.sslExpiryThreshold
                     responseItem.sslValidUntil shouldBe null
+                    responseItem.expectedStatusCodes.shouldBeEmpty()
+                    responseItem.expectedKeyword shouldBe null
+                    responseItem.expectedKeywordCaseSensitive shouldBe false
+                    responseItem.expectedKeywordNegated shouldBe false
+                    responseItem.responseTimeThresholdMillis.shouldBeNull()
 
                     // Integrations
                     responseItem.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -480,6 +486,11 @@ class MonitorControllerTest(
                     followRedirects = false,
                     sslExpiryThreshold = 15,
                     integrations = setUpIntegrations,
+                    expectedStatusCodes = setOf(200, 201),
+                    expectedKeyword = "keyword",
+                    expectedKeywordCaseSensitive = false,
+                    expectedKeywordNegated = true,
+                    responseTimeThresholdMillis = 5000,
                 )
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
@@ -518,6 +529,11 @@ class MonitorControllerTest(
                     response.followRedirects shouldBe false
                     response.sslExpiryThreshold shouldBe 15
                     response.sslValidUntil shouldBe sslExpiryDate
+                    response.expectedStatusCodes shouldContainExactlyInAnyOrder setOf(200, 201)
+                    response.expectedKeyword shouldBe "keyword"
+                    response.expectedKeywordCaseSensitive shouldBe false
+                    response.expectedKeywordNegated shouldBe true
+                    response.responseTimeThresholdMillis shouldBe 5000
 
                     // Integrations
                     response.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -770,6 +786,11 @@ class MonitorControllerTest(
                     monitorInDb.sslExpiryThreshold shouldBe 30
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
                     monitorInDb.integrations.shouldNotBeNull().shouldBeEmpty()
+                    monitorInDb.expectedStatusCodes.shouldNotBeNull().shouldBeEmpty()
+                    monitorInDb.responseTimeThresholdMillis.shouldBeNull()
+                    monitorInDb.expectedKeyword.shouldBeNull()
+                    monitorInDb.expectedKeywordCaseSensitive shouldBe false
+                    monitorInDb.expectedKeywordNegated shouldBe false
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -795,6 +816,11 @@ class MonitorControllerTest(
                     followRedirects = false,
                     sslExpiryThreshold = 20,
                     integrations = setUpIntegrations.map { it.toString() },
+                    expectedStatusCodes = listOf(200, 201, 200),
+                    responseTimeThresholdMillis = 5000,
+                    expectedKeyword = "keyword",
+                    expectedKeywordCaseSensitive = true,
+                    expectedKeywordNegated = true,
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -823,6 +849,11 @@ class MonitorControllerTest(
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
                         setUpIntegrations.toTypedArray()
+                    monitorInDb.expectedStatusCodes.shouldNotBeNull() shouldContainExactlyInAnyOrder arrayOf(200, 201)
+                    monitorInDb.responseTimeThresholdMillis shouldBe 5000
+                    monitorInDb.expectedKeyword shouldBe "keyword"
+                    monitorInDb.expectedKeywordCaseSensitive shouldBe true
+                    monitorInDb.expectedKeywordNegated shouldBe true
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -950,6 +981,64 @@ class MonitorControllerTest(
                         "Non-existing integration ID found: email:non-existing-integration."
                 }
             }
+
+            `when`("it is called with an unsupported HTTP status code") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    expectedStatusCodes = listOf(200, 201, 999) // 999 is not a supported status code
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.SUPPORTED_STATUS_CODES
+                }
+            }
+
+            `when`("it is called with a negative response time threshold") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    responseTimeThresholdMillis = -100 // Negative value
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
+                }
+            }
+
+            `when`("it is called with a too high response time threshold") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    responseTimeThresholdMillis = 30001,
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain
+                        "Response time threshold must be less than or equal to 30000 milliseconds"
+                }
+            }
         }
 
         given("MonitorController's deleteMonitor() endpoint") {
@@ -1021,10 +1110,16 @@ class MonitorControllerTest(
                     forceNoCache = true,
                     sslExpiryThreshold = 10,
                     integrations = setUpIntegrations.map { it.toString() },
+                    expectedStatusCodes = listOf(200, 201, 202),
+                    responseTimeThresholdMillis = 5000,
+                    expectedKeyword = "keyword",
+                    expectedKeywordCaseSensitive = true,
+                    expectedKeywordNegated = true,
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                 checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
+
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(MonitorUpdateDto::enabled.name, false)
                     .put(MonitorUpdateDto::sslCheckEnabled.name, false)
@@ -1043,6 +1138,14 @@ class MonitorControllerTest(
                             .add("slack:test_implicitly_enabled")
                             .add("telegram:disabled")
                     )
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::expectedStatusCodes.name,
+                        mapper.createArrayNode().add(200).add(201)
+                    )
+                    .put(MonitorUpdateDto::responseTimeThresholdMillis.name, 10000)
+                    .put(MonitorUpdateDto::expectedKeyword.name, "updated_keyword")
+                    .put(MonitorUpdateDto::expectedKeywordCaseSensitive.name, false)
+                    .put(MonitorUpdateDto::expectedKeywordNegated.name, false)
 
                 val subscriber = TestSubscriber<MonitorLifecycleEvent>()
                 eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
@@ -1068,6 +1171,11 @@ class MonitorControllerTest(
                             IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
                             IntegrationID(IntegrationType.TELEGRAM, "disabled"),
                         )
+                    monitorInDb.expectedStatusCodes.shouldNotBeNull() shouldContainExactlyInAnyOrder arrayOf(200, 201)
+                    monitorInDb.responseTimeThresholdMillis shouldBe 10000
+                    monitorInDb.expectedKeyword shouldBe "updated_keyword"
+                    monitorInDb.expectedKeywordCaseSensitive shouldBe false
+                    monitorInDb.expectedKeywordNegated shouldBe false
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1421,6 +1529,83 @@ class MonitorControllerTest(
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                 }
             }
+
+            `when`("it is called with a too high response time threshold") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::responseTimeThresholdMillis.name, 30001)
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Response time threshold must be less than or equal to 30000 milliseconds"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with a negative response time threshold") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::responseTimeThresholdMillis.name, -100)
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with an invalid expected status code") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::expectedStatusCodes.name,
+                        mapper.createArrayNode().add(200).add(999) // 999 is not a valid status code
+                    )
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.SUPPORTED_STATUS_CODES
+                    monitorInDb.expectedStatusCodes shouldContainExactlyInAnyOrder
+                        createdMonitor.expectedStatusCodes.toTypedArray()
+                }
+            }
         }
 
         given("MonitorController's getUptimeEvents() endpoint") {
@@ -1555,6 +1740,11 @@ class MonitorControllerTest(
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
                     sslExpiryThreshold = 15,
+                    expectedStatusCodes = setOf(200, 404),
+                    responseTimeThresholdMillis = 1400,
+                    expectedKeyword = "somethingExpected",
+                    expectedKeywordCaseSensitive = true,
+                    expectedKeywordNegated = false,
                 )
                 val request = HttpRequest.GET<Any>("/api/v1/monitors/export/yaml").accept(MediaType.APPLICATION_YAML)
 
@@ -1597,6 +1787,11 @@ class MonitorControllerTest(
                         secondMonitor.forceNoCache shouldBe monitor2.forceNoCache
                         secondMonitor.followRedirects shouldBe monitor2.followRedirects
                         secondMonitor.sslExpiryThreshold shouldBe monitor2.sslExpiryThreshold
+                        secondMonitor.expectedStatusCodes shouldBe monitor2.expectedStatusCodes.toSet()
+                        secondMonitor.responseTimeThresholdMillis shouldBe monitor2.responseTimeThresholdMillis
+                        secondMonitor.expectedKeyword shouldBe monitor2.expectedKeyword
+                        secondMonitor.expectedKeywordCaseSensitive shouldBe monitor2.expectedKeywordCaseSensitive
+                        secondMonitor.expectedKeywordNegated shouldBe monitor2.expectedKeywordNegated
                     }
                 }
             }

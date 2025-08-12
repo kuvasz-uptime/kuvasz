@@ -141,9 +141,9 @@ public class Monitor extends TableImpl<MonitorRecord> {
     public final TableField<MonitorRecord, Integer[]> EXPECTED_STATUS_CODES = createField(DSL.name("expected_status_codes"), SQLDataType.INTEGER.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::integer[]"), SQLDataType.INTEGER.array())), this, "");
 
     /**
-     * The column <code>kuvasz.monitor.response_time_threshold</code>.
+     * The column <code>kuvasz.monitor.response_time_threshold_millis</code>.
      */
-    public final TableField<MonitorRecord, Integer> RESPONSE_TIME_THRESHOLD = createField(DSL.name("response_time_threshold"), SQLDataType.INTEGER, this, "");
+    public final TableField<MonitorRecord, Integer> RESPONSE_TIME_THRESHOLD_MILLIS = createField(DSL.name("response_time_threshold_millis"), SQLDataType.INTEGER, this, "");
 
     /**
      * The column <code>kuvasz.monitor.expected_keyword</code>.

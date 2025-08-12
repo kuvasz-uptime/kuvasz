@@ -35,7 +35,7 @@ public class Monitor implements Serializable {
     private Integer sslExpiryThreshold;
     private IntegrationID[] integrations;
     private Integer[] expectedStatusCodes;
-    private Integer responseTimeThreshold;
+    private Integer responseTimeThresholdMillis;
     private String expectedKeyword;
     private Boolean expectedKeywordCaseSensitive;
     private Boolean expectedKeywordNegated;
@@ -58,7 +58,7 @@ public class Monitor implements Serializable {
         this.sslExpiryThreshold = value.sslExpiryThreshold;
         this.integrations = value.integrations;
         this.expectedStatusCodes = value.expectedStatusCodes;
-        this.responseTimeThreshold = value.responseTimeThreshold;
+        this.responseTimeThresholdMillis = value.responseTimeThresholdMillis;
         this.expectedKeyword = value.expectedKeyword;
         this.expectedKeywordCaseSensitive = value.expectedKeywordCaseSensitive;
         this.expectedKeywordNegated = value.expectedKeywordNegated;
@@ -80,7 +80,7 @@ public class Monitor implements Serializable {
         Integer sslExpiryThreshold,
         IntegrationID[] integrations,
         Integer[] expectedStatusCodes,
-        Integer responseTimeThreshold,
+        Integer responseTimeThresholdMillis,
         String expectedKeyword,
         Boolean expectedKeywordCaseSensitive,
         Boolean expectedKeywordNegated
@@ -100,7 +100,7 @@ public class Monitor implements Serializable {
         this.sslExpiryThreshold = sslExpiryThreshold;
         this.integrations = integrations;
         this.expectedStatusCodes = expectedStatusCodes;
-        this.responseTimeThreshold = responseTimeThreshold;
+        this.responseTimeThresholdMillis = responseTimeThresholdMillis;
         this.expectedKeyword = expectedKeyword;
         this.expectedKeywordCaseSensitive = expectedKeywordCaseSensitive;
         this.expectedKeywordNegated = expectedKeywordNegated;
@@ -336,17 +336,17 @@ public class Monitor implements Serializable {
     }
 
     /**
-     * Getter for <code>kuvasz.monitor.response_time_threshold</code>.
+     * Getter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
      */
-    public Integer getResponseTimeThreshold() {
-        return this.responseTimeThreshold;
+    public Integer getResponseTimeThresholdMillis() {
+        return this.responseTimeThresholdMillis;
     }
 
     /**
-     * Setter for <code>kuvasz.monitor.response_time_threshold</code>.
+     * Setter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
      */
-    public Monitor setResponseTimeThreshold(Integer responseTimeThreshold) {
-        this.responseTimeThreshold = responseTimeThreshold;
+    public Monitor setResponseTimeThresholdMillis(Integer responseTimeThresholdMillis) {
+        this.responseTimeThresholdMillis = responseTimeThresholdMillis;
         return this;
     }
 
@@ -494,11 +494,11 @@ public class Monitor implements Serializable {
         }
         else if (!Arrays.deepEquals(this.expectedStatusCodes, other.expectedStatusCodes))
             return false;
-        if (this.responseTimeThreshold == null) {
-            if (other.responseTimeThreshold != null)
+        if (this.responseTimeThresholdMillis == null) {
+            if (other.responseTimeThresholdMillis != null)
                 return false;
         }
-        else if (!this.responseTimeThreshold.equals(other.responseTimeThreshold))
+        else if (!this.responseTimeThresholdMillis.equals(other.responseTimeThresholdMillis))
             return false;
         if (this.expectedKeyword == null) {
             if (other.expectedKeyword != null)
@@ -540,7 +540,7 @@ public class Monitor implements Serializable {
         result = prime * result + ((this.sslExpiryThreshold == null) ? 0 : this.sslExpiryThreshold.hashCode());
         result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         result = prime * result + ((this.expectedStatusCodes == null) ? 0 : Arrays.deepHashCode(this.expectedStatusCodes));
-        result = prime * result + ((this.responseTimeThreshold == null) ? 0 : this.responseTimeThreshold.hashCode());
+        result = prime * result + ((this.responseTimeThresholdMillis == null) ? 0 : this.responseTimeThresholdMillis.hashCode());
         result = prime * result + ((this.expectedKeyword == null) ? 0 : this.expectedKeyword.hashCode());
         result = prime * result + ((this.expectedKeywordCaseSensitive == null) ? 0 : this.expectedKeywordCaseSensitive.hashCode());
         result = prime * result + ((this.expectedKeywordNegated == null) ? 0 : this.expectedKeywordNegated.hashCode());
@@ -566,7 +566,7 @@ public class Monitor implements Serializable {
         sb.append(", ").append(sslExpiryThreshold);
         sb.append(", ").append(Arrays.deepToString(integrations));
         sb.append(", ").append(Arrays.deepToString(expectedStatusCodes));
-        sb.append(", ").append(responseTimeThreshold);
+        sb.append(", ").append(responseTimeThresholdMillis);
         sb.append(", ").append(expectedKeyword);
         sb.append(", ").append(expectedKeywordCaseSensitive);
         sb.append(", ").append(expectedKeywordNegated);

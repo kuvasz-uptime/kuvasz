@@ -11,13 +11,21 @@ data class SSLEventDto(
     val id: Long,
     @param:Schema(description = "The status of the SSL certificate", required = true)
     val status: SslStatus,
-    @param:Schema(description = "The error that occurred during the SSL check, if any", required = true, nullable = true)
+    @param:Schema(
+        description = "The error that occurred during the SSL check, if any",
+        required = true,
+        nullable = true
+    )
     val error: String?,
     @param:Schema(description = "The timestamp when the SSL event started", required = true)
     val startedAt: OffsetDateTime,
     @param:Schema(description = "The timestamp the SSL certificate is valid until", required = true, nullable = true)
     val sslValidUntil: OffsetDateTime?,
-    @param:Schema(description = "The timestamp when the SSL event ended, if applicable", required = true, nullable = true)
+    @param:Schema(
+        description = "The timestamp when the SSL event ended, if applicable",
+        required = true,
+        nullable = true
+    )
     val endedAt: OffsetDateTime?,
     @param:Schema(description = "The timestamp when the SSL event was updated", required = true)
     val updatedAt: OffsetDateTime

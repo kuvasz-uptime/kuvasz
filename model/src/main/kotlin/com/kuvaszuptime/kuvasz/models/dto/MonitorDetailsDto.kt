@@ -67,6 +67,16 @@ data class MonitorDetailsDto(
     val integrations: Set<IntegrationID>,
     @param:Schema(description = MonitorDocs.EFFECTIVE_INTEGRATIONS, required = true)
     val effectiveIntegrations: Set<IntegrationDetailsDto>,
+    @param:Schema(description = MonitorDocs.EXPECTED_STATUS_CODES, required = true)
+    val expectedStatusCodes: Set<Int>,
+    @param:Schema(description = MonitorDocs.RESPONSE_TIME_THRESHOLD, required = true, nullable = true)
+    val responseTimeThresholdMillis: Int? = null,
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD, required = true, nullable = true)
+    val expectedKeyword: String? = null,
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_CASE_SENSITIVE, required = true)
+    val expectedKeywordCaseSensitive: Boolean,
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_NEGATED, required = true)
+    val expectedKeywordNegated: Boolean,
 )
 
 data class IntegrationDetailsDto(

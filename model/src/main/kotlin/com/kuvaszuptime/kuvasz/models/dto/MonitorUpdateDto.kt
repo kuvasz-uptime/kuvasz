@@ -4,8 +4,10 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -60,4 +62,24 @@ data class MonitorUpdateDto(
 
     @param:Schema(description = MonitorDocs.INTEGRATIONS, required = false, nullable = true)
     val integrations: Set<IntegrationID>?,
+
+    @get:SupportedStatusCodes
+    @param:Schema(description = MonitorDocs.EXPECTED_STATUS_CODES, required = false, nullable = true)
+    val expectedStatusCodes: List<Int>?,
+
+    @get:Positive(message = ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE)
+    @get:Max(Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS, message = ValidationMessages.RESPONSE_TIME_THRESHOLD_MAX)
+    @param:Schema(description = MonitorDocs.RESPONSE_TIME_THRESHOLD, required = false, nullable = true)
+    val responseTimeThresholdMillis: Int?,
+
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD, required = false, nullable = true)
+    val expectedKeyword: String?,
+
+    @get:NotNull
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_CASE_SENSITIVE, required = false, nullable = false)
+    val expectedKeywordCaseSensitive: Boolean?,
+
+    @get:NotNull
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_NEGATED, required = false, nullable = false)
+    val expectedKeywordNegated: Boolean?,
 )

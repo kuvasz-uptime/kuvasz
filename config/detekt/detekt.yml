@@ -400,6 +400,7 @@ performance:
   active: true
   ArrayPrimitive:
     active: true
+    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**' ]
   CouldBeSequence:
     active: false
     threshold: 3

@@ -252,17 +252,17 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     }
 
     /**
-     * Setter for <code>kuvasz.monitor.response_time_threshold</code>.
+     * Setter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
      */
-    public MonitorRecord setResponseTimeThreshold(Integer value) {
+    public MonitorRecord setResponseTimeThresholdMillis(Integer value) {
         set(15, value);
         return this;
     }
 
     /**
-     * Getter for <code>kuvasz.monitor.response_time_threshold</code>.
+     * Getter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
      */
-    public Integer getResponseTimeThreshold() {
+    public Integer getResponseTimeThresholdMillis() {
         return (Integer) get(15);
     }
 
@@ -334,7 +334,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThreshold, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated) {
+    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated) {
         super(Monitor.MONITOR);
 
         setId(id);
@@ -352,7 +352,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         setSslExpiryThreshold(sslExpiryThreshold);
         setIntegrations(integrations);
         setExpectedStatusCodes(expectedStatusCodes);
-        setResponseTimeThreshold(responseTimeThreshold);
+        setResponseTimeThresholdMillis(responseTimeThresholdMillis);
         setExpectedKeyword(expectedKeyword);
         setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive);
         setExpectedKeywordNegated(expectedKeywordNegated);
@@ -381,7 +381,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
             setSslExpiryThreshold(value.getSslExpiryThreshold());
             setIntegrations(value.getIntegrations());
             setExpectedStatusCodes(value.getExpectedStatusCodes());
-            setResponseTimeThreshold(value.getResponseTimeThreshold());
+            setResponseTimeThresholdMillis(value.getResponseTimeThresholdMillis());
             setExpectedKeyword(value.getExpectedKeyword());
             setExpectedKeywordCaseSensitive(value.getExpectedKeywordCaseSensitive());
             setExpectedKeywordNegated(value.getExpectedKeywordNegated());

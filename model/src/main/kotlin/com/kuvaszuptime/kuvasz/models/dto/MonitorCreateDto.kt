@@ -33,7 +33,11 @@ data class MonitorCreateDto(
         defaultValue = MonitorDefaults.SSL_CHECK_ENABLED.toString()
     )
     override val sslCheckEnabled: Boolean = MonitorDefaults.SSL_CHECK_ENABLED,
-    @param:Schema(description = MonitorDocs.REQUEST_METHOD, required = false, defaultValue = MonitorDefaults.REQUEST_METHOD)
+    @param:Schema(
+        description = MonitorDocs.REQUEST_METHOD,
+        required = false,
+        defaultValue = MonitorDefaults.REQUEST_METHOD
+    )
     override val requestMethod: HttpMethod = HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD),
     @param:Schema(
         description = MonitorDocs.LATENCY_HISTORY_ENABLED,

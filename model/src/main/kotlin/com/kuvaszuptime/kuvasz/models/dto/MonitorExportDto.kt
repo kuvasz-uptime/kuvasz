@@ -39,7 +39,7 @@ data class MonitorExportDto(
                 sslExpiryThreshold = record.sslExpiryThreshold,
                 integrations = record.integrations.toSet(),
                 expectedStatusCodes = record.expectedStatusCodes.toSet(),
-                responseTimeThresholdMillis = record.responseTimeThreshold,
+                responseTimeThresholdMillis = record.responseTimeThresholdMillis,
                 expectedKeyword = record.expectedKeyword,
                 expectedKeywordCaseSensitive = record.expectedKeywordCaseSensitive,
                 expectedKeywordNegated = record.expectedKeywordNegated,

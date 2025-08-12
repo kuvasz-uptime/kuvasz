@@ -33,6 +33,16 @@ data class MonitorDto(
     val sslExpiryThreshold: Int,
     @param:Schema(description = MonitorDocs.INTEGRATIONS, required = true)
     val integrations: Set<IntegrationID>,
+    @param:Schema(description = MonitorDocs.EXPECTED_STATUS_CODES, required = true)
+    val expectedStatusCodes: Set<Int>,
+    @param:Schema(description = MonitorDocs.RESPONSE_TIME_THRESHOLD, required = true, nullable = true)
+    val responseTimeThresholdMillis: Int? = null,
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD, required = true, nullable = true)
+    val expectedKeyword: String? = null,
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_CASE_SENSITIVE, required = true)
+    val expectedKeywordCaseSensitive: Boolean,
+    @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_NEGATED, required = true)
+    val expectedKeywordNegated: Boolean,
     @param:Schema(description = MonitorDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
     @param:Schema(description = MonitorDocs.UPDATED_AT, required = true, nullable = true)
@@ -53,6 +63,11 @@ data class MonitorDto(
                 followRedirects = record.followRedirects,
                 sslExpiryThreshold = record.sslExpiryThreshold,
                 integrations = record.integrations.toSet(),
+                expectedStatusCodes = record.expectedStatusCodes.toSet(),
+                responseTimeThresholdMillis = record.responseTimeThresholdMillis,
+                expectedKeyword = record.expectedKeyword,
+                expectedKeywordCaseSensitive = record.expectedKeywordCaseSensitive,
+                expectedKeywordNegated = record.expectedKeywordNegated,
                 createdAt = record.createdAt,
                 updatedAt = record.updatedAt,
             )
