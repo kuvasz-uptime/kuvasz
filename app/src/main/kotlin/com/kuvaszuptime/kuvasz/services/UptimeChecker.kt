@@ -53,8 +53,7 @@ class UptimeChecker(
             visitedUrls.add(effectiveUrl)
 
             val checkResponse = sendHttpRequest(monitor, uri = effectiveUrl)
-            val result = checkResponseEvaluator.evaluateResponse(monitor, checkResponse, visitedUrls)
-            when (result) {
+            when (val result = checkResponseEvaluator.evaluateResponse(monitor, checkResponse, visitedUrls)) {
                 is HttpCheckResult.Redirected -> check(monitor, result.redirectionUri, result.visitedUrls)
                 HttpCheckResult.Continue -> {
                     logger.warn("HTTP uptime check for monitor with ID: ${monitor.id} returned Continue unexpectedly")
