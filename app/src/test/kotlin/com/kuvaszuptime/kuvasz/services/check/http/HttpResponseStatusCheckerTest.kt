@@ -133,13 +133,13 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                     )
                 )
 
+                redirectSubscriber.assertSingleValue(mockMonitor.id, "https://else.com/redirect")
                 result shouldBe HttpCheckResult.Redirected(
                     redirectionUri = "https://else.com/redirect".toUri(),
                     visitedUrls = mutableListOf("/something".toUri())
                 )
                 upSubscriber.assertNoValues()
                 downSubscriber.assertNoValues()
-                redirectSubscriber.assertSingleValue(mockMonitor.id, "https://else.com/redirect")
             }
         }
 
@@ -177,10 +177,10 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 )
             )
 
-            result shouldBe HttpCheckResult.Finished
-            upSubscriber.assertNoValues()
             redirectSubscriber.assertSingleValue(mockMonitor.id, "http://example.com/redirect")
             downSubscriber.assertSingleError<RedirectLoopException>("Redirect loop detected")
+            upSubscriber.assertNoValues()
+            result shouldBe HttpCheckResult.Finished
         }
     }
 
@@ -273,13 +273,13 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                     )
                 )
 
+                redirectSubscriber.assertSingleValue(mockMonitor.id, "http://example.com/redirect")
+                upSubscriber.assertNoValues()
+                downSubscriber.assertNoValues()
                 result shouldBe HttpCheckResult.Redirected(
                     redirectionUri = "http://example.com/redirect".toUri(),
                     visitedUrls = mutableListOf("/something".toUri())
                 )
-                upSubscriber.assertNoValues()
-                downSubscriber.assertNoValues()
-                redirectSubscriber.assertSingleValue(mockMonitor.id, "http://example.com/redirect")
             }
         }
     }
