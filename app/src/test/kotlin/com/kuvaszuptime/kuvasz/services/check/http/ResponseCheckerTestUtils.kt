@@ -8,10 +8,12 @@ import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import kotlin.time.Duration.Companion.seconds
 
 fun EventDispatcher.upSubscriber(): TestSubscriber<MonitorUpEvent> {
     val subscriber = TestSubscriber<MonitorUpEvent>()
@@ -49,16 +51,18 @@ fun mockMonitor(
     this.followRedirects = followRedirects
 }
 
-inline fun <reified E : UptimeCheckException> TestSubscriber<MonitorDownEvent>.assertSingleError(
+suspend inline fun <reified E : UptimeCheckException> TestSubscriber<MonitorDownEvent>.assertSingleError(
     expectedMessage: String,
 ) {
-    val event = this.awaitCount(1).values().first()
+    this.awaitCount(1)
+    val event = eventually(2.seconds) { this.values().first() }
     event.error.shouldBeInstanceOf<E>()
     event.error.message shouldStartWith expectedMessage
 }
 
-inline fun TestSubscriber<RedirectEvent>.assertSingleValue(monitorId: Long, redirectLocation: String) {
-    val event = this.awaitCount(1).values().first()
+suspend inline fun TestSubscriber<RedirectEvent>.assertSingleValue(monitorId: Long, redirectLocation: String) {
+    this.awaitCount(1)
+    val event = eventually(2.seconds) { this.values().first() }
     event.monitor.id shouldBe monitorId
     event.redirectLocation shouldBe redirectLocation.toUri()
 }
