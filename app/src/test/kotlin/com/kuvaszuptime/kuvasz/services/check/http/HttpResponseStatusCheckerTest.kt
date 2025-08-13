@@ -9,10 +9,6 @@ import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.data.forAll
-import io.kotest.data.headers
-import io.kotest.data.row
-import io.kotest.data.table
 import io.kotest.matchers.shouldBe
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
@@ -43,19 +39,31 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
     context("expected status is not explicitly set") {
 
         should("return Continue for 2xx status") {
-            table(
-                headers("status"),
-                row(HttpStatus.OK),
-                row(HttpStatus.CREATED),
-                row(HttpStatus.ACCEPTED),
-                row(HttpStatus.NON_AUTHORITATIVE_INFORMATION),
-                row(HttpStatus.NO_CONTENT),
-                row(HttpStatus.RESET_CONTENT),
-                row(HttpStatus.PARTIAL_CONTENT),
-                row(HttpStatus.MULTI_STATUS),
-                row(HttpStatus.ALREADY_IMPORTED),
-                row(HttpStatus.IM_USED),
-            ).forAll { httpStatus ->
+//            table(
+//                headers("status"),
+//                row(HttpStatus.OK),
+//                row(HttpStatus.CREATED),
+//                row(HttpStatus.ACCEPTED),
+//                row(HttpStatus.NON_AUTHORITATIVE_INFORMATION),
+//                row(HttpStatus.NO_CONTENT),
+//                row(HttpStatus.RESET_CONTENT),
+//                row(HttpStatus.PARTIAL_CONTENT),
+//                row(HttpStatus.MULTI_STATUS),
+//                row(HttpStatus.ALREADY_IMPORTED),
+//                row(HttpStatus.IM_USED),
+//            ).forAll { httpStatus ->
+            listOf(
+                HttpStatus.OK,
+                HttpStatus.CREATED,
+                HttpStatus.ACCEPTED,
+                HttpStatus.NON_AUTHORITATIVE_INFORMATION,
+                HttpStatus.NO_CONTENT,
+                HttpStatus.RESET_CONTENT,
+                HttpStatus.PARTIAL_CONTENT,
+                HttpStatus.MULTI_STATUS,
+                HttpStatus.ALREADY_IMPORTED,
+                HttpStatus.IM_USED,
+            ).forEach { httpStatus ->
                 val upSubscriber = dispatcher.upSubscriber()
                 val downSubscriber = dispatcher.downSubscriber()
                 val redirectSubscriber = dispatcher.redirectSubscriber()
@@ -109,15 +117,23 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
         }
 
         should("return Redirected for 3xx status when followRedirects is true") {
-            table(
-                headers("status"),
-                row(HttpStatus.SEE_OTHER),
-                row(HttpStatus.MOVED_PERMANENTLY),
-                row(HttpStatus.TEMPORARY_REDIRECT),
-                row(HttpStatus.PERMANENT_REDIRECT),
-                row(HttpStatus.FOUND),
-                row(HttpStatus.NOT_MODIFIED),
-            ).forAll { httpStatus ->
+//            table(
+//                headers("status"),
+//                row(HttpStatus.SEE_OTHER),
+//                row(HttpStatus.MOVED_PERMANENTLY),
+//                row(HttpStatus.TEMPORARY_REDIRECT),
+//                row(HttpStatus.PERMANENT_REDIRECT),
+//                row(HttpStatus.FOUND),
+//                row(HttpStatus.NOT_MODIFIED),
+//            ).forAll { httpStatus ->
+            listOf(
+                HttpStatus.SEE_OTHER,
+                HttpStatus.MOVED_PERMANENTLY,
+                HttpStatus.TEMPORARY_REDIRECT,
+                HttpStatus.PERMANENT_REDIRECT,
+                HttpStatus.FOUND,
+                HttpStatus.NOT_MODIFIED,
+            ).forEach { httpStatus ->
                 val upSubscriber = dispatcher.upSubscriber()
                 val downSubscriber = dispatcher.downSubscriber()
                 val redirectSubscriber = dispatcher.redirectSubscriber()
@@ -187,12 +203,17 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
     context("expected status is explicitly set") {
 
         should("return Continue for any of the expected statuses") {
-            table(
-                headers("statuses"),
-                row(listOf(HttpStatus.OK)),
-                row(listOf(HttpStatus.ACCEPTED, HttpStatus.NO_CONTENT)),
-                row(listOf(HttpStatus.NOT_FOUND, HttpStatus.BAD_REQUEST)),
-            ).forAll { expectedStatuses ->
+//            table(
+//                headers("statuses"),
+//                row(listOf(HttpStatus.OK)),
+//                row(listOf(HttpStatus.ACCEPTED, HttpStatus.NO_CONTENT)),
+//                row(listOf(HttpStatus.NOT_FOUND, HttpStatus.BAD_REQUEST)),
+//            ).forAll { expectedStatuses ->
+            listOf(
+                listOf(HttpStatus.OK),
+                listOf(HttpStatus.ACCEPTED, HttpStatus.NO_CONTENT),
+                listOf(HttpStatus.NOT_FOUND, HttpStatus.BAD_REQUEST),
+            ).forEach { expectedStatuses ->
                 val upSubscriber = dispatcher.upSubscriber()
                 val downSubscriber = dispatcher.downSubscriber()
                 val redirectSubscriber = dispatcher.redirectSubscriber()
@@ -246,15 +267,23 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
         }
 
         should("return Redirected for 3xx status if the status is expected") {
-            table(
-                headers("status"),
-                row(HttpStatus.SEE_OTHER),
-                row(HttpStatus.MOVED_PERMANENTLY),
-                row(HttpStatus.TEMPORARY_REDIRECT),
-                row(HttpStatus.PERMANENT_REDIRECT),
-                row(HttpStatus.FOUND),
-                row(HttpStatus.NOT_MODIFIED),
-            ).forAll { httpStatus ->
+//            table(
+//                headers("status"),
+//                row(HttpStatus.SEE_OTHER),
+//                row(HttpStatus.MOVED_PERMANENTLY),
+//                row(HttpStatus.TEMPORARY_REDIRECT),
+//                row(HttpStatus.PERMANENT_REDIRECT),
+//                row(HttpStatus.FOUND),
+//                row(HttpStatus.NOT_MODIFIED),
+//            ).forAll { httpStatus ->
+            listOf(
+                HttpStatus.SEE_OTHER,
+                HttpStatus.MOVED_PERMANENTLY,
+                HttpStatus.TEMPORARY_REDIRECT,
+                HttpStatus.PERMANENT_REDIRECT,
+                HttpStatus.FOUND,
+                HttpStatus.NOT_MODIFIED,
+            ).forEach { httpStatus ->
                 val upSubscriber = dispatcher.upSubscriber()
                 val downSubscriber = dispatcher.downSubscriber()
                 val redirectSubscriber = dispatcher.redirectSubscriber()
