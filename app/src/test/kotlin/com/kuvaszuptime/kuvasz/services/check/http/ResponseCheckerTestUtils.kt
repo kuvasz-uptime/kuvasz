@@ -52,13 +52,13 @@ fun mockMonitor(
 inline fun <reified E : UptimeCheckException> TestSubscriber<MonitorDownEvent>.assertSingleError(
     expectedMessage: String,
 ) {
-    val event = this.awaitCount(1).values().single()
+    val event = this.awaitCount(1).values().first()
     event.error.shouldBeInstanceOf<E>()
     event.error.message shouldStartWith expectedMessage
 }
 
 inline fun TestSubscriber<RedirectEvent>.assertSingleValue(monitorId: Long, redirectLocation: String) {
-    val event = this.awaitCount(1).values().single()
+    val event = this.awaitCount(1).values().first()
     event.monitor.id shouldBe monitorId
     event.redirectLocation shouldBe redirectLocation.toUri()
 }
