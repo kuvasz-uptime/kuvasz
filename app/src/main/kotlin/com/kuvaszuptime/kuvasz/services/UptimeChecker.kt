@@ -4,6 +4,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckResponseEvaluator
 import com.kuvaszuptime.kuvasz.util.isServerRelatedError
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.core.type.Argument

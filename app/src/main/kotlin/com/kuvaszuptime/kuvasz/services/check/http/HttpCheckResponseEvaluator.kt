@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
@@ -6,12 +6,7 @@ import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
-import com.kuvaszuptime.kuvasz.services.check.http.HttpResponseBodyChecker
-import com.kuvaszuptime.kuvasz.services.check.http.HttpResponseCheckContext
-import com.kuvaszuptime.kuvasz.services.check.http.HttpResponseChecker
-import com.kuvaszuptime.kuvasz.services.check.http.HttpResponseStatusChecker
-import com.kuvaszuptime.kuvasz.services.check.http.HttpResponseTimeChecker
-import com.kuvaszuptime.kuvasz.services.check.http.NoOpUpDispatcher
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import jakarta.inject.Singleton
@@ -32,13 +27,15 @@ class HttpCheckResponseEvaluator(
     /**
      * Evaluates the HTTP response for a given monitor. The checks are intended to be chained together, allowing for an
      * early exit at any point in the evaluation process. The last check in the chain is always expected to return a
-     * [HttpCheckResult.Finished] result, which indicates that the evaluation is complete.
+     * [com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult.Finished] result, which indicates that the evaluation
+     * is complete.
      *
      * @param monitor The monitor record to evaluate the response for
      * @param response The HTTP response along with the latency data to evaluate
      * @param visitedUrls A list of the already visited URLs to track redirection loops
      *
-     * @return An instance of [HttpCheckResult] indicating the result of the evaluation.
+     * @return An instance of [com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult] indicating the result of the
+     * evaluation.
      */
     fun evaluateResponse(
         monitor: MonitorRecord,
