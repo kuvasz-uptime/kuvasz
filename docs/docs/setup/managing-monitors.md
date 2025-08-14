@@ -51,6 +51,14 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
       follow-redirects: true # (8)!
       force-no-cache: true # (9)!
       ssl-expiry-threshold: 30 # (10)!
+      expected-status-codes: # (12)!
+        - 200
+        - 201
+        - 303
+      expected-keyword: "Kuvasz" # (13)!
+      expected-keyword-case-sensitive: false # (14)!
+      expected-keyword-negated: false # (15)!
+      response-time-threshold-millis: 500 # (16)!
       integrations: # (11)!
         - "email:my-email-integration"
     # ... other monitors
@@ -67,6 +75,11 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     9. **Force no cache**: Whether the monitor should send a `Cache-Control: no-cache` header with the request. Defaults to true.
     10. **SSL expiry threshold**: The number of days before the SSL certificate expires that the monitor should alert about it. Defaults to 30 days.
     11. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
+    12. **Expected status codes**: A list of expected HTTP status codes that the monitor should accept as valid responses. Defaults to any `2xx` status.
+    13. **Expected keyword**: A keyword that the monitor should look for in the response body. If the keyword is not found, the monitor will alert you about it.
+    14. **Expected keyword case sensitive**: Whether the keyword matching should be case-sensitive or not. Defaults to false.
+    15. **Expected keyword negated**: Whether the keyword matching should be negated or not. If set to true, the monitor will alert you if the keyword is found in the response body. Defaults to false.
+    16. **Response time threshold**: The maximum response time in milliseconds that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. Maximum is 30 seconds (30000 ms), default is `null` which means that there is no response time threshold.
 
 === "API (expert)"
 
@@ -178,6 +191,56 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
     You can add/keep **disabled integrations in the list**, but they will not be used for the monitor. This is useful if you want to enable them later without modifying the monitor's configuration.
 
     **Global integrations** can be explicitly added too, which is handy if you're about to **make them non-global later**, but you want to make sure that they will be assigned to certain monitors even after the change.
+
+### Expected status codes
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `2xx` -->
+<!-- md:type list -->
+
+A list of **expected HTTP status codes** that the monitor should accept as valid responses. If the response status code is not in this list, the monitor will alert you about it. Defaults to any `2xx` status code.
+
+!!! warning "Redirects"
+
+    If the monitor is **set to follows redirects**, the status code of the **final response will be checked** against this list. 
+
+    However if you want to allow redirects, and you would also like to explicitly specify the expected status codes, you have to **add the right `3xx` status codes to this list** as well, otherwise the monitor will alert you about the redirect responses.
+
+### Expected keyword
+
+<!-- md:version 2.4.0 -->
+<!-- md:default empty -->
+<!-- md:type string -->
+
+A keyword that the monitor should look for in the response body. If the **keyword is not found**, the monitor will alert you about it. This is useful to ensure that the response contains the expected content. You can use **JSON strings** as well, for example `{"status":"ok"}` to match a JSON response, but keep in mind, that _Kuvasz_ will check the response as is, without parsing it, so the keyword **must match exactly**.
+
+!!! warning "HEAD requests"
+
+    If the monitor is set to use the `HEAD` request method, the response body will be empty, so this check will always fail. In this case, you should either use the `GET` method, or disable this check.
+
+### Expected keyword case sensitivity
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+
+Whether the keyword matching should be **case-sensitive** or not. If it's set to `true`, the monitor will be considered healthy only if the keyword matches exactly, including the case. If it's set to `false`, the monitor will be considered healthy if the keyword is found in the response body, regardless of the case.
+
+### Expected keyword negation
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+
+A.k.a. "reverse matching". If this is set to `true`, the monitor will alert you if the keyword is found in the response body, instead of alerting you if it's not found. This is useful if you want to ensure that a specific keyword is **not present** in the response body.
+
+### Response time threshold
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `null` -->
+<!-- md:type number -->
+
+The maximum response time in **milliseconds** that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. This is useful to ensure that your services are performing well and responding within an acceptable time frame. The maximum value is 30 seconds (30000 ms), and the default is `null`, which means that there is no response time threshold.
 
 ## Common operations
 

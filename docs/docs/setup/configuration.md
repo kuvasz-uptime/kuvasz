@@ -379,7 +379,13 @@ Toggles the log based event handler, which **writes the uptime & SSL events** co
     APP_LANGUAGE=en
     ```
 
-The language to use. Currently, **only `en` (English) is supported**, but more languages will be added in the future. See the [**Localization**](../localization.md) section for more details.
+The language to use. If you would like to translate _Kuvasz_ to your desired language, check out the [**Localization**](../localization.md) section for more details.
+
+!!! info "Currently supported languages"
+
+    - English (`en`)
+    - French (`fr`)
+    - Polish (`pl`)
 
 ## Full configuration example
 

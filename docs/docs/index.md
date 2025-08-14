@@ -24,7 +24,7 @@
 
     With flexible configuration, adjustable intervals, headers, and more.
 
-    [:octicons-arrow-right-24: Uptime monitoring](features/uptime-monitoring.md)
+    [:octicons-arrow-right-24: Uptime monitoring](features/http-uptime-monitoring.md)
 
 -   :lock:{ .lg .card-header-icon } __SSL monitoring__
 
