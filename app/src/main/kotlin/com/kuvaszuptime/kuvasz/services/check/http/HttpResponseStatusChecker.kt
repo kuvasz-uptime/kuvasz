@@ -58,7 +58,7 @@ class HttpResponseStatusChecker(
                 "Status check failed for monitor with ID: ${monitor.id} with status ${response.httpResponse.status}"
             )
             val error = if (response.httpResponse.isRedirected() && !monitor.followRedirects) {
-                InvalidRedirectionException("The request was redirected, but the followRedirects option is disabled")
+                InvalidRedirectionException("The request was redirected, but following redirects is disabled")
             } else {
                 IneligibleStatusCodeException(response.httpResponse.status.code)
             }

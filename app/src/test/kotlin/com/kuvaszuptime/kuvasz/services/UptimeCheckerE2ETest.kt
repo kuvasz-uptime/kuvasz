@@ -480,7 +480,7 @@ class UptimeCheckerE2ETest(
                 expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                 expectedDownEvent.monitor.id shouldBe monitor.id
                 expectedDownEvent.error.message shouldBe
-                    "The request was redirected, but the followRedirects option is disabled"
+                    "The request was redirected, but following redirects is disabled"
 
                 mockServer.verifyRequest(request1)
                 mockServer.verifyRequest(request2, exactly = 0)

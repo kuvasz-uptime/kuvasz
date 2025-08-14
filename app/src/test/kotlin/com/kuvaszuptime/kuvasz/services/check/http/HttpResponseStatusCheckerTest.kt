@@ -104,7 +104,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             upSubscriber.assertNoValues()
             redirectSubscriber.assertNoValues()
             downSubscriber.assertSingleError<InvalidRedirectionException>(
-                "The request was redirected, but the followRedirects option is disabled"
+                "The request was redirected, but following redirects is disabled"
             )
         }
 
