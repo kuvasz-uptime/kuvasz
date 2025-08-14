@@ -2,10 +2,12 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.checks.SupportedExpectedHttpStatusCodes
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.fragments.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.serde.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -103,21 +105,30 @@ internal fun FlowContent.monitorCreateUpdateModal(
             "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
             "sslExpiryThresholdInvalid" to Messages.errorSSLExpiryThresholdInvalid(),
             "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
+            "responseTimeThresholdInvalid" to Messages.errorResponseTimeThresholdInvalid(),
         )
     )
+    val serializedStatusCodes = objectMapper.writeValueAsString(SupportedExpectedHttpStatusCodes.allCodes)
     val modalClosedEvent = "monitor-upsert-modal-closed"
+    val acceptedStatusCodeSelectId = "accepted-status-codes-select"
     div {
         id = modalId
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
-        xData("upsertMonitorForm($serializedMonitor, $serializedErrorMessages)")
+        xData(
+            """upsertMonitorForm(
+                |$serializedMonitor, 
+                |$serializedErrorMessages, 
+                |'$acceptedStatusCodeSelectId', 
+                |$serializedStatusCodes)
+            """.trimMargin()
+        )
         attributes["@$modalClosedEvent.window"] = "resetState()"
-        attributes["tabindex"] = "-1"
-        attributes["role"] = "dialog"
+        tabIndex = "-1"
+        role = "dialog"
 
         div {
             classes(MODAL_DIALOG, MODAL_LG, MODAL_DIALOG_CENTERED)
-            attributes["role"] = "document"
-            role
+            role = "document"
 
             div {
                 classes(MODAL_CONTENT)
@@ -182,41 +193,169 @@ internal fun FlowContent.monitorCreateUpdateModal(
                             disabledIf = "${globals.isReadOnlyMode()}",
                         )
                     }
+                    // Latency History
+                    div {
+                        toggleSwitch(
+                            propName = "latencyHistoryEnabled",
+                            label = Messages.latencyHistorySwitchLabel(),
+                            description = Messages.latencyHistorySwitchDescription(),
+                            isDisabled = globals.isReadOnlyMode(),
+                        )
+                    }
+                }
+                // Request Settings
+                div {
+                    classes(MODAL_BODY)
+                    h3 {
+                        classes(MB_3)
+                        +Messages.requestSettingsLabel()
+                    }
                     // HTTP Method (GET, HEAD, etc.)
                     div {
                         label {
                             classes(FORM_LABEL)
                             +Messages.httpMethodLabel()
                         }
+                        selectGroup(
+                            xModelName = "requestMethod",
+                            readOnly = globals.isReadOnlyMode(),
+                            values = listOf(
+                                ValueAndLabel("GET", "GET"),
+                                ValueAndLabel("HEAD", "HEAD"),
+                            )
+                        )
+                    }
+                    // Follow Redirects
+                    div {
+                        classes(MB_3)
+                        toggleSwitch(
+                            propName = "followRedirects",
+                            label = Messages.followRedirectsSwitchLabel(),
+                            description = Messages.followRedirectsSwitchDescription(),
+                            isDisabled = globals.isReadOnlyMode(),
+                        )
+                    }
+                    // Force no-cache header
+                    div {
+                        toggleSwitch(
+                            propName = "forceNoCache",
+                            label = Messages.forceNoCacheSwitchLabel(),
+                            description = Messages.forceNoCacheSwitchDescription(),
+                            isDisabled = globals.isReadOnlyMode(),
+                        )
+                    }
+                }
+                // Evaluation Settings
+                div {
+                    classes(MODAL_BODY)
+                    h3 {
+                        classes(MB_3)
+                        +Messages.evaluationSettingsLabel()
+                    }
+                    // Accepted status codes
+                    div {
+                        classes(MB_3)
                         div {
-                            classes(FORM_SELECTGROUP)
-                            label {
-                                classes(FORM_SELECTGROUP_ITEM)
-                                input(type = InputType.radio, name = "http-methods") {
-                                    classes(FORM_SELECTGROUP_INPUT)
-                                    value = "GET"
-                                    xModel("requestMethod")
-                                    if (globals.isReadOnlyMode()) disabled = true
-                                }
-                                span {
-                                    classes(FORM_SELECTGROUP_LABEL)
-                                    +"GET"
-                                }
+                            classes(FORM_LABEL)
+                            +Messages.expectedStatusCodesLabel()
+                            span {
+                                classes(MS_2)
+                                tooltip(
+                                    title = Messages.expectedStatusCodesDescription(),
+                                    location = TooltipLocation.RIGHT,
+                                )
+                                icon(Icon.INFO_CIRCLE)
                             }
-                            label {
-                                classes(FORM_SELECTGROUP_ITEM)
-                                input(type = InputType.radio, name = "http-methods") {
-                                    classes(FORM_SELECTGROUP_INPUT)
-                                    value = "HEAD"
-                                    xModel("requestMethod")
-                                    if (globals.isReadOnlyMode()) disabled = true
-                                }
-                                span {
-                                    classes(FORM_SELECTGROUP_LABEL)
-                                    +"HEAD"
+                        }
+                        select {
+                            classes(FORM_SELECT)
+                            id = acceptedStatusCodeSelectId
+                            multiple = true
+                            xModel("selectedHttpStatusCodes")
+                            xInitNextTick(
+                                """{ new TomSelect(
+                                    '#$acceptedStatusCodeSelectId', { 
+                                        maxOptions: null,
+                                        valueField: 'value',
+                                        searchField: 'text',
+                                        plugins: ['clear_button', 'remove_button'],
+                                        render: {
+                                            option: function(data, escape) {
+                                                const statusClass = statusCodeToBadgeClass(data.value);
+                                                return '<div>' +
+                                                           '<span class="status-dot ' + statusClass + ' me-2"></span>' +
+                                                       escape(data.text) +
+                                                    '</div>';
+                                            },
+                                            item: function(data, escape) {
+                                                const statusClass = statusCodeToBadgeClass(data.value);
+                                                return '<div>' +
+                                                 '<span class="status-dot ' + statusClass + ' me-2"></span>' +
+                                                    escape(data.value) + 
+                                                '</div>';
+                                            }
+                                        }
+                                    }
+                                )}
+                                """.trimMargin()
+                            )
+                            if (globals.isReadOnlyMode()) disabled = true
+                            templateTag {
+                                xFor("status in supportedHttpStatusCodes")
+                                xBindKey("status.code")
+                                optionTag {
+                                    xBindValue("status.code")
+                                    xText("[status.code, status.reason].join(' - ')")
+                                    xBindSelected("selectedHttpStatusCodes.includes(status.code.toString())")
                                 }
                             }
                         }
+                    }
+                    // Expected Keyword
+                    div {
+                        classes(MB_3)
+                        validatedInput(
+                            propName = "expectedKeyword",
+                            label = Messages.expectedKeywordLabel(),
+                            description = Messages.expectedKeywordDescription(),
+                            placeholder = null,
+                            required = false,
+                            onInput = null,
+                            disabledIf = "${globals.isReadOnlyMode()}",
+                        )
+                    }
+                    // Expected Keyword Case Sensitivity
+                    div {
+                        classes(MB_3)
+                        toggleSwitch(
+                            propName = "expectedKeywordCaseSensitive",
+                            label = Messages.expectedKeywordCaseSensitiveLabel(),
+                            description = Messages.expectedKeywordCaseSensitiveDescription(),
+                            isDisabled = globals.isReadOnlyMode(),
+                        )
+                    }
+                    // Expected Keyword Negation
+                    div {
+                        classes(MB_3)
+                        toggleSwitch(
+                            propName = "expectedKeywordNegated",
+                            label = Messages.negateExpectedKeywordLabel(),
+                            description = Messages.negateExpectedKeywordDescription(),
+                            isDisabled = globals.isReadOnlyMode(),
+                        )
+                    }
+                    // Response Time Threshold
+                    div {
+                        validatedInput(
+                            propName = "responseTimeThresholdMillis",
+                            label = Messages.responseTimeThresholdLabel(),
+                            description = Messages.responseTimeThresholdDescription(),
+                            placeholder = null,
+                            required = false,
+                            onInput = "validateResponseTimeThreshold()",
+                            disabledIf = "${globals.isReadOnlyMode()}",
+                            isNumber = true,
+                        )
                     }
                 }
                 // SSL Check Settings
@@ -241,41 +380,6 @@ internal fun FlowContent.monitorCreateUpdateModal(
                         onInput = "validateSslExpiryThreshold()",
                         disabledIf = "${globals.isReadOnlyMode()} || !sslCheckEnabled",
                     )
-                }
-                // Advanced Settings
-                div {
-                    classes(MODAL_BODY)
-                    h3 {
-                        classes(MB_3)
-                        +Messages.advancedSettingsLabel()
-                    }
-                    div {
-                        classes(MB_3)
-                        toggleSwitch(
-                            propName = "latencyHistoryEnabled",
-                            label = Messages.latencyHistorySwitchLabel(),
-                            description = Messages.latencyHistorySwitchDescription(),
-                            isDisabled = globals.isReadOnlyMode(),
-                        )
-                    }
-                    div {
-                        classes(MB_3)
-                        toggleSwitch(
-                            propName = "followRedirects",
-                            label = Messages.followRedirectsSwitchLabel(),
-                            description = Messages.followRedirectsSwitchDescription(),
-                            isDisabled = globals.isReadOnlyMode(),
-                        )
-                    }
-                    div {
-                        classes(MB_3)
-                        toggleSwitch(
-                            propName = "forceNoCache",
-                            label = Messages.forceNoCacheSwitchLabel(),
-                            description = Messages.forceNoCacheSwitchDescription(),
-                            isDisabled = globals.isReadOnlyMode(),
-                        )
-                    }
                 }
                 // Integrations
                 div {

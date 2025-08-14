@@ -337,12 +337,13 @@ const isValidUrl = (url) => {
     return urlPattern.test(url);
 }
 
-const upsertMonitorForm = (monitor, errorMessages) => {
+const upsertMonitorForm = (monitor, errorMessages, acceptedStatusCodeSelectId, supportedHttpStatusCodes) => {
     const originalMonitor = monitor || null;
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
         isUpdate: !!monitor,
+        supportedHttpStatusCodes: supportedHttpStatusCodes || [],
 
         init() {
             this.resetState();
@@ -360,7 +361,21 @@ const upsertMonitorForm = (monitor, errorMessages) => {
             this.followRedirects = (originalMonitor?.followRedirects != null ? originalMonitor?.followRedirects : true);
             this.requestMethod = originalMonitor?.requestMethod || 'GET';
             this.integrations = originalMonitor?.integrations || [];
+            this.selectedHttpStatusCodes = originalMonitor?.expectedStatusCodes?.map (code => code.toString()) || [];
+            this.expectedKeyword = originalMonitor?.expectedKeyword || null;
+            this.expectedKeywordCaseSensitive = originalMonitor?.expectedKeywordCaseSensitive || false;
+            this.expectedKeywordNegated = originalMonitor?.expectedKeywordNegated || false;
+            this.responseTimeThresholdMillis = originalMonitor?.responseTimeThresholdMillis || null;
             this.errors = {};
+            // Resetting the TomSelect component, otherwise the state of the select won't be cleared
+            // Without this, the previously selected values will remain in the select box, and also in alpine's state,
+            // because TomSelect re-initializes the select element, which then will be bound to alpine, and we're in a
+            // loop then.
+            const httpStatusSelect = document.getElementById(acceptedStatusCodeSelectId);
+            httpStatusSelect?.tomselect?.clear(true);
+            this.selectedHttpStatusCodes.forEach(code => {
+                httpStatusSelect?.tomselect?.addItem(code, true);
+            });
         },
 
         validate() {
@@ -369,6 +384,7 @@ const upsertMonitorForm = (monitor, errorMessages) => {
             this.validateUrl();
             this.validateSslExpiryThreshold();
             this.validateUptimeCheckInterval();
+            this.validateResponseTimeThreshold();
         },
 
         validateName() {
@@ -405,6 +421,14 @@ const upsertMonitorForm = (monitor, errorMessages) => {
             }
         },
 
+        validateResponseTimeThreshold() {
+            if (this.responseTimeThresholdMillis !== null && (isNaN(this.responseTimeThresholdMillis) || this.responseTimeThresholdMillis < 1 || this.responseTimeThresholdMillis > 30000)) {
+                this.errors.responseTimeThresholdMillis = this.errorMessages.responseTimeThresholdInvalid;
+            } else {
+                this.errors.responseTimeThresholdMillis = null;
+            }
+        },
+
         submitForm() {
             this.validate();
             if (hasNonNullValue(this.errors)) {
@@ -429,6 +453,11 @@ const upsertMonitorForm = (monitor, errorMessages) => {
                     uptimeCheckInterval: this.uptimeCheckInterval,
                     requestMethod: this.requestMethod,
                     integrations: this.integrations,
+                    expectedStatusCodes: this.selectedHttpStatusCodes,
+                    expectedKeyword: sanitizeTextInput(this.expectedKeyword),
+                    expectedKeywordCaseSensitive: this.expectedKeywordCaseSensitive,
+                    expectedKeywordNegated: this.expectedKeywordNegated,
+                    responseTimeThresholdMillis: this.responseTimeThresholdMillis
                 };
                 if (!this.isUpdate) {
                     body.enabled = true; // Default enabled, can be paused later
@@ -475,4 +504,21 @@ const upsertMonitorForm = (monitor, errorMessages) => {
             }
         }
     }
+};
+
+const sanitizeTextInput = (inputValue) => {
+  if (typeof inputValue !== 'string' || inputValue === null || inputValue === undefined) {
+    return null;
+  }
+  if (inputValue.trim() === '') {
+    return null;
+  }
+  return inputValue;
+};
+
+const statusCodeToBadgeClass = (statusCode) => {
+    return statusCode.substring(0, 1) === '1' ? 'status-azure' :
+        statusCode.substring(0, 1) === '2' ? 'status-green' :
+        statusCode.substring(0, 1) === '3' ? 'status-yellow' :
+        statusCode.substring(0, 1) === '4' ? 'status-red' : '';
 };

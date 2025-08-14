@@ -10,6 +10,18 @@ internal fun HTMLTag.xBindClass(value: String) {
     attributes["x-bind:class"] = value
 }
 
+internal fun HTMLTag.xBindSelected(value: String) {
+    attributes["x-bind:selected"] = value
+}
+
+internal fun HTMLTag.xBindKey(value: String) {
+    attributes["x-bind:key"] = value
+}
+
+internal fun HTMLTag.xBindValue(value: String) {
+    attributes["x-bind:value"] = value
+}
+
 internal fun HTMLTag.xData(value: String) {
     attributes["x-data"] = value
 }
@@ -40,4 +52,12 @@ internal fun HTMLTag.xText(value: String) {
 
 internal fun HTMLTag.xIf(value: String) {
     attributes["x-if"] = value
+}
+
+internal fun HTMLTag.xInitNextTick(action: String) {
+    attributes["x-init"] = "\$nextTick(() => $action)"
+}
+
+internal fun HTMLTag.xFor(loopDef: String) {
+    attributes["x-for"] = loopDef
 }

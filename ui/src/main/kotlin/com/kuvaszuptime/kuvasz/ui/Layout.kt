@@ -44,8 +44,9 @@ internal fun withLayout(
                     link(rel = "stylesheet", href = "/public/ext/css/tomselect.4.2.3.bootstrap5.min.css")
                     link(rel = "stylesheet", href = "/public/ext/css/tabler.1.4.0.min.css")
                     link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.4.0.min.css")
+                    link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=${globals.appVersion}")
                     script(src = "/public/ext/js/apexcharts.3.54.1.min.js") {}
-                    script(src = "/public/ext/js/tomselect.4.2.3.min.js") {}
+                    script(src = "/public/ext/js/tomselect.4.2.3.complete.min.js") {}
                 }
                 body {
                     div {
