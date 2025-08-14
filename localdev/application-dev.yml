@@ -38,12 +38,22 @@ monitors:
   - name: test1
     url: https://demo.kuvasz-uptime.dev
     uptime-check-interval: 120
-    enabled: false
+    enabled: true
     ssl-check-enabled: true
-    request-method: HEAD
+    request-method: GET
     latency-history-enabled: false
     force-no-cache: false
-    follow-redirects: false
+    follow-redirects: true
+    expected-status-codes:
+      - 200
+      - 201
+      - 303
+    expected-keyword: "Kuvasz"
+    expected-keyword-case-sensitive: true
+    expected-keyword-negated: false
+    response-time-threshold-millis: 500
   - name: test2
     url: https://kuvasz-uptime.dev
     uptime-check-interval: 60
+    request-method: HEAD
+    enabled: false
