@@ -101,6 +101,7 @@ internal enum class CSSClass(val className: String) {
     FORM_CONTROL("form-control"),
     FORM_FOOTER("form-footer"),
     FORM_LABEL("form-label"),
+    FORM_SELECT("form-select"),
     FORM_SELECTGROUP("form-selectgroup"),
     FORM_SELECTGROUP_INPUT("form-selectgroup-input"),
     FORM_SELECTGROUP_ITEM("form-selectgroup-item"),

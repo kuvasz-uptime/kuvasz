@@ -12,7 +12,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 
     fun Set<ConstraintViolation<MonitorCreateDto>>.shouldHaveSingleError(
         propertyPath: String,
-        message: String
+        message: String,
     ) {
         this.size shouldBe 1
         this.first().let { error ->
@@ -33,7 +33,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "name",
-                    message = "must not be blank"
+                    message = ValidationMessages.NAME_NOT_BLANK
                 )
             }
         }
@@ -48,7 +48,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "url",
-                    message = "must match \"^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\""
+                    message = ValidationMessages.URL_PATTERN
                 )
             }
         }
@@ -63,12 +63,12 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "url",
-                    message = "must match \"^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\""
+                    message = ValidationMessages.URL_PATTERN
                 )
             }
         }
 
-        `when`("uptimeCheckInterval is less than 60 seconds") {
+        `when`("uptimeCheckInterval is less than 5 seconds") {
             val dto = MonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
@@ -78,7 +78,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "uptimeCheckInterval",
-                    message = "must be greater than or equal to 5"
+                    message = "Uptime check interval must be at least 5 seconds"
                 )
             }
         }
@@ -94,7 +94,71 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "sslExpiryThreshold",
-                    message = "must be greater than or equal to 0"
+                    message = ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
+                )
+            }
+        }
+
+        `when`("expectedStatusCodes contains a non-supported status code") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                expectedStatusCodes = listOf(500, 200)
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "expectedStatusCodes",
+                    message = ValidationMessages.SUPPORTED_STATUS_CODES
+                )
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is negative") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                responseTimeThresholdMillis = -100
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "responseTimeThresholdMillis",
+                    message = ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
+                )
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is 0") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                responseTimeThresholdMillis = 0
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "responseTimeThresholdMillis",
+                    message = ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
+                )
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is greater than 30000") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                responseTimeThresholdMillis = 30001
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "responseTimeThresholdMillis",
+                    message = "Response time threshold must be less than or equal to 30000 milliseconds"
                 )
             }
         }
@@ -118,6 +182,12 @@ class MonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
             dto.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
             dto.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
+            dto.integrations shouldBe emptyList()
+            dto.expectedStatusCodes shouldBe emptyList()
+            dto.responseTimeThresholdMillis shouldBe null
+            dto.expectedKeyword shouldBe null
+            dto.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
+            dto.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
         }
     }
 })

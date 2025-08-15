@@ -18,6 +18,10 @@ Kuvasz tests currently require docker to be installed, because they are relying 
 
 To run the tests use `./gradlew check`. 
 
+## Localization
+
+Please refer to the corresponding section of the documentation: [**Localization**](https://kuvasz-uptime.dev/localization).
+
 ## Working on the code base
 
 The most important command you will have to run before sending your changes is the check command.

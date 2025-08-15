@@ -9,6 +9,13 @@ monitors:
     force-no-cache: false
     follow-redirects: false
     ssl-expiry-threshold: 15
+    expected-status-codes:
+      - 200
+      - 201
+    expected-keyword: "something"
+    expected-keyword-case-sensitive: true
+    expected-keyword-negated: true
+    response-time-threshold-millis: 500
   - name: test2
     url: http://example.org
     uptime-check-interval: 60

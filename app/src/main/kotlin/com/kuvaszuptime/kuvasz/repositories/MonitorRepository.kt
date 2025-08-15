@@ -106,6 +106,11 @@ class MonitorRepository(private val dslContext: DSLContext) {
                     .set(MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
                     .set(MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
                     .set(MONITOR.INTEGRATIONS, updatedMonitor.integrations)
+                    .set(MONITOR.EXPECTED_STATUS_CODES, updatedMonitor.expectedStatusCodes)
+                    .set(MONITOR.RESPONSE_TIME_THRESHOLD_MILLIS, updatedMonitor.responseTimeThresholdMillis)
+                    .set(MONITOR.EXPECTED_KEYWORD, updatedMonitor.expectedKeyword)
+                    .set(MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE, updatedMonitor.expectedKeywordCaseSensitive)
+                    .set(MONITOR.EXPECTED_KEYWORD_NEGATED, updatedMonitor.expectedKeywordNegated)
                     .where(MONITOR.ID.eq(updatedMonitor.id))
                     .returning(MONITOR.asterisk())
                     .fetchOneOrThrow<MonitorRecord>()
@@ -169,6 +174,11 @@ class MonitorRepository(private val dslContext: DSLContext) {
             MONITOR.SSL_EXPIRY_THRESHOLD.`as`(MonitorDetailsDto::sslExpiryThreshold.name),
             DSL.array(arrayOf<String>()).`as`(MonitorDetailsDto::effectiveIntegrations.name),
             MONITOR.INTEGRATIONS.`as`(MonitorDetailsDto::integrations.name),
+            MONITOR.EXPECTED_STATUS_CODES.`as`(MonitorDetailsDto::expectedStatusCodes.name),
+            MONITOR.RESPONSE_TIME_THRESHOLD_MILLIS.`as`(MonitorDetailsDto::responseTimeThresholdMillis.name),
+            MONITOR.EXPECTED_KEYWORD.`as`(MonitorDetailsDto::expectedKeyword.name),
+            MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE.`as`(MonitorDetailsDto::expectedKeywordCaseSensitive.name),
+            MONITOR.EXPECTED_KEYWORD_NEGATED.`as`(MonitorDetailsDto::expectedKeywordNegated.name),
         )
         .from(MONITOR)
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))

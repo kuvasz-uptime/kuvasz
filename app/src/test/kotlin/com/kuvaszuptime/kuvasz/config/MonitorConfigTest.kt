@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.config
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
@@ -28,7 +29,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getName - must not be blank"
+                    "MonitorConfig.getName - ${ValidationMessages.NAME_NOT_BLANK}"
             }
         }
 
@@ -38,8 +39,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUrl - must match " +
-                    "\"^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\""
+                    "MonitorConfig.getUrl - ${ValidationMessages.URL_PATTERN}"
             }
         }
 
@@ -49,8 +49,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUrl - must match " +
-                    "\"^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]\""
+                    "MonitorConfig.getUrl - ${ValidationMessages.URL_PATTERN}"
             }
         }
 
@@ -60,7 +59,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUptimeCheckInterval - must be greater than or equal to 5"
+                    "MonitorConfig.getUptimeCheckInterval - Uptime check interval must be at least 5 seconds"
             }
         }
 
@@ -70,7 +69,28 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getSslExpiryThreshold - must be greater than or equal to 0"
+                    "MonitorConfig.getSslExpiryThreshold - ${ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO}"
+            }
+        }
+
+        `when`("expectedStatusCodes contains an unsupported status code") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-invalid-status-code")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "getExpectedStatusCodes - ${ValidationMessages.SUPPORTED_STATUS_CODES}"
+            }
+        }
+
+        `when`("responseTimeThresholdMillis is invalid") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-invalid-response-time-threshold")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "MonitorConfig.getResponseTimeThresholdMillis - " +
+                    "Response time threshold must be less than or equal to 30000 milliseconds"
             }
         }
     }
@@ -99,6 +119,11 @@ class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : D
                 monitorConfig.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
                 monitorConfig.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
                 monitorConfig.integrations.shouldBeNull()
+                monitorConfig.expectedStatusCodes.shouldBeNull()
+                monitorConfig.responseTimeThresholdMillis.shouldBeNull()
+                monitorConfig.expectedKeyword.shouldBeNull()
+                monitorConfig.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
+                monitorConfig.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
             }
         }
     }

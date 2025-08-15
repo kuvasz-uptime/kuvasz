@@ -41,9 +41,12 @@ internal fun withLayout(
                             """.trimIndent()
                         }
                     }
-                    link(rel = "stylesheet", href = "/public/ext/css/tabler.min.css")
-                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.min.css")
-                    script(src = "/public/ext/js/apexcharts.min.js") {}
+                    link(rel = "stylesheet", href = "/public/ext/css/tomselect.4.2.3.bootstrap5.min.css")
+                    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.4.0.min.css")
+                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.4.0.min.css")
+                    link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=${globals.appVersion}")
+                    script(src = "/public/ext/js/apexcharts.3.54.1.min.js") {}
+                    script(src = "/public/ext/js/tomselect.4.2.3.complete.min.js") {}
                 }
                 body {
                     div {
@@ -78,10 +81,10 @@ internal fun withLayout(
                             footer(globals.appVersion)
                         }
                     }
-                    script(src = "/public/ext/js/tabler.min.js") {}
+                    script(src = "/public/ext/js/tabler.1.4.0.min.js") {}
                     script(src = "/public/dist/js/kuvasz.min.js?cb=${globals.appVersion}") {}
-                    script(src = "/public/ext/js/htmx.2.0.5.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.min.js") {}
+                    script(src = "/public/ext/js/htmx.2.0.6.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.14.9.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }

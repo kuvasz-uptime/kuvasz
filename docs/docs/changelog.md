@@ -2,17 +2,36 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
-## 2.4.0 <small>2025-xx-xx</small> { id="2.4.0" data-toc-label="2.4.0" }
+## 2.4.0 <small>2025-08-15</small> { id="2.4.0" data-toc-label="2.4.0" }
 
-### Features
+### New features
+
+- **New HTTP response evaluation options**: you can now configure your HTTP monitors to:
+    - accept only [**specific HTTP status codes**](setup/managing-monitors.md#expected-status-codes) as valid responses
+    - check for a [**keyword in the response body**](setup/managing-monitors.md#expected-keyword), and you can make the check optionally [**case-sensitive**](setup/managing-monitors.md#expected-keyword-case-sensitivity), or also [**reversed**](setup/managing-monitors.md#expected-keyword-negation) to check for the absence of the keyword
+    - **[check the response time](setup/managing-monitors.md#response-time-threshold)** against a **threshold** (in milliseconds) to ensure that the response is not only valid but also fast enough
+
+![Kuvasz evaluation settings](images/features/kuvasz_new_matchers.webp)
 
 - **More details** are persisted **about the errors** that occur during the HTTP uptime checks
+- Added **French** translation, thanks to [**@waazaa-fr**](https://github.com/waazaa-fr){ target="_blank" }!
+- Added **Polish** translation, thanks to [**@nkkfs**](https://github.com/nkkfs){ target="_blank" }!
+- Made the **URL on details page clickable**, so you can easily open the target URL in a new tab
+
+### Improvements
+
 - **Re-worked the logic of the HTTP uptime check configuration & evaluation** to make it easier to introduce new configuration & evaluation options in the future
+- [**@by-su**](https://github.com/by-su){ target="_blank" } **improved the validation messages** around the admin authentication configuration, and also extended the docs to clarify the usage of it, thanks for that!
+- **Other validation messages** have been improved as well, to make them more user-friendly if something goes wrong during the bootstrapping of _Kuvasz_ or during an API request.
+- **Client-related HTTP response errors are not retried** anymore, only the server-related ones. This means practically that 4xx responses will be evaluated as-is without retrying them, while 5xx responses will be retried up to 3 times with an exponential backoff strategy.
 
 ### Fixes
 
 - Translated the "...[REDACTED]" string to make it internationalization friendly
 - **Fixed the latency measurement logic** to not include the time spent on retrying failing HTTP requests
+- **Fixed the following CVEs** by upgrading 3rd party dependencies:
+    - [CVE-2025-49146](https://nvd.nist.gov/vuln/detail/CVE-2025-49146){ target="_blank" }
+    - [CVE-2025-53864](https://nvd.nist.gov/vuln/detail/CVE-2025-53864){ target="_blank" }
 
 ## 2.3.1 <small>2025-07-25</small> { id="2.3.1" data-toc-label="2.3.1" }
 

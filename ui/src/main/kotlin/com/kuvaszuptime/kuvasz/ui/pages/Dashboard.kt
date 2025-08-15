@@ -31,7 +31,7 @@ fun renderDashboard(globals: AppGlobals) =
             id = "monitoring-dashboard"
             div {
                 classes(SPINNER_GROW, HTMX_INDICATOR)
-                attributes["role"] = "status"
+                role = "status"
             }
         }
     }

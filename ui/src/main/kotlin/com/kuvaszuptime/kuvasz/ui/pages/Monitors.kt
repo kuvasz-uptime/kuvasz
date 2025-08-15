@@ -35,7 +35,7 @@ fun renderMonitorsPage(globals: AppGlobals) =
                         id = "monitors-list"
                         div {
                             classes(SPINNER_GROW, HTMX_INDICATOR)
-                            attributes["role"] = "status"
+                            role = "status"
                         }
                     }
                 }

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.Monitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
@@ -52,8 +51,6 @@ class MonitorCrudService(
     private val objectMapper: ObjectMapper = jacksonObjectMapper()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .registerModules(JavaTimeModule())
-
-    private val readOnlyMonitorFieldNames = setOf(MONITOR.ID.name, MONITOR.CREATED_AT.name, MONITOR.UPDATED_AT.name)
 
     fun getMonitorDetails(monitorId: Long): MonitorDetailsDto {
         val monitorFromRepo =
@@ -115,7 +112,6 @@ class MonitorCrudService(
                 monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
                     val toUpdate = existingMonitor.into(Monitor::class.java)
                     val filteredUpdates = updates.fieldNames().asSequence()
-                        .filterNot { it in readOnlyMonitorFieldNames }
                         .fold(objectMapper.createObjectNode()) { acc, fieldName ->
                             acc.set(fieldName, updates.get(fieldName))
                         }

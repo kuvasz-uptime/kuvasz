@@ -86,7 +86,7 @@ nav:
       - Metrics exporters: setup/metrics-exporters.md
       - Recipes & examples: setup/examples.md
   - Features:
-      - Uptime monitoring: features/uptime-monitoring.md
+      - HTTP monitoring: features/http-monitoring.md
       - SSL monitoring: features/ssl-monitoring.md
       - Notifications: features/notifications.md
       - Web UI: features/ui.md

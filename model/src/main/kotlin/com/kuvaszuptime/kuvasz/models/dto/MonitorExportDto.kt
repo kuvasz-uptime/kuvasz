@@ -18,6 +18,11 @@ data class MonitorExportDto(
     val forceNoCache: Boolean,
     val sslExpiryThreshold: Int,
     val integrations: Set<IntegrationID>,
+    val expectedStatusCodes: Set<Int>,
+    val responseTimeThresholdMillis: Int?,
+    val expectedKeyword: String?,
+    val expectedKeywordCaseSensitive: Boolean,
+    val expectedKeywordNegated: Boolean,
 ) {
     companion object {
         fun fromMonitorRecord(record: MonitorRecord): MonitorExportDto {
@@ -33,6 +38,11 @@ data class MonitorExportDto(
                 forceNoCache = record.forceNoCache,
                 sslExpiryThreshold = record.sslExpiryThreshold,
                 integrations = record.integrations.toSet(),
+                expectedStatusCodes = record.expectedStatusCodes.toSet(),
+                responseTimeThresholdMillis = record.responseTimeThresholdMillis,
+                expectedKeyword = record.expectedKeyword,
+                expectedKeywordCaseSensitive = record.expectedKeywordCaseSensitive,
+                expectedKeywordNegated = record.expectedKeywordNegated,
             )
         }
     }

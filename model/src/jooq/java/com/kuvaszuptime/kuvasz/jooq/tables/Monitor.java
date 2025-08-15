@@ -135,6 +135,31 @@ public class Monitor extends TableImpl<MonitorRecord> {
      */
     public final TableField<MonitorRecord, IntegrationID[]> INTEGRATIONS = createField(DSL.name("integrations"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "", new TextArrayToIntegrationIdArrayConverter());
 
+    /**
+     * The column <code>kuvasz.monitor.expected_status_codes</code>.
+     */
+    public final TableField<MonitorRecord, Integer[]> EXPECTED_STATUS_CODES = createField(DSL.name("expected_status_codes"), SQLDataType.INTEGER.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::integer[]"), SQLDataType.INTEGER.array())), this, "");
+
+    /**
+     * The column <code>kuvasz.monitor.response_time_threshold_millis</code>.
+     */
+    public final TableField<MonitorRecord, Integer> RESPONSE_TIME_THRESHOLD_MILLIS = createField(DSL.name("response_time_threshold_millis"), SQLDataType.INTEGER, this, "");
+
+    /**
+     * The column <code>kuvasz.monitor.expected_keyword</code>.
+     */
+    public final TableField<MonitorRecord, String> EXPECTED_KEYWORD = createField(DSL.name("expected_keyword"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>kuvasz.monitor.expected_keyword_case_sensitive</code>.
+     */
+    public final TableField<MonitorRecord, Boolean> EXPECTED_KEYWORD_CASE_SENSITIVE = createField(DSL.name("expected_keyword_case_sensitive"), SQLDataType.BOOLEAN.defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>kuvasz.monitor.expected_keyword_negated</code>.
+     */
+    public final TableField<MonitorRecord, Boolean> EXPECTED_KEYWORD_NEGATED = createField(DSL.name("expected_keyword_negated"), SQLDataType.BOOLEAN.defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private Monitor(Name alias, Table<MonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -178,6 +178,11 @@ class AppBootstrappingYamlConfigTest : StringSpec({
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
             firstMonitor.sslExpiryThreshold shouldBe 15
+            firstMonitor.expectedStatusCodes shouldContainExactlyInAnyOrder arrayOf(200, 201)
+            firstMonitor.expectedKeyword shouldBe "something"
+            firstMonitor.expectedKeywordCaseSensitive shouldBe true
+            firstMonitor.expectedKeywordNegated shouldBe true
+            firstMonitor.responseTimeThresholdMillis shouldBe 500
             firstMonitor.updatedAt shouldBeAfter firstMonitor.createdAt
 
             scheduledUptimeChecks[firstMonitor.id].shouldNotBeNull()

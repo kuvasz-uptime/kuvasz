@@ -34,6 +34,11 @@ public class Monitor implements Serializable {
     private HttpMethod requestMethod;
     private Integer sslExpiryThreshold;
     private IntegrationID[] integrations;
+    private Integer[] expectedStatusCodes;
+    private Integer responseTimeThresholdMillis;
+    private String expectedKeyword;
+    private Boolean expectedKeywordCaseSensitive;
+    private Boolean expectedKeywordNegated;
 
     public Monitor() {}
 
@@ -52,6 +57,11 @@ public class Monitor implements Serializable {
         this.requestMethod = value.requestMethod;
         this.sslExpiryThreshold = value.sslExpiryThreshold;
         this.integrations = value.integrations;
+        this.expectedStatusCodes = value.expectedStatusCodes;
+        this.responseTimeThresholdMillis = value.responseTimeThresholdMillis;
+        this.expectedKeyword = value.expectedKeyword;
+        this.expectedKeywordCaseSensitive = value.expectedKeywordCaseSensitive;
+        this.expectedKeywordNegated = value.expectedKeywordNegated;
     }
 
     public Monitor(
@@ -68,7 +78,12 @@ public class Monitor implements Serializable {
         Boolean forceNoCache,
         HttpMethod requestMethod,
         Integer sslExpiryThreshold,
-        IntegrationID[] integrations
+        IntegrationID[] integrations,
+        Integer[] expectedStatusCodes,
+        Integer responseTimeThresholdMillis,
+        String expectedKeyword,
+        Boolean expectedKeywordCaseSensitive,
+        Boolean expectedKeywordNegated
     ) {
         this.id = id;
         this.name = name;
@@ -84,6 +99,11 @@ public class Monitor implements Serializable {
         this.requestMethod = requestMethod;
         this.sslExpiryThreshold = sslExpiryThreshold;
         this.integrations = integrations;
+        this.expectedStatusCodes = expectedStatusCodes;
+        this.responseTimeThresholdMillis = responseTimeThresholdMillis;
+        this.expectedKeyword = expectedKeyword;
+        this.expectedKeywordCaseSensitive = expectedKeywordCaseSensitive;
+        this.expectedKeywordNegated = expectedKeywordNegated;
     }
 
     /**
@@ -300,6 +320,81 @@ public class Monitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.monitor.expected_status_codes</code>.
+     */
+    public Integer[] getExpectedStatusCodes() {
+        return this.expectedStatusCodes;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_status_codes</code>.
+     */
+    public Monitor setExpectedStatusCodes(Integer[] expectedStatusCodes) {
+        this.expectedStatusCodes = expectedStatusCodes;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
+     */
+    public Integer getResponseTimeThresholdMillis() {
+        return this.responseTimeThresholdMillis;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
+     */
+    public Monitor setResponseTimeThresholdMillis(Integer responseTimeThresholdMillis) {
+        this.responseTimeThresholdMillis = responseTimeThresholdMillis;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_keyword</code>.
+     */
+    public String getExpectedKeyword() {
+        return this.expectedKeyword;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_keyword</code>.
+     */
+    public Monitor setExpectedKeyword(String expectedKeyword) {
+        this.expectedKeyword = expectedKeyword;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_keyword_case_sensitive</code>.
+     */
+    public Boolean getExpectedKeywordCaseSensitive() {
+        return this.expectedKeywordCaseSensitive;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_keyword_case_sensitive</code>.
+     */
+    public Monitor setExpectedKeywordCaseSensitive(Boolean expectedKeywordCaseSensitive) {
+        this.expectedKeywordCaseSensitive = expectedKeywordCaseSensitive;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_keyword_negated</code>.
+     */
+    public Boolean getExpectedKeywordNegated() {
+        return this.expectedKeywordNegated;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_keyword_negated</code>.
+     */
+    public Monitor setExpectedKeywordNegated(Boolean expectedKeywordNegated) {
+        this.expectedKeywordNegated = expectedKeywordNegated;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -393,6 +488,36 @@ public class Monitor implements Serializable {
         }
         else if (!Arrays.deepEquals(this.integrations, other.integrations))
             return false;
+        if (this.expectedStatusCodes == null) {
+            if (other.expectedStatusCodes != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.expectedStatusCodes, other.expectedStatusCodes))
+            return false;
+        if (this.responseTimeThresholdMillis == null) {
+            if (other.responseTimeThresholdMillis != null)
+                return false;
+        }
+        else if (!this.responseTimeThresholdMillis.equals(other.responseTimeThresholdMillis))
+            return false;
+        if (this.expectedKeyword == null) {
+            if (other.expectedKeyword != null)
+                return false;
+        }
+        else if (!this.expectedKeyword.equals(other.expectedKeyword))
+            return false;
+        if (this.expectedKeywordCaseSensitive == null) {
+            if (other.expectedKeywordCaseSensitive != null)
+                return false;
+        }
+        else if (!this.expectedKeywordCaseSensitive.equals(other.expectedKeywordCaseSensitive))
+            return false;
+        if (this.expectedKeywordNegated == null) {
+            if (other.expectedKeywordNegated != null)
+                return false;
+        }
+        else if (!this.expectedKeywordNegated.equals(other.expectedKeywordNegated))
+            return false;
         return true;
     }
 
@@ -414,6 +539,11 @@ public class Monitor implements Serializable {
         result = prime * result + ((this.requestMethod == null) ? 0 : this.requestMethod.hashCode());
         result = prime * result + ((this.sslExpiryThreshold == null) ? 0 : this.sslExpiryThreshold.hashCode());
         result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
+        result = prime * result + ((this.expectedStatusCodes == null) ? 0 : Arrays.deepHashCode(this.expectedStatusCodes));
+        result = prime * result + ((this.responseTimeThresholdMillis == null) ? 0 : this.responseTimeThresholdMillis.hashCode());
+        result = prime * result + ((this.expectedKeyword == null) ? 0 : this.expectedKeyword.hashCode());
+        result = prime * result + ((this.expectedKeywordCaseSensitive == null) ? 0 : this.expectedKeywordCaseSensitive.hashCode());
+        result = prime * result + ((this.expectedKeywordNegated == null) ? 0 : this.expectedKeywordNegated.hashCode());
         return result;
     }
 
@@ -435,6 +565,11 @@ public class Monitor implements Serializable {
         sb.append(", ").append(requestMethod);
         sb.append(", ").append(sslExpiryThreshold);
         sb.append(", ").append(Arrays.deepToString(integrations));
+        sb.append(", ").append(Arrays.deepToString(expectedStatusCodes));
+        sb.append(", ").append(responseTimeThresholdMillis);
+        sb.append(", ").append(expectedKeyword);
+        sb.append(", ").append(expectedKeywordCaseSensitive);
+        sb.append(", ").append(expectedKeywordNegated);
 
         sb.append(")");
         return sb.toString();

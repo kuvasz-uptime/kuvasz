@@ -86,6 +86,11 @@ curl -X GET "http://your.kuvasz.host/api/v1/monitors/107" \
       "enabled": true,
       "global": true
     }
-  ]
+  ],
+  "expectedStatusCodes": [200, 201, 303],
+  "responseTimeThresholdMillis": 500,
+  "expectedKeyword": "Kuvasz",
+  "expectedKeywordCaseSensitive": true,
+  "expectedKeywordNegated": false
 }
 ```

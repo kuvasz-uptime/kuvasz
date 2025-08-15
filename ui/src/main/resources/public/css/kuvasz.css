@@ -1,0 +1,11 @@
+/* TomSelect clear button */
+div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-button {
+    border: none;
+    transform: translateY(-62%);
+    font-size: 24px;
+}
+
+/* TomSelect item remove button */
+.ts-wrapper.plugin-remove_button:not(.rtl) .item .remove {
+    border-left: none;
+}

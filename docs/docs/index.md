@@ -18,13 +18,13 @@
 
 <div class="grid cards" markdown>
 
--   :green_circle:{ .lg .card-header-icon } __Uptime monitoring__
+-   :green_circle:{ .lg .card-header-icon } __HTTP monitoring__
 
     ---
 
-    With flexible configuration, adjustable intervals, headers, and more.
+    With flexible configuration, adjustable intervals, headers, keyword matching, expected response status codes, response time checks and more.
 
-    [:octicons-arrow-right-24: Uptime monitoring](features/uptime-monitoring.md)
+    [:octicons-arrow-right-24: HTTP monitoring](features/http-monitoring.md)
 
 -   :lock:{ .lg .card-header-icon } __SSL monitoring__
 
@@ -121,4 +121,4 @@ on [**Wikipedia**](https://en.wikipedia.org/wiki/Kuvasz){ target="_blank" }.
 While _Kuvasz_ is free and open-source, it still requires a lot of time and effort to maintain and develop. If you like it, please consider our [**sponsoring**](sponsoring.md) options.
 
 ## Do you have a question?
-Let's go to the [**GitHub discussions**](https://github.com/kuvasz-uptime/kuvasz/discussions){ target="_blank" }!
+Let's go to the [**GitHub discussions**](https://github.com/kuvasz-uptime/kuvasz/discussions){ target="_blank" } or to our [**Discord server**](https://discord.com/invite/hMkyGPyU32){ target="_blank" }!

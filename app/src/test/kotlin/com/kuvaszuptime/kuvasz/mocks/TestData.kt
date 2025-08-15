@@ -30,6 +30,11 @@ fun createMonitor(
     followRedirects: Boolean = true,
     sslExpiryThreshold: Int = 30,
     integrations: List<IntegrationID> = emptyList(),
+    expectedStatusCodes: Set<Int> = emptySet(),
+    responseTimeThresholdMillis: Int? = null,
+    expectedKeyword: String? = null,
+    expectedKeywordCaseSensitive: Boolean = false,
+    expectedKeywordNegated: Boolean = false,
 ): MonitorRecord {
     val monitor = MonitorRecord()
         .setName(monitorName)
@@ -45,6 +50,11 @@ fun createMonitor(
         .setFollowRedirects(followRedirects)
         .setSslExpiryThreshold(sslExpiryThreshold)
         .setIntegrations(integrations.toTypedArray())
+        .setExpectedStatusCodes(expectedStatusCodes.toTypedArray())
+        .setResponseTimeThresholdMillis(responseTimeThresholdMillis)
+        .setExpectedKeyword(expectedKeyword)
+        .setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive)
+        .setExpectedKeywordNegated(expectedKeywordNegated)
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 

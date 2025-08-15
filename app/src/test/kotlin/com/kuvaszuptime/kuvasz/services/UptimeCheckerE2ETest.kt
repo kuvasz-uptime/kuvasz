@@ -7,21 +7,26 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBeUriOf
 import io.kotest.inspectors.forAll
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import org.mockserver.integration.ClientAndServer
+import org.mockserver.model.HttpError
 import org.mockserver.model.HttpRequest
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.NottableString.not
 import org.mockserver.model.NottableString.string
 import org.mockserver.verify.VerificationTimes
+import java.util.concurrent.TimeUnit
 
 @MicronautTest(startApplication = false)
 class UptimeCheckerE2ETest(
@@ -67,6 +72,34 @@ class UptimeCheckerE2ETest(
                 val expectedEvent = subscriber.awaitCount(1).values().first()
 
                 expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that returns a client error, but it's expected") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedStatusCodes = setOf(HttpStatus.NOT_FOUND.code)
+            )
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.NOT_FOUND.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorUpEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.NOT_FOUND
                 expectedEvent.monitor.id shouldBe monitor.id
 
                 mockServer.verifyRequest(request)
@@ -191,7 +224,7 @@ class UptimeCheckerE2ETest(
                 val expectedRedirectEvents = redirectSubscriber.awaitCount(2).values()
                 val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
 
-                downSubscriber.assertValueCount(0)
+                downSubscriber.assertNoValues()
 
                 expectedUpEvent.status shouldBe HttpStatus.OK
                 expectedUpEvent.monitor.id shouldBe monitor.id
@@ -203,6 +236,155 @@ class UptimeCheckerE2ETest(
                 mockServer.verifyRequest(request1)
                 mockServer.verifyRequest(request2)
                 mockServer.verifyRequest(request3)
+            }
+        }
+
+        `when`("it checks a monitor that is redirected - following redirects is enabled, explicit status codes") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                followRedirects = true,
+                expectedStatusCodes = setOf(200, 307, 308)
+            )
+            val upSubscriber = TestSubscriber<MonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<RedirectEvent>()
+            val downSubscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+            val request1 = getRequest("/some-path")
+            val request2 = getRequest("/redirected-path1")
+            val request3 = getRequest("/redirected-path2")
+
+            mockServer.`when`(request1).respond(
+                response()
+                    .withStatusCode(HttpStatus.PERMANENT_REDIRECT.code)
+                    .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/redirected-path1")
+            )
+            mockServer.`when`(request2).respond(
+                response()
+                    .withStatusCode(HttpStatus.TEMPORARY_REDIRECT.code)
+                    .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/redirected-path2")
+            )
+            mockServer.`when`(request3).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should follow the redirects") {
+                val expectedRedirectEvents = redirectSubscriber.awaitCount(2).values()
+                val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                downSubscriber.assertNoValues()
+
+                expectedUpEvent.status shouldBe HttpStatus.OK
+                expectedUpEvent.monitor.id shouldBe monitor.id
+
+                expectedRedirectEvents.forAll { it.monitor.id shouldBe monitor.id }
+                expectedRedirectEvents[0].redirectLocation shouldBeUriOf "$mockServerUrl/redirected-path1"
+                expectedRedirectEvents[1].redirectLocation shouldBeUriOf "$mockServerUrl/redirected-path2"
+
+                mockServer.verifyRequest(request1)
+                mockServer.verifyRequest(request2)
+                mockServer.verifyRequest(request3)
+            }
+        }
+
+        `when`(
+            "it checks a monitor that is redirected - following redirects is enabled, " +
+                "but the returned redirect status code is not expected"
+        ) {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                followRedirects = true,
+                expectedStatusCodes = setOf(200, 201, 301)
+            )
+            val upSubscriber = TestSubscriber<MonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<RedirectEvent>()
+            val downSubscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+            val request1 = getRequest("/some-path")
+
+            mockServer.`when`(request1).respond(
+                response()
+                    .withStatusCode(HttpStatus.PERMANENT_REDIRECT.code)
+                    .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/redirected-path1")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should not follow the redirect and dispatch a DOWN event") {
+                redirectSubscriber.assertNoValues()
+                upSubscriber.assertNoValues()
+
+                val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
+
+                expectedDownEvent.monitor.id shouldBe monitor.id
+                expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
+                expectedDownEvent.error.message shouldStartWith
+                    "Response status code [308] was unexpected"
+
+                mockServer.verifyRequest(request1)
+            }
+        }
+
+        `when`(
+            "it checks a monitor that is redirected - following redirects is enabled - " +
+                "final status code is not acceptable"
+        ) {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                followRedirects = true,
+                expectedStatusCodes = setOf(201, 308)
+            )
+            val upSubscriber = TestSubscriber<MonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<RedirectEvent>()
+            val downSubscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+            val request1 = getRequest("/some-path")
+            val request2 = getRequest("/redirected-path1")
+
+            mockServer.`when`(request1).respond(
+                response()
+                    .withStatusCode(HttpStatus.PERMANENT_REDIRECT.code)
+                    .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/redirected-path1")
+            )
+            mockServer.`when`(request2).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should follow the redirect and should dispatch a MonitorDownEvent") {
+                val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
+                val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
+
+                upSubscriber.assertNoValues()
+
+                expectedRedirectEvent.monitor.id shouldBe monitor.id
+                expectedRedirectEvent.redirectLocation shouldBeUriOf "$mockServerUrl/redirected-path1"
+
+                expectedDownEvent.status shouldBe HttpStatus.OK
+                expectedDownEvent.monitor.id shouldBe monitor.id
+                expectedDownEvent.error.message shouldBe "Response status code [200] was unexpected"
+
+                mockServer.verifyRequest(request1)
+                mockServer.verifyRequest(request2)
             }
         }
 
@@ -245,7 +427,7 @@ class UptimeCheckerE2ETest(
                 val expectedRedirectEvents = redirectSubscriber.awaitCount(2).values()
                 val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
 
-                downSubscriber.assertValueCount(0)
+                downSubscriber.assertNoValues()
 
                 expectedUpEvent.status shouldBe HttpStatus.OK
                 expectedUpEvent.monitor.id shouldBe monitor.id
@@ -292,16 +474,57 @@ class UptimeCheckerE2ETest(
             then("it should not follow the redirects and should dispatch a MonitorDownEvent") {
                 val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
 
-                redirectSubscriber.assertValueCount(0)
-                upSubscriber.assertValueCount(0)
+                redirectSubscriber.assertNoValues()
+                upSubscriber.assertNoValues()
 
                 expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                 expectedDownEvent.monitor.id shouldBe monitor.id
                 expectedDownEvent.error.message shouldBe
-                    "The request was redirected, but the followRedirects option is disabled"
+                    "The request was redirected, but following redirects is disabled"
 
                 mockServer.verifyRequest(request1)
                 mockServer.verifyRequest(request2, exactly = 0)
+            }
+        }
+
+        `when`(
+            "it checks a monitor that is redirected - following redirects is disabled, " +
+                "but the returned status code is explicitly accepted"
+        ) {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                followRedirects = false,
+                expectedStatusCodes = setOf(HttpStatus.PERMANENT_REDIRECT.code)
+            )
+            val upSubscriber = TestSubscriber<MonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<RedirectEvent>()
+            val downSubscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+            val request1 = getRequest("/some-path")
+
+            mockServer.`when`(request1).respond(
+                response()
+                    .withStatusCode(HttpStatus.PERMANENT_REDIRECT.code)
+                    .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/redirected-path1")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should not follow the redirects and should dispatch a MonitorUpEvent") {
+                redirectSubscriber.assertNoValues()
+                downSubscriber.assertNoValues()
+
+                val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                expectedUpEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
+                expectedUpEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request1)
             }
         }
 
@@ -331,8 +554,8 @@ class UptimeCheckerE2ETest(
             then("it should dispatch a MonitorDownEvent") {
                 val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
 
-                redirectSubscriber.assertValueCount(0)
-                upSubscriber.assertValueCount(0)
+                redirectSubscriber.assertNoValues()
+                upSubscriber.assertNoValues()
 
                 expectedDownEvent.status shouldBe HttpStatus.PERMANENT_REDIRECT
                 expectedDownEvent.monitor.id shouldBe monitor.id
@@ -375,7 +598,7 @@ class UptimeCheckerE2ETest(
                 val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
                 val expectedRedirectEvent = redirectSubscriber.awaitCount(1).values().first()
 
-                upSubscriber.assertValueCount(0)
+                upSubscriber.assertNoValues()
 
                 expectedRedirectEvent.monitor.id shouldBe monitor.id
                 expectedRedirectEvent.redirectLocation shouldBeUriOf "$mockServerUrl/redirected-path1"
@@ -389,7 +612,7 @@ class UptimeCheckerE2ETest(
             }
         }
 
-        `when`("it checks a monitor that is DOWN - valid HTTP status code") {
+        `when`("it checks a monitor that is DOWN - valid client-related HTTP status code") {
             val monitor = createMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
@@ -405,14 +628,86 @@ class UptimeCheckerE2ETest(
 
             uptimeChecker.check(monitor)
 
-            then("it should retry the check 3 times in total before it dispatches a MonitorDownEvent") {
+            then("it should dispatch a MonitorDownEvent") {
                 val expectedEvent = subscriber.awaitCount(1).values().first()
 
                 expectedEvent.status shouldBe HttpStatus.NOT_ACCEPTABLE
                 expectedEvent.monitor.id shouldBe monitor.id
-                expectedEvent.error.message shouldBe "Not Acceptable"
+                expectedEvent.error.message shouldBe "Response status code [406] was unexpected"
+
+                mockServer.verifyRequest(request, exactly = 1)
+            }
+        }
+
+        `when`("it checks a monitor that is DOWN - valid server-related HTTP status code") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.HEAD,
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = headRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.BAD_GATEWAY.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should retry the request 3 times before it dispatches a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.BAD_GATEWAY
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Bad Gateway"
 
                 mockServer.verifyRequest(request, exactly = 3)
+            }
+        }
+
+        `when`("it checks a monitor that drops the connection") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.HEAD,
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = headRequest("/some-path")
+            mockServer.`when`(request).error(HttpError().withDropConnection(true))
+
+            uptimeChecker.check(monitor)
+
+            then("it should retry the check 3 times in total before it dispatches a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                mockServer.verifyRequest(request, exactly = 3)
+
+                expectedEvent.status.shouldBeNull()
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Connection closed before response was received"
+            }
+        }
+
+        `when`("it checks a monitor that is unreachable") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "https://34hkl2jklvd.com/some-path",
+                requestMethod = HttpMethod.HEAD,
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            uptimeChecker.check(monitor)
+
+            then("it should handle the connection the right way") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status.shouldBeNull()
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Connect Error: 34hkl2jklvd.com"
             }
         }
 
@@ -439,7 +734,7 @@ class UptimeCheckerE2ETest(
                 expectedEvent.monitor.id shouldBe monitor.id
                 expectedEvent.error.message shouldBe "Invalid HTTP status code: 489"
 
-                mockServer.verifyRequest(request, exactly = 3)
+                mockServer.verifyRequest(request, exactly = 1)
             }
         }
 
@@ -510,7 +805,7 @@ class UptimeCheckerE2ETest(
                 val expectedRedirectEvents = redirectSubscriber.awaitCount(3).values()
                 val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
 
-                upSubscriber.assertValueCount(0)
+                upSubscriber.assertNoValues()
 
                 expectedDownEvent.status shouldBe HttpStatus.TEMPORARY_REDIRECT
                 expectedDownEvent.monitor.id shouldBe monitor.id
@@ -524,6 +819,413 @@ class UptimeCheckerE2ETest(
                 mockServer.verifyRequest(request1)
                 mockServer.verifyRequest(request2)
                 mockServer.verifyRequest(request3)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the response time exceeds the threshold") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                responseTimeThresholdMillis = 1000
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withDelay(org.mockserver.model.Delay.delay(TimeUnit.MILLISECONDS, 1005))
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldStartWith
+                    "Response time exceeded the threshold of 1000 ms"
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the response time is below the threshold") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                responseTimeThresholdMillis = 1000
+            )
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withDelay(org.mockserver.model.Delay.delay(TimeUnit.MILLISECONDS, 500))
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorUpEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the expected keyword is not found in the response") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "darkness"
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("Hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe
+                    "Response body does not contain the expected keyword: darkness (case-insensitive)"
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the expected keyword is found in the response") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "lo, w"
+            )
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("Hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorUpEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the response body is empty") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "darkness"
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Response body is empty or not a string"
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the response body is null") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "darkness"
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Response body is empty or not a string"
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`(
+            "it checks a monitor that is UP - " +
+                "the expected keyword is not found in the response - case sensitive"
+        ) {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "Hello, world!",
+                expectedKeywordCaseSensitive = true
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe
+                    "Response body does not contain the expected keyword: Hello, world! (case-sensitive)"
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`(
+            "it checks a monitor that is UP - " +
+                "the expected keyword is found in the response - case insensitive"
+        ) {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "Hello, world!",
+                expectedKeywordCaseSensitive = false
+            )
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorUpEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the expected keyword is not found in the response - negated") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "darkness",
+                expectedKeywordNegated = true
+            )
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("Hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorUpEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the expected keyword is found in the response - negated") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "Hello, world!",
+                expectedKeywordNegated = true
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("Hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe
+                    "Response body should not contain the expected keyword: Hello, world! (case-insensitive)"
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`(
+            "it checks a monitor that is UP - " +
+                "the expected keyword is not found in the response - negated and case sensitive"
+        ) {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "Hello, world!",
+                expectedKeywordNegated = true,
+                expectedKeywordCaseSensitive = true
+            )
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorUpEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`(
+            "it checks a monitor that is UP - " +
+                "the expected keyword is found in the response - negated and case sensitive"
+        ) {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = "Hello, world!",
+                expectedKeywordNegated = true,
+                expectedKeywordCaseSensitive = true
+            )
+            val subscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withBody("Hello, world!")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe
+                    "Response body should not contain the expected keyword: Hello, world! (case-sensitive)"
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor that is UP - the expected keyword is an empty string") {
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedKeyword = ""
+            )
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = getRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should not check the body, but dispatch a MonitorUpEvent") {
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
             }
         }
     }

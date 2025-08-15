@@ -30,6 +30,21 @@ object MonitorDocs {
         "List of integrations explicitly assigned to the monitor, e.g. \"email:my-email-notification\""
     const val EFFECTIVE_INTEGRATIONS =
         "List of integrations that are effective for the monitor, including global integrations"
+    const val EXPECTED_STATUS_CODES =
+        "List of expected HTTP status codes for the monitor. If the response code is not in this list, the monitor " +
+            "will be marked as DOWN. By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx and 4xx " +
+            "codes are supported."
+    const val RESPONSE_TIME_THRESHOLD =
+        "The threshold in milliseconds for the response time. If the response time exceeds this value, the monitor " +
+            "will be marked as DOWN."
+    const val EXPECTED_KEYWORD =
+        "A keyword that is expected to be present in the response body. If the keyword is not found, the monitor " +
+            "will be marked as DOWN."
+    const val EXPECTED_KEYWORD_CASE_SENSITIVE =
+        "Whether the expected keyword check is case-sensitive. If false, the check will be case-insensitive."
+    const val EXPECTED_KEYWORD_NEGATED =
+        "Whether the expected keyword check is negated. If true, the monitor will be marked as DOWN if the keyword " +
+            "is found in the response body."
 }
 
 object IntegrationDocs {

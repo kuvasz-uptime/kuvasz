@@ -236,6 +236,81 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         return (IntegrationID[]) get(13);
     }
 
+    /**
+     * Setter for <code>kuvasz.monitor.expected_status_codes</code>.
+     */
+    public MonitorRecord setExpectedStatusCodes(Integer[] value) {
+        set(14, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_status_codes</code>.
+     */
+    public Integer[] getExpectedStatusCodes() {
+        return (Integer[]) get(14);
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
+     */
+    public MonitorRecord setResponseTimeThresholdMillis(Integer value) {
+        set(15, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.response_time_threshold_millis</code>.
+     */
+    public Integer getResponseTimeThresholdMillis() {
+        return (Integer) get(15);
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_keyword</code>.
+     */
+    public MonitorRecord setExpectedKeyword(String value) {
+        set(16, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_keyword</code>.
+     */
+    public String getExpectedKeyword() {
+        return (String) get(16);
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_keyword_case_sensitive</code>.
+     */
+    public MonitorRecord setExpectedKeywordCaseSensitive(Boolean value) {
+        set(17, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_keyword_case_sensitive</code>.
+     */
+    public Boolean getExpectedKeywordCaseSensitive() {
+        return (Boolean) get(17);
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_keyword_negated</code>.
+     */
+    public MonitorRecord setExpectedKeywordNegated(Boolean value) {
+        set(18, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_keyword_negated</code>.
+     */
+    public Boolean getExpectedKeywordNegated() {
+        return (Boolean) get(18);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -259,7 +334,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations) {
+    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated) {
         super(Monitor.MONITOR);
 
         setId(id);
@@ -276,6 +351,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         setRequestMethod(requestMethod);
         setSslExpiryThreshold(sslExpiryThreshold);
         setIntegrations(integrations);
+        setExpectedStatusCodes(expectedStatusCodes);
+        setResponseTimeThresholdMillis(responseTimeThresholdMillis);
+        setExpectedKeyword(expectedKeyword);
+        setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive);
+        setExpectedKeywordNegated(expectedKeywordNegated);
         resetTouchedOnNotNull();
     }
 
@@ -300,6 +380,11 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
             setRequestMethod(value.getRequestMethod());
             setSslExpiryThreshold(value.getSslExpiryThreshold());
             setIntegrations(value.getIntegrations());
+            setExpectedStatusCodes(value.getExpectedStatusCodes());
+            setResponseTimeThresholdMillis(value.getResponseTimeThresholdMillis());
+            setExpectedKeyword(value.getExpectedKeyword());
+            setExpectedKeywordCaseSensitive(value.getExpectedKeywordCaseSensitive());
+            setExpectedKeywordNegated(value.getExpectedKeywordNegated());
             resetTouchedOnNotNull();
         }
     }

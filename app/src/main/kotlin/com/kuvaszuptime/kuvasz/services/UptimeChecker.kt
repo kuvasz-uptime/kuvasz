@@ -4,9 +4,16 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckResponseEvaluator
+import com.kuvaszuptime.kuvasz.util.isServerRelatedError
+import io.micronaut.core.io.buffer.ByteBuffer
+import io.micronaut.core.type.Argument
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.exceptions.HttpException
 import io.micronaut.retry.annotation.Retryable
 import io.micronaut.runtime.ApplicationConfiguration
 import jakarta.inject.Singleton
@@ -48,8 +55,7 @@ class UptimeChecker(
             visitedUrls.add(effectiveUrl)
 
             val checkResponse = sendHttpRequest(monitor, uri = effectiveUrl)
-            val result = checkResponseEvaluator.evaluateResponse(monitor, checkResponse, visitedUrls)
-            when (result) {
+            when (val result = checkResponseEvaluator.evaluateResponse(monitor, checkResponse, visitedUrls)) {
                 is HttpCheckResult.Redirected -> check(monitor, result.redirectionUri, result.visitedUrls)
                 HttpCheckResult.Continue -> {
                     logger.warn("HTTP uptime check for monitor with ID: ${monitor.id} returned Continue unexpectedly")
@@ -75,13 +81,21 @@ class UptimeChecker(
         delay = RETRY_INITIAL_DELAY,
         attempts = "$RETRY_COUNT",
         multiplier = "$RETRY_BACKOFF_MULTIPLIER",
+        includes = [HttpException::class],
     )
     suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpCheckResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val request = checkRequestConfigurator.fromMonitor(monitor, uri)
         val start = System.currentTimeMillis()
-        val httpResponse = httpClient.exchange(request).awaitSingle()
+        val httpResponse = httpClient.exchange(
+            request,
+            Argument.of(ByteBuffer::class.java),
+            Argument.of(ByteBuffer::class.java),
+        ).awaitSingle()
         val latency = (System.currentTimeMillis() - start).toInt()
+        if (httpResponse.isServerRelatedError()) {
+            throw HttpClientResponseException(httpResponse.status.reason, httpResponse)
+        }
 
         return HttpCheckResponse(
             httpResponse = httpResponse,
@@ -100,6 +114,8 @@ class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpCli
     override fun getReadTimeout(): Optional<Duration> = Optional.of(Duration.ofSeconds(READ_TIMEOUT_SECONDS))
 
     override fun getConnectionPoolConfiguration(): ConnectionPoolConfiguration = ConnectionPoolConfiguration()
+
+    override fun isExceptionOnErrorStatus(): Boolean = false
 
     companion object {
         private const val EVENT_LOOP_GROUP = "uptime-check"

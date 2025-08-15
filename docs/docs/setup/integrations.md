@@ -23,11 +23,12 @@ You can reference your integrations in your monitors by their _ID_, which is alw
 All the integrations **share some common, generic settings
 **, which means that it doesn't matter which integration you configure, you can use the same settings for all of them.
 
-### `name`
+### Name
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `name` -->
 
 The name of the integration. It must be **unique across the given type** of integration, so you can have multiple Slack integrations, for example, but they must have different names, and vice versa: you can have multiple integrations of different types with the same name.
 
@@ -42,11 +43,12 @@ integrations:
       integration-key: YourOwnIntegrationKey
 ```
 
-### `enabled`
+### Enabled
 
 <!-- md:version 2.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type `boolean` -->
+<!-- md:yaml_prop `enabled` -->
 
 Whether the integration is enabled or not. If it's set to `false`, the integration won't be used, and **no notifications will be sent** through it, however you can still reference it in your monitors.
 
@@ -58,11 +60,12 @@ integrations:
       integration-key: YourOwnIntegrationKey
 ```
 
-### `global`
+### Global
 
 <!-- md:version 2.0.0 -->
 <!-- md:default `false` -->
 <!-- md:type `boolean` -->
+<!-- md:yaml_prop `global` -->
 
 Whether the integration is global or not. If it's set to `true`, the integration **will be used for all monitors by default**, even if they don't have a specific integration assigned to them. If it's set to `false`, the integration will only be used for monitors that explicitly reference it.
 
@@ -80,11 +83,12 @@ integrations:
 
 The Slack integration allows you to send notifications to a Slack channel **via a webhook URL**.
 
-### `webhook-url`
+### Webhook URL
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `webhook-url` -->
 
 The webhook URL of the Slack channel where the notifications will be sent. You can create a webhook URL in your Slack workspace by following the [**official documentation**](https://api.slack.com/messaging/webhooks){target="_blank"}.
 
@@ -107,11 +111,12 @@ integrations:
 
 The Discord integration allows you to send notifications to a Discord channel **via a webhook URL**.
 
-### `webhook-url`
+### Webhook URL
 
 <!-- md:version 2.3.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `webhook-url` -->
 
 The webhook URL of the Discord channel where the notifications will be sent. You can create a webhook URL in your Discord server by following these steps:
 
@@ -148,19 +153,21 @@ The email integration allows you to send notifications via email. You can have m
 
     For more information, see the [**SMTP configuration**](configuration.md#smtp) section of the documentation.
 
-### `from-address`
+### From address
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `from-address` -->
 
 The email address from which the notifications will be sent. This is the address that will **appear in the "From" field** of the email.
 
-### `to-address`
+### To address
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `to-address` -->
 
 The email address **to which the notifications will be sent**.
 
@@ -196,11 +203,12 @@ The _PagerDuty_ integration allows you to **trigger incidents in PagerDuty** whe
     5. An **Integration Key** will be generated on this screen. Keep this key saved in a safe place, as it will be used when you configure the integration with Kuvasz in the next section.
       ![Copy PD key](https://pdpartner.s3.amazonaws.com/ig-template-copy-integration-key.png)
 
-### `integration-key`
+### Integration Key
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `integration-key` -->
 
 The **integration key of the _PagerDuty_ service** where the incidents will be created. You can find this key in your _PagerDuty_ service settings.
 
@@ -243,19 +251,21 @@ The _Telegram_ integration allows you to send notifications to a _Telegram_ **ch
          }
          ```
 
-### `api-token`
+### API token
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `api-token` -->
 
 The **API token of the _Telegram_ bot** that will send the notifications. You can get this token **from the BotFather** when you create your bot.
 
-### `chat-id`
+### Chat ID
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
 <!-- md:type `string` -->
+<!-- md:yaml_prop `chat-id` -->
 
 The **chat ID of the _Telegram_ chat** where the notifications will be sent. You can get this ID by following the steps outlined in the **Getting your bot token and chat ID** section.
 

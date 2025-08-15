@@ -40,5 +40,14 @@ class InvalidRedirectionException(
 
 class IneligibleStatusCodeException(
     val statusCode: Int,
-    override val message: String? = "The status code $statusCode is not eligible for the check"
+    override val message: String? = "Response status code [$statusCode] was unexpected"
 ) : UptimeCheckException()
+
+class ResponseTimeThresholdExceededException(
+    val responseTimeMillis: Int,
+    val thresholdMillis: Int,
+    override val message: String? =
+        "Response time exceeded the threshold of $thresholdMillis ms (actual: $responseTimeMillis ms)"
+) : UptimeCheckException()
+
+class ExpectedKeywordNotFoundException(override val message: String) : UptimeCheckException()

@@ -8,4 +8,4 @@ data class HttpCheckResponse(
     val latency: Int,
 )
 
-typealias RawHttpResponse = HttpResponse<ByteBuffer<Any>>
+typealias RawHttpResponse = HttpResponse<ByteBuffer<*>>

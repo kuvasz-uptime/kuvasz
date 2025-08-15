@@ -51,6 +51,8 @@ def on_page_markdown(
             return _badge_for_default(args, page, files)
         elif type == "required_if":
             return _badge_for_required_if(args, page, files)
+        elif type == "yaml_prop":
+            return _badge_for_yaml_prop(args, page, files)
 
         # Otherwise, raise an error
         raise RuntimeError(f"Unknown shortcode: {type}")
@@ -131,14 +133,12 @@ def _badge_for_version(text: str, page: Page, files: Files):
         text=f"[{text}]({_resolve_path(path, page, files)})" if spec else ""
     )
 
-
 # Create badge for configuration docs link
 def _badge_for_configuration(href: str):
     icon = "material-cog"
     return _badge(
         icon=f"[:{icon}:]({href} 'Configuration')",
     )
-
 
 # Create badge for type
 def _badge_for_type(text: str, page: Page, files: Files):
@@ -149,7 +149,6 @@ def _badge_for_type(text: str, page: Page, files: Files):
         text=text
     )
 
-
 # Create badge for default value
 def _badge_for_default(text: str, page: Page, files: Files):
     icon = "material-backup-restore"
@@ -159,6 +158,15 @@ def _badge_for_default(text: str, page: Page, files: Files):
         text=text
     )
 
+
+# Create badge for YAML property name
+def _badge_for_yaml_prop(text: str, page: Page, files: Files):
+    icon = "material-code-tags"
+    href = _resolve_path("conventions.md#yaml_property", page, files)
+    return _badge(
+        icon=f"[:{icon}:]({href} 'YAML property')",
+        text=text
+    )
 
 # Create badge for required value flag
 def _badge_for_required(page: Page, files: Files):

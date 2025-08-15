@@ -35,7 +35,7 @@ internal fun FlowContent.loginForm(loginErrorMessage: String?) {
                             if (!loginErrorMessage.isNullOrEmpty()) {
                                 div {
                                     classes(ALERT, ALERT_DANGER, ALERT_DISMISSIBLE)
-                                    attributes["role"] = "alert"
+                                    role = "alert"
                                     div {
                                         classes(ALERT_ICON)
                                         icon(Icon.CIRCLE_EXCLAMATION)

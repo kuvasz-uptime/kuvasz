@@ -1,0 +1,307 @@
+package com.kuvaszuptime.kuvasz.services.check.http
+
+import com.kuvaszuptime.kuvasz.models.ExpectedKeywordNotFoundException
+import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
+import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
+import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.util.getBodyAs
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockk
+
+class HttpResponseBodyCheckerTest : ShouldSpec({
+
+    val mockUptimeRepo = mockk<UptimeEventRepository>(relaxed = true)
+    val dispatcher = EventDispatcher()
+    val checker = HttpResponseBodyChecker(dispatcher, mockUptimeRepo)
+
+    fun mockResponseBody(body: String?): HttpCheckResponse =
+        mockk<HttpCheckResponse>(relaxed = true) {
+            if (body != null) {
+                every { httpResponse.getBodyAs<String>() } returns body
+            }
+        }
+
+    context("keyword is found in the response - case-insensitive, non-negated") {
+
+        should("return Continue") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a test keyword response")
+            val monitor = mockMonitor(
+                expectedKeyword = "keyword",
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Continue
+            upSubscriber.assertNoValues()
+            downSubscriber.assertNoValues()
+        }
+    }
+
+    context("keyword is found in the response - case-sensitive, non-negated") {
+
+        should("return Continue") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a test Keyword response")
+            val monitor = mockMonitor(
+                expectedKeyword = "Keyword",
+                expectedKeywordCaseSensitive = true,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Continue
+            upSubscriber.assertNoValues()
+            downSubscriber.assertNoValues()
+        }
+    }
+
+    context("keyword is found in the response - case-insensitive, negated") {
+
+        should("dispatch down event and return Finished") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a test KEYWorD response")
+            val monitor = mockMonitor(
+                expectedKeyword = "keyword",
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = true
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
+                "Response body should not contain the expected keyword: keyword (case-insensitive)"
+            )
+        }
+    }
+
+    context("keyword is found in the response - case-sensitive, negated") {
+
+        should("dispatch down event and return Finished") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a test Keyword response")
+            val monitor = mockMonitor(
+                expectedKeyword = "Keyword",
+                expectedKeywordCaseSensitive = true,
+                expectedKeywordNegated = true
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
+                "Response body should not contain the expected keyword: Keyword (case-sensitive)"
+            )
+        }
+    }
+
+    context("keyword is not found in the response - case-insensitive, non-negated") {
+
+        should("dispatch down event and return Finished") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a test response")
+            val monitor = mockMonitor(
+                expectedKeyword = "keyword",
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
+                "Response body does not contain the expected keyword: keyword (case-insensitive)"
+            )
+        }
+    }
+
+    context("keyword is not found in the response - case-sensitive, non-negated") {
+
+        should("dispatch down event and return Finished") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a keyword test response")
+            val monitor = mockMonitor(
+                expectedKeyword = "Keyword",
+                expectedKeywordCaseSensitive = true,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
+                "Response body does not contain the expected keyword: Keyword (case-sensitive)"
+            )
+        }
+    }
+
+    context("keyword is not found in the response - case-insensitive, negated") {
+
+        should("return Continue") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a test keywor response")
+            val monitor = mockMonitor(
+                expectedKeyword = "keyword",
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = true
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Continue
+            upSubscriber.assertNoValues()
+            downSubscriber.assertNoValues()
+        }
+    }
+
+    context("keyword is not found in the response - case-sensitive, negated") {
+
+        should("return Continue") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("This is a test KEYWORd response")
+            val monitor = mockMonitor(
+                expectedKeyword = "KEYWORD",
+                expectedKeywordCaseSensitive = true,
+                expectedKeywordNegated = true
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Continue
+            upSubscriber.assertNoValues()
+            downSubscriber.assertNoValues()
+        }
+    }
+
+    context("response body is null") {
+
+        should("dispatch down event and return Finished") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody(null)
+            val monitor = mockMonitor(
+                expectedKeyword = "keyword",
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
+                "Error while checking response body for monitor with ID: 1, expected keyword: keyword, error:"
+            )
+        }
+    }
+
+    context("response body is empty string") {
+
+        should("dispatch down event and return Finished") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody("")
+            val monitor = mockMonitor(
+                expectedKeyword = "keyword",
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
+                "Response body does not contain the expected keyword: keyword (case-insensitive)"
+            )
+        }
+    }
+
+    context("response body throws an exception when getting body") {
+
+        should("dispatch down event and return Finished") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockk<HttpCheckResponse>(relaxed = true) {
+                every { httpResponse.getBodyAs<String>() } throws RuntimeException("Error getting body")
+            }
+            val monitor = mockMonitor(
+                expectedKeyword = "keyword",
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
+                "Error while checking response body for monitor with ID: ${monitor.id}, " +
+                    "expected keyword: keyword, error: Error getting body"
+            )
+        }
+    }
+
+    context("monitor has no expected keyword") {
+
+        should("return Continue without checking response body") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+
+            val response = mockResponseBody(null)
+            val monitor = mockMonitor(
+                expectedKeyword = null,
+                expectedKeywordCaseSensitive = false,
+                expectedKeywordNegated = false
+            )
+            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+
+            val result = checker.evaluate(ctx)
+
+            result shouldBe HttpCheckResult.Continue
+            upSubscriber.assertNoValues()
+            downSubscriber.assertNoValues()
+        }
+    }
+})

@@ -74,6 +74,16 @@ inline fun FlowContent.templateTag(classes: String? = null, crossinline block: T
     TEMPLATE(attributesMapOf("class", classes), consumer).visit(block)
 }
 
+/**
+ * Needed only because kotlinx.html doesn't support `options` tags inside `template` tags
+ */
+@HtmlTagMarker
+@OptIn(ExperimentalContracts::class)
+inline fun FlowContent.optionTag(classes: String? = null, crossinline block: OPTION.() -> Unit = {}) {
+    contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+    OPTION(attributesMapOf("class", classes), consumer).visit(block)
+}
+
 internal fun HTMLTag.unsafeText(text: MessageBundleLocalizedString) {
     unsafe { raw(text.invoke()) }
 }

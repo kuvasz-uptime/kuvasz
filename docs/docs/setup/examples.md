@@ -158,6 +158,14 @@ monitors:
     integrations:
       - "telegram:telegram_disabled"
       - "slack:slack_default"
+    expected-status-codes:
+      - 200
+      - 201
+      - 303
+    expected-keyword: "akobor"
+    expected-keyword-case-sensitive: true
+    expected-keyword-negated: false
+    response-time-threshold-millis: 500
   - name: "minimal configuration example"
     url: "https://kuvasz-uptime.dev"
     uptime-check-interval: 5

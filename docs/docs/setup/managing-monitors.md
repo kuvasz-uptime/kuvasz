@@ -51,6 +51,14 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
       follow-redirects: true # (8)!
       force-no-cache: true # (9)!
       ssl-expiry-threshold: 30 # (10)!
+      expected-status-codes: # (12)!
+        - 200
+        - 201
+        - 303
+      expected-keyword: "Kuvasz" # (13)!
+      expected-keyword-case-sensitive: false # (14)!
+      expected-keyword-negated: false # (15)!
+      response-time-threshold-millis: 500 # (16)!
       integrations: # (11)!
         - "email:my-email-integration"
     # ... other monitors
@@ -67,6 +75,11 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     9. **Force no cache**: Whether the monitor should send a `Cache-Control: no-cache` header with the request. Defaults to true.
     10. **SSL expiry threshold**: The number of days before the SSL certificate expires that the monitor should alert about it. Defaults to 30 days.
     11. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
+    12. **Expected status codes**: A list of expected HTTP status codes that the monitor should accept as valid responses. Defaults to any `2xx` status, see [supported codes](#expected-status-codes).
+    13. **Expected keyword**: A keyword that the monitor should look for in the response body. If the keyword is not found, the monitor will alert you about it.
+    14. **Expected keyword case sensitive**: Whether the keyword matching should be case-sensitive or not. Defaults to false.
+    15. **Expected keyword negated**: Whether the keyword matching should be negated or not. If set to true, the monitor will alert you if the keyword is found in the response body. Defaults to false.
+    16. **Response time threshold**: The maximum response time in milliseconds that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. Maximum is 30 seconds (30000 ms), default is `null` which means that there is no response time threshold.
 
 === "API (expert)"
 
@@ -86,6 +99,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 
 <!-- md:flag required -->
 <!-- md:type string -->
+<!-- md:yaml_prop `name` -->
 
 The name of the monitor, which **must be unique** across all monitors.
 
@@ -93,6 +107,7 @@ The name of the monitor, which **must be unique** across all monitors.
 
 <!-- md:flag required -->
 <!-- md:type string -->
+<!-- md:yaml_prop `url` -->
 
 The URL of the monitor, which is **the endpoint that will be monitored**. It can be an HTTP or HTTPS URL.
 
@@ -100,6 +115,7 @@ The URL of the monitor, which is **the endpoint that will be monitored**. It can
 
 <!-- md:flag required -->
 <!-- md:type number -->
+<!-- md:yaml_prop `uptime-check-interval` -->
 
 The interval **in seconds** at which the uptime checks will be performed. The **minimum value is 5 seconds**.
 
@@ -107,6 +123,7 @@ The interval **in seconds** at which the uptime checks will be performed. The **
 
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `enabled` -->
 
 Whether the monitor is enabled or not. If it's disabled, it won't be checked, and **no events will be recorded** for it. Also disables SSL checks, because it **toggles the whole monitor**.
 
@@ -114,6 +131,7 @@ Whether the monitor is enabled or not. If it's disabled, it won't be checked, an
 
 <!-- md:default `false` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `ssl-check-enabled` -->
 
 Whether the SSL check is enabled or not. If it's disabled, the monitor **won't check the SSL certificate**. This setting is probably only relevant for HTTPS URLs.
 
@@ -122,6 +140,7 @@ Whether the SSL check is enabled or not. If it's disabled, the monitor **won't c
 <!-- md:version 2.0.0 -->
 <!-- md:default `30` -->
 <!-- md:type number -->
+<!-- md:yaml_prop `ssl-expiry-threshold` -->
 
 The **number of days before the SSL certificate expires** that the monitor should alert about it. **Minimum value is 0**, which mean that the monitor will alert you only on the day of the expiry.
 
@@ -134,6 +153,7 @@ The **number of days before the SSL certificate expires** that the monitor shoul
 <!-- md:version 2.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `latency-history-enabled` -->
 
 Whether the latency history is enabled or not. If it's disabled, the monitor **won't record the measured latency**. If you disable it on a monitor that has already recorded latency history, the **existing history will be deleted**.
 
@@ -142,6 +162,7 @@ Whether the latency history is enabled or not. If it's disabled, the monitor **w
 <!-- md:version 2.0.0 -->
 <!-- md:default `GET` -->
 <!-- md:type enum: `GET`, `HEAD` -->
+<!-- md:yaml_prop `request-method` -->
 
 The **HTTP method** to use for the uptime checks. `HEAD` **is recommended** for most cases, but not every endpoint supports it, so you can use `GET` if you need to. 
 
@@ -152,6 +173,7 @@ The **HTTP method** to use for the uptime checks. `HEAD` **is recommended** for 
 <!-- md:version 2.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `follow-redirects` -->
 
 Whether the monitor **should follow redirects** or not. If it's disabled, the monitor will **not follow HTTP redirects** (`3xx` responses) and will only check the initial URL. Multiple redirects will be followed, and the final response will be checked, however if a redirect loop is detected, the monitor will fail and alert you about it.
 
@@ -160,6 +182,7 @@ Whether the monitor **should follow redirects** or not. If it's disabled, the mo
 <!-- md:version 2.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `force-no-cache` -->
 
 Whether the monitor should send a `Cache-Control: no-cache` header with the request. This is useful to ensure that the **response is not cached by the server** or any intermediate proxies, and you always get the latest response.
 
@@ -168,6 +191,7 @@ Whether the monitor should send a `Cache-Control: no-cache` header with the requ
 <!-- md:version 2.0.0 -->
 <!-- md:default empty -->
 <!-- md:type list -->
+<!-- md:yaml_prop `integrations` -->
 
 A list of **integrations to assign** to the monitor. 
 
@@ -178,6 +202,136 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
     You can add/keep **disabled integrations in the list**, but they will not be used for the monitor. This is useful if you want to enable them later without modifying the monitor's configuration.
 
     **Global integrations** can be explicitly added too, which is handy if you're about to **make them non-global later**, but you want to make sure that they will be assigned to certain monitors even after the change.
+
+### Expected status codes
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `every 2xx code` -->
+<!-- md:type list -->
+<!-- md:yaml_prop `expected-status-codes` -->
+
+A list of **expected HTTP status codes** that the monitor should accept as valid responses. If the response status code is not in this list, the monitor will alert you about it. Defaults to any `2xx` status code. 
+
+??? info "Supported status codes"
+
+    **Informational**:
+
+    - `100` Continue
+    - `101` Switching Protocols
+    - `102` Processing
+    - `103` Early Hints
+
+    **Success**:
+
+    - `200` Ok
+    - `201` Created
+    - `202` Accepted
+    - `203` Non-Authoritative Information
+    - `204` No Content
+    - `205` Reset Content
+    - `206` Partial Content
+    - `207` Multi Status
+    - `208` Already Imported
+    - `226` IM Used
+
+    **Redirection**:
+
+    - `300` Multiple Choices
+    - `301` Moved Permanently
+    - `302` Found
+    - `303` See Other
+    - `304` Not Modified
+    - `305` Use Proxy
+    - `306` Switch Proxy
+    - `307` Temporary Redirect
+    - `308` Permanent Redirect
+
+    **Client Error**:
+
+    - `400` Bad Request
+    - `401` Unauthorized
+    - `402` Payment Required
+    - `403` Forbidden
+    - `404` Not Found
+    - `405` Method Not Allowed
+    - `406` Not Acceptable
+    - `407` Proxy Authentication Required
+    - `408` Request Timeout
+    - `409` Conflict
+    - `410` Gone
+    - `411` Length Required
+    - `412` Precondition Failed
+    - `413` Request Entity Too Large
+    - `414` Request-URI Too Long
+    - `415` Unsupported Media Type
+    - `416` Requested Range Not Satisfiable
+    - `417` Expectation Failed
+    - `418` I am a teapot (RFC 7168)
+    - `420` Enhance your calm (Twitter)
+    - `421` Misdirected Request (RFC 7540)
+    - `422` Unprocessable Entity (WebDAV; RFC 4918)
+    - `423` Locked (WebDAV; RFC 4918)
+    - `424` Failed Dependency (WebDAV; RFC 4918)
+    - `425` Too Early (RFC 8470)
+    - `426` Upgrade Required (RFC 7231)
+    - `428` Precondition Required (RFC 6585)
+    - `429` Too Many Requests (RFC 6585)
+    - `431` Request Header Fields Too Large (RFC 6585)
+    - `444` No Response
+    - `450` Blocked by Windows Parental Controls (Microsoft)
+    - `451` Unavailable For Legal Reasons (RFC 7725)
+    - `494` Request Header Too Large
+
+!!! warning "Redirects"
+
+    If the monitor is set to follows redirects, **every intermediate request's status code** will be checked against this list. 
+
+    Therefore if you want to allow redirects, and you would also like to explicitly specify the expected status codes, you have to **add the right `3xx` status codes to this list** as well, otherwise the monitor will alert you about the redirect responses.
+
+    For example: you have a monitor that checks a URL that redirects to another URL with a `307 Temporary Redirect`, and the final request is expected to return a `204 No Content` response. In this case you need to do the following:
+
+    - enable the [**following redirects**](#follow-redirects) option
+    - add `307` and `204` to the `expected-status-codes` list
+
+### Expected keyword
+
+<!-- md:version 2.4.0 -->
+<!-- md:default empty -->
+<!-- md:type string -->
+<!-- md:yaml_prop `expected-keyword` -->
+
+A keyword that the monitor should look for in the response body. If the **keyword is not found**, the monitor will alert you about it. This is useful to ensure that the response contains the expected content. You can use **JSON strings** as well, for example `{"status":"ok"}` to match a JSON response, but keep in mind, that _Kuvasz_ will check the response as is, without parsing it, so the keyword **must match exactly**.
+
+!!! warning "HEAD requests"
+
+    If the monitor is set to use the `HEAD` request method, the response body will be empty, so this check will always fail. In this case, you should either use the `GET` method, or disable this check.
+
+### Expected keyword case sensitivity
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `expected-keyword-case-sensitive` -->
+
+Whether the keyword matching should be **case-sensitive** or not. If it's set to `true`, the monitor will be considered healthy only if the keyword matches exactly, including the case. If it's set to `false`, the monitor will be considered healthy if the keyword is found in the response body, regardless of the case.
+
+### Expected keyword negation
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `expected-keyword-negated` -->
+
+A.k.a. _"reverse matching"_. If this is set to `true`, the monitor will alert you if the keyword is found in the response body, instead of alerting you if it's not found. This is useful if you want to ensure that a specific keyword is **not present** in the response body.
+
+### Response time threshold
+
+<!-- md:version 2.4.0 -->
+<!-- md:default `null` -->
+<!-- md:type number -->
+<!-- md:yaml_prop `response-time-threshold-millis` -->
+
+The maximum response time in **milliseconds** that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. This is useful to ensure that your services are performing well and responding within an acceptable time frame. The maximum value is 30 seconds (30000 ms), and the default is `null`, which means that there is no response time threshold.
 
 ## Common operations
 

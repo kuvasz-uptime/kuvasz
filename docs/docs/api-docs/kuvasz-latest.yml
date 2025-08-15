@@ -20,11 +20,13 @@ paths:
       parameters:
       - name: enabled
         in: query
+        explode: false
         schema:
           type: boolean
           nullable: true
       - name: uptimeStatus
         in: query
+        explode: false
         schema:
           type: array
           nullable: true
@@ -32,6 +34,7 @@ paths:
             $ref: "#/components/schemas/UptimeStatus"
       - name: sslStatus
         in: query
+        explode: false
         schema:
           type: array
           nullable: true
@@ -39,6 +42,7 @@ paths:
             $ref: "#/components/schemas/SslStatus"
       - name: sslCheckEnabled
         in: query
+        explode: false
         schema:
           type: boolean
           nullable: true
@@ -111,6 +115,7 @@ paths:
       parameters:
       - name: period
         in: query
+        explode: false
         schema:
           type: string
           description: "A Java Duration string, default 7d"
@@ -275,6 +280,7 @@ paths:
           format: int64
       - name: period
         in: query
+        explode: false
         schema:
           type: string
           description: "A Java Duration string, default 1d"
@@ -456,15 +462,20 @@ components:
           minLength: 1
           type: string
           description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          x-size-message: Monitor name must not be blank
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
           description: The URL that is monitored
+          x-pattern-message: URL must be a valid HTTP(S) URI
+          x-not-null-message: URL must not be null
         uptimeCheckInterval:
           minimum: 5
           type: integer
           description: The interval in seconds at which the monitor checks for uptime
           format: int32
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
         enabled:
           type: boolean
           description: "Whether the monitor is enabled. If false, the monitor will\
@@ -497,6 +508,9 @@ components:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
           format: int32
+          x-minimum-message: SSL expiry threshold must be greater than or equal to
+            0 days
+          x-not-null-message: SSL expiry threshold must not be null
           default: 30
         integrations:
           type: array
@@ -505,11 +519,53 @@ components:
           nullable: true
           items:
             type: string
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          nullable: true
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          maximum: 30000
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+          x-maximum-message: "Response time threshold must be less than or equal to\
+            \ {value} milliseconds"
+          x-minimum-message: Response time threshold must be greater than 0 milliseconds
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+          default: false
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
+          default: false
     MonitorDetailsDto:
       required:
       - createdAt
       - effectiveIntegrations
       - enabled
+      - expectedKeyword
+      - expectedKeywordCaseSensitive
+      - expectedKeywordNegated
+      - expectedStatusCodes
       - followRedirects
       - forceNoCache
       - id
@@ -521,6 +577,7 @@ components:
       - nextSSLCheck
       - nextUptimeCheck
       - requestMethod
+      - responseTimeThresholdMillis
       - sslCheckEnabled
       - sslError
       - sslExpiryThreshold
@@ -653,10 +710,43 @@ components:
             \ global integrations"
           items:
             $ref: "#/components/schemas/IntegrationDetailsDto"
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
     MonitorDto:
       required:
       - createdAt
       - enabled
+      - expectedKeyword
+      - expectedKeywordCaseSensitive
+      - expectedKeywordNegated
+      - expectedStatusCodes
       - followRedirects
       - forceNoCache
       - id
@@ -664,6 +754,7 @@ components:
       - latencyHistoryEnabled
       - name
       - requestMethod
+      - responseTimeThresholdMillis
       - sslCheckEnabled
       - sslExpiryThreshold
       - updatedAt
@@ -718,6 +809,35 @@ components:
             type: string
             description: "A unique identifier for an integration, formatted as 'type:name'."
             example: email:my-email-integration
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
         createdAt:
           type: string
           description: The creation timestamp of the monitor
@@ -785,17 +905,21 @@ components:
           type: string
           description: "Unique name for the monitor, e.g., 'My Website Monitor'"
           nullable: false
+          x-size-message: Monitor name must not be blank
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
           description: The URL that is monitored
           nullable: false
+          x-pattern-message: URL must be a valid HTTP(S) URI
+          x-not-null-message: URL must not be null
         uptimeCheckInterval:
           minimum: 5
           type: integer
           description: The interval in seconds at which the monitor checks for uptime
           format: int32
           nullable: false
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
         enabled:
           type: boolean
           description: "Whether the monitor is enabled. If false, the monitor will\
@@ -823,10 +947,13 @@ components:
           description: Whether to follow redirects during the uptime check
           nullable: false
         sslExpiryThreshold:
+          minimum: 0
           type: integer
           description: The threshold in days for SSL certificate expiry checks
           format: int32
           nullable: false
+          x-minimum-message: SSL expiry threshold must be greater than or equal to
+            0 days
         integrations:
           type: array
           description: "List of integrations explicitly assigned to the monitor, e.g.\
@@ -836,6 +963,44 @@ components:
             type: string
             description: "A unique identifier for an integration, formatted as 'type:name'."
             example: email:my-email-integration
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          nullable: true
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          maximum: 30000
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+          x-maximum-message: "Response time threshold must be less than or equal to\
+            \ {value} milliseconds"
+          x-minimum-message: Response time threshold must be greater than 0 milliseconds
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+          nullable: false
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
+          nullable: false
     MonitoringStatsDto:
       required:
       - actual
