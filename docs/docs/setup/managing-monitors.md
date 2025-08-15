@@ -75,7 +75,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     9. **Force no cache**: Whether the monitor should send a `Cache-Control: no-cache` header with the request. Defaults to true.
     10. **SSL expiry threshold**: The number of days before the SSL certificate expires that the monitor should alert about it. Defaults to 30 days.
     11. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
-    12. **Expected status codes**: A list of expected HTTP status codes that the monitor should accept as valid responses. Defaults to any `2xx` status.
+    12. **Expected status codes**: A list of expected HTTP status codes that the monitor should accept as valid responses. Defaults to any `2xx` status, see [supported codes](#expected-status-codes).
     13. **Expected keyword**: A keyword that the monitor should look for in the response body. If the keyword is not found, the monitor will alert you about it.
     14. **Expected keyword case sensitive**: Whether the keyword matching should be case-sensitive or not. Defaults to false.
     15. **Expected keyword negated**: Whether the keyword matching should be negated or not. If set to true, the monitor will alert you if the keyword is found in the response body. Defaults to false.
@@ -206,17 +206,92 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
 ### Expected status codes
 
 <!-- md:version 2.4.0 -->
-<!-- md:default `2xx` -->
+<!-- md:default `every 2xx code` -->
 <!-- md:type list -->
 <!-- md:yaml_prop `expected-status-codes` -->
 
-A list of **expected HTTP status codes** that the monitor should accept as valid responses. If the response status code is not in this list, the monitor will alert you about it. Defaults to any `2xx` status code.
+A list of **expected HTTP status codes** that the monitor should accept as valid responses. If the response status code is not in this list, the monitor will alert you about it. Defaults to any `2xx` status code. 
+
+??? info "Supported status codes"
+
+    **Informational**:
+
+    - `100` Continue
+    - `101` Switching Protocols
+    - `102` Processing
+    - `103` Early Hints
+
+    **Success**:
+
+    - `200` Ok
+    - `201` Created
+    - `202` Accepted
+    - `203` Non-Authoritative Information
+    - `204` No Content
+    - `205` Reset Content
+    - `206` Partial Content
+    - `207` Multi Status
+    - `208` Already Imported
+    - `226` IM Used
+
+    **Redirection**:
+
+    - `300` Multiple Choices
+    - `301` Moved Permanently
+    - `302` Found
+    - `303` See Other
+    - `304` Not Modified
+    - `305` Use Proxy
+    - `306` Switch Proxy
+    - `307` Temporary Redirect
+    - `308` Permanent Redirect
+
+    **Client Error**:
+
+    - `400` Bad Request
+    - `401` Unauthorized
+    - `402` Payment Required
+    - `403` Forbidden
+    - `404` Not Found
+    - `405` Method Not Allowed
+    - `406` Not Acceptable
+    - `407` Proxy Authentication Required
+    - `408` Request Timeout
+    - `409` Conflict
+    - `410` Gone
+    - `411` Length Required
+    - `412` Precondition Failed
+    - `413` Request Entity Too Large
+    - `414` Request-URI Too Long
+    - `415` Unsupported Media Type
+    - `416` Requested Range Not Satisfiable
+    - `417` Expectation Failed
+    - `418` I am a teapot (RFC 7168)
+    - `420` Enhance your calm (Twitter)
+    - `421` Misdirected Request (RFC 7540)
+    - `422` Unprocessable Entity (WebDAV; RFC 4918)
+    - `423` Locked (WebDAV; RFC 4918)
+    - `424` Failed Dependency (WebDAV; RFC 4918)
+    - `425` Too Early (RFC 8470)
+    - `426` Upgrade Required (RFC 7231)
+    - `428` Precondition Required (RFC 6585)
+    - `429` Too Many Requests (RFC 6585)
+    - `431` Request Header Fields Too Large (RFC 6585)
+    - `444` No Response
+    - `450` Blocked by Windows Parental Controls (Microsoft)
+    - `451` Unavailable For Legal Reasons (RFC 7725)
+    - `494` Request Header Too Large
 
 !!! warning "Redirects"
 
-    If the monitor is **set to follows redirects**, the status code of the **final response will be checked** against this list. 
+    If the monitor is set to follows redirects, **every intermediate request's status code** will be checked against this list. 
 
-    However if you want to allow redirects, and you would also like to explicitly specify the expected status codes, you have to **add the right `3xx` status codes to this list** as well, otherwise the monitor will alert you about the redirect responses.
+    Therefore if you want to allow redirects, and you would also like to explicitly specify the expected status codes, you have to **add the right `3xx` status codes to this list** as well, otherwise the monitor will alert you about the redirect responses.
+
+    For example: you have a monitor that checks a URL that redirects to another URL with a `307 Temporary Redirect`, and the final request is expected to return a `204 No Content` response. In this case you need to do the following:
+
+    - enable the [**following redirects**](#follow-redirects) option
+    - add `307` and `204` to the `expected-status-codes` list
 
 ### Expected keyword
 
@@ -247,7 +322,7 @@ Whether the keyword matching should be **case-sensitive** or not. If it's set to
 <!-- md:type boolean -->
 <!-- md:yaml_prop `expected-keyword-negated` -->
 
-A.k.a. "reverse matching". If this is set to `true`, the monitor will alert you if the keyword is found in the response body, instead of alerting you if it's not found. This is useful if you want to ensure that a specific keyword is **not present** in the response body.
+A.k.a. _"reverse matching"_. If this is set to `true`, the monitor will alert you if the keyword is found in the response body, instead of alerting you if it's not found. This is useful if you want to ensure that a specific keyword is **not present** in the response body.
 
 ### Response time threshold
 
