@@ -39,3 +39,6 @@ You'll find the condition next to the symbol.
 
 ### <!-- md:config #config --> – Configuration { #config data-toc-label="Configuration" }
 This symbol indicates that a dedicated configuration section is available for the feature or integration you are reading about.
+
+### <!-- md:yaml_prop --> – YAML property { #yaml_property data-toc-label="YAML property" }
+When a setting in the documentation is marked with this symbol, it means that the setting can be configured in the YAML configuration file with the given property name.

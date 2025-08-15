@@ -99,6 +99,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 
 <!-- md:flag required -->
 <!-- md:type string -->
+<!-- md:yaml_prop `name` -->
 
 The name of the monitor, which **must be unique** across all monitors.
 
@@ -106,6 +107,7 @@ The name of the monitor, which **must be unique** across all monitors.
 
 <!-- md:flag required -->
 <!-- md:type string -->
+<!-- md:yaml_prop `url` -->
 
 The URL of the monitor, which is **the endpoint that will be monitored**. It can be an HTTP or HTTPS URL.
 
@@ -113,6 +115,7 @@ The URL of the monitor, which is **the endpoint that will be monitored**. It can
 
 <!-- md:flag required -->
 <!-- md:type number -->
+<!-- md:yaml_prop `uptime-check-interval` -->
 
 The interval **in seconds** at which the uptime checks will be performed. The **minimum value is 5 seconds**.
 
@@ -120,6 +123,7 @@ The interval **in seconds** at which the uptime checks will be performed. The **
 
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `enabled` -->
 
 Whether the monitor is enabled or not. If it's disabled, it won't be checked, and **no events will be recorded** for it. Also disables SSL checks, because it **toggles the whole monitor**.
 
@@ -127,6 +131,7 @@ Whether the monitor is enabled or not. If it's disabled, it won't be checked, an
 
 <!-- md:default `false` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `ssl-check-enabled` -->
 
 Whether the SSL check is enabled or not. If it's disabled, the monitor **won't check the SSL certificate**. This setting is probably only relevant for HTTPS URLs.
 
@@ -135,6 +140,7 @@ Whether the SSL check is enabled or not. If it's disabled, the monitor **won't c
 <!-- md:version 2.0.0 -->
 <!-- md:default `30` -->
 <!-- md:type number -->
+<!-- md:yaml_prop `ssl-expiry-threshold` -->
 
 The **number of days before the SSL certificate expires** that the monitor should alert about it. **Minimum value is 0**, which mean that the monitor will alert you only on the day of the expiry.
 
@@ -147,6 +153,7 @@ The **number of days before the SSL certificate expires** that the monitor shoul
 <!-- md:version 2.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `latency-history-enabled` -->
 
 Whether the latency history is enabled or not. If it's disabled, the monitor **won't record the measured latency**. If you disable it on a monitor that has already recorded latency history, the **existing history will be deleted**.
 
@@ -155,6 +162,7 @@ Whether the latency history is enabled or not. If it's disabled, the monitor **w
 <!-- md:version 2.0.0 -->
 <!-- md:default `GET` -->
 <!-- md:type enum: `GET`, `HEAD` -->
+<!-- md:yaml_prop `request-method` -->
 
 The **HTTP method** to use for the uptime checks. `HEAD` **is recommended** for most cases, but not every endpoint supports it, so you can use `GET` if you need to. 
 
@@ -165,6 +173,7 @@ The **HTTP method** to use for the uptime checks. `HEAD` **is recommended** for 
 <!-- md:version 2.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `follow-redirects` -->
 
 Whether the monitor **should follow redirects** or not. If it's disabled, the monitor will **not follow HTTP redirects** (`3xx` responses) and will only check the initial URL. Multiple redirects will be followed, and the final response will be checked, however if a redirect loop is detected, the monitor will fail and alert you about it.
 
@@ -173,6 +182,7 @@ Whether the monitor **should follow redirects** or not. If it's disabled, the mo
 <!-- md:version 2.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `force-no-cache` -->
 
 Whether the monitor should send a `Cache-Control: no-cache` header with the request. This is useful to ensure that the **response is not cached by the server** or any intermediate proxies, and you always get the latest response.
 
@@ -181,6 +191,7 @@ Whether the monitor should send a `Cache-Control: no-cache` header with the requ
 <!-- md:version 2.0.0 -->
 <!-- md:default empty -->
 <!-- md:type list -->
+<!-- md:yaml_prop `integrations` -->
 
 A list of **integrations to assign** to the monitor. 
 
@@ -197,6 +208,7 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
 <!-- md:version 2.4.0 -->
 <!-- md:default `2xx` -->
 <!-- md:type list -->
+<!-- md:yaml_prop `expected-status-codes` -->
 
 A list of **expected HTTP status codes** that the monitor should accept as valid responses. If the response status code is not in this list, the monitor will alert you about it. Defaults to any `2xx` status code.
 
@@ -211,6 +223,7 @@ A list of **expected HTTP status codes** that the monitor should accept as valid
 <!-- md:version 2.4.0 -->
 <!-- md:default empty -->
 <!-- md:type string -->
+<!-- md:yaml_prop `expected-keyword` -->
 
 A keyword that the monitor should look for in the response body. If the **keyword is not found**, the monitor will alert you about it. This is useful to ensure that the response contains the expected content. You can use **JSON strings** as well, for example `{"status":"ok"}` to match a JSON response, but keep in mind, that _Kuvasz_ will check the response as is, without parsing it, so the keyword **must match exactly**.
 
@@ -223,6 +236,7 @@ A keyword that the monitor should look for in the response body. If the **keywor
 <!-- md:version 2.4.0 -->
 <!-- md:default `false` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `expected-keyword-case-sensitive` -->
 
 Whether the keyword matching should be **case-sensitive** or not. If it's set to `true`, the monitor will be considered healthy only if the keyword matches exactly, including the case. If it's set to `false`, the monitor will be considered healthy if the keyword is found in the response body, regardless of the case.
 
@@ -231,6 +245,7 @@ Whether the keyword matching should be **case-sensitive** or not. If it's set to
 <!-- md:version 2.4.0 -->
 <!-- md:default `false` -->
 <!-- md:type boolean -->
+<!-- md:yaml_prop `expected-keyword-negated` -->
 
 A.k.a. "reverse matching". If this is set to `true`, the monitor will alert you if the keyword is found in the response body, instead of alerting you if it's not found. This is useful if you want to ensure that a specific keyword is **not present** in the response body.
 
@@ -239,6 +254,7 @@ A.k.a. "reverse matching". If this is set to `true`, the monitor will alert you 
 <!-- md:version 2.4.0 -->
 <!-- md:default `null` -->
 <!-- md:type number -->
+<!-- md:yaml_prop `response-time-threshold-millis` -->
 
 The maximum response time in **milliseconds** that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. This is useful to ensure that your services are performing well and responding within an acceptable time frame. The maximum value is 30 seconds (30000 ms), and the default is `null`, which means that there is no response time threshold.
 
