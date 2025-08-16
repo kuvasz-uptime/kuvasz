@@ -92,7 +92,7 @@ nav:
       - Configuration reference: setup/configuration.md
   - Management:
       - Integrations setup: management/integrations.md
-      - Managing-monitors:
+      - Managing monitors:
           - management/managing-monitors/index.md
           - Manage HTTP & SSL monitors: management/http-monitors.md
       - Metrics exporters: management/metrics-exporters.md
