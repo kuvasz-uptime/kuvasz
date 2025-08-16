@@ -6,6 +6,6 @@ Monitoring your SSL/TLS certificates is crucial to ensure that your services **r
 
 Kuvasz checks your SSL/TLS certificates **every day and notifies** you before they expire. You can configure the notification channels on a per-monitor basis, and you can also **set the days before expiration** when you want to be notified.
 
-## Configuration <!-- md:config ../setup/managing-monitors.md -->
+## Configuration <!-- md:config ../management/http-monitors.md -->
 
-Please refer to the [**Managing monitors**](../setup/managing-monitors.md) section of the documentation for more information on how to configure SSL monitoring.
+Please refer to the [**Managing monitors**](../management/http-monitors.md) section of the documentation for more information on how to configure SSL monitoring.

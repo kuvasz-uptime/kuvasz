@@ -31,6 +31,6 @@ _Kuvasz_ monitors your websites and services by **periodically sending requests*
 - **Notifications on a per-monitor basis**: Configure different notification channels for each monitor, allowing you to tailor alerts to your specific needs.
 - More to come: _Kuvasz_ is under active development, and more features are planned for the future, such as **POST requests with arbitrary payload**, and more.
 
-## Configuration <!-- md:config ../setup/managing-monitors.md -->
+## Configuration <!-- md:config ../management/http-monitors.md -->
 
-Please refer to the [**Managing monitors**](../setup/managing-monitors.md) section of the documentation for more information on how to configure uptime monitoring.
+Please refer to the [**Managing monitors**](../management/http-monitors.md) section of the documentation for more information on how to configure uptime monitoring.

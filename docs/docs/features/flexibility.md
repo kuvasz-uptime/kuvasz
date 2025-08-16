@@ -6,9 +6,9 @@ You can also choose to set up your monitors **initially via the UI**, and then *
 
 !!! tip 
 
-    You can find the monitoring configuration options in the [**Managing monitors**](../setup/managing-monitors.md) section of the documentation.
+    You can find the monitoring configuration options in the [**Managing monitors**](../management/http-monitors.md) section of the documentation.
 
-## Metrics exporters <!-- md:config ../setup/metrics-exporters.md -->
+## Metrics exporters <!-- md:config ../management/metrics-exporters.md -->
 
 _Kuvasz_ supports **exporting metrics** to _Prometheus_ or to any _OTLP-compatible_ tool, to allow you to integrate with your existing monitoring and alerting systems. This means you can use _Kuvasz_ alongside your preferred observability stack.
 

@@ -28,30 +28,30 @@ Every integration **watches a set of events**, which are fired by the monitors. 
 | `INVALID`     | Fired, when an SSL certificate is **invalid or expired** now                                        |
 | `WILL_EXPIRE` | Fired, when an SSL certificate **will expire in the next X days** (`X` is configurable per monitor) |
 
-## Slack <!-- md:config ../setup/integrations.md#slack -->
+## Slack <!-- md:config ../management/integrations.md#slack -->
 
 You can set up
 _Slack_ as a notification channel for your monitors. This allows you to receive notifications about the status of your monitors directly in your Slack channels.
 
 ![Slack notifications](../images/integrations/slack.webp)
 
-## Discord <!-- md:config ../setup/integrations.md#discord -->
+## Discord <!-- md:config ../management/integrations.md#discord -->
 
 The _Discord_ integration allows you to send notifications **to Discord channels**. This allows you to receive notifications about the status of your monitors directly in your Discord channels.
 
 
-## Email <!-- md:config ../setup/integrations.md#email -->
+## Email <!-- md:config ../management/integrations.md#email -->
 
 The email integration lets you to configure an _SMTP_ connection, with which
 _Kuvasz_ can send you simple email notifications about the status of your monitors.
 
-## PagerDuty <!-- md:config ../setup/integrations.md#pagerduty -->
+## PagerDuty <!-- md:config ../management/integrations.md#pagerduty -->
 
 The _PagerDuty_ integration allows you to trigger **incidents in PagerDuty** when a monitor goes down or an SSL certificate is invalid or will expire soon. This way, you can ensure that your team is notified immediately about critical issues. Incidents will be **automatically resolved** when the monitor is back up or the SSL certificate is valid again.
 
 ![PagerDuty integration](../images/integrations/pagerduty.webp)
 
-## Telegram <!-- md:config ../setup/integrations.md#telegram -->
+## Telegram <!-- md:config ../management/integrations.md#telegram -->
 
 The _Telegram_ integration allows you to send notifications **to a specific Telegram chat** via the Bot API. You can use it to receive notifications about the status of your monitors **directly in your Telegram app**.
 

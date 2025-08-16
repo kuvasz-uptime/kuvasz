@@ -30,6 +30,7 @@ theme:
   features:
     - navigation.top
     - navigation.footer
+    - navigation.indexes
     - search.suggest
     - search.highlight
     - content.code.copy
@@ -78,13 +79,6 @@ extra_css:
 nav:
   - Introduction: index.md
   - Live demo: demo.md
-  - Getting started:
-      - Installation: setup/installation.md
-      - Configure Kuvasz: setup/configuration.md
-      - Integrations setup: setup/integrations.md
-      - Managing monitors: setup/managing-monitors.md
-      - Metrics exporters: setup/metrics-exporters.md
-      - Recipes & examples: setup/examples.md
   - Features:
       - HTTP monitoring: features/http-monitoring.md
       - SSL monitoring: features/ssl-monitoring.md
@@ -93,6 +87,16 @@ nav:
       - Flexibility: features/flexibility.md
       - Performance: features/performance.md
       - API: features/api.md
+  - Getting started:
+      - Installation: setup/installation.md
+      - Configuration reference: setup/configuration.md
+  - Management:
+      - Integrations setup: management/integrations.md
+      - Managing-monitors:
+          - management/managing-monitors/index.md
+          - Manage HTTP & SSL monitors: management/http-monitors.md
+      - Metrics exporters: management/metrics-exporters.md
+      - Recipes & examples: management/examples.md
   - API docs: api-docs.md
   - Changelog: changelog.md
   - Conventions: conventions.md

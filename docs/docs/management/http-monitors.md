@@ -1,43 +1,16 @@
-There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**, using a **YAML configuration file**, or via the **REST API**. Each method has its own advantages, and you can choose the one that best fits your workflow.
+!!! tip "Before you start..."
 
-!!!note "Key concepts for all methods"
-
-    - The **name of the monitor must be unique**, otherwise the creation/update will fail. If you want to update an existing monitor, you can use the same name, of course.
-    - The UI and the API will be in **read-only mode** if you have defined your monitors via _YAML_
+    Make sure that you **carefully read the** [**common documentation**](managing-monitors/index.md) about managing the monitors!
 
 ## Management methods
 
 === "Web UI (recommended)"
 
-    The Web UI should be intuitive and user-friendly enough to make it straightforward to create, edit, and manage your monitors. You can access the UI by **navigating to the root of your _Kuvasz_ instance** (e.g. `http://0.0.0.0:8080` if you're running it with the default port setup).
+    If you navigate to the Web UI of _Kuvasz_, you can create a new monitor on the **Dashboard**, or on the **Monitors** page, by clicking the "+ New Monitor" button in the page header.
 
     ![Creating a monitor](../images/ui/create_monitor.webp)
 
-=== "YAML (more advanced)"
-
-    !!!info "Consequences of describing your monitors as YAML"
-
-        Be aware that if you define your monitors via _YAML_, you **cannot use the UI, or the API** to modify them, you can only view them there (read-only operations are permitted)!
-    
-        In this case _Kuvasz_ reads your YAML file on startup, compares the monitors in there with the existing ones in the database, and uses the YAML file as the source of truth. 
-    
-        The same applies if you **used the UI or the API before** to manage your monitors, and you decide to switch to YAML: unless your YAML definition matches the existing monitors by their name, existing monitors **could be deleted or modified**.
-
-    **What happens if you add one or more monitor to your YAML file?**
-
-    - If there is a monitor in the database that is not in the YAML file, **it will be deleted**.
-    - If there is a monitor in the YAML file that is not in the database, **it will be created** and added to the database.
-    - If there is a monitor in both the YAML file and the database, and they have the same name, the monitor in the database **will be updated** with the values from the YAML file.
-
-    **What happens if you remove all of your monitors from the YAML file?**
-
-    All monitors in the database **will be kept** (i.e. the ones that were created before via YAML). This is especially useful if you want to **restore your monitors from your exported YAML backup**, but you want to manage them on the UI in the future.
-
-    Vice versa: Another typical use case is when you want to manage your monitors via YAML, but you want to **set them up initially via the UI or the API**. In this case, you can export all your monitors to a YAML file, and then **copy the content** of that file into your own configuration file.
-
-    !!!danger "Changing a monitor's name"
-
-        **If you change the name** of an existing monitor in the YAML file, it will be treated as a new monitor, and the old one will be deleted. This also means that all of your previously recorded events and metrics (i.e. latency history, uptime checks, etc.) **will be lost for that monitor**.
+=== "YAML (advanced)"
 
     ```yaml title="YAML monitor reference"
     monitors:
@@ -93,7 +66,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     - `PATCH /api/v1/monitors/{id}` – Update an existing monitor
     - `DELETE /api/v1/monitors/{id}` – Delete a monitor
 
-## Available settings
+## Basic settings
 
 ### Name
 
@@ -127,27 +100,6 @@ The interval **in seconds** at which the uptime checks will be performed. The **
 
 Whether the monitor is enabled or not. If it's disabled, it won't be checked, and **no events will be recorded** for it. Also disables SSL checks, because it **toggles the whole monitor**.
 
-### SSL check enabled
-
-<!-- md:default `false` -->
-<!-- md:type boolean -->
-<!-- md:yaml_prop `ssl-check-enabled` -->
-
-Whether the SSL check is enabled or not. If it's disabled, the monitor **won't check the SSL certificate**. This setting is probably only relevant for HTTPS URLs.
-
-### SSL expiry threshold
-
-<!-- md:version 2.0.0 -->
-<!-- md:default `30` -->
-<!-- md:type number -->
-<!-- md:yaml_prop `ssl-expiry-threshold` -->
-
-The **number of days before the SSL certificate expires** that the monitor should alert about it. **Minimum value is 0**, which mean that the monitor will alert you only on the day of the expiry.
-
-!!!tip "Using Let's Encrypt?"
-
-    If you're using _Let's Encrypt_ certificates, you can set this to a lower value, like 20 days, because most of the automated renewal tools **will renew the certificate** at least **30 days before** the expiry date, so you will be notified only if something goes wrong with the automated renewal process.
-
 ### Latency history enabled
 
 <!-- md:version 2.0.0 -->
@@ -157,6 +109,8 @@ The **number of days before the SSL certificate expires** that the monitor shoul
 
 Whether the latency history is enabled or not. If it's disabled, the monitor **won't record the measured latency**. If you disable it on a monitor that has already recorded latency history, the **existing history will be deleted**.
 
+## Request settings
+
 ### Request method
 
 <!-- md:version 2.0.0 -->
@@ -164,7 +118,7 @@ Whether the latency history is enabled or not. If it's disabled, the monitor **w
 <!-- md:type enum: `GET`, `HEAD` -->
 <!-- md:yaml_prop `request-method` -->
 
-The **HTTP method** to use for the uptime checks. `HEAD` **is recommended** for most cases, but not every endpoint supports it, so you can use `GET` if you need to. 
+The **HTTP method** to use for the uptime checks. `HEAD` **is recommended** for most cases, but not every endpoint supports it, so you can use `GET` if you need to.
 
 !!!tip "More method to come in the future..."
 
@@ -186,22 +140,7 @@ Whether the monitor **should follow redirects** or not. If it's disabled, the mo
 
 Whether the monitor should send a `Cache-Control: no-cache` header with the request. This is useful to ensure that the **response is not cached by the server** or any intermediate proxies, and you always get the latest response.
 
-### Integrations <!-- md:config ../setup/integrations.md -->
-
-<!-- md:version 2.0.0 -->
-<!-- md:default empty -->
-<!-- md:type list -->
-<!-- md:yaml_prop `integrations` -->
-
-A list of **integrations to assign** to the monitor. 
-
-If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the integration (e.g. `email`, `slack`, etc.), and `name` is the name of the integration as defined in the [**`integrations` section of your YAML file**](../setup/integrations.md). Example: `email:my-email-integration`.
-
-!!!tip
-    
-    You can add/keep **disabled integrations in the list**, but they will not be used for the monitor. This is useful if you want to enable them later without modifying the monitor's configuration.
-
-    **Global integrations** can be explicitly added too, which is handy if you're about to **make them non-global later**, but you want to make sure that they will be assigned to certain monitors even after the change.
+## Evaluation settings
 
 ### Expected status codes
 
@@ -210,7 +149,7 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
 <!-- md:type list -->
 <!-- md:yaml_prop `expected-status-codes` -->
 
-A list of **expected HTTP status codes** that the monitor should accept as valid responses. If the response status code is not in this list, the monitor will alert you about it. Defaults to any `2xx` status code. 
+A list of **expected HTTP status codes** that the monitor should accept as valid responses. If the response status code is not in this list, the monitor will alert you about it. Defaults to any `2xx` status code.
 
 ??? info "Supported status codes"
 
@@ -296,7 +235,6 @@ A list of **expected HTTP status codes** that the monitor should accept as valid
 ### Expected keyword
 
 <!-- md:version 2.4.0 -->
-<!-- md:default empty -->
 <!-- md:type string -->
 <!-- md:yaml_prop `expected-keyword` -->
 
@@ -327,11 +265,50 @@ A.k.a. _"reverse matching"_. If this is set to `true`, the monitor will alert yo
 ### Response time threshold
 
 <!-- md:version 2.4.0 -->
-<!-- md:default `null` -->
 <!-- md:type number -->
 <!-- md:yaml_prop `response-time-threshold-millis` -->
 
 The maximum response time in **milliseconds** that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. This is useful to ensure that your services are performing well and responding within an acceptable time frame. The maximum value is 30 seconds (30000 ms), and the default is `null`, which means that there is no response time threshold.
+
+## SSL check settings
+
+### SSL check enabled
+
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `ssl-check-enabled` -->
+
+Whether the SSL check is enabled or not. If it's disabled, the monitor **won't check the SSL certificate**. This setting is probably only relevant for HTTPS URLs.
+
+### SSL expiry threshold
+
+<!-- md:version 2.0.0 -->
+<!-- md:default `30` -->
+<!-- md:type number -->
+<!-- md:yaml_prop `ssl-expiry-threshold` -->
+
+The **number of days before the SSL certificate expires** that the monitor should alert about it. **Minimum value is 0**, which mean that the monitor will alert you only on the day of the expiry.
+
+!!!tip "Using Let's Encrypt?"
+
+    If you're using _Let's Encrypt_ certificates, you can set this to a lower value, like 20 days, because most of the automated renewal tools **will renew the certificate** at least **30 days before** the expiry date, so you will be notified only if something goes wrong with the automated renewal process.
+
+## Integrations <!-- md:config ../management/integrations.md -->
+
+<!-- md:version 2.0.0 -->
+<!-- md:default empty -->
+<!-- md:type list -->
+<!-- md:yaml_prop `integrations` -->
+
+A list of **integrations to assign** to the monitor. 
+
+If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the integration (e.g. `email`, `slack`, etc.), and `name` is the name of the integration as defined in the [**`integrations` section of your YAML file**](../management/integrations.md). Example: `email:my-email-integration`.
+
+!!!tip
+    
+    You can add/keep **disabled integrations in the list**, but they will not be used for the monitor. This is useful if you want to enable them later without modifying the monitor's configuration.
+
+    **Global integrations** can be explicitly added too, which is handy if you're about to **make them non-global later**, but you want to make sure that they will be assigned to certain monitors even after the change.
 
 ## Common operations
 
@@ -345,7 +322,7 @@ Disabled monitors **won't be counted in the cumulated metrics**, like uptime rat
 
     Look for the **toggle switches** with the :material-pause: sign.
 
-=== "YAML (more advanced)"
+=== "YAML (advanced)"
 
     Set the `enabled` field to `true` or `false` in your YAML file.
 
@@ -368,7 +345,7 @@ If you delete a monitor, it will be **removed** from the database, and **all of 
 
     Look for the **delete button** with the :material-trash-can: sign next to the monitor you want to delete.
 
-=== "YAML (more advanced)"
+=== "YAML (advanced)"
 
     **Remove the monitor from your YAML** file, and then restart _Kuvasz_ to apply the changes.
 
@@ -382,7 +359,7 @@ If you delete a monitor, it will be **removed** from the database, and **all of 
 
     You can modify the assigned integrations of a monitor by clicking on the **configure button** with the :material-cog: sign on the **monitor's detail page** (look for the _Integrations_ block), where you can add or remove integrations as needed.
 
-=== "YAML (more advanced)"
+=== "YAML (advanced)"
 
     Modify the `integrations` property of your affected monitor, by adding or removing list items, and then restart _Kuvasz_ to apply the changes.
 

@@ -7,9 +7,9 @@
 ### New features
 
 - **New HTTP response evaluation options**: you can now configure your HTTP monitors to:
-    - accept only [**specific HTTP status codes**](setup/managing-monitors.md#expected-status-codes) as valid responses
-    - check for a [**keyword in the response body**](setup/managing-monitors.md#expected-keyword), and you can make the check optionally [**case-sensitive**](setup/managing-monitors.md#expected-keyword-case-sensitivity), or also [**reversed**](setup/managing-monitors.md#expected-keyword-negation) to check for the absence of the keyword
-    - **[check the response time](setup/managing-monitors.md#response-time-threshold)** against a **threshold** (in milliseconds) to ensure that the response is not only valid but also fast enough
+    - accept only [**specific HTTP status codes**](management/http-monitors.md#expected-status-codes) as valid responses
+    - check for a [**keyword in the response body**](management/http-monitors.md#expected-keyword), and you can make the check optionally [**case-sensitive**](management/http-monitors.md#expected-keyword-case-sensitivity), or also [**reversed**](management/http-monitors.md#expected-keyword-negation) to check for the absence of the keyword
+    - **[check the response time](management/http-monitors.md#response-time-threshold)** against a **threshold** (in milliseconds) to ensure that the response is not only valid but also fast enough
 
 ![Kuvasz evaluation settings](images/features/kuvasz_new_matchers.webp)
 
@@ -65,7 +65,7 @@
 
 ### Features
 
-- **Metrics exporters**: Added support for exporting metrics to _OpenTelemetry_ and _Prometheus_. See the [**Metrics exporters**](setup/metrics-exporters.md) section for more details. With this feature, you easily integrate _Kuvasz_ with your existing observability stack. Currently exposed metrics are:
+- **Metrics exporters**: Added support for exporting metrics to _OpenTelemetry_ and _Prometheus_. See the [**Metrics exporters**](management/metrics-exporters.md) section for more details. With this feature, you easily integrate _Kuvasz_ with your existing observability stack. Currently exposed metrics are:
     - Uptime status
     - Latest latency
     - SSL status

@@ -16,7 +16,7 @@ You can reference your integrations in your monitors by their _ID_, which is alw
 
 !!!tip
     
-    Find out more about assigning integrations to your monitors in the [**Managing monitors**](managing-monitors.md#modifying-the-assigned-integrations) section of the documentation.
+    Find out more about assigning integrations to your monitors in the [**Managing monitors**](http-monitors.md#modifying-the-assigned-integrations) section of the documentation.
 
 ## Common settings
 
@@ -151,7 +151,7 @@ The email integration allows you to send notifications via email. You can have m
 
     To make the email integration work, it's not enough to just configure the integration itself, you also **need to set up the _SMTP_ configuration** in your _YAML_ file. You can have multiple email integrations, but they will **all use the same** SMTP configuration.
 
-    For more information, see the [**SMTP configuration**](configuration.md#smtp) section of the documentation.
+    For more information, see the [**SMTP configuration**](../setup/configuration.md#smtp) section of the documentation.
 
 ### From address
 

@@ -128,10 +128,10 @@ web UI of _Kuvasz_ at
 
 If you didn't disable authentication, you should see the login page, where you can log in with the credentials you specified. Otherwise, you should be redirected to the dashboard of _Kuvasz_.
 
-### Setting up integrations (a.k.a "Notifications") <!-- md:config integrations.md -->
+### Setting up integrations (a.k.a "Notifications") <!-- md:config ../management/integrations.md -->
 
 Setting up integrations is as simple as adding a few lines to your _YAML_ configuration. You can find the available options in the
-[**Integrations setup**](../setup/integrations.md) section of the documentation.
+[**Integrations setup**](../management/integrations.md) section of the documentation.
 
 Setting up _Slack_ as a global notification channel for all of your monitors, for example, would look like this:
 
@@ -149,9 +149,9 @@ integrations:
 
     If you modify your configuration (via _YAML_ or _ENV_, it doesn't matter), you need to restart the _Kuvasz_ container for the changes to take effect. In certain cases if you changed an environment variable, **you might need to rebuild the container** as well.
 
-### Creating your first monitor <!-- md:config managing-monitors.md -->
+### Creating your first monitor <!-- md:config ../management/managing-monitors/index.md -->
 
-You have 3 options to [**manage your monitors**](managing-monitors.md):
+You have 3 options to [**manage your monitors**](../management/managing-monitors/index.md):
 
 - using the **Web UI**, which is probably the most user-friendly way
 - using the **REST API**, which is more suitable for automation and integration with other systems
@@ -187,7 +187,7 @@ All in all, you can use your old database, **your data will be migrated automati
 - _Kuvasz_ is not distributed as a **native** (GraalVM based) Docker image anymore
 - The minimum required _PostgreSQL_ version is now **12**
 - The [**REST API**](../features/api.md) is versioned now, and a few **endpoints have been changed or removed**. You can find the new API documentation [here](../api-docs.md)
-- [**Integrations**](integrations.md) are now configured via the _YAML_ file, and the old, environment-variable-based configuration is no longer supported
+- [**Integrations**](../management/integrations.md) are now configured via the _YAML_ file, and the old, environment-variable-based configuration is no longer supported
 - The **authentication** and its configuration **has been simplified**, read the [**Authentication**](../setup/configuration.md#authentication) section carefully!
 
 !!! warning

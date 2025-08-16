@@ -16,7 +16,7 @@ _Kuvasz_ can be easily **integrated with Home Assistant** using the [_RESTful_](
 
 !!! tip
 
-    If you have the [authentication disabled](configuration.md#toggling-authentication), you can skip setting up your API key as a secret and you can also omit the `X-API-KEY` header in your requests.
+    If you have the [authentication disabled](../setup/configuration.md#toggling-authentication), you can skip setting up your API key as a secret and you can also omit the `X-API-KEY` header in your requests.
 
 ### Define your secret in Home Assistant
 

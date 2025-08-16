@@ -56,7 +56,7 @@
 
     Export your metrics to _Prometheus_ or to any _OTLP-compatible_ tool, to integrate with your existing monitoring and alerting systems.
 
-    [:octicons-arrow-right-24: Metrics exporters](setup/metrics-exporters.md)
+    [:octicons-arrow-right-24: Metrics exporters](management/metrics-exporters.md)
 
 -   :sparkles:{ .lg .card-header-icon } __Sleek UI__
 
