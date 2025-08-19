@@ -45,7 +45,7 @@ const val API_V1_PREFIX = "/api/v1"
 
 @Controller("$API_V1_PREFIX/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "Monitor operations")
+@Tag(name = "HTTP monitors")
 @SecurityRequirements(
     SecurityRequirement(name = "apiKey"),
     SecurityRequirement(name = "bearerAuth")

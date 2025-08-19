@@ -121,6 +121,7 @@ tasks.withType<JavaExec> {
 }
 
 tasks.withType<ShadowJar> {
+    dependsOn("updateApiDoc")
     mergeServiceFiles()
 }
 
@@ -162,10 +163,8 @@ jib {
     }
 }
 
-val updateApiDoc by tasks.registering(type = Copy::class) {
+val updateApiDoc by tasks.registering {
     dependsOn("kaptKotlin")
-    from(layout.buildDirectory.file("tmp/kapt3/classes/main/META-INF/swagger/kuvasz-latest.yml"))
-    into("$rootDir/docs/docs/api-docs")
 }
 
 buildConfig {

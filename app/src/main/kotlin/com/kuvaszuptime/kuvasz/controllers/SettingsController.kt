@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Controller("$API_V1_PREFIX/settings", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "Settings operations")
+@Tag(name = "Settings")
 @SecurityRequirements(
     SecurityRequirement(name = "apiKey"),
     SecurityRequirement(name = "bearerAuth")

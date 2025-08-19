@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz
 
+import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader
 import io.micronaut.runtime.Micronaut.build
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
-import io.swagger.v3.oas.annotations.info.Contact
 import io.swagger.v3.oas.annotations.info.Info
 import io.swagger.v3.oas.annotations.security.SecurityScheme
 import io.swagger.v3.oas.annotations.security.SecuritySchemes
@@ -13,17 +13,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @OpenAPIDefinition(
     info = Info(
-        title = "kuvasz",
-        version = "latest",
-        description = "Kuvasz [pronounce as 'koovas'] is an open-source uptime and SSL monitoring service",
-        contact = Contact(
-            url = "https://github.com/kuvasz-uptime/kuvasz"
-        )
+        title = "Kuvasz Uptime",
+        version = BuildConfig.APP_VERSION,
     ),
     tags = [
-        Tag(name = "Management operations"),
-        Tag(name = "Monitor operations"),
-        Tag(name = "Settings operations"),
+        Tag(name = "Management"),
+        Tag(name = "HTTP monitors"),
+        Tag(name = "Settings"),
     ]
 )
 @SecuritySchemes(
