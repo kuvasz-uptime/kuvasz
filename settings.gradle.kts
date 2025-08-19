@@ -78,6 +78,7 @@ dependencyResolutionManagement {
             // jOOQ
             library("jooq-kotlin", "org.jooq", "jooq-kotlin").version(jooqVersion)
             library("jooq-postgres-extensions", "org.jooq", "jooq-postgres-extensions").version(jooqVersion)
+            library("jooq-jackson-extensions", "org.jooq", "jooq-jackson-extensions").version(jooqVersion)
             library("jooq-gradle-plugin", "nu.studer", "gradle-jooq-plugin").version(jooqPluginVersion)
 
             // Simple Java Mail

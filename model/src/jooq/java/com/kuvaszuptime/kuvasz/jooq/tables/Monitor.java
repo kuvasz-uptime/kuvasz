@@ -4,6 +4,7 @@
 package com.kuvaszuptime.kuvasz.jooq.tables;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
 import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
@@ -40,6 +41,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
+import org.jooq.jackson.extensions.converters.JSONBtoJacksonConverter;
 
 
 /**
@@ -159,6 +161,21 @@ public class Monitor extends TableImpl<MonitorRecord> {
      * The column <code>kuvasz.monitor.expected_keyword_negated</code>.
      */
     public final TableField<MonitorRecord, Boolean> EXPECTED_KEYWORD_NEGATED = createField(DSL.name("expected_keyword_negated"), SQLDataType.BOOLEAN.defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>kuvasz.monitor.request_headers</code>.
+     */
+    public final TableField<MonitorRecord, JsonNode> REQUEST_HEADERS = createField(DSL.name("request_headers"), SQLDataType.JSONB.nullable(false).defaultValue(DSL.field(DSL.raw("'{}'::jsonb"), SQLDataType.JSONB)), this, "", new JSONBtoJacksonConverter<JsonNode>(JsonNode.class));
+
+    /**
+     * The column <code>kuvasz.monitor.expected_headers</code>.
+     */
+    public final TableField<MonitorRecord, JsonNode> EXPECTED_HEADERS = createField(DSL.name("expected_headers"), SQLDataType.JSONB.nullable(false).defaultValue(DSL.field(DSL.raw("'{}'::jsonb"), SQLDataType.JSONB)), this, "", new JSONBtoJacksonConverter<JsonNode>(JsonNode.class));
+
+    /**
+     * The column <code>kuvasz.monitor.request_body</code>.
+     */
+    public final TableField<MonitorRecord, String> REQUEST_BODY = createField(DSL.name("request_body"), SQLDataType.CLOB, this, "");
 
     private Monitor(Name alias, Table<MonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

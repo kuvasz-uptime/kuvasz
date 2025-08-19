@@ -4,6 +4,7 @@
 package com.kuvaszuptime.kuvasz.jooq.tables.records;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.jooq.tables.Monitor;
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
@@ -311,6 +312,51 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         return (Boolean) get(18);
     }
 
+    /**
+     * Setter for <code>kuvasz.monitor.request_headers</code>.
+     */
+    public MonitorRecord setRequestHeaders(JsonNode value) {
+        set(19, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.request_headers</code>.
+     */
+    public JsonNode getRequestHeaders() {
+        return (JsonNode) get(19);
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_headers</code>.
+     */
+    public MonitorRecord setExpectedHeaders(JsonNode value) {
+        set(20, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_headers</code>.
+     */
+    public JsonNode getExpectedHeaders() {
+        return (JsonNode) get(20);
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.request_body</code>.
+     */
+    public MonitorRecord setRequestBody(String value) {
+        set(21, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.request_body</code>.
+     */
+    public String getRequestBody() {
+        return (String) get(21);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -334,7 +380,7 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
     /**
      * Create a detached, initialised MonitorRecord
      */
-    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated) {
+    public MonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated, JsonNode requestHeaders, JsonNode expectedHeaders, String requestBody) {
         super(Monitor.MONITOR);
 
         setId(id);
@@ -356,6 +402,9 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
         setExpectedKeyword(expectedKeyword);
         setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive);
         setExpectedKeywordNegated(expectedKeywordNegated);
+        setRequestHeaders(requestHeaders);
+        setExpectedHeaders(expectedHeaders);
+        setRequestBody(requestBody);
         resetTouchedOnNotNull();
     }
 
@@ -385,6 +434,9 @@ public class MonitorRecord extends UpdatableRecordImpl<MonitorRecord> {
             setExpectedKeyword(value.getExpectedKeyword());
             setExpectedKeywordCaseSensitive(value.getExpectedKeywordCaseSensitive());
             setExpectedKeywordNegated(value.getExpectedKeywordNegated());
+            setRequestHeaders(value.getRequestHeaders());
+            setExpectedHeaders(value.getExpectedHeaders());
+            setRequestBody(value.getRequestBody());
             resetTouchedOnNotNull();
         }
     }

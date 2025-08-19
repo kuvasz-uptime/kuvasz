@@ -37,6 +37,7 @@ dependencies {
     // DB & jOOQ & Flyway
     implementation(libs.jooq.kotlin)
     implementation(libs.jooq.postgres.extensions)
+    implementation(libs.jooq.jackson.extensions)
     jooqGenerator(mn.postgresql)
     implementation(libs.jooq.gradle.plugin)
     runtimeOnly(mn.flyway.postgresql)
@@ -94,6 +95,11 @@ jooq {
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter"
                                 isGenericConverter = false
                                 includeExpression = "MONITOR.INTEGRATIONS"
+                            }
+                            forcedType {
+                                userType = "com.fasterxml.jackson.databind.JsonNode"
+                                isJsonConverter = true
+                                includeExpression = "MONITOR.REQUEST_HEADERS|MONITOR.EXPECTED_HEADERS"
                             }
                         }
                     }
