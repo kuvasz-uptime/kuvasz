@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz
 
-import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader
 import io.micronaut.runtime.Micronaut.build
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
@@ -14,7 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 @OpenAPIDefinition(
     info = Info(
         title = "Kuvasz Uptime",
-        version = BuildConfig.APP_VERSION,
+        version = "latest",
     ),
     tags = [
         Tag(name = "Management"),

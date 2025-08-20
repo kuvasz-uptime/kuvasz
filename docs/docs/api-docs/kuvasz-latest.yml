@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: Kuvasz Uptime
-  version: 2.5.0
+  version: latest
 tags:
 - name: Management
 - name: HTTP monitors
