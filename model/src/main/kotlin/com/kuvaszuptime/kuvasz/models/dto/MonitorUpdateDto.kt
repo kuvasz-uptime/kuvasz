@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
+import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
+import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Max
@@ -82,4 +84,18 @@ data class MonitorUpdateDto(
     @get:NotNull
     @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_NEGATED, required = false, nullable = false)
     val expectedKeywordNegated: Boolean?,
+
+    @get:NotNull
+    @get:ValidHeaderNames
+    @param:Schema(description = MonitorDocs.REQUEST_HEADERS, required = false, nullable = false)
+    val requestHeaders: Map<String, String>?,
+
+    @get:NotNull
+    @get:ValidHeaderNames
+    @param:Schema(description = MonitorDocs.EXPECTED_HEADERS, required = false, nullable = false)
+    val expectedHeaders: Map<String, String>?,
+
+    @get:WellFormedJsonString
+    @param:Schema(description = MonitorDocs.REQUEST_BODY, required = false, nullable = true)
+    val requestBody: String?,
 )

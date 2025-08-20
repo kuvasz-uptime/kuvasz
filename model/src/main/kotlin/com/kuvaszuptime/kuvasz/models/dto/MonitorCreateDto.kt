@@ -83,4 +83,13 @@ data class MonitorCreateDto(
         defaultValue = MonitorDefaults.EXPECTED_KEYWORD_NEGATED.toString(),
     )
     override val expectedKeywordNegated: Boolean = MonitorDefaults.EXPECTED_KEYWORD_NEGATED,
+
+    @param:Schema(description = MonitorDocs.REQUEST_HEADERS, required = false)
+    override val requestHeaders: Map<String, String> = emptyMap(),
+
+    @param:Schema(description = MonitorDocs.EXPECTED_HEADERS, required = false)
+    override val expectedHeaders: Map<String, String> = emptyMap(),
+
+    @param:Schema(description = MonitorDocs.REQUEST_BODY, required = false, nullable = true)
+    override val requestBody: String? = null,
 ) : MonitorCreatorLike

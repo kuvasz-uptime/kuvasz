@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
+import com.kuvaszuptime.kuvasz.jooq.JsonNodeToMapConverter
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -111,6 +112,9 @@ class MonitorRepository(private val dslContext: DSLContext) {
                     .set(MONITOR.EXPECTED_KEYWORD, updatedMonitor.expectedKeyword)
                     .set(MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE, updatedMonitor.expectedKeywordCaseSensitive)
                     .set(MONITOR.EXPECTED_KEYWORD_NEGATED, updatedMonitor.expectedKeywordNegated)
+                    .set(MONITOR.REQUEST_HEADERS, updatedMonitor.requestHeaders)
+                    .set(MONITOR.EXPECTED_HEADERS, updatedMonitor.expectedHeaders)
+                    .set(MONITOR.REQUEST_BODY, updatedMonitor.requestBody)
                     .where(MONITOR.ID.eq(updatedMonitor.id))
                     .returning(MONITOR.asterisk())
                     .fetchOneOrThrow<MonitorRecord>()
@@ -179,6 +183,9 @@ class MonitorRepository(private val dslContext: DSLContext) {
             MONITOR.EXPECTED_KEYWORD.`as`(MonitorDetailsDto::expectedKeyword.name),
             MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE.`as`(MonitorDetailsDto::expectedKeywordCaseSensitive.name),
             MONITOR.EXPECTED_KEYWORD_NEGATED.`as`(MonitorDetailsDto::expectedKeywordNegated.name),
+            MONITOR.REQUEST_HEADERS.`as`(MonitorDetailsDto::requestHeaders.name).convert(JsonNodeToMapConverter()),
+            MONITOR.EXPECTED_HEADERS.`as`(MonitorDetailsDto::expectedHeaders.name).convert(JsonNodeToMapConverter()),
+            MONITOR.REQUEST_BODY.`as`(MonitorDetailsDto::requestBody.name),
         )
         .from(MONITOR)
         .leftJoin(UPTIME_EVENT).on(MONITOR.ID.eq(UPTIME_EVENT.MONITOR_ID).and(UPTIME_EVENT.ENDED_AT.isNull))

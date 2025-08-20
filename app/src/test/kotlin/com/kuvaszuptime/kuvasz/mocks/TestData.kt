@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -35,6 +36,9 @@ fun createMonitor(
     expectedKeyword: String? = null,
     expectedKeywordCaseSensitive: Boolean = false,
     expectedKeywordNegated: Boolean = false,
+    requestHeaders: Map<String, String> = emptyMap(),
+    expectedHeaders: Map<String, String> = emptyMap(),
+    requestBody: String? = null,
 ): MonitorRecord {
     val monitor = MonitorRecord()
         .setName(monitorName)
@@ -55,6 +59,9 @@ fun createMonitor(
         .setExpectedKeyword(expectedKeyword)
         .setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive)
         .setExpectedKeywordNegated(expectedKeywordNegated)
+        .setRequestHeaders(requestHeaders.toJsonNode())
+        .setExpectedHeaders(expectedHeaders.toJsonNode())
+        .setRequestBody(requestBody)
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 

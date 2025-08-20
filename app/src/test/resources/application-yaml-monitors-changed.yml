@@ -16,6 +16,13 @@ monitors:
     expected-keyword-case-sensitive: true
     expected-keyword-negated: true
     response-time-threshold-millis: 500
+    request-headers:
+      User-Agent: "Mozilla/5.0"
+      X-Custom-Header: "custom-value"
+    expected-headers:
+      Content-Type: "application/json"
+      X-Example-Header: "example-value"
+    request-body: "{\"key\": \"value\"}"
   - name: test2
     url: http://example.org
     uptime-check-interval: 60

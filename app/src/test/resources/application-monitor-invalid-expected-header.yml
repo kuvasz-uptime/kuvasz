@@ -1,0 +1,7 @@
+monitors:
+  - name: irrelevant
+    url: http://example.com
+    uptime-check-interval: 60
+    expected-headers:
+      validheader: validvalue
+      1-invalid-header: invalidvalue

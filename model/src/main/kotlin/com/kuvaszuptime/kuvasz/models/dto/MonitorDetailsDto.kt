@@ -77,6 +77,12 @@ data class MonitorDetailsDto(
     val expectedKeywordCaseSensitive: Boolean,
     @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_NEGATED, required = true)
     val expectedKeywordNegated: Boolean,
+    @param:Schema(description = MonitorDocs.REQUEST_HEADERS, required = true)
+    val requestHeaders: Map<String, String>,
+    @param:Schema(description = MonitorDocs.EXPECTED_HEADERS, required = true)
+    val expectedHeaders: Map<String, String>,
+    @param:Schema(description = MonitorDocs.REQUEST_BODY, required = true, nullable = true)
+    val requestBody: String? = null,
 )
 
 data class IntegrationDetailsDto(

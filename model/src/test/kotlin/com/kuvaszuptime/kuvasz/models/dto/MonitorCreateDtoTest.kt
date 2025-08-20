@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.micronaut.validation.validator.DefaultValidator
@@ -162,6 +164,164 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 )
             }
         }
+
+        `when`("requestHeaders contains an empty key") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestHeaders = mapOf("" to "value")
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "requestHeaders",
+                    message = ValidationMessages.VALID_HEADER_NAMES
+                )
+            }
+        }
+
+        `when`("requestHeaders contains a badly-formed key") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestHeaders = mapOf("1-" to "value", "Valid-Header" to "value")
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "requestHeaders",
+                    message = ValidationMessages.VALID_HEADER_NAMES
+                )
+            }
+        }
+
+        `when`("requestHeaders contains a well-formed key") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestHeaders = mapOf("Valid-Header" to "value")
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
+
+        `when`("expectedHeaders contains an empty key") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                expectedHeaders = mapOf("" to "value")
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "expectedHeaders",
+                    message = ValidationMessages.VALID_HEADER_NAMES
+                )
+            }
+        }
+
+        `when`("expectedHeaders contains a badly-formed key") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                expectedHeaders = mapOf("1-" to "value")
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "expectedHeaders",
+                    message = ValidationMessages.VALID_HEADER_NAMES
+                )
+            }
+        }
+
+        `when`("expectedHeaders contains a well-formed key") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                expectedHeaders = mapOf("Valid-Header" to "value")
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
+
+        `when`("requestBody is a well-formed JSON string") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestBody = "{ \"key\": \"value\" }"
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
+
+        `when`("requestBody is an invalid JSON string") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestBody = "{ key: value }" // Invalid JSON
+            )
+
+            then("bean validation should signal an error") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "requestBody",
+                    message = ValidationMessages.WELL_FORMED_JSON_STRING
+                )
+            }
+        }
+
+        `when`("requestBody is null") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestBody = null
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
+
+        `when`("requestBody is an empty string") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestBody = ""
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
+
+        `when`("requestBody is an empty JSON object") {
+            val dto = MonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                requestBody = "{}"
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
     }
 })
 
@@ -188,6 +348,9 @@ class MonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.expectedKeyword shouldBe null
             dto.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
             dto.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
+            dto.requestHeaders.shouldBeEmpty()
+            dto.expectedHeaders.shouldBeEmpty()
+            dto.requestBody shouldBe null
         }
     }
 })
