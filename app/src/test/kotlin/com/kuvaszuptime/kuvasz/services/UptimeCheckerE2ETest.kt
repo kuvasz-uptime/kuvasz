@@ -16,6 +16,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import org.mockserver.integration.ClientAndServer
@@ -1224,6 +1225,156 @@ class UptimeCheckerE2ETest(
 
                 expectedEvent.status shouldBe HttpStatus.OK
                 expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor with overriding the built-in headers") {
+
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                requestHeaders = mapOf(
+                    "X-Custom-Header" to "CustomValue",
+                    HttpHeaders.USER_AGENT to "CustomUserAgent/1.0",
+                    HttpHeaders.ACCEPT to "application/json",
+                    HttpHeaders.ACCEPT_ENCODING to "gzip",
+                    HttpHeaders.HOST to "example.com",
+                    HttpHeaders.CACHE_CONTROL to "must-revalidate, no-cache"
+                )
+            )
+
+            val request = request()
+                .withMethod(HttpMethod.GET.literal)
+                .withPath("/some-path")
+                .withHeader("X-Custom-Header", "CustomValue")
+                .withHeader(HttpHeaders.USER_AGENT, "CustomUserAgent/1.0")
+                .withHeader(HttpHeaders.ACCEPT, "application/json")
+                .withHeader(HttpHeaders.ACCEPT_ENCODING, "gzip")
+                .withHeader(HttpHeaders.HOST, "example.com")
+                .withHeader(HttpHeaders.CACHE_CONTROL, "must-revalidate, no-cache")
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.NO_CONTENT.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should really override them in the request") {
+
+                subscriber.awaitCount(1)
+                mockServer.verify(
+                    request,
+                    VerificationTimes.exactly(1)
+                )
+            }
+        }
+
+        `when`("it checks a monitor with a custom request body") {
+
+            val subscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.POST,
+                requestBody = """{"key": "value"}"""
+            )
+
+            val request = request()
+                .withMethod(monitor.requestMethod.literal)
+                .withPath("/some-path")
+                .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .withBody(monitor.requestBody)
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.CREATED.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should send the request with the custom body") {
+
+                subscriber.awaitCount(1)
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor with explicitly set expected headers - they are matching") {
+
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedHeaders = mapOf(
+                    HttpHeaders.CONTENT_TYPE to MediaType.APPLICATION_JSON,
+                    "X-Custom-Header" to "CustomValue"
+                )
+            )
+
+            val upSubscriber = TestSubscriber<MonitorUpEvent>()
+            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+
+            val request = getRequest("/some-path")
+
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .withHeader("x-custom-header", "CustomValue ")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorUpEvent") {
+                val expectedEvent = upSubscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+
+                mockServer.verifyRequest(request)
+            }
+        }
+
+        `when`("it checks a monitor with explicitly set expected headers - they are not matching") {
+
+            val monitor = createMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.GET,
+                expectedHeaders = mapOf(
+                    HttpHeaders.CONTENT_TYPE to MediaType.APPLICATION_JSON,
+                    "X-Custom-Header" to "CustomValue",
+                    "X-Another-Header" to "AnotherValue",
+                )
+            )
+
+            val downSubscriber = TestSubscriber<MonitorDownEvent>()
+            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+            val request = getRequest("/some-path")
+
+            mockServer.`when`(request).respond(
+                response()
+                    .withStatusCode(HttpStatus.OK.code)
+                    .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .withHeader("X-Custom-Header", "WrongValue")
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent") {
+                val expectedEvent = downSubscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.OK
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe
+                    "Response headers did not match the expected headers: [X-Custom-Header, X-Another-Header]"
 
                 mockServer.verifyRequest(request)
             }

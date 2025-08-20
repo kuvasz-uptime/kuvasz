@@ -51,3 +51,8 @@ class ResponseTimeThresholdExceededException(
 ) : UptimeCheckException()
 
 class ExpectedKeywordNotFoundException(override val message: String) : UptimeCheckException()
+
+class ExpectedHeaderNotFoundException(
+    val failingHeaders: List<String>,
+    override val message: String? = "Response headers did not match the expected headers: $failingHeaders"
+) : UptimeCheckException()
