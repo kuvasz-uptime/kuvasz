@@ -2,6 +2,18 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
+## 2.5.0 <small>2025-08-22</small> { id="2.5.0" data-toc-label="2.5.0" }
+
+### New features
+
+- **Custom request headers**: you can now specify custom headers to be sent with the HTTP requests, allowing for more flexible and tailored monitoring setups. See the [**HTTP monitors > Request headers**](management/http-monitors.md#request-headers) section for more details.
+- **Custom request body**: you can send your own JSON body to the monitored HTTP endpoint, which can be useful for testing APIs that require a specific payload. See the [**HTTP monitors > Request body**](management/http-monitors.md#request-body) section for more details.
+- **Expected headers**: this is a brand new evaluation option that allows you to specify expected headers in the HTTP response. If the response does not contain the expected headers, the monitor will be marked as `DOWN`. You can find more details in the [**HTTP monitors > Expected headers**](management/http-monitors.md#expected-headers) section.
+- **New HTTP request methods**: `POST`, `PUT`, `PATCH`, `DELETE` and `OPTIONS` are now supported in addition to the existing `GET` and `HEAD`. This allows you to monitor endpoints that require different HTTP methods, such as APIs that expect a `POST` request with a specific payload. See the [**HTTP monitors > Request method**](management/http-monitors.md#request-method) section for more details.
+- **Revamped UI for creating and editing HTTP monitors**: the UI of the existing modal has been slightly redesigned to make it easier and more convenient to configure HTTP monitors with the new features. The fresh look is hopefully more intuitive and user-friendlier by having a **better structure**.
+
+![Kuvasz HTTP monitor creation modal](images/features/new_monitor_modal.webp)
+
 ## 2.4.0 <small>2025-08-15</small> { id="2.4.0" data-toc-label="2.4.0" }
 
 ### New features
