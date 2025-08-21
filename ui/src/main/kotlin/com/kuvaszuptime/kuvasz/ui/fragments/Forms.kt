@@ -7,18 +7,18 @@ import kotlinx.html.*
 internal fun FlowContent.selectGroup(xModelName: String, readOnly: Boolean, values: List<ValueAndLabel>) {
     div {
         classes(FORM_SELECTGROUP, MB_2)
-        values.forEach { (value, label) ->
+        values.forEach { option ->
             label {
                 classes(FORM_SELECTGROUP_ITEM)
                 input(type = InputType.radio, name = xModelName) {
                     classes(FORM_SELECTGROUP_INPUT)
-                    this.value = value
+                    this.value = option.value
                     xModel(xModelName)
                     if (readOnly) disabled = true
                 }
                 span {
                     classes(FORM_SELECTGROUP_LABEL)
-                    +label
+                    +option.label
                 }
             }
         }

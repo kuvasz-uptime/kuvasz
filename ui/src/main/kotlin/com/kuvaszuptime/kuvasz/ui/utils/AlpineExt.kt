@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.ui.utils
 
+import com.kuvaszuptime.kuvasz.ui.*
 import kotlinx.html.*
 
 internal fun HTMLTag.xBindDisabled(value: String) {
@@ -8,6 +9,10 @@ internal fun HTMLTag.xBindDisabled(value: String) {
 
 internal fun HTMLTag.xBindClass(value: String) {
     attributes["x-bind:class"] = value
+}
+
+internal fun HTMLTag.xBindErrorClass(errorProp: String) {
+    xBindClass("errors.$errorProp ? '${CSSClass.IS_INVALID.className}' : ''")
 }
 
 internal fun HTMLTag.xBindSelected(value: String) {
