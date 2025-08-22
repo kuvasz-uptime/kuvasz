@@ -17,6 +17,9 @@ object ValidationMessages {
     const val RESPONSE_TIME_THRESHOLD_POSITIVE = "Response time threshold must be greater than 0 milliseconds"
     const val RESPONSE_TIME_THRESHOLD_MAX = "Response time threshold must be less than or equal to {value} milliseconds"
     const val SUPPORTED_STATUS_CODES = "All status codes must be valid HTTP status codes between 100 and 499"
+    const val VALID_HEADER_NAMES = "All header names must be valid HTTP header names, containing only " +
+        "alphanumeric characters and hyphens, starting with a letter"
+    const val WELL_FORMED_JSON_STRING = "The provided string must be a well-formed JSON"
     const val APP_CONFIG_EVENT_RETENTION_DAYS_MIN = "Event data retention must be at least {value} days"
     const val APP_CONFIG_LATENCY_RETENTION_DAYS_MIN = "Latency data retention must be at least {value} days"
     const val SMTP_HOST_NOT_BLANK = "SMTP host must not be blank"

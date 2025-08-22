@@ -4,6 +4,7 @@
 package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
@@ -39,6 +40,9 @@ public class Monitor implements Serializable {
     private String expectedKeyword;
     private Boolean expectedKeywordCaseSensitive;
     private Boolean expectedKeywordNegated;
+    private JsonNode requestHeaders;
+    private JsonNode expectedHeaders;
+    private String requestBody;
 
     public Monitor() {}
 
@@ -62,6 +66,9 @@ public class Monitor implements Serializable {
         this.expectedKeyword = value.expectedKeyword;
         this.expectedKeywordCaseSensitive = value.expectedKeywordCaseSensitive;
         this.expectedKeywordNegated = value.expectedKeywordNegated;
+        this.requestHeaders = value.requestHeaders;
+        this.expectedHeaders = value.expectedHeaders;
+        this.requestBody = value.requestBody;
     }
 
     public Monitor(
@@ -83,7 +90,10 @@ public class Monitor implements Serializable {
         Integer responseTimeThresholdMillis,
         String expectedKeyword,
         Boolean expectedKeywordCaseSensitive,
-        Boolean expectedKeywordNegated
+        Boolean expectedKeywordNegated,
+        JsonNode requestHeaders,
+        JsonNode expectedHeaders,
+        String requestBody
     ) {
         this.id = id;
         this.name = name;
@@ -104,6 +114,9 @@ public class Monitor implements Serializable {
         this.expectedKeyword = expectedKeyword;
         this.expectedKeywordCaseSensitive = expectedKeywordCaseSensitive;
         this.expectedKeywordNegated = expectedKeywordNegated;
+        this.requestHeaders = requestHeaders;
+        this.expectedHeaders = expectedHeaders;
+        this.requestBody = requestBody;
     }
 
     /**
@@ -395,6 +408,51 @@ public class Monitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.monitor.request_headers</code>.
+     */
+    public JsonNode getRequestHeaders() {
+        return this.requestHeaders;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.request_headers</code>.
+     */
+    public Monitor setRequestHeaders(JsonNode requestHeaders) {
+        this.requestHeaders = requestHeaders;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.expected_headers</code>.
+     */
+    public JsonNode getExpectedHeaders() {
+        return this.expectedHeaders;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.expected_headers</code>.
+     */
+    public Monitor setExpectedHeaders(JsonNode expectedHeaders) {
+        this.expectedHeaders = expectedHeaders;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.monitor.request_body</code>.
+     */
+    public String getRequestBody() {
+        return this.requestBody;
+    }
+
+    /**
+     * Setter for <code>kuvasz.monitor.request_body</code>.
+     */
+    public Monitor setRequestBody(String requestBody) {
+        this.requestBody = requestBody;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -518,6 +576,24 @@ public class Monitor implements Serializable {
         }
         else if (!this.expectedKeywordNegated.equals(other.expectedKeywordNegated))
             return false;
+        if (this.requestHeaders == null) {
+            if (other.requestHeaders != null)
+                return false;
+        }
+        else if (!this.requestHeaders.equals(other.requestHeaders))
+            return false;
+        if (this.expectedHeaders == null) {
+            if (other.expectedHeaders != null)
+                return false;
+        }
+        else if (!this.expectedHeaders.equals(other.expectedHeaders))
+            return false;
+        if (this.requestBody == null) {
+            if (other.requestBody != null)
+                return false;
+        }
+        else if (!this.requestBody.equals(other.requestBody))
+            return false;
         return true;
     }
 
@@ -544,6 +620,9 @@ public class Monitor implements Serializable {
         result = prime * result + ((this.expectedKeyword == null) ? 0 : this.expectedKeyword.hashCode());
         result = prime * result + ((this.expectedKeywordCaseSensitive == null) ? 0 : this.expectedKeywordCaseSensitive.hashCode());
         result = prime * result + ((this.expectedKeywordNegated == null) ? 0 : this.expectedKeywordNegated.hashCode());
+        result = prime * result + ((this.requestHeaders == null) ? 0 : this.requestHeaders.hashCode());
+        result = prime * result + ((this.expectedHeaders == null) ? 0 : this.expectedHeaders.hashCode());
+        result = prime * result + ((this.requestBody == null) ? 0 : this.requestBody.hashCode());
         return result;
     }
 
@@ -570,6 +649,9 @@ public class Monitor implements Serializable {
         sb.append(", ").append(expectedKeyword);
         sb.append(", ").append(expectedKeywordCaseSensitive);
         sb.append(", ").append(expectedKeywordNegated);
+        sb.append(", ").append(requestHeaders);
+        sb.append(", ").append(expectedHeaders);
+        sb.append(", ").append(requestBody);
 
         sb.append(")");
         return sb.toString();

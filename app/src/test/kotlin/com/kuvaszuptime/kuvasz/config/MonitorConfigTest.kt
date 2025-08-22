@@ -8,7 +8,9 @@ import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.ApplicationContext
@@ -93,6 +95,36 @@ class MonitorConfigValidationTest : BehaviorSpec({
                     "Response time threshold must be less than or equal to 30000 milliseconds"
             }
         }
+
+        `when`("requestHeaders contains an invalid header") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-invalid-request-header")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "MonitorConfig.getRequestHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
+            }
+        }
+
+        `when`("expectedHeaders contains an invalid header") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-invalid-expected-header")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "MonitorConfig.getExpectedHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
+            }
+        }
+
+        `when`("requestBody is not a well-formed JSON") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                ApplicationContext.run("monitor-invalid-request-body")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "MonitorConfig.getRequestBody - ${ValidationMessages.WELL_FORMED_JSON_STRING}"
+            }
+        }
     }
 })
 
@@ -124,6 +156,9 @@ class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : D
                 monitorConfig.expectedKeyword.shouldBeNull()
                 monitorConfig.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
                 monitorConfig.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
+                monitorConfig.requestHeaders.shouldNotBeNull().shouldBeEmpty()
+                monitorConfig.expectedHeaders.shouldNotBeNull().shouldBeEmpty()
+                monitorConfig.requestBody.shouldBeNull()
             }
         }
     }

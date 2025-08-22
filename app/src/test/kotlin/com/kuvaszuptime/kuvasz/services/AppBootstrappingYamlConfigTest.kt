@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
+import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -16,6 +18,7 @@ import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldBeAfter
+import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -183,6 +186,15 @@ class AppBootstrappingYamlConfigTest : StringSpec({
             firstMonitor.expectedKeywordCaseSensitive shouldBe true
             firstMonitor.expectedKeywordNegated shouldBe true
             firstMonitor.responseTimeThresholdMillis shouldBe 500
+            firstMonitor.requestHeadersAsMap() shouldContainExactly mapOf(
+                "User-Agent" to "Mozilla/5.0",
+                "X-Custom-Header" to "custom-value"
+            )
+            firstMonitor.expectedHeadersAsMap() shouldContainExactly mapOf(
+                "Content-Type" to "application/json",
+                "X-Example-Header" to "example-value"
+            )
+            firstMonitor.requestBody shouldBe "{\"key\": \"value\"}"
             firstMonitor.updatedAt shouldBeAfter firstMonitor.createdAt
 
             scheduledUptimeChecks[firstMonitor.id].shouldNotBeNull()

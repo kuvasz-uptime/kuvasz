@@ -32,6 +32,11 @@
       expected-keyword-case-sensitive: false # (14)!
       expected-keyword-negated: false # (15)!
       response-time-threshold-millis: 500 # (16)!
+      request-headers: # (17)!
+        Host: "example.com"
+      expected-headers: # (18)!
+        Content-Type: "application/json"
+      request-body: "{\"key\":\"value\"}" # (19)!
       integrations: # (11)!
         - "email:my-email-integration"
     # ... other monitors
@@ -53,6 +58,9 @@
     14. **Expected keyword case sensitive**: Whether the keyword matching should be case-sensitive or not. Defaults to false.
     15. **Expected keyword negated**: Whether the keyword matching should be negated or not. If set to true, the monitor will alert you if the keyword is found in the response body. Defaults to false.
     16. **Response time threshold**: The maximum response time in milliseconds that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. Maximum is 30 seconds (30000 ms), default is `null` which means that there is no response time threshold.
+    17. **Request headers**: A map of request headers to send with the request. This is useful if you need to set specific headers for the request, like `Host`, `Authorization`, etc.
+    18. **Expected headers**: A map of expected response headers that the monitor should check for in the response.
+    19. **Request body**: The JSON request body to send with the request.
 
 === "API (expert)"
 
@@ -115,12 +123,22 @@ Whether the latency history is enabled or not. If it's disabled, the monitor **w
 
 <!-- md:version 2.0.0 -->
 <!-- md:default `GET` -->
-<!-- md:type enum: `GET`, `HEAD` -->
+<!-- md:type enum -->
 <!-- md:yaml_prop `request-method` -->
 
-The **HTTP method** to use for the uptime checks. `HEAD` **is recommended** for most cases, but not every endpoint supports it, so you can use `GET` if you need to.
+The **HTTP method** to use for the uptime checks.
 
-!!!tip "More method to come in the future..."
+!!!info "Supported methods"
+
+    The supported methods are:
+
+    - `GET`, `HEAD` - since [2.0.0](../changelog.md#2.0.0)
+    - `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` - since [2.5.0](../changelog.md#2.5.0)
+
+!!!warning "Consequences of certain methods"
+
+    - If you use the `HEAD` method, the response body will be empty, so the [**expected keyword check**](#expected-keyword) will always fail.
+    - If you would like to send a [**request body**](#request-body), you must use the `POST`, `PUT`, or `PATCH` methods.
 
 ### Follow redirects
 
@@ -139,6 +157,40 @@ Whether the monitor **should follow redirects** or not. If it's disabled, the mo
 <!-- md:yaml_prop `force-no-cache` -->
 
 Whether the monitor should send a `Cache-Control: no-cache` header with the request. This is useful to ensure that the **response is not cached by the server** or any intermediate proxies, and you always get the latest response.
+
+### Request headers
+
+<!-- md:version 2.5.0 -->
+<!-- md:type map -->
+<!-- md:yaml_prop `request-headers` -->
+
+A set of request headers to send with the request. This is useful if you need to set **specific headers for the request**, like `Host`, `Authorization`, etc. The headers will be sent as-is, without any parsing, the only requirement is that the keys must be valid HTTP header names (starting with a letter and containing only letters, digits or dashes).
+
+!!! info "Default headers"
+
+    _Kuvasz_ will automatically add the following headers to every request:
+
+    - `User-Agent`: `Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz`
+    - `Accept`: `*/*`
+    - `Accept-Encoding`: `gzip, deflate, br` (only if there is no [keyword matcher](#expected-keyword) defined)
+    - `Host`: the host part of the URL being monitored
+    - `Cache-Control`: `no-cache` (if the [**force no-cache header**](#force-no-cache-header) option is enabled)
+
+    If you define any of these headers along your custom request headers, they **will be overridden** by your values!
+
+### Request body
+
+<!-- md:version 2.5.0 -->
+<!-- md:type string -->
+<!-- md:yaml_prop `request-body` -->
+
+The JSON request body to send with the request. This is useful if you need to **send a specific payload with the request**. The body will be sent as-is, without any sanitization, trimming or parsing, the only requirement is that it must be a valid JSON string.
+
+**Supported request methods**: `POST`, `PUT` and `PATCH`
+
+!!!info
+
+    If you use one of the supported request methods and you don't provide a request body, an **empty JSON object** (`{}`) will be sent as the request body by default.
 
 ## Evaluation settings
 
@@ -269,6 +321,14 @@ A.k.a. _"reverse matching"_. If this is set to `true`, the monitor will alert yo
 <!-- md:yaml_prop `response-time-threshold-millis` -->
 
 The maximum response time in **milliseconds** that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. This is useful to ensure that your services are performing well and responding within an acceptable time frame. The maximum value is 30 seconds (30000 ms), and the default is `null`, which means that there is no response time threshold.
+
+### Expected headers
+
+<!-- md:version 2.5.0 -->
+<!-- md:type map -->
+<!-- md:yaml_prop `expected-headers` -->
+
+A set of expected response headers that the monitor should check for in the response. If any of the **expected headers are missing or have different values**, the monitor will alert you about it. The header names will be checked in a case-insensitive manner, but the values will be checked as-is, without any parsing, trimming or normalization. The keys must be valid HTTP header names (starting with a letter and containing only letters, digits or dashes).
 
 ## SSL check settings
 

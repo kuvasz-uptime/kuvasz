@@ -1,0 +1,10 @@
+ALTER TABLE monitor
+    ADD COLUMN request_headers JSONB DEFAULT '{}' NOT NULL,
+    ADD COLUMN expected_headers JSONB DEFAULT '{}' NOT NULL,
+    ADD COLUMN request_body TEXT DEFAULT NULL;
+
+ALTER TYPE http_method ADD VALUE 'POST';
+ALTER TYPE http_method ADD VALUE 'PUT';
+ALTER TYPE http_method ADD VALUE 'DELETE';
+ALTER TYPE http_method ADD VALUE 'PATCH';
+ALTER TYPE http_method ADD VALUE 'OPTIONS';

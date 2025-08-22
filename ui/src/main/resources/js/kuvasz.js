@@ -335,15 +335,22 @@ const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null
 const isValidUrl = (url) => {
     const urlPattern = /^(https?):\/\/[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$/;
     return urlPattern.test(url);
-}
+};
 
-const upsertMonitorForm = (monitor, errorMessages, acceptedStatusCodeSelectId, supportedHttpStatusCodes) => {
+const upsertMonitorForm = (
+    monitor,
+    errorMessages,
+    acceptedStatusCodeSelectId,
+    supportedHttpStatusCodes,
+    globalIntegrationCount
+  ) => {
     const originalMonitor = monitor || null;
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
         isUpdate: !!monitor,
         supportedHttpStatusCodes: supportedHttpStatusCodes || [],
+        globalIntegrationCount: globalIntegrationCount || 0,
 
         init() {
             this.resetState();
@@ -366,6 +373,15 @@ const upsertMonitorForm = (monitor, errorMessages, acceptedStatusCodeSelectId, s
             this.expectedKeywordCaseSensitive = originalMonitor?.expectedKeywordCaseSensitive || false;
             this.expectedKeywordNegated = originalMonitor?.expectedKeywordNegated || false;
             this.responseTimeThresholdMillis = originalMonitor?.responseTimeThresholdMillis || null;
+            this.requestHeaders = originalMonitor?.requestHeaders || {};
+            this.expectedHeaders = originalMonitor?.expectedHeaders || {};
+            this.requestBody = originalMonitor?.requestBody || null;
+            this.newRequestHeaderKey = '';
+            this.newRequestHeaderValue = '';
+            this.isRequestHeaderAddable = false;
+            this.newExpectedHeaderKey = '';
+            this.newExpectedHeaderValue = '';
+            this.isExpectedHeaderAddable = false;
             this.errors = {};
             // Resetting the TomSelect component, otherwise the state of the select won't be cleared
             // Without this, the previously selected values will remain in the select box, and also in alpine's state,
@@ -376,6 +392,56 @@ const upsertMonitorForm = (monitor, errorMessages, acceptedStatusCodeSelectId, s
             this.selectedHttpStatusCodes.forEach(code => {
                 httpStatusSelect?.tomselect?.addItem(code, true);
             });
+        },
+
+        isValidHttpHeaderName(headerName) {
+            if (headerName === null || headerName === undefined || headerName === '') return true;
+            const headerPattern = /^[a-zA-Z][a-zA-Z0-9-]*$/;
+            return headerPattern.test(headerName);
+        },
+
+        validateNewHeader(headerKey, headerValue, errorKey) {
+            const isValidHeaderName = this.isValidHttpHeaderName(headerKey)
+            if (!isValidHeaderName) {
+                this.errors[errorKey] = this.errorMessages.requestHeaderInvalid;
+            } else {
+                this.errors[errorKey] = null;
+            }
+            return isValidHeaderName;
+        },
+
+        validateNewRequestHeader() {
+            const isValidHeader = this.validateNewHeader(this.newRequestHeaderKey, this.newRequestHeaderValue, 'newRequestHeader');
+            this.isRequestHeaderAddable = isValidHeader && this.newRequestHeaderKey.trim() !== '' && this.newRequestHeaderValue.trim() !== '';
+        },
+
+        validateNewExpectedHeader() {
+            const isValidHeader = this.validateNewHeader(this.newExpectedHeaderKey, this.newExpectedHeaderValue, 'newExpectedHeader');
+            this.isExpectedHeaderAddable = isValidHeader && this.newExpectedHeaderKey.trim() !== '' && this.newExpectedHeaderValue.trim() !== '';
+        },
+
+        addRequestHeader() {
+            this.validateNewRequestHeader();
+            if (this.errors.newRequestHeader) return
+            this.requestHeaders[this.newRequestHeaderKey] = this.newRequestHeaderValue;
+            this.newRequestHeaderKey = '';
+            this.newRequestHeaderValue = '';
+        },
+
+        addExpectedHeader() {
+            this.validateNewExpectedHeader();
+            if (this.errors.newExpectedHeader) return
+            this.expectedHeaders[this.newExpectedHeaderKey] = this.newExpectedHeaderValue;
+            this.newExpectedHeaderKey = '';
+            this.newExpectedHeaderValue = '';
+        },
+
+        removeRequestHeader(key) {
+            delete this.requestHeaders[key];
+        },
+
+        removeExpectedHeader(key) {
+            delete this.expectedHeaders[key];
         },
 
         validate() {
@@ -429,6 +495,20 @@ const upsertMonitorForm = (monitor, errorMessages, acceptedStatusCodeSelectId, s
             }
         },
 
+        validateRequestBody() {
+            if (!this.requestBody || this.requestBody.trim() === '') {
+                this.requestBody = null;
+                this.errors.requestBody = null;
+                return;
+            }
+            try {
+                JSON.parse(this.requestBody);
+                this.errors.requestBody = null;
+            } catch (e) {
+                this.errors.requestBody = this.errorMessages.requestBodyInvalid;
+            }
+        },
+
         submitForm() {
             this.validate();
             if (hasNonNullValue(this.errors)) {
@@ -457,7 +537,10 @@ const upsertMonitorForm = (monitor, errorMessages, acceptedStatusCodeSelectId, s
                     expectedKeyword: sanitizeTextInput(this.expectedKeyword),
                     expectedKeywordCaseSensitive: this.expectedKeywordCaseSensitive,
                     expectedKeywordNegated: this.expectedKeywordNegated,
-                    responseTimeThresholdMillis: this.responseTimeThresholdMillis
+                    responseTimeThresholdMillis: this.responseTimeThresholdMillis,
+                    requestHeaders: this.requestHeaders,
+                    expectedHeaders: this.expectedHeaders,
+                    requestBody: sanitizeTextInput(this.requestBody)
                 };
                 if (!this.isUpdate) {
                     body.enabled = true; // Default enabled, can be paused later

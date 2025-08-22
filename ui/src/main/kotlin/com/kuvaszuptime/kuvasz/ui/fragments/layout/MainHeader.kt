@@ -20,7 +20,7 @@ internal fun FlowContent.mainHeader(
             if (isAuthenticated) {
                 button(type = ButtonType.button) {
                     classes(NAVBAR_TOGGLER)
-                    dataBsToggle("collapse")
+                    collapseToggler()
                     dataBsTarget("#$navbarMenuId")
                     ariaControls(navbarMenuId)
                     ariaExpanded(false)

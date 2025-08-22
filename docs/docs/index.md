@@ -100,6 +100,52 @@
 
 </div>
 
+## Kuvasz vs. UptimeRobot
+
+|                                           |    Kuvasz     | UptimeRobot Free | UptimeRobot Solo |
+|-------------------------------------------|:-------------:|:----------------:|:----------------:|
+| Price                                     |     Free      |       Free       |     $84/year     |
+| Monitoring interval                       | **5 seconds** |    5 minutes     |    60 seconds    |
+| Monitors limit                            | **unlimited** |        50        |        10        |
+| Location-specific monitoring              |     ✅^1^      |        ❌         |        ✅         |
+| Translations                              |       ✅       |        ❌         |        ❌         |
+| Custom data retention                     |       ✅       |     3 months     |    12 months     |
+| REST API                                  |       ✅       |        ✅         |        ✅         |
+| Prometheus & OpenTelemetry exporters      |       ✅       |        ❌         |        ❌         |
+| Backups & YAML configuration              |       ✅       |        ❌         |        ❌         |
+| Status pages                              |      📆       |      only 1      |      only 3      |
+| Maintenance windows                       |      📆       |        ❌         |        ✅         |
+| **HTTPs monitoring**                      |               |                  |                  |
+| Keyword matching                          |       ✅       |        ✅         |        ✅         |
+| Header matching                           |       ✅       |        ❌         |        ❌         |
+| Slow response alerts                      |       ✅       |        ❌         |        ✅         |
+| Custom HTTP methods                       |       ✅       |  ❌ (HEAD only)   |        ✅         |
+| Custom status matcher                     |       ✅       |        ❌         |        ✅         |
+| Custom headers                            |       ✅       |        ❌         |        ✅         |
+| Custom request body                       |       ✅       |        ❌         |        ✅         |
+| **SSL monitoring**                        |       ✅       |        ❌         |        ✅         |
+| **Ping (ICMP) monitoring**                |      📆       |        ✅         |        ✅         |
+| **Heartbeat monitoring**                  |      📆       |        ❌         |        ✅         |
+| **Port monitoring**                       |       ❌       |        ✅         |        ✅         |
+| **DNS monitoring**                        |       ❌       |        ❌         |        ✅         |
+| **Domain expiration monitoring**          |       ❌       |        ❌         |        ✅         |
+| **Notifications**                         |               |                  |                  |
+| Email                                     |       ✅       |        ✅         |        ✅         |
+| Discord                                   |       ✅       |        ✅         |        ✅         |
+| Slack                                     |       ✅       |        ❌         |        ✅         |
+| Telegram                                  |       ✅       |        ❌         |        ✅         |
+| Pagerduty                                 |       ✅       |        ❌         |        ❌         |
+| MS Teams                                  |      📆       |        ❌         |        ✅         |
+| Webhook                                   |      📆       |        ❌         |        ❌         |
+| SMS / Voice call                          |     📆^2^     |        ❌         |  10 incl./month  |
+| Google Chat, Pushover, Pushbullet, Splunk |       ❌       |        ✅         |        ✅         |
+| Mattermost                                |       ❌       |        ❌         |        ✅         |
+
+✅ Supported | ❌ Not supported | 📆 Planned
+
+- ^1^ You can deploy _Kuvasz_ to multiple locations and monitor your services from those locations, but it does not support location-specific monitoring out of the box.
+- ^2^ _Kuvasz_ will only provide the integration, but you will need to pay for the SMS or voice call service yourself
+
 ## Don't miss out on the latest updates!
 
 First and foremost, if you want to **stay up-to-date with the latest news**, features, and updates about _Kuvasz_, please consider:

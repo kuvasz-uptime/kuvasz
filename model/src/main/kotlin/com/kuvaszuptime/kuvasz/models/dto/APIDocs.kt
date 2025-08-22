@@ -45,6 +45,15 @@ object MonitorDocs {
     const val EXPECTED_KEYWORD_NEGATED =
         "Whether the expected keyword check is negated. If true, the monitor will be marked as DOWN if the keyword " +
             "is found in the response body."
+    const val REQUEST_HEADERS =
+        "Custom HTTP headers to be sent with the request. It is a map of header names to values, null values are " +
+            "not allowed."
+    const val EXPECTED_HEADERS =
+        "Expected HTTP headers in the response. If any of these headers are missing, the monitor will be marked as " +
+            "DOWN. It is a map of header names to values, null values are not allowed. The check will be " +
+            "case-insensitive for the header names, but the values must match exactly"
+    const val REQUEST_BODY = "The body of the request to be sent, which is used for POST, PATCH and PUT requests. " +
+        "Currently only valid JSON bodies are supported."
 }
 
 object IntegrationDocs {

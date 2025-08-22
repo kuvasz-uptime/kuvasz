@@ -51,4 +51,8 @@ interface MonitorConfig : MonitorCreatorLike {
 
     @get:Bindable(defaultValue = MonitorDefaults.EXPECTED_KEYWORD_NEGATED.toString())
     override val expectedKeywordNegated: Boolean
+
+    override val requestHeaders: Map<String, String>?
+    override val expectedHeaders: Map<String, String>?
+    override val requestBody: String?
 }

@@ -24,6 +24,7 @@ micronaut:
   application:
     name: kuvasz
   openapi:
+    target.file: ../docs/docs/api-docs/kuvasz-latest.yml
     additional:
       files: 'src/main/resources/swagger'
   security:

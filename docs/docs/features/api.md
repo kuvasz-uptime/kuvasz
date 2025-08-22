@@ -91,6 +91,13 @@ curl -X GET "http://your.kuvasz.host/api/v1/monitors/107" \
   "responseTimeThresholdMillis": 500,
   "expectedKeyword": "Kuvasz",
   "expectedKeywordCaseSensitive": true,
-  "expectedKeywordNegated": false
+  "expectedKeywordNegated": false,
+  "requestHeaders": {
+    "Authorization": "Bearer jklfjkds8fdshlkfds"
+  },
+  "expectedHeaders": {
+    "Access-Control-Max-Age": "30"
+  },
+  "requestBody": "{\"key\": \"value\"}"
 }
 ```

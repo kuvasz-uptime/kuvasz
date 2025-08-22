@@ -10,7 +10,7 @@ internal fun FlowContent.compactIconButton(
     icon: Icon,
     classes: Set<CSSClass> = emptySet(),
     onClick: String? = null,
-    content: HTMLTag.() -> Unit = {}
+    content: HTMLTag.() -> Unit = {},
 ) {
     compactIconButton(classes = classes, onClick = onClick) {
         content()
@@ -23,7 +23,7 @@ internal fun FlowContent.compactIconButton(
     onClick: String? = null,
     content: HTMLTag.() -> Unit = {}
 ) {
-    div {
+    button {
         classes(setOf(BTN, BTN_ICON) + classes)
         onClick?.let { this.onClick = it }
         content()

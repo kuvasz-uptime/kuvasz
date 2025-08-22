@@ -4,8 +4,11 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
+import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
+import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -51,6 +54,15 @@ interface MonitorCreatorLike {
     val expectedKeyword: String?
     val expectedKeywordCaseSensitive: Boolean
     val expectedKeywordNegated: Boolean
+
+    @get:ValidHeaderNames
+    val requestHeaders: Map<String, String>?
+
+    @get:ValidHeaderNames
+    val expectedHeaders: Map<String, String>?
+
+    @get:WellFormedJsonString
+    val requestBody: String?
 }
 
 fun MonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): MonitorRecord =
@@ -71,3 +83,6 @@ fun MonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setExpectedKeyword(expectedKeyword)
         .setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive)
         .setExpectedKeywordNegated(expectedKeywordNegated)
+        .setRequestHeaders(requestHeaders.orEmpty().toJsonNode())
+        .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
+        .setRequestBody(requestBody)

@@ -1,20 +1,16 @@
 openapi: 3.0.1
 info:
-  title: kuvasz
-  description: "Kuvasz [pronounce as 'koovas'] is an open-source uptime and SSL monitoring\
-    \ service"
-  contact:
-    url: https://github.com/kuvasz-uptime/kuvasz
+  title: Kuvasz Uptime
   version: latest
 tags:
-- name: Management operations
-- name: Monitor operations
-- name: Settings operations
+- name: Management
+- name: HTTP monitors
+- name: Settings
 paths:
   /api/v1/monitors:
     get:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Get all monitors with their details
       operationId: getMonitorsWithDetails
       parameters:
@@ -60,7 +56,7 @@ paths:
       - bearerAuth: []
     post:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Create a monitor
       operationId: createMonitor
       requestBody:
@@ -95,7 +91,7 @@ paths:
   /api/v1/monitors/export/yaml:
     get:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Download the export of all monitors in YAML format
       operationId: getYamlMonitorsExport
       responses:
@@ -109,7 +105,7 @@ paths:
   /api/v1/monitors/stats:
     get:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: "Get the overall, cumulative stats of all monitors"
       operationId: getMonitoringStats
       parameters:
@@ -133,7 +129,7 @@ paths:
   /api/v1/monitors/{monitorId}:
     get:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Get a monitor's details
       operationId: getMonitorDetails
       parameters:
@@ -161,7 +157,7 @@ paths:
       - bearerAuth: []
     delete:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Delete a monitor by ID
       operationId: deleteMonitor
       parameters:
@@ -192,7 +188,7 @@ paths:
       - bearerAuth: []
     patch:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Update a monitor by ID
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
@@ -243,7 +239,7 @@ paths:
   /api/v1/monitors/{monitorId}/ssl-events:
     get:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Get the SSL events of the given monitor
       operationId: getSSLEvents
       parameters:
@@ -268,7 +264,7 @@ paths:
   /api/v1/monitors/{monitorId}/stats:
     get:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Get the stats of the given monitor
       operationId: getMonitorStats
       parameters:
@@ -304,7 +300,7 @@ paths:
   /api/v1/monitors/{monitorId}/uptime-events:
     get:
       tags:
-      - Monitor operations
+      - HTTP monitors
       summary: Get the uptime events of the given monitor
       operationId: getUptimeEvents
       parameters:
@@ -329,7 +325,7 @@ paths:
   /api/v1/settings:
     get:
       tags:
-      - Settings operations
+      - Settings
       summary: Get the current settings of the application
       operationId: getSettings
       responses:
@@ -345,7 +341,7 @@ paths:
   /api/v1/health:
     get:
       tags:
-      - Management operations
+      - Management
       summary: Health endpoint
       description: General health check endpoint
       operationId: health
@@ -366,7 +362,7 @@ paths:
   /api/v1/prometheus:
     get:
       tags:
-      - Management operations
+      - Management
       summary: Prometheus metrics endpoint
       description: Exposes Prometheus metrics for monitoring
       operationId: prometheusMetrics
@@ -397,6 +393,11 @@ components:
       enum:
       - GET
       - HEAD
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - OPTIONS
     IntegrationDetailsDto:
       required:
       - enabled
@@ -557,11 +558,31 @@ components:
             \ monitor will be marked as DOWN if the keyword is found in the response\
             \ body."
           default: false
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
     MonitorDetailsDto:
       required:
       - createdAt
       - effectiveIntegrations
       - enabled
+      - expectedHeaders
       - expectedKeyword
       - expectedKeywordCaseSensitive
       - expectedKeywordNegated
@@ -576,6 +597,8 @@ components:
       - name
       - nextSSLCheck
       - nextUptimeCheck
+      - requestBody
+      - requestHeaders
       - requestMethod
       - responseTimeThresholdMillis
       - sslCheckEnabled
@@ -739,10 +762,30 @@ components:
           description: "Whether the expected keyword check is negated. If true, the\
             \ monitor will be marked as DOWN if the keyword is found in the response\
             \ body."
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
     MonitorDto:
       required:
       - createdAt
       - enabled
+      - expectedHeaders
       - expectedKeyword
       - expectedKeywordCaseSensitive
       - expectedKeywordNegated
@@ -753,6 +796,8 @@ components:
       - integrations
       - latencyHistoryEnabled
       - name
+      - requestBody
+      - requestHeaders
       - requestMethod
       - responseTimeThresholdMillis
       - sslCheckEnabled
@@ -838,6 +883,25 @@ components:
           description: "Whether the expected keyword check is negated. If true, the\
             \ monitor will be marked as DOWN if the keyword is found in the response\
             \ body."
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
         createdAt:
           type: string
           description: The creation timestamp of the monitor
@@ -1001,6 +1065,27 @@ components:
             \ monitor will be marked as DOWN if the keyword is found in the response\
             \ body."
           nullable: false
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+          nullable: false
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+          nullable: false
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
     MonitoringStatsDto:
       required:
       - actual

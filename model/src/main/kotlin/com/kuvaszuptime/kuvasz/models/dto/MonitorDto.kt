@@ -43,6 +43,12 @@ data class MonitorDto(
     val expectedKeywordCaseSensitive: Boolean,
     @param:Schema(description = MonitorDocs.EXPECTED_KEYWORD_NEGATED, required = true)
     val expectedKeywordNegated: Boolean,
+    @param:Schema(description = MonitorDocs.REQUEST_HEADERS, required = true)
+    val requestHeaders: Map<String, String>,
+    @param:Schema(description = MonitorDocs.EXPECTED_HEADERS, required = true)
+    val expectedHeaders: Map<String, String>,
+    @param:Schema(description = MonitorDocs.REQUEST_BODY, required = true, nullable = true)
+    val requestBody: String?,
     @param:Schema(description = MonitorDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
     @param:Schema(description = MonitorDocs.UPDATED_AT, required = true, nullable = true)
@@ -68,6 +74,9 @@ data class MonitorDto(
                 expectedKeyword = record.expectedKeyword,
                 expectedKeywordCaseSensitive = record.expectedKeywordCaseSensitive,
                 expectedKeywordNegated = record.expectedKeywordNegated,
+                requestHeaders = record.requestHeadersAsMap(),
+                expectedHeaders = record.expectedHeadersAsMap(),
+                requestBody = record.requestBody,
                 createdAt = record.createdAt,
                 updatedAt = record.updatedAt,
             )

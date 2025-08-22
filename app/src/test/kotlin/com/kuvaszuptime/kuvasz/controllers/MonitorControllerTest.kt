@@ -21,6 +21,8 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -45,6 +47,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -143,6 +146,9 @@ class MonitorControllerTest(
                     responseItem.expectedKeywordCaseSensitive shouldBe false
                     responseItem.expectedKeywordNegated shouldBe false
                     responseItem.responseTimeThresholdMillis.shouldBeNull()
+                    responseItem.requestHeaders.shouldBeEmpty()
+                    responseItem.expectedHeaders.shouldBeEmpty()
+                    responseItem.requestBody.shouldBeNull()
 
                     // Integrations
                     responseItem.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -491,6 +497,12 @@ class MonitorControllerTest(
                     expectedKeywordCaseSensitive = false,
                     expectedKeywordNegated = true,
                     responseTimeThresholdMillis = 5000,
+                    requestHeaders = mapOf("X-Test-Header" to "TestValue", "Another-Header" to "AnotherValue"),
+                    expectedHeaders = mapOf(
+                        "X-Expected-Header" to "ExpectedValue",
+                        "Another-Expected-Header" to "AnotherExpectedValue"
+                    ),
+                    requestBody = "{\"key\": \"value\"}",
                 )
                 val now = getCurrentTimestamp()
                 createUptimeEventRecord(
@@ -534,6 +546,15 @@ class MonitorControllerTest(
                     response.expectedKeywordCaseSensitive shouldBe false
                     response.expectedKeywordNegated shouldBe true
                     response.responseTimeThresholdMillis shouldBe 5000
+                    response.requestHeaders shouldContainExactly mapOf(
+                        "X-Test-Header" to "TestValue",
+                        "Another-Header" to "AnotherValue"
+                    )
+                    response.expectedHeaders shouldContainExactly mapOf(
+                        "X-Expected-Header" to "ExpectedValue",
+                        "Another-Expected-Header" to "AnotherExpectedValue"
+                    )
+                    response.requestBody shouldBe "{\"key\": \"value\"}"
 
                     // Integrations
                     response.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -791,6 +812,9 @@ class MonitorControllerTest(
                     monitorInDb.expectedKeyword.shouldBeNull()
                     monitorInDb.expectedKeywordCaseSensitive shouldBe false
                     monitorInDb.expectedKeywordNegated shouldBe false
+                    monitorInDb.requestHeadersAsMap().shouldBeEmpty()
+                    monitorInDb.expectedHeadersAsMap().shouldBeEmpty()
+                    monitorInDb.requestBody.shouldBeNull()
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -821,6 +845,9 @@ class MonitorControllerTest(
                     expectedKeyword = "keyword",
                     expectedKeywordCaseSensitive = true,
                     expectedKeywordNegated = true,
+                    requestHeaders = mapOf("X-Test-Header" to "TestValue", "Another-Header" to "AnotherValue"),
+                    expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue"),
+                    requestBody = "{\"key\": \"value\"}",
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -854,6 +881,14 @@ class MonitorControllerTest(
                     monitorInDb.expectedKeyword shouldBe "keyword"
                     monitorInDb.expectedKeywordCaseSensitive shouldBe true
                     monitorInDb.expectedKeywordNegated shouldBe true
+                    monitorInDb.requestHeadersAsMap() shouldContainExactly mapOf(
+                        "X-Test-Header" to "TestValue",
+                        "Another-Header" to "AnotherValue"
+                    )
+                    monitorInDb.expectedHeadersAsMap() shouldContainExactly mapOf(
+                        "X-Expected-Header" to "ExpectedValue"
+                    )
+                    monitorInDb.requestBody shouldBe "{\"key\": \"value\"}"
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1039,6 +1074,63 @@ class MonitorControllerTest(
                         "Response time threshold must be less than or equal to 30000 milliseconds"
                 }
             }
+
+            `when`("it is called with an invalid request header") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    requestHeaders = mapOf("1-Invalid-Header" to "Value")
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                }
+            }
+
+            `when`("it is called with an invalid expected header") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    expectedHeaders = mapOf("2-Header" to "Value")
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                }
+            }
+
+            `when`("it is called with an invalid request body") {
+                val monitorToCreate = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    requestBody = "Invalid JSON"
+                )
+                val request = HttpRequest.POST("/api/v1/monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
+                }
+            }
         }
 
         given("MonitorController's deleteMonitor() endpoint") {
@@ -1115,6 +1207,9 @@ class MonitorControllerTest(
                     expectedKeyword = "keyword",
                     expectedKeywordCaseSensitive = true,
                     expectedKeywordNegated = true,
+                    requestHeaders = mapOf("X-Test-Header" to "TestValue", "Another-Header" to "AnotherValue"),
+                    expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue"),
+                    requestBody = "{\"key\": \"value\"}",
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
@@ -1146,6 +1241,15 @@ class MonitorControllerTest(
                     .put(MonitorUpdateDto::expectedKeyword.name, "updated_keyword")
                     .put(MonitorUpdateDto::expectedKeywordCaseSensitive.name, false)
                     .put(MonitorUpdateDto::expectedKeywordNegated.name, false)
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::requestHeaders.name,
+                        mapper.createObjectNode().put("X-New-Header", "UpdatedValue")
+                    )
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::expectedHeaders.name,
+                        mapper.createObjectNode()
+                    )
+                    .put(MonitorUpdateDto::requestBody.name, "{\"newKey\": \"newValue\"}")
 
                 val subscriber = TestSubscriber<MonitorLifecycleEvent>()
                 eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
@@ -1176,6 +1280,9 @@ class MonitorControllerTest(
                     monitorInDb.expectedKeyword shouldBe "updated_keyword"
                     monitorInDb.expectedKeywordCaseSensitive shouldBe false
                     monitorInDb.expectedKeywordNegated shouldBe false
+                    monitorInDb.requestHeadersAsMap() shouldContainExactly mapOf("X-New-Header" to "UpdatedValue")
+                    monitorInDb.expectedHeadersAsMap().shouldBeEmpty()
+                    monitorInDb.requestBody shouldBe "{\"newKey\": \"newValue\"}"
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1606,6 +1713,87 @@ class MonitorControllerTest(
                         createdMonitor.expectedStatusCodes.toTypedArray()
                 }
             }
+
+            `when`("it is called with an invalid request header") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    requestHeaders = mapOf("X-Test-Header" to "TestValue")
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::requestHeaders.name,
+                        mapper.createObjectNode().put("-Header", "NewValue")
+                    )
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    monitorInDb.requestHeadersAsMap() shouldContainExactly createdMonitor.requestHeaders
+                }
+            }
+
+            `when`("it is called with an invalid expected header") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue")
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set<ObjectNode>(
+                        MonitorUpdateDto::expectedHeaders.name,
+                        mapper.createObjectNode().put("1241", "NewValue")
+                    )
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    monitorInDb.expectedHeadersAsMap() shouldContainExactly createdMonitor.expectedHeaders
+                }
+            }
+
+            `when`("it is called with an invalid request body") {
+                val createDto = MonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    requestBody = "{\"key\": \"value\"}"
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(MonitorUpdateDto::requestBody.name, "not a-json")
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
+                    monitorInDb.requestBody shouldBe createdMonitor.requestBody
+                }
+            }
         }
 
         given("MonitorController's getUptimeEvents() endpoint") {
@@ -1745,6 +1933,9 @@ class MonitorControllerTest(
                     expectedKeyword = "somethingExpected",
                     expectedKeywordCaseSensitive = true,
                     expectedKeywordNegated = false,
+                    requestHeaders = mapOf("X-Test-Header" to "TestValue"),
+                    expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue"),
+                    requestBody = "{\"key\": \"value\"}",
                 )
                 val request = HttpRequest.GET<Any>("/api/v1/monitors/export/yaml").accept(MediaType.APPLICATION_YAML)
 
@@ -1792,6 +1983,9 @@ class MonitorControllerTest(
                         secondMonitor.expectedKeyword shouldBe monitor2.expectedKeyword
                         secondMonitor.expectedKeywordCaseSensitive shouldBe monitor2.expectedKeywordCaseSensitive
                         secondMonitor.expectedKeywordNegated shouldBe monitor2.expectedKeywordNegated
+                        secondMonitor.requestHeaders shouldBe monitor2.requestHeadersAsMap()
+                        secondMonitor.expectedHeaders shouldBe monitor2.expectedHeadersAsMap()
+                        secondMonitor.requestBody shouldBe monitor2.requestBody
                     }
                 }
             }

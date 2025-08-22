@@ -23,6 +23,9 @@ data class MonitorExportDto(
     val expectedKeyword: String?,
     val expectedKeywordCaseSensitive: Boolean,
     val expectedKeywordNegated: Boolean,
+    val requestHeaders: Map<String, String>,
+    val expectedHeaders: Map<String, String>,
+    val requestBody: String?,
 ) {
     companion object {
         fun fromMonitorRecord(record: MonitorRecord): MonitorExportDto {
@@ -43,6 +46,9 @@ data class MonitorExportDto(
                 expectedKeyword = record.expectedKeyword,
                 expectedKeywordCaseSensitive = record.expectedKeywordCaseSensitive,
                 expectedKeywordNegated = record.expectedKeywordNegated,
+                requestHeaders = record.requestHeadersAsMap(),
+                expectedHeaders = record.expectedHeadersAsMap(),
+                requestBody = record.requestBody,
             )
         }
     }

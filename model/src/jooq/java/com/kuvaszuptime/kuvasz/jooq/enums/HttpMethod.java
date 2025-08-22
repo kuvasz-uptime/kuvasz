@@ -19,7 +19,17 @@ public enum HttpMethod implements EnumType {
 
     GET("GET"),
 
-    HEAD("HEAD");
+    HEAD("HEAD"),
+
+    POST("POST"),
+
+    PUT("PUT"),
+
+    DELETE("DELETE"),
+
+    PATCH("PATCH"),
+
+    OPTIONS("OPTIONS");
 
     private final String literal;
 

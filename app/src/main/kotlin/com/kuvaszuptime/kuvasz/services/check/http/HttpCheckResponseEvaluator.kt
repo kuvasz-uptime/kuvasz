@@ -19,6 +19,7 @@ class HttpCheckResponseEvaluator(
     private val responseStatusChecker: HttpResponseStatusChecker,
     private val responseTimeChecker: HttpResponseTimeChecker,
     private val responseBodyChecker: HttpResponseBodyChecker,
+    private val responseHeaderChecker: HttpResponseHeaderChecker,
     private val noOpUpDispatcher: NoOpUpDispatcher,
 ) {
     private fun getPreviousEvent(monitor: MonitorRecord): UptimeEventRecord? =
@@ -57,6 +58,7 @@ class HttpCheckResponseEvaluator(
         return HttpCheckResult.Continue
             .finishOrContinueWith(responseStatusChecker)
             .finishOrContinueWith(responseTimeChecker)
+            .finishOrContinueWith(responseHeaderChecker)
             .finishOrContinueWith(responseBodyChecker)
             // As the last step we always dispatch an UP event
             .finishOrContinueWith(noOpUpDispatcher)

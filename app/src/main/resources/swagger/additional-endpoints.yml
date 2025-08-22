@@ -6,7 +6,7 @@ paths:
   /api/v1/health:
     get:
       tags:
-        - Management operations
+        - Management
       summary: Health endpoint
       description: General health check endpoint
       operationId: health
@@ -27,7 +27,7 @@ paths:
   /api/v1/prometheus:
     get:
       tags:
-        - Management operations
+        - Management
       summary: Prometheus metrics endpoint
       description: Exposes Prometheus metrics for monitoring
       operationId: prometheusMetrics

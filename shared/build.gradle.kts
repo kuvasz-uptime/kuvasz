@@ -107,6 +107,8 @@ tasks.register("validateI18n") {
 
                 if (!hasOrderIssues && missingKeys.isEmpty() && extraKeys.isEmpty()) {
                     logger.lifecycle("  ✅ All keys and comments are in sync!")
+                } else {
+                    throw GradleException("Validation failed for ${file.name}. Please fix the issues above.")
                 }
                 logger.lifecycle("--------------------------------------------------------")
             }

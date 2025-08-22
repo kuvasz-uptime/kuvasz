@@ -23,6 +23,12 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+    - name: Validate translations
+      run: ./gradlew :shared:validateI18n
+    - name: Generate OpenAPI spec
+      run: ./gradlew :app:updateApiDoc
+    - name: Validate that generated sources are committed
+      run: git diff --quiet --exit-code HEAD --
     - name: Run detekt
       run: ./gradlew detektAll
     - name: Run check

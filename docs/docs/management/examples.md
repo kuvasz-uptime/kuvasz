@@ -150,7 +150,7 @@ monitors:
     uptime-check-interval: 30
     enabled: true
     ssl-check-enabled: false
-    request-method: "GET"
+    request-method: "POST"
     latency-history-enabled: true
     follow-redirects: true
     force-no-cache: true
@@ -166,6 +166,11 @@ monitors:
     expected-keyword-case-sensitive: true
     expected-keyword-negated: false
     response-time-threshold-millis: 500
+    request-headers:
+      Host: "example.com"
+    expected-headers:
+      Content-Type: "application/json"
+    request-body: "{\"key\":\"value\"}"
   - name: "minimal configuration example"
     url: "https://kuvasz-uptime.dev"
     uptime-check-interval: 5
