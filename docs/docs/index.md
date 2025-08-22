@@ -111,6 +111,8 @@
 | Translations                              |       ✅       |        ❌         |        ❌         |
 | Custom data retention                     |       ✅       |     3 months     |    12 months     |
 | REST API                                  |       ✅       |        ✅         |        ✅         |
+| Prometheus & OpenTelemetry exporters      |       ✅       |        ❌         |        ❌         |
+| Backups & YAML configuration              |       ✅       |        ❌         |        ❌         |
 | Status pages                              |      📆       |      only 1      |      only 3      |
 | Maintenance windows                       |      📆       |        ❌         |        ✅         |
 | **HTTPs monitoring**                      |               |                  |                  |
@@ -126,6 +128,7 @@
 | **Heartbeat monitoring**                  |      📆       |        ❌         |        ✅         |
 | **Port monitoring**                       |       ❌       |        ✅         |        ✅         |
 | **DNS monitoring**                        |       ❌       |        ❌         |        ✅         |
+| **Domain expiration monitoring**          |       ❌       |        ❌         |        ✅         |
 | **Notifications**                         |               |                  |                  |
 | Email                                     |       ✅       |        ✅         |        ✅         |
 | Discord                                   |       ✅       |        ✅         |        ✅         |
