@@ -2,7 +2,7 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
-## To be released { id="tbr" data-toc-label="To be released" }
+## 2.5.1 <small>2025-08-23</small> { id="2.5.1" data-toc-label="2.5.1" }
 
 ### Fixes
 
