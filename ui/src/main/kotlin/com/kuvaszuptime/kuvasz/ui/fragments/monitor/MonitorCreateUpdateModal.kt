@@ -612,6 +612,9 @@ private fun FlowContent.acceptedStatusCodeSelector(
                                     escape(data.value) + 
                                 '</div>';
                             }
+                        },
+                        onItemAdd: function(data, item) {
+                            this.setTextboxValue('');
                         }
                     }
                     )}
