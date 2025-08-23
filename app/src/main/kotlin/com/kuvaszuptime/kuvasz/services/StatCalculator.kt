@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @Singleton
 class StatCalculator(
@@ -18,7 +19,8 @@ class StatCalculator(
     @Suppress("NestedBlockDepth")
     fun calculateOverallStats(period: Duration): MonitoringStatsDto {
         val monitors = monitorCrudService.getMonitorsWithDetails()
-        val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(period)
+        val periodStart = getCurrentTimestamp().minus(period)
+        val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(periodStart)
         var downMonitors = 0
         var upMonitors = 0
         var pausedMonitors = 0
@@ -69,12 +71,13 @@ class StatCalculator(
                 )
             ),
             history = MonitoringStatsDto.HistoricalMonitoringStats(
-                uptimeStats = calculateHistoricalStats(uptimeEvents)
+                uptimeStats = calculateHistoricalStats(periodStart, uptimeEvents)
             )
         )
     }
 
     fun calculateHistoricalStats(
+        periodStart: OffsetDateTime,
         uptimeEvents: List<UptimeEventRecord>,
     ): MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats {
         val monitorsWithIncidents: MutableSet<Long> = mutableSetOf()
@@ -83,7 +86,7 @@ class StatCalculator(
         var historicalDowntimeSeconds = 0L
 
         uptimeEvents.forEach { uptimeEvent ->
-            val duration = uptimeEvent.startedAt
+            val duration = maxOf(uptimeEvent.startedAt, periodStart)
                 .diffToDuration(uptimeEvent.endedAt ?: getCurrentTimestamp()).inWholeSeconds
 
             if (uptimeEvent.status == UptimeStatus.DOWN) {

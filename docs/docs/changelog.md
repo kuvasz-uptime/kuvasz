@@ -2,6 +2,12 @@
 
     Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
+## To be released { id="tbr" data-toc-label="To be released" }
+
+### Fixes
+
+- Fixed a bug where the historical uptime stats could contain misleading values in case of prolonging incidents that overlap with the requested time range of stats.
+
 ## 2.5.0 <small>2025-08-22</small> { id="2.5.0" data-toc-label="2.5.0" }
 
 ### New features

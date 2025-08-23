@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.nulls.shouldNotBeNull
 import org.jooq.DSLContext
@@ -81,7 +82,8 @@ fun createUptimeEventRecord(
             .setUpdatedAt(endedAt ?: startedAt)
             .setEndedAt(endedAt)
     )
-    .execute()
+    .returning(UPTIME_EVENT.asterisk())
+    .fetchOneOrThrow<UptimeEventRecord>()
 
 fun createSSLEventRecord(
     dslContext: DSLContext,

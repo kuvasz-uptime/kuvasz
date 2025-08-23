@@ -8,11 +8,9 @@ import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
-import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
-import java.time.Duration
 import java.time.OffsetDateTime
 
 @Singleton
@@ -100,11 +98,11 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
      * Fetches all uptime events that have ended or was open within the specified period and are associated with
      * enabled monitors.
      */
-    fun fetchAllInPeriod(period: Duration): List<UptimeEventRecord> = dslContext
+    fun fetchAllInPeriod(periodStart: OffsetDateTime): List<UptimeEventRecord> = dslContext
         .select(UPTIME_EVENT.asterisk())
         .from(UPTIME_EVENT)
         .join(MONITOR).on(UPTIME_EVENT.MONITOR_ID.eq(MONITOR.ID))
-        .where(DSL.coalesce(UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(getCurrentTimestamp().minus(period)))
+        .where(DSL.coalesce(UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
         .and(MONITOR.ENABLED.isTrue)
         .fetchInto(UptimeEventRecord::class.java)
 
