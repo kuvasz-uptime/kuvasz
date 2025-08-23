@@ -139,17 +139,28 @@ class StatCalculatorTest(
 
             val monitor = createMonitor(monitorRepository, enabled = true, sslCheckEnabled = true)
 
-            createUptimeEventRecord(
+            // Events outside the 9 days period
+            val firstUptimeEvent = createUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = monitor.id,
                 startedAt = getCurrentTimestamp().minusDays(12),
-                status = UptimeStatus.DOWN,
+                status = UptimeStatus.UP,
                 endedAt = getCurrentTimestamp().minusDays(10),
             )
+            // Event that overlaps with the start of the 9 days period, downtime should be counted from the beginning
+            // of the given period
+            val secondUptimeEvent = createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor.id,
+                startedAt = firstUptimeEvent.endedAt,
+                status = UptimeStatus.DOWN,
+                endedAt = getCurrentTimestamp().minusDays(7),
+            )
+            // Events within the 9 days period
             createUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = monitor.id,
-                startedAt = getCurrentTimestamp().minusDays(10),
+                startedAt = secondUptimeEvent.endedAt,
                 status = UptimeStatus.UP,
                 endedAt = null,
             )
@@ -182,10 +193,13 @@ class StatCalculatorTest(
                 stats.actual.sslStats.willExpire shouldBe 0
                 stats.actual.sslStats.inProgress shouldBe 0
 
-                stats.history.uptimeStats.incidents shouldBe 0
-                stats.history.uptimeStats.affectedMonitors shouldBe 0
-                stats.history.uptimeStats.uptimeRatio shouldBe 1.0 // Only UP event in the period
-                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 0L // No DOWN events in the period
+                stats.history.uptimeStats.incidents shouldBe 1
+                stats.history.uptimeStats.affectedMonitors shouldBe 1
+                // The uptime ratio calculation should only take the time within the given period into account
+                stats.history.uptimeStats.uptimeRatio shouldBe 0.7777777777777778
+                // 2 days in seconds, because even the downtime stared before the period, only the part within the
+                // period should be counted
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 2 * 24 * 60 * 60
             }
         }
 
