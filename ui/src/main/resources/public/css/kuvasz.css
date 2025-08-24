@@ -13,3 +13,13 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 .ts-wrapper .ts-control > div.item {
     border-radius: 6px; /* Match the border-radius of the parent input */
 }
+
+/* TomSelect active option background - dark */
+[data-bs-theme=dark] .ts-wrapper .ts-dropdown .option.active {
+    background-color: var(--tblr-bg-forms);
+}
+
+/* TomSelect active option background - light */
+[data-bs-theme=light] .ts-wrapper .ts-dropdown .option.active {
+    background-color: var(--tblr-gray-100);
+}
