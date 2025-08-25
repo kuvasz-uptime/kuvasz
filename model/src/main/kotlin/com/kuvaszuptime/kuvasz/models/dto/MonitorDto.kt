@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -55,7 +55,7 @@ data class MonitorDto(
     val updatedAt: OffsetDateTime?
 ) {
     companion object {
-        fun fromMonitorRecord(record: MonitorRecord) =
+        fun fromMonitorRecord(record: HttpMonitorRecord) =
             MonitorDto(
                 id = record.id,
                 name = record.name,

@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
@@ -41,8 +41,8 @@ class AppBootstrappingYamlConfigTest : StringSpec({
 
     var appContext: ApplicationContext? = null
 
-    val monitorsAfterTheFirstStep = mutableListOf<MonitorRecord>()
-    val monitorsAfterTheSecondStep = mutableListOf<MonitorRecord>()
+    val monitorsAfterTheFirstStep = mutableListOf<HttpMonitorRecord>()
+    val monitorsAfterTheSecondStep = mutableListOf<HttpMonitorRecord>()
 
     afterTest {
         // Stopping the app context after each test, so we can practically simulate the app restart

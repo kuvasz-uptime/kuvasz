@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
@@ -160,7 +160,7 @@ class UptimeCheckerTest(
             }
         every {
             uptimeChecker["sendHttpRequest"](
-                any<MonitorRecord>(),
+                any<HttpMonitorRecord>(),
                 requestUri ?: any<URI>()
             )
         } returns HttpCheckResponse(httpResponse = response, latency = 100)

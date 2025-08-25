@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -41,7 +41,7 @@ interface MetricsExporter {
      *
      * This method is called once per exporter during application startup to set up the metrics exporters.
      */
-    fun initialize(monitors: List<MonitorRecord>)
+    fun initialize(monitors: List<HttpMonitorRecord>)
 }
 
 /**
@@ -77,7 +77,7 @@ abstract class BaseMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, METER_V
     /**
      * Determines whether the monitor should be included in the meter registration.
      */
-    protected abstract fun filterCondition(monitor: MonitorRecord): Boolean
+    protected abstract fun filterCondition(monitor: HttpMonitorRecord): Boolean
 
     /**
      * Transforms the value SOURCE into INTERNAL_VAL for the internal representation.
@@ -87,13 +87,13 @@ abstract class BaseMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, METER_V
     /**
      * Returns the initial value for the meter based on the monitors actual state
      */
-    protected abstract fun computeInitialValue(monitor: MonitorRecord): SOURCE_VAL?
+    protected abstract fun computeInitialValue(monitor: HttpMonitorRecord): SOURCE_VAL?
 
     /**
      * Registers a meter for the given monitor with the provided initial value and returns the meter definition.
      * Keeping a reference to the meter is the responsibility of the inheriting class.
      */
-    protected abstract fun register(monitor: MonitorRecord, initialValue: INTERNAL_VAL): MeterDefinition<METER_VAL>
+    protected abstract fun register(monitor: HttpMonitorRecord, initialValue: INTERNAL_VAL): MeterDefinition<METER_VAL>
 
     /**
      * Updates the value of the existing meter with the new value.
@@ -126,7 +126,7 @@ abstract class BaseMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, METER_V
      * Providing an external initial value is useful when the meter is created on the fly and the initial value is known
      * from the underlying event.
      */
-    private fun createMeter(monitor: MonitorRecord, initialValue: SOURCE_VAL?) {
+    private fun createMeter(monitor: HttpMonitorRecord, initialValue: SOURCE_VAL?) {
         if (filterCondition(monitor)) {
             (initialValue ?: computeInitialValue(monitor))?.let { initVal ->
                 register(monitor, transform(initVal)).also { meterDef ->
@@ -153,7 +153,7 @@ abstract class BaseMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, METER_V
         }
     }
 
-    override fun initialize(monitors: List<MonitorRecord>) {
+    override fun initialize(monitors: List<HttpMonitorRecord>) {
         monitors.forEach { monitor ->
             createMeter(monitor, null)
         }

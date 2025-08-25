@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.IneligibleStatusCodeException
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
@@ -111,7 +111,7 @@ class HttpResponseStatusChecker(
      * 2. If the monitor is configured to follow redirects, it considers 2xx and 3xx status codes as acceptable.
      * 3. If the monitor is not configured to follow redirects, it considers only 2xx status codes as acceptable.
      */
-    private fun RawHttpResponse.statusIsAcceptableForMonitor(monitor: MonitorRecord): Boolean =
+    private fun RawHttpResponse.statusIsAcceptableForMonitor(monitor: HttpMonitorRecord): Boolean =
         monitor.expectedStatusCodes.orEmpty().let { acceptedStatusCodes ->
             if (acceptedStatusCodes.isNotEmpty()) {
                 // Check if the response status code is in the list of expected status codes

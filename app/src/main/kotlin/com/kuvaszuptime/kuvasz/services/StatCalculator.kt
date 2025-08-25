@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.diffToDuration
@@ -78,7 +78,7 @@ class StatCalculator(
 
     fun calculateHistoricalStats(
         periodStart: OffsetDateTime,
-        uptimeEvents: List<UptimeEventRecord>,
+        uptimeEvents: List<HttpUptimeEventRecord>,
     ): MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats {
         val monitorsWithIncidents: MutableSet<Long> = mutableSetOf()
         var historicalIncidentCnt = 0

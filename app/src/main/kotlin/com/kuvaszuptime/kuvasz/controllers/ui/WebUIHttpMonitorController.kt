@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.MonitorCrudService
 import com.kuvaszuptime.kuvasz.services.StatCalculator
@@ -74,7 +74,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorTable(): String {
-        val monitors = monitorCrudService.getMonitorsWithDetails(sortedBy = MONITOR.NAME.asc())
+        val monitors = monitorCrudService.getMonitorsWithDetails(sortedBy = HTTP_MONITOR.NAME.asc())
 
         return renderHttpMonitorList(monitors, appGlobals.editabilityState.areHttpMonitorsReadOnly())
     }

@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
-import com.kuvaszuptime.kuvasz.jooq.tables.UptimeEvent.UPTIME_EVENT
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -18,8 +18,8 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
 
     private fun MonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: UptimeMonitorEvent, ctx: DSLContext = dslContext): UptimeEventRecord {
-        val eventToInsert = UptimeEventRecord()
+    fun insertFromMonitorEvent(event: UptimeMonitorEvent, ctx: DSLContext = dslContext): HttpUptimeEventRecord {
+        val eventToInsert = HttpUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
@@ -29,46 +29,46 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
             eventToInsert.error = event.getPersistableError()
         }
 
-        return ctx.insertInto(UPTIME_EVENT)
+        return ctx.insertInto(HTTP_UPTIME_EVENT)
             .set(eventToInsert)
-            .returning(UPTIME_EVENT.asterisk())
-            .fetchOneOrThrow<UptimeEventRecord>()
+            .returning(HTTP_UPTIME_EVENT.asterisk())
+            .fetchOneOrThrow<HttpUptimeEventRecord>()
     }
 
-    fun fetchByMonitorId(monitorId: Long): List<UptimeEventRecord> = dslContext
-        .selectFrom(UPTIME_EVENT)
-        .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+    fun fetchByMonitorId(monitorId: Long): List<HttpUptimeEventRecord> = dslContext
+        .selectFrom(HTTP_UPTIME_EVENT)
+        .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun getPreviousEventByMonitorId(monitorId: Long): UptimeEventRecord? = dslContext
-        .selectFrom(UPTIME_EVENT)
-        .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .and(UPTIME_EVENT.ENDED_AT.isNull)
+    fun getPreviousEventByMonitorId(monitorId: Long): HttpUptimeEventRecord? = dslContext
+        .selectFrom(HTTP_UPTIME_EVENT)
+        .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+        .and(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
         .fetchOne()
 
     fun endEventById(eventId: Long, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
-        .update(UPTIME_EVENT)
-        .set(UPTIME_EVENT.ENDED_AT, endedAt)
-        .set(UPTIME_EVENT.UPDATED_AT, endedAt)
-        .where(UPTIME_EVENT.ID.eq(eventId))
+        .update(HTTP_UPTIME_EVENT)
+        .set(HTTP_UPTIME_EVENT.ENDED_AT, endedAt)
+        .set(HTTP_UPTIME_EVENT.UPDATED_AT, endedAt)
+        .where(HTTP_UPTIME_EVENT.ID.eq(eventId))
         .execute()
 
     fun deleteEventsBeforeDate(limit: OffsetDateTime) = dslContext
-        .delete(UPTIME_EVENT)
-        .where(UPTIME_EVENT.ENDED_AT.isNotNull)
-        .and(UPTIME_EVENT.ENDED_AT.lessThan(limit))
+        .delete(HTTP_UPTIME_EVENT)
+        .where(HTTP_UPTIME_EVENT.ENDED_AT.isNotNull)
+        .and(HTTP_UPTIME_EVENT.ENDED_AT.lessThan(limit))
         .execute()
 
     @Suppress("IgnoredReturnValue")
     fun updateEvent(eventId: Long, newEvent: UptimeMonitorEvent) = dslContext
-        .update(UPTIME_EVENT)
-        .set(UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
+        .update(HTTP_UPTIME_EVENT)
+        .set(HTTP_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {
             if (newEvent is MonitorDownEvent) {
-                set(UPTIME_EVENT.ERROR, newEvent.getPersistableError())
+                set(HTTP_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
             }
         }
-        .where(UPTIME_EVENT.ID.eq(eventId))
+        .where(HTTP_UPTIME_EVENT.ID.eq(eventId))
         .execute()
 
     fun isMonitorUp(monitorId: Long, nullAsUp: Boolean = false): Boolean =
@@ -77,16 +77,16 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
     @Suppress("IgnoredReturnValue")
     fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<UptimeEventDto> = dslContext
         .select(
-            UPTIME_EVENT.ID.`as`(UptimeEventDto::id.name),
-            UPTIME_EVENT.STATUS.`as`(UptimeEventDto::status.name),
-            UPTIME_EVENT.ERROR.`as`(UptimeEventDto::error.name),
-            UPTIME_EVENT.STARTED_AT.`as`(UptimeEventDto::startedAt.name),
-            UPTIME_EVENT.ENDED_AT.`as`(UptimeEventDto::endedAt.name),
-            UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventDto::updatedAt.name),
+            HTTP_UPTIME_EVENT.ID.`as`(UptimeEventDto::id.name),
+            HTTP_UPTIME_EVENT.STATUS.`as`(UptimeEventDto::status.name),
+            HTTP_UPTIME_EVENT.ERROR.`as`(UptimeEventDto::error.name),
+            HTTP_UPTIME_EVENT.STARTED_AT.`as`(UptimeEventDto::startedAt.name),
+            HTTP_UPTIME_EVENT.ENDED_AT.`as`(UptimeEventDto::endedAt.name),
+            HTTP_UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventDto::updatedAt.name),
         )
-        .from(UPTIME_EVENT)
-        .where(UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .orderBy(UPTIME_EVENT.STARTED_AT.desc())
+        .from(HTTP_UPTIME_EVENT)
+        .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+        .orderBy(HTTP_UPTIME_EVENT.STARTED_AT.desc())
         .apply {
             if (limit != null) {
                 limit(limit)
@@ -98,22 +98,22 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
      * Fetches all uptime events that have ended or was open within the specified period and are associated with
      * enabled monitors.
      */
-    fun fetchAllInPeriod(periodStart: OffsetDateTime): List<UptimeEventRecord> = dslContext
-        .select(UPTIME_EVENT.asterisk())
-        .from(UPTIME_EVENT)
-        .join(MONITOR).on(UPTIME_EVENT.MONITOR_ID.eq(MONITOR.ID))
-        .where(DSL.coalesce(UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-        .and(MONITOR.ENABLED.isTrue)
-        .fetchInto(UptimeEventRecord::class.java)
+    fun fetchAllInPeriod(periodStart: OffsetDateTime): List<HttpUptimeEventRecord> = dslContext
+        .select(HTTP_UPTIME_EVENT.asterisk())
+        .from(HTTP_UPTIME_EVENT)
+        .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
+        .where(DSL.coalesce(HTTP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+        .and(HTTP_MONITOR.ENABLED.isTrue)
+        .fetchInto(HttpUptimeEventRecord::class.java)
 
     /**
      * Fetches the timestamp of the latest incident (DOWN status) for enabled monitors.
      */
     fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
-        .select(DSL.max(DSL.coalesce(UPTIME_EVENT.UPDATED_AT, UPTIME_EVENT.STARTED_AT)))
-        .from(UPTIME_EVENT)
-        .join(MONITOR).on(UPTIME_EVENT.MONITOR_ID.eq(MONITOR.ID))
-        .where(UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-        .and(MONITOR.ENABLED.isTrue)
+        .select(DSL.max(DSL.coalesce(HTTP_UPTIME_EVENT.UPDATED_AT, HTTP_UPTIME_EVENT.STARTED_AT)))
+        .from(HTTP_UPTIME_EVENT)
+        .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
+        .where(HTTP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+        .and(HTTP_MONITOR.ENABLED.isTrue)
         .fetchAny(0, OffsetDateTime::class.java)
 }

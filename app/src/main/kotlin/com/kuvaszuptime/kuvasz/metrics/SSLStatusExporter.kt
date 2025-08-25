@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.metrics
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -41,7 +41,7 @@ class SSLStatusExporter(
         }
     }
 
-    override fun filterCondition(monitor: MonitorRecord): Boolean = monitor.enabled && monitor.sslCheckEnabled
+    override fun filterCondition(monitor: HttpMonitorRecord): Boolean = monitor.enabled && monitor.sslCheckEnabled
 
     override fun transform(valueSource: SslStatus): Long =
         when (valueSource) {
@@ -49,6 +49,6 @@ class SSLStatusExporter(
             SslStatus.INVALID -> 0L
         }
 
-    override fun computeInitialValue(monitor: MonitorRecord): SslStatus? =
+    override fun computeInitialValue(monitor: HttpMonitorRecord): SslStatus? =
         monitorRepository.getMonitorWithDetails(monitor.id)?.sslStatus
 }

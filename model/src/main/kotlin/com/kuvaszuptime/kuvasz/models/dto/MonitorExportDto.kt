@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 
@@ -28,7 +28,7 @@ data class MonitorExportDto(
     val requestBody: String?,
 ) {
     companion object {
-        fun fromMonitorRecord(record: MonitorRecord): MonitorExportDto {
+        fun fromMonitorRecord(record: HttpMonitorRecord): MonitorExportDto {
             return MonitorExportDto(
                 name = record.name,
                 url = record.url,

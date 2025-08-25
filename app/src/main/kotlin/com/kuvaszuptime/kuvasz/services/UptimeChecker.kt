@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -40,10 +40,10 @@ class UptimeChecker(
     }
 
     suspend fun check(
-        monitor: MonitorRecord,
+        monitor: HttpMonitorRecord,
         uriOverride: URI? = null,
         visitedUrls: MutableList<URI> = mutableListOf(),
-        doAfter: ((monitor: MonitorRecord) -> Unit)? = null,
+        doAfter: ((monitor: HttpMonitorRecord) -> Unit)? = null,
     ) {
         if (uriOverride == null) {
             logger.debug("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
@@ -83,7 +83,7 @@ class UptimeChecker(
         multiplier = "$RETRY_BACKOFF_MULTIPLIER",
         includes = [HttpException::class],
     )
-    suspend fun sendHttpRequest(monitor: MonitorRecord, uri: URI): HttpCheckResponse {
+    suspend fun sendHttpRequest(monitor: HttpMonitorRecord, uri: URI): HttpCheckResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val request = checkRequestConfigurator.fromMonitor(monitor, uri)
         val start = System.currentTimeMillis()

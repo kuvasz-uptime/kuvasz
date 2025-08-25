@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.Indexes;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus;
-import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MonitorPath;
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HttpMonitorPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord;
 
 import java.time.OffsetDateTime;
@@ -195,16 +195,16 @@ public class SslEvent extends TableImpl<SslEventRecord> {
         return Arrays.asList(Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY);
     }
 
-    private transient MonitorPath _monitor;
+    private transient HttpMonitorPath _httpMonitor;
 
     /**
-     * Get the implicit join path to the <code>kuvasz.monitor</code> table.
+     * Get the implicit join path to the <code>kuvasz.http_monitor</code> table.
      */
-    public MonitorPath monitor() {
-        if (_monitor == null)
-            _monitor = new MonitorPath(this, Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY, null);
+    public HttpMonitorPath httpMonitor() {
+        if (_httpMonitor == null)
+            _httpMonitor = new HttpMonitorPath(this, Keys.SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY, null);
 
-        return _monitor;
+        return _httpMonitor;
     }
 
     @Override

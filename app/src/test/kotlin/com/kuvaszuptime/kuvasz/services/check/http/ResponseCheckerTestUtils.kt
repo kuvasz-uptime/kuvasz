@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.UptimeCheckException
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
@@ -42,7 +42,7 @@ fun mockMonitor(
     expectedStatusCodes: Set<Int> = emptySet(),
     followRedirects: Boolean = true,
     expectedHeaders: Map<String, String> = emptyMap(),
-): MonitorRecord = MonitorRecord().apply {
+): HttpMonitorRecord = HttpMonitorRecord().apply {
     this.id = 1L
     this.url = "http://example.com"
     this.expectedKeyword = expectedKeyword

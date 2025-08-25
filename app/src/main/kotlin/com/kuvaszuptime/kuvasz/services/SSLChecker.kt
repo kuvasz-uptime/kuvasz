@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -18,7 +18,7 @@ class SSLChecker(
     private val sslEventRepository: SSLEventRepository
 ) {
 
-    fun check(monitor: MonitorRecord) {
+    fun check(monitor: HttpMonitorRecord) {
         if (uptimeEventRepository.isMonitorUp(monitor.id, nullAsUp = true)) {
             val previousEvent = sslEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
             sslValidator.validate(URI(monitor.url).toURL()).fold(

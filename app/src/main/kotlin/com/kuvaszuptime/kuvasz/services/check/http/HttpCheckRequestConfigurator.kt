@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
@@ -15,14 +15,14 @@ class HttpCheckRequestConfigurator {
 
     /**
      * Creates a [io.micronaut.http.MutableHttpRequest] from the given
-     * [com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord] and [java.net.URI].
+     * [com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord] and [java.net.URI].
      *
      * @param monitor The monitor record containing request details.
      * @param uri The URI to which the request will be sent. Because of possible redirects,
      * this URI may differ from the one stored in the monitor.
      * @return A configured [io.micronaut.http.MutableHttpRequest].
      */
-    fun fromMonitor(monitor: MonitorRecord, uri: URI): MutableHttpRequest<*> =
+    fun fromMonitor(monitor: HttpMonitorRecord, uri: URI): MutableHttpRequest<*> =
         provisionRequestWithMethodAndBody(monitor.requestMethod, uri, monitor.requestBody)
             .initializeHeaders()
             .decorateWithHeaders(monitor)
@@ -58,7 +58,7 @@ class HttpCheckRequestConfigurator {
     /**
      * Applies additional headers based on the monitor's configuration.
      */
-    private fun MutableHttpRequest<*>.decorateWithHeaders(monitor: MonitorRecord): MutableHttpRequest<*> =
+    private fun MutableHttpRequest<*>.decorateWithHeaders(monitor: HttpMonitorRecord): MutableHttpRequest<*> =
         this.apply {
             if (monitor.forceNoCache) {
                 header(HttpHeaders.CACHE_CONTROL, "no-cache")

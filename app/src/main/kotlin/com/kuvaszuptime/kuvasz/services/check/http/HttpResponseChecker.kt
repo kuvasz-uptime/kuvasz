@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
@@ -16,7 +16,7 @@ abstract class HttpResponseChecker(
 
     abstract fun evaluate(ctx: HttpResponseCheckContext): HttpCheckResult
 
-    protected fun getPreviousEvent(monitorId: Long): UptimeEventRecord? =
+    protected fun getPreviousEvent(monitorId: Long): HttpUptimeEventRecord? =
         uptimeEventRepository.getPreviousEventByMonitorId(monitorId)
 
     protected fun dispatchDownEvent(ctx: HttpResponseCheckContext, error: Exception): HttpCheckResult.Finished {
@@ -33,7 +33,7 @@ abstract class HttpResponseChecker(
 }
 
 data class HttpResponseCheckContext(
-    val monitor: MonitorRecord,
+    val monitor: HttpMonitorRecord,
     val response: HttpCheckResponse,
     val visitedUrls: MutableList<URI>,
 )

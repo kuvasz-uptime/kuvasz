@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -149,7 +149,7 @@ class CheckSchedulerTest(
                 val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } coAnswers {
-                    lambda<(MonitorRecord) -> Unit>().captured.invoke(monitor)
+                    lambda<(HttpMonitorRecord) -> Unit>().captured.invoke(monitor)
                 }
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true

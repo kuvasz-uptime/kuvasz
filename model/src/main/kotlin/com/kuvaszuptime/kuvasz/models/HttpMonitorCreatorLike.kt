@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.models
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
@@ -65,8 +65,8 @@ interface HttpMonitorCreatorLike {
     val requestBody: String?
 }
 
-fun HttpMonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): MonitorRecord =
-    MonitorRecord()
+fun HttpMonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
+    HttpMonitorRecord()
         .setName(name)
         .setUrl(url)
         .setEnabled(enabled)

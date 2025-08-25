@@ -8,8 +8,8 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.pojos.Monitor
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
@@ -78,7 +78,7 @@ class MonitorCrudService(
                 )
             }
 
-    fun createMonitor(monitorCreateDto: MonitorCreateDto): MonitorRecord {
+    fun createMonitor(monitorCreateDto: MonitorCreateDto): HttpMonitorRecord {
         // Validate the raw integrations from the DTO
         val validatedIntegrations =
             integrationIdValidator.validateIntegrationIds(monitorCreateDto.integrations.orEmpty())
@@ -106,11 +106,11 @@ class MonitorCrudService(
                 eventDispatcher.dispatch(MonitorDeleteEvent(monitor.id))
             }
 
-    fun updateMonitor(monitorId: Long, updates: ObjectNode): MonitorRecord {
+    fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorRecord {
         val result = try {
             dslContext.transactionResult { config ->
                 monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
-                    val toUpdate = existingMonitor.into(Monitor::class.java)
+                    val toUpdate = existingMonitor.into(HttpMonitor::class.java)
                     val filteredUpdates = updates.fieldNames().asSequence()
                         .fold(objectMapper.createObjectNode()) { acc, fieldName ->
                             acc.set(fieldName, updates.get(fieldName))
@@ -128,7 +128,7 @@ class MonitorCrudService(
                     // Validate the raw integrations from the DTO
                     updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
 
-                    MonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, config.dsl())
+                    HttpMonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, config.dsl())
                 }
             }.orThrowNotFound(monitorId)
         } catch (ex: DataAccessException) {
@@ -140,10 +140,10 @@ class MonitorCrudService(
         return result.also { eventDispatcher.dispatch(MonitorUpdateEvent(it.id)) }
     }
 
-    private fun MonitorRecord.saveAndReschedule(
-        existingMonitor: MonitorRecord,
+    private fun HttpMonitorRecord.saveAndReschedule(
+        existingMonitor: HttpMonitorRecord,
         txCtx: DSLContext,
-    ): MonitorRecord =
+    ): HttpMonitorRecord =
         monitorRepository.returningUpdate(this, txCtx).fold(
             { persistenceError -> throw persistenceError },
             { updatedMonitor ->
@@ -205,8 +205,8 @@ class MonitorCrudService(
                 )
             }
 
-    private fun MonitorRecord?.orThrowNotFound(monitorId: Long): MonitorRecord =
+    private fun HttpMonitorRecord?.orThrowNotFound(monitorId: Long): HttpMonitorRecord =
         this ?: throw MonitorNotFoundException(monitorId)
 
-    fun getHttpMonitorsExport(): List<MonitorRecord> = monitorRepository.fetchAll()
+    fun getHttpMonitorsExport(): List<HttpMonitorRecord> = monitorRepository.fetchAll()
 }

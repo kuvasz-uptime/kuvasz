@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -53,7 +53,7 @@ class CheckScheduler(
     fun getScheduledUptimeChecks() = scheduledUptimeChecks.toMap()
     fun getScheduledSSLChecks() = scheduledSSLChecks.toMap()
 
-    private fun logCreated(monitor: MonitorRecord, checkType: CheckType, task: ScheduledFuture<*>) {
+    private fun logCreated(monitor: HttpMonitorRecord, checkType: CheckType, task: ScheduledFuture<*>) {
         val estimatedNextCheck = task.getNextCheck()
         logger.debug(
             "${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully. " +
@@ -61,14 +61,14 @@ class CheckScheduler(
         )
     }
 
-    private fun logError(monitor: MonitorRecord, checkType: CheckType, ex: Throwable) {
+    private fun logError(monitor: HttpMonitorRecord, checkType: CheckType, ex: Throwable) {
         logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${ex.message}")
     }
 
-    private fun scheduledUptimeCheckSuccessHandler(monitor: MonitorRecord, doAfter: () -> Unit = {}) =
+    private fun scheduledUptimeCheckSuccessHandler(monitor: HttpMonitorRecord, doAfter: () -> Unit = {}) =
         scheduledCheckSuccessHandler(CheckType.UPTIME, monitor, doAfter)
 
-    private fun scheduledSSLCheckSuccessHandler(monitor: MonitorRecord, doAfter: () -> Unit = {}) =
+    private fun scheduledSSLCheckSuccessHandler(monitor: HttpMonitorRecord, doAfter: () -> Unit = {}) =
         scheduledCheckSuccessHandler(CheckType.SSL, monitor, doAfter)
 
     /**
@@ -80,7 +80,7 @@ class CheckScheduler(
      */
     private fun scheduledCheckSuccessHandler(
         checkType: CheckType,
-        monitor: MonitorRecord,
+        monitor: HttpMonitorRecord,
         doAfter: () -> Unit,
     ): (ScheduledFuture<*>) -> SchedulingException? = { scheduledUptimeTask ->
         monitor.cancelCheck(checkType)
@@ -90,29 +90,29 @@ class CheckScheduler(
         null
     }
 
-    private fun MonitorRecord.registerCheck(checkType: CheckType, task: ScheduledFuture<*>) {
+    private fun HttpMonitorRecord.registerCheck(checkType: CheckType, task: ScheduledFuture<*>) {
         when (checkType) {
             CheckType.UPTIME -> scheduledUptimeChecks[this.id] = task
             CheckType.SSL -> scheduledSSLChecks[this.id] = task
         }
     }
 
-    private fun MonitorRecord.cancelCheck(checkType: CheckType) {
+    private fun HttpMonitorRecord.cancelCheck(checkType: CheckType) {
         when (checkType) {
             CheckType.UPTIME -> scheduledUptimeChecks[this.id].gracefulCancel()
             CheckType.SSL -> scheduledSSLChecks[this.id].gracefulCancel()
         }
     }
 
-    private fun scheduledUptimeCheckErrorHandler(monitor: MonitorRecord) =
+    private fun scheduledUptimeCheckErrorHandler(monitor: HttpMonitorRecord) =
         scheduledCheckErrorHandler(CheckType.UPTIME, monitor)
 
-    private fun scheduledSSLCheckErrorHandler(monitor: MonitorRecord) =
+    private fun scheduledSSLCheckErrorHandler(monitor: HttpMonitorRecord) =
         scheduledCheckErrorHandler(CheckType.SSL, monitor)
 
     private fun scheduledCheckErrorHandler(
         checkType: CheckType,
-        monitor: MonitorRecord,
+        monitor: HttpMonitorRecord,
     ): (Throwable) -> SchedulingException? = { error ->
         logError(monitor, checkType, error)
         SchedulingException(error.message)
@@ -121,7 +121,7 @@ class CheckScheduler(
     /**
      * (Re)Creates the checks (uptime + SSL) of a monitor. Relevant when a monitor is created or updated.
      */
-    fun createChecksForMonitor(monitor: MonitorRecord): SchedulingException? =
+    fun createChecksForMonitor(monitor: HttpMonitorRecord): SchedulingException? =
         scheduleUptimeCheck(monitor, resync = false).fold(
             onSuccess = scheduledUptimeCheckSuccessHandler(
                 monitor,
@@ -142,7 +142,7 @@ class CheckScheduler(
      * Removes the checks (uptime + SSL) of a monitor from the scheduler.
      * Relevant when a monitor is disabled or deleted.
      */
-    fun removeChecksOfMonitor(monitor: MonitorRecord) {
+    fun removeChecksOfMonitor(monitor: HttpMonitorRecord) {
         monitor.cancelCheck(CheckType.UPTIME)
         scheduledUptimeChecks.remove(monitor.id)
         monitor.cancelCheck(CheckType.SSL)
@@ -164,7 +164,7 @@ class CheckScheduler(
      * Takes care of the actual scheduling of the uptime check
      */
     private fun scheduleUptimeCheck(
-        monitor: MonitorRecord,
+        monitor: HttpMonitorRecord,
         resync: Boolean,
     ): Result<ScheduledFuture<*>> =
         runCatching {
@@ -205,7 +205,7 @@ class CheckScheduler(
     /**
      * Takes care of the actual scheduling of the SSL check
      */
-    private fun scheduleSSLCheck(monitor: MonitorRecord): Result<ScheduledFuture<*>> =
+    private fun scheduleSSLCheck(monitor: HttpMonitorRecord): Result<ScheduledFuture<*>> =
         runCatching {
             val initialDelay = Duration.ofSeconds(
                 (SSL_CHECK_INITIAL_DELAY_MIN_SECONDS..SSL_CHECK_INITIAL_DELAY_MAX_SECONDS).random()
@@ -220,7 +220,7 @@ class CheckScheduler(
      * Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
      * delay of the monitor's uptime check interval, to decrease the chance of overlapping checks
      */
-    private fun reScheduleUptimeCheckForMonitor(monitor: MonitorRecord): SchedulingException? =
+    private fun reScheduleUptimeCheckForMonitor(monitor: HttpMonitorRecord): SchedulingException? =
         scheduleUptimeCheck(monitor, resync = true).fold(
             onSuccess = scheduledUptimeCheckSuccessHandler(monitor),
             onFailure = scheduledUptimeCheckErrorHandler(monitor),

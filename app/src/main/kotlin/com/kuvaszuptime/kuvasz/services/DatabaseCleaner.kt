@@ -33,7 +33,7 @@ class DatabaseCleaner(
         val deletedSSLEvents = sslEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedLatencyLogs = latencyLogRepository.deleteLogsBeforeDate(latencyLimit)
 
-        logger.info("$deletedUptimeEvents UPTIME_EVENT record has been deleted")
+        logger.info("$deletedUptimeEvents HTTP_UPTIME_EVENT record has been deleted")
         logger.info("$deletedLatencyLogs LATENCY_LOG record has been deleted")
         logger.info("$deletedSSLEvents SSL_EVENT record has been deleted")
     }

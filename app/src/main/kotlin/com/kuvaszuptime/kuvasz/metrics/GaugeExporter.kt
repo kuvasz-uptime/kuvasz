@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.Gauge
@@ -21,7 +21,7 @@ abstract class GaugeExporter<SOURCE_VAL : Any>(
         existingValue.set(newValue)
     }
 
-    override fun register(monitor: MonitorRecord, initialValue: Long): MeterDefinition<AtomicLong> {
+    override fun register(monitor: HttpMonitorRecord, initialValue: Long): MeterDefinition<AtomicLong> {
         logger.debug("Registering gauge for monitor with ID: ${monitor.id}")
         val value = AtomicLong(initialValue)
         val gauge = Gauge.builder(prefixedMeterName(), value) { it.toDouble() }

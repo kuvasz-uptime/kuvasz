@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.WithCertInfo
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -42,10 +42,10 @@ class SSLCertificateExpiryExporter(
         upsertMeter(monitor.id, certInfo.validTo)
     }
 
-    override fun filterCondition(monitor: MonitorRecord): Boolean = monitor.enabled && monitor.sslCheckEnabled
+    override fun filterCondition(monitor: HttpMonitorRecord): Boolean = monitor.enabled && monitor.sslCheckEnabled
 
     override fun transform(valueSource: OffsetDateTime): Long = valueSource.toEpochSecond()
 
-    override fun computeInitialValue(monitor: MonitorRecord): OffsetDateTime? =
+    override fun computeInitialValue(monitor: HttpMonitorRecord): OffsetDateTime? =
         monitorRepository.getMonitorWithDetails(monitor.id)?.sslValidUntil
 }

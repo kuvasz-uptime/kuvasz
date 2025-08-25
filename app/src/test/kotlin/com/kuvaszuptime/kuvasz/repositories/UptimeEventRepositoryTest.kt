@@ -46,7 +46,7 @@ class UptimeEventRepositoryTest(
                 }
             }
 
-            `when`("there is no UPTIME_EVENT record") {
+            `when`("there is no HTTP_UPTIME_EVENT record") {
                 val monitor = createMonitor(monitorRepository)
 
                 then("it should return false") {

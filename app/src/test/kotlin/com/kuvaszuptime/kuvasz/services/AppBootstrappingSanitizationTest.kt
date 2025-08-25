@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
-import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -25,9 +25,9 @@ class AppBootstrappingSanitizationTest(
 
         // Manually adding non-existing integrations to the monitor
         dslContext
-            .update(MONITOR)
+            .update(HTTP_MONITOR)
             .set(
-                MONITOR.INTEGRATIONS,
+                HTTP_MONITOR.INTEGRATIONS,
                 arrayOf(
                     IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
                     IntegrationID(IntegrationType.EMAIL, "disabled"),

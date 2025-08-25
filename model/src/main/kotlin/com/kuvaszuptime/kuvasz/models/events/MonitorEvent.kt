@@ -3,9 +3,9 @@ package com.kuvaszuptime.kuvasz.models.events
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.ERROR_MAX_LENGTH
@@ -17,7 +17,7 @@ import java.net.URI
 import kotlin.time.Duration
 
 sealed class MonitorEvent {
-    abstract val monitor: MonitorRecord
+    abstract val monitor: HttpMonitorRecord
 
     abstract fun toStructuredMessage(): StructuredMessage
 
@@ -29,11 +29,11 @@ sealed class MonitorEvent {
 }
 
 sealed class UptimeMonitorEvent : MonitorEvent() {
-    abstract val previousEvent: UptimeEventRecord?
+    abstract val previousEvent: HttpUptimeEventRecord?
 
     abstract val uptimeStatus: UptimeStatus
 
-    fun statusNotEquals(previousEvent: UptimeEventRecord) = !statusEquals(previousEvent)
+    fun statusNotEquals(previousEvent: HttpUptimeEventRecord) = !statusEquals(previousEvent)
 
     fun getEndedEventDuration(): Duration? =
         previousEvent?.let { previousEvent ->
@@ -51,14 +51,14 @@ sealed class UptimeMonitorEvent : MonitorEvent() {
             }
         } ?: toRun(this)
 
-    private fun statusEquals(previousEvent: UptimeEventRecord) = uptimeStatus == previousEvent.status
+    private fun statusEquals(previousEvent: HttpUptimeEventRecord) = uptimeStatus == previousEvent.status
 }
 
 data class MonitorUpEvent(
-    override val monitor: MonitorRecord,
+    override val monitor: HttpMonitorRecord,
     val status: HttpStatus,
     val latency: Int,
-    override val previousEvent: UptimeEventRecord?
+    override val previousEvent: HttpUptimeEventRecord?
 ) : UptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.UP
@@ -72,10 +72,10 @@ data class MonitorUpEvent(
 }
 
 data class MonitorDownEvent(
-    override val monitor: MonitorRecord,
+    override val monitor: HttpMonitorRecord,
     val status: HttpStatus?,
     val error: Exception,
-    override val previousEvent: UptimeEventRecord?
+    override val previousEvent: HttpUptimeEventRecord?
 ) : UptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN
@@ -107,7 +107,7 @@ data class MonitorDownEvent(
 }
 
 data class RedirectEvent(
-    override val monitor: MonitorRecord,
+    override val monitor: HttpMonitorRecord,
     val redirectLocation: URI
 ) : MonitorEvent() {
 
@@ -145,12 +145,12 @@ sealed class SSLMonitorEvent : MonitorEvent() {
 }
 
 interface WithCertInfo {
-    val monitor: MonitorRecord
+    val monitor: HttpMonitorRecord
     val certInfo: CertificateInfo
 }
 
 data class SSLValidEvent(
-    override val monitor: MonitorRecord,
+    override val monitor: HttpMonitorRecord,
     override val certInfo: CertificateInfo,
     override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent(), WithCertInfo {
@@ -166,7 +166,7 @@ data class SSLValidEvent(
 }
 
 data class SSLInvalidEvent(
-    override val monitor: MonitorRecord,
+    override val monitor: HttpMonitorRecord,
     val error: SSLValidationError,
     override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent() {
@@ -183,7 +183,7 @@ data class SSLInvalidEvent(
 }
 
 data class SSLWillExpireEvent(
-    override val monitor: MonitorRecord,
+    override val monitor: HttpMonitorRecord,
     override val certInfo: CertificateInfo,
     override val previousEvent: SslEventRecord?
 ) : SSLMonitorEvent(), WithCertInfo {

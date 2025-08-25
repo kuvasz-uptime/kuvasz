@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.metrics
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -51,8 +51,8 @@ class UptimeStatusExporter(
             UptimeStatus.DOWN -> 0L
         }
 
-    override fun computeInitialValue(monitor: MonitorRecord): UptimeStatus? =
+    override fun computeInitialValue(monitor: HttpMonitorRecord): UptimeStatus? =
         monitorRepository.getMonitorWithDetails(monitor.id)?.uptimeStatus
 
-    override fun filterCondition(monitor: MonitorRecord): Boolean = monitor.enabled
+    override fun filterCondition(monitor: HttpMonitorRecord): Boolean = monitor.enabled
 }
