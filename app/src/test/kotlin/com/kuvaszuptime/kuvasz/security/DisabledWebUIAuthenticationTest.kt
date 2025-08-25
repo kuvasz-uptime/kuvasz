@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -20,7 +20,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 @Property(name = "micronaut.http.client.follow-redirects", value = "false")
 class DisabledWebUIAuthenticationTest(
     @Client("/") client: HttpClient,
-    monitorRepository: MonitorRepository,
+    monitorRepository: HttpMonitorRepository,
 ) : DatabaseStringSpec({
 
     "all the web UI endpoints should be publicly available" {
@@ -29,13 +29,13 @@ class DisabledWebUIAuthenticationTest(
         table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/${monitor.id}"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/${monitor.id}/details-heading"),
-            row("/fragments/monitors/${monitor.id}/details-uptime-events"),
-            row("/fragments/monitors/${monitor.id}/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/${monitor.id}"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/${monitor.id}"),
+            row("/http-monitors/fragments/details-uptime-events/${monitor.id}"),
+            row("/http-monitors/fragments/details-ssl-events/${monitor.id}"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         ).forAll { url ->
             val response = client.exchange(url).awaitFirst()

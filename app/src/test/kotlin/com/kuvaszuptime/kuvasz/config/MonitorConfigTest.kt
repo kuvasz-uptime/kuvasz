@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
@@ -142,20 +142,20 @@ class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : D
         `when`("not all the properties are explicitly set in the YAML") {
 
             then("it should fall back to the right default values") {
-                val monitorConfig = applicationContext.getBean<MonitorConfig>()
-                monitorConfig.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
-                monitorConfig.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
-                monitorConfig.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
-                monitorConfig.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
-                monitorConfig.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
-                monitorConfig.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
-                monitorConfig.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
+                val monitorConfig = applicationContext.getBean<HttpMonitorConfig>()
+                monitorConfig.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+                monitorConfig.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
+                monitorConfig.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
+                monitorConfig.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
+                monitorConfig.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
+                monitorConfig.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
+                monitorConfig.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
                 monitorConfig.integrations.shouldBeNull()
                 monitorConfig.expectedStatusCodes.shouldBeNull()
                 monitorConfig.responseTimeThresholdMillis.shouldBeNull()
                 monitorConfig.expectedKeyword.shouldBeNull()
-                monitorConfig.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
-                monitorConfig.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
+                monitorConfig.expectedKeywordCaseSensitive shouldBe HttpMonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
+                monitorConfig.expectedKeywordNegated shouldBe HttpMonitorDefaults.EXPECTED_KEYWORD_NEGATED
                 monitorConfig.requestHeaders.shouldNotBeNull().shouldBeEmpty()
                 monitorConfig.expectedHeaders.shouldNotBeNull().shouldBeEmpty()
                 monitorConfig.requestBody.shouldBeNull()

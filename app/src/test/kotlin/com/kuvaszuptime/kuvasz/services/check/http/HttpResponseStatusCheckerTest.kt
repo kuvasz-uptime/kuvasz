@@ -5,7 +5,7 @@ import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.ShouldSpec
@@ -23,7 +23,7 @@ import io.mockk.mockk
 
 class HttpResponseStatusCheckerTest : ShouldSpec({
 
-    val mockUptimeRepo = mockk<UptimeEventRepository>(relaxed = true)
+    val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
     val dispatcher = EventDispatcher()
     val checker = HttpResponseStatusChecker(dispatcher, mockUptimeRepo)
 

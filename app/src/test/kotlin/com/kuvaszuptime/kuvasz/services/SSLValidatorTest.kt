@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.services.check.ssl.SSLValidator
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.data.forAll

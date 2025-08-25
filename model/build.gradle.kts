@@ -94,12 +94,12 @@ jooq {
                                 userType = "com.kuvaszuptime.kuvasz.models.handlers.IntegrationID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter"
                                 isGenericConverter = false
-                                includeExpression = "MONITOR.INTEGRATIONS"
+                                includeExpression = "HTTP_MONITOR.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.fasterxml.jackson.databind.JsonNode"
                                 isJsonConverter = true
-                                includeExpression = "MONITOR.REQUEST_HEADERS|MONITOR.EXPECTED_HEADERS"
+                                includeExpression = "HTTP_MONITOR.REQUEST_HEADERS|HTTP_MONITOR.EXPECTED_HEADERS"
                             }
                         }
                     }

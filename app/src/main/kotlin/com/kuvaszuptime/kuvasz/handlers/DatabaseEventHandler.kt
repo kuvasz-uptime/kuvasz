@@ -1,10 +1,10 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micronaut.context.annotation.Context
 import org.jooq.DSLContext
@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory
 @Context
 class DatabaseEventHandler(
     private val eventDispatcher: EventDispatcher,
-    private val uptimeEventRepository: UptimeEventRepository,
-    private val latencyLogRepository: LatencyLogRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
     private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
 ) {
@@ -27,16 +27,16 @@ class DatabaseEventHandler(
     }
 
     private fun subscribeToEvents() {
-        eventDispatcher.subscribeToMonitorUpEvents { event ->
+        eventDispatcher.subscribeToHttpMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
             if (event.monitor.latencyHistoryEnabled) {
                 latencyLogRepository.insertLatencyForMonitor(event.monitor.id, event.latency)
             }
-            handleUptimeMonitorEvent(event)
+            handleHttpUptimeMonitorEvent(event)
         }
-        eventDispatcher.subscribeToMonitorDownEvents { event ->
+        eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
             logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
-            handleUptimeMonitorEvent(event)
+            handleHttpUptimeMonitorEvent(event)
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->
             logger.debug("An SSLValidEvent has been received for monitor with ID: ${event.monitor.id}")
@@ -52,7 +52,7 @@ class DatabaseEventHandler(
         }
     }
 
-    private fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {
+    private fun handleHttpUptimeMonitorEvent(currentEvent: HttpUptimeMonitorEvent) {
         currentEvent.previousEvent?.let { previousEvent ->
             logger.debug(
                 "A previous event was found for [${currentEvent.monitor.name}] with ID: ${previousEvent.id} " +

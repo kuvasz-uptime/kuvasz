@@ -11,7 +11,7 @@ import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Introspected
-data class SettingsDto(
+data class LegacySettingsDto(
     @param:Schema(description = "Authentication settings", required = true)
     val authentication: AuthenticationSettingsDto,
     @param:Schema(description = "Application settings", required = true)
@@ -213,6 +213,111 @@ data class SettingsDto(
             val latestLatency: Boolean,
             @param:Schema(description = "Whether monitor status exporter is enabled", required = true)
             val uptimeStatus: Boolean,
+            @param:Schema(description = "Whether SSL status exporter is enabled", required = true)
+            val sslStatus: Boolean,
+        )
+
+        @Introspected
+        data class ExporterSettingsDto(
+            @param:Schema(description = "Prometheus exporter settings", required = true)
+            val prometheus: PrometheusSettingsDto,
+            @param:Schema(description = "OpenTelemetry exporter settings", required = true)
+            val openTelemetry: OTLPSettingsDto,
+        ) {
+            @Introspected
+            data class PrometheusSettingsDto(
+                @param:Schema(description = "Whether the exporter is enabled", required = true)
+                val enabled: Boolean,
+                @param:Schema(description = "Whether descriptions are included in the export", required = true)
+                val descriptions: Boolean,
+            )
+
+            @Introspected
+            data class OTLPSettingsDto(
+                @param:Schema(description = "Whether the exporter is enabled", required = true)
+                val enabled: Boolean,
+                @param:Schema(description = "The endpoint where the metrics will be published", required = true)
+                val url: String,
+                @param:Schema(
+                    description = "The step for the metrics reporting as an ISO 8601 duration string",
+                    required = true
+                )
+                val step: String,
+            )
+        }
+    }
+}
+
+@Introspected
+data class SettingsDto(
+    @param:Schema(description = "Authentication settings", required = true)
+    val authentication: AuthenticationSettingsDto,
+    @param:Schema(description = "Application settings", required = true)
+    val app: AppSettingsDto,
+    @param:Schema(description = "Metrics exporter settings", required = true)
+    val metricsExport: MetricsExportSettingsDto,
+    @param:Schema(description = "SMTP configuration for email notifications", required = false, nullable = true)
+    val smtp: SmtpConfigDto?,
+) {
+    @Introspected
+    data class AuthenticationSettingsDto(
+        @param:Schema(description = "Whether authentication is enabled", required = true)
+        val enabled: Boolean,
+        @param:Schema(description = "The maximum age of the access token in seconds", required = true)
+        val accessTokenMaxAge: Long,
+    )
+
+    @Introspected
+    data class AppSettingsDto(
+        @param:Schema(description = "The version of the application", required = true)
+        val version: String,
+        @param:Schema(description = "Number of days to retain event data", required = true)
+        val eventDataRetentionDays: Int,
+        @param:Schema(description = "Number of days to retain latency data", required = true)
+        val latencyDataRetentionDays: Int,
+        @param:Schema(description = "The language of the application", required = true)
+        val language: String,
+        @param:Schema(description = "Whether event logging is enabled", required = true)
+        val eventLoggingEnabled: Boolean,
+        @param:Schema(
+            description = "Whether the application is in read-only mode (i.e. monitors are configured via YAML",
+            required = true,
+        )
+        val editabilityState: EditabilityStateDto,
+    ) {
+        data class EditabilityStateDto(
+            @param:Schema(description = "Whether the HTTP monitors are in read-only mode", required = true)
+            val areHttpMonitorsReadOnly: Boolean,
+        )
+    }
+
+    @Introspected
+    data class SmtpConfigDto(
+        @param:Schema(description = "The SMTP host", required = true)
+        val host: String,
+        @param:Schema(description = "The SMTP port", required = true)
+        val port: Int,
+        @param:Schema(description = "The SMTP transport strategy", required = true)
+        val transportStrategy: String,
+    )
+
+    @Introspected
+    data class MetricsExportSettingsDto(
+        @param:Schema(description = "Whether the metrics exporting is generally enabled", required = true)
+        val exportEnabled: Boolean,
+        @param:Schema(description = "Settings for individual meters", required = true)
+        val meters: MeterSettingsDto,
+        @param:Schema(description = "Settings for individual exporters", required = true)
+        val exporters: ExporterSettingsDto,
+    ) {
+        @Introspected
+        data class MeterSettingsDto(
+            @param:Schema(description = "Whether SSL certificate expiry exporter is enabled", required = true)
+            val sslExpiry: Boolean,
+            @param:Schema(description = "Whether HTTP latest latency exporter is enabled", required = true)
+            val httpLatestLatency: Boolean,
+            @param:Schema(description = "Whether HTTP monitor status exporter is enabled", required = true)
+            val httpUptimeStatus: Boolean,
             @param:Schema(description = "Whether SSL status exporter is enabled", required = true)
             val sslStatus: Boolean,
         )

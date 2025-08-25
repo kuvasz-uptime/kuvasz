@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.dashboard
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
@@ -17,9 +17,9 @@ import java.math.RoundingMode
 private const val METRICS_PERIOD_DEFAULT_DAYS = 7L
 
 fun renderMonitoringStats(
-    monitoringStats: MonitoringStatsDto,
-    downMonitors: List<MonitorDetailsDto>,
-    problematicSslMonitors: List<MonitorDetailsDto>,
+    monitoringStats: HttpMonitoringStatsDto,
+    downMonitors: List<HttpMonitorDetailsDto>,
+    problematicSslMonitors: List<HttpMonitorDetailsDto>,
 ): String = createHTML(prettyPrint = false, xhtmlCompatible = false)
     .div {
         val lastIncidentText = monitoringStats.actual.uptimeStats.lastIncident?.let { last ->
@@ -218,7 +218,7 @@ private fun FlowContent.statCard(
     }
 }
 
-private fun FlowContent.downMonitorList(monitors: List<MonitorDetailsDto>) =
+private fun FlowContent.downMonitorList(monitors: List<HttpMonitorDetailsDto>) =
     table {
         classes(CSSClass.TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
         thead {
@@ -242,7 +242,7 @@ private fun FlowContent.downMonitorList(monitors: List<MonitorDetailsDto>) =
             monitors.forEach { monitor ->
                 tr {
                     td {
-                        a(href = "/monitors/${monitor.id}") {
+                        a(href = "/http-monitors/${monitor.id}") {
                             classes(TEXT_RESET)
                             span {
                                 classes(TEXT_WRAP, TEXT_BREAK)
@@ -278,7 +278,7 @@ private fun FlowContent.downMonitorList(monitors: List<MonitorDetailsDto>) =
         }
     }
 
-private fun FlowContent.problematicSSLMonitorList(monitors: List<MonitorDetailsDto>) =
+private fun FlowContent.problematicSSLMonitorList(monitors: List<HttpMonitorDetailsDto>) =
     table {
         classes(CSSClass.TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
         thead {
@@ -302,7 +302,7 @@ private fun FlowContent.problematicSSLMonitorList(monitors: List<MonitorDetailsD
             monitors.forEach { monitor ->
                 tr {
                     td {
-                        a(href = "/monitors/${monitor.id}") {
+                        a(href = "/http-monitors/${monitor.id}") {
                             classes(TEXT_RESET)
                             span {
                                 classes(TEXT_WRAP, TEXT_BREAK)

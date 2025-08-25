@@ -1,15 +1,15 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.jooq.tables.LatencyLog.LATENCY_LOG
-import com.kuvaszuptime.kuvasz.jooq.tables.records.LatencyLogRecord
+import com.kuvaszuptime.kuvasz.jooq.Tables.HTTP_LATENCY_LOG
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -21,16 +21,16 @@ import java.time.OffsetDateTime
 @Property(name = "app-config.event-data-retention-days", value = "7")
 @Property(name = "app-config.latency-data-retention-days", value = "5")
 class DatabaseCleanerTest(
-    private val uptimeEventRepository: UptimeEventRepository,
-    private val latencyLogRepository: LatencyLogRepository,
-    private val monitorRepository: MonitorRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
+    private val monitorRepository: HttpMonitorRepository,
     private val sslEventRepository: SSLEventRepository,
     private val databaseCleaner: DatabaseCleaner,
 ) : DatabaseBehaviorSpec() {
     init {
 
         given("a DatabaseCleaner service") {
-            `when`("there is an UPTIME_EVENT record with an end date greater than retention limit") {
+            `when`("there is an HTTP_UPTIME_EVENT record with an end date greater than retention limit") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
                     dslContext,
@@ -46,7 +46,7 @@ class DatabaseCleanerTest(
                 }
             }
 
-            `when`("there is an UPTIME_EVENT record without an end date") {
+            `when`("there is an HTTP_UPTIME_EVENT record without an end date") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
                     dslContext,
@@ -62,7 +62,7 @@ class DatabaseCleanerTest(
                 }
             }
 
-            `when`("there is an UPTIME_EVENT record with an end date less than retention limit") {
+            `when`("there is an HTTP_UPTIME_EVENT record with an end date less than retention limit") {
                 val monitor = createMonitor(monitorRepository)
                 createUptimeEventRecord(
                     dslContext,
@@ -149,9 +149,9 @@ class DatabaseCleanerTest(
     }
 
     private fun insertLatencyLogRecord(monitorId: Long, createdAt: OffsetDateTime) = dslContext
-        .insertInto(LATENCY_LOG)
+        .insertInto(HTTP_LATENCY_LOG)
         .set(
-            LatencyLogRecord()
+            HttpLatencyLogRecord()
                 .setMonitorId(monitorId)
                 .setLatency(1000)
                 .setCreatedAt(createdAt)

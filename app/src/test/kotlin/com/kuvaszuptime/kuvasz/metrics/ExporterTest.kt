@@ -2,14 +2,14 @@ package com.kuvaszuptime.kuvasz.metrics
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.MonitorCrudService
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.test.TestCase
@@ -27,22 +27,22 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
 
     var appContext: ApplicationContext? = null
 
-    fun getMonitorRepository() = appContext?.getBean<MonitorRepository>().shouldNotBeNull()
-    fun latencyLogRepository() = appContext?.getBean<LatencyLogRepository>().shouldNotBeNull()
+    fun getMonitorRepository() = appContext?.getBean<HttpMonitorRepository>().shouldNotBeNull()
+    fun latencyLogRepository() = appContext?.getBean<HttpLatencyLogRepository>().shouldNotBeNull()
     fun meterRegistry() = appContext?.getBean<MeterRegistry>().shouldNotBeNull()
     fun eventDispatcher() = appContext?.getBean<EventDispatcher>().shouldNotBeNull()
-    fun monitorCrudService() = appContext?.getBean<MonitorCrudService>().shouldNotBeNull()
+    fun monitorCrudService() = appContext?.getBean<HttpMonitorCrudService>().shouldNotBeNull()
     fun sslEventRepository() = appContext?.getBean<SSLEventRepository>().shouldNotBeNull()
-    fun uptimeEventRepository() = appContext?.getBean<UptimeEventRepository>().shouldNotBeNull()
+    fun uptimeEventRepository() = appContext?.getBean<HttpUptimeEventRepository>().shouldNotBeNull()
 
     val monitorEnableUpdate: ObjectNode =
-        JsonNodeFactory.instance.objectNode().put(MonitorUpdateDto::enabled.name, true)
+        JsonNodeFactory.instance.objectNode().put(HttpMonitorUpdateDto::enabled.name, true)
     val monitorDisableUpdate: ObjectNode =
-        JsonNodeFactory.instance.objectNode().put(MonitorUpdateDto::enabled.name, false)
+        JsonNodeFactory.instance.objectNode().put(HttpMonitorUpdateDto::enabled.name, false)
     val monitorNameUpdate: ObjectNode =
-        JsonNodeFactory.instance.objectNode().put(MonitorUpdateDto::name.name, "new-name")
+        JsonNodeFactory.instance.objectNode().put(HttpMonitorUpdateDto::name.name, "new-name")
     val monitorSSLEnableUpdate: ObjectNode =
-        JsonNodeFactory.instance.objectNode().put(MonitorUpdateDto::sslCheckEnabled.name, true)
+        JsonNodeFactory.instance.objectNode().put(HttpMonitorUpdateDto::sslCheckEnabled.name, true)
 
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         // Doing a final manual cleanup after each tests to make sure that we don't leave any data behind that would
@@ -68,7 +68,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
         this.id.tags.shouldContain(Tag.of("name", expectedName))
     }
 
-    infix fun Meter.shouldHaveUrlTag(expectedUrl: String) {
-        this.id.tags.shouldContain(Tag.of("url", expectedUrl))
+    infix fun Meter.shouldHaveTargetTag(expectedUrl: String) {
+        this.id.tags.shouldContain(Tag.of("target", expectedUrl))
     }
 }

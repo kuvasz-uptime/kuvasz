@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
+import com.kuvaszuptime.kuvasz.models.dto.LegacySettingsDto
 import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
@@ -34,6 +35,49 @@ class SettingsRepository(
     @field:Property(name = "micronaut.metrics.enabled")
     protected var metricsExportEnabled: Boolean = false
 
+    @Suppress("MaxLineLength")
+    @Deprecated("Use getSettings() which returns the new SettingsDto")
+    fun getLegacySettings(): LegacySettingsDto =
+        LegacySettingsDto(
+            authentication = LegacySettingsDto.AuthenticationSettingsDto(
+                enabled = appGlobals.isAuthEnabled,
+                accessTokenMaxAge = accessTokenMaxAge
+            ),
+            app = LegacySettingsDto.AppSettingsDto(
+                version = appGlobals.appVersion,
+                eventDataRetentionDays = appConfig.eventDataRetentionDays,
+                latencyDataRetentionDays = appConfig.latencyDataRetentionDays,
+                language = appConfig.language,
+                eventLoggingEnabled = appConfig.logEventHandler,
+                readOnlyMode = appConfig.isHttpMonitorExternalWriteDisabled(),
+            ),
+            integrations = LegacySettingsDto.IntegrationSettingsDto(
+                smtp = smtpMailerConfig?.let { smtpConfig ->
+                    LegacySettingsDto.SmtpConfigDto(
+                        host = smtpConfig.host.orEmpty(),
+                        port = smtpConfig.port ?: 0,
+                        transportStrategy = smtpConfig.transportStrategy.toString()
+                    )
+                },
+                slack = getIntegrationConfigs<SlackNotificationConfig, LegacySettingsDto.SlackNotificationConfigDto> { id, config ->
+                    LegacySettingsDto.SlackNotificationConfigDto(id, config)
+                },
+                discord = getIntegrationConfigs<DiscordNotificationConfig, LegacySettingsDto.DiscordNotificationConfigDto> { id, config ->
+                    LegacySettingsDto.DiscordNotificationConfigDto(id, config)
+                },
+                telegram = getIntegrationConfigs<TelegramNotificationConfig, LegacySettingsDto.TelegramNotificationConfigDto> { id, config ->
+                    LegacySettingsDto.TelegramNotificationConfigDto(id, config)
+                },
+                email = getIntegrationConfigs<EmailNotificationConfig, LegacySettingsDto.EmailNotificationConfigDto> { id, config ->
+                    LegacySettingsDto.EmailNotificationConfigDto(id, config)
+                },
+                pagerduty = getIntegrationConfigs<PagerdutyConfig, LegacySettingsDto.PagerdutyConfigDto> { id, config ->
+                    LegacySettingsDto.PagerdutyConfigDto(id, config)
+                }
+            ),
+            metricsExport = legacyMetricsExportSettingsDto()
+        )
+
     fun getSettings(): SettingsDto =
         SettingsDto(
             authentication = SettingsDto.AuthenticationSettingsDto(
@@ -46,46 +90,47 @@ class SettingsRepository(
                 latencyDataRetentionDays = appConfig.latencyDataRetentionDays,
                 language = appConfig.language,
                 eventLoggingEnabled = appConfig.logEventHandler,
-                readOnlyMode = appConfig.isExternalWriteDisabled(),
+                editabilityState = SettingsDto.AppSettingsDto.EditabilityStateDto(
+                    areHttpMonitorsReadOnly = appConfig.isHttpMonitorExternalWriteDisabled()
+                )
             ),
-            integrations = SettingsDto.IntegrationSettingsDto(
-                smtp = smtpMailerConfig?.let { smtpConfig ->
-                    SettingsDto.SmtpConfigDto(
-                        host = smtpConfig.host.orEmpty(),
-                        port = smtpConfig.port ?: 0,
-                        transportStrategy = smtpConfig.transportStrategy.toString()
-                    )
-                },
-                slack = getIntegrationConfigs<SlackNotificationConfig, SettingsDto.SlackNotificationConfigDto>
-                { id, config ->
-                    SettingsDto.SlackNotificationConfigDto(id, config)
-                },
-                discord = getIntegrationConfigs<DiscordNotificationConfig, SettingsDto.DiscordNotificationConfigDto>
-                { id, config ->
-                    SettingsDto.DiscordNotificationConfigDto(id, config)
-                },
-                telegram = getIntegrationConfigs<TelegramNotificationConfig, SettingsDto.TelegramNotificationConfigDto>
-                { id, config ->
-                    SettingsDto.TelegramNotificationConfigDto(id, config)
-                },
-                email = getIntegrationConfigs<EmailNotificationConfig, SettingsDto.EmailNotificationConfigDto>
-                { id, config ->
-                    SettingsDto.EmailNotificationConfigDto(id, config)
-                },
-                pagerduty = getIntegrationConfigs<PagerdutyConfig, SettingsDto.PagerdutyConfigDto>
-                { id, config ->
-                    SettingsDto.PagerdutyConfigDto(id, config)
-                }
-            ),
+            smtp = smtpMailerConfig?.let { smtpConfig ->
+                SettingsDto.SmtpConfigDto(
+                    host = smtpConfig.host.orEmpty(),
+                    port = smtpConfig.port ?: 0,
+                    transportStrategy = smtpConfig.transportStrategy.toString()
+                )
+            },
             metricsExport = metricsExportSettingsDto()
         )
+
+    private fun legacyMetricsExportSettingsDto() = LegacySettingsDto.MetricsExportSettingsDto(
+        exportEnabled = metricsExportEnabled,
+        meters = LegacySettingsDto.MetricsExportSettingsDto.MeterSettingsDto(
+            sslExpiry = exportConfig.sslExpiry,
+            latestLatency = exportConfig.httpLatestLatency,
+            uptimeStatus = exportConfig.httpUptimeStatus,
+            sslStatus = exportConfig.sslStatus,
+        ),
+        exporters = LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
+            prometheus = LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(
+                enabled = prometheusSettings.exportEnabled,
+                descriptions = prometheusSettings.descriptionsEnabled,
+            ),
+            openTelemetry = LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto(
+                enabled = otlpSettings.exportEnabled,
+                url = otlpSettings.url,
+                step = otlpSettings.step,
+            )
+        )
+    )
 
     private fun metricsExportSettingsDto() = SettingsDto.MetricsExportSettingsDto(
         exportEnabled = metricsExportEnabled,
         meters = SettingsDto.MetricsExportSettingsDto.MeterSettingsDto(
             sslExpiry = exportConfig.sslExpiry,
-            latestLatency = exportConfig.latestLatency,
-            uptimeStatus = exportConfig.uptimeStatus,
+            httpLatestLatency = exportConfig.httpLatestLatency,
+            httpUptimeStatus = exportConfig.httpUptimeStatus,
             sslStatus = exportConfig.sslStatus,
         ),
         exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
@@ -103,7 +148,7 @@ class SettingsRepository(
 
     private inline fun <reified C : IntegrationConfig, T> getIntegrationConfigs(
         transform: (IntegrationID, C) -> T
-    ): List<T> where T : SettingsDto.IntegrationConfigDto =
+    ): List<T> where T : LegacySettingsDto.IntegrationConfigDto =
         integrationRepository.configuredIntegrations.mapNotNull { (id, config) ->
             if (config is C) {
                 transform(id, config)

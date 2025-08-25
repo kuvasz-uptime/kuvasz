@@ -2,15 +2,17 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -41,8 +43,8 @@ class AppBootstrappingYamlConfigTest : StringSpec({
 
     var appContext: ApplicationContext? = null
 
-    val monitorsAfterTheFirstStep = mutableListOf<MonitorRecord>()
-    val monitorsAfterTheSecondStep = mutableListOf<MonitorRecord>()
+    val monitorsAfterTheFirstStep = mutableListOf<HttpMonitorRecord>()
+    val monitorsAfterTheSecondStep = mutableListOf<HttpMonitorRecord>()
 
     afterTest {
         // Stopping the app context after each test, so we can practically simulate the app restart
@@ -58,10 +60,10 @@ class AppBootstrappingYamlConfigTest : StringSpec({
         ephemeralAppContext.stop()
     }
 
-    fun getCheckScheduler() = appContext?.getBean<CheckScheduler>().shouldNotBeNull()
-    fun getMonitorRepository() = appContext?.getBean<MonitorRepository>().shouldNotBeNull()
+    fun getCheckScheduler() = appContext?.getBean<HttpCheckScheduler>().shouldNotBeNull()
+    fun getMonitorRepository() = appContext?.getBean<HttpMonitorRepository>().shouldNotBeNull()
     fun getAppConfig() = appContext?.getBean<AppConfig>().shouldNotBeNull()
-    fun getMonitorCrudService() = appContext?.getBean<MonitorCrudService>().shouldNotBeNull()
+    fun getMonitorCrudService() = appContext?.getBean<HttpMonitorCrudService>().shouldNotBeNull()
 
     /**
      * The whole test logic for the first step is reused, because we test that we get the same outcome in a later step,
@@ -81,7 +83,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
         val scheduledSSLChecks = checkScheduler.getScheduledSSLChecks()
         scheduledSSLChecks shouldHaveSize 1
         // The app config should be set to disable external writes against the monitors
-        getAppConfig().isExternalWriteDisabled() shouldBe true
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe true
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
@@ -103,12 +105,12 @@ class AppBootstrappingYamlConfigTest : StringSpec({
             secondMonitor.name shouldBe "test2"
             secondMonitor.url shouldBe "http://example.org"
             secondMonitor.uptimeCheckInterval shouldBe 60
-            secondMonitor.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
-            secondMonitor.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
-            secondMonitor.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
-            secondMonitor.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
-            secondMonitor.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
-            secondMonitor.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
+            secondMonitor.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+            secondMonitor.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
+            secondMonitor.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
+            secondMonitor.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
+            secondMonitor.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
+            secondMonitor.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
             secondMonitor.sslExpiryThreshold shouldBe 10
             secondMonitor.integrations shouldBe arrayOf(
                 IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")
@@ -127,7 +129,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
             thirdMonitor.latencyHistoryEnabled shouldBe true
             thirdMonitor.forceNoCache shouldBe false
             thirdMonitor.followRedirects shouldBe true
-            thirdMonitor.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
+            thirdMonitor.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
 
             scheduledUptimeChecks[thirdMonitor.id].shouldNotBeNull()
             scheduledSSLChecks[thirdMonitor.id].shouldNotBeNull()
@@ -168,7 +170,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
         val scheduledSSLChecks = checkScheduler.getScheduledSSLChecks()
         scheduledSSLChecks shouldHaveSize 1
         // The app config should be set to disable external writes against the monitors
-        getAppConfig().isExternalWriteDisabled() shouldBe true
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe true
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
@@ -207,12 +209,12 @@ class AppBootstrappingYamlConfigTest : StringSpec({
             secondMonitor.name shouldBe "test2"
             secondMonitor.url shouldBe "http://example.org"
             secondMonitor.uptimeCheckInterval shouldBe 60
-            secondMonitor.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
-            secondMonitor.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
-            secondMonitor.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
-            secondMonitor.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
-            secondMonitor.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
-            secondMonitor.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
+            secondMonitor.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+            secondMonitor.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
+            secondMonitor.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
+            secondMonitor.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
+            secondMonitor.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
+            secondMonitor.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
             secondMonitor.updatedAt shouldBeAfter secondMonitor.createdAt
 
             scheduledUptimeChecks[secondMonitor.id].shouldNotBeNull()
@@ -253,7 +255,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
         val monitorRepository = getMonitorRepository()
 
         // The app config should be set to enable external writes against the monitors
-        getAppConfig().isExternalWriteDisabled() shouldBe false
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe false
         // All the previously set up monitors should be still in there
         monitorRepository.fetchAll().shouldHaveSize(3).shouldContainExactlyInAnyOrder(monitorsAfterTheSecondStep)
         // The same scheduled checks should be present
@@ -264,7 +266,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
 
         // Creating a monitor by hand during runtime that should be persisted & scheduled
         getMonitorCrudService().createMonitor(
-            MonitorCreateDto(
+            HttpMonitorCreateDto(
                 name = "manual_monitor",
                 url = "http://example.dev",
                 uptimeCheckInterval = 300000,

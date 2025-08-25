@@ -10,8 +10,8 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(startApplication = false)
 class UptimeEventRepositoryTest(
-    private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -46,7 +46,7 @@ class UptimeEventRepositoryTest(
                 }
             }
 
-            `when`("there is no UPTIME_EVENT record") {
+            `when`("there is no HTTP_UPTIME_EVENT record") {
                 val monitor = createMonitor(monitorRepository)
 
                 then("it should return false") {

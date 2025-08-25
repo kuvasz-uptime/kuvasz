@@ -1,4 +1,4 @@
 micronaut.metrics.enabled: true
 ---
 metrics-exports:
-  uptime-status: true
+  http-uptime-status: true

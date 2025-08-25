@@ -1,13 +1,13 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.IneligibleStatusCodeException
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.checks.RawHttpResponse
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.isSuccess
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -21,7 +21,7 @@ import java.net.URI
 @Singleton
 class HttpResponseStatusChecker(
     private val eventDispatcher: EventDispatcher,
-    uptimeEventRepository: UptimeEventRepository,
+    uptimeEventRepository: HttpUptimeEventRepository,
 ) : HttpResponseChecker(eventDispatcher, uptimeEventRepository) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -76,7 +76,7 @@ class HttpResponseStatusChecker(
 
         return if (redirectionUri != null) {
             eventDispatcher.dispatch(
-                RedirectEvent(
+                HttpRedirectEvent(
                     monitor = ctx.monitor,
                     redirectLocation = redirectionUri
                 )
@@ -111,7 +111,7 @@ class HttpResponseStatusChecker(
      * 2. If the monitor is configured to follow redirects, it considers 2xx and 3xx status codes as acceptable.
      * 3. If the monitor is not configured to follow redirects, it considers only 2xx status codes as acceptable.
      */
-    private fun RawHttpResponse.statusIsAcceptableForMonitor(monitor: MonitorRecord): Boolean =
+    private fun RawHttpResponse.statusIsAcceptableForMonitor(monitor: HttpMonitorRecord): Boolean =
         monitor.expectedStatusCodes.orEmpty().let { acceptedStatusCodes ->
             if (acceptedStatusCodes.isNotEmpty()) {
                 // Check if the response status code is in the list of expected status codes

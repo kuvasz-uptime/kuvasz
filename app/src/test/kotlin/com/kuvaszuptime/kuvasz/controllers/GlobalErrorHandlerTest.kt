@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
-import com.kuvaszuptime.kuvasz.services.MonitorCrudService
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -29,17 +29,17 @@ import kotlinx.coroutines.reactive.awaitFirst
 @MicronautTest
 class GlobalErrorHandlerTest(
     @Client("/") client: HttpClient,
-    monitorCrudService: MonitorCrudService
+    monitorCrudService: HttpMonitorCrudService
 ) : BehaviorSpec({
 
     given("an endpoint that accepts a payload") {
 
         `when`("it is called with an invalid JSON") {
 
-            val request = HttpRequest.POST("/api/v1/monitors", "not-a-json")
+            val request = HttpRequest.POST("/api/v2/http-monitors", "not-a-json")
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(HttpMonitorDto::class.java), Argument.of(ServiceError::class.java))
                     .awaitFirst()
             }
 
@@ -54,10 +54,10 @@ class GlobalErrorHandlerTest(
         `when`("it is called with a JSON that contains a non-convertible property") {
 
             val request =
-                HttpRequest.POST("/api/v1/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
+                HttpRequest.POST("/api/v2/http-monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(HttpMonitorDto::class.java), Argument.of(ServiceError::class.java))
                     .awaitFirst()
             }
 
@@ -72,18 +72,18 @@ class GlobalErrorHandlerTest(
         `when`("it is called with a valid body but the underlying logic throws a PersistenceError") {
 
             val crudServiceMock = getMock(monitorCrudService)
-            val monitorDto = MonitorCreateDto(
+            val monitorDto = HttpMonitorCreateDto(
                 name = "test",
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
+            val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws PersistenceException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(HttpMonitorDto::class.java), Argument.of(ServiceError::class.java))
                     .awaitFirst()
             }
 
@@ -98,18 +98,18 @@ class GlobalErrorHandlerTest(
         `when`("it is called with a valid body but the underlying logic throws a SchedulingError") {
 
             val crudServiceMock = getMock(monitorCrudService)
-            val monitorDto = MonitorCreateDto(
+            val monitorDto = HttpMonitorCreateDto(
                 name = "test",
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
+            val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws SchedulingException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(HttpMonitorDto::class.java), Argument.of(ServiceError::class.java))
                     .awaitFirst()
             }
             then("should return a 500 with the correct error message") {
@@ -122,18 +122,18 @@ class GlobalErrorHandlerTest(
         `when`("it is called with a valid body but the underlying logic throws a DuplicationError") {
 
             val crudServiceMock = getMock(monitorCrudService)
-            val monitorDto = MonitorCreateDto(
+            val monitorDto = HttpMonitorCreateDto(
                 name = "test",
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
+            val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws DuplicationException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
-                    .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
+                    .exchange(request, Argument.of(HttpMonitorDto::class.java), Argument.of(ServiceError::class.java))
                     .awaitFirst()
             }
 
@@ -146,8 +146,8 @@ class GlobalErrorHandlerTest(
         }
     }
 }) {
-    @MockBean(MonitorCrudService::class)
-    fun monitorCrudService(): MonitorCrudService {
+    @MockBean(HttpMonitorCrudService::class)
+    fun monitorCrudService(): HttpMonitorCrudService {
         return mockk()
     }
 }

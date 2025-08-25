@@ -3,16 +3,16 @@ package com.kuvaszuptime.kuvasz.ui.fragments
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
-import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTooltip: Boolean) {
+internal fun FlowContent.uptimeBadgeOfMonitor(monitor: HttpMonitorDetailsDto, withTooltip: Boolean) {
     return when {
         monitor.enabled && monitor.uptimeStatus != null -> {
             span {
@@ -45,7 +45,7 @@ internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTo
 }
 
 internal fun FlowContent.uptimeStatusOfMonitor(
-    monitor: MonitorDetailsDto,
+    monitor: HttpMonitorDetailsDto,
     withTooltip: Boolean
 ) {
     return when {
@@ -79,7 +79,7 @@ internal fun FlowContent.uptimeStatusOfMonitor(
     }
 }
 
-internal fun FlowContent.uptimeStatusOfEvent(event: UptimeEventDto) =
+internal fun FlowContent.uptimeStatusOfEvent(event: HttpUptimeEventDto) =
     span {
         classes {
             mutableSetOf(STATUS).apply {
@@ -119,7 +119,7 @@ private fun FlowContent.uptimeStatusLabel(
 }
 
 internal fun FlowContent.sslStatusOfMonitor(
-    monitor: MonitorDetailsDto,
+    monitor: HttpMonitorDetailsDto,
     withTooltip: Boolean
 ) {
     if (monitor.enabled && monitor.sslCheckEnabled) {

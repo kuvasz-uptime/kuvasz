@@ -411,8 +411,8 @@ You can find the full configuration example below, which includes all the option
             descriptions: true
     ---
     metrics-exports:
-      uptime-status: true
-      latest-latency: true
+      http-uptime-status: true
+      http-latest-latency: true
       ssl-status: true
       ssl-expiry: true
     ---
@@ -461,8 +461,8 @@ You can find the full configuration example below, which includes all the option
     ENABLE_PROMETHEUS_EXPORT=true
     ENABLE_PROMETHEUS_DESCRIPTIONS=true
     # Enable the individual metrics
-    ENABLE_UPTIME_STATUS_EXPORT=true
-    ENABLE_LATEST_LATENCY_EXPORT=true
+    ENABLE_HTTP_UPTIME_STATUS_EXPORT=true
+    ENABLE_HTTP_LATEST_LATENCY_EXPORT=true
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
     ```

@@ -8,7 +8,6 @@ import de.comahe.i18n4k.config.I18n4kConfigDefault
 import de.comahe.i18n4k.i18n4k
 
 data class AppGlobals(
-    val isReadOnlyMode: () -> Boolean,
     val isAuthenticated: () -> Boolean,
     val isAuthEnabled: Boolean,
     val appVersion: String,
@@ -16,6 +15,7 @@ data class AppGlobals(
     val configuredIntegrations: IntegrationMap,
     val enabledIntegrations: IntegrationMap,
     val configuredIntegrationsByType: Map<IntegrationType, Set<IntegrationConfig>>,
+    val editabilityState: EditabilityState,
 ) {
     init {
         // Setting up the locale for i18n messages
@@ -23,4 +23,8 @@ data class AppGlobals(
         i18n4k = i18n4kConfig
         i18n4kConfig.locale = this.locale
     }
+
+    data class EditabilityState(
+        val areHttpMonitorsReadOnly: () -> Boolean,
+    )
 }

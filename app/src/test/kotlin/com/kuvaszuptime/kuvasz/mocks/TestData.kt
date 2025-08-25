@@ -3,15 +3,15 @@ package com.kuvaszuptime.kuvasz.mocks
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
-import com.kuvaszuptime.kuvasz.jooq.tables.UptimeEvent.UPTIME_EVENT
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -20,7 +20,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 fun createMonitor(
-    repository: MonitorRepository,
+    repository: HttpMonitorRepository,
     enabled: Boolean = true,
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
@@ -40,8 +40,8 @@ fun createMonitor(
     requestHeaders: Map<String, String> = emptyMap(),
     expectedHeaders: Map<String, String> = emptyMap(),
     requestBody: String? = null,
-): MonitorRecord {
-    val monitor = MonitorRecord()
+): HttpMonitorRecord {
+    val monitor = HttpMonitorRecord()
         .setName(monitorName)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setUrl(url)
@@ -73,17 +73,17 @@ fun createUptimeEventRecord(
     startedAt: OffsetDateTime,
     endedAt: OffsetDateTime?,
 ) = dslContext
-    .insertInto(UPTIME_EVENT)
+    .insertInto(HTTP_UPTIME_EVENT)
     .set(
-        UptimeEventRecord()
+        HttpUptimeEventRecord()
             .setMonitorId(monitorId)
             .setStatus(status)
             .setStartedAt(startedAt)
             .setUpdatedAt(endedAt ?: startedAt)
             .setEndedAt(endedAt)
     )
-    .returning(UPTIME_EVENT.asterisk())
-    .fetchOneOrThrow<UptimeEventRecord>()
+    .returning(HTTP_UPTIME_EVENT.asterisk())
+    .fetchOneOrThrow<HttpUptimeEventRecord>()
 
 fun createSSLEventRecord(
     dslContext: DSLContext,

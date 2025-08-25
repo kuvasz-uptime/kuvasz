@@ -6,7 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
@@ -16,7 +16,7 @@ import java.time.Duration
 
 @MicronautTest(startApplication = false)
 class StatCalculatorTest(
-    monitorRepository: MonitorRepository,
+    monitorRepository: HttpMonitorRepository,
     dslContext: DSLContext,
     statCalculator: StatCalculator,
 ) : DatabaseBehaviorSpec({
@@ -83,7 +83,7 @@ class StatCalculatorTest(
             )
 
             then("it should ignore them in the statistics") {
-                val stats = statCalculator.calculateOverallStats(Duration.ofDays(6))
+                val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
                 stats.actual.uptimeStats.total shouldBe 3 // 2 enabled monitors + 1 paused monitor
                 stats.actual.uptimeStats.down shouldBe 1
                 stats.actual.uptimeStats.up shouldBe 1
@@ -123,7 +123,7 @@ class StatCalculatorTest(
 
             then("it should count it as an in progress one") {
 
-                val stats = statCalculator.calculateOverallStats(Duration.ofDays(6))
+                val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
                 stats.actual.uptimeStats.total shouldBe 2 // 1 old monitor + 1 new monitor
                 stats.actual.uptimeStats.up shouldBe 1
                 stats.actual.uptimeStats.inProgress shouldBe 1
@@ -179,7 +179,7 @@ class StatCalculatorTest(
                 endedAt = null,
             )
 
-            val stats = statCalculator.calculateOverallStats(Duration.ofDays(9))
+            val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(9))
 
             then("historical data should only contain events within the period") {
                 stats.actual.uptimeStats.total shouldBe 1
@@ -281,7 +281,7 @@ class StatCalculatorTest(
             // sslInProgressMonitor's has no events at all
 
             then("it should correctly calculate the stats for all statuses") {
-                val stats = statCalculator.calculateOverallStats(Duration.ofDays(6))
+                val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
 
                 stats.actual.uptimeStats.total shouldBe 6
                 stats.actual.uptimeStats.down shouldBe 1
@@ -311,7 +311,7 @@ class StatCalculatorTest(
                 endedAt = getCurrentTimestamp().minusDays(6).minusSeconds(1),
             )
 
-            val stats = statCalculator.calculateOverallStats(Duration.ofDays(6))
+            val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
 
             then("it should handle it gracefully and return null as the ratio") {
 
@@ -322,7 +322,7 @@ class StatCalculatorTest(
         `when`("there are no monitors at all") {
 
             then("it should return empty stats") {
-                val stats = statCalculator.calculateOverallStats(Duration.ofDays(6))
+                val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
 
                 stats.actual.uptimeStats.total shouldBe 0
                 stats.actual.uptimeStats.down shouldBe 0
@@ -382,7 +382,7 @@ class StatCalculatorTest(
                 endedAt = null,
             )
 
-            val stats = statCalculator.calculateOverallStats(Duration.ofDays(12))
+            val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(12))
 
             then("it should calculate the uptimeRatio correctly & return the last incident timestamp") {
 

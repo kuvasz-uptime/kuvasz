@@ -25,6 +25,7 @@ tasks.withType<Detekt>().configureEach {
 }
 
 tasks.register("validateI18n") {
+    dependsOn("generateI18n4kFiles")
     group = "Verification"
     description = "Checks all i18n files against the English reference for missing keys and comments."
 

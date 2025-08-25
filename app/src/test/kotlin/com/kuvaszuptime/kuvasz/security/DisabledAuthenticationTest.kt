@@ -22,7 +22,7 @@ class DisabledAuthenticationTest(
         given("a public API endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.exchange("/api/v1/health").awaitFirst()
+                val response = client.exchange("/api/v2/health").awaitFirst()
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
                 }
@@ -47,7 +47,7 @@ class DisabledAuthenticationTest(
             }
         }
 
-        given("a secured API endpoint") {
+        given("a secured API endpoint - v1") {
 
             `when`("an anonymous user calls it") {
                 val response = client.exchange("/api/v1/monitors").awaitFirst()
@@ -58,10 +58,21 @@ class DisabledAuthenticationTest(
             }
         }
 
+        given("a secured API endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val response = client.exchange("/api/v2/http-monitors").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
         given("the /prometheus endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.exchange("/api/v1/prometheus").awaitFirst()
+                val response = client.exchange("/api/v2/prometheus").awaitFirst()
 
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
@@ -72,7 +83,7 @@ class DisabledAuthenticationTest(
         given("a secured UI endpoint") {
 
             `when`("an anonymous user calls it") {
-                val response = client.exchange("/monitors").awaitFirst()
+                val response = client.exchange("/http-monitors").awaitFirst()
 
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK

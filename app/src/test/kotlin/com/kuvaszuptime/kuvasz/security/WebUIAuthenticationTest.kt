@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.security
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -30,7 +30,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 class WebUIAuthenticationTest(
     @Client("/") private val client: HttpClient,
     private val authConfig: AdminAuthConfig,
-    monitorRepository: MonitorRepository,
+    monitorRepository: HttpMonitorRepository,
 ) : DatabaseStringSpec({
 
     "all the web UI endpoints should be secured - anonymous user" {
@@ -38,13 +38,13 @@ class WebUIAuthenticationTest(
         table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/1"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/1/details-heading"),
-            row("/fragments/monitors/1/details-uptime-events"),
-            row("/fragments/monitors/1/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/1"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/1"),
+            row("/http-monitors/fragments/details-uptime-events/1"),
+            row("/http-monitors/fragments/details-ssl-events/1"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         ).forAll { url ->
             val response = client.exchange(url).awaitFirst()
@@ -61,13 +61,13 @@ class WebUIAuthenticationTest(
         val cases = table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/1"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/1/details-heading"),
-            row("/fragments/monitors/1/details-uptime-events"),
-            row("/fragments/monitors/1/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/1"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/1"),
+            row("/http-monitors/fragments/details-uptime-events/1"),
+            row("/http-monitors/fragments/details-ssl-events/1"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         )
         cases.forAll { url ->
@@ -98,13 +98,13 @@ class WebUIAuthenticationTest(
         table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/${monitor.id}"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/${monitor.id}/details-heading"),
-            row("/fragments/monitors/${monitor.id}/details-uptime-events"),
-            row("/fragments/monitors/${monitor.id}/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/${monitor.id}"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/${monitor.id}"),
+            row("/http-monitors/fragments/details-uptime-events/${monitor.id}"),
+            row("/http-monitors/fragments/details-ssl-events/${monitor.id}"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         ).forAll { url ->
             val response = client.exchange(

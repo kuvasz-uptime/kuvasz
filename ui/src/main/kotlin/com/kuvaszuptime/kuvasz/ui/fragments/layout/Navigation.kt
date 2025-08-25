@@ -30,11 +30,17 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     link = "/",
                                     externalLink = false,
                                 )
-                                navItem(
+                                navItemDropdown(
+                                    id = "monitors",
                                     label = Messages.monitors(),
                                     icon = Icon.BINOCULARS,
-                                    link = "/monitors",
-                                    externalLink = false
+                                    items = listOf(
+                                        NavItem(
+                                            label = Messages.httpMonitors(),
+                                            link = "/http-monitors",
+                                            icon = Icon.WORLD,
+                                        ),
+                                    )
                                 )
                                 navItem(
                                     label = Messages.settings(),
@@ -78,6 +84,42 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
     }
 }
 
+private fun UL.navItemDropdown(id: String, label: String, icon: Icon, items: List<NavItem>) {
+    li {
+        classes(NAV_ITEM, DROPDOWN)
+        a(href = "#navbar-$id") {
+            classes(NAV_LINK, DROPDOWN_TOGGLE)
+            ariaExpanded(false)
+            attributes["data-bs-auto-close"] = "outside"
+            role = "button"
+            ariaLabel(label)
+            dropdownToggler()
+            span {
+                classes(NAV_LINK_ICON, D_LG_INLINE_BLOCK)
+                icon(icon)
+            }
+            span {
+                classes(NAV_LINK_TITLE)
+                +label
+            }
+        }
+        div {
+            classes(DROPDOWN_MENU)
+            items.forEach { item ->
+                a(
+                    href = item.link,
+                    target = if (item.externalLink) "_blank" else null,
+                ) {
+                    classes(DROPDOWN_ITEM)
+                    if (item.externalLink) relNoOpener()
+                    ariaLabel(item.label)
+                    +item.label
+                }
+            }
+        }
+    }
+}
+
 private fun UL.navItem(label: String, icon: Icon, link: String, externalLink: Boolean = false) {
     li {
         classes(NAV_ITEM)
@@ -99,3 +141,10 @@ private fun UL.navItem(label: String, icon: Icon, link: String, externalLink: Bo
         }
     }
 }
+
+private data class NavItem(
+    val label: String,
+    val icon: Icon,
+    val link: String,
+    val externalLink: Boolean = false,
+)

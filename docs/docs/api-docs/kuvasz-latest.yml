@@ -4,13 +4,16 @@ info:
   version: latest
 tags:
 - name: Management
+- name: Monitors
+- name: "HTTP monitors (V1, deprecated)"
 - name: HTTP monitors
+- name: "Settings (V1, deprecated)"
 - name: Settings
 paths:
   /api/v1/monitors:
     get:
       tags:
-      - HTTP monitors
+      - "HTTP monitors (V1, deprecated)"
       summary: Get all monitors with their details
       operationId: getMonitorsWithDetails
       parameters:
@@ -50,20 +53,21 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MonitorDetailsDto"
+                  $ref: "#/components/schemas/HttpMonitorDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
     post:
       tags:
-      - HTTP monitors
+      - "HTTP monitors (V1, deprecated)"
       summary: Create a monitor
       operationId: createMonitor
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MonitorCreateDto"
+              $ref: "#/components/schemas/HttpMonitorCreateDto"
         required: true
       responses:
         "201":
@@ -71,7 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDto"
+                $ref: "#/components/schemas/HttpMonitorDto"
         "400":
           description: Bad request
           content:
@@ -85,13 +89,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
   /api/v1/monitors/export/yaml:
     get:
       tags:
-      - HTTP monitors
+      - "HTTP monitors (V1, deprecated)"
       summary: Download the export of all monitors in YAML format
       operationId: getYamlMonitorsExport
       responses:
@@ -99,13 +104,14 @@ paths:
           description: Successful query
           content:
             application/x-yaml: {}
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
   /api/v1/monitors/stats:
     get:
       tags:
-      - HTTP monitors
+      - "HTTP monitors (V1, deprecated)"
       summary: "Get the overall, cumulative stats of all monitors"
       operationId: getMonitoringStats
       parameters:
@@ -122,14 +128,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitoringStatsDto"
+                $ref: "#/components/schemas/HttpMonitoringStatsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
   /api/v1/monitors/{monitorId}:
     get:
       tags:
-      - HTTP monitors
+      - "HTTP monitors (V1, deprecated)"
       summary: Get a monitor's details
       operationId: getMonitorDetails
       parameters:
@@ -145,7 +152,331 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDetailsDto"
+                $ref: "#/components/schemas/HttpMonitorDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - "HTTP monitors (V1, deprecated)"
+      summary: Delete a monitor by ID
+      operationId: deleteMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - "HTTP monitors (V1, deprecated)"
+      summary: Update a monitor by ID
+      description: Updates the monitor with the given ID. Only fields that are present
+        in the request body will be updated. Fields not present in the request body
+        will remain unchanged.
+      operationId: updateMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HttpMonitorUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v1/monitors/{monitorId}/ssl-events:
+    get:
+      tags:
+      - "HTTP monitors (V1, deprecated)"
+      summary: Get the SSL events of the given monitor
+      operationId: getSSLEvents
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SSLEventDto"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v1/monitors/{monitorId}/stats:
+    get:
+      tags:
+      - "HTTP monitors (V1, deprecated)"
+      summary: Get the stats of the given monitor
+      operationId: getMonitorStats
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "A Java Duration string, default 1d"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpMonitorStatsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v1/monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - "HTTP monitors (V1, deprecated)"
+      summary: Get the uptime events of the given monitor
+      operationId: getUptimeEvents
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HttpUptimeEventDto"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v1/settings:
+    get:
+      tags:
+      - "Settings (V1, deprecated)"
+      summary: Get the current settings of the application
+      operationId: getSettings
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegacySettingsDto"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/http-monitors:
+    get:
+      tags:
+      - HTTP monitors
+      summary: Get all monitors with their details
+      operationId: getMonitorsWithDetails_1
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: sslStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/SslStatus"
+      - name: sslCheckEnabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HttpMonitorDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - HTTP monitors
+      summary: Create a monitor
+      operationId: createMonitor_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HttpMonitorCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Monitors are in read-only mode, because they are loaded from\
+            \ a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/http-monitors/stats:
+    get:
+      tags:
+      - HTTP monitors
+      summary: "Get the overall, cumulative stats of all monitors"
+      operationId: getMonitoringStats_1
+      parameters:
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "A Java Duration string, default 7d"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpMonitoringStatsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/http-monitors/{monitorId}:
+    get:
+      tags:
+      - HTTP monitors
+      summary: Get a monitor's details
+      operationId: getMonitorDetails_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpMonitorDetailsDto"
         "404":
           description: Not found
           content:
@@ -159,7 +490,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor
+      operationId: deleteMonitor_1
       parameters:
       - name: monitorId
         in: path
@@ -193,7 +524,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor
+      operationId: updateMonitor_1
       parameters:
       - name: monitorId
         in: path
@@ -205,7 +536,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MonitorUpdateDto"
+              $ref: "#/components/schemas/HttpMonitorUpdateDto"
         required: true
       responses:
         "200":
@@ -213,7 +544,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDto"
+                $ref: "#/components/schemas/HttpMonitorDto"
         "400":
           description: Bad request
           content:
@@ -236,12 +567,12 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
-  /api/v1/monitors/{monitorId}/ssl-events:
+  /api/v2/http-monitors/{monitorId}/ssl-events:
     get:
       tags:
       - HTTP monitors
       summary: Get the SSL events of the given monitor
-      operationId: getSSLEvents
+      operationId: getSSLEvents_1
       parameters:
       - name: monitorId
         in: path
@@ -261,12 +592,12 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
-  /api/v1/monitors/{monitorId}/stats:
+  /api/v2/http-monitors/{monitorId}/stats:
     get:
       tags:
       - HTTP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats
+      operationId: getMonitorStats_1
       parameters:
       - name: monitorId
         in: path
@@ -287,7 +618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorStatsDto"
+                $ref: "#/components/schemas/HttpMonitorStatsDto"
         "404":
           description: Not found
           content:
@@ -297,12 +628,12 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
-  /api/v1/monitors/{monitorId}/uptime-events:
+  /api/v2/http-monitors/{monitorId}/uptime-events:
     get:
       tags:
       - HTTP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents
+      operationId: getUptimeEvents_1
       parameters:
       - name: monitorId
         in: path
@@ -318,16 +649,30 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UptimeEventDto"
+                  $ref: "#/components/schemas/HttpUptimeEventDto"
       security:
       - apiKey: []
       - bearerAuth: []
-  /api/v1/settings:
+  /api/v2/monitors/export/yaml:
+    get:
+      tags:
+      - Monitors
+      summary: Download the export of all monitors in YAML format
+      operationId: getYamlMonitorsExport_1
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/x-yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/settings:
     get:
       tags:
       - Settings
       summary: Get the current settings of the application
-      operationId: getSettings
+      operationId: getSettings_1
       responses:
         "200":
           description: Successful query
@@ -338,7 +683,7 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
-  /api/v1/health:
+  /api/v2/health:
     get:
       tags:
       - Management
@@ -359,7 +704,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResult"
-  /api/v1/prometheus:
+  /api/v2/prometheus:
     get:
       tags:
       - Management
@@ -398,61 +743,7 @@ components:
       - DELETE
       - PATCH
       - OPTIONS
-    IntegrationDetailsDto:
-      required:
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the integration that can be used as a
-            reference on a monitor
-        type:
-          description: "Type of the integration, e.g., EMAIL, WEBHOOK, etc."
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: "Name of the integration, e.g., 'slack-team-devops', 'email-ops-global',\
-            \ etc."
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled or not
-        global:
-          type: boolean
-          description: Whether the integration is global or not
-    IntegrationType:
-      type: string
-      enum:
-      - EMAIL
-      - PAGERDUTY
-      - SLACK
-      - TELEGRAM
-      - DISCORD
-    LatencyLogDto:
-      required:
-      - createdAt
-      - id
-      - latencyInMs
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier of the latency log
-          format: int64
-        latencyInMs:
-          type: integer
-          description: The latency in milliseconds recorded for the monitor
-          format: int32
-        createdAt:
-          type: string
-          description: The timestamp when the latency was recorded
-          format: date-time
-    MonitorCreateDto:
+    HttpMonitorCreateDto:
       required:
       - name
       - uptimeCheckInterval
@@ -577,7 +868,7 @@ components:
           description: "The body of the request to be sent, which is used for POST,\
             \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
           nullable: true
-    MonitorDetailsDto:
+    HttpMonitorDetailsDto:
       required:
       - createdAt
       - effectiveIntegrations
@@ -781,7 +1072,7 @@ components:
           description: "The body of the request to be sent, which is used for POST,\
             \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
           nullable: true
-    MonitorDto:
+    HttpMonitorDto:
       required:
       - createdAt
       - enabled
@@ -911,7 +1202,7 @@ components:
           description: The last updated timestamp of the monitor
           format: date-time
           nullable: true
-    MonitorStatsDto:
+    HttpMonitorStatsDto:
       required:
       - id
       - latencyHistoryEnabled
@@ -961,7 +1252,7 @@ components:
             period
           items:
             $ref: "#/components/schemas/LatencyLogDto"
-    MonitorUpdateDto:
+    HttpMonitorUpdateDto:
       type: object
       properties:
         name:
@@ -1086,7 +1377,7 @@ components:
           description: "The body of the request to be sent, which is used for POST,\
             \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
           nullable: true
-    MonitoringStatsDto:
+    HttpMonitoringStatsDto:
       required:
       - actual
       - history
@@ -1096,13 +1387,13 @@ components:
           description: The actual monitoring statistics for the current state of the
             monitors.
           allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats"
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats"
         history:
           description: "The historical monitoring statistics, summarizing incidents\
             \ and uptime ratios over time."
           allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.HistoricalMonitoringStats"
-    MonitoringStatsDto.ActualMonitoringStats:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.HistoricalMonitoringStats"
+    HttpMonitoringStatsDto.ActualMonitoringStats:
       required:
       - sslStats
       - uptimeStats
@@ -1111,13 +1402,13 @@ components:
         uptimeStats:
           description: Statistics about the current state of uptime for all monitors.
           allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
         sslStats:
           description: Statistics about the current state of SSL certificates for
             all monitors.
           allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats.SslStats"
-    MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.SslStats"
+    HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
       required:
       - down
       - inProgress
@@ -1153,7 +1444,7 @@ components:
           description: The timestamp of the last incident detected across all monitors.
           format: date-time
           nullable: true
-    MonitoringStatsDto.ActualMonitoringStats.SslStats:
+    HttpMonitoringStatsDto.ActualMonitoringStats.SslStats:
       required:
       - inProgress
       - invalid
@@ -1180,7 +1471,7 @@ components:
           type: integer
           description: Number of SSL certificates that has not been checked yet.
           format: int32
-    MonitoringStatsDto.HistoricalMonitoringStats:
+    HttpMonitoringStatsDto.HistoricalMonitoringStats:
       required:
       - uptimeStats
       type: object
@@ -1188,8 +1479,8 @@ components:
         uptimeStats:
           description: Statistics about the historical uptime of all monitors.
           allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats"
-    MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats"
+    HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats:
       required:
       - affectedMonitors
       - incidents
@@ -1214,6 +1505,448 @@ components:
           type: integer
           description: Total downtime in seconds across all monitors.
           format: int64
+    HttpUptimeEventDto:
+      required:
+      - endedAt
+      - error
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the uptime event
+          format: int64
+        status:
+          description: The status of the uptime event
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        startedAt:
+          type: string
+          description: The timestamp when the uptime event started
+          format: date-time
+        endedAt:
+          type: string
+          description: "The timestamp when the uptime event ended, if applicable"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: The timestamp when the uptime event was updated
+          format: date-time
+    IntegrationDetailsDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the integration that can be used as a
+            reference on a monitor
+        type:
+          description: "Type of the integration, e.g., EMAIL, WEBHOOK, etc."
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: "Name of the integration, e.g., 'slack-team-devops', 'email-ops-global',\
+            \ etc."
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled or not
+        global:
+          type: boolean
+          description: Whether the integration is global or not
+    IntegrationType:
+      type: string
+      enum:
+      - EMAIL
+      - PAGERDUTY
+      - SLACK
+      - TELEGRAM
+      - DISCORD
+    LatencyLogDto:
+      required:
+      - createdAt
+      - id
+      - latencyInMs
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the latency log
+          format: int64
+        latencyInMs:
+          type: integer
+          description: The latency in milliseconds recorded for the monitor
+          format: int32
+        createdAt:
+          type: string
+          description: The timestamp when the latency was recorded
+          format: date-time
+    LegacySettingsDto:
+      required:
+      - app
+      - authentication
+      - integrations
+      - metricsExport
+      type: object
+      properties:
+        authentication:
+          description: Authentication settings
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.AuthenticationSettingsDto"
+        app:
+          description: Application settings
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.AppSettingsDto"
+        integrations:
+          description: Integration settings
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.IntegrationSettingsDto"
+        metricsExport:
+          description: Metrics exporter settings
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto"
+    LegacySettingsDto.AppSettingsDto:
+      required:
+      - eventDataRetentionDays
+      - eventLoggingEnabled
+      - language
+      - latencyDataRetentionDays
+      - readOnlyMode
+      - version
+      type: object
+      properties:
+        version:
+          type: string
+          description: The version of the application
+        eventDataRetentionDays:
+          type: integer
+          description: Number of days to retain event data
+          format: int32
+        latencyDataRetentionDays:
+          type: integer
+          description: Number of days to retain latency data
+          format: int32
+        language:
+          type: string
+          description: The language of the application
+        eventLoggingEnabled:
+          type: boolean
+          description: Whether event logging is enabled
+        readOnlyMode:
+          type: boolean
+          description: Whether the application is in read-only mode (i.e. monitors
+            are configured via YAML
+    LegacySettingsDto.AuthenticationSettingsDto:
+      required:
+      - accessTokenMaxAge
+      - enabled
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether authentication is enabled
+        accessTokenMaxAge:
+          type: integer
+          description: The maximum age of the access token in seconds
+          format: int64
+    LegacySettingsDto.DiscordNotificationConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+    LegacySettingsDto.EmailNotificationConfigDto:
+      required:
+      - enabled
+      - fromAddress
+      - global
+      - id
+      - name
+      - toAddress
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        fromAddress:
+          type: string
+          description: The email address from which notifications are sent
+        toAddress:
+          type: string
+          description: The email address to which notifications are sent
+    LegacySettingsDto.IntegrationSettingsDto:
+      required:
+      - discord
+      - email
+      - pagerduty
+      - slack
+      - smtp
+      - telegram
+      type: object
+      properties:
+        smtp:
+          description: SMTP configuration for email notifications
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.SmtpConfigDto"
+        slack:
+          type: array
+          description: List of Slack notification configurations
+          items:
+            $ref: "#/components/schemas/LegacySettingsDto.SlackNotificationConfigDto"
+        discord:
+          type: array
+          description: List of Discord notification configurations
+          items:
+            $ref: "#/components/schemas/LegacySettingsDto.DiscordNotificationConfigDto"
+        pagerduty:
+          type: array
+          description: List of PagerDuty configurations
+          items:
+            $ref: "#/components/schemas/LegacySettingsDto.PagerdutyConfigDto"
+        email:
+          type: array
+          description: List of email notification configurations
+          items:
+            $ref: "#/components/schemas/LegacySettingsDto.EmailNotificationConfigDto"
+        telegram:
+          type: array
+          description: List of Telegram notification configurations
+          items:
+            $ref: "#/components/schemas/LegacySettingsDto.TelegramNotificationConfigDto"
+    LegacySettingsDto.MetricsExportSettingsDto:
+      required:
+      - exportEnabled
+      - exporters
+      - meters
+      type: object
+      properties:
+        exportEnabled:
+          type: boolean
+          description: Whether the metrics exporting is generally enabled
+        meters:
+          description: Settings for individual meters
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.MeterSettingsDto"
+        exporters:
+          description: Settings for individual exporters
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto"
+    LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto:
+      required:
+      - openTelemetry
+      - prometheus
+      type: object
+      properties:
+        prometheus:
+          description: Prometheus exporter settings
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto"
+        openTelemetry:
+          description: OpenTelemetry exporter settings
+          allOf:
+          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto"
+    LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto:
+      required:
+      - enabled
+      - step
+      - url
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the exporter is enabled
+        url:
+          type: string
+          description: The endpoint where the metrics will be published
+        step:
+          type: string
+          description: The step for the metrics reporting as an ISO 8601 duration
+            string
+    LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto:
+      required:
+      - descriptions
+      - enabled
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the exporter is enabled
+        descriptions:
+          type: boolean
+          description: Whether descriptions are included in the export
+    LegacySettingsDto.MetricsExportSettingsDto.MeterSettingsDto:
+      required:
+      - latestLatency
+      - sslExpiry
+      - sslStatus
+      - uptimeStatus
+      type: object
+      properties:
+        sslExpiry:
+          type: boolean
+          description: Whether SSL certificate expiry exporter is enabled
+        latestLatency:
+          type: boolean
+          description: Whether latest latency exporter is enabled
+        uptimeStatus:
+          type: boolean
+          description: Whether monitor status exporter is enabled
+        sslStatus:
+          type: boolean
+          description: Whether SSL status exporter is enabled
+    LegacySettingsDto.PagerdutyConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+    LegacySettingsDto.SlackNotificationConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+    LegacySettingsDto.SmtpConfigDto:
+      required:
+      - host
+      - port
+      - transportStrategy
+      type: object
+      properties:
+        host:
+          type: string
+          description: The SMTP host
+        port:
+          type: integer
+          description: The SMTP port
+          format: int32
+        transportStrategy:
+          type: string
+          description: The SMTP transport strategy
+    LegacySettingsDto.TelegramNotificationConfigDto:
+      required:
+      - chatId
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        chatId:
+          type: string
+          description: The chat ID for Telegram notifications
     SSLEventDto:
       required:
       - endedAt
@@ -1265,7 +1998,6 @@ components:
       required:
       - app
       - authentication
-      - integrations
       - metricsExport
       type: object
       properties:
@@ -1277,21 +2009,22 @@ components:
           description: Application settings
           allOf:
           - $ref: "#/components/schemas/SettingsDto.AppSettingsDto"
-        integrations:
-          description: Integration settings
-          allOf:
-          - $ref: "#/components/schemas/SettingsDto.IntegrationSettingsDto"
         metricsExport:
           description: Metrics exporter settings
           allOf:
           - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto"
+        smtp:
+          description: SMTP configuration for email notifications
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.SmtpConfigDto"
     SettingsDto.AppSettingsDto:
       required:
+      - editabilityState
       - eventDataRetentionDays
       - eventLoggingEnabled
       - language
       - latencyDataRetentionDays
-      - readOnlyMode
       - version
       type: object
       properties:
@@ -1312,10 +2045,19 @@ components:
         eventLoggingEnabled:
           type: boolean
           description: Whether event logging is enabled
-        readOnlyMode:
-          type: boolean
+        editabilityState:
           description: Whether the application is in read-only mode (i.e. monitors
             are configured via YAML
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.AppSettingsDto.EditabilityStateDto"
+    SettingsDto.AppSettingsDto.EditabilityStateDto:
+      required:
+      - areHttpMonitorsReadOnly
+      type: object
+      properties:
+        areHttpMonitorsReadOnly:
+          type: boolean
+          description: Whether the HTTP monitors are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge
@@ -1329,108 +2071,6 @@ components:
           type: integer
           description: The maximum age of the access token in seconds
           format: int64
-    SettingsDto.DiscordNotificationConfigDto:
-      required:
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-    SettingsDto.EmailNotificationConfigDto:
-      required:
-      - enabled
-      - fromAddress
-      - global
-      - id
-      - name
-      - toAddress
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-        fromAddress:
-          type: string
-          description: The email address from which notifications are sent
-        toAddress:
-          type: string
-          description: The email address to which notifications are sent
-    SettingsDto.IntegrationSettingsDto:
-      required:
-      - discord
-      - email
-      - pagerduty
-      - slack
-      - smtp
-      - telegram
-      type: object
-      properties:
-        smtp:
-          description: SMTP configuration for email notifications
-          nullable: true
-          allOf:
-          - $ref: "#/components/schemas/SettingsDto.SmtpConfigDto"
-        slack:
-          type: array
-          description: List of Slack notification configurations
-          items:
-            $ref: "#/components/schemas/SettingsDto.SlackNotificationConfigDto"
-        discord:
-          type: array
-          description: List of Discord notification configurations
-          items:
-            $ref: "#/components/schemas/SettingsDto.DiscordNotificationConfigDto"
-        pagerduty:
-          type: array
-          description: List of PagerDuty configurations
-          items:
-            $ref: "#/components/schemas/SettingsDto.PagerdutyConfigDto"
-        email:
-          type: array
-          description: List of email notification configurations
-          items:
-            $ref: "#/components/schemas/SettingsDto.EmailNotificationConfigDto"
-        telegram:
-          type: array
-          description: List of Telegram notification configurations
-          items:
-            $ref: "#/components/schemas/SettingsDto.TelegramNotificationConfigDto"
     SettingsDto.MetricsExportSettingsDto:
       required:
       - exportEnabled
@@ -1494,78 +2134,24 @@ components:
           description: Whether descriptions are included in the export
     SettingsDto.MetricsExportSettingsDto.MeterSettingsDto:
       required:
-      - latestLatency
+      - httpLatestLatency
+      - httpUptimeStatus
       - sslExpiry
       - sslStatus
-      - uptimeStatus
       type: object
       properties:
         sslExpiry:
           type: boolean
           description: Whether SSL certificate expiry exporter is enabled
-        latestLatency:
+        httpLatestLatency:
           type: boolean
-          description: Whether latest latency exporter is enabled
-        uptimeStatus:
+          description: Whether HTTP latest latency exporter is enabled
+        httpUptimeStatus:
           type: boolean
-          description: Whether monitor status exporter is enabled
+          description: Whether HTTP monitor status exporter is enabled
         sslStatus:
           type: boolean
           description: Whether SSL status exporter is enabled
-    SettingsDto.PagerdutyConfigDto:
-      required:
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-    SettingsDto.SlackNotificationConfigDto:
-      required:
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
     SettingsDto.SmtpConfigDto:
       required:
       - host
@@ -1583,78 +2169,12 @@ components:
         transportStrategy:
           type: string
           description: The SMTP transport strategy
-    SettingsDto.TelegramNotificationConfigDto:
-      required:
-      - chatId
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-        chatId:
-          type: string
-          description: The chat ID for Telegram notifications
     SslStatus:
       type: string
       enum:
       - VALID
       - INVALID
       - WILL_EXPIRE
-    UptimeEventDto:
-      required:
-      - endedAt
-      - error
-      - id
-      - startedAt
-      - status
-      - updatedAt
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier for the uptime event
-          format: int64
-        status:
-          description: The status of the uptime event
-          allOf:
-          - $ref: "#/components/schemas/UptimeStatus"
-        error:
-          type: string
-          description: "The error that occurred during the uptime check, if any"
-          nullable: true
-        startedAt:
-          type: string
-          description: The timestamp when the uptime event started
-          format: date-time
-        endedAt:
-          type: string
-          description: "The timestamp when the uptime event ended, if applicable"
-          format: date-time
-          nullable: true
-        updatedAt:
-          type: string
-          description: The timestamp when the uptime event was updated
-          format: date-time
     UptimeStatus:
       type: string
       enum:

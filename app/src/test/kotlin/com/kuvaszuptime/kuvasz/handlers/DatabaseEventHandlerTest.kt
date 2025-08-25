@@ -6,15 +6,15 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import io.kotest.core.test.TestCase
@@ -35,9 +35,9 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
 class DatabaseEventHandlerTest(
-    uptimeEventRepository: UptimeEventRepository,
-    latencyLogRepository: LatencyLogRepository,
-    monitorRepository: MonitorRepository,
+    uptimeEventRepository: HttpUptimeEventRepository,
+    latencyLogRepository: HttpLatencyLogRepository,
+    monitorRepository: HttpMonitorRepository,
     sslEventRepository: SSLEventRepository,
     dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
@@ -57,7 +57,7 @@ class DatabaseEventHandlerTest(
         given("the DatabaseEventHandler - UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createMonitor(monitorRepository)
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -90,7 +90,7 @@ class DatabaseEventHandlerTest(
             `when`("it receives a MonitorUpEvent and latency history is disabled") {
 
                 val monitor = createMonitor(monitorRepository, latencyHistoryEnabled = false)
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -110,7 +110,7 @@ class DatabaseEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
                 val monitor = createMonitor(monitorRepository)
-                val event = MonitorDownEvent(
+                val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
@@ -133,7 +133,7 @@ class DatabaseEventHandlerTest(
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorUpEvent(
+                val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -142,7 +142,7 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorUpEvent(
+                val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1200,
@@ -175,7 +175,7 @@ class DatabaseEventHandlerTest(
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorDownEvent(
+                val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
@@ -184,7 +184,7 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorUpEvent(
+                val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -219,7 +219,7 @@ class DatabaseEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorUpEvent(
+                val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     previousEvent = null,
@@ -228,7 +228,7 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorDownEvent(
+                val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Exception(),
@@ -264,7 +264,7 @@ class DatabaseEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent - error message needs to be redacted") {
                 val monitor = createMonitor(monitorRepository)
-                val event = MonitorDownEvent(
+                val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = null,
                     previousEvent = null,

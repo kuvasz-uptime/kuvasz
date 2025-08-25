@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
-import com.kuvaszuptime.kuvasz.jooq.tables.Monitor.MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -16,7 +16,7 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
 class AppBootstrappingSanitizationTest(
-    monitorRepository: MonitorRepository,
+    monitorRepository: HttpMonitorRepository,
     dslContext: DSLContext,
 ) : DatabaseStringSpec({
 
@@ -25,9 +25,9 @@ class AppBootstrappingSanitizationTest(
 
         // Manually adding non-existing integrations to the monitor
         dslContext
-            .update(MONITOR)
+            .update(HTTP_MONITOR)
             .set(
-                MONITOR.INTEGRATIONS,
+                HTTP_MONITOR.INTEGRATIONS,
                 arrayOf(
                     IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
                     IntegrationID(IntegrationType.EMAIL, "disabled"),

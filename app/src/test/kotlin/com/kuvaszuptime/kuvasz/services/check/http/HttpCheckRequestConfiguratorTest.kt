@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.data.forAll
@@ -103,7 +103,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                 ),
             ).forAll { monitorMethod, forceNoCache, expectedKeyword, requestBody, testExpectation ->
 
-                val monitor = MonitorRecord().apply {
+                val monitor = HttpMonitorRecord().apply {
                     requestMethod = monitorMethod
                     this.forceNoCache = forceNoCache
                     this.expectedKeyword = expectedKeyword
@@ -129,7 +129,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
     context("the configurator logic - custom request headers") {
 
         should("add custom request headers to the request") {
-            val monitor = MonitorRecord().apply {
+            val monitor = HttpMonitorRecord().apply {
                 forceNoCache = true
                 requestMethod = HttpMethod.GET
                 requestHeaders = JsonNodeFactory.instance.objectNode().apply {
@@ -174,7 +174,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                 row(HttpMethod.OPTIONS, testBody, null, io.micronaut.http.HttpMethod.OPTIONS),
             ).forAll { method, body, expectedBody, expectedMethod ->
 
-                val monitor = MonitorRecord().apply {
+                val monitor = HttpMonitorRecord().apply {
                     requestMethod = method
                     requestBody = body
                     forceNoCache = false // irrelevant for this test

@@ -2,13 +2,11 @@ package com.kuvaszuptime.kuvasz.ui.fragments.layout
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
-import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
 internal fun FlowContent.mainHeader(
-    isReadOnlyMode: Boolean,
     isAuthenticated: Boolean,
     navbarMenuId: String,
 ) {
@@ -45,15 +43,6 @@ internal fun FlowContent.mainHeader(
 
             div {
                 classes(NAVBAR_NAV, FLEX_ROW, ORDER_MD_LAST)
-                // Read only notice
-                if (isReadOnlyMode) {
-                    div {
-                        classes(NAV_ITEM, D_MD_FLEX, ME_3)
-                        compactIconButton(Icon.LOCK_COG, setOf(PX_0)) {
-                            tooltip(title = Messages.readOnlyNotice())
-                        }
-                    }
-                }
                 // Dark and light mode toggles
                 div {
                     classes(NAV_ITEM, D_MD_FLEX)

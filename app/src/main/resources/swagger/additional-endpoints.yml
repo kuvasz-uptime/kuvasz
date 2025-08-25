@@ -3,7 +3,7 @@ info:
   title: kuvasz
   version: latest
 paths:
-  /api/v1/health:
+  /api/v2/health:
     get:
       tags:
         - Management
@@ -24,7 +24,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResult'
-  /api/v1/prometheus:
+  /api/v2/prometheus:
     get:
       tags:
         - Management

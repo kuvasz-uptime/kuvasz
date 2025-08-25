@@ -13,7 +13,7 @@
 === "YAML (advanced)"
 
     ```yaml title="YAML monitor reference"
-    monitors:
+    http-monitors:
     - name: "My Monitor" # (1)!
       url: "https://kuvasz-uptime.dev" # (2)!
       uptime-check-interval: 60 # (3)!
@@ -68,11 +68,11 @@
 
     However, here are **few of the most important** endpoints:
 
-    - `GET /api/v1/monitors` – List all monitors
-    - `GET /api/v1/monitors/{id}` – Get a specific monitor by its ID
-    - `POST /api/v1/monitors` – Create a new monitor
-    - `PATCH /api/v1/monitors/{id}` – Update an existing monitor
-    - `DELETE /api/v1/monitors/{id}` – Delete a monitor
+    - `GET /api/v2/http-monitors` – List all HTTP monitors
+    - `GET /api/v2/http-monitors/{id}` – Get a specific HTTP monitor by its ID
+    - `POST /api/v2/http-monitors` – Create a new HTTP monitor
+    - `PATCH /api/v2/http-monitors/{id}` – Update an existing HTTP monitor
+    - `DELETE /api/v2/http-monitors/{id}` – Delete an HTTP monitor
 
 ## Basic settings
 
@@ -387,7 +387,7 @@ Disabled monitors **won't be counted in the cumulated metrics**, like uptime rat
     Set the `enabled` field to `true` or `false` in your YAML file.
 
     ```yaml hl_lines="4"
-    monitors:
+    http-monitors:
     - name: "My Monitor"
       url: "https://kuvasz-uptime.dev"
       enabled: false
@@ -395,7 +395,7 @@ Disabled monitors **won't be counted in the cumulated metrics**, like uptime rat
 
 === "API (expert)"
 
-    Use the `PATCH /api/v1/monitors/{id}` endpoint to update the `enabled` field of the monitor.
+    Use the `PATCH /api/v2/http-monitors/{id}` endpoint to update the `enabled` field of the monitor.
 
 ### Deleting a monitor
 
@@ -411,7 +411,7 @@ If you delete a monitor, it will be **removed** from the database, and **all of 
 
 === "API (expert)"
 
-    Use the `DELETE /api/v1/monitors/{id}` endpoint to delete the monitor by its ID.
+    Use the `DELETE /api/v2/http-monitors/{id}` endpoint to delete the monitor by its ID.
 
 ### Modifying the assigned integrations
 
@@ -424,7 +424,7 @@ If you delete a monitor, it will be **removed** from the database, and **all of 
     Modify the `integrations` property of your affected monitor, by adding or removing list items, and then restart _Kuvasz_ to apply the changes.
 
     ```yaml hl_lines="5"
-    monitors:
+    http-monitors:
     - name: "My Monitor"
       url: "https://kuvasz-uptime.dev"
       uptime-check-interval: 60
@@ -435,7 +435,7 @@ If you delete a monitor, it will be **removed** from the database, and **all of 
 
 === "API (expert)"
 
-    Use the `PATCH /api/v1/monitors/{id}` endpoint to update the `integrations` field of the monitor. You can add or remove integrations as needed.
+    Use the `PATCH /api/v2/http-monitors/{id}` endpoint to update the `integrations` field of the monitor. You can add or remove integrations as needed.
 
     ```json
     {

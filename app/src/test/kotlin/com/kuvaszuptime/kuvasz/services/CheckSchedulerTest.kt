@@ -1,10 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.CheckType
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -28,9 +30,9 @@ import java.util.concurrent.TimeUnit
 
 @MicronautTest(startApplication = false)
 class CheckSchedulerTest(
-    private val checkScheduler: CheckScheduler,
-    private val monitorRepository: MonitorRepository,
-    private val uptimeChecker: UptimeChecker,
+    private val checkScheduler: HttpCheckScheduler,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeChecker: HttpUptimeChecker,
     private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
 ) : DatabaseBehaviorSpec() {
     init {
@@ -149,7 +151,7 @@ class CheckSchedulerTest(
                 val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } coAnswers {
-                    lambda<(MonitorRecord) -> Unit>().captured.invoke(monitor)
+                    lambda<(HttpMonitorRecord) -> Unit>().captured.invoke(monitor)
                 }
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
@@ -232,8 +234,8 @@ class CheckSchedulerTest(
         super.afterTest(testCase, result)
     }
 
-    @MockBean(UptimeChecker::class)
-    fun uptimeCheckerMock(): UptimeChecker = mockk()
+    @MockBean(HttpUptimeChecker::class)
+    fun uptimeCheckerMock(): HttpUptimeChecker = mockk()
 
     @MockBean(UptimeCheckLockRegistry::class)
     fun uptimeCheckLockRegistryMock(): UptimeCheckLockRegistry = mockk()

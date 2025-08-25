@@ -2,14 +2,14 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -26,7 +26,7 @@ class LogMessageFormatterTest : BehaviorSpec({
 
     val formatter = LogMessageFormatter
 
-    val monitor = MonitorRecord()
+    val monitor = HttpMonitorRecord()
         .setId(1111)
         .setName("test_monitor")
         .setUrl("https://test.url")
@@ -34,7 +34,7 @@ class LogMessageFormatterTest : BehaviorSpec({
     given("toFormattedMessage(event: UptimeMonitorEvent)") {
 
         `when`("it gets a MonitorUpEvent without a previousEvent") {
-            val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, null)
+            val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null)
 
             then("it should return the correct message") {
                 val expectedMessage =
@@ -44,8 +44,8 @@ class LogMessageFormatterTest : BehaviorSpec({
         }
 
         `when`("it gets a MonitorUpEvent with a previousEvent with the same status") {
-            val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.UP)
-            val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
+            val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP)
+            val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
 
             then("it should return the correct message") {
                 val expectedMessage =
@@ -56,8 +56,8 @@ class LogMessageFormatterTest : BehaviorSpec({
 
         `when`("it gets a MonitorUpEvent with a previousEvent with different status") {
             val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
-            val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
-            val event = MonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
+            val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
+            val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
 
             then("it should return the correct message") {
                 val expectedDurationString =
@@ -70,7 +70,7 @@ class LogMessageFormatterTest : BehaviorSpec({
         }
 
         `when`("it gets a MonitorDownEvent without a response status") {
-            val event = MonitorDownEvent(monitor, null, Exception("uptime error"), null)
+            val event = HttpMonitorDownEvent(monitor, null, Exception("uptime error"), null)
 
             then("it should use the error message as a reason") {
                 val expectedMessage =
@@ -80,7 +80,7 @@ class LogMessageFormatterTest : BehaviorSpec({
         }
 
         `when`("it gets a MonitorDownEvent without a previousEvent") {
-            val event = MonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Exception("uptime error"), null)
+            val event = HttpMonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Exception("uptime error"), null)
 
             then("it should return the correct message") {
                 val expectedMessage =
@@ -91,8 +91,8 @@ class LogMessageFormatterTest : BehaviorSpec({
         }
 
         `when`("it gets a MonitorDownEvent with a previousEvent with the same status") {
-            val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.DOWN)
-            val event = MonitorDownEvent(
+            val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.DOWN)
+            val event = HttpMonitorDownEvent(
                 monitor,
                 HttpStatus.BAD_REQUEST,
                 Exception("uptime error"),
@@ -109,8 +109,8 @@ class LogMessageFormatterTest : BehaviorSpec({
 
         `when`("it gets a MonitorDownEvent with a previousEvent with different status") {
             val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
-            val previousEvent = UptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
-            val event = MonitorDownEvent(
+            val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
+            val event = HttpMonitorDownEvent(
                 monitor,
                 HttpStatus.BAD_REQUEST,
                 Exception("uptime error"),
@@ -131,7 +131,7 @@ class LogMessageFormatterTest : BehaviorSpec({
     given("toFormattedMessage(event: RedirectEvent)") {
 
         `when`("it gets a RedirectEvent") {
-            val event = RedirectEvent(monitor, URI("https://irrelevant.com"))
+            val event = HttpRedirectEvent(monitor, URI("https://irrelevant.com"))
 
             then("it should return the correct message") {
                 val expectedMessage = "ℹ️ Request to \"test_monitor\" (https://test.url) has been redirected " +

@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
@@ -115,7 +115,7 @@ class IntegrationRepository(
     /**
      * Returns all the integrations that are effective for the given monitor, including the globally enabled ones
      */
-    fun getEffectiveIntegrations(monitor: MonitorDetailsDto): List<IntegrationDetailsDto> =
+    fun getEffectiveIntegrations(monitor: HttpMonitorDetailsDto): List<IntegrationDetailsDto> =
         configuredIntegrations.filter { (id, config) ->
             (config.global && config.enabled) || monitor.integrations.contains(id)
         }.values.map { IntegrationDetailsDto.fromConfig(it) }

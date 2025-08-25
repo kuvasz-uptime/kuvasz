@@ -4,15 +4,16 @@
 package com.kuvaszuptime.kuvasz.jooq;
 
 
-import com.kuvaszuptime.kuvasz.jooq.tables.LatencyLog;
-import com.kuvaszuptime.kuvasz.jooq.tables.Monitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
-import com.kuvaszuptime.kuvasz.jooq.tables.UptimeEvent;
 
 import java.util.Arrays;
 import java.util.List;
 
 import org.jooq.Catalog;
+import org.jooq.Sequence;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SchemaImpl;
@@ -32,24 +33,24 @@ public class Kuvasz extends SchemaImpl {
     public static final Kuvasz KUVASZ = new Kuvasz();
 
     /**
-     * The table <code>kuvasz.latency_log</code>.
+     * The table <code>kuvasz.http_latency_log</code>.
      */
-    public final LatencyLog LATENCY_LOG = LatencyLog.LATENCY_LOG;
+    public final HttpLatencyLog HTTP_LATENCY_LOG = HttpLatencyLog.HTTP_LATENCY_LOG;
 
     /**
-     * The table <code>kuvasz.monitor</code>.
+     * The table <code>kuvasz.http_monitor</code>.
      */
-    public final Monitor MONITOR = Monitor.MONITOR;
+    public final HttpMonitor HTTP_MONITOR = HttpMonitor.HTTP_MONITOR;
+
+    /**
+     * The table <code>kuvasz.http_uptime_event</code>.
+     */
+    public final HttpUptimeEvent HTTP_UPTIME_EVENT = HttpUptimeEvent.HTTP_UPTIME_EVENT;
 
     /**
      * The table <code>kuvasz.ssl_event</code>.
      */
     public final SslEvent SSL_EVENT = SslEvent.SSL_EVENT;
-
-    /**
-     * The table <code>kuvasz.uptime_event</code>.
-     */
-    public final UptimeEvent UPTIME_EVENT = UptimeEvent.UPTIME_EVENT;
 
     /**
      * No further instances allowed
@@ -65,12 +66,21 @@ public class Kuvasz extends SchemaImpl {
     }
 
     @Override
+    public final List<Sequence<?>> getSequences() {
+        return Arrays.asList(
+            Sequences.LATENCY_LOG_ID_SEQ,
+            Sequences.MONITOR_ID_SEQ,
+            Sequences.UPTIME_EVENT_ID_SEQ
+        );
+    }
+
+    @Override
     public final List<Table<?>> getTables() {
         return Arrays.asList(
-            LatencyLog.LATENCY_LOG,
-            Monitor.MONITOR,
-            SslEvent.SSL_EVENT,
-            UptimeEvent.UPTIME_EVENT
+            HttpLatencyLog.HTTP_LATENCY_LOG,
+            HttpMonitor.HTTP_MONITOR,
+            HttpUptimeEvent.HTTP_UPTIME_EVENT,
+            SslEvent.SSL_EVENT
         );
     }
 }

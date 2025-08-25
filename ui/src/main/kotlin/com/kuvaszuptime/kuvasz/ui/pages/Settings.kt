@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
-import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -14,44 +13,44 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
     withLayout(
         globals,
         title = Messages.settings(),
-        pageTitle = { simplePageHeader(preTitle = Messages.overview(), title = Messages.settings()) }
+        pageTitle = { settingsPageHeader() }
     ) {
-        fun FlowContent.integrationBadge(config: SettingsDto.IntegrationConfigDto) {
-            val effective = if (config is SettingsDto.EmailNotificationConfigDto) {
-                config.enabled && settings.integrations.smtp != null
-            } else {
-                config.enabled
-            }
+//        fun FlowContent.integrationBadge(config: LegacySettingsDto.IntegrationConfigDto) {
+//            val effective = if (config is LegacySettingsDto.EmailNotificationConfigDto) {
+//                config.enabled && settings.integrations.smtp != null
+//            } else {
+//                config.enabled
+//            }
+//
+//            span {
+//                classes(
+//                    mutableSetOf(BADGE, BADGE_LG).addIf(effective, BG_GREEN_LT)
+//                )
+//                if (config is LegacySettingsDto.EmailNotificationConfigDto && effective != config.enabled) {
+//                    tooltip(Messages.emailNotEnabledDueToMissingSMTP())
+//                }
+//                if (config.global) {
+//                    icon(Icon.WORLD)
+//                }
+//                +config.name
+//                if (config.enabled != effective) {
+//                    span {
+//                        classes(TEXT_YELLOW)
+//                        icon(Icon.ALERT_TRIANGLE)
+//                    }
+//                }
+//            }
+//        }
 
-            span {
-                classes(
-                    mutableSetOf(BADGE, BADGE_LG).addIf(effective, BG_GREEN_LT)
-                )
-                if (config is SettingsDto.EmailNotificationConfigDto && effective != config.enabled) {
-                    tooltip(Messages.emailNotEnabledDueToMissingSMTP())
-                }
-                if (config.global) {
-                    icon(Icon.WORLD)
-                }
-                +config.name
-                if (config.enabled != effective) {
-                    span {
-                        classes(TEXT_YELLOW)
-                        icon(Icon.ALERT_TRIANGLE)
-                    }
-                }
-            }
-        }
-
-        fun FlowContent.integrationsList(integrations: List<SettingsDto.IntegrationConfigDto>) {
-            div {
-                classes(BADGES_LIST)
-                integrations.sortedBy { it.name }.forEach { integrationBadge(it) }
-                if (integrations.isEmpty()) {
-                    span { +Messages.notConfigured() }
-                }
-            }
-        }
+//        fun FlowContent.integrationsList(integrations: List<LegacySettingsDto.IntegrationConfigDto>) {
+//            div {
+//                classes(BADGES_LIST)
+//                integrations.sortedBy { it.name }.forEach { integrationBadge(it) }
+//                if (integrations.isEmpty()) {
+//                    span { +Messages.notConfigured() }
+//                }
+//            }
+//        }
 
         div {
             classes(ROW)
@@ -85,11 +84,14 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         value = Messages.xDays(settings.app.latencyDataRetentionDays.toString())
                     )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
-                    settingsToggle(label = Messages.readOnlyMode(), checked = settings.app.readOnlyMode)
                     settingsToggle(label = Messages.authentication(), checked = settings.authentication.enabled)
                     settingsLabel(
                         label = Messages.authenticationMaxAge(),
                         value = Messages.xSeconds(settings.authentication.accessTokenMaxAge.toString())
+                    )
+                    settingsToggle(
+                        label = Messages.httpMonitorsReadOnlyMode(),
+                        checked = settings.app.editabilityState.areHttpMonitorsReadOnly
                     )
                 }
             }
@@ -112,7 +114,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         }
                         div {
                             classes(MT_3)
-                            settings.integrations.smtp?.let { smtpConfig ->
+                            settings.smtp?.let { smtpConfig ->
                                 multiSettingsLabel(
                                     label = Messages.smtpHost(),
                                     value = smtpConfig.host
@@ -130,69 +132,6 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                                 +Messages.notConfigured()
                             }
                         }
-                    }
-                    // Email integrations
-                    div {
-                        div {
-                            classes(FORM_LABEL)
-                            icon(Icon.ENVELOPE)
-                            span {
-                                classes(MS_2)
-                                +"E-mail"
-                            }
-                        }
-                        integrationsList(settings.integrations.email)
-                    }
-                    // PagerDuty integrations
-                    div {
-                        div {
-                            classes(FORM_LABEL)
-                            icon(Icon.BRAND_PAGERDUTY)
-                            span {
-                                classes(MS_2)
-                                +"PagerDuty"
-                            }
-                        }
-                        integrationsList(settings.integrations.pagerduty)
-                    }
-
-                    // Slack integrations
-                    div {
-                        div {
-                            classes(FORM_LABEL)
-                            icon(Icon.BRAND_SLACK)
-                            span {
-                                classes(MS_2)
-                                +"Slack"
-                            }
-                        }
-                        integrationsList(settings.integrations.slack)
-                    }
-
-                    // Discord integrations
-                    div {
-                        div {
-                            classes(FORM_LABEL)
-                            icon(Icon.BRAND_DISCORD)
-                            span {
-                                classes(MS_2)
-                                +"Discord"
-                            }
-                        }
-                        integrationsList(settings.integrations.discord)
-                    }
-
-                    // Telegram integrations
-                    div {
-                        div {
-                            classes(FORM_LABEL)
-                            icon(Icon.BRAND_TELEGRAM)
-                            span {
-                                classes(MS_2)
-                                +"Telegram"
-                            }
-                        }
-                        integrationsList(settings.integrations.telegram)
                     }
                 }
             }
@@ -221,12 +160,12 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                                 div {
                                     classes(MT_3)
                                     multiSettingsToggle(
-                                        label = Messages.uptimeStatus(),
-                                        checked = metersConfig.uptimeStatus,
+                                        label = Messages.httpUptimeStatus(),
+                                        checked = metersConfig.httpUptimeStatus,
                                     )
                                     multiSettingsToggle(
-                                        label = Messages.latestLatency(),
-                                        checked = metersConfig.latestLatency,
+                                        label = Messages.httpLatestLatency(),
+                                        checked = metersConfig.httpLatestLatency,
                                     )
                                     multiSettingsToggle(label = Messages.sslStatus(), checked = metersConfig.sslStatus)
                                     multiSettingsToggle(label = Messages.sslExpiry(), checked = metersConfig.sslExpiry)
@@ -380,3 +319,53 @@ private fun FlowContent.multiSettingsToggle(label: String, checked: Boolean) =
 
 private fun FlowContent.multiSettingsLabel(label: String, value: String) =
     settingsLabel(label, value, multi = true)
+
+private fun HtmlBlockTag.settingsPageHeader() {
+    div {
+        classes(CONTAINER_XL)
+        div {
+            classes(ROW, G_2, ALIGN_ITEMS_CENTER)
+            div {
+                classes(CSSClass.COL)
+                div {
+                    classes(ROW, ALIGN_ITEMS_CENTER)
+                    div {
+                        classes(CSSClass.COL)
+                        div {
+                            classes(PAGE_PRETITLE)
+                            +Messages.overview()
+                        }
+                        h2 {
+                            classes(PAGE_TITLE)
+                            +Messages.settings()
+                        }
+                    }
+                    div {
+                        classes(COL_AUTO, MS_AUTO)
+                        div {
+                            classes(BTN_LIST)
+                            div {
+                                classes(DROPDOWN)
+                                a(href = "#") {
+                                    classes(BTN, DROPDOWN_TOGGLE)
+                                    dropdownToggler()
+                                    icon(Icon.FLOPPY)
+                                    +Messages.backupAndRestore()
+                                }
+                                div {
+                                    classes(DROPDOWN_MENU)
+                                    a(href = "/api/v2/monitors/export/yaml") {
+                                        classes(DROPDOWN_ITEM)
+                                        attributes["download"] = "true"
+                                        icon(Icon.DOWNLOAD)
+                                        +Messages.downloadYamlBackup()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

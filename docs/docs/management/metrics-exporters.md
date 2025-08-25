@@ -30,9 +30,9 @@ Currently the following metrics are exported, but all of them is **disabled by d
 Every metric has the following **labels/tags**, that you can use to filter/group them in your monitoring backend:
 
 - `name`: the name of the monitor
-- `url`: the URL that is monitored
+- `target`: the target that is monitored (i.e. a URL or an IP address)
 
-### Uptime status
+### HTTP uptime status
 
 <!-- md:version 2.1.0 -->
 <!-- md:default `false` -->
@@ -41,23 +41,23 @@ Every metric has the following **labels/tags**, that you can use to filter/group
 === "YAML"
 
     ```yaml
-    metrics-exports.uptime-status: true
+    metrics-exports.http-uptime-status: true
     ```
 
 === "ENV"
 
     ```bash
-    ENABLE_UPTIME_STATUS_EXPORT=true
+    ENABLE_HTTP_UPTIME_STATUS_EXPORT=true
     ```
 
-This metric is exported as a **gauge** and indicates the current uptime status of the monitored services.
+This metric is exported as a **gauge** and indicates the current uptime status of the monitored HTTP services.
 
 | Status                                | Gauge value |
 |---------------------------------------|-------------|
 | UP                                    | 1           |
 | DOWN                                  | 0           |
 
-### Latest latency
+### HTTP latest latency
 
 <!-- md:version 2.1.0 -->
 <!-- md:default `false` -->
@@ -66,16 +66,16 @@ This metric is exported as a **gauge** and indicates the current uptime status o
 === "YAML"
 
     ```yaml
-    metrics-exports.latest-latency: true
+    metrics-exports.http-latest-latency: true
     ```
 
 === "ENV"
 
     ```bash
-    ENABLE_LATEST_LATENCY_EXPORT=true
+    ENABLE_HTTP_LATEST_LATENCY_EXPORT=true
     ```
 
-This metric is exported as a **gauge** and reports the latest recorded latency of the monitored endpoint, in milliseconds.
+This metric is exported as a **gauge** and reports the latest recorded latency of the monitored HTTP endpoint, in milliseconds.
 
 ### SSL status
 
@@ -168,15 +168,15 @@ Whether **meter descriptions** should be exposed to _Prometheus_. Disable **to m
 
 ### Scraping the metrics
 
-The metrics are scrapeable through the **`/api/v1/prometheus`** endpoint, and you'll need to **use** [**your API key**](../features/api.md#authentication) by default to access it, just like on any other API endpoint. In case you have disabled the authentication, the endpoint will be available without authentication, of course.
+The metrics are scrapeable through the **`/api/v2/prometheus`** endpoint, and you'll need to **use** [**your API key**](../features/api.md#authentication) by default to access it, just like on any other API endpoint. In case you have disabled the authentication, the endpoint will be available without authentication, of course.
 
 ### Example output
 
 ```text
-kuvasz_monitor_uptime_status{name="nytimes.com",url="https://www.nytimes.com"} 1.0
-kuvasz_monitor_latency_latest_milliseconds{name="nytimes.com",url="https://www.nytimes.com"} 29.0
-kuvasz_monitor_ssl_status{name="nytimes.com",url="https://www.nytimes.com"} 1.0
-kuvasz_monitor_ssl_expiry_seconds{name="nytimes.com",url="https://www.nytimes.com"} 1.758828296E9
+kuvasz_http_uptime_status{name="nytimes.com",target="https://www.nytimes.com"} 1.0
+kuvasz_http_latency_latest_milliseconds{name="nytimes.com",target="https://www.nytimes.com"} 29.0
+kuvasz_http_ssl_status{name="nytimes.com",target="https://www.nytimes.com"} 1.0
+kuvasz_http_ssl_expiry_seconds{name="nytimes.com",target="https://www.nytimes.com"} 1.758828296E9
 ```
 
 ### Example config
@@ -193,8 +193,8 @@ kuvasz_monitor_ssl_expiry_seconds{name="nytimes.com",url="https://www.nytimes.co
             descriptions: true
     ---
     metrics-exports:
-        uptime-status: true
-        latest-latency: true
+        http-uptime-status: true
+        http-latest-latency: true
         ssl-status: true
         ssl-expiry: true
     ```
@@ -206,8 +206,8 @@ kuvasz_monitor_ssl_expiry_seconds{name="nytimes.com",url="https://www.nytimes.co
     ENABLE_PROMETHEUS_EXPORT=true
     ENABLE_PROMETHEUS_DESCRIPTIONS=true
     # Enable the individual metrics
-    ENABLE_UPTIME_STATUS_EXPORT=true
-    ENABLE_LATEST_LATENCY_EXPORT=true
+    ENABLE_HTTP_UPTIME_STATUS_EXPORT=true
+    ENABLE_HTTP_LATEST_LATENCY_EXPORT=true
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
     ```
@@ -301,10 +301,10 @@ The **frequency** of exporting the metrics to _OpenTelemetry_. The default is **
 ### Example output
 
 ```text
-kuvasz.monitor.ssl.status{name=weather.com,url=https://weather.com} 1
-kuvasz.monitor.latency.latest.milliseconds{name=samsung.com,url=https://www.samsung.com} 183
-kuvasz.monitor.uptime.status{name=google.com,url=https://www.google.com} 1
-kuvasz.monitor.ssl.expiry.seconds{name=bbc.com,url=https://www.bbc.com} 1.785147977e+09
+kuvasz.http.ssl.status{name=weather.com,target=https://weather.com} 1
+kuvasz.http.latency.latest.milliseconds{name=samsung.com,target=https://www.samsung.com} 183
+kuvasz.http.uptime.status{name=google.com,target=https://www.google.com} 1
+kuvasz.http.ssl.expiry.seconds{name=bbc.com,target=https://www.bbc.com} 1.785147977e+09
 ```
 
 ### Example config
@@ -323,8 +323,8 @@ kuvasz.monitor.ssl.expiry.seconds{name=bbc.com,url=https://www.bbc.com} 1.785147
             step: PT1M
     ---
     metrics-exports:
-      uptime-status: true
-      latest-latency: true
+      http-uptime-status: true
+      http-latest-latency: true
       ssl-status: true
       ssl-expiry: true
     ```
@@ -338,8 +338,8 @@ kuvasz.monitor.ssl.expiry.seconds{name=bbc.com,url=https://www.bbc.com} 1.785147
     OTLP_EXPORT_HEADERS='Authorization=Bearer Your-collectors-API-token,key2=value'
     OTLP_EXPORT_STEP=PT1M
     # Enable the individual metrics
-    ENABLE_UPTIME_STATUS_EXPORT=true
-    ENABLE_LATEST_LATENCY_EXPORT=true
+    ENABLE_HTTP_UPTIME_STATUS_EXPORT=true
+    ENABLE_HTTP_LATEST_LATENCY_EXPORT=true
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
     ```

@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.models.ExpectedKeywordNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import jakarta.inject.Singleton
@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 @Singleton
 class HttpResponseBodyChecker(
     eventDispatcher: EventDispatcher,
-    uptimeEventRepository: UptimeEventRepository,
+    uptimeEventRepository: HttpUptimeEventRepository,
 ) : HttpResponseChecker(eventDispatcher, uptimeEventRepository) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
-import com.kuvaszuptime.kuvasz.jooq.tables.records.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.UptimeCheckException
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -16,21 +16,21 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlin.time.Duration.Companion.seconds
 
-fun EventDispatcher.upSubscriber(): TestSubscriber<MonitorUpEvent> {
-    val subscriber = TestSubscriber<MonitorUpEvent>()
-    this.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+fun EventDispatcher.upSubscriber(): TestSubscriber<HttpMonitorUpEvent> {
+    val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+    this.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
     return subscriber
 }
 
-fun EventDispatcher.downSubscriber(): TestSubscriber<MonitorDownEvent> {
-    val subscriber = TestSubscriber<MonitorDownEvent>()
-    this.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+fun EventDispatcher.downSubscriber(): TestSubscriber<HttpMonitorDownEvent> {
+    val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+    this.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
     return subscriber
 }
 
-fun EventDispatcher.redirectSubscriber(): TestSubscriber<RedirectEvent> {
-    val subscriber = TestSubscriber<RedirectEvent>()
-    this.subscribeToRedirectEvents { it.forwardToSubscriber(subscriber) }
+fun EventDispatcher.redirectSubscriber(): TestSubscriber<HttpRedirectEvent> {
+    val subscriber = TestSubscriber<HttpRedirectEvent>()
+    this.subscribeToHttpRedirectEvents { it.forwardToSubscriber(subscriber) }
     return subscriber
 }
 
@@ -42,7 +42,7 @@ fun mockMonitor(
     expectedStatusCodes: Set<Int> = emptySet(),
     followRedirects: Boolean = true,
     expectedHeaders: Map<String, String> = emptyMap(),
-): MonitorRecord = MonitorRecord().apply {
+): HttpMonitorRecord = HttpMonitorRecord().apply {
     this.id = 1L
     this.url = "http://example.com"
     this.expectedKeyword = expectedKeyword
@@ -54,7 +54,7 @@ fun mockMonitor(
     this.expectedHeaders = expectedHeaders.toJsonNode()
 }
 
-suspend inline fun <reified E : UptimeCheckException> TestSubscriber<MonitorDownEvent>.assertSingleError(
+suspend inline fun <reified E : UptimeCheckException> TestSubscriber<HttpMonitorDownEvent>.assertSingleError(
     expectedMessage: String,
 ) {
     this.awaitCount(1)
@@ -63,7 +63,7 @@ suspend inline fun <reified E : UptimeCheckException> TestSubscriber<MonitorDown
     event.error.message shouldStartWith expectedMessage
 }
 
-suspend inline fun TestSubscriber<RedirectEvent>.assertSingleValue(monitorId: Long, redirectLocation: String) {
+suspend inline fun TestSubscriber<HttpRedirectEvent>.assertSingleValue(monitorId: Long, redirectLocation: String) {
     this.awaitCount(1)
     val event = eventually(2.seconds) { this.values().first() }
     event.monitor.id shouldBe monitorId

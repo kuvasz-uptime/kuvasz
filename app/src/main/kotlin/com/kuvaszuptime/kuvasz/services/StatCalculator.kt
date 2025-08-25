@@ -2,9 +2,10 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.records.UptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -13,11 +14,11 @@ import java.time.OffsetDateTime
 
 @Singleton
 class StatCalculator(
-    private val monitorCrudService: MonitorCrudService,
-    private val uptimeEventRepository: UptimeEventRepository,
+    private val monitorCrudService: HttpMonitorCrudService,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
 ) {
     @Suppress("NestedBlockDepth")
-    fun calculateOverallStats(period: Duration): MonitoringStatsDto {
+    fun calculateOverallHttpStats(period: Duration): HttpMonitoringStatsDto {
         val monitors = monitorCrudService.getMonitorsWithDetails()
         val periodStart = getCurrentTimestamp().minus(period)
         val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(periodStart)
@@ -53,9 +54,9 @@ class StatCalculator(
             }
         }
 
-        return MonitoringStatsDto(
-            actual = MonitoringStatsDto.ActualMonitoringStats(
-                uptimeStats = MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+        return HttpMonitoringStatsDto(
+            actual = HttpMonitoringStatsDto.ActualMonitoringStats(
+                uptimeStats = HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
                     total = monitors.size,
                     down = downMonitors,
                     up = upMonitors,
@@ -63,23 +64,23 @@ class StatCalculator(
                     inProgress = uptimeInProgressMonitors,
                     lastIncident = uptimeEventRepository.fetchLatestIncidentTimestamp(),
                 ),
-                sslStats = MonitoringStatsDto.ActualMonitoringStats.SslStats(
+                sslStats = HttpMonitoringStatsDto.ActualMonitoringStats.SslStats(
                     invalid = sslInvalidMonitors,
                     valid = sslValidMonitors,
                     willExpire = sslWillExpireMonitors,
                     inProgress = sslInProgressMonitors,
                 )
             ),
-            history = MonitoringStatsDto.HistoricalMonitoringStats(
-                uptimeStats = calculateHistoricalStats(periodStart, uptimeEvents)
+            history = HttpMonitoringStatsDto.HistoricalMonitoringStats(
+                uptimeStats = calculateHistoricalHttpStats(periodStart, uptimeEvents)
             )
         )
     }
 
-    fun calculateHistoricalStats(
+    fun calculateHistoricalHttpStats(
         periodStart: OffsetDateTime,
-        uptimeEvents: List<UptimeEventRecord>,
-    ): MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats {
+        uptimeEvents: List<HttpUptimeEventRecord>,
+    ): HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats {
         val monitorsWithIncidents: MutableSet<Long> = mutableSetOf()
         var historicalIncidentCnt = 0
         var historicalUptimeSeconds = 0L
@@ -98,7 +99,7 @@ class StatCalculator(
             }
         }
 
-        return MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
+        return HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
             incidents = historicalIncidentCnt,
             affectedMonitors = monitorsWithIncidents.size,
             uptimeRatio = if (historicalUptimeSeconds + historicalDowntimeSeconds > 0) {
