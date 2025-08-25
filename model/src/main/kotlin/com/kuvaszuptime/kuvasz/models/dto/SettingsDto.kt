@@ -290,22 +290,6 @@ data class SettingsDto(
     }
 
     @Introspected
-    data class IntegrationSettingsDto(
-        @param:Schema(description = "SMTP configuration for email notifications", required = true, nullable = false)
-        val smtp: SmtpConfigDto?,
-        @param:Schema(description = "List of Slack notification configurations", required = true)
-        val slack: List<SlackNotificationConfigDto>,
-        @param:Schema(description = "List of Discord notification configurations", required = true)
-        val discord: List<DiscordNotificationConfigDto>,
-        @param:Schema(description = "List of PagerDuty configurations", required = true)
-        val pagerduty: List<PagerdutyConfigDto>,
-        @param:Schema(description = "List of email notification configurations", required = true)
-        val email: List<EmailNotificationConfigDto>,
-        @param:Schema(description = "List of Telegram notification configurations", required = true)
-        val telegram: List<TelegramNotificationConfigDto>,
-    )
-
-    @Introspected
     data class SmtpConfigDto(
         @param:Schema(description = "The SMTP host", required = true)
         val host: String,
