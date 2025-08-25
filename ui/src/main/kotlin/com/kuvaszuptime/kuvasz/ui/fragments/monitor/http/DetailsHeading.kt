@@ -1,7 +1,7 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.iodesystems.htmx.Htmx.Companion.hx
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
@@ -11,17 +11,17 @@ import kotlinx.html.*
 import kotlinx.html.stream.*
 import kotlin.time.Duration.Companion.seconds
 
-fun renderMonitorDetailsHeading(monitor: MonitorDetailsDto): String =
-    buildString { appendHTML().div { monitorDetailsHeading(monitor) } }
+fun renderHttpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto): String =
+    buildString { appendHTML().div { httpMonitorDetailsHeading(monitor) } }
 
 private const val MONITOR_URL_MAX_LENGTH = 60
 
-internal fun FlowContent.monitorDetailsHeading(monitor: MonitorDetailsDto) {
+internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto) {
     div {
         id = "monitor-detail-heading"
         classes(COL_AUTO)
         hx {
-            get("/fragments/monitors/${monitor.id}/details-heading")
+            get("/http-monitors/fragments/details-heading/${monitor.id}")
             trigger {
                 every(15.seconds)
                 event("refresh-monitor-detail-status")
@@ -40,6 +40,10 @@ internal fun FlowContent.monitorDetailsHeading(monitor: MonitorDetailsDto) {
                 div {
                     classes(PAGE_PRETITLE)
                     +"#${monitor.id}"
+                    span {
+                        classes(BADGE_SM, BADGE, BADGE_PILL, BG_PRIMARY, TEXT_PRIMARY_FG, MS_2)
+                        +"HTTP"
+                    }
                 }
                 h2 {
                     classes(PAGE_TITLE, TEXT_WRAP, TEXT_BREAK)

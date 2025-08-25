@@ -1,9 +1,9 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
@@ -12,12 +12,12 @@ import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderSSLSummary(monitor: MonitorDetailsDto): String =
+fun renderSSLSummary(monitor: HttpMonitorDetailsDto): String =
     buildString { appendHTML().div { detailsSSLSummary(monitor) } }
 
 private const val SSL_ERROR_MAX_LENGTH = 40
 
-internal fun FlowContent.detailsSSLSummary(monitor: MonitorDetailsDto) {
+internal fun FlowContent.detailsSSLSummary(monitor: HttpMonitorDetailsDto) {
     div {
         id = "monitor-details-ssl-summary"
         classes(ROW, ROW_CARDS, MB_3)

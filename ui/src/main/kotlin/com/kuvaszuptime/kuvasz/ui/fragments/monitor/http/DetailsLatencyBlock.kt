@@ -1,7 +1,7 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -30,7 +30,7 @@ private fun FlowContent.latencyMetricCard(propertyName: String, label: String) {
     }
 }
 
-internal fun FlowContent.detailsLatencyBlock(monitor: MonitorDetailsDto) {
+internal fun FlowContent.detailsLatencyBlock(monitor: HttpMonitorDetailsDto) {
     div {
         xData(
             """latencyBlock(

@@ -1,9 +1,9 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
@@ -13,10 +13,10 @@ import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderUptimeSummary(monitor: MonitorDetailsDto): String =
+fun renderUptimeSummary(monitor: HttpMonitorDetailsDto): String =
     buildString { appendHTML().div { detailsUptimeSummary(monitor) } }
 
-fun FlowContent.detailsUptimeSummary(monitor: MonitorDetailsDto) {
+fun FlowContent.detailsUptimeSummary(monitor: HttpMonitorDetailsDto) {
     div {
         id = "monitor-details-uptime-summary"
         classes(ROW, ROW_CARDS, MB_3)
@@ -129,7 +129,7 @@ fun FlowContent.detailsUptimeSummary(monitor: MonitorDetailsDto) {
     }
 }
 
-private fun getUptimeCardStatusClass(monitor: MonitorDetailsDto): CSSClass? {
+private fun getUptimeCardStatusClass(monitor: HttpMonitorDetailsDto): CSSClass? {
     return when {
         !monitor.enabled -> BG_CYAN
         monitor.uptimeStatus == null -> BG_WARNING
@@ -139,7 +139,7 @@ private fun getUptimeCardStatusClass(monitor: MonitorDetailsDto): CSSClass? {
     }
 }
 
-private fun getUptimeCardIcon(monitor: MonitorDetailsDto): Icon {
+private fun getUptimeCardIcon(monitor: HttpMonitorDetailsDto): Icon {
     return when {
         !monitor.enabled -> Icon.HEART_OFF
         monitor.uptimeStatus == UptimeStatus.UP -> Icon.HEART

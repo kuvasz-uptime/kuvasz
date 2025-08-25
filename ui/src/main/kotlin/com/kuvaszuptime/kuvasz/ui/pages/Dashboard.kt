@@ -6,7 +6,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -20,7 +20,7 @@ fun renderDashboard(globals: AppGlobals) =
     ) {
         div {
             hx {
-                get("/fragments/monitors/stats")
+                get("/http-monitors/fragments/stats")
                 trigger {
                     load()
                     every(30.seconds)
@@ -37,7 +37,7 @@ fun renderDashboard(globals: AppGlobals) =
     }
 
 private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
-    val createModalId = "create-monitor-modal"
+    val createHttpModalId = "create-http-monitor-modal"
     div {
         classes(CONTAINER_XL)
         div {
@@ -54,23 +54,28 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                         }
                         h2 {
                             classes(PAGE_TITLE)
-                            +Messages.uptimeTitle()
+                            +Messages.http()
                         }
                     }
                     div {
                         classes(COL_AUTO, MS_AUTO)
                         div {
                             classes(BTN_LIST)
-                            if (!globals.isReadOnlyMode()) {
-                                buttonWithIcon(
-                                    icon = Icon.PLUS,
-                                    label = Messages.addNewMonitor(),
-                                    classes = setOf(BTN_PRIMARY, D_NONE, D_MD_BLOCK)
-                                ) {
-                                    modalOpener(createModalId)
+                            div {
+                                classes(DROPDOWN)
+                                a(href = "#") {
+                                    classes(BTN, DROPDOWN_TOGGLE, BTN_PRIMARY)
+                                    dropdownToggler()
+                                    icon(Icon.PLUS)
                                 }
-                                compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY, D_MD_NONE)) {
-                                    modalOpener(createModalId)
+                                div {
+                                    classes(DROPDOWN_MENU)
+                                    button {
+                                        classes(DROPDOWN_ITEM)
+                                        modalOpener(createHttpModalId)
+                                        disabled = globals.editabilityState.areHttpMonitorsReadOnly()
+                                        +Messages.httpMonitor()
+                                    }
                                 }
                             }
                             compactIconButton(Icon.REFRESH, onClick = "refreshDashboard()") {}
@@ -80,7 +85,8 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
             }
         }
     }
-    if (!globals.isReadOnlyMode()) {
-        monitorCreateUpdateModal(modalId = createModalId, monitor = null, globals)
+    // Render the upsert modals conditionally
+    if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
+        httpMonitorCreateUpdateModal(modalId = createHttpModalId, monitor = null, globals)
     }
 }

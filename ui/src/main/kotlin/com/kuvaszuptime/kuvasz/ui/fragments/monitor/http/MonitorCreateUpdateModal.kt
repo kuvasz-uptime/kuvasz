@@ -1,11 +1,11 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.checks.KnownHttpHeaders
 import com.kuvaszuptime.kuvasz.models.checks.SupportedExpectedHttpStatusCodes
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -17,9 +17,9 @@ import com.kuvaszuptime.kuvasz.ui.utils.*
 import de.comahe.i18n4k.strings.capitalize
 import kotlinx.html.*
 
-internal fun FlowContent.monitorCreateUpdateModal(
+internal fun FlowContent.httpMonitorCreateUpdateModal(
     modalId: String,
-    monitor: MonitorDetailsDto?,
+    monitor: HttpMonitorDetailsDto?,
     globals: AppGlobals,
 ) {
     val serializedMonitor: String? = monitor?.let { objectMapper.writeValueAsString(it) }
@@ -40,6 +40,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
     val serializedStatusCodes = objectMapper.writeValueAsString(SupportedExpectedHttpStatusCodes.allCodes)
     val modalClosedEvent = "monitor-upsert-modal-closed"
     val acceptedStatusCodeSelectId = "accepted-status-codes-select"
+    val isReadOnlyMode = globals.editabilityState.areHttpMonitorsReadOnly()
     div {
         id = modalId
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
@@ -68,8 +69,8 @@ internal fun FlowContent.monitorCreateUpdateModal(
                     h5 {
                         classes(MODAL_TITLE)
                         if (monitor == null) {
-                            +Messages.createNewMonitor()
-                        } else if (globals.isReadOnlyMode()) {
+                            +Messages.createNewHttpMonitor()
+                        } else if (isReadOnlyMode) {
                             +Messages.configurationOf(monitor.name)
                         } else {
                             +Messages.updateMonitor(monitor.name)
@@ -92,7 +93,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                             placeholder = Messages.monitorNamePlaceholder(),
                             required = true,
                             onInput = "validateName()",
-                            disabledIf = "${globals.isReadOnlyMode()}",
+                            disabledIf = "$isReadOnlyMode",
                         )
                     }
                     // URL
@@ -104,7 +105,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                             placeholder = Messages.monitorUrlPlaceholder(),
                             required = true,
                             onInput = "validateUrl()",
-                            disabledIf = "${globals.isReadOnlyMode()}",
+                            disabledIf = "$isReadOnlyMode",
                         )
                     }
                     // Uptime Check Interval
@@ -116,7 +117,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                             placeholder = null,
                             required = true,
                             onInput = "validateUptimeCheckInterval()",
-                            disabledIf = "${globals.isReadOnlyMode()}",
+                            disabledIf = "$isReadOnlyMode",
                         )
                     }
                     // Latency History
@@ -126,7 +127,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                             propName = "latencyHistoryEnabled",
                             label = Messages.latencyHistorySwitchLabel(),
                             description = Messages.latencyHistorySwitchDescription(),
-                            isDisabled = globals.isReadOnlyMode(),
+                            isDisabled = isReadOnlyMode,
                         )
                     }
 
@@ -148,7 +149,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     inputName = "requestMethod",
                                     required = true,
                                 )
-                                httpMethodSelector(xModelName = "requestMethod", isReadOnly = globals.isReadOnlyMode())
+                                httpMethodSelector(xModelName = "requestMethod", isReadOnly = isReadOnlyMode)
                             }
                             // Follow Redirects
                             div {
@@ -157,7 +158,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     propName = "followRedirects",
                                     label = Messages.followRedirectsSwitchLabel(),
                                     description = Messages.followRedirectsSwitchDescription(),
-                                    isDisabled = globals.isReadOnlyMode(),
+                                    isDisabled = isReadOnlyMode,
                                 )
                             }
                             // Force no-cache header
@@ -167,7 +168,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     propName = "forceNoCache",
                                     label = Messages.forceNoCacheSwitchLabel(),
                                     description = Messages.forceNoCacheSwitchDescription(),
-                                    isDisabled = globals.isReadOnlyMode(),
+                                    isDisabled = isReadOnlyMode,
                                 )
                             }
                             // Custom Headers
@@ -177,7 +178,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     label = Messages.requestHeadersLabel(),
                                     description = Messages.requestHeadersDescription(),
                                     errorProp = "newRequestHeader",
-                                    isReadOnly = globals.isReadOnlyMode(),
+                                    isReadOnly = isReadOnlyMode,
                                     xModelName = "requestHeaders",
                                     xNewKeyModelName = "newRequestHeaderKey",
                                     xNewValueModelName = "newRequestHeaderValue",
@@ -196,7 +197,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     placeholder = Messages.requestBodyPlaceholder(),
                                     required = false,
                                     onInput = "validateRequestBody()",
-                                    disabledIf = "isRequestLoading || ${globals.isReadOnlyMode()}",
+                                    disabledIf = "isRequestLoading || $isReadOnlyMode",
                                 )
                             }
                         }
@@ -220,7 +221,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                 acceptedStatusCodeSelector(
                                     xModelName = "selectedHttpStatusCodes",
                                     acceptedStatusCodeSelectId = acceptedStatusCodeSelectId,
-                                    isReadOnly = globals.isReadOnlyMode(),
+                                    isReadOnly = isReadOnlyMode,
                                 )
                             }
                             // Expected Keyword
@@ -233,7 +234,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     placeholder = null,
                                     required = false,
                                     onInput = null,
-                                    disabledIf = "${globals.isReadOnlyMode()}",
+                                    disabledIf = "$isReadOnlyMode",
                                 )
                             }
                             // Expected Keyword Case Sensitivity
@@ -243,7 +244,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     propName = "expectedKeywordCaseSensitive",
                                     label = Messages.expectedKeywordCaseSensitiveLabel(),
                                     description = Messages.expectedKeywordCaseSensitiveDescription(),
-                                    isDisabled = globals.isReadOnlyMode(),
+                                    isDisabled = isReadOnlyMode,
                                 )
                             }
                             // Expected Keyword Negation
@@ -253,7 +254,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     propName = "expectedKeywordNegated",
                                     label = Messages.negateExpectedKeywordLabel(),
                                     description = Messages.negateExpectedKeywordDescription(),
-                                    isDisabled = globals.isReadOnlyMode(),
+                                    isDisabled = isReadOnlyMode,
                                 )
                             }
                             // Response Time Threshold
@@ -265,7 +266,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     placeholder = null,
                                     required = false,
                                     onInput = "validateResponseTimeThreshold()",
-                                    disabledIf = "${globals.isReadOnlyMode()}",
+                                    disabledIf = "$isReadOnlyMode",
                                     isNumber = true,
                                 )
                             }
@@ -277,7 +278,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                     label = Messages.expectedHeadersLabel(),
                                     description = Messages.expectedHeadersDescription(),
                                     errorProp = "newExpectedHeader",
-                                    isReadOnly = globals.isReadOnlyMode(),
+                                    isReadOnly = isReadOnlyMode,
                                     xModelName = "expectedHeaders",
                                     xNewKeyModelName = "newExpectedHeaderKey",
                                     xNewValueModelName = "newExpectedHeaderValue",
@@ -299,7 +300,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                 propName = "sslCheckEnabled",
                                 label = Messages.enabled(),
                                 description = Messages.sslCheckSwitchDescription(),
-                                isDisabled = globals.isReadOnlyMode(),
+                                isDisabled = isReadOnlyMode,
                             )
                             validatedInput(
                                 propName = "sslExpiryThreshold",
@@ -308,7 +309,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                 placeholder = null,
                                 required = true,
                                 onInput = "validateSslExpiryThreshold()",
-                                disabledIf = "${globals.isReadOnlyMode()} || !sslCheckEnabled",
+                                disabledIf = "$isReadOnlyMode || !sslCheckEnabled",
                             )
                         }
                         // Integration Settings
@@ -362,7 +363,7 @@ internal fun FlowContent.monitorCreateUpdateModal(
                                                     value = integration.id.toString()
                                                     classes(FORM_CHECK_INPUT)
                                                     xModel("integrations")
-                                                    if (globals.isReadOnlyMode()) disabled = true
+                                                    if (isReadOnlyMode) disabled = true
                                                 }
                                                 span {
                                                     classes(FORM_CHECK_LABEL)
@@ -402,13 +403,13 @@ internal fun FlowContent.monitorCreateUpdateModal(
                     a(href = "#") {
                         classes(BTN, BTN_LINK, LINK_SECONDARY)
                         modalCloser()
-                        if (globals.isReadOnlyMode()) {
+                        if (isReadOnlyMode) {
                             +Messages.close()
                         } else {
                             +Messages.cancel()
                         }
                     }
-                    if (!globals.isReadOnlyMode()) {
+                    if (!isReadOnlyMode) {
                         button {
                             classes(BTN, BTN_PRIMARY, MS_AUTO)
                             xBindDisabled("hasNonNullValue(errors) || isRequestLoading")

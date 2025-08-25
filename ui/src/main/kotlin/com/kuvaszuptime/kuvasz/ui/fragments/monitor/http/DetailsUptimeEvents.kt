@@ -1,7 +1,7 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
@@ -10,10 +10,10 @@ import com.kuvaszuptime.kuvasz.util.durationBetween
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderUptimeEvents(events: List<UptimeEventDto>): String =
+fun renderHttpUptimeEvents(events: List<HttpUptimeEventDto>): String =
     buildString { appendHTML().div { detailsUptimeEvents(events) } }
 
-internal fun FlowContent.detailsUptimeEvents(events: List<UptimeEventDto>) {
+internal fun FlowContent.detailsUptimeEvents(events: List<HttpUptimeEventDto>) {
     div {
         classes(COL_12)
         div {

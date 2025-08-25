@@ -14,7 +14,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (linkPath === "") {
             linkPath = '/';
         }
-        if (currentPath == linkPath || (currentPath.startsWith(linkPath) && linkPath !== "/")) {
+        if (currentPath == linkPath
+            || (currentPath.startsWith(linkPath) && linkPath !== "/")
+            || (currentPath.startsWith('/http-monitors') && linkPath === '#navbar-monitors')
+            ) {
             link.parentNode.classList.add('active');
         }
     });
@@ -57,7 +60,7 @@ const monitorList = (monitorId, isMonitorEnabled) => {
         isRequestLoading: false,
         toggleMonitor() {
             this.isRequestLoading = true;
-            fetch('/api/v1/monitors/' + this.monitorId, {
+            fetch('/api/v2/http-monitors/' + this.monitorId, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ enabled: !this.isMonitorEnabled })
@@ -76,7 +79,7 @@ const monitorList = (monitorId, isMonitorEnabled) => {
         },
         deleteMonitor() {
             this.isRequestLoading = true;
-            fetch('/api/v1/monitors/' + this.monitorId, {
+            fetch('/api/v2/http-monitors/' + this.monitorId, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' }
             }).then(response => {
@@ -99,7 +102,7 @@ const monitorDetails = (monitorId, isMonitorEnabled) => {
 
         toggleMonitor() {
             this.isRequestLoading = true;
-            fetch('/api/v1/monitors/' + this.monitorId, {
+            fetch('/api/v2/http-monitors/' + this.monitorId, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
@@ -127,7 +130,7 @@ const monitorDetails = (monitorId, isMonitorEnabled) => {
 
         deleteMonitor() {
             this.isRequestLoading = true;
-            fetch('/api/v1/monitors/' + this.monitorId, {
+            fetch('/api/v2/http-monitors/' + this.monitorId, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
@@ -135,7 +138,7 @@ const monitorDetails = (monitorId, isMonitorEnabled) => {
             })
                 .then(response => {
                     if (response.ok) {
-                        window.location.href = '/monitors';
+                        window.location.href = '/http-monitors';
                     } else {
                         this.isRequestLoading = false;
                         console.error('Error deleting monitor:', response.statusText);
@@ -166,7 +169,7 @@ const latencyBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLa
         isMonitorEnabled,
         chart: null,
         previousData: null,
-        endpointUrl: '/api/v1/monitors/' + monitorId + '/stats?period=1d',
+        endpointUrl: '/api/v2/http-monitors/' + monitorId + '/stats?period=1d',
         pollInterval: uptimeCheckInterval * 1000,
         isAutoRefreshEnabled: false,
         intervalId: null,
@@ -548,7 +551,7 @@ const upsertMonitorForm = (
 
                 console.debug('Submitting monitor form with data:', body);
 
-                const url = this.isUpdate ? '/api/v1/monitors/' + monitor.id : '/api/v1/monitors';
+                const url = this.isUpdate ? '/api/v2/http-monitors/' + monitor.id : '/api/v2/http-monitors';
                 const method = this.isUpdate ? 'PATCH' : 'POST';
 
                 const response = await fetch(url, {
@@ -567,7 +570,7 @@ const upsertMonitorForm = (
                     if (this.isUpdate) {
                         window.location.reload();
                     } else {
-                        window.location.href = '/monitors/' + responseData.id;
+                        window.location.href = '/http-monitors/' + responseData.id;
                     }
                 } else {
                     if (response.status === 409) {

@@ -1,18 +1,76 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
+import com.iodesystems.htmx.Htmx.Companion.hx
+import com.iodesystems.htmx.HtmxAttrs
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
+import kotlin.time.Duration.Companion.seconds
 
-fun renderMonitorList(monitors: List<MonitorDetailsDto>, isReadOnlyMode: Boolean): String =
+internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto) {
+    div {
+        id = "monitor-details-content"
+        // Uptime summary
+        h2 { +Messages.uptimeBlockTitle() }
+        detailsUptimeSummary(monitor)
+        // Uptime events
+        h3 { +Messages.recentEventsBlockTitle() }
+        div {
+            classes(ROW, ROW_CARDS, MB_3)
+            id = "monitor-details-uptime-events"
+            hx {
+                get("/http-monitors/fragments/details-uptime-events/${monitor.id}")
+                trigger {
+                    load()
+                    every(15.seconds)
+                }
+                onSwapReinitTooltips()
+                swap(HtmxAttrs.Swap.innerHTML)
+            }
+        }
+        // Latency metrics
+        if (monitor.latencyHistoryEnabled) {
+            h2 {
+                +Messages.latencyBlockTitle()
+                span {
+                    classes(BADGE)
+                    +Messages.latencyBlockSubtitle()
+                }
+            }
+            detailsLatencyBlock(monitor)
+        }
+        // SSL check metrics
+        if (monitor.sslCheckEnabled) {
+            h2 { +Messages.sslBlockTitle() }
+            detailsSSLSummary(monitor)
+            h3 { +Messages.recentEventsBlockTitle() }
+            div {
+                classes(ROW, ROW_CARDS, MB_3)
+                id = "monitor-details-ssl-events"
+                hx {
+                    get("/http-monitors/fragments/details-ssl-events/${monitor.id}")
+                    trigger {
+                        load()
+                        every(15.seconds)
+                    }
+                    onSwapReinitTooltips()
+                    swap(HtmxAttrs.Swap.innerHTML)
+                }
+            }
+        }
+    }
+}
+
+fun renderHttpMonitorList(monitors: List<HttpMonitorDetailsDto>, isReadOnlyMode: Boolean): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
         if (monitors.isNotEmpty()) {
             div {
@@ -51,7 +109,7 @@ fun renderMonitorList(monitors: List<MonitorDetailsDto>, isReadOnlyMode: Boolean
                             tr {
                                 xData("monitorList(${monitor.id}, ${monitor.enabled})")
                                 td {
-                                    a(href = "/monitors/${monitor.id}") {
+                                    a(href = "/http-monitors/${monitor.id}") {
                                         classes(TEXT_RESET)
                                         span {
                                             classes(TEXT_WRAP, TEXT_BREAK)

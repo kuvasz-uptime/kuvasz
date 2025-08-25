@@ -6,16 +6,16 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-fun renderMonitorsPage(globals: AppGlobals) =
+fun renderHttpMonitorsPage(globals: AppGlobals) =
     withLayout(
         globals,
         title = Messages.monitors(),
-        pageTitle = { monitorsHeader(globals) }
+        pageTitle = { httpMonitorsHeader(globals) }
     ) {
         div {
             classes(ROW, ROW_CARDS)
@@ -25,7 +25,7 @@ fun renderMonitorsPage(globals: AppGlobals) =
                     classes(CARD)
                     div {
                         hx {
-                            get("/fragments/monitors/list")
+                            get("/http-monitors/fragments/list")
                             trigger {
                                 load()
                                 event("refresh-monitor-list")
@@ -43,8 +43,8 @@ fun renderMonitorsPage(globals: AppGlobals) =
         }
     }
 
-internal fun HtmlBlockTag.monitorsHeader(globals: AppGlobals) {
-    val createModalId = "create-monitor-modal"
+internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
+    val createHttpModalId = "create-http-monitor-modal"
     div {
         classes(CONTAINER_XL)
         div {
@@ -61,50 +61,41 @@ internal fun HtmlBlockTag.monitorsHeader(globals: AppGlobals) {
                         }
                         h2 {
                             classes(PAGE_TITLE)
-                            +Messages.monitors()
+                            +Messages.httpMonitors()
+                            // Read only notice
+                            if (globals.editabilityState.areHttpMonitorsReadOnly()) {
+                                span {
+                                    classes(MS_2, TEXT_SECONDARY)
+                                    tooltip(title = Messages.readOnlyNotice())
+                                    icon(Icon.LOCK_COG)
+                                }
+                            }
                         }
                     }
                     div {
                         classes(COL_AUTO, MS_AUTO)
                         div {
                             classes(BTN_LIST)
-                            if (!globals.isReadOnlyMode()) {
+                            if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
                                 buttonWithIcon(
                                     icon = Icon.PLUS,
                                     label = Messages.addNewMonitor(),
                                     classes = setOf(BTN_PRIMARY, D_NONE, D_MD_BLOCK)
                                 ) {
-                                    modalOpener(createModalId)
+                                    modalOpener(createHttpModalId)
                                 }
                                 compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY, D_MD_NONE)) {
-                                    modalOpener(createModalId)
+                                    modalOpener(createHttpModalId)
                                 }
                             }
                             compactIconButton(Icon.REFRESH, onClick = "refreshMonitorList()") {}
-                            div {
-                                classes(DROPDOWN)
-                                a(href = "#") {
-                                    classes(BTN, DROPDOWN_TOGGLE)
-                                    dropdownToggler()
-                                    icon(Icon.SETTINGS)
-                                }
-                                div {
-                                    classes(DROPDOWN_MENU)
-                                    a(href = "/api/v1/monitors/export/yaml") {
-                                        classes(DROPDOWN_ITEM)
-                                        attributes["download"] = "true"
-                                        icon(Icon.DOWNLOAD)
-                                        +Messages.downloadYamlBackup()
-                                    }
-                                }
-                            }
                         }
                     }
                 }
             }
         }
-        if (!globals.isReadOnlyMode()) {
-            monitorCreateUpdateModal(modalId = createModalId, monitor = null, globals)
+        if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
+            httpMonitorCreateUpdateModal(modalId = createHttpModalId, monitor = null, globals)
         }
     }
 }
