@@ -84,14 +84,14 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         value = Messages.xDays(settings.app.latencyDataRetentionDays.toString())
                     )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
-                    settingsToggle(
-                        label = Messages.httpMonitorsReadOnlyMode(),
-                        checked = settings.app.editabilityState.areHttpMonitorsReadOnly
-                    )
                     settingsToggle(label = Messages.authentication(), checked = settings.authentication.enabled)
                     settingsLabel(
                         label = Messages.authenticationMaxAge(),
                         value = Messages.xSeconds(settings.authentication.accessTokenMaxAge.toString())
+                    )
+                    settingsToggle(
+                        label = Messages.httpMonitorsReadOnlyMode(),
+                        checked = settings.app.editabilityState.areHttpMonitorsReadOnly
                     )
                 }
             }
