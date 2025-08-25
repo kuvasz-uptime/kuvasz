@@ -2,7 +2,7 @@ _Kuvasz_ provides a fully-fledged REST API to **manage your monitors, check thei
 
 ## Authentication
 
-Unless you [completely disabled authentication](../setup/configuration.md#authentication), you need to authenticate every API call (except the `GET /api/v1/health` health check endpoint), using your pre-configured API key.
+Unless you [completely disabled authentication](../setup/configuration.md#authentication), you need to authenticate every API call (except the `GET /api/v2/health` health check endpoint), using your pre-configured API key.
 
 !!! info "API key usage"
 
@@ -17,7 +17,7 @@ There is an OpenAPI-compliant [**API documentation**](../api-docs.md) which you 
 ## Example request
 
 ```bash title="cURL"
-curl -X GET "http://your.kuvasz.host/api/v1/monitors/107" \
+curl -X GET "http://your.kuvasz.host/api/v2/http-monitors/107" \
   -H "X-API-KEY: ThisShouldBeVeryVerySecureToo"
 ```
 

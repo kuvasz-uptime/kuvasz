@@ -36,7 +36,7 @@ class GlobalErrorHandlerTest(
 
         `when`("it is called with an invalid JSON") {
 
-            val request = HttpRequest.POST("/api/v1/monitors", "not-a-json")
+            val request = HttpRequest.POST("/api/v2/http-monitors", "not-a-json")
             val exception = shouldThrow<HttpClientResponseException> {
                 client
                     .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
@@ -54,7 +54,7 @@ class GlobalErrorHandlerTest(
         `when`("it is called with a JSON that contains a non-convertible property") {
 
             val request =
-                HttpRequest.POST("/api/v1/monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
+                HttpRequest.POST("/api/v2/http-monitors", "{\"uptimeCheckInterval\":\"not-a-number\"}")
             val exception = shouldThrow<HttpClientResponseException> {
                 client
                     .exchange(request, Argument.of(MonitorDto::class.java), Argument.of(ServiceError::class.java))
@@ -77,7 +77,7 @@ class GlobalErrorHandlerTest(
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
+            val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws PersistenceException("This is an error message")
 
@@ -103,7 +103,7 @@ class GlobalErrorHandlerTest(
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
+            val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws SchedulingException("This is an error message")
 
@@ -127,7 +127,7 @@ class GlobalErrorHandlerTest(
                 url = "https://valid-url.com",
                 uptimeCheckInterval = 60
             )
-            val request = HttpRequest.POST("/api/v1/monitors", monitorDto)
+            val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
             every { crudServiceMock.createMonitor(any()) } throws DuplicationException("This is an error message")
 

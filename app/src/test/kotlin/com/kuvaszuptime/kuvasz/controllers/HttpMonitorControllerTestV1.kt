@@ -71,9 +71,9 @@ import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
 
 @MicronautTest(environments = ["full-integrations-setup"])
-class MonitorControllerTest(
+class HttpMonitorControllerTestV1(
     @param:Client("/") private val client: HttpClient,
-    private val monitorClient: MonitorClient,
+    private val monitorClient: HttpMonitorClientV1,
     private val monitorRepository: MonitorRepository,
     private val latencyLogRepository: LatencyLogRepository,
     private val checkScheduler: CheckScheduler,

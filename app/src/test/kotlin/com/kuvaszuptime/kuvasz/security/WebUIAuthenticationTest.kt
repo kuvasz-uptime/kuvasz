@@ -38,13 +38,13 @@ class WebUIAuthenticationTest(
         table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/1"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/1/details-heading"),
-            row("/fragments/monitors/1/details-uptime-events"),
-            row("/fragments/monitors/1/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/1"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/1"),
+            row("/http-monitors/fragments/details-uptime-events/1"),
+            row("/http-monitors/fragments/details-ssl-events/1"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         ).forAll { url ->
             val response = client.exchange(url).awaitFirst()
@@ -61,13 +61,13 @@ class WebUIAuthenticationTest(
         val cases = table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/1"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/1/details-heading"),
-            row("/fragments/monitors/1/details-uptime-events"),
-            row("/fragments/monitors/1/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/1"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/1"),
+            row("/http-monitors/fragments/details-uptime-events/1"),
+            row("/http-monitors/fragments/details-ssl-events/1"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         )
         cases.forAll { url ->
@@ -98,13 +98,13 @@ class WebUIAuthenticationTest(
         table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/${monitor.id}"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/${monitor.id}/details-heading"),
-            row("/fragments/monitors/${monitor.id}/details-uptime-events"),
-            row("/fragments/monitors/${monitor.id}/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/${monitor.id}"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/${monitor.id}"),
+            row("/http-monitors/fragments/details-uptime-events/${monitor.id}"),
+            row("/http-monitors/fragments/details-ssl-events/${monitor.id}"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         ).forAll { url ->
             val response = client.exchange(

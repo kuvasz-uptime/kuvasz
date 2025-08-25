@@ -14,7 +14,7 @@ import jakarta.inject.Singleton
 @Singleton
 @Requirements(
     Requires(bean = MeterRegistry::class),
-    Requires(property = "${MetricsExportConfig.CONFIG_PREFIX}.latest-latency", value = StringUtils.TRUE),
+    Requires(property = "${MetricsExportConfig.CONFIG_PREFIX}.http-latest-latency", value = StringUtils.TRUE),
 )
 class LatencyExporter(
     meterRegistry: MeterRegistry,
@@ -24,7 +24,7 @@ class LatencyExporter(
 ) : GaugeExporter<Int>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
-        private const val MONITOR_LATENCY = "monitor.latency.latest.milliseconds"
+        private const val MONITOR_LATENCY = "http.latency.latest.milliseconds"
     }
 
     override val meterName = MONITOR_LATENCY

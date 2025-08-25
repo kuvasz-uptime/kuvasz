@@ -23,7 +23,7 @@ class SSLCertificateExpiryExporter(
 ) : GaugeExporter<OffsetDateTime>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
-        private const val MONITOR_SSL_EXPIRY = "monitor.ssl.expiry.seconds"
+        private const val MONITOR_SSL_EXPIRY = "http.ssl.expiry.seconds"
     }
 
     override val meterName = MONITOR_SSL_EXPIRY

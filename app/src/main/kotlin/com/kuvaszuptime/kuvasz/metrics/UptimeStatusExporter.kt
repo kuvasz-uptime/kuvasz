@@ -14,7 +14,7 @@ import jakarta.inject.Singleton
 @Singleton
 @Requirements(
     Requires(bean = MeterRegistry::class),
-    Requires(property = "${MetricsExportConfig.CONFIG_PREFIX}.uptime-status", value = StringUtils.TRUE),
+    Requires(property = "${MetricsExportConfig.CONFIG_PREFIX}.http-uptime-status", value = StringUtils.TRUE),
 )
 class UptimeStatusExporter(
     meterRegistry: MeterRegistry,
@@ -23,7 +23,7 @@ class UptimeStatusExporter(
 ) : GaugeExporter<UptimeStatus>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
-        private const val MONITOR_UPTIME_STATUS = "monitor.uptime.status"
+        private const val MONITOR_UPTIME_STATUS = "http.uptime.status"
     }
 
     override val meterName = MONITOR_UPTIME_STATUS

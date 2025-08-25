@@ -25,7 +25,7 @@ abstract class GaugeExporter<SOURCE_VAL : Any>(
         logger.debug("Registering gauge for monitor with ID: ${monitor.id}")
         val value = AtomicLong(initialValue)
         val gauge = Gauge.builder(prefixedMeterName(), value) { it.toDouble() }
-            .commonTags(name = monitor.name, url = monitor.url)
+            .commonTags(name = monitor.name, target = monitor.url)
             .register(meterRegistry)
 
         return MeterDefinition(gauge.id, value)
@@ -34,7 +34,7 @@ abstract class GaugeExporter<SOURCE_VAL : Any>(
     /**
      * Adds common tags to the gauge builder
      */
-    private fun Gauge.Builder<*>.commonTags(name: String, url: String): Gauge.Builder<*> = this
-        .tag("url", url)
+    private fun Gauge.Builder<*>.commonTags(name: String, target: String): Gauge.Builder<*> = this
+        .tag("target", target)
         .tag("name", name)
 }

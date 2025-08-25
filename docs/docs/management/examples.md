@@ -33,7 +33,7 @@ sensor:
     platform: rest
     verify_ssl: false
     scan_interval: 60
-    resource: http://kuvasz.home/api/v1/monitors/107
+    resource: http://kuvasz.home/api/v2/http-monitors/107
     headers:
       X-API-KEY: !secret kuvasz_api_key
     value_template: "OK"
@@ -79,7 +79,7 @@ binary_sensor:
     platform: rest
     verify_ssl: false
     scan_interval: 60
-    resource: http://kuvasz.home/api/v1/monitors/107
+    resource: http://kuvasz.home/api/v2/http-monitors/107
     headers:
       X-API-KEY: !secret kuvasz_api_key
     device_class: connectivity
@@ -144,7 +144,7 @@ integrations:
       chat-id: '-1232642423121'
       enabled: false
 ---
-monitors:
+http-monitors:
   - name: "full configuration example"
     url: "https://akobor.me"
     uptime-check-interval: 30

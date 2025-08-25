@@ -65,9 +65,9 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 then("it should register one meter for the enabled monitor with status") {
 
                     val expectedMeter = registeredMeters.single()
-                    expectedMeter.id.name shouldBe "kuvasz.monitor.ssl.status"
+                    expectedMeter.id.name shouldBe "kuvasz.http.ssl.status"
                     expectedMeter shouldHaveNameTag enabledMonitorWithStatus.name
-                    expectedMeter shouldHaveUrlTag enabledMonitorWithStatus.url
+                    expectedMeter shouldHaveTargetTag enabledMonitorWithStatus.url
                     expectedMeter shouldHaveValue 1.0
                 }
             }

@@ -11,10 +11,10 @@ interface MetricsExportConfig {
     }
 
     @get:Bindable(defaultValue = "false")
-    val uptimeStatus: Boolean
+    val httpUptimeStatus: Boolean
 
     @get:Bindable(defaultValue = "false")
-    val latestLatency: Boolean
+    val httpLatestLatency: Boolean
 
     @get:Bindable(defaultValue = "false")
     val sslStatus: Boolean

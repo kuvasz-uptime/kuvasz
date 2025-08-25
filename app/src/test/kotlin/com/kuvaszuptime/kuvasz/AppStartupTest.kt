@@ -32,8 +32,8 @@ class AppStartupTest : BehaviorSpec({
                 val properties = mapOf(
                     "micronaut.metrics.enabled" to true,
                     "micronaut.metrics.export.prometheus.enabled" to true,
-                    "metrics-exports.uptime-status" to true,
-                    "metrics-exports.latest-latency" to true,
+                    "metrics-exports.http-uptime-status" to true,
+                    "metrics-exports.http-latest-latency" to true,
                     "metrics-exports.ssl-status" to true,
                     "metrics-exports.ssl-expiry" to true
                 )
@@ -51,8 +51,8 @@ class AppStartupTest : BehaviorSpec({
                 val properties = mapOf(
                     "micronaut.metrics.enabled" to false,
                     "micronaut.metrics.export.prometheus.enabled" to true,
-                    "metrics-exports.uptime-status" to true,
-                    "metrics-exports.latest-latency" to true,
+                    "metrics-exports.http-uptime-status" to true,
+                    "metrics-exports.http-latest-latency" to true,
                     "metrics-exports.ssl-status" to true,
                     "metrics-exports.ssl-expiry" to true
                 )

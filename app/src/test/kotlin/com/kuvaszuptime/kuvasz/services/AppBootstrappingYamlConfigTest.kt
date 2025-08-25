@@ -81,7 +81,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
         val scheduledSSLChecks = checkScheduler.getScheduledSSLChecks()
         scheduledSSLChecks shouldHaveSize 1
         // The app config should be set to disable external writes against the monitors
-        getAppConfig().isExternalWriteDisabled() shouldBe true
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe true
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
@@ -168,7 +168,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
         val scheduledSSLChecks = checkScheduler.getScheduledSSLChecks()
         scheduledSSLChecks shouldHaveSize 1
         // The app config should be set to disable external writes against the monitors
-        getAppConfig().isExternalWriteDisabled() shouldBe true
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe true
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
@@ -253,7 +253,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
         val monitorRepository = getMonitorRepository()
 
         // The app config should be set to enable external writes against the monitors
-        getAppConfig().isExternalWriteDisabled() shouldBe false
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe false
         // All the previously set up monitors should be still in there
         monitorRepository.fetchAll().shouldHaveSize(3).shouldContainExactlyInAnyOrder(monitorsAfterTheSecondStep)
         // The same scheduled checks should be present

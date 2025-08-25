@@ -102,6 +102,7 @@ nav:
       - Recipes & examples: management/examples.md
   - API docs: api-docs.md
   - Changelog: changelog.md
+  - Upgrade notes: upgrade-notes.md
   - Conventions: conventions.md
   - Localization: localization.md
   - Contributing ⏏: https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md

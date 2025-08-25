@@ -1,19 +1,20 @@
 package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.MonitorCreatorLike
+import com.kuvaszuptime.kuvasz.models.HttpMonitorCreatorLike
 import com.kuvaszuptime.kuvasz.models.dto.MonitorDefaults
 import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
 
-@EachProperty(MonitorConfig.CONFIG_PREFIX, list = true)
+@EachProperty(HttpMonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
 @Suppress("ComplexInterface")
-interface MonitorConfig : MonitorCreatorLike {
+interface HttpMonitorConfig : HttpMonitorCreatorLike {
 
     companion object {
-        const val CONFIG_PREFIX = "monitors"
+        const val LEGACY_CONFIG_PREFIX = "monitors"
+        const val CONFIG_PREFIX = "http-monitors"
     }
 
     override val name: String

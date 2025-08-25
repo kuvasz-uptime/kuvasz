@@ -15,14 +15,14 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 
-@Controller("$API_V1_PREFIX/settings", produces = [MediaType.APPLICATION_JSON])
+@Controller("$API_V2_PREFIX/settings", produces = [MediaType.APPLICATION_JSON])
 @Validated
 @Tag(name = "Settings")
 @SecurityRequirements(
     SecurityRequirement(name = "apiKey"),
     SecurityRequirement(name = "bearerAuth")
 )
-class SettingsController(private val settingsRepository: SettingsRepository) : SettingsOperations {
+class SettingsControllerV2(private val settingsRepository: SettingsRepository) : SettingsOperationsV2 {
 
     @ApiResponses(
         ApiResponse(

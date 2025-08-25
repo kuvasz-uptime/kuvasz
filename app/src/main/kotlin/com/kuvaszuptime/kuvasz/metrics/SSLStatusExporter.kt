@@ -23,7 +23,7 @@ class SSLStatusExporter(
 ) : GaugeExporter<SslStatus>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
-        private const val MONITOR_SSL_STATUS = "monitor.ssl.status"
+        private const val MONITOR_SSL_STATUS = "http.ssl.status"
     }
 
     override val meterName = MONITOR_SSL_STATUS

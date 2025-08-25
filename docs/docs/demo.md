@@ -5,7 +5,7 @@ Use the following credentials to log in:
 - **Username**: `demo`
 - **Password**: `secureDemoPassword`
 
-In case you would like to try out the API too, you are free to do so under `https://demo.kuvasz-uptime.dev/api/v1/`, the **API key** is set to `KuvaszDemoAPIKey`.
+In case you would like to try out the API too, you are free to do so under `https://demo.kuvasz-uptime.dev/api/v2/...`, the **API key** is set to `KuvaszDemoAPIKey`.
 
 !!!note
     

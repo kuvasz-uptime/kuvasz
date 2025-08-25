@@ -12,15 +12,15 @@ import jakarta.inject.Singleton
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
 @Around
-annotation class ReadOnlyIfYaml
+annotation class CheckHttpMonitorsWritable
 
 @Singleton
-@InterceptorBean(ReadOnlyIfYaml::class)
-class ReadOnlyIfYamlInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
+@InterceptorBean(CheckHttpMonitorsWritable::class)
+class HttpMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
 
     override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
-        context.findAnnotation(ReadOnlyIfYaml::class.java).ifPresent { _ ->
-            if (appConfig.isExternalWriteDisabled()) throw ReadOnlyMonitorException()
+        context.findAnnotation(CheckHttpMonitorsWritable::class.java).ifPresent { _ ->
+            if (appConfig.isHttpMonitorExternalWriteDisabled()) throw ReadOnlyMonitorException()
         }
         return context.proceed()
     }

@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.MonitorCreatorLike
+import com.kuvaszuptime.kuvasz.models.HttpMonitorCreatorLike
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -92,4 +92,4 @@ data class MonitorCreateDto(
 
     @param:Schema(description = MonitorDocs.REQUEST_BODY, required = false, nullable = true)
     override val requestBody: String? = null,
-) : MonitorCreatorLike
+) : HttpMonitorCreatorLike

@@ -19,7 +19,9 @@ class AppGlobalsFactory {
         appConfig: AppConfig,
         integrationRepository: IntegrationRepository,
     ) = AppGlobals(
-        isReadOnlyMode = { appConfig.isExternalWriteDisabled() },
+        editabilityState = AppGlobals.EditabilityState(
+            areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() }
+        ),
         isAuthenticated = { securityService?.isAuthenticated ?: true },
         isAuthEnabled = securityService != null,
         appVersion = BuildConfig.APP_VERSION,

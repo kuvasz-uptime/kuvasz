@@ -142,7 +142,7 @@ class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : D
         `when`("not all the properties are explicitly set in the YAML") {
 
             then("it should fall back to the right default values") {
-                val monitorConfig = applicationContext.getBean<MonitorConfig>()
+                val monitorConfig = applicationContext.getBean<HttpMonitorConfig>()
                 monitorConfig.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
                 monitorConfig.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
                 monitorConfig.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)

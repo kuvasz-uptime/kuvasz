@@ -28,7 +28,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 @Property(name = "app-config.latency-data-retention-days", value = "6")
 @Property(name = "app-config.language", value = "en")
 @Property(name = "app-config.log-event-handler", value = "true")
-class SettingsControllerTest(settingsClient: SettingsClient, appGlobals: AppGlobals) : DatabaseBehaviorSpec({
+class SettingsControllerV1Test(settingsClient: SettingsClientV1, appGlobals: AppGlobals) : DatabaseBehaviorSpec({
 
     given("the SettingsController") {
 

@@ -65,9 +65,9 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                 then("it should register one meter for the enabled monitor with expiry") {
 
                     val expectedMeter = registeredMeters.single()
-                    expectedMeter.id.name shouldBe "kuvasz.monitor.ssl.expiry.seconds"
+                    expectedMeter.id.name shouldBe "kuvasz.http.ssl.expiry.seconds"
                     expectedMeter shouldHaveNameTag enabledMonitorWithExpiry.name
-                    expectedMeter shouldHaveUrlTag enabledMonitorWithExpiry.url
+                    expectedMeter shouldHaveTargetTag enabledMonitorWithExpiry.url
                     expectedMeter shouldHaveValue firstExpiry.toEpochSecond().toDouble()
                 }
             }

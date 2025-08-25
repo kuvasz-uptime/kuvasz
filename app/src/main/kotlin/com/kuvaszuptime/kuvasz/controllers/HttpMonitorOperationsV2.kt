@@ -17,7 +17,6 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.QueryValue
-import io.micronaut.http.server.types.files.SystemFile
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -25,7 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import java.time.Duration
 
-interface MonitorOperations {
+interface HttpMonitorOperationsV2 {
 
     @Operation(summary = "Get all monitors with their details")
     @Get("/")
@@ -84,10 +83,6 @@ interface MonitorOperations {
         )
         period: Duration?,
     ): MonitorStatsDto
-
-    @Operation(summary = "Download the export of all monitors in YAML format")
-    @Get("/export/yaml")
-    fun getYamlMonitorsExport(): SystemFile
 
     @Operation(summary = "Get the overall, cumulative stats of all monitors")
     @Get("/stats")

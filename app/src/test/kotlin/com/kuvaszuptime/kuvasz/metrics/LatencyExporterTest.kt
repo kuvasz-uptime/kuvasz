@@ -50,9 +50,9 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
                 then("it should register one meter for the enabled monitor with latency") {
 
                     val expectedMeter = registeredMeters.single()
-                    expectedMeter.id.name shouldBe "kuvasz.monitor.latency.latest.milliseconds"
+                    expectedMeter.id.name shouldBe "kuvasz.http.latency.latest.milliseconds"
                     expectedMeter shouldHaveNameTag enabledMonitorWithLatency.name
-                    expectedMeter shouldHaveUrlTag enabledMonitorWithLatency.url
+                    expectedMeter shouldHaveTargetTag enabledMonitorWithLatency.url
                     expectedMeter shouldHaveValue 20.0
                 }
             }

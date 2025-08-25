@@ -68,7 +68,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
         this.id.tags.shouldContain(Tag.of("name", expectedName))
     }
 
-    infix fun Meter.shouldHaveUrlTag(expectedUrl: String) {
-        this.id.tags.shouldContain(Tag.of("url", expectedUrl))
+    infix fun Meter.shouldHaveTargetTag(expectedUrl: String) {
+        this.id.tags.shouldContain(Tag.of("target", expectedUrl))
     }
 }

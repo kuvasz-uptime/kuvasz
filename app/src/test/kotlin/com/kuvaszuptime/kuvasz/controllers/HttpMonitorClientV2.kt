@@ -13,8 +13,8 @@ import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.client.annotation.Client
 import java.time.Duration
 
-@Client("/api/v1/monitors")
-interface MonitorClient : MonitorOperations {
+@Client("/api/v2/http-monitors")
+interface HttpMonitorClientV2 : HttpMonitorOperationsV2 {
     override fun getMonitorDetails(monitorId: Long): MonitorDetailsDto
 
     override fun getMonitorsWithDetails(

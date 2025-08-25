@@ -1,10 +1,10 @@
 package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.StringSpec
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -20,9 +20,9 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest(environments = ["test", "yaml-monitors", "full-integrations-setup"])
-class MonitorMutabilityTest(
+class HttpMonitorMutabilityTest(
     @Client("/") private val client: HttpClient,
-) : StringSpec({
+) : DatabaseStringSpec({
 
     val monitorCreateDto = MonitorCreateDto(
         name = "something",
@@ -38,6 +38,9 @@ class MonitorMutabilityTest(
             row("/api/v1/monitors", HttpMethod.POST, monitorCreateDto),
             row("/api/v1/monitors/1", HttpMethod.DELETE, null),
             row("/api/v1/monitors/1", HttpMethod.PATCH, monitorUpdateDto),
+            row("/api/v2/http-monitors", HttpMethod.POST, monitorCreateDto),
+            row("/api/v2/http-monitors/1", HttpMethod.DELETE, null),
+            row("/api/v2/http-monitors/1", HttpMethod.PATCH, monitorUpdateDto),
         ).forAll { url, method, testBody ->
             val request = HttpRequest.create<Any>(method, url).apply { testBody?.let { body(it) } }
             val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }

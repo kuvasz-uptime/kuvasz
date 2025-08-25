@@ -165,7 +165,7 @@ as shown above.
 
 ## Readiness/health probes
 
-If you run _Kuvasz_ in a container orchestration system, you can use the `GET /api/v1/health` endpoint as a readiness probe to check if the application is UP and running. The endpoint **doesn't need authentication**, and returns a simple JSON response with the status of the application.
+If you run _Kuvasz_ in a container orchestration system, you can use the `GET /api/v2/health` endpoint as a readiness probe to check if the application is UP and running. The endpoint **doesn't need authentication**, and returns a simple JSON response with the status of the application.
 
 ```json
 {

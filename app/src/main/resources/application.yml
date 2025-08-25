@@ -61,9 +61,7 @@ micronaut:
           refresh-token:
             enabled: false
     intercept-url-map:
-      - pattern: /api/v1/health
-        access: isAnonymous()
-      - pattern: /api/v1/info
+      - pattern: /api/v2/health
         access: isAnonymous()
       - pattern: /api/**
         access:
@@ -84,7 +82,7 @@ micronaut:
         num-threads: 4
         prefer-native-transport: false
 endpoints:
-  all.path: /api/v1/
+  all.path: /api/v2/
   health:
     enabled: true
     sensitive: false
@@ -134,7 +132,7 @@ admin-auth:
   api-key: ${ADMIN_API_KEY}
 ---
 metrics-exports:
-  uptime-status: ${ENABLE_UPTIME_STATUS_EXPORT:`false`}
-  latest-latency: ${ENABLE_LATEST_LATENCY_EXPORT:`false`}
+  http-uptime-status: ${ENABLE_HTTP_UPTIME_STATUS_EXPORT:`false`}
+  http-latest-latency: ${ENABLE_HTTP_LATEST_LATENCY_EXPORT:`false`}
   ssl-status: ${ENABLE_SSL_STATUS_EXPORT:`false`}
   ssl-expiry: ${ENABLE_SSL_EXPIRY_EXPORT:`false`}

@@ -17,7 +17,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
     ),
     tags = [
         Tag(name = "Management"),
+        Tag(name = "Monitors"),
+        Tag(name = "HTTP monitors (V1, deprecated)"),
         Tag(name = "HTTP monitors"),
+        Tag(name = "Settings (V1, deprecated)"),
         Tag(name = "Settings"),
     ]
 )

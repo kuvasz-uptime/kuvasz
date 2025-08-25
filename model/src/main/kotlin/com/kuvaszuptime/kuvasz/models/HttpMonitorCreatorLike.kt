@@ -18,7 +18,7 @@ import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 
 @Suppress("ComplexInterface")
-interface MonitorCreatorLike {
+interface HttpMonitorCreatorLike {
     @get:NotBlank(message = ValidationMessages.NAME_NOT_BLANK)
     val name: String
 
@@ -65,7 +65,7 @@ interface MonitorCreatorLike {
     val requestBody: String?
 }
 
-fun MonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): MonitorRecord =
+fun HttpMonitorCreatorLike.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): MonitorRecord =
     MonitorRecord()
         .setName(name)
         .setUrl(url)

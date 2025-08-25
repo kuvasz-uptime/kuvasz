@@ -29,13 +29,13 @@ class DisabledWebUIAuthenticationTest(
         table(
             headers("url"),
             row("/"),
-            row("/monitors"),
-            row("/monitors/${monitor.id}"),
-            row("/fragments/monitors/list"),
-            row("/fragments/monitors/${monitor.id}/details-heading"),
-            row("/fragments/monitors/${monitor.id}/details-uptime-events"),
-            row("/fragments/monitors/${monitor.id}/details-ssl-events"),
-            row("/fragments/monitors/stats"),
+            row("/http-monitors"),
+            row("/http-monitors/${monitor.id}"),
+            row("/http-monitors/fragments/list"),
+            row("/http-monitors/fragments/details-heading/${monitor.id}"),
+            row("/http-monitors/fragments/details-uptime-events/${monitor.id}"),
+            row("/http-monitors/fragments/details-ssl-events/${monitor.id}"),
+            row("/http-monitors/fragments/stats"),
             row("/settings"),
         ).forAll { url ->
             val response = client.exchange(url).awaitFirst()

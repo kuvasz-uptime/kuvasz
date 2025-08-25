@@ -30,7 +30,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.appVersion shouldBe BuildConfig.APP_VERSION
                 globals.isAuthEnabled shouldBe false
                 globals.isAuthenticated() shouldBe true
-                globals.isReadOnlyMode() shouldBe false
+                globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -44,7 +44,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.appVersion shouldBe BuildConfig.APP_VERSION
                 globals.isAuthEnabled shouldBe true
                 globals.isAuthenticated() shouldBe true
-                globals.isReadOnlyMode() shouldBe false
+                globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -58,30 +58,30 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.appVersion shouldBe BuildConfig.APP_VERSION
                 globals.isAuthEnabled shouldBe true
                 globals.isAuthenticated() shouldBe false
-                globals.isReadOnlyMode() shouldBe false
+                globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             }
         }
 
         `when`("when the app is in read-only mode") {
             val appConfig = AppConfig()
-            appConfig.disableExternalWrite()
+            appConfig.disableHttpMonitorExternalWrite()
             val globals = AppGlobalsFactory().appGlobals(null, appConfig, emptyIntegrationRepository)
 
             then("it should return the correctly hydrated view model") {
-                globals.isReadOnlyMode() shouldBe true
+                globals.editabilityState.areHttpMonitorsReadOnly() shouldBe true
             }
         }
 
         `when`("when the app is in read-only mode but it's only set later") {
             val appConfig = AppConfig()
             val globals = AppGlobalsFactory().appGlobals(null, appConfig, emptyIntegrationRepository)
-            globals.isReadOnlyMode() shouldBe false
+            globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
 
-            appConfig.disableExternalWrite()
+            appConfig.disableHttpMonitorExternalWrite()
             val globalsAfterUpdate = AppGlobalsFactory().appGlobals(null, appConfig, emptyIntegrationRepository)
 
             then("it should return the correctly hydrated view model") {
-                globalsAfterUpdate.isReadOnlyMode() shouldBe true
+                globalsAfterUpdate.editabilityState.areHttpMonitorsReadOnly() shouldBe true
             }
         }
 

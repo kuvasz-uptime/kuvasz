@@ -4,6 +4,11 @@
 
 ## To be released { id="to-be-released" data-toc-label="To be released" }
 
+### Breaking changes
+
+This is a major release that paths the way for **new monitor types** in the future, by handling the already existing HTTP monitors in a more explicit way. There are a few breaking changes in there, so please **refer to the** [**Upgrade notes**](upgrade-notes.md) for more details. 
+Don't be afraid, the upgrade process is straightforward and well-documented, and if you follow the steps, everything should go smoothly.
+
 ### Fixes
 
 - Clear the expected status code select's search value after selecting an option (by [WasixXD](https://github.com/WasixXD){target="_blank" })
