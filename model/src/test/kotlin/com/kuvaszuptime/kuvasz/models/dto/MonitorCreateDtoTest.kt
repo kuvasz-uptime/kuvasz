@@ -12,7 +12,7 @@ import jakarta.validation.ConstraintViolation
 @MicronautTest(startApplication = false)
 class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 
-    fun Set<ConstraintViolation<MonitorCreateDto>>.shouldHaveSingleError(
+    fun Set<ConstraintViolation<HttpMonitorCreateDto>>.shouldHaveSingleError(
         propertyPath: String,
         message: String,
     ) {
@@ -26,7 +26,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
     given("the validation setup of a MonitorCreateDto") {
 
         `when`("name is an empty string") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -41,7 +41,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("url is an empty string") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "",
                 uptimeCheckInterval = 60,
@@ -56,7 +56,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("url is not a valid URL") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "invalid-url",
                 uptimeCheckInterval = 60,
@@ -71,7 +71,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("uptimeCheckInterval is less than 5 seconds") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 4,
@@ -86,7 +86,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("sslExpiryThreshold is less than 0 days") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -102,7 +102,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("expectedStatusCodes contains a non-supported status code") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -118,7 +118,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("responseTimeThresholdMillis is negative") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -134,7 +134,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("responseTimeThresholdMillis is 0") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -150,7 +150,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("responseTimeThresholdMillis is greater than 30000") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -166,7 +166,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestHeaders contains an empty key") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -182,7 +182,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestHeaders contains a badly-formed key") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -198,7 +198,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestHeaders contains a well-formed key") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -211,7 +211,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("expectedHeaders contains an empty key") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -227,7 +227,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("expectedHeaders contains a badly-formed key") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -243,7 +243,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("expectedHeaders contains a well-formed key") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -256,7 +256,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestBody is a well-formed JSON string") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -269,7 +269,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestBody is an invalid JSON string") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -285,7 +285,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestBody is null") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -298,7 +298,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestBody is an empty string") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -311,7 +311,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         }
 
         `when`("requestBody is an empty JSON object") {
-            val dto = MonitorCreateDto(
+            val dto = HttpMonitorCreateDto(
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
@@ -328,26 +328,26 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 class MonitorCreateDtoDefaultsTest : BehaviorSpec({
 
     given("a MonitorCreateDto with default values") {
-        val dto = MonitorCreateDto(
+        val dto = HttpMonitorCreateDto(
             name = "Test Monitor",
             url = "https://example.com",
             uptimeCheckInterval = 60,
         )
 
         then("the default values should be set correctly") {
-            dto.enabled shouldBe MonitorDefaults.MONITOR_ENABLED
-            dto.sslCheckEnabled shouldBe MonitorDefaults.SSL_CHECK_ENABLED
-            dto.requestMethod shouldBe HttpMethod.valueOf(MonitorDefaults.REQUEST_METHOD)
-            dto.latencyHistoryEnabled shouldBe MonitorDefaults.LATENCY_HISTORY_ENABLED
-            dto.forceNoCache shouldBe MonitorDefaults.FORCE_NO_CACHE
-            dto.followRedirects shouldBe MonitorDefaults.FOLLOW_REDIRECTS
-            dto.sslExpiryThreshold shouldBe MonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
+            dto.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+            dto.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
+            dto.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
+            dto.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
+            dto.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
+            dto.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
+            dto.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
             dto.integrations shouldBe emptyList()
             dto.expectedStatusCodes shouldBe emptyList()
             dto.responseTimeThresholdMillis shouldBe null
             dto.expectedKeyword shouldBe null
-            dto.expectedKeywordCaseSensitive shouldBe MonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
-            dto.expectedKeywordNegated shouldBe MonitorDefaults.EXPECTED_KEYWORD_NEGATED
+            dto.expectedKeywordCaseSensitive shouldBe HttpMonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE
+            dto.expectedKeywordNegated shouldBe HttpMonitorDefaults.EXPECTED_KEYWORD_NEGATED
             dto.requestHeaders.shouldBeEmpty()
             dto.expectedHeaders.shouldBeEmpty()
             dto.requestBody shouldBe null

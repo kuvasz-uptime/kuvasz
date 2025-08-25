@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -16,11 +16,11 @@ object Emoji {
     const val LOCK = "🔒️"
 }
 
-fun MonitorEvent.getEmoji(): String =
+fun HttpMonitorEvent.getEmoji(): String =
     when (this) {
-        is MonitorUpEvent -> Emoji.CHECK_OK
-        is MonitorDownEvent -> Emoji.ALERT
-        is RedirectEvent -> Emoji.INFO
+        is HttpMonitorUpEvent -> Emoji.CHECK_OK
+        is HttpMonitorDownEvent -> Emoji.ALERT
+        is HttpRedirectEvent -> Emoji.INFO
         is SSLValidEvent -> Emoji.LOCK
         is SSLInvalidEvent -> Emoji.ALERT
         is SSLWillExpireEvent -> Emoji.WARNING

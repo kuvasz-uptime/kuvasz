@@ -4,7 +4,8 @@ import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import io.micronaut.context.annotation.Context
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
@@ -14,9 +15,9 @@ class AppBootstrapper(
     private val yamlHttpMonitorConfigs: List<HttpMonitorConfig>,
     private val monitorImporter: MonitorImporter,
     private val appConfig: AppConfig,
-    private val monitorRepository: MonitorRepository,
+    private val monitorRepository: HttpMonitorRepository,
     private val integrationRepository: IntegrationRepository,
-    private val checkScheduler: CheckScheduler,
+    private val checkScheduler: HttpCheckScheduler,
     private val metricsExportRegistry: MetricsExportRegistry?,
 ) {
 
@@ -71,7 +72,7 @@ class AppBootstrapper(
                 "Disabled external modifications of monitors, because a YAML monitor config was found. " +
                     "Loading monitors from YAML config..."
             )
-            monitorImporter.importMonitorConfigs(yamlHttpMonitorConfigs)
+            monitorImporter.importHttpMonitorConfigs(yamlHttpMonitorConfigs)
         } else {
             logger.info(
                 "No YAML monitor config was found. " +

@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
 
 @Introspected
-data class UptimeEventDto(
+data class HttpUptimeEventDto(
     @param:Schema(description = "Unique identifier for the uptime event", required = true)
     val id: Long,
     @param:Schema(description = "The status of the uptime event", required = true)

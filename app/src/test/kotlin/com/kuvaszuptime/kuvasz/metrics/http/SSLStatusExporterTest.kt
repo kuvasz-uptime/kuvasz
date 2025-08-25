@@ -1,7 +1,10 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
+import com.kuvaszuptime.kuvasz.metrics.ExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.SSLValidationError
+import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import io.kotest.inspectors.forNone
@@ -11,50 +14,48 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.context.ApplicationContext
 import java.time.OffsetDateTime
 
-class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expiry") {
+class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
 
     init {
-        given("an enabled SSL expiry exporter") {
+        given("an enabled SSL status exporter") {
 
             `when`("the exporter is initialized") {
                 appContext = ApplicationContext.run()
 
-                val enabledMonitorWithExpiry = createMonitor(
+                val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
-                // Enabled monitor without expiry data
+                // Enabled monitor without status
                 createMonitor(
                     getMonitorRepository(),
-                    monitorName = "test-enabled-no-expiry",
-                    url = "https://test.enabled.no-expiry",
+                    monitorName = "test-enabled-no-status",
+                    url = "https://test.enabled.no-status",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
-                val disabledMonitorWithExpiry = createMonitor(
+                val disabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = true,
                     sslCheckEnabled = false,
                 )
-                val firstExpiry = OffsetDateTime.now().plusDays(30)
                 sslEventRepository().insertFromMonitorEvent(
                     SSLValidEvent(
-                        monitor = enabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = firstExpiry),
+                        monitor = enabledMonitorWithStatus,
+                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(20)),
                         null
                     )
                 )
-                val secondExpiry = OffsetDateTime.now().plusDays(60)
                 sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = disabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = secondExpiry),
-                        null
+                    SSLInvalidEvent(
+                        monitor = disabledMonitorWithStatus,
+                        SSLValidationError("irrelevant"),
+                        null,
                     )
                 )
 
@@ -62,34 +63,34 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
 
                 val registeredMeters = meterRegistry().meters
 
-                then("it should register one meter for the enabled monitor with expiry") {
+                then("it should register one meter for the enabled monitor with status") {
 
                     val expectedMeter = registeredMeters.single()
-                    expectedMeter.id.name shouldBe "kuvasz.http.ssl.expiry.seconds"
-                    expectedMeter shouldHaveNameTag enabledMonitorWithExpiry.name
-                    expectedMeter shouldHaveTargetTag enabledMonitorWithExpiry.url
-                    expectedMeter shouldHaveValue firstExpiry.toEpochSecond().toDouble()
+                    expectedMeter.id.name shouldBe "kuvasz.http.ssl.status"
+                    expectedMeter shouldHaveNameTag enabledMonitorWithStatus.name
+                    expectedMeter shouldHaveTargetTag enabledMonitorWithStatus.url
+                    expectedMeter shouldHaveValue 1.0
                 }
             }
 
             `when`("there are new events for existing monitors after initialization") {
                 appContext = ApplicationContext.run()
 
-                val enabledMonitorWithExpiry = createMonitor(
+                val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
-                val enabledMonitorWithoutExpiry = createMonitor(
+                val enabledMonitorWithoutStatus = createMonitor(
                     getMonitorRepository(),
-                    monitorName = "test-enabled-no-expiry",
-                    url = "https://test.enabled.no-expiry",
+                    monitorName = "test-enabled-no-status",
+                    url = "https://test.enabled.no-status",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
-                val disabledMonitorWithExpiry = createMonitor(
+                val disabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
@@ -97,19 +98,17 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                     sslCheckEnabled = false,
                 )
 
-                val firstExpiry = OffsetDateTime.now().plusDays(30)
                 val firstMonitorPreviousEvent = sslEventRepository().insertFromMonitorEvent(
                     SSLValidEvent(
-                        monitor = enabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = firstExpiry),
+                        monitor = enabledMonitorWithStatus,
+                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(30)),
                         null
                     )
                 )
-                val secondExpiry = OffsetDateTime.now().plusDays(60)
-                val secondMonitorPreviousEvent = sslEventRepository().insertFromMonitorEvent(
+                sslEventRepository().insertFromMonitorEvent(
                     SSLValidEvent(
-                        monitor = disabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = secondExpiry),
+                        monitor = disabledMonitorWithStatus,
+                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(60)),
                         null
                     )
                 )
@@ -118,17 +117,17 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
 
                 // Simulating the events
                 eventDispatcher().dispatch(
-                    SSLWillExpireEvent(
-                        enabledMonitorWithExpiry,
-                        CertificateInfo(validTo = firstExpiry.plusDays(2)),
+                    SSLInvalidEvent(
+                        enabledMonitorWithStatus,
+                        SSLValidationError("irrelevant"),
                         firstMonitorPreviousEvent
                     )
                 )
                 eventDispatcher().dispatch(
-                    SSLValidEvent(
-                        enabledMonitorWithoutExpiry,
-                        CertificateInfo(validTo = secondExpiry.plusDays(4)),
-                        secondMonitorPreviousEvent
+                    SSLWillExpireEvent(
+                        enabledMonitorWithoutStatus,
+                        CertificateInfo(validTo = OffsetDateTime.now().plusDays(60).plusDays(4)),
+                        null,
                     )
                 )
 
@@ -138,15 +137,15 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
 
                     registeredMeters shouldHaveSize 2
 
-                    // The meter for the enabled monitor with expiry should be updated
-                    registeredMeters.forOne { withPreviousExpiry ->
-                        withPreviousExpiry shouldHaveNameTag enabledMonitorWithExpiry.name
-                        withPreviousExpiry shouldHaveValue firstExpiry.plusDays(2).toEpochSecond().toDouble()
+                    // The meter for the enabled monitor with status should be updated
+                    registeredMeters.forOne { withPreviousStatus ->
+                        withPreviousStatus shouldHaveNameTag enabledMonitorWithStatus.name
+                        withPreviousStatus shouldHaveValue 0.0 // The status is invalid, so the value should be 0
                     }
-                    // The meter for the enabled monitor without expiry should be created
-                    registeredMeters.forOne { withoutPreviousExpiry ->
-                        withoutPreviousExpiry shouldHaveNameTag enabledMonitorWithoutExpiry.name
-                        withoutPreviousExpiry shouldHaveValue secondExpiry.plusDays(4).toEpochSecond().toDouble()
+                    // The meter for the enabled monitor without status should be created
+                    registeredMeters.forOne { withoutPreviousStatus ->
+                        withoutPreviousStatus shouldHaveNameTag enabledMonitorWithoutStatus.name
+                        withoutPreviousStatus shouldHaveValue 1.0 // The status is valid, so the value should be 1
                     }
                 }
             }
@@ -155,28 +154,28 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
 
                 appContext = ApplicationContext.run()
 
-                val enabledMonitorWithExpiry = createMonitor(
+                val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
-                val anotherEnabledMonitorWithExpiry = createMonitor(
+                val anotherEnabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
-                val yetAnotherEnabledMonitorWithExpiry = createMonitor(
+                val yetAnotherEnabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "yet-another-enabled",
                     url = "https://yet.another.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
-                val disabledMonitorWithExpiry = createMonitor(
+                val disabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
@@ -184,36 +183,32 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                     sslCheckEnabled = false,
                 )
 
-                val firstExpiry = OffsetDateTime.now().plusDays(30)
                 sslEventRepository().insertFromMonitorEvent(
                     SSLValidEvent(
-                        monitor = enabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = firstExpiry),
+                        monitor = enabledMonitorWithStatus,
+                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(30)),
                         null
                     )
                 )
-                val secondExpiry = OffsetDateTime.now().plusDays(60)
                 sslEventRepository().insertFromMonitorEvent(
                     SSLValidEvent(
-                        monitor = anotherEnabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = secondExpiry),
+                        monitor = anotherEnabledMonitorWithStatus,
+                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(60)),
                         null
                     )
                 )
 
-                val thirdExpiry = OffsetDateTime.now().plusDays(90)
                 sslEventRepository().insertFromMonitorEvent(
                     SSLValidEvent(
-                        monitor = yetAnotherEnabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = thirdExpiry),
+                        monitor = yetAnotherEnabledMonitorWithStatus,
+                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(90)),
                         null
                     )
                 )
-                val fourthExpiry = OffsetDateTime.now().plusDays(50)
                 sslEventRepository().insertFromMonitorEvent(
                     SSLValidEvent(
-                        monitor = disabledMonitorWithExpiry,
-                        certInfo = CertificateInfo(validTo = fourthExpiry),
+                        monitor = disabledMonitorWithStatus,
+                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(50)),
                         null
                     )
                 )
@@ -223,10 +218,10 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                 meterRegistry().meters shouldHaveSize 3
 
                 // Simulating the events
-                monitorCrudService().updateMonitor(enabledMonitorWithExpiry.id, monitorDisableUpdate)
-                monitorCrudService().updateMonitor(anotherEnabledMonitorWithExpiry.id, monitorNameUpdate)
-                monitorCrudService().updateMonitor(disabledMonitorWithExpiry.id, monitorSSLEnableUpdate)
-                monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithExpiry.id)
+                monitorCrudService().updateMonitor(enabledMonitorWithStatus.id, monitorDisableUpdate)
+                monitorCrudService().updateMonitor(anotherEnabledMonitorWithStatus.id, monitorNameUpdate)
+                monitorCrudService().updateMonitor(disabledMonitorWithStatus.id, monitorSSLEnableUpdate)
+                monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithStatus.id)
 
                 val registeredMeters = meterRegistry().meters
 
@@ -235,18 +230,18 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                     registeredMeters shouldHaveSize 2
 
                     // The meter for the disabled monitor should be removed
-                    registeredMeters.forNone { it shouldHaveNameTag enabledMonitorWithExpiry.name }
+                    registeredMeters.forNone { it shouldHaveNameTag enabledMonitorWithStatus.name }
                     // The deleted monitor's meter should not exist
-                    registeredMeters.forNone { it shouldHaveNameTag yetAnotherEnabledMonitorWithExpiry.name }
+                    registeredMeters.forNone { it shouldHaveNameTag yetAnotherEnabledMonitorWithStatus.name }
                     // The meter for the enabled monitor should be updated with the new name
                     registeredMeters.forOne { updatedMonitor ->
                         updatedMonitor shouldHaveNameTag "new-name"
-                        updatedMonitor shouldHaveValue secondExpiry.toEpochSecond().toDouble()
+                        updatedMonitor shouldHaveValue 1.0
                     }
                     // The meter for the newly enabled monitor should be created
                     registeredMeters.forOne { newlyEnabledMonitor ->
-                        newlyEnabledMonitor shouldHaveNameTag disabledMonitorWithExpiry.name
-                        newlyEnabledMonitor shouldHaveValue fourthExpiry.toEpochSecond().toDouble()
+                        newlyEnabledMonitor shouldHaveNameTag disabledMonitorWithStatus.name
+                        newlyEnabledMonitor shouldHaveValue 1.0
                     }
                 }
             }

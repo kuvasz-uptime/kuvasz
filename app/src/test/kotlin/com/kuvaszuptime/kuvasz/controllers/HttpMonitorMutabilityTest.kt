@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -24,12 +24,12 @@ class HttpMonitorMutabilityTest(
     @Client("/") private val client: HttpClient,
 ) : DatabaseStringSpec({
 
-    val monitorCreateDto = MonitorCreateDto(
+    val monitorCreateDto = HttpMonitorCreateDto(
         name = "something",
         url = "https://example.com",
         uptimeCheckInterval = 5149,
     )
-    val monitorUpdateDto = JsonNodeFactory.instance.objectNode().put(MonitorUpdateDto::enabled.name, false)
+    val monitorUpdateDto = JsonNodeFactory.instance.objectNode().put(HttpMonitorUpdateDto::enabled.name, false)
 
     "all the API endpoints that mutate monitors should return a 405 if the monitors are configured via YAML" {
 

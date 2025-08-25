@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
 
 @Introspected
-data class MonitorStatsDto(
+data class HttpMonitorStatsDto(
     @param:Schema(description = "Unique identifier of the monitor", required = true)
     val id: Long,
     @param:Schema(description = "Whether recording of latency is enabled for this monitor", required = true)

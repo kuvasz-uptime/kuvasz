@@ -6,10 +6,10 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -29,7 +29,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 @MicronautTest(environments = ["full-integrations-setup"])
 class MonitorControllerTestV2(
     @param:Client("/") private val client: HttpClient,
-    private val monitorRepository: MonitorRepository,
+    private val monitorRepository: HttpMonitorRepository,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -73,7 +73,7 @@ class MonitorControllerTestV2(
 
                     val exportedMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
                     val parsedMonitors =
-                        mapper.convertValue<List<MonitorExportDto>>(exportedMonitorsRaw).shouldNotBeEmpty()
+                        mapper.convertValue<List<HttpMonitorExportDto>>(exportedMonitorsRaw).shouldNotBeEmpty()
 
                     parsedMonitors.size shouldBe 2
                     parsedMonitors.forOne { firstMonitor ->
@@ -121,7 +121,7 @@ class MonitorControllerTestV2(
 
                     response.status shouldBe HttpStatus.OK
                     val exportedMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
-                    mapper.convertValue<List<MonitorExportDto>>(exportedMonitorsRaw).shouldBeEmpty()
+                    mapper.convertValue<List<HttpMonitorExportDto>>(exportedMonitorsRaw).shouldBeEmpty()
                 }
             }
         }

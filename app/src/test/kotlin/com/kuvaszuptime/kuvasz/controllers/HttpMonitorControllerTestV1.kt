@@ -15,22 +15,22 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
-import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.services.CheckScheduler
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
@@ -74,9 +74,9 @@ import java.time.Duration
 class HttpMonitorControllerTestV1(
     @param:Client("/") private val client: HttpClient,
     private val monitorClient: HttpMonitorClientV1,
-    private val monitorRepository: MonitorRepository,
-    private val latencyLogRepository: LatencyLogRepository,
-    private val checkScheduler: CheckScheduler,
+    private val monitorRepository: HttpMonitorRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
+    private val checkScheduler: HttpCheckScheduler,
     private val statCalculator: StatCalculator,
     private val eventDispatcher: EventDispatcher,
 ) : DatabaseBehaviorSpec() {
@@ -621,7 +621,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("there is a scheduled monitor") {
-                val monitor = MonitorCreateDto(
+                val monitor = HttpMonitorCreateDto(
                     name = "test",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 60000,
@@ -778,7 +778,7 @@ class HttpMonitorControllerTestV1(
         given("MonitorController's createMonitor() endpoint") {
 
             `when`("it is called with a valid DTO - default parameters") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -828,7 +828,7 @@ class HttpMonitorControllerTestV1(
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor2",
                     url = "https://valid-url2.com",
                     uptimeCheckInterval = 65,
@@ -896,13 +896,13 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("there is already a monitor with the same name") {
-                val firstMonitor = MonitorCreateDto(
+                val firstMonitor = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = true
                 )
-                val secondMonitor = MonitorCreateDto(
+                val secondMonitor = HttpMonitorCreateDto(
                     name = firstMonitor.name,
                     url = "https://valid-url2.com",
                     uptimeCheckInterval = 4000,
@@ -923,7 +923,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid URL") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "htt://invalid-url.com",
                     uptimeCheckInterval = 6000,
@@ -941,7 +941,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid uptime check interval") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 4,
@@ -959,7 +959,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid SSL expiry threshold") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -978,7 +978,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid integration name") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -998,7 +998,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a non-existing integration") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1018,7 +1018,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an unsupported HTTP status code") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1037,7 +1037,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a negative response time threshold") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1056,7 +1056,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a too high response time threshold") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1076,7 +1076,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid request header") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1095,7 +1095,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid expected header") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1114,7 +1114,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid request body") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1136,7 +1136,7 @@ class HttpMonitorControllerTestV1(
         given("MonitorController's deleteMonitor() endpoint") {
 
             `when`("it is called with an existing monitor ID") {
-                val monitorToCreate = MonitorCreateDto(
+                val monitorToCreate = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1144,8 +1144,8 @@ class HttpMonitorControllerTestV1(
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/${createdMonitor.id}")
-                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
-                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
+                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 val response = client.exchange(deleteRequest).awaitFirst()
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)
@@ -1165,8 +1165,8 @@ class HttpMonitorControllerTestV1(
 
             `when`("it is called with a non existing monitor ID") {
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/123232")
-                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
-                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
+                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(deleteRequest).awaitFirst()
@@ -1190,7 +1190,7 @@ class HttpMonitorControllerTestV1(
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1216,43 +1216,43 @@ class HttpMonitorControllerTestV1(
                 checkScheduler.getScheduledSSLChecks()[createdMonitor.id].shouldNotBeNull()
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::enabled.name, false)
-                    .put(MonitorUpdateDto::sslCheckEnabled.name, false)
-                    .put(MonitorUpdateDto::requestMethod.name, "GET")
-                    .put(MonitorUpdateDto::latencyHistoryEnabled.name, false)
-                    .put(MonitorUpdateDto::forceNoCache.name, false)
-                    .put(MonitorUpdateDto::followRedirects.name, false)
-                    .put(MonitorUpdateDto::name.name, "updated_test_monitor")
-                    .put(MonitorUpdateDto::url.name, "https://updated-url.com")
-                    .put(MonitorUpdateDto::uptimeCheckInterval.name, "5000")
-                    .put(MonitorUpdateDto::sslExpiryThreshold.name, "20")
+                    .put(HttpMonitorUpdateDto::enabled.name, false)
+                    .put(HttpMonitorUpdateDto::sslCheckEnabled.name, false)
+                    .put(HttpMonitorUpdateDto::requestMethod.name, "GET")
+                    .put(HttpMonitorUpdateDto::latencyHistoryEnabled.name, false)
+                    .put(HttpMonitorUpdateDto::forceNoCache.name, false)
+                    .put(HttpMonitorUpdateDto::followRedirects.name, false)
+                    .put(HttpMonitorUpdateDto::name.name, "updated_test_monitor")
+                    .put(HttpMonitorUpdateDto::url.name, "https://updated-url.com")
+                    .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, "5000")
+                    .put(HttpMonitorUpdateDto::sslExpiryThreshold.name, "20")
                     .set<ObjectNode>(
-                        MonitorUpdateDto::integrations.name,
+                        HttpMonitorUpdateDto::integrations.name,
                         mapper
                             .createArrayNode()
                             .add("slack:test_implicitly_enabled")
                             .add("telegram:disabled")
                     )
                     .set<ObjectNode>(
-                        MonitorUpdateDto::expectedStatusCodes.name,
+                        HttpMonitorUpdateDto::expectedStatusCodes.name,
                         mapper.createArrayNode().add(200).add(201)
                     )
-                    .put(MonitorUpdateDto::responseTimeThresholdMillis.name, 10000)
-                    .put(MonitorUpdateDto::expectedKeyword.name, "updated_keyword")
-                    .put(MonitorUpdateDto::expectedKeywordCaseSensitive.name, false)
-                    .put(MonitorUpdateDto::expectedKeywordNegated.name, false)
+                    .put(HttpMonitorUpdateDto::responseTimeThresholdMillis.name, 10000)
+                    .put(HttpMonitorUpdateDto::expectedKeyword.name, "updated_keyword")
+                    .put(HttpMonitorUpdateDto::expectedKeywordCaseSensitive.name, false)
+                    .put(HttpMonitorUpdateDto::expectedKeywordNegated.name, false)
                     .set<ObjectNode>(
-                        MonitorUpdateDto::requestHeaders.name,
+                        HttpMonitorUpdateDto::requestHeaders.name,
                         mapper.createObjectNode().put("X-New-Header", "UpdatedValue")
                     )
                     .set<ObjectNode>(
-                        MonitorUpdateDto::expectedHeaders.name,
+                        HttpMonitorUpdateDto::expectedHeaders.name,
                         mapper.createObjectNode()
                     )
-                    .put(MonitorUpdateDto::requestBody.name, "{\"newKey\": \"newValue\"}")
+                    .put(HttpMonitorUpdateDto::requestBody.name, "{\"newKey\": \"newValue\"}")
 
-                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
-                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
+                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
@@ -1294,7 +1294,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an existing monitor ID and a valid DTO to enable the monitor") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1305,10 +1305,10 @@ class HttpMonitorControllerTestV1(
                 checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::enabled.name, true)
-                    .put(MonitorUpdateDto::sslCheckEnabled.name, true)
-                    .put(MonitorUpdateDto::requestMethod.name, "HEAD")
-                    .put(MonitorUpdateDto::latencyHistoryEnabled.name, false)
+                    .put(HttpMonitorUpdateDto::enabled.name, true)
+                    .put(HttpMonitorUpdateDto::sslCheckEnabled.name, true)
+                    .put(HttpMonitorUpdateDto::requestMethod.name, "HEAD")
+                    .put(HttpMonitorUpdateDto::latencyHistoryEnabled.name, false)
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
@@ -1333,7 +1333,7 @@ class HttpMonitorControllerTestV1(
 
             `when`("it is called to disable the latency history and there are previous latency logs") {
 
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1345,7 +1345,7 @@ class HttpMonitorControllerTestV1(
                 latencyLogRepository.fetchLatestByMonitorId(createdMonitor.id).shouldNotBeEmpty()
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::latencyHistoryEnabled.name, false)
+                    .put(HttpMonitorUpdateDto::latencyHistoryEnabled.name, false)
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
 
                 then("it should remove the existing latency log records as well") {
@@ -1360,7 +1360,7 @@ class HttpMonitorControllerTestV1(
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1376,7 +1376,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(MonitorUpdateDto::integrations.name, mapper.createArrayNode())
+                    .set<ObjectNode>(HttpMonitorUpdateDto::integrations.name, mapper.createArrayNode())
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
 
@@ -1386,7 +1386,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("integrations are omitted") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1404,7 +1404,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::name.name, "updated_test_monitor")
+                    .put(HttpMonitorUpdateDto::name.name, "updated_test_monitor")
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
 
@@ -1416,13 +1416,13 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an existing monitor ID but there is an other monitor with the given name") {
-                val firstCreateDto = MonitorCreateDto(
+                val firstCreateDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
                 )
                 val firstCreatedMonitor = monitorClient.createMonitor(firstCreateDto)
-                val secondCreateDto = MonitorCreateDto(
+                val secondCreateDto = HttpMonitorCreateDto(
                     name = "test_monitor2",
                     url = "https://valid-url2.com",
                     uptimeCheckInterval = 6000
@@ -1430,7 +1430,7 @@ class HttpMonitorControllerTestV1(
                 val secondCreatedMonitor = monitorClient.createMonitor(secondCreateDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::name.name, secondCreatedMonitor.name)
+                    .put(HttpMonitorUpdateDto::name.name, secondCreatedMonitor.name)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${firstCreatedMonitor.id}", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
@@ -1445,7 +1445,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a blank name") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1453,7 +1453,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::name.name, "\n")
+                    .put(HttpMonitorUpdateDto::name.name, "\n")
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
                 val ex = shouldThrow<HttpClientResponseException> {
@@ -1470,7 +1470,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a null on a property that is non-nullable") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1478,11 +1478,11 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .putNull(MonitorUpdateDto::enabled.name)
+                    .putNull(HttpMonitorUpdateDto::enabled.name)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
-                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
-                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
+                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
@@ -1500,7 +1500,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a too short uptime check interval") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1508,7 +1508,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::uptimeCheckInterval.name, 4)
+                    .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, 4)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
                 val ex = shouldThrow<HttpClientResponseException> {
@@ -1525,7 +1525,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid URL") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1533,7 +1533,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::url.name, "h34l/2683")
+                    .put(HttpMonitorUpdateDto::url.name, "h34l/2683")
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
                 val ex = shouldThrow<HttpClientResponseException> {
@@ -1551,7 +1551,7 @@ class HttpMonitorControllerTestV1(
 
             `when`("it is called with a non existing monitor ID") {
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::enabled.name, false)
+                    .put(HttpMonitorUpdateDto::enabled.name, false)
                 val updateRequest = HttpRequest.PATCH("/api/v1/monitors/123232", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
@@ -1563,7 +1563,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid integration name") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1572,7 +1572,7 @@ class HttpMonitorControllerTestV1(
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(
-                        MonitorUpdateDto::integrations.name,
+                        HttpMonitorUpdateDto::integrations.name,
                         mapper.createArrayNode().add("invalid-integration")
                     )
                 val updateRequest =
@@ -1590,7 +1590,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a non-existing integration") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1599,7 +1599,7 @@ class HttpMonitorControllerTestV1(
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(
-                        MonitorUpdateDto::integrations.name,
+                        HttpMonitorUpdateDto::integrations.name,
                         mapper.createArrayNode().add("email:non-existing-integration")
                     )
                 val updateRequest =
@@ -1617,7 +1617,7 @@ class HttpMonitorControllerTestV1(
                 }
             }
             `when`("it is called to update a non-updatable field") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1638,7 +1638,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a too high response time threshold") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1646,7 +1646,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::responseTimeThresholdMillis.name, 30001)
+                    .put(HttpMonitorUpdateDto::responseTimeThresholdMillis.name, 30001)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
                 val ex = shouldThrow<HttpClientResponseException> {
@@ -1663,7 +1663,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with a negative response time threshold") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1671,7 +1671,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::responseTimeThresholdMillis.name, -100)
+                    .put(HttpMonitorUpdateDto::responseTimeThresholdMillis.name, -100)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
                 val ex = shouldThrow<HttpClientResponseException> {
@@ -1687,7 +1687,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid expected status code") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000
@@ -1696,7 +1696,7 @@ class HttpMonitorControllerTestV1(
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(
-                        MonitorUpdateDto::expectedStatusCodes.name,
+                        HttpMonitorUpdateDto::expectedStatusCodes.name,
                         mapper.createArrayNode().add(200).add(999) // 999 is not a valid status code
                     )
                 val updateRequest =
@@ -1715,7 +1715,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid request header") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1725,7 +1725,7 @@ class HttpMonitorControllerTestV1(
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(
-                        MonitorUpdateDto::requestHeaders.name,
+                        HttpMonitorUpdateDto::requestHeaders.name,
                         mapper.createObjectNode().put("-Header", "NewValue")
                     )
                 val updateRequest =
@@ -1743,7 +1743,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid expected header") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1753,7 +1753,7 @@ class HttpMonitorControllerTestV1(
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(
-                        MonitorUpdateDto::expectedHeaders.name,
+                        HttpMonitorUpdateDto::expectedHeaders.name,
                         mapper.createObjectNode().put("1241", "NewValue")
                     )
                 val updateRequest =
@@ -1771,7 +1771,7 @@ class HttpMonitorControllerTestV1(
             }
 
             `when`("it is called with an invalid request body") {
-                val createDto = MonitorCreateDto(
+                val createDto = HttpMonitorCreateDto(
                     name = "test_monitor",
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
@@ -1780,7 +1780,7 @@ class HttpMonitorControllerTestV1(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(MonitorUpdateDto::requestBody.name, "not a-json")
+                    .put(HttpMonitorUpdateDto::requestBody.name, "not a-json")
                 val updateRequest =
                     HttpRequest.PATCH("/api/v1/monitors/${createdMonitor.id}", updateDto)
                 val response = shouldThrow<HttpClientResponseException> {
@@ -1952,7 +1952,7 @@ class HttpMonitorControllerTestV1(
 
                     val exportedMonitorsRaw = mapper.readTree(responseBody)["monitors"].shouldNotBeNull()
                     val parsedMonitors =
-                        mapper.convertValue<List<MonitorExportDto>>(exportedMonitorsRaw).shouldNotBeEmpty()
+                        mapper.convertValue<List<HttpMonitorExportDto>>(exportedMonitorsRaw).shouldNotBeEmpty()
 
                     parsedMonitors.size shouldBe 2
                     parsedMonitors.forOne { firstMonitor ->
@@ -2000,16 +2000,16 @@ class HttpMonitorControllerTestV1(
 
                     response.status shouldBe HttpStatus.OK
                     val exportedMonitorsRaw = mapper.readTree(responseBody)["monitors"].shouldNotBeNull()
-                    mapper.convertValue<List<MonitorExportDto>>(exportedMonitorsRaw).shouldBeEmpty()
+                    mapper.convertValue<List<HttpMonitorExportDto>>(exportedMonitorsRaw).shouldBeEmpty()
                 }
             }
         }
 
         given("the getMonitoringStats() endpoint") {
 
-            val monitoringStatsDtoStub = MonitoringStatsDto(
-                actual = MonitoringStatsDto.ActualMonitoringStats(
-                    uptimeStats = MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+            val monitoringStatsDtoStub = HttpMonitoringStatsDto(
+                actual = HttpMonitoringStatsDto.ActualMonitoringStats(
+                    uptimeStats = HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
                         total = 10000,
                         down = 8185,
                         up = 3535,
@@ -2017,15 +2017,15 @@ class HttpMonitorControllerTestV1(
                         inProgress = 6139,
                         lastIncident = getCurrentTimestamp()
                     ),
-                    sslStats = MonitoringStatsDto.ActualMonitoringStats.SslStats(
+                    sslStats = HttpMonitoringStatsDto.ActualMonitoringStats.SslStats(
                         invalid = 6381,
                         valid = 8827,
                         willExpire = 4208,
                         inProgress = 4622
                     )
                 ),
-                history = MonitoringStatsDto.HistoricalMonitoringStats(
-                    uptimeStats = MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
+                history = HttpMonitoringStatsDto.HistoricalMonitoringStats(
+                    uptimeStats = HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
                         incidents = 7630,
                         affectedMonitors = 8313,
                         uptimeRatio = 0.12343784,
@@ -2037,28 +2037,28 @@ class HttpMonitorControllerTestV1(
             `when`("it's called without an explicit period") {
 
                 val statCalculatorMock = getMock(statCalculator)
-                every { statCalculatorMock.calculateOverallStats(any()) } returns monitoringStatsDtoStub
+                every { statCalculatorMock.calculateOverallHttpStats(any()) } returns monitoringStatsDtoStub
 
                 val response = monitorClient.getMonitoringStats(period = null)
 
                 then("it should delegate to the StatCalculator with the default period and return the stats") {
                     response.shouldNotBeNull()
 
-                    verify(exactly = 1) { statCalculatorMock.calculateOverallStats(Duration.ofHours(168)) }
+                    verify(exactly = 1) { statCalculatorMock.calculateOverallHttpStats(Duration.ofHours(168)) }
                 }
             }
 
             `when`("it's called with an explicit period") {
 
                 val statCalculatorMock = getMock(statCalculator)
-                every { statCalculatorMock.calculateOverallStats(any()) } returns monitoringStatsDtoStub
+                every { statCalculatorMock.calculateOverallHttpStats(any()) } returns monitoringStatsDtoStub
 
                 val response = monitorClient.getMonitoringStats(period = Duration.ofDays(1))
 
                 then("it should delegate to the StatCalculator with the default period and return the stats") {
                     response.shouldNotBeNull()
 
-                    verify(exactly = 1) { statCalculatorMock.calculateOverallStats(Duration.ofDays(1)) }
+                    verify(exactly = 1) { statCalculatorMock.calculateOverallHttpStats(Duration.ofDays(1)) }
                 }
             }
         }

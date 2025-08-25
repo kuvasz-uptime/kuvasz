@@ -16,7 +16,7 @@ import java.time.Duration
 import java.time.OffsetDateTime
 
 @Singleton
-class LatencyLogRepository(private val dslContext: DSLContext) {
+class HttpLatencyLogRepository(private val dslContext: DSLContext) {
 
     companion object {
         private const val P90 = .90

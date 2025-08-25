@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
 
 @Introspected
-data class MonitoringStatsDto(
+data class HttpMonitoringStatsDto(
     @param:Schema(
         description = "The actual monitoring statistics for the current state of the monitors.",
         required = true

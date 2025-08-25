@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory
 @Singleton
 class DatabaseCleaner(
     private val appConfig: AppConfig,
-    private val uptimeEventRepository: UptimeEventRepository,
-    private val latencyLogRepository: LatencyLogRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
     private val sslEventRepository: SSLEventRepository
 ) {
 

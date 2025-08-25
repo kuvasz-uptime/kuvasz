@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
-import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
-import com.kuvaszuptime.kuvasz.services.MonitorCrudService
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Produces
@@ -30,7 +30,7 @@ import java.time.Instant
     SecurityRequirement(name = "bearerAuth")
 )
 class MonitorControllerV2(
-    private val monitorCrudService: MonitorCrudService,
+    private val monitorCrudService: HttpMonitorCrudService,
 ) : MonitorOperationsV2 {
 
     private val yamlMapper = YAMLMapper()
@@ -50,7 +50,7 @@ class MonitorControllerV2(
         val file = File.createTempFile("temp", EXPORT_FILE_NAME_PREFIX)
         val export = mapOf(
             HttpMonitorConfig.CONFIG_PREFIX to monitorCrudService.getHttpMonitorsExport()
-                .map { MonitorExportDto.fromMonitorRecord(it) }
+                .map { HttpMonitorExportDto.fromMonitorRecord(it) }
         )
         yamlMapper.writeValue(file, export)
         val finalFileName = EXPORT_FILE_NAME_PREFIX + Instant.now().epochSecond + EXPORT_FILE_EXTENSION

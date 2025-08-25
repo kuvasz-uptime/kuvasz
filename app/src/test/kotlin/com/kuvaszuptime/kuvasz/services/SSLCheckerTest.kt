@@ -9,9 +9,11 @@ import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
+import com.kuvaszuptime.kuvasz.services.check.ssl.SSLValidator
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -31,12 +33,12 @@ import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
 class SSLCheckerTest(
-    private val monitorRepository: MonitorRepository,
+    private val monitorRepository: HttpMonitorRepository,
     sslEventRepository: SSLEventRepository
 ) : DatabaseBehaviorSpec() {
 
     private val sslValidator = mockk<SSLValidator>()
-    private val uptimeEventRepository = mockk<UptimeEventRepository>()
+    private val uptimeEventRepository = mockk<HttpUptimeEventRepository>()
 
     init {
         val eventDispatcher = EventDispatcher()

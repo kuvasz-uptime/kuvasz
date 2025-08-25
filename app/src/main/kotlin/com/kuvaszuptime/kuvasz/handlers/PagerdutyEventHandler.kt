@@ -1,13 +1,13 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
@@ -44,11 +44,11 @@ class PagerdutyEventHandler(
     override val integrationType: IntegrationType = IntegrationType.PAGERDUTY
 
     private fun subscribeToEvents() {
-        eventDispatcher.subscribeToMonitorUpEvents { event ->
+        eventDispatcher.subscribeToHttpMonitorUpEvents { event ->
             logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
-        eventDispatcher.subscribeToMonitorDownEvents { event ->
+        eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
             logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
@@ -79,18 +79,18 @@ class PagerdutyEventHandler(
             }
         )
 
-    private val UptimeMonitorEvent.deduplicationKey: String
+    private val HttpUptimeMonitorEvent.deduplicationKey: String
         get() = "kuvasz_uptime_${monitor.id}"
 
     private val SSLMonitorEvent.deduplicationKey: String
         get() = "kuvasz_ssl_${monitor.id}"
 
-    private fun UptimeMonitorEvent.handle() {
+    private fun HttpUptimeMonitorEvent.handle() {
         runWhenStateChanges { event ->
             val integrations = filterTargetConfigs(event.monitor.integrations)
                 .map { (it as PagerdutyConfig).integrationKey }
             when (event) {
-                is MonitorUpEvent -> {
+                is HttpMonitorUpEvent -> {
                     if (previousEvent != null) {
                         integrations.forEach { integrationKey ->
                             val request = createResolveRequest(
@@ -102,7 +102,7 @@ class PagerdutyEventHandler(
                     }
                 }
 
-                is MonitorDownEvent -> {
+                is HttpMonitorDownEvent -> {
                     integrations.forEach { integrationKey ->
                         val request = event.toTriggerRequest(
                             serviceKey = integrationKey,
@@ -156,7 +156,7 @@ class PagerdutyEventHandler(
         }
     }
 
-    private fun MonitorEvent.toTriggerRequest(
+    private fun HttpMonitorEvent.toTriggerRequest(
         serviceKey: String,
         deduplicationKey: String,
         severity: PagerdutySeverity = PagerdutySeverity.CRITICAL

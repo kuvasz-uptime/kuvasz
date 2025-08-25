@@ -5,7 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -16,7 +16,7 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
 class AppBootstrappingSanitizationTest(
-    monitorRepository: MonitorRepository,
+    monitorRepository: HttpMonitorRepository,
     dslContext: DSLContext,
 ) : DatabaseStringSpec({
 

@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.metrics.http.HttpMetricsExporter
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
@@ -13,8 +14,8 @@ import org.slf4j.LoggerFactory
 @Requires(bean = MeterRegistry::class)
 @Singleton
 class MetricsExportRegistry(
-    private val monitorRepository: MonitorRepository,
-    private val metricsExporters: List<MetricsExporter>,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val httpMetricsExporters: List<HttpMetricsExporter>,
 ) {
 
     companion object {
@@ -22,11 +23,11 @@ class MetricsExportRegistry(
     }
 
     /**
-     * Reads the actually available monitors from the database and initializes the metrics exporters with them
+     * Reads the actually available HTTP monitors from the database and initializes the metrics exporters with them
      */
     fun initialize() {
-        val monitors = monitorRepository.fetchByEnabled(enabled = true)
-        metricsExporters.forEach { exporter ->
+        val monitors = httpMonitorRepository.fetchByEnabled(enabled = true)
+        httpMetricsExporters.forEach { exporter ->
             logger.debug("Initializing exporter: ${exporter::class.java.simpleName} for ${monitors.size} monitors")
             exporter.initialize(monitors)
         }

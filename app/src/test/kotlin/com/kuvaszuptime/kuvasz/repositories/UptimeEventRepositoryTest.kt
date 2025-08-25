@@ -10,8 +10,8 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(startApplication = false)
 class UptimeEventRepositoryTest(
-    private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
 ) : DatabaseBehaviorSpec() {
 
     init {

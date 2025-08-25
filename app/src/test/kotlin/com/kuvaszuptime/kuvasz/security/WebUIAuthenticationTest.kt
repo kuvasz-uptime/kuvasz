@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.security
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -30,7 +30,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 class WebUIAuthenticationTest(
     @Client("/") private val client: HttpClient,
     private val authConfig: AdminAuthConfig,
-    monitorRepository: MonitorRepository,
+    monitorRepository: HttpMonitorRepository,
 ) : DatabaseStringSpec({
 
     "all the web UI endpoints should be secured - anonymous user" {

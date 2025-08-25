@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -20,7 +20,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 @Property(name = "micronaut.http.client.follow-redirects", value = "false")
 class DisabledWebUIAuthenticationTest(
     @Client("/") client: HttpClient,
-    monitorRepository: MonitorRepository,
+    monitorRepository: HttpMonitorRepository,
 ) : DatabaseStringSpec({
 
     "all the web UI endpoints should be publicly available" {

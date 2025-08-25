@@ -1,9 +1,10 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.metrics.MeterDefinition
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDeleteEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpdateEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.Logger
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * A marker interface for all metrics exporters.
  */
-interface MetricsExporter {
+interface HttpMetricsExporter {
 
     companion object {
         private const val PREFIX = "kuvasz"
@@ -54,17 +55,18 @@ interface MetricsExporter {
  * @param METER_VAL The type of the value that will be used as a reference in the meter registry, e.g. for a gauge, it's
  * an [java.util.concurrent.atomic.AtomicLong].
  */
-abstract class BaseMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, METER_VAL : Any>(
-    private val monitorRepository: MonitorRepository,
+abstract class BaseHttpMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, METER_VAL : Any>(
+    private val monitorRepository: HttpMonitorRepository,
     private val meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-) : MetricsExporter {
+) : HttpMetricsExporter {
 
     protected val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     /**
      * A map to hold the meter definitions for each monitor.
-     * The key is the monitor ID, and the value is the [MeterDefinition] containing the meter's ID and its value.
+     * The key is the monitor ID, and the value is the [com.kuvaszuptime.kuvasz.metrics.MeterDefinition] containing the
+     * meter's ID and its value.
      * Keeping tab on the meter's ID allows us to re-create or remove the meter later if needed.
      */
     protected val meterDefinitions: ConcurrentHashMap<Long, MeterDefinition<METER_VAL>> = ConcurrentHashMap()
@@ -165,14 +167,14 @@ abstract class BaseMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, METER_V
         // Creation is not covered purposefully, as the initial registration is either done upon startup, or when
         // the given exporter tries to update the meter for the first time.
         // This means that the meter will be created only when we have a value to register.
-        eventDispatcher.subscribeToMonitorLifecycleEvents { event ->
+        eventDispatcher.subscribeToHttpMonitorLifecycleEvents { event ->
             when (event) {
-                is MonitorUpdateEvent -> {
+                is HttpMonitorUpdateEvent -> {
                     deleteMeter(event.monitorId)
                     createMeter(event.monitorId, null)
                 }
 
-                is MonitorDeleteEvent -> deleteMeter(event.monitorId)
+                is HttpMonitorDeleteEvent -> deleteMeter(event.monitorId)
             }
         }
     }

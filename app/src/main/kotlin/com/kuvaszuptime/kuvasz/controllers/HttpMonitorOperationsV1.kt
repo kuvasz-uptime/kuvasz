@@ -3,14 +3,14 @@ package com.kuvaszuptime.kuvasz.controllers
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
-import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Get
@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import java.time.Duration
 
+@Deprecated("Use HttpMonitorOperationsV2 instead")
 interface HttpMonitorOperationsV1 {
 
     @Operation(summary = "Get all monitors with their details", deprecated = true)
@@ -42,15 +43,15 @@ interface HttpMonitorOperationsV1 {
         @QueryValue
         @Parameter(required = false)
         sslCheckEnabled: Boolean?,
-    ): List<MonitorDetailsDto>
+    ): List<HttpMonitorDetailsDto>
 
     @Operation(summary = "Get a monitor's details", deprecated = true)
     @Get("/{monitorId}")
-    fun getMonitorDetails(monitorId: Long): MonitorDetailsDto
+    fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto
 
     @Operation(summary = "Create a monitor", deprecated = true)
     @Post("/")
-    fun createMonitor(@Body monitor: MonitorCreateDto): MonitorDto
+    fun createMonitor(@Body monitor: HttpMonitorCreateDto): HttpMonitorDto
 
     @Operation(summary = "Delete a monitor by ID", deprecated = true)
     @Delete("/{monitorId}")
@@ -60,15 +61,15 @@ interface HttpMonitorOperationsV1 {
         summary = "Update a monitor by ID",
         description = "Updates the monitor with the given ID. Only fields that are present in the request body " +
             "will be updated. Fields not present in the request body will remain unchanged.",
-        requestBody = RequestBody(content = [Content(schema = Schema(implementation = MonitorUpdateDto::class))]),
+        requestBody = RequestBody(content = [Content(schema = Schema(implementation = HttpMonitorUpdateDto::class))]),
         deprecated = true
     )
     @Patch("/{monitorId}")
-    fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): MonitorDto
+    fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): HttpMonitorDto
 
     @Operation(summary = "Get the uptime events of the given monitor", deprecated = true)
     @Get("/{monitorId}/uptime-events")
-    fun getUptimeEvents(monitorId: Long): List<UptimeEventDto>
+    fun getUptimeEvents(monitorId: Long): List<HttpUptimeEventDto>
 
     @Operation(summary = "Get the SSL events of the given monitor", deprecated = true)
     @Get("/{monitorId}/ssl-events")
@@ -84,7 +85,7 @@ interface HttpMonitorOperationsV1 {
             schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 1d")
         )
         period: Duration?,
-    ): MonitorStatsDto
+    ): HttpMonitorStatsDto
 
     @Operation(summary = "Download the export of all monitors in YAML format", deprecated = true)
     @Get("/export/yaml")
@@ -99,5 +100,5 @@ interface HttpMonitorOperationsV1 {
             schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 7d")
         )
         period: Duration?,
-    ): MonitoringStatsDto
+    ): HttpMonitoringStatsDto
 }

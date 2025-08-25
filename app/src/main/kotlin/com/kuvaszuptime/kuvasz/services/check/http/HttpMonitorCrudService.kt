@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -12,19 +12,21 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
-import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
-import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDeleteEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.toMonitorRecord
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
@@ -35,11 +37,11 @@ import org.jooq.exception.DataAccessException
 import java.time.Duration
 
 @Singleton
-class MonitorCrudService(
-    private val monitorRepository: MonitorRepository,
-    private val latencyLogRepository: LatencyLogRepository,
-    private val checkScheduler: CheckScheduler,
-    private val uptimeEventRepository: UptimeEventRepository,
+class HttpMonitorCrudService(
+    private val monitorRepository: HttpMonitorRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
+    private val checkScheduler: HttpCheckScheduler,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
     private val validator: Validator,
@@ -52,7 +54,7 @@ class MonitorCrudService(
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .registerModules(JavaTimeModule())
 
-    fun getMonitorDetails(monitorId: Long): MonitorDetailsDto {
+    fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
         return monitorFromRepo.copy(
@@ -68,7 +70,7 @@ class MonitorCrudService(
         sslStatus: List<SslStatus> = emptyList(),
         sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
-    ): List<MonitorDetailsDto> =
+    ): List<HttpMonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sslCheckEnabled, sortedBy)
             .map { detailsDto ->
                 detailsDto.copy(
@@ -78,7 +80,7 @@ class MonitorCrudService(
                 )
             }
 
-    fun createMonitor(monitorCreateDto: MonitorCreateDto): HttpMonitorRecord {
+    fun createMonitor(monitorCreateDto: HttpMonitorCreateDto): HttpMonitorRecord {
         // Validate the raw integrations from the DTO
         val validatedIntegrations =
             integrationIdValidator.validateIntegrationIds(monitorCreateDto.integrations.orEmpty())
@@ -103,7 +105,7 @@ class MonitorCrudService(
             .let { monitor ->
                 monitorRepository.deleteById(monitor.id)
                 checkScheduler.removeChecksOfMonitor(monitor)
-                eventDispatcher.dispatch(MonitorDeleteEvent(monitor.id))
+                eventDispatcher.dispatch(HttpMonitorDeleteEvent(monitor.id))
             }
 
     fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorRecord {
@@ -117,7 +119,7 @@ class MonitorCrudService(
                         }
                     val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
 
-                    objectMapper.convertValue<MonitorUpdateDto>(updatedMonitor).let { toValidate ->
+                    objectMapper.convertValue<HttpMonitorUpdateDto>(updatedMonitor).let { toValidate ->
                         val errors = validator.validate(toValidate)
                         if (errors.isNotEmpty()) {
                             throw ValidationException(
@@ -137,7 +139,7 @@ class MonitorCrudService(
             throw ex.cause ?: ex
         }
 
-        return result.also { eventDispatcher.dispatch(MonitorUpdateEvent(it.id)) }
+        return result.also { eventDispatcher.dispatch(HttpMonitorUpdateEvent(it.id)) }
     }
 
     private fun HttpMonitorRecord.saveAndReschedule(
@@ -160,7 +162,7 @@ class MonitorCrudService(
             }
         )
 
-    fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<UptimeEventDto> =
+    fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> =
         monitorRepository.findById(monitorId)
             .orThrowNotFound(monitorId)
             .let { monitor ->
@@ -174,11 +176,11 @@ class MonitorCrudService(
                 sslEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
-    fun getMonitorStats(monitorId: Long, period: Duration): MonitorStatsDto =
+    fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =
         monitorRepository.findById(monitorId)
             .orThrowNotFound(monitorId)
             .let { monitor ->
-                val statsDto = MonitorStatsDto(
+                val statsDto = HttpMonitorStatsDto(
                     id = monitor.id,
                     latencyHistoryEnabled = monitor.latencyHistoryEnabled,
                     averageLatencyInMs = null,

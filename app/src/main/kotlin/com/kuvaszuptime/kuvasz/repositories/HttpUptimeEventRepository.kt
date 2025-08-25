@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -14,18 +14,18 @@ import org.jooq.impl.DSL
 import java.time.OffsetDateTime
 
 @Singleton
-class UptimeEventRepository(private val dslContext: DSLContext) {
+class HttpUptimeEventRepository(private val dslContext: DSLContext) {
 
-    private fun MonitorDownEvent.getPersistableError() = toStructuredMessage().error
+    private fun HttpMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: UptimeMonitorEvent, ctx: DSLContext = dslContext): HttpUptimeEventRecord {
+    fun insertFromMonitorEvent(event: HttpUptimeMonitorEvent, ctx: DSLContext = dslContext): HttpUptimeEventRecord {
         val eventToInsert = HttpUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
 
-        if (event is MonitorDownEvent) {
+        if (event is HttpMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()
         }
 
@@ -60,11 +60,11 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun updateEvent(eventId: Long, newEvent: UptimeMonitorEvent) = dslContext
+    fun updateEvent(eventId: Long, newEvent: HttpUptimeMonitorEvent) = dslContext
         .update(HTTP_UPTIME_EVENT)
         .set(HTTP_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {
-            if (newEvent is MonitorDownEvent) {
+            if (newEvent is HttpMonitorDownEvent) {
                 set(HTTP_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
             }
         }
@@ -75,14 +75,14 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
         getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: nullAsUp
 
     @Suppress("IgnoredReturnValue")
-    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<UptimeEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> = dslContext
         .select(
-            HTTP_UPTIME_EVENT.ID.`as`(UptimeEventDto::id.name),
-            HTTP_UPTIME_EVENT.STATUS.`as`(UptimeEventDto::status.name),
-            HTTP_UPTIME_EVENT.ERROR.`as`(UptimeEventDto::error.name),
-            HTTP_UPTIME_EVENT.STARTED_AT.`as`(UptimeEventDto::startedAt.name),
-            HTTP_UPTIME_EVENT.ENDED_AT.`as`(UptimeEventDto::endedAt.name),
-            HTTP_UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventDto::updatedAt.name),
+            HTTP_UPTIME_EVENT.ID.`as`(HttpUptimeEventDto::id.name),
+            HTTP_UPTIME_EVENT.STATUS.`as`(HttpUptimeEventDto::status.name),
+            HTTP_UPTIME_EVENT.ERROR.`as`(HttpUptimeEventDto::error.name),
+            HTTP_UPTIME_EVENT.STARTED_AT.`as`(HttpUptimeEventDto::startedAt.name),
+            HTTP_UPTIME_EVENT.ENDED_AT.`as`(HttpUptimeEventDto::endedAt.name),
+            HTTP_UPTIME_EVENT.UPDATED_AT.`as`(HttpUptimeEventDto::updatedAt.name),
         )
         .from(HTTP_UPTIME_EVENT)
         .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
@@ -92,7 +92,7 @@ class UptimeEventRepository(private val dslContext: DSLContext) {
                 limit(limit)
             }
         }
-        .fetchInto(UptimeEventDto::class.java)
+        .fetchInto(HttpUptimeEventDto::class.java)
 
     /**
      * Fetches all uptime events that have ended or was open within the specified period and are associated with

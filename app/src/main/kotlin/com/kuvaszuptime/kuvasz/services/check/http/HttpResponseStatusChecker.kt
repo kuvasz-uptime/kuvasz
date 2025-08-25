@@ -6,8 +6,8 @@ import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.checks.RawHttpResponse
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.isSuccess
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -21,7 +21,7 @@ import java.net.URI
 @Singleton
 class HttpResponseStatusChecker(
     private val eventDispatcher: EventDispatcher,
-    uptimeEventRepository: UptimeEventRepository,
+    uptimeEventRepository: HttpUptimeEventRepository,
 ) : HttpResponseChecker(eventDispatcher, uptimeEventRepository) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -76,7 +76,7 @@ class HttpResponseStatusChecker(
 
         return if (redirectionUri != null) {
             eventDispatcher.dispatch(
-                RedirectEvent(
+                HttpRedirectEvent(
                     monitor = ctx.monitor,
                     redirectLocation = redirectionUri
                 )

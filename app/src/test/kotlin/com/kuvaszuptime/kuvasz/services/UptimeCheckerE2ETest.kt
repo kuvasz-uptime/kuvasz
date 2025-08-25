@@ -3,11 +3,12 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
+import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBeUriOf
 import io.kotest.inspectors.forAll
@@ -31,8 +32,8 @@ import java.util.concurrent.TimeUnit
 
 @MicronautTest(startApplication = false)
 class UptimeCheckerE2ETest(
-    uptimeChecker: UptimeChecker,
-    private val monitorRepository: MonitorRepository,
+    uptimeChecker: HttpUptimeChecker,
+    private val monitorRepository: HttpMonitorRepository,
     private val eventDispatcher: EventDispatcher
 ) : DatabaseBehaviorSpec({
 
@@ -57,8 +58,8 @@ class UptimeCheckerE2ETest(
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -86,8 +87,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 expectedStatusCodes = setOf(HttpStatus.NOT_FOUND.code)
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -113,8 +114,8 @@ class UptimeCheckerE2ETest(
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = headRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -140,8 +141,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.HEAD,
                 forceNoCache = true,
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = headRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -167,8 +168,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.HEAD,
                 forceNoCache = false,
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = headRequest("/some-path")
                 .withHeader(not("Cache-Control"), string(".*"))
@@ -193,12 +194,12 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 followRedirects = true,
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
             val request2 = getRequest("/redirected-path1")
@@ -248,12 +249,12 @@ class UptimeCheckerE2ETest(
                 followRedirects = true,
                 expectedStatusCodes = setOf(200, 307, 308)
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
             val request2 = getRequest("/redirected-path1")
@@ -306,12 +307,12 @@ class UptimeCheckerE2ETest(
                 followRedirects = true,
                 expectedStatusCodes = setOf(200, 201, 301)
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
 
@@ -349,12 +350,12 @@ class UptimeCheckerE2ETest(
                 followRedirects = true,
                 expectedStatusCodes = setOf(201, 308)
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
             val request2 = getRequest("/redirected-path1")
@@ -396,12 +397,12 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 followRedirects = true,
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
             val request2 = getRequest("/redirected-path1")
@@ -450,12 +451,12 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 followRedirects = false,
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
             val request2 = getRequest("/redirected-path1")
@@ -499,12 +500,12 @@ class UptimeCheckerE2ETest(
                 followRedirects = false,
                 expectedStatusCodes = setOf(HttpStatus.PERMANENT_REDIRECT.code)
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
 
@@ -536,12 +537,12 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 followRedirects = true,
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
 
@@ -573,12 +574,12 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 followRedirects = true,
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
             val request2 = getRequest("/redirected-path1")
@@ -619,8 +620,8 @@ class UptimeCheckerE2ETest(
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = headRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -646,8 +647,8 @@ class UptimeCheckerE2ETest(
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = headRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -673,8 +674,8 @@ class UptimeCheckerE2ETest(
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = headRequest("/some-path")
             mockServer.`when`(request).error(HttpError().withDropConnection(true))
@@ -698,8 +699,8 @@ class UptimeCheckerE2ETest(
                 url = "https://34hkl2jklvd.com/some-path",
                 requestMethod = HttpMethod.HEAD,
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             uptimeChecker.check(monitor)
 
@@ -718,8 +719,8 @@ class UptimeCheckerE2ETest(
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = headRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -746,8 +747,8 @@ class UptimeCheckerE2ETest(
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -773,12 +774,12 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 followRedirects = true,
             )
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            val redirectSubscriber = TestSubscriber<RedirectEvent>()
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
-            eventDispatcher.subscribeToRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request1 = getRequest("/some-path")
             val request2 = getRequest("/redirected-path1")
@@ -830,8 +831,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 responseTimeThresholdMillis = 1000
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -861,8 +862,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 responseTimeThresholdMillis = 1000
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -890,8 +891,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 expectedKeyword = "darkness"
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -921,8 +922,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 expectedKeyword = "lo, w"
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -950,8 +951,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 expectedKeyword = "darkness"
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -980,8 +981,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 expectedKeyword = "darkness"
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1013,8 +1014,8 @@ class UptimeCheckerE2ETest(
                 expectedKeyword = "Hello, world!",
                 expectedKeywordCaseSensitive = true
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1048,8 +1049,8 @@ class UptimeCheckerE2ETest(
                 expectedKeyword = "Hello, world!",
                 expectedKeywordCaseSensitive = false
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1078,8 +1079,8 @@ class UptimeCheckerE2ETest(
                 expectedKeyword = "darkness",
                 expectedKeywordNegated = true
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1108,8 +1109,8 @@ class UptimeCheckerE2ETest(
                 expectedKeyword = "Hello, world!",
                 expectedKeywordNegated = true
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1144,8 +1145,8 @@ class UptimeCheckerE2ETest(
                 expectedKeywordNegated = true,
                 expectedKeywordCaseSensitive = true
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1178,8 +1179,8 @@ class UptimeCheckerE2ETest(
                 expectedKeywordNegated = true,
                 expectedKeywordCaseSensitive = true
             )
-            val subscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1209,8 +1210,8 @@ class UptimeCheckerE2ETest(
                 requestMethod = HttpMethod.GET,
                 expectedKeyword = ""
             )
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
             mockServer.`when`(request).respond(
@@ -1232,8 +1233,8 @@ class UptimeCheckerE2ETest(
 
         `when`("it checks a monitor with overriding the built-in headers") {
 
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val monitor = createMonitor(
                 repository = monitorRepository,
@@ -1277,8 +1278,8 @@ class UptimeCheckerE2ETest(
 
         `when`("it checks a monitor with a custom request body") {
 
-            val subscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+            val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
             val monitor = createMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
@@ -1317,8 +1318,8 @@ class UptimeCheckerE2ETest(
                 )
             )
 
-            val upSubscriber = TestSubscriber<MonitorUpEvent>()
-            eventDispatcher.subscribeToMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+            val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
 
             val request = getRequest("/some-path")
 
@@ -1354,8 +1355,8 @@ class UptimeCheckerE2ETest(
                 )
             )
 
-            val downSubscriber = TestSubscriber<MonitorDownEvent>()
-            eventDispatcher.subscribeToMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+            val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
 
             val request = getRequest("/some-path")
 

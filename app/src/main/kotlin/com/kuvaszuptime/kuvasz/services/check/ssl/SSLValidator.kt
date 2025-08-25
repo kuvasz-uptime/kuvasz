@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.check.ssl
 
 import arrow.core.Either
 import com.kuvaszuptime.kuvasz.models.CertificateInfo

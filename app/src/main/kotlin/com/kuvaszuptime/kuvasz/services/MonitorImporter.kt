@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.models.dto.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.toMonitorRecord
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory
 @Singleton
 class MonitorImporter(
     private val integrationIdValidator: IntegrationIdValidator,
-    private val httpMonitorRepository: MonitorRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
     private val dslContext: DSLContext,
 ) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
-    fun importMonitorConfigs(monitorConfigs: List<HttpMonitorConfig>): MonitorImportResultDto =
+    fun importHttpMonitorConfigs(monitorConfigs: List<HttpMonitorConfig>): MonitorImportResultDto =
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
             val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->

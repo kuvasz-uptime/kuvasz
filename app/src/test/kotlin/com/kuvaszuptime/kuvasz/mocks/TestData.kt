@@ -11,7 +11,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -20,7 +20,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 fun createMonitor(
-    repository: MonitorRepository,
+    repository: HttpMonitorRepository,
     enabled: Boolean = true,
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,

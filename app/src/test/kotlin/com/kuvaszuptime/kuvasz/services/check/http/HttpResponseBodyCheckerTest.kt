@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.services.check.http
 import com.kuvaszuptime.kuvasz.models.ExpectedKeywordNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.core.spec.style.ShouldSpec
@@ -13,7 +13,7 @@ import io.mockk.mockk
 
 class HttpResponseBodyCheckerTest : ShouldSpec({
 
-    val mockUptimeRepo = mockk<UptimeEventRepository>(relaxed = true)
+    val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
     val dispatcher = EventDispatcher()
     val checker = HttpResponseBodyChecker(dispatcher, mockUptimeRepo)
 

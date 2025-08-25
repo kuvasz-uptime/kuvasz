@@ -8,16 +8,16 @@ import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.MonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorExportDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.MonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
-import com.kuvaszuptime.kuvasz.models.dto.UptimeEventDto
-import com.kuvaszuptime.kuvasz.services.MonitorCrudService
 import com.kuvaszuptime.kuvasz.services.StatCalculator
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -50,7 +50,7 @@ import java.time.Instant
     SecurityRequirement(name = "bearerAuth")
 )
 class HttpMonitorControllerV1(
-    private val monitorCrudService: MonitorCrudService,
+    private val monitorCrudService: HttpMonitorCrudService,
     private val statCalculator: StatCalculator,
 ) : HttpMonitorOperationsV1 {
 
@@ -62,7 +62,7 @@ class HttpMonitorControllerV1(
         ApiResponse(
             responseCode = "200",
             description = "Successful query",
-            content = [Content(array = ArraySchema(schema = Schema(implementation = MonitorDetailsDto::class)))]
+            content = [Content(array = ArraySchema(schema = Schema(implementation = HttpMonitorDetailsDto::class)))]
         )
     )
     @ExecuteOn(TaskExecutors.IO)
@@ -71,7 +71,7 @@ class HttpMonitorControllerV1(
         @QueryValue uptimeStatus: List<UptimeStatus>?,
         @QueryValue sslStatus: List<SslStatus>?,
         @QueryValue sslCheckEnabled: Boolean?,
-    ): List<MonitorDetailsDto> =
+    ): List<HttpMonitorDetailsDto> =
         monitorCrudService.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
@@ -83,7 +83,7 @@ class HttpMonitorControllerV1(
         ApiResponse(
             responseCode = "200",
             description = "Successful query",
-            content = [Content(schema = Schema(implementation = MonitorDetailsDto::class))]
+            content = [Content(schema = Schema(implementation = HttpMonitorDetailsDto::class))]
         ),
         ApiResponse(
             responseCode = "404",
@@ -92,7 +92,7 @@ class HttpMonitorControllerV1(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getMonitorDetails(monitorId: Long): MonitorDetailsDto =
+    override fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto =
         monitorCrudService.getMonitorDetails(monitorId)
 
     @Status(HttpStatus.CREATED)
@@ -100,7 +100,7 @@ class HttpMonitorControllerV1(
         ApiResponse(
             responseCode = "201",
             description = "Successful creation",
-            content = [Content(schema = Schema(implementation = MonitorDto::class))]
+            content = [Content(schema = Schema(implementation = HttpMonitorDto::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -115,9 +115,9 @@ class HttpMonitorControllerV1(
     )
     @ExecuteOn(TaskExecutors.IO)
     @CheckHttpMonitorsWritable
-    override fun createMonitor(@Valid monitor: MonitorCreateDto): MonitorDto {
+    override fun createMonitor(@Valid monitor: HttpMonitorCreateDto): HttpMonitorDto {
         val createdMonitor = monitorCrudService.createMonitor(monitor)
-        return MonitorDto.fromMonitorRecord(createdMonitor)
+        return HttpMonitorDto.fromMonitorRecord(createdMonitor)
     }
 
     @Status(HttpStatus.NO_CONTENT)
@@ -145,7 +145,7 @@ class HttpMonitorControllerV1(
         ApiResponse(
             responseCode = "200",
             description = "Successful update",
-            content = [Content(schema = Schema(implementation = MonitorDto::class))]
+            content = [Content(schema = Schema(implementation = HttpMonitorDto::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -165,20 +165,20 @@ class HttpMonitorControllerV1(
     )
     @ExecuteOn(TaskExecutors.IO)
     @CheckHttpMonitorsWritable
-    override fun updateMonitor(monitorId: Long, updates: ObjectNode): MonitorDto {
+    override fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorDto {
         val updatedMonitor = monitorCrudService.updateMonitor(monitorId, updates)
-        return MonitorDto.fromMonitorRecord(updatedMonitor)
+        return HttpMonitorDto.fromMonitorRecord(updatedMonitor)
     }
 
     @ApiResponses(
         ApiResponse(
             responseCode = "200",
             description = "Successful query",
-            content = [Content(array = ArraySchema(schema = Schema(implementation = UptimeEventDto::class)))]
+            content = [Content(array = ArraySchema(schema = Schema(implementation = HttpUptimeEventDto::class)))]
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getUptimeEvents(monitorId: Long): List<UptimeEventDto> =
+    override fun getUptimeEvents(monitorId: Long): List<HttpUptimeEventDto> =
         monitorCrudService.getUptimeEventsByMonitorId(monitorId)
 
     @ApiResponses(
@@ -196,7 +196,7 @@ class HttpMonitorControllerV1(
         ApiResponse(
             responseCode = "200",
             description = "Successful query",
-            content = [Content(schema = Schema(implementation = MonitorStatsDto::class))]
+            content = [Content(schema = Schema(implementation = HttpMonitorStatsDto::class))]
         ),
         ApiResponse(
             responseCode = "404",
@@ -208,7 +208,7 @@ class HttpMonitorControllerV1(
     override fun getMonitorStats(
         monitorId: Long,
         @QueryValue period: Duration?,
-    ): MonitorStatsDto {
+    ): HttpMonitorStatsDto {
         val effectivePeriod = period ?: Duration.ofDays(MONITOR_STATS_PERIOD_DEFAULT_DAYS)
         return monitorCrudService.getMonitorStats(
             monitorId = monitorId,
@@ -229,7 +229,7 @@ class HttpMonitorControllerV1(
         val file = File.createTempFile("temp", EXPORT_FILE_NAME_PREFIX)
         val export = mapOf(
             HttpMonitorConfig.LEGACY_CONFIG_PREFIX to monitorCrudService.getHttpMonitorsExport()
-                .map { MonitorExportDto.fromMonitorRecord(it) }
+                .map { HttpMonitorExportDto.fromMonitorRecord(it) }
         )
         yamlMapper.writeValue(file, export)
         val finalFileName = EXPORT_FILE_NAME_PREFIX + Instant.now().epochSecond + EXPORT_FILE_EXTENSION
@@ -241,12 +241,12 @@ class HttpMonitorControllerV1(
         ApiResponse(
             responseCode = "200",
             description = "Successful query",
-            content = [Content(schema = Schema(implementation = MonitoringStatsDto::class))]
+            content = [Content(schema = Schema(implementation = HttpMonitoringStatsDto::class))]
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getMonitoringStats(period: Duration?): MonitoringStatsDto {
-        return statCalculator.calculateOverallStats(period ?: Duration.ofDays(MONITORING_STATS_PERIOD_DEFAULT_DAYS))
+    override fun getMonitoringStats(period: Duration?): HttpMonitoringStatsDto {
+        return statCalculator.calculateOverallHttpStats(period ?: Duration.ofDays(MONITORING_STATS_PERIOD_DEFAULT_DAYS))
     }
 
     companion object {

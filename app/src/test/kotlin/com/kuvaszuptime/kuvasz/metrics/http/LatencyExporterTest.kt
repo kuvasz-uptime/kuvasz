@@ -1,7 +1,8 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
+import com.kuvaszuptime.kuvasz.metrics.ExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
@@ -88,8 +89,8 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
                 restartAppContextWithMetrics()
 
                 // Simulating the events
-                eventDispatcher().dispatch(MonitorUpEvent(enabledMonitorWithLatency, HttpStatus.OK, 30, null))
-                eventDispatcher().dispatch(MonitorUpEvent(enabledMonitorWithoutLatency, HttpStatus.OK, 40, null))
+                eventDispatcher().dispatch(HttpMonitorUpEvent(enabledMonitorWithLatency, HttpStatus.OK, 30, null))
+                eventDispatcher().dispatch(HttpMonitorUpEvent(enabledMonitorWithoutLatency, HttpStatus.OK, 40, null))
 
                 val registeredMeters = meterRegistry().meters
 

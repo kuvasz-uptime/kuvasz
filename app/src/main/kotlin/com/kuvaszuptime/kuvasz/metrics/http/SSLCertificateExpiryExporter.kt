@@ -1,8 +1,9 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
 import com.kuvaszuptime.kuvasz.models.events.WithCertInfo
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requirements
@@ -19,8 +20,8 @@ import java.time.OffsetDateTime
 class SSLCertificateExpiryExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-    private val monitorRepository: MonitorRepository,
-) : GaugeExporter<OffsetDateTime>(meterRegistry, eventDispatcher, monitorRepository) {
+    private val monitorRepository: HttpMonitorRepository,
+) : HttpGaugeExporter<OffsetDateTime>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
         private const val MONITOR_SSL_EXPIRY = "http.ssl.expiry.seconds"

@@ -1,9 +1,10 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
+import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requirements
@@ -16,11 +17,11 @@ import jakarta.inject.Singleton
     Requires(bean = MeterRegistry::class),
     Requires(property = "${MetricsExportConfig.CONFIG_PREFIX}.http-uptime-status", value = StringUtils.TRUE),
 )
-class UptimeStatusExporter(
+class HttpUptimeStatusExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-    private val monitorRepository: MonitorRepository,
-) : GaugeExporter<UptimeStatus>(meterRegistry, eventDispatcher, monitorRepository) {
+    private val monitorRepository: HttpMonitorRepository,
+) : HttpGaugeExporter<UptimeStatus>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
         private const val MONITOR_UPTIME_STATUS = "http.uptime.status"
@@ -30,15 +31,15 @@ class UptimeStatusExporter(
 
     override fun subscribeToEvents() {
         logger.debug("Subscribing to uptime monitor events")
-        eventDispatcher.subscribeToMonitorUpEvents { event ->
+        eventDispatcher.subscribeToHttpMonitorUpEvents { event ->
             event.handle()
         }
-        eventDispatcher.subscribeToMonitorDownEvents { event ->
+        eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
             event.handle()
         }
     }
 
-    private fun UptimeMonitorEvent.handle() {
+    private fun HttpUptimeMonitorEvent.handle() {
         runWhenStateChanges {
             logger.debug("Updating uptime status for monitor with ID: ${monitor.id} to $uptimeStatus")
             upsertMeter(monitor.id, uptimeStatus)

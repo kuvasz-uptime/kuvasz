@@ -1,9 +1,10 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requirements
@@ -19,8 +20,8 @@ import jakarta.inject.Singleton
 class SSLStatusExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-    private val monitorRepository: MonitorRepository,
-) : GaugeExporter<SslStatus>(meterRegistry, eventDispatcher, monitorRepository) {
+    private val monitorRepository: HttpMonitorRepository,
+) : HttpGaugeExporter<SslStatus>(meterRegistry, eventDispatcher, monitorRepository) {
 
     companion object {
         private const val MONITOR_SSL_STATUS = "http.ssl.status"

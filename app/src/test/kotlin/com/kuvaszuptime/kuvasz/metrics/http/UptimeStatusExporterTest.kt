@@ -1,22 +1,20 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
+import com.kuvaszuptime.kuvasz.metrics.ExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.CertificateInfo
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.micronaut.context.ApplicationContext
-import java.time.OffsetDateTime
+import io.micronaut.http.HttpStatus
 
-class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
+class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
 
     init {
-        given("an enabled SSL status exporter") {
+        given("an enabled status exporter") {
 
             `when`("the exporter is initialized") {
                 appContext = ApplicationContext.run()
@@ -26,7 +24,6 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
-                    sslCheckEnabled = true,
                 )
                 // Enabled monitor without status
                 createMonitor(
@@ -34,27 +31,27 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
-                    sslCheckEnabled = true,
                 )
                 val disabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
-                    enabled = true,
-                    sslCheckEnabled = false,
+                    enabled = false,
                 )
-                sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = enabledMonitorWithStatus,
-                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(20)),
-                        null
+                uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        enabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 20,
+                        previousEvent = null,
                     )
                 )
-                sslEventRepository().insertFromMonitorEvent(
-                    SSLInvalidEvent(
-                        monitor = disabledMonitorWithStatus,
-                        SSLValidationError("irrelevant"),
-                        null,
+                uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        disabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 10,
+                        previousEvent = null,
                     )
                 )
 
@@ -65,7 +62,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 then("it should register one meter for the enabled monitor with status") {
 
                     val expectedMeter = registeredMeters.single()
-                    expectedMeter.id.name shouldBe "kuvasz.http.ssl.status"
+                    expectedMeter.id.name shouldBe "kuvasz.http.uptime.status"
                     expectedMeter shouldHaveNameTag enabledMonitorWithStatus.name
                     expectedMeter shouldHaveTargetTag enabledMonitorWithStatus.url
                     expectedMeter shouldHaveValue 1.0
@@ -80,35 +77,34 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
-                    sslCheckEnabled = true,
                 )
                 val enabledMonitorWithoutStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
-                    sslCheckEnabled = true,
                 )
                 val disabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
-                    enabled = true,
-                    sslCheckEnabled = false,
+                    enabled = false,
                 )
 
-                val firstMonitorPreviousEvent = sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = enabledMonitorWithStatus,
-                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(30)),
-                        null
+                val firstMonitorPreviousEvent = uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        enabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 20,
+                        previousEvent = null,
                     )
                 )
-                sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = disabledMonitorWithStatus,
-                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(60)),
-                        null
+                uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        disabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 10,
+                        previousEvent = null,
                     )
                 )
 
@@ -116,17 +112,19 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
 
                 // Simulating the events
                 eventDispatcher().dispatch(
-                    SSLInvalidEvent(
+                    HttpMonitorDownEvent(
                         enabledMonitorWithStatus,
-                        SSLValidationError("irrelevant"),
-                        firstMonitorPreviousEvent
+                        status = HttpStatus.SERVICE_UNAVAILABLE,
+                        previousEvent = firstMonitorPreviousEvent,
+                        error = Exception("irrelevant")
                     )
                 )
                 eventDispatcher().dispatch(
-                    SSLWillExpireEvent(
+                    HttpMonitorUpEvent(
                         enabledMonitorWithoutStatus,
-                        CertificateInfo(validTo = OffsetDateTime.now().plusDays(60).plusDays(4)),
-                        null,
+                        status = HttpStatus.OK,
+                        latency = 25,
+                        previousEvent = null
                     )
                 )
 
@@ -139,12 +137,12 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                     // The meter for the enabled monitor with status should be updated
                     registeredMeters.forOne { withPreviousStatus ->
                         withPreviousStatus shouldHaveNameTag enabledMonitorWithStatus.name
-                        withPreviousStatus shouldHaveValue 0.0 // The status is invalid, so the value should be 0
+                        withPreviousStatus shouldHaveValue 0.0 // The status is down, so the value should be 0
                     }
                     // The meter for the enabled monitor without status should be created
                     registeredMeters.forOne { withoutPreviousStatus ->
                         withoutPreviousStatus shouldHaveNameTag enabledMonitorWithoutStatus.name
-                        withoutPreviousStatus shouldHaveValue 1.0 // The status is valid, so the value should be 1
+                        withoutPreviousStatus shouldHaveValue 1.0 // The status is up, so the value should be 1
                     }
                 }
             }
@@ -158,57 +156,56 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
-                    sslCheckEnabled = true,
                 )
                 val anotherEnabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
-                    sslCheckEnabled = true,
                 )
                 val yetAnotherEnabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "yet-another-enabled",
                     url = "https://yet.another.enabled",
                     enabled = true,
-                    sslCheckEnabled = true,
                 )
                 val disabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
-                    enabled = true,
-                    sslCheckEnabled = false,
+                    enabled = false,
                 )
 
-                sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = enabledMonitorWithStatus,
-                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(30)),
-                        null
+                uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        enabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 20,
+                        previousEvent = null,
                     )
                 )
-                sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = anotherEnabledMonitorWithStatus,
-                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(60)),
-                        null
+                uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        anotherEnabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 30,
+                        previousEvent = null,
                     )
                 )
-
-                sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = yetAnotherEnabledMonitorWithStatus,
-                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(90)),
-                        null
+                uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        yetAnotherEnabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 25,
+                        previousEvent = null,
                     )
                 )
-                sslEventRepository().insertFromMonitorEvent(
-                    SSLValidEvent(
-                        monitor = disabledMonitorWithStatus,
-                        certInfo = CertificateInfo(validTo = OffsetDateTime.now().plusDays(50)),
-                        null
+                uptimeEventRepository().insertFromMonitorEvent(
+                    HttpMonitorUpEvent(
+                        disabledMonitorWithStatus,
+                        status = HttpStatus.OK,
+                        latency = 10,
+                        previousEvent = null,
                     )
                 )
 
@@ -219,7 +216,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 // Simulating the events
                 monitorCrudService().updateMonitor(enabledMonitorWithStatus.id, monitorDisableUpdate)
                 monitorCrudService().updateMonitor(anotherEnabledMonitorWithStatus.id, monitorNameUpdate)
-                monitorCrudService().updateMonitor(disabledMonitorWithStatus.id, monitorSSLEnableUpdate)
+                monitorCrudService().updateMonitor(disabledMonitorWithStatus.id, monitorEnableUpdate)
                 monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithStatus.id)
 
                 val registeredMeters = meterRegistry().meters

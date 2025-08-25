@@ -4,17 +4,17 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.SlackWebhookClient
@@ -40,10 +40,10 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class SlackEventHandlerTest(
-    private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
-    latencyLogRepository: LatencyLogRepository,
+    latencyLogRepository: HttpLatencyLogRepository,
     dslContext: DSLContext,
     integrationRepository: IntegrationRepository,
     slackNotificationConfigs: List<SlackNotificationConfig>,
@@ -71,7 +71,7 @@ class SlackEventHandlerTest(
         given("the SlackEventHandler - UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createMonitor(monitorRepository)
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -94,7 +94,7 @@ class SlackEventHandlerTest(
                         disabledSlackConfig.id,
                     )
                 )
-                val event = MonitorDownEvent(
+                val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Exception(),
@@ -119,7 +119,7 @@ class SlackEventHandlerTest(
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorUpEvent(
+                val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -128,7 +128,7 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorUpEvent(
+                val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1200,
@@ -143,7 +143,7 @@ class SlackEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorDownEvent(
+                val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Exception("First error"),
@@ -153,7 +153,7 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorDownEvent(
+                val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.NOT_FOUND,
                     error = Exception("Second error"),
@@ -171,7 +171,7 @@ class SlackEventHandlerTest(
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorDownEvent(
+                val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
@@ -181,7 +181,7 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorUpEvent(
+                val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -201,7 +201,7 @@ class SlackEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorUpEvent(
+                val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -211,7 +211,7 @@ class SlackEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorDownEvent(
+                val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = firstUptimeRecord,
@@ -453,7 +453,7 @@ class SlackEventHandlerTest(
         given("the SlackEventHandler - error handling logic") {
             `when`("it receives an event but an error happens when it calls the webhook") {
                 val monitor = createMonitor(monitorRepository)
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,

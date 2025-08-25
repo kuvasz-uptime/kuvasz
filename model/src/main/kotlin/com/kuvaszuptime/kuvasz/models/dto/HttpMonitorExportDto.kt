@@ -6,7 +6,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 
 @Introspected
-data class MonitorExportDto(
+data class HttpMonitorExportDto(
     val name: String,
     val url: String,
     val uptimeCheckInterval: Int,
@@ -28,8 +28,8 @@ data class MonitorExportDto(
     val requestBody: String?,
 ) {
     companion object {
-        fun fromMonitorRecord(record: HttpMonitorRecord): MonitorExportDto {
-            return MonitorExportDto(
+        fun fromMonitorRecord(record: HttpMonitorRecord): HttpMonitorExportDto {
+            return HttpMonitorExportDto(
                 name = record.name,
                 url = record.url,
                 uptimeCheckInterval = record.uptimeCheckInterval,

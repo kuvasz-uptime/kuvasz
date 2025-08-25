@@ -1,11 +1,9 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
-import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
-import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckResponseEvaluator
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.isServerRelatedError
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.core.type.Argument
@@ -24,10 +22,10 @@ import java.time.Duration
 import java.util.Optional
 
 @Singleton
-class UptimeChecker(
+class HttpUptimeChecker(
     @Client(configuration = HttpCheckerClientConfiguration::class)
     private val httpClient: HttpClient,
-    private val monitorRepository: MonitorRepository,
+    private val monitorRepository: HttpMonitorRepository,
     private val checkRequestConfigurator: HttpCheckRequestConfigurator,
     private val checkResponseEvaluator: HttpCheckResponseEvaluator,
 ) {
@@ -36,7 +34,7 @@ class UptimeChecker(
         private const val RETRY_COUNT = 2L
         private const val RETRY_INITIAL_DELAY = "500ms"
         private const val RETRY_BACKOFF_MULTIPLIER = 3L
-        private val logger = LoggerFactory.getLogger(UptimeChecker::class.java)
+        private val logger = LoggerFactory.getLogger(HttpUptimeChecker::class.java)
     }
 
     suspend fun check(

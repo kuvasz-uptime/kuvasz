@@ -12,7 +12,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
-import com.kuvaszuptime.kuvasz.models.dto.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -25,7 +25,7 @@ import org.jooq.impl.DSL
 
 @Singleton
 @Suppress("TooManyFunctions")
-class MonitorRepository(private val dslContext: DSLContext) {
+class HttpMonitorRepository(private val dslContext: DSLContext) {
 
     fun findById(monitorId: Long, ctx: DSLContext = dslContext): HttpMonitorRecord? = ctx
         .selectFrom(HTTP_MONITOR)
@@ -58,7 +58,7 @@ class MonitorRepository(private val dslContext: DSLContext) {
         sslStatus: List<SslStatus> = emptyList(),
         sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
-    ): List<MonitorDetailsDto> =
+    ): List<HttpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
                 enabled?.let { and(HTTP_MONITOR.ENABLED.eq(it)) }
@@ -67,12 +67,12 @@ class MonitorRepository(private val dslContext: DSLContext) {
                 sslCheckEnabled?.let { and(HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it)) }
                 sortedBy?.let { orderBy(it) }
             }
-            .fetchInto(MonitorDetailsDto::class.java)
+            .fetchInto(HttpMonitorDetailsDto::class.java)
 
-    fun getMonitorWithDetails(monitorId: Long): MonitorDetailsDto? =
+    fun getMonitorWithDetails(monitorId: Long): HttpMonitorDetailsDto? =
         monitorDetailsSelect()
             .and(HTTP_MONITOR.ID.eq(monitorId))
-            .fetchOneInto(MonitorDetailsDto::class.java)
+            .fetchOneInto(HttpMonitorDetailsDto::class.java)
 
     fun returningInsert(monitor: HttpMonitorRecord): Either<PersistenceException, HttpMonitorRecord> =
         try {
@@ -154,39 +154,40 @@ class MonitorRepository(private val dslContext: DSLContext) {
 
     private fun monitorDetailsSelect() = dslContext
         .select(
-            HTTP_MONITOR.ID.`as`(MonitorDetailsDto::id.name),
-            HTTP_MONITOR.NAME.`as`(MonitorDetailsDto::name.name),
-            HTTP_MONITOR.URL.`as`(MonitorDetailsDto::url.name),
-            HTTP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(MonitorDetailsDto::uptimeCheckInterval.name),
-            HTTP_MONITOR.ENABLED.`as`(MonitorDetailsDto::enabled.name),
-            HTTP_MONITOR.SSL_CHECK_ENABLED.`as`(MonitorDetailsDto::sslCheckEnabled.name),
-            HTTP_MONITOR.CREATED_AT.`as`(MonitorDetailsDto::createdAt.name),
-            HTTP_MONITOR.UPDATED_AT.`as`(MonitorDetailsDto::updatedAt.name),
-            HTTP_UPTIME_EVENT.STATUS.`as`(MonitorDetailsDto::uptimeStatus.name),
-            HTTP_UPTIME_EVENT.STARTED_AT.`as`(MonitorDetailsDto::uptimeStatusStartedAt.name),
-            HTTP_UPTIME_EVENT.UPDATED_AT.`as`(MonitorDetailsDto::lastUptimeCheck.name),
-            SSL_EVENT.STATUS.`as`(MonitorDetailsDto::sslStatus.name),
-            SSL_EVENT.STARTED_AT.`as`(MonitorDetailsDto::sslStatusStartedAt.name),
-            SSL_EVENT.UPDATED_AT.`as`(MonitorDetailsDto::lastSSLCheck.name),
-            SSL_EVENT.SSL_EXPIRY_DATE.`as`(MonitorDetailsDto::sslValidUntil.name),
-            HTTP_UPTIME_EVENT.ERROR.`as`(MonitorDetailsDto::uptimeError.name),
-            SSL_EVENT.ERROR.`as`(MonitorDetailsDto::sslError.name),
-            HTTP_MONITOR.LATENCY_HISTORY_ENABLED.`as`(MonitorDetailsDto::latencyHistoryEnabled.name),
-            HTTP_MONITOR.FORCE_NO_CACHE.`as`(MonitorDetailsDto::forceNoCache.name),
-            HTTP_MONITOR.FOLLOW_REDIRECTS.`as`(MonitorDetailsDto::followRedirects.name),
-            HTTP_MONITOR.REQUEST_METHOD.`as`(MonitorDetailsDto::requestMethod.name),
-            HTTP_MONITOR.SSL_EXPIRY_THRESHOLD.`as`(MonitorDetailsDto::sslExpiryThreshold.name),
-            DSL.array(arrayOf<String>()).`as`(MonitorDetailsDto::effectiveIntegrations.name),
-            HTTP_MONITOR.INTEGRATIONS.`as`(MonitorDetailsDto::integrations.name),
-            HTTP_MONITOR.EXPECTED_STATUS_CODES.`as`(MonitorDetailsDto::expectedStatusCodes.name),
-            HTTP_MONITOR.RESPONSE_TIME_THRESHOLD_MILLIS.`as`(MonitorDetailsDto::responseTimeThresholdMillis.name),
-            HTTP_MONITOR.EXPECTED_KEYWORD.`as`(MonitorDetailsDto::expectedKeyword.name),
-            HTTP_MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE.`as`(MonitorDetailsDto::expectedKeywordCaseSensitive.name),
-            HTTP_MONITOR.EXPECTED_KEYWORD_NEGATED.`as`(MonitorDetailsDto::expectedKeywordNegated.name),
-            HTTP_MONITOR.REQUEST_HEADERS.`as`(MonitorDetailsDto::requestHeaders.name).convert(JsonNodeToMapConverter()),
-            HTTP_MONITOR.EXPECTED_HEADERS.`as`(MonitorDetailsDto::expectedHeaders.name)
+            HTTP_MONITOR.ID.`as`(HttpMonitorDetailsDto::id.name),
+            HTTP_MONITOR.NAME.`as`(HttpMonitorDetailsDto::name.name),
+            HTTP_MONITOR.URL.`as`(HttpMonitorDetailsDto::url.name),
+            HTTP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(HttpMonitorDetailsDto::uptimeCheckInterval.name),
+            HTTP_MONITOR.ENABLED.`as`(HttpMonitorDetailsDto::enabled.name),
+            HTTP_MONITOR.SSL_CHECK_ENABLED.`as`(HttpMonitorDetailsDto::sslCheckEnabled.name),
+            HTTP_MONITOR.CREATED_AT.`as`(HttpMonitorDetailsDto::createdAt.name),
+            HTTP_MONITOR.UPDATED_AT.`as`(HttpMonitorDetailsDto::updatedAt.name),
+            HTTP_UPTIME_EVENT.STATUS.`as`(HttpMonitorDetailsDto::uptimeStatus.name),
+            HTTP_UPTIME_EVENT.STARTED_AT.`as`(HttpMonitorDetailsDto::uptimeStatusStartedAt.name),
+            HTTP_UPTIME_EVENT.UPDATED_AT.`as`(HttpMonitorDetailsDto::lastUptimeCheck.name),
+            SSL_EVENT.STATUS.`as`(HttpMonitorDetailsDto::sslStatus.name),
+            SSL_EVENT.STARTED_AT.`as`(HttpMonitorDetailsDto::sslStatusStartedAt.name),
+            SSL_EVENT.UPDATED_AT.`as`(HttpMonitorDetailsDto::lastSSLCheck.name),
+            SSL_EVENT.SSL_EXPIRY_DATE.`as`(HttpMonitorDetailsDto::sslValidUntil.name),
+            HTTP_UPTIME_EVENT.ERROR.`as`(HttpMonitorDetailsDto::uptimeError.name),
+            SSL_EVENT.ERROR.`as`(HttpMonitorDetailsDto::sslError.name),
+            HTTP_MONITOR.LATENCY_HISTORY_ENABLED.`as`(HttpMonitorDetailsDto::latencyHistoryEnabled.name),
+            HTTP_MONITOR.FORCE_NO_CACHE.`as`(HttpMonitorDetailsDto::forceNoCache.name),
+            HTTP_MONITOR.FOLLOW_REDIRECTS.`as`(HttpMonitorDetailsDto::followRedirects.name),
+            HTTP_MONITOR.REQUEST_METHOD.`as`(HttpMonitorDetailsDto::requestMethod.name),
+            HTTP_MONITOR.SSL_EXPIRY_THRESHOLD.`as`(HttpMonitorDetailsDto::sslExpiryThreshold.name),
+            DSL.array(arrayOf<String>()).`as`(HttpMonitorDetailsDto::effectiveIntegrations.name),
+            HTTP_MONITOR.INTEGRATIONS.`as`(HttpMonitorDetailsDto::integrations.name),
+            HTTP_MONITOR.EXPECTED_STATUS_CODES.`as`(HttpMonitorDetailsDto::expectedStatusCodes.name),
+            HTTP_MONITOR.RESPONSE_TIME_THRESHOLD_MILLIS.`as`(HttpMonitorDetailsDto::responseTimeThresholdMillis.name),
+            HTTP_MONITOR.EXPECTED_KEYWORD.`as`(HttpMonitorDetailsDto::expectedKeyword.name),
+            HTTP_MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE.`as`(HttpMonitorDetailsDto::expectedKeywordCaseSensitive.name),
+            HTTP_MONITOR.EXPECTED_KEYWORD_NEGATED.`as`(HttpMonitorDetailsDto::expectedKeywordNegated.name),
+            HTTP_MONITOR.REQUEST_HEADERS.`as`(HttpMonitorDetailsDto::requestHeaders.name)
                 .convert(JsonNodeToMapConverter()),
-            HTTP_MONITOR.REQUEST_BODY.`as`(MonitorDetailsDto::requestBody.name),
+            HTTP_MONITOR.EXPECTED_HEADERS.`as`(HttpMonitorDetailsDto::expectedHeaders.name)
+                .convert(JsonNodeToMapConverter()),
+            HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
         )
         .from(HTTP_MONITOR)
         .leftJoin(HTTP_UPTIME_EVENT)

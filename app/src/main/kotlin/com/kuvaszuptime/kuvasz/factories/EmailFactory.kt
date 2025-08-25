@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.factories
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
@@ -14,19 +14,19 @@ class EmailFactory(private val config: EmailNotificationConfig) {
 
     private val formatter = PlainTextMessageFormatter
 
-    fun fromMonitorEvent(event: UptimeMonitorEvent): Email =
+    fun fromHttpMonitorEvent(event: HttpUptimeMonitorEvent): Email =
         createEmailBase()
             .withSubject(event.getSubject())
             .withPlainText(formatter.toFormattedMessage(event))
             .buildEmail()
 
-    fun fromMonitorEvent(event: SSLMonitorEvent): Email =
+    fun fromHttpMonitorEvent(event: SSLMonitorEvent): Email =
         createEmailBase()
             .withSubject(event.getSubject())
             .withPlainText(formatter.toFormattedMessage(event))
             .buildEmail()
 
-    private fun UptimeMonitorEvent.getSubject(): String =
+    private fun HttpUptimeMonitorEvent.getSubject(): String =
         "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${monitor.url} is $uptimeStatus"
 
     private fun SSLMonitorEvent.getSubject(): String {

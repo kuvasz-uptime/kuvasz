@@ -1,26 +1,27 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.RedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 
 object LogMessageFormatter : TextMessageFormatter {
 
-    override fun toFormattedMessage(event: UptimeMonitorEvent): String {
+    override fun toFormattedMessage(event: HttpUptimeMonitorEvent): String {
         val messageParts: List<String> = when (event) {
-            is MonitorUpEvent -> event.toStructuredMessage().let { details ->
+            is HttpMonitorUpEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
                     event.getEmoji() + " " + details.summary,
                     details.latency,
                     details.previousDownTime
                 )
             }
-            is MonitorDownEvent -> event.toStructuredMessage().let { details ->
+
+            is HttpMonitorDownEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
                     event.getEmoji() + " " + details.summary,
                     details.error,
@@ -58,7 +59,7 @@ object LogMessageFormatter : TextMessageFormatter {
         return messageParts.assemble()
     }
 
-    fun toFormattedMessage(event: RedirectEvent) = "${event.getEmoji()} ${event.toStructuredMessage().summary}"
+    fun toFormattedMessage(event: HttpRedirectEvent) = "${event.getEmoji()} ${event.toStructuredMessage().summary}"
 
     private fun List<String>.assemble(): String = joinToString(". ")
 }

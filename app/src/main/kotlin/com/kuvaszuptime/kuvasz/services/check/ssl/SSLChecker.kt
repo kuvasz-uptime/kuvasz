@@ -1,11 +1,12 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.check.ssl
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import java.net.URI
@@ -13,7 +14,7 @@ import java.net.URI
 @Singleton
 class SSLChecker(
     private val sslValidator: SSLValidator,
-    private val uptimeEventRepository: UptimeEventRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
     private val eventDispatcher: EventDispatcher,
     private val sslEventRepository: SSLEventRepository
 ) {

@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
-object MonitorDocs {
+object HttpMonitorDocs {
     const val ID = "Unique identifier of the monitor"
     const val NAME = "Unique name for the monitor, e.g., 'My Website Monitor'"
     const val URL = "The URL that is monitored"

@@ -4,8 +4,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -15,7 +15,7 @@ import java.net.URI
 @Singleton
 class HttpCheckResponseEvaluator(
     private val eventDispatcher: EventDispatcher,
-    private val uptimeEventRepository: UptimeEventRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
     private val responseStatusChecker: HttpResponseStatusChecker,
     private val responseTimeChecker: HttpResponseTimeChecker,
     private val responseBodyChecker: HttpResponseBodyChecker,
@@ -88,7 +88,7 @@ class HttpCheckResponseEvaluator(
             null
         }
         eventDispatcher.dispatch(
-            MonitorDownEvent(
+            HttpMonitorDownEvent(
                 monitor = monitor,
                 status = status,
                 error = clarifiedError,

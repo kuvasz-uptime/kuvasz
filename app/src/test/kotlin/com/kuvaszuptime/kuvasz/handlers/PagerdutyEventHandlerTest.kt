@@ -4,8 +4,8 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.SSLValidationError
-import com.kuvaszuptime.kuvasz.models.events.MonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -15,10 +15,10 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.models.handlers.id
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.PagerdutyAPIClient
@@ -43,10 +43,10 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class PagerdutyEventHandlerTest(
-    private val monitorRepository: MonitorRepository,
-    private val uptimeEventRepository: UptimeEventRepository,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
     sslEventRepository: SSLEventRepository,
-    latencyLogRepository: LatencyLogRepository,
+    latencyLogRepository: HttpLatencyLogRepository,
     dslContext: DSLContext,
     integrationRepository: IntegrationRepository,
     pagerdutyConfigs: List<PagerdutyConfig>,
@@ -72,7 +72,7 @@ class PagerdutyEventHandlerTest(
         given("the PagerdutyEventHandler - UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createMonitor(monitorRepository)
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -95,7 +95,7 @@ class PagerdutyEventHandlerTest(
                         disabledPagerdutyConfig.id,
                     )
                 )
-                val event = MonitorDownEvent(
+                val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Exception(),
@@ -128,7 +128,7 @@ class PagerdutyEventHandlerTest(
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorUpEvent(
+                val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -137,7 +137,7 @@ class PagerdutyEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorUpEvent(
+                val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1200,
@@ -152,7 +152,7 @@ class PagerdutyEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorDownEvent(
+                val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     error = Exception("First error"),
@@ -162,7 +162,7 @@ class PagerdutyEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorDownEvent(
+                val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.NOT_FOUND,
                     error = Exception("Second error"),
@@ -188,7 +188,7 @@ class PagerdutyEventHandlerTest(
                         disabledPagerdutyConfig.id,
                     )
                 )
-                val firstEvent = MonitorDownEvent(
+                val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,
@@ -198,7 +198,7 @@ class PagerdutyEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorUpEvent(
+                val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -246,7 +246,7 @@ class PagerdutyEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
                 val monitor = createMonitor(monitorRepository)
-                val firstEvent = MonitorUpEvent(
+                val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -255,7 +255,7 @@ class PagerdutyEventHandlerTest(
                 eventDispatcher.dispatch(firstEvent)
                 val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                val secondEvent = MonitorDownEvent(
+                val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = firstUptimeRecord,
@@ -525,7 +525,7 @@ class PagerdutyEventHandlerTest(
         given("the PagerdutyEventHandler - error handling logic") {
             `when`("an error happens when it calls the API") {
                 val monitor = createMonitor(monitorRepository)
-                val event = MonitorDownEvent(
+                val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     previousEvent = null,

@@ -53,7 +53,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MonitorDetailsDto"
+                  $ref: "#/components/schemas/HttpMonitorDetailsDto"
       deprecated: true
       security:
       - apiKey: []
@@ -67,7 +67,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MonitorCreateDto"
+              $ref: "#/components/schemas/HttpMonitorCreateDto"
         required: true
       responses:
         "201":
@@ -75,7 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDto"
+                $ref: "#/components/schemas/HttpMonitorDto"
         "400":
           description: Bad request
           content:
@@ -128,7 +128,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitoringStatsDto"
+                $ref: "#/components/schemas/HttpMonitoringStatsDto"
       deprecated: true
       security:
       - apiKey: []
@@ -152,7 +152,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDetailsDto"
+                $ref: "#/components/schemas/HttpMonitorDetailsDto"
         "404":
           description: Not found
           content:
@@ -214,7 +214,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MonitorUpdateDto"
+              $ref: "#/components/schemas/HttpMonitorUpdateDto"
         required: true
       responses:
         "200":
@@ -222,7 +222,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDto"
+                $ref: "#/components/schemas/HttpMonitorDto"
         "400":
           description: Bad request
           content:
@@ -298,7 +298,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorStatsDto"
+                $ref: "#/components/schemas/HttpMonitorStatsDto"
         "404":
           description: Not found
           content:
@@ -330,7 +330,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UptimeEventDto"
+                  $ref: "#/components/schemas/HttpUptimeEventDto"
       deprecated: true
       security:
       - apiKey: []
@@ -395,7 +395,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MonitorDetailsDto"
+                  $ref: "#/components/schemas/HttpMonitorDetailsDto"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -408,7 +408,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MonitorCreateDto"
+              $ref: "#/components/schemas/HttpMonitorCreateDto"
         required: true
       responses:
         "201":
@@ -416,7 +416,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDto"
+                $ref: "#/components/schemas/HttpMonitorDto"
         "400":
           description: Bad request
           content:
@@ -453,7 +453,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitoringStatsDto"
+                $ref: "#/components/schemas/HttpMonitoringStatsDto"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -476,7 +476,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDetailsDto"
+                $ref: "#/components/schemas/HttpMonitorDetailsDto"
         "404":
           description: Not found
           content:
@@ -536,7 +536,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MonitorUpdateDto"
+              $ref: "#/components/schemas/HttpMonitorUpdateDto"
         required: true
       responses:
         "200":
@@ -544,7 +544,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorDto"
+                $ref: "#/components/schemas/HttpMonitorDto"
         "400":
           description: Bad request
           content:
@@ -618,7 +618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitorStatsDto"
+                $ref: "#/components/schemas/HttpMonitorStatsDto"
         "404":
           description: Not found
           content:
@@ -649,7 +649,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UptimeEventDto"
+                  $ref: "#/components/schemas/HttpUptimeEventDto"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -743,6 +743,803 @@ components:
       - DELETE
       - PATCH
       - OPTIONS
+    HttpMonitorCreateDto:
+      required:
+      - name
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          x-size-message: Monitor name must not be blank
+        url:
+          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+          type: string
+          description: The URL that is monitored
+          x-pattern-message: URL must be a valid HTTP(S) URI
+          x-not-null-message: URL must not be null
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor checks for uptime
+          format: int32
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          default: true
+        sslCheckEnabled:
+          type: boolean
+          description: Whether the monitor checks the SSL certificate for expiry and
+            validity.
+          default: false
+        requestMethod:
+          description: The HTTP method used for the uptime check
+          allOf:
+          - $ref: "#/components/schemas/HttpMethod"
+          default: GET
+        latencyHistoryEnabled:
+          type: boolean
+          description: Whether latency history is enabled for the monitor
+          default: true
+        forceNoCache:
+          type: boolean
+          description: Whether to send a force no-cache headers in the request
+          default: true
+        followRedirects:
+          type: boolean
+          description: Whether to follow redirects during the uptime check
+          default: true
+        sslExpiryThreshold:
+          minimum: 0
+          type: integer
+          description: The threshold in days for SSL certificate expiry checks
+          format: int32
+          x-minimum-message: SSL expiry threshold must be greater than or equal to
+            0 days
+          x-not-null-message: SSL expiry threshold must not be null
+          default: 30
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          nullable: true
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          maximum: 30000
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+          x-maximum-message: "Response time threshold must be less than or equal to\
+            \ {value} milliseconds"
+          x-minimum-message: Response time threshold must be greater than 0 milliseconds
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+          default: false
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
+          default: false
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
+    HttpMonitorDetailsDto:
+      required:
+      - createdAt
+      - effectiveIntegrations
+      - enabled
+      - expectedHeaders
+      - expectedKeyword
+      - expectedKeywordCaseSensitive
+      - expectedKeywordNegated
+      - expectedStatusCodes
+      - followRedirects
+      - forceNoCache
+      - id
+      - integrations
+      - lastSSLCheck
+      - lastUptimeCheck
+      - latencyHistoryEnabled
+      - name
+      - nextSSLCheck
+      - nextUptimeCheck
+      - requestBody
+      - requestHeaders
+      - requestMethod
+      - responseTimeThresholdMillis
+      - sslCheckEnabled
+      - sslError
+      - sslExpiryThreshold
+      - sslStatus
+      - sslStatusStartedAt
+      - sslValidUntil
+      - updatedAt
+      - uptimeCheckInterval
+      - uptimeError
+      - uptimeStatus
+      - uptimeStatusStartedAt
+      - url
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+        url:
+          type: string
+          description: The URL that is monitored
+          format: uri
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor checks for uptime
+          format: int32
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        sslCheckEnabled:
+          type: boolean
+          description: Whether the monitor checks the SSL certificate for expiry and
+            validity.
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+          nullable: true
+        uptimeStatus:
+          description: "The current uptime status of the monitor. If it's null, the\
+            \ monitor has not been checked yet."
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusStartedAt:
+          type: string
+          description: The timestamp when the uptime status was last changed
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          description: The timestamp when the last uptime check was performed
+          format: date-time
+          nullable: true
+        nextUptimeCheck:
+          type: string
+          description: The timestamp when the next uptime check is scheduled
+          format: date-time
+          nullable: true
+        sslStatus:
+          description: "The current SSL status of the monitor. If it's null, the monitor\
+            \ has not been checked yet."
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SslStatus"
+        sslStatusStartedAt:
+          type: string
+          description: The timestamp when the SSL status was last changed
+          format: date-time
+          nullable: true
+        lastSSLCheck:
+          type: string
+          description: The timestamp when the last SSL check was performed
+          format: date-time
+          nullable: true
+        nextSSLCheck:
+          type: string
+          description: The timestamp when the next SSL check is scheduled
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          description: The error message if the last uptime check failed
+          nullable: true
+        sslError:
+          type: string
+          description: The error message if the last SSL check failed
+          nullable: true
+        requestMethod:
+          description: The HTTP method used for the uptime check
+          allOf:
+          - $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+          description: Whether latency history is enabled for the monitor
+        forceNoCache:
+          type: boolean
+          description: Whether to send a force no-cache headers in the request
+        followRedirects:
+          type: boolean
+          description: Whether to follow redirects during the uptime check
+        sslExpiryThreshold:
+          type: integer
+          description: The threshold in days for SSL certificate expiry checks
+          format: int32
+        sslValidUntil:
+          type: string
+          description: The timestamp until which the SSL certificate is valid
+          format: date-time
+          nullable: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        effectiveIntegrations:
+          type: array
+          description: "List of integrations that are effective for the monitor, including\
+            \ global integrations"
+          items:
+            $ref: "#/components/schemas/IntegrationDetailsDto"
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
+    HttpMonitorDto:
+      required:
+      - createdAt
+      - enabled
+      - expectedHeaders
+      - expectedKeyword
+      - expectedKeywordCaseSensitive
+      - expectedKeywordNegated
+      - expectedStatusCodes
+      - followRedirects
+      - forceNoCache
+      - id
+      - integrations
+      - latencyHistoryEnabled
+      - name
+      - requestBody
+      - requestHeaders
+      - requestMethod
+      - responseTimeThresholdMillis
+      - sslCheckEnabled
+      - sslExpiryThreshold
+      - updatedAt
+      - uptimeCheckInterval
+      - url
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+        url:
+          type: string
+          description: The URL that is monitored
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor checks for uptime
+          format: int32
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        sslCheckEnabled:
+          type: boolean
+          description: Whether the monitor checks the SSL certificate for expiry and
+            validity.
+        requestMethod:
+          description: The HTTP method used for the uptime check
+          allOf:
+          - $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+          description: Whether latency history is enabled for the monitor
+        forceNoCache:
+          type: boolean
+          description: Whether to send a force no-cache headers in the request
+        followRedirects:
+          type: boolean
+          description: Whether to follow redirects during the uptime check
+        sslExpiryThreshold:
+          type: integer
+          description: The threshold in days for SSL certificate expiry checks
+          format: int32
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+          nullable: true
+    HttpMonitorStatsDto:
+      required:
+      - id
+      - latencyHistoryEnabled
+      - latencyLogs
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        latencyHistoryEnabled:
+          type: boolean
+          description: Whether recording of latency is enabled for this monitor
+        averageLatencyInMs:
+          type: integer
+          description: The average latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        minLatencyInMs:
+          type: integer
+          description: The minimum latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        maxLatencyInMs:
+          type: integer
+          description: The maximum latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p90LatencyInMs:
+          type: integer
+          description: The 90th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p95LatencyInMs:
+          type: integer
+          description: The 95th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p99LatencyInMs:
+          type: integer
+          description: The 99th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        latencyLogs:
+          type: array
+          description: All the latency logs recorded for the monitor in the given
+            period
+          items:
+            $ref: "#/components/schemas/LatencyLogDto"
+    HttpMonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          nullable: false
+          x-size-message: Monitor name must not be blank
+        url:
+          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+          type: string
+          description: The URL that is monitored
+          nullable: false
+          x-pattern-message: URL must be a valid HTTP(S) URI
+          x-not-null-message: URL must not be null
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor checks for uptime
+          format: int32
+          nullable: false
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          nullable: false
+        sslCheckEnabled:
+          type: boolean
+          description: Whether the monitor checks the SSL certificate for expiry and
+            validity.
+          nullable: false
+        requestMethod:
+          description: The HTTP method used for the uptime check
+          allOf:
+          - $ref: "#/components/schemas/HttpMethod"
+        latencyHistoryEnabled:
+          type: boolean
+          description: Whether latency history is enabled for the monitor
+          nullable: false
+        forceNoCache:
+          type: boolean
+          description: Whether to send a force no-cache headers in the request
+          nullable: false
+        followRedirects:
+          type: boolean
+          description: Whether to follow redirects during the uptime check
+          nullable: false
+        sslExpiryThreshold:
+          minimum: 0
+          type: integer
+          description: The threshold in days for SSL certificate expiry checks
+          format: int32
+          nullable: false
+          x-minimum-message: SSL expiry threshold must be greater than or equal to
+            0 days
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        expectedStatusCodes:
+          type: array
+          description: "List of expected HTTP status codes for the monitor. If the\
+            \ response code is not in this list, the monitor will be marked as DOWN.\
+            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
+            \ and 4xx codes are supported."
+          nullable: true
+          items:
+            type: integer
+            format: int32
+        responseTimeThresholdMillis:
+          maximum: 30000
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: "The threshold in milliseconds for the response time. If the\
+            \ response time exceeds this value, the monitor will be marked as DOWN."
+          format: int32
+          nullable: true
+          x-maximum-message: "Response time threshold must be less than or equal to\
+            \ {value} milliseconds"
+          x-minimum-message: Response time threshold must be greater than 0 milliseconds
+        expectedKeyword:
+          type: string
+          description: "A keyword that is expected to be present in the response body.\
+            \ If the keyword is not found, the monitor will be marked as DOWN."
+          nullable: true
+        expectedKeywordCaseSensitive:
+          type: boolean
+          description: "Whether the expected keyword check is case-sensitive. If false,\
+            \ the check will be case-insensitive."
+          nullable: false
+        expectedKeywordNegated:
+          type: boolean
+          description: "Whether the expected keyword check is negated. If true, the\
+            \ monitor will be marked as DOWN if the keyword is found in the response\
+            \ body."
+          nullable: false
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Custom HTTP headers to be sent with the request. It is a map\
+            \ of header names to values, null values are not allowed."
+          nullable: false
+        expectedHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Expected HTTP headers in the response. If any of these headers\
+            \ are missing, the monitor will be marked as DOWN. It is a map of header\
+            \ names to values, null values are not allowed. The check will be case-insensitive\
+            \ for the header names, but the values must match exactly"
+          nullable: false
+        requestBody:
+          type: string
+          description: "The body of the request to be sent, which is used for POST,\
+            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
+          nullable: true
+    HttpMonitoringStatsDto:
+      required:
+      - actual
+      - history
+      type: object
+      properties:
+        actual:
+          description: The actual monitoring statistics for the current state of the
+            monitors.
+          allOf:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats"
+        history:
+          description: "The historical monitoring statistics, summarizing incidents\
+            \ and uptime ratios over time."
+          allOf:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.HistoricalMonitoringStats"
+    HttpMonitoringStatsDto.ActualMonitoringStats:
+      required:
+      - sslStats
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the current state of uptime for all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
+        sslStats:
+          description: Statistics about the current state of SSL certificates for
+            all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.SslStats"
+    HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
+      required:
+      - down
+      - inProgress
+      - lastIncident
+      - paused
+      - total
+      - up
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of monitors currently being monitored.
+          format: int32
+        down:
+          type: integer
+          description: Number of monitors currently down.
+          format: int32
+        up:
+          type: integer
+          description: Number of monitors currently up.
+          format: int32
+        paused:
+          type: integer
+          description: Number of monitors currently paused.
+          format: int32
+        inProgress:
+          type: integer
+          description: "Number of monitors currently in progress (e.g., waiting for\
+            \ first check)."
+          format: int32
+        lastIncident:
+          type: string
+          description: The timestamp of the last incident detected across all monitors.
+          format: date-time
+          nullable: true
+    HttpMonitoringStatsDto.ActualMonitoringStats.SslStats:
+      required:
+      - inProgress
+      - invalid
+      - valid
+      - willExpire
+      type: object
+      properties:
+        invalid:
+          type: integer
+          description: ' Number of SSL certificates that are currently invalid or
+            expired.'
+          format: int32
+        valid:
+          type: integer
+          description: Number of SSL certificates that are valid and not close to
+            expiry.
+          format: int32
+        willExpire:
+          type: integer
+          description: Number of SSL certificates that are close to expiry (within
+            the threshold).
+          format: int32
+        inProgress:
+          type: integer
+          description: Number of SSL certificates that has not been checked yet.
+          format: int32
+    HttpMonitoringStatsDto.HistoricalMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the historical uptime of all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats"
+    HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats:
+      required:
+      - affectedMonitors
+      - incidents
+      - totalDowntimeSeconds
+      - uptimeRatio
+      type: object
+      properties:
+        incidents:
+          type: integer
+          description: Total number of incidents recorded across all monitors.
+          format: int32
+        affectedMonitors:
+          type: integer
+          description: Total number of monitors that have been affected by incidents.
+          format: int32
+        uptimeRatio:
+          type: number
+          description: The percentage of uptime across all monitors.
+          format: double
+          nullable: true
+        totalDowntimeSeconds:
+          type: integer
+          description: Total downtime in seconds across all monitors.
+          format: int64
+    HttpUptimeEventDto:
+      required:
+      - endedAt
+      - error
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the uptime event
+          format: int64
+        status:
+          description: The status of the uptime event
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        startedAt:
+          type: string
+          description: The timestamp when the uptime event started
+          format: date-time
+        endedAt:
+          type: string
+          description: "The timestamp when the uptime event ended, if applicable"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: The timestamp when the uptime event was updated
+          format: date-time
     IntegrationDetailsDto:
       required:
       - enabled
@@ -1150,768 +1947,6 @@ components:
         chatId:
           type: string
           description: The chat ID for Telegram notifications
-    MonitorCreateDto:
-      required:
-      - name
-      - uptimeCheckInterval
-      - url
-      type: object
-      properties:
-        name:
-          minLength: 1
-          type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
-          x-size-message: Monitor name must not be blank
-        url:
-          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
-          type: string
-          description: The URL that is monitored
-          x-pattern-message: URL must be a valid HTTP(S) URI
-          x-not-null-message: URL must not be null
-        uptimeCheckInterval:
-          minimum: 5
-          type: integer
-          description: The interval in seconds at which the monitor checks for uptime
-          format: int32
-          x-minimum-message: "Uptime check interval must be at least {value} seconds"
-          x-not-null-message: Uptime check interval must not be null
-        enabled:
-          type: boolean
-          description: "Whether the monitor is enabled. If false, the monitor will\
-            \ not perform checks."
-          default: true
-        sslCheckEnabled:
-          type: boolean
-          description: Whether the monitor checks the SSL certificate for expiry and
-            validity.
-          default: false
-        requestMethod:
-          description: The HTTP method used for the uptime check
-          allOf:
-          - $ref: "#/components/schemas/HttpMethod"
-          default: GET
-        latencyHistoryEnabled:
-          type: boolean
-          description: Whether latency history is enabled for the monitor
-          default: true
-        forceNoCache:
-          type: boolean
-          description: Whether to send a force no-cache headers in the request
-          default: true
-        followRedirects:
-          type: boolean
-          description: Whether to follow redirects during the uptime check
-          default: true
-        sslExpiryThreshold:
-          minimum: 0
-          type: integer
-          description: The threshold in days for SSL certificate expiry checks
-          format: int32
-          x-minimum-message: SSL expiry threshold must be greater than or equal to
-            0 days
-          x-not-null-message: SSL expiry threshold must not be null
-          default: 30
-        integrations:
-          type: array
-          description: "List of integrations explicitly assigned to the monitor, e.g.\
-            \ \"email:my-email-notification\""
-          nullable: true
-          items:
-            type: string
-        expectedStatusCodes:
-          type: array
-          description: "List of expected HTTP status codes for the monitor. If the\
-            \ response code is not in this list, the monitor will be marked as DOWN.\
-            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
-            \ and 4xx codes are supported."
-          nullable: true
-          items:
-            type: integer
-            format: int32
-        responseTimeThresholdMillis:
-          maximum: 30000
-          minimum: 0
-          exclusiveMinimum: true
-          type: integer
-          description: "The threshold in milliseconds for the response time. If the\
-            \ response time exceeds this value, the monitor will be marked as DOWN."
-          format: int32
-          nullable: true
-          x-maximum-message: "Response time threshold must be less than or equal to\
-            \ {value} milliseconds"
-          x-minimum-message: Response time threshold must be greater than 0 milliseconds
-        expectedKeyword:
-          type: string
-          description: "A keyword that is expected to be present in the response body.\
-            \ If the keyword is not found, the monitor will be marked as DOWN."
-          nullable: true
-        expectedKeywordCaseSensitive:
-          type: boolean
-          description: "Whether the expected keyword check is case-sensitive. If false,\
-            \ the check will be case-insensitive."
-          default: false
-        expectedKeywordNegated:
-          type: boolean
-          description: "Whether the expected keyword check is negated. If true, the\
-            \ monitor will be marked as DOWN if the keyword is found in the response\
-            \ body."
-          default: false
-        requestHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Custom HTTP headers to be sent with the request. It is a map\
-            \ of header names to values, null values are not allowed."
-        expectedHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Expected HTTP headers in the response. If any of these headers\
-            \ are missing, the monitor will be marked as DOWN. It is a map of header\
-            \ names to values, null values are not allowed. The check will be case-insensitive\
-            \ for the header names, but the values must match exactly"
-        requestBody:
-          type: string
-          description: "The body of the request to be sent, which is used for POST,\
-            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
-          nullable: true
-    MonitorDetailsDto:
-      required:
-      - createdAt
-      - effectiveIntegrations
-      - enabled
-      - expectedHeaders
-      - expectedKeyword
-      - expectedKeywordCaseSensitive
-      - expectedKeywordNegated
-      - expectedStatusCodes
-      - followRedirects
-      - forceNoCache
-      - id
-      - integrations
-      - lastSSLCheck
-      - lastUptimeCheck
-      - latencyHistoryEnabled
-      - name
-      - nextSSLCheck
-      - nextUptimeCheck
-      - requestBody
-      - requestHeaders
-      - requestMethod
-      - responseTimeThresholdMillis
-      - sslCheckEnabled
-      - sslError
-      - sslExpiryThreshold
-      - sslStatus
-      - sslStatusStartedAt
-      - sslValidUntil
-      - updatedAt
-      - uptimeCheckInterval
-      - uptimeError
-      - uptimeStatus
-      - uptimeStatusStartedAt
-      - url
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier of the monitor
-          format: int64
-        name:
-          type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
-        url:
-          type: string
-          description: The URL that is monitored
-          format: uri
-        uptimeCheckInterval:
-          type: integer
-          description: The interval in seconds at which the monitor checks for uptime
-          format: int32
-        enabled:
-          type: boolean
-          description: "Whether the monitor is enabled. If false, the monitor will\
-            \ not perform checks."
-        sslCheckEnabled:
-          type: boolean
-          description: Whether the monitor checks the SSL certificate for expiry and
-            validity.
-        createdAt:
-          type: string
-          description: The creation timestamp of the monitor
-          format: date-time
-        updatedAt:
-          type: string
-          description: The last updated timestamp of the monitor
-          format: date-time
-          nullable: true
-        uptimeStatus:
-          description: "The current uptime status of the monitor. If it's null, the\
-            \ monitor has not been checked yet."
-          nullable: true
-          allOf:
-          - $ref: "#/components/schemas/UptimeStatus"
-        uptimeStatusStartedAt:
-          type: string
-          description: The timestamp when the uptime status was last changed
-          format: date-time
-          nullable: true
-        lastUptimeCheck:
-          type: string
-          description: The timestamp when the last uptime check was performed
-          format: date-time
-          nullable: true
-        nextUptimeCheck:
-          type: string
-          description: The timestamp when the next uptime check is scheduled
-          format: date-time
-          nullable: true
-        sslStatus:
-          description: "The current SSL status of the monitor. If it's null, the monitor\
-            \ has not been checked yet."
-          nullable: true
-          allOf:
-          - $ref: "#/components/schemas/SslStatus"
-        sslStatusStartedAt:
-          type: string
-          description: The timestamp when the SSL status was last changed
-          format: date-time
-          nullable: true
-        lastSSLCheck:
-          type: string
-          description: The timestamp when the last SSL check was performed
-          format: date-time
-          nullable: true
-        nextSSLCheck:
-          type: string
-          description: The timestamp when the next SSL check is scheduled
-          format: date-time
-          nullable: true
-        uptimeError:
-          type: string
-          description: The error message if the last uptime check failed
-          nullable: true
-        sslError:
-          type: string
-          description: The error message if the last SSL check failed
-          nullable: true
-        requestMethod:
-          description: The HTTP method used for the uptime check
-          allOf:
-          - $ref: "#/components/schemas/HttpMethod"
-        latencyHistoryEnabled:
-          type: boolean
-          description: Whether latency history is enabled for the monitor
-        forceNoCache:
-          type: boolean
-          description: Whether to send a force no-cache headers in the request
-        followRedirects:
-          type: boolean
-          description: Whether to follow redirects during the uptime check
-        sslExpiryThreshold:
-          type: integer
-          description: The threshold in days for SSL certificate expiry checks
-          format: int32
-        sslValidUntil:
-          type: string
-          description: The timestamp until which the SSL certificate is valid
-          format: date-time
-          nullable: true
-        integrations:
-          type: array
-          description: "List of integrations explicitly assigned to the monitor, e.g.\
-            \ \"email:my-email-notification\""
-          items:
-            type: string
-            description: "A unique identifier for an integration, formatted as 'type:name'."
-            example: email:my-email-integration
-        effectiveIntegrations:
-          type: array
-          description: "List of integrations that are effective for the monitor, including\
-            \ global integrations"
-          items:
-            $ref: "#/components/schemas/IntegrationDetailsDto"
-        expectedStatusCodes:
-          type: array
-          description: "List of expected HTTP status codes for the monitor. If the\
-            \ response code is not in this list, the monitor will be marked as DOWN.\
-            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
-            \ and 4xx codes are supported."
-          items:
-            type: integer
-            format: int32
-        responseTimeThresholdMillis:
-          type: integer
-          description: "The threshold in milliseconds for the response time. If the\
-            \ response time exceeds this value, the monitor will be marked as DOWN."
-          format: int32
-          nullable: true
-        expectedKeyword:
-          type: string
-          description: "A keyword that is expected to be present in the response body.\
-            \ If the keyword is not found, the monitor will be marked as DOWN."
-          nullable: true
-        expectedKeywordCaseSensitive:
-          type: boolean
-          description: "Whether the expected keyword check is case-sensitive. If false,\
-            \ the check will be case-insensitive."
-        expectedKeywordNegated:
-          type: boolean
-          description: "Whether the expected keyword check is negated. If true, the\
-            \ monitor will be marked as DOWN if the keyword is found in the response\
-            \ body."
-        requestHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Custom HTTP headers to be sent with the request. It is a map\
-            \ of header names to values, null values are not allowed."
-        expectedHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Expected HTTP headers in the response. If any of these headers\
-            \ are missing, the monitor will be marked as DOWN. It is a map of header\
-            \ names to values, null values are not allowed. The check will be case-insensitive\
-            \ for the header names, but the values must match exactly"
-        requestBody:
-          type: string
-          description: "The body of the request to be sent, which is used for POST,\
-            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
-          nullable: true
-    MonitorDto:
-      required:
-      - createdAt
-      - enabled
-      - expectedHeaders
-      - expectedKeyword
-      - expectedKeywordCaseSensitive
-      - expectedKeywordNegated
-      - expectedStatusCodes
-      - followRedirects
-      - forceNoCache
-      - id
-      - integrations
-      - latencyHistoryEnabled
-      - name
-      - requestBody
-      - requestHeaders
-      - requestMethod
-      - responseTimeThresholdMillis
-      - sslCheckEnabled
-      - sslExpiryThreshold
-      - updatedAt
-      - uptimeCheckInterval
-      - url
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier of the monitor
-          format: int64
-        name:
-          type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
-        url:
-          type: string
-          description: The URL that is monitored
-        uptimeCheckInterval:
-          type: integer
-          description: The interval in seconds at which the monitor checks for uptime
-          format: int32
-        enabled:
-          type: boolean
-          description: "Whether the monitor is enabled. If false, the monitor will\
-            \ not perform checks."
-        sslCheckEnabled:
-          type: boolean
-          description: Whether the monitor checks the SSL certificate for expiry and
-            validity.
-        requestMethod:
-          description: The HTTP method used for the uptime check
-          allOf:
-          - $ref: "#/components/schemas/HttpMethod"
-        latencyHistoryEnabled:
-          type: boolean
-          description: Whether latency history is enabled for the monitor
-        forceNoCache:
-          type: boolean
-          description: Whether to send a force no-cache headers in the request
-        followRedirects:
-          type: boolean
-          description: Whether to follow redirects during the uptime check
-        sslExpiryThreshold:
-          type: integer
-          description: The threshold in days for SSL certificate expiry checks
-          format: int32
-        integrations:
-          type: array
-          description: "List of integrations explicitly assigned to the monitor, e.g.\
-            \ \"email:my-email-notification\""
-          items:
-            type: string
-            description: "A unique identifier for an integration, formatted as 'type:name'."
-            example: email:my-email-integration
-        expectedStatusCodes:
-          type: array
-          description: "List of expected HTTP status codes for the monitor. If the\
-            \ response code is not in this list, the monitor will be marked as DOWN.\
-            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
-            \ and 4xx codes are supported."
-          items:
-            type: integer
-            format: int32
-        responseTimeThresholdMillis:
-          type: integer
-          description: "The threshold in milliseconds for the response time. If the\
-            \ response time exceeds this value, the monitor will be marked as DOWN."
-          format: int32
-          nullable: true
-        expectedKeyword:
-          type: string
-          description: "A keyword that is expected to be present in the response body.\
-            \ If the keyword is not found, the monitor will be marked as DOWN."
-          nullable: true
-        expectedKeywordCaseSensitive:
-          type: boolean
-          description: "Whether the expected keyword check is case-sensitive. If false,\
-            \ the check will be case-insensitive."
-        expectedKeywordNegated:
-          type: boolean
-          description: "Whether the expected keyword check is negated. If true, the\
-            \ monitor will be marked as DOWN if the keyword is found in the response\
-            \ body."
-        requestHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Custom HTTP headers to be sent with the request. It is a map\
-            \ of header names to values, null values are not allowed."
-        expectedHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Expected HTTP headers in the response. If any of these headers\
-            \ are missing, the monitor will be marked as DOWN. It is a map of header\
-            \ names to values, null values are not allowed. The check will be case-insensitive\
-            \ for the header names, but the values must match exactly"
-        requestBody:
-          type: string
-          description: "The body of the request to be sent, which is used for POST,\
-            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
-          nullable: true
-        createdAt:
-          type: string
-          description: The creation timestamp of the monitor
-          format: date-time
-        updatedAt:
-          type: string
-          description: The last updated timestamp of the monitor
-          format: date-time
-          nullable: true
-    MonitorStatsDto:
-      required:
-      - id
-      - latencyHistoryEnabled
-      - latencyLogs
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier of the monitor
-          format: int64
-        latencyHistoryEnabled:
-          type: boolean
-          description: Whether recording of latency is enabled for this monitor
-        averageLatencyInMs:
-          type: integer
-          description: The average latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        minLatencyInMs:
-          type: integer
-          description: The minimum latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        maxLatencyInMs:
-          type: integer
-          description: The maximum latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p90LatencyInMs:
-          type: integer
-          description: The 90th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p95LatencyInMs:
-          type: integer
-          description: The 95th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p99LatencyInMs:
-          type: integer
-          description: The 99th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        latencyLogs:
-          type: array
-          description: All the latency logs recorded for the monitor in the given
-            period
-          items:
-            $ref: "#/components/schemas/LatencyLogDto"
-    MonitorUpdateDto:
-      type: object
-      properties:
-        name:
-          minLength: 1
-          type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
-          nullable: false
-          x-size-message: Monitor name must not be blank
-        url:
-          pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
-          type: string
-          description: The URL that is monitored
-          nullable: false
-          x-pattern-message: URL must be a valid HTTP(S) URI
-          x-not-null-message: URL must not be null
-        uptimeCheckInterval:
-          minimum: 5
-          type: integer
-          description: The interval in seconds at which the monitor checks for uptime
-          format: int32
-          nullable: false
-          x-minimum-message: "Uptime check interval must be at least {value} seconds"
-        enabled:
-          type: boolean
-          description: "Whether the monitor is enabled. If false, the monitor will\
-            \ not perform checks."
-          nullable: false
-        sslCheckEnabled:
-          type: boolean
-          description: Whether the monitor checks the SSL certificate for expiry and
-            validity.
-          nullable: false
-        requestMethod:
-          description: The HTTP method used for the uptime check
-          allOf:
-          - $ref: "#/components/schemas/HttpMethod"
-        latencyHistoryEnabled:
-          type: boolean
-          description: Whether latency history is enabled for the monitor
-          nullable: false
-        forceNoCache:
-          type: boolean
-          description: Whether to send a force no-cache headers in the request
-          nullable: false
-        followRedirects:
-          type: boolean
-          description: Whether to follow redirects during the uptime check
-          nullable: false
-        sslExpiryThreshold:
-          minimum: 0
-          type: integer
-          description: The threshold in days for SSL certificate expiry checks
-          format: int32
-          nullable: false
-          x-minimum-message: SSL expiry threshold must be greater than or equal to
-            0 days
-        integrations:
-          type: array
-          description: "List of integrations explicitly assigned to the monitor, e.g.\
-            \ \"email:my-email-notification\""
-          nullable: true
-          items:
-            type: string
-            description: "A unique identifier for an integration, formatted as 'type:name'."
-            example: email:my-email-integration
-        expectedStatusCodes:
-          type: array
-          description: "List of expected HTTP status codes for the monitor. If the\
-            \ response code is not in this list, the monitor will be marked as DOWN.\
-            \ By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx\
-            \ and 4xx codes are supported."
-          nullable: true
-          items:
-            type: integer
-            format: int32
-        responseTimeThresholdMillis:
-          maximum: 30000
-          minimum: 0
-          exclusiveMinimum: true
-          type: integer
-          description: "The threshold in milliseconds for the response time. If the\
-            \ response time exceeds this value, the monitor will be marked as DOWN."
-          format: int32
-          nullable: true
-          x-maximum-message: "Response time threshold must be less than or equal to\
-            \ {value} milliseconds"
-          x-minimum-message: Response time threshold must be greater than 0 milliseconds
-        expectedKeyword:
-          type: string
-          description: "A keyword that is expected to be present in the response body.\
-            \ If the keyword is not found, the monitor will be marked as DOWN."
-          nullable: true
-        expectedKeywordCaseSensitive:
-          type: boolean
-          description: "Whether the expected keyword check is case-sensitive. If false,\
-            \ the check will be case-insensitive."
-          nullable: false
-        expectedKeywordNegated:
-          type: boolean
-          description: "Whether the expected keyword check is negated. If true, the\
-            \ monitor will be marked as DOWN if the keyword is found in the response\
-            \ body."
-          nullable: false
-        requestHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Custom HTTP headers to be sent with the request. It is a map\
-            \ of header names to values, null values are not allowed."
-          nullable: false
-        expectedHeaders:
-          type: object
-          additionalProperties:
-            type: string
-          description: "Expected HTTP headers in the response. If any of these headers\
-            \ are missing, the monitor will be marked as DOWN. It is a map of header\
-            \ names to values, null values are not allowed. The check will be case-insensitive\
-            \ for the header names, but the values must match exactly"
-          nullable: false
-        requestBody:
-          type: string
-          description: "The body of the request to be sent, which is used for POST,\
-            \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
-          nullable: true
-    MonitoringStatsDto:
-      required:
-      - actual
-      - history
-      type: object
-      properties:
-        actual:
-          description: The actual monitoring statistics for the current state of the
-            monitors.
-          allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats"
-        history:
-          description: "The historical monitoring statistics, summarizing incidents\
-            \ and uptime ratios over time."
-          allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.HistoricalMonitoringStats"
-    MonitoringStatsDto.ActualMonitoringStats:
-      required:
-      - sslStats
-      - uptimeStats
-      type: object
-      properties:
-        uptimeStats:
-          description: Statistics about the current state of uptime for all monitors.
-          allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
-        sslStats:
-          description: Statistics about the current state of SSL certificates for
-            all monitors.
-          allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.ActualMonitoringStats.SslStats"
-    MonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
-      required:
-      - down
-      - inProgress
-      - lastIncident
-      - paused
-      - total
-      - up
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of monitors currently being monitored.
-          format: int32
-        down:
-          type: integer
-          description: Number of monitors currently down.
-          format: int32
-        up:
-          type: integer
-          description: Number of monitors currently up.
-          format: int32
-        paused:
-          type: integer
-          description: Number of monitors currently paused.
-          format: int32
-        inProgress:
-          type: integer
-          description: "Number of monitors currently in progress (e.g., waiting for\
-            \ first check)."
-          format: int32
-        lastIncident:
-          type: string
-          description: The timestamp of the last incident detected across all monitors.
-          format: date-time
-          nullable: true
-    MonitoringStatsDto.ActualMonitoringStats.SslStats:
-      required:
-      - inProgress
-      - invalid
-      - valid
-      - willExpire
-      type: object
-      properties:
-        invalid:
-          type: integer
-          description: ' Number of SSL certificates that are currently invalid or
-            expired.'
-          format: int32
-        valid:
-          type: integer
-          description: Number of SSL certificates that are valid and not close to
-            expiry.
-          format: int32
-        willExpire:
-          type: integer
-          description: Number of SSL certificates that are close to expiry (within
-            the threshold).
-          format: int32
-        inProgress:
-          type: integer
-          description: Number of SSL certificates that has not been checked yet.
-          format: int32
-    MonitoringStatsDto.HistoricalMonitoringStats:
-      required:
-      - uptimeStats
-      type: object
-      properties:
-        uptimeStats:
-          description: Statistics about the historical uptime of all monitors.
-          allOf:
-          - $ref: "#/components/schemas/MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats"
-    MonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats:
-      required:
-      - affectedMonitors
-      - incidents
-      - totalDowntimeSeconds
-      - uptimeRatio
-      type: object
-      properties:
-        incidents:
-          type: integer
-          description: Total number of incidents recorded across all monitors.
-          format: int32
-        affectedMonitors:
-          type: integer
-          description: Total number of monitors that have been affected by incidents.
-          format: int32
-        uptimeRatio:
-          type: number
-          description: The percentage of uptime across all monitors.
-          format: double
-          nullable: true
-        totalDowntimeSeconds:
-          type: integer
-          description: Total downtime in seconds across all monitors.
-          format: int64
     SSLEventDto:
       required:
       - endedAt
@@ -2118,41 +2153,6 @@ components:
       - VALID
       - INVALID
       - WILL_EXPIRE
-    UptimeEventDto:
-      required:
-      - endedAt
-      - error
-      - id
-      - startedAt
-      - status
-      - updatedAt
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier for the uptime event
-          format: int64
-        status:
-          description: The status of the uptime event
-          allOf:
-          - $ref: "#/components/schemas/UptimeStatus"
-        error:
-          type: string
-          description: "The error that occurred during the uptime check, if any"
-          nullable: true
-        startedAt:
-          type: string
-          description: The timestamp when the uptime event started
-          format: date-time
-        endedAt:
-          type: string
-          description: "The timestamp when the uptime event ended, if applicable"
-          format: date-time
-          nullable: true
-        updatedAt:
-          type: string
-          description: The timestamp when the uptime event was updated
-          format: date-time
     UptimeStatus:
       type: string
       enum:

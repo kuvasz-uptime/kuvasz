@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.events
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -17,7 +17,7 @@ class EventTest : BehaviorSpec() {
                 val previousEvent = HttpUptimeEventRecord()
                     .setStatus(UptimeStatus.DOWN)
                     .setStartedAt(OffsetDateTime.now())
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -32,7 +32,7 @@ class EventTest : BehaviorSpec() {
                 val previousEvent = HttpUptimeEventRecord()
                     .setStatus(UptimeStatus.UP)
                     .setStartedAt(OffsetDateTime.now())
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -44,7 +44,7 @@ class EventTest : BehaviorSpec() {
             }
 
             `when`("previousEvent is null") {
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -61,7 +61,7 @@ class EventTest : BehaviorSpec() {
                 val previousEvent = HttpUptimeEventRecord()
                     .setStatus(UptimeStatus.DOWN)
                     .setStartedAt(OffsetDateTime.now())
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -81,7 +81,7 @@ class EventTest : BehaviorSpec() {
                 val previousEvent = HttpUptimeEventRecord()
                     .setStatus(UptimeStatus.UP)
                     .setStartedAt(OffsetDateTime.now())
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,
@@ -98,7 +98,7 @@ class EventTest : BehaviorSpec() {
             }
 
             `when`("previousEvent is null") {
-                val event = MonitorUpEvent(
+                val event = HttpMonitorUpEvent(
                     monitor = mockk(),
                     status = HttpStatus.OK,
                     latency = 1000,

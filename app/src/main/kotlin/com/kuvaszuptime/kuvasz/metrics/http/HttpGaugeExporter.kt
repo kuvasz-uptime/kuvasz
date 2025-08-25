@@ -1,7 +1,8 @@
-package com.kuvaszuptime.kuvasz.metrics
+package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.metrics.MeterDefinition
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
@@ -11,11 +12,11 @@ import java.util.concurrent.atomic.AtomicLong
  * Base class for gauge exporters that provides common functionality for registering and updating gauges.
  * The INTERNAL_VAL is always a [Long] along with the [AtomicLong] as the METER_VAL.
  */
-abstract class GaugeExporter<SOURCE_VAL : Any>(
+abstract class HttpGaugeExporter<SOURCE_VAL : Any>(
     private val meterRegistry: MeterRegistry,
     eventDispatcher: EventDispatcher,
-    monitorRepository: MonitorRepository,
-) : BaseMetricsExporter<SOURCE_VAL, Long, AtomicLong>(monitorRepository, meterRegistry, eventDispatcher) {
+    monitorRepository: HttpMonitorRepository,
+) : BaseHttpMetricsExporter<SOURCE_VAL, Long, AtomicLong>(monitorRepository, meterRegistry, eventDispatcher) {
 
     override fun updateValue(existingValue: AtomicLong, newValue: Long) {
         existingValue.set(newValue)

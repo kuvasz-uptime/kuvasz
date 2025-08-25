@@ -1,9 +1,11 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.UptimeCheckLockRegistry
+import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import io.micronaut.scheduling.TaskExecutors
@@ -24,10 +26,10 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 @Singleton
-class CheckScheduler(
+class HttpCheckScheduler(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
-    private val monitorRepository: MonitorRepository,
-    private val uptimeChecker: UptimeChecker,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeChecker: HttpUptimeChecker,
     private val sslChecker: SSLChecker,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
@@ -246,6 +248,6 @@ class CheckScheduler(
         private const val SSL_CHECK_INITIAL_DELAY_MIN_SECONDS = 60L
         private const val SSL_CHECK_INITIAL_DELAY_MAX_SECONDS = 300L
         private const val SSL_CHECK_PERIOD_DAYS = 1L
-        private val logger = LoggerFactory.getLogger(CheckScheduler::class.java)
+        private val logger = LoggerFactory.getLogger(HttpCheckScheduler::class.java)
     }
 }

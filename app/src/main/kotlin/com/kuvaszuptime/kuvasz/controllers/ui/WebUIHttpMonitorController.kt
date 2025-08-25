@@ -5,8 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
-import com.kuvaszuptime.kuvasz.services.MonitorCrudService
 import com.kuvaszuptime.kuvasz.services.StatCalculator
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
@@ -23,7 +23,7 @@ import java.time.Duration
 @Controller("/")
 @Hidden
 class WebUIHttpMonitorController(
-    private val monitorCrudService: MonitorCrudService,
+    private val monitorCrudService: HttpMonitorCrudService,
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
 ) {
@@ -42,7 +42,7 @@ class WebUIHttpMonitorController(
         val period = Duration.ofDays(DASHBOARD_STATS_PERIOD_DEFAULT_DAYS)
 
         return renderMonitoringStats(
-            monitoringStats = statCalculator.calculateOverallStats(period),
+            monitoringStats = statCalculator.calculateOverallHttpStats(period),
             downMonitors = monitorCrudService.getMonitorsWithDetails(
                 enabled = true,
                 uptimeStatus = listOf(UptimeStatus.DOWN),

@@ -6,10 +6,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
-import com.kuvaszuptime.kuvasz.repositories.LatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
-import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -21,9 +21,9 @@ import java.time.OffsetDateTime
 @Property(name = "app-config.event-data-retention-days", value = "7")
 @Property(name = "app-config.latency-data-retention-days", value = "5")
 class DatabaseCleanerTest(
-    private val uptimeEventRepository: UptimeEventRepository,
-    private val latencyLogRepository: LatencyLogRepository,
-    private val monitorRepository: MonitorRepository,
+    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
+    private val monitorRepository: HttpMonitorRepository,
     private val sslEventRepository: SSLEventRepository,
     private val databaseCleaner: DatabaseCleaner,
 ) : DatabaseBehaviorSpec() {
