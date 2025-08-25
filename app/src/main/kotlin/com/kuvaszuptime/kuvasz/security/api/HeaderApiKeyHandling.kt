@@ -33,7 +33,7 @@ class ApiKeyTokenValidator(
     override fun validateToken(token: String, request: HttpRequest<*>?): Publisher<Authentication> {
         val isApiRequest = request != null &&
             (request.path.startsWith(API_V1_PREFIX) || request.path.startsWith(API_V2_PREFIX))
-        return if (request != null && isApiRequest && token == adminAuthConfig.apiKey) {
+        return if (isApiRequest && token == adminAuthConfig.apiKey) {
             Publishers.just(Authentication.build(adminAuthConfig.username, listOf(Role.API.alias)))
         } else {
             Publishers.empty()
