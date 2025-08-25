@@ -2013,6 +2013,11 @@ components:
           description: Metrics exporter settings
           allOf:
           - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto"
+        smtp:
+          description: SMTP configuration for email notifications
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.SmtpConfigDto"
     SettingsDto.AppSettingsDto:
       required:
       - editabilityState
@@ -2147,6 +2152,23 @@ components:
         sslStatus:
           type: boolean
           description: Whether SSL status exporter is enabled
+    SettingsDto.SmtpConfigDto:
+      required:
+      - host
+      - port
+      - transportStrategy
+      type: object
+      properties:
+        host:
+          type: string
+          description: The SMTP host
+        port:
+          type: integer
+          description: The SMTP port
+          format: int32
+        transportStrategy:
+          type: string
+          description: The SMTP transport strategy
     SslStatus:
       type: string
       enum:

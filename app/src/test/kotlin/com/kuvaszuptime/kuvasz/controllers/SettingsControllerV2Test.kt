@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.controllers
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.micronaut.context.annotation.Property
@@ -39,6 +41,12 @@ class SettingsControllerV2Test(settingsClient: SettingsClientV2, appGlobals: App
                 result.app.eventLoggingEnabled shouldBe true
                 result.app.version.shouldNotBeEmpty() shouldBe appGlobals.appVersion
                 result.app.editabilityState.areHttpMonitorsReadOnly shouldBe true
+
+                with(result.smtp.shouldNotBeNull()) {
+                    host shouldBe "localhost"
+                    port shouldBeGreaterThan 0
+                    transportStrategy shouldBe "SMTP"
+                }
 
                 with(result.metricsExport) {
                     exportEnabled shouldBe true

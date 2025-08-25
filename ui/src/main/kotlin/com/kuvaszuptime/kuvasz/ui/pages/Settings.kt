@@ -95,109 +95,46 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     )
                 }
             }
-//            // Integration settings
-//            settingsCard(
-//                title = Messages.integrationSettings(),
-//                icon = Icon.PLUG,
-//            ) {
-//                div {
-//                    classes(DIVIDE_Y)
-//                    // SMTP settings
-//                    div {
-//                        div {
-//                            classes(FORM_LABEL)
-//                            icon(Icon.SMTP)
-//                            span {
-//                                classes(MS_2)
-//                                +"SMTP"
-//                            }
-//                        }
-//                        div {
-//                            classes(MT_3)
-//                            settings.integrations.smtp?.let { smtpConfig ->
-//                                multiSettingsLabel(
-//                                    label = Messages.smtpHost(),
-//                                    value = smtpConfig.host
-//                                )
-//                                multiSettingsLabel(
-//                                    label = Messages.smtpPort(),
-//                                    value = smtpConfig.port.toString()
-//                                )
-//                                multiSettingsLabel(
-//                                    label = Messages.smtpTransportStrategy(),
-//                                    value = smtpConfig.transportStrategy
-//                                )
-//                            } ?: span {
-//                                classes(TEXT_SECONDARY)
-//                                +Messages.notConfigured()
-//                            }
-//                        }
-//                    }
-//                    // Email integrations
-//                    div {
-//                        div {
-//                            classes(FORM_LABEL)
-//                            icon(Icon.ENVELOPE)
-//                            span {
-//                                classes(MS_2)
-//                                +"E-mail"
-//                            }
-//                        }
-//                        integrationsList(settings.integrations.email)
-//                    }
-//                    // PagerDuty integrations
-//                    div {
-//                        div {
-//                            classes(FORM_LABEL)
-//                            icon(Icon.BRAND_PAGERDUTY)
-//                            span {
-//                                classes(MS_2)
-//                                +"PagerDuty"
-//                            }
-//                        }
-//                        integrationsList(settings.integrations.pagerduty)
-//                    }
-//
-//                    // Slack integrations
-//                    div {
-//                        div {
-//                            classes(FORM_LABEL)
-//                            icon(Icon.BRAND_SLACK)
-//                            span {
-//                                classes(MS_2)
-//                                +"Slack"
-//                            }
-//                        }
-//                        integrationsList(settings.integrations.slack)
-//                    }
-//
-//                    // Discord integrations
-//                    div {
-//                        div {
-//                            classes(FORM_LABEL)
-//                            icon(Icon.BRAND_DISCORD)
-//                            span {
-//                                classes(MS_2)
-//                                +"Discord"
-//                            }
-//                        }
-//                        integrationsList(settings.integrations.discord)
-//                    }
-//
-//                    // Telegram integrations
-//                    div {
-//                        div {
-//                            classes(FORM_LABEL)
-//                            icon(Icon.BRAND_TELEGRAM)
-//                            span {
-//                                classes(MS_2)
-//                                +"Telegram"
-//                            }
-//                        }
-//                        integrationsList(settings.integrations.telegram)
-//                    }
-//                }
-//            }
+            // Integration settings
+            settingsCard(
+                title = Messages.integrationSettings(),
+                icon = Icon.PLUG,
+            ) {
+                div {
+                    classes(DIVIDE_Y)
+                    // SMTP settings
+                    div {
+                        div {
+                            classes(FORM_LABEL)
+                            icon(Icon.SMTP)
+                            span {
+                                classes(MS_2)
+                                +"SMTP"
+                            }
+                        }
+                        div {
+                            classes(MT_3)
+                            settings.smtp?.let { smtpConfig ->
+                                multiSettingsLabel(
+                                    label = Messages.smtpHost(),
+                                    value = smtpConfig.host
+                                )
+                                multiSettingsLabel(
+                                    label = Messages.smtpPort(),
+                                    value = smtpConfig.port.toString()
+                                )
+                                multiSettingsLabel(
+                                    label = Messages.smtpTransportStrategy(),
+                                    value = smtpConfig.transportStrategy
+                                )
+                            } ?: span {
+                                classes(TEXT_SECONDARY)
+                                +Messages.notConfigured()
+                            }
+                        }
+                    }
+                }
+            }
             // Exporter settings
             settingsCard(
                 title = Messages.exporterSettings(),

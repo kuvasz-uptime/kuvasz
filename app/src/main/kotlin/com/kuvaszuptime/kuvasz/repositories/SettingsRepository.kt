@@ -94,6 +94,13 @@ class SettingsRepository(
                     areHttpMonitorsReadOnly = appConfig.isHttpMonitorExternalWriteDisabled()
                 )
             ),
+            smtp = smtpMailerConfig?.let { smtpConfig ->
+                SettingsDto.SmtpConfigDto(
+                    host = smtpConfig.host.orEmpty(),
+                    port = smtpConfig.port ?: 0,
+                    transportStrategy = smtpConfig.transportStrategy.toString()
+                )
+            },
             metricsExport = metricsExportSettingsDto()
         )
 

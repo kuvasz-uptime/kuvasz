@@ -256,6 +256,8 @@ data class SettingsDto(
     val app: AppSettingsDto,
     @param:Schema(description = "Metrics exporter settings", required = true)
     val metricsExport: MetricsExportSettingsDto,
+    @param:Schema(description = "SMTP configuration for email notifications", required = false, nullable = true)
+    val smtp: SmtpConfigDto?,
 ) {
     @Introspected
     data class AuthenticationSettingsDto(
@@ -298,128 +300,6 @@ data class SettingsDto(
         @param:Schema(description = "The SMTP transport strategy", required = true)
         val transportStrategy: String,
     )
-
-    interface IntegrationConfigDto {
-        val id: IntegrationID
-        val type: IntegrationType
-        val name: String
-        val enabled: Boolean
-        val global: Boolean
-    }
-
-    @Introspected
-    data class SlackNotificationConfigDto(
-        override val id: IntegrationID,
-        @param:Schema(description = IntegrationDocs.TYPE, required = true)
-        override val type: IntegrationType,
-        @param:Schema(description = IntegrationDocs.NAME, required = true)
-        override val name: String,
-        @param:Schema(description = IntegrationDocs.ENABLED, required = true)
-        override val enabled: Boolean,
-        @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
-        override val global: Boolean,
-    ) : IntegrationConfigDto {
-        constructor(integrationID: IntegrationID, config: SlackNotificationConfig) : this(
-            id = integrationID,
-            type = integrationID.type,
-            name = config.name,
-            enabled = config.enabled,
-            global = config.global,
-        )
-    }
-
-    @Introspected
-    data class DiscordNotificationConfigDto(
-        override val id: IntegrationID,
-        @param:Schema(description = IntegrationDocs.TYPE, required = true)
-        override val type: IntegrationType,
-        @param:Schema(description = IntegrationDocs.NAME, required = true)
-        override val name: String,
-        @param:Schema(description = IntegrationDocs.ENABLED, required = true)
-        override val enabled: Boolean,
-        @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
-        override val global: Boolean
-    ) : IntegrationConfigDto {
-        constructor(integrationID: IntegrationID, config: DiscordNotificationConfig) : this(
-            id = integrationID,
-            type = integrationID.type,
-            name = config.name,
-            enabled = config.enabled,
-            global = config.global
-        )
-    }
-
-    @Introspected
-    data class PagerdutyConfigDto(
-        override val id: IntegrationID,
-        @param:Schema(description = IntegrationDocs.TYPE, required = true)
-        override val type: IntegrationType,
-        @param:Schema(description = IntegrationDocs.NAME, required = true)
-        override val name: String,
-        @param:Schema(description = IntegrationDocs.ENABLED, required = true)
-        override val enabled: Boolean,
-        @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
-        override val global: Boolean,
-    ) : IntegrationConfigDto {
-        constructor(integrationID: IntegrationID, config: PagerdutyConfig) : this(
-            id = integrationID,
-            type = integrationID.type,
-            name = config.name,
-            enabled = config.enabled,
-            global = config.global,
-        )
-    }
-
-    @Introspected
-    data class EmailNotificationConfigDto(
-        override val id: IntegrationID,
-        @param:Schema(description = IntegrationDocs.TYPE, required = true)
-        override val type: IntegrationType,
-        @param:Schema(description = IntegrationDocs.NAME, required = true)
-        override val name: String,
-        @param:Schema(description = IntegrationDocs.ENABLED, required = true)
-        override val enabled: Boolean,
-        @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
-        override val global: Boolean,
-        @param:Schema(description = "The email address from which notifications are sent", required = true)
-        val fromAddress: String,
-        @param:Schema(description = "The email address to which notifications are sent", required = true)
-        val toAddress: String,
-    ) : IntegrationConfigDto {
-        constructor(integrationID: IntegrationID, config: EmailNotificationConfig) : this(
-            id = integrationID,
-            type = integrationID.type,
-            name = config.name,
-            enabled = config.enabled,
-            global = config.global,
-            fromAddress = config.fromAddress,
-            toAddress = config.toAddress,
-        )
-    }
-
-    @Introspected
-    data class TelegramNotificationConfigDto(
-        override val id: IntegrationID,
-        @param:Schema(description = IntegrationDocs.TYPE, required = true)
-        override val type: IntegrationType,
-        @param:Schema(description = IntegrationDocs.NAME, required = true)
-        override val name: String,
-        @param:Schema(description = IntegrationDocs.ENABLED, required = true)
-        override val enabled: Boolean,
-        @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
-        override val global: Boolean,
-        @param:Schema(description = "The chat ID for Telegram notifications", required = true)
-        val chatId: String,
-    ) : IntegrationConfigDto {
-        constructor(integrationID: IntegrationID, config: TelegramNotificationConfig) : this(
-            id = integrationID,
-            type = integrationID.type,
-            name = config.name,
-            enabled = config.enabled,
-            global = config.global,
-            chatId = config.chatId,
-        )
-    }
 
     @Introspected
     data class MetricsExportSettingsDto(
