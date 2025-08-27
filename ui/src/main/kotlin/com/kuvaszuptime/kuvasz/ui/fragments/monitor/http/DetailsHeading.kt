@@ -4,7 +4,7 @@ import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
-import com.kuvaszuptime.kuvasz.ui.fragments.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -40,10 +40,6 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                 div {
                     classes(PAGE_PRETITLE)
                     +"#${monitor.id}"
-                    span {
-                        classes(BADGE_SM, BADGE, BADGE_PILL, BG_PRIMARY, TEXT_PRIMARY_FG, MS_2)
-                        +"HTTP"
-                    }
                 }
                 h2 {
                     classes(PAGE_TITLE, TEXT_WRAP, TEXT_BREAK)
@@ -53,6 +49,14 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                     classes(TEXT_SECONDARY)
                     ul {
                         classes(LIST_INLINE, MT_1, MB_0)
+                        a(href = "/http-monitors") {
+                            classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
+                            span {
+                                classes(STATUS, BG_BLUE_LT, TEXT_BLUE_LT_FG)
+                                icon(Icon.WORLD)
+                                +"HTTP"
+                            }
+                        }
                         a(href = "#monitor-details-ssl-summary") {
                             classes(LIST_INLINE_ITEM, ALIGN_MIDDLE, TEXT_WRAP, TEXT_BREAK)
                             sslStatusOfMonitor(monitor, withTooltip = false)

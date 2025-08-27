@@ -43,6 +43,12 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     )
                                 )
                                 navItem(
+                                    label = Messages.integrationsLabel(),
+                                    icon = Icon.PLUG,
+                                    link = "/integrations",
+                                    externalLink = false
+                                )
+                                navItem(
                                     label = Messages.settings(),
                                     icon = Icon.SETTINGS,
                                     link = "/settings",
@@ -113,6 +119,7 @@ private fun UL.navItemDropdown(id: String, label: String, icon: Icon, items: Lis
                     classes(DROPDOWN_ITEM)
                     if (item.externalLink) relNoOpener()
                     ariaLabel(item.label)
+                    icon(item.icon)
                     +item.label
                 }
             }

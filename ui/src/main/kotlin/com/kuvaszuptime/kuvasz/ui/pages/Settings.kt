@@ -15,43 +15,6 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
         title = Messages.settings(),
         pageTitle = { settingsPageHeader() }
     ) {
-//        fun FlowContent.integrationBadge(config: LegacySettingsDto.IntegrationConfigDto) {
-//            val effective = if (config is LegacySettingsDto.EmailNotificationConfigDto) {
-//                config.enabled && settings.integrations.smtp != null
-//            } else {
-//                config.enabled
-//            }
-//
-//            span {
-//                classes(
-//                    mutableSetOf(BADGE, BADGE_LG).addIf(effective, BG_GREEN_LT)
-//                )
-//                if (config is LegacySettingsDto.EmailNotificationConfigDto && effective != config.enabled) {
-//                    tooltip(Messages.emailNotEnabledDueToMissingSMTP())
-//                }
-//                if (config.global) {
-//                    icon(Icon.WORLD)
-//                }
-//                +config.name
-//                if (config.enabled != effective) {
-//                    span {
-//                        classes(TEXT_YELLOW)
-//                        icon(Icon.ALERT_TRIANGLE)
-//                    }
-//                }
-//            }
-//        }
-
-//        fun FlowContent.integrationsList(integrations: List<LegacySettingsDto.IntegrationConfigDto>) {
-//            div {
-//                classes(BADGES_LIST)
-//                integrations.sortedBy { it.name }.forEach { integrationBadge(it) }
-//                if (integrations.isEmpty()) {
-//                    span { +Messages.notConfigured() }
-//                }
-//            }
-//        }
-
         div {
             classes(ROW)
             div {

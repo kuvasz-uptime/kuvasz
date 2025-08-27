@@ -9,10 +9,13 @@ internal enum class TooltipLocation {
     RIGHT,
 }
 
-internal fun HTMLTag.tooltip(title: String, location: TooltipLocation = TooltipLocation.BOTTOM) {
+internal fun HTMLTag.tooltip(title: String, location: TooltipLocation = TooltipLocation.BOTTOM, html: Boolean = false) {
     tooltipToggler()
     attributes["data-bs-placement"] = location.name.lowercase()
     attributes["title"] = title
+    if (html) {
+        attributes["data-bs-html"] = "true"
+    }
 }
 
 internal fun HTMLTag.modalOpener(modalId: String) {

@@ -46,6 +46,7 @@ class WebUIAuthenticationTest(
             row("/http-monitors/fragments/details-ssl-events/1"),
             row("/http-monitors/fragments/stats"),
             row("/settings"),
+            row("/integrations"),
         ).forAll { url ->
             val response = client.exchange(url).awaitFirst()
 
@@ -69,6 +70,7 @@ class WebUIAuthenticationTest(
             row("/http-monitors/fragments/details-ssl-events/1"),
             row("/http-monitors/fragments/stats"),
             row("/settings"),
+            row("/integrations"),
         )
         cases.forAll { url ->
             val request = HttpRequest.GET<Any>(url).header("X-API-KEY", TEST_API_KEY)
@@ -106,6 +108,7 @@ class WebUIAuthenticationTest(
             row("/http-monitors/fragments/details-ssl-events/${monitor.id}"),
             row("/http-monitors/fragments/stats"),
             row("/settings"),
+            row("/integrations"),
         ).forAll { url ->
             val response = client.exchange(
                 HttpRequest.GET<Any>(url).header(HttpHeaders.COOKIE, "JWT=$jwt")
