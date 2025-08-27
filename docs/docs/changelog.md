@@ -6,8 +6,12 @@
 
 ### Breaking changes
 
-This is a major release that paths the way for **new monitor types** in the future, by handling the already existing HTTP monitors in a more explicit way. There are a few breaking changes in there, so please **refer to the** [**Upgrade notes**](upgrade-notes.md) for more details. 
+This is a major release that paths the way for **new monitor types** in the future, by handling the already existing HTTP monitors in a more explicit way. There are a few breaking changes in there, so please **refer to the** [**Upgrade notes**](upgrade-notes.md#upgrade-from-v2xx-to-v300) for more details. 
 Don't be afraid, the upgrade process is straightforward and well-documented, and if you follow the steps, everything should go smoothly.
+
+### New features
+
+- **Integrations** have their own section on the UI now, and they are also exposed under a new API endpoint (`GET /api/v2/integrations`). Furthermore, [**you can test them**](management/integrations.md#testing-integrations) directly from the UI, or via the API to make sure that they are working as expected, before you would enable them or assign them to monitors.
 
 ### Fixes
 

@@ -1,5 +1,7 @@
 _Kuvasz_ supports a variety of integrations to help you **stay informed** about the status of your monitors. If you're curious about the configuration options, just click on the <!-- md:config --> icon, next to the integration name, and it will take you to the relevant section of the configuration documentation.
 
+![Integrations list](../images/integrations/integrations_list.webp)
+
 !!! info 
   
     Integrations can be:
@@ -56,12 +58,6 @@ The _PagerDuty_ integration allows you to trigger **incidents in PagerDuty** whe
 The _Telegram_ integration allows you to send notifications **to a specific Telegram chat** via the Bot API. You can use it to receive notifications about the status of your monitors **directly in your Telegram app**.
 
 ![Telegram integration](../images/integrations/telegram.webp)
-
-## Coming soon...
-
-- Grafana IRM
-- Microsoft Teams
-- Sendable test notifications (e.g. to test if the integration is working)
 
 !!! tip "Do you miss an integration?"
 
