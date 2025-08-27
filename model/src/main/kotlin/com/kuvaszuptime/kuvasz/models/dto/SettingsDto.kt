@@ -258,6 +258,7 @@ data class SettingsDto(
     val metricsExport: MetricsExportSettingsDto,
     @param:Schema(description = "SMTP configuration for email notifications", required = false, nullable = true)
     val smtp: SmtpConfigDto?,
+    val versionInfo: VersionInfoDto
 ) {
     @Introspected
     data class AuthenticationSettingsDto(
@@ -284,6 +285,8 @@ data class SettingsDto(
             required = true,
         )
         val editabilityState: EditabilityStateDto,
+        @param:Schema(description = "Whether automatic update checks are enabled")
+        val updateChecksEnabled: Boolean,
     ) {
         data class EditabilityStateDto(
             @param:Schema(description = "Whether the HTTP monitors are in read-only mode", required = true)

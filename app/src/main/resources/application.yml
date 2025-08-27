@@ -125,6 +125,7 @@ app-config:
   latency-data-retention-days: ${LATENCY_DATA_RETENTION_DAYS:`7`}
   log-event-handler: ${ENABLE_LOG_EVENT_HANDLER:`true`}
   language: ${APP_LANGUAGE:`en`}
+  check-updates: ${ENABLE_CHECK_UPDATES:`true`}
 ---
 admin-auth:
   username: ${ADMIN_USER}

@@ -29,6 +29,8 @@ class AppConfig {
 
     var logEventHandler: Boolean = false
 
+    var checkUpdates: Boolean = true
+
     private var isHttpMonitorExternalWriteDisabled = false
 
     var uptimeCheckLockTimeoutMs: Long = UPTIME_CHECK_LOCK_TIMEOUT_MS

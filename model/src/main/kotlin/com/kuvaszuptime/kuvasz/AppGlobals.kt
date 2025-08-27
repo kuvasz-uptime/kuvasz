@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz
 
+import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -16,6 +17,7 @@ data class AppGlobals(
     val enabledIntegrations: IntegrationMap,
     val configuredIntegrationsByType: Map<IntegrationType, Set<IntegrationConfig>>,
     val editabilityState: EditabilityState,
+    val versionInfo: () -> VersionInfo,
 ) {
     init {
         // Setting up the locale for i18n messages

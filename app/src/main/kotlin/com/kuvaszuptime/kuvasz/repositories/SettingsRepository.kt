@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
 import com.kuvaszuptime.kuvasz.models.dto.LegacySettingsDto
 import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.VersionInfoDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
@@ -13,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import io.micronaut.context.annotation.Property
 import jakarta.inject.Singleton
@@ -27,6 +29,7 @@ class SettingsRepository(
     private val exportConfig: MetricsExportConfig,
     private val prometheusSettings: PrometheusSettingsRepository,
     private val otlpSettings: OTLPSettingsRepository,
+    private val versionChecker: VersionChecker,
 ) {
 
     @field:Property(name = "micronaut.security.token.generator.access-token.expiration")
@@ -92,7 +95,8 @@ class SettingsRepository(
                 eventLoggingEnabled = appConfig.logEventHandler,
                 editabilityState = SettingsDto.AppSettingsDto.EditabilityStateDto(
                     areHttpMonitorsReadOnly = appConfig.isHttpMonitorExternalWriteDisabled()
-                )
+                ),
+                updateChecksEnabled = appConfig.checkUpdates,
             ),
             smtp = smtpMailerConfig?.let { smtpConfig ->
                 SettingsDto.SmtpConfigDto(
@@ -101,7 +105,8 @@ class SettingsRepository(
                     transportStrategy = smtpConfig.transportStrategy.toString()
                 )
             },
-            metricsExport = metricsExportSettingsDto()
+            metricsExport = metricsExportSettingsDto(),
+            versionInfo = VersionInfoDto.fromVersionInfo(versionChecker.getVersionInfo()),
         )
 
     private fun legacyMetricsExportSettingsDto() = LegacySettingsDto.MetricsExportSettingsDto(
