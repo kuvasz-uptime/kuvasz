@@ -4,8 +4,8 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.TelegramTextFormatter
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
-import com.kuvaszuptime.kuvasz.services.TelegramAPIService
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.TelegramAPIService
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory

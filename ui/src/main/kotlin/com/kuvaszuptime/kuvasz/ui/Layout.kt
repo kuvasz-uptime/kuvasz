@@ -50,6 +50,10 @@ internal fun withLayout(
                 }
                 body {
                     div {
+                        id = "toast-container"
+                        classes(TOAST_CONTAINER, POSITION_ABSOLUTE, P_3, BOTTOM_0, END_0)
+                    }
+                    div {
                         classes(PAGE)
                         // Main header
                         val navbarMenuId = "navbar-menu"

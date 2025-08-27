@@ -9,6 +9,7 @@ tags:
 - name: HTTP monitors
 - name: "Settings (V1, deprecated)"
 - name: Settings
+- name: Integrations
 paths:
   /api/v1/monitors:
     get:
@@ -653,6 +654,48 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/integrations:
+    get:
+      tags:
+      - Integrations
+      summary: Returns all the configured integrations
+      operationId: getIntegrations
+      responses:
+        "200":
+          description: The list of configured integrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntegrationConfigDto"
+  /api/v2/integrations/{integrationId}/test:
+    post:
+      tags:
+      - Integrations
+      summary: Send a test notification with the specified integration
+      operationId: sendTestNotification
+      parameters:
+      - name: integrationId
+        in: path
+        required: true
+        schema:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+      responses:
+        "200":
+          description: The result of the test
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
   /api/v2/monitors/export/yaml:
     get:
       tags:
@@ -724,6 +767,68 @@ paths:
       - bearerAuth: []
 components:
   schemas:
+    DiscordNotificationConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+    EmailNotificationConfigDto:
+      required:
+      - enabled
+      - fromAddress
+      - global
+      - id
+      - name
+      - toAddress
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        fromAddress:
+          type: string
+          description: The email address from which notifications are sent
+        toAddress:
+          type: string
+          description: The email address to which notifications are sent
     HealthResult:
       type: object
       properties:
@@ -1540,6 +1645,31 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
+    IntegrationConfigDto:
+      required:
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+        enabled:
+          type: boolean
+        global:
+          type: boolean
+      oneOf:
+      - $ref: "#/components/schemas/SlackNotificationConfigDto"
+      - $ref: "#/components/schemas/DiscordNotificationConfigDto"
+      - $ref: "#/components/schemas/PagerdutyConfigDto"
+      - $ref: "#/components/schemas/EmailNotificationConfigDto"
+      - $ref: "#/components/schemas/TelegramNotificationConfigDto"
     IntegrationDetailsDto:
       required:
       - enabled
@@ -1947,6 +2077,43 @@ components:
         chatId:
           type: string
           description: The chat ID for Telegram notifications
+    NotificationTestResult:
+      required:
+      - message
+      - success
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+    PagerdutyConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
     SSLEventDto:
       required:
       - endedAt
@@ -2169,12 +2336,70 @@ components:
         transportStrategy:
           type: string
           description: The SMTP transport strategy
+    SlackNotificationConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
     SslStatus:
       type: string
       enum:
       - VALID
       - INVALID
       - WILL_EXPIRE
+    TelegramNotificationConfigDto:
+      required:
+      - chatId
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        chatId:
+          type: string
+          description: The chat ID for Telegram notifications
     UptimeStatus:
       type: string
       enum:

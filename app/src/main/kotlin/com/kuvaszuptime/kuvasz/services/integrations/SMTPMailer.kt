@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import jakarta.inject.Singleton
@@ -14,7 +14,7 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
         private val logger = LoggerFactory.getLogger(SMTPMailer::class.java)
     }
 
-    private val mailerClient =
+    private val mailerClient = run {
         MailerBuilder
             .withTransportStrategy(smtpMailerConfig.transportStrategy.toJavaMailerTransportStrategy())
             .withSMTPServerHost(smtpMailerConfig.host)
@@ -26,15 +26,16 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
                         .withSMTPServerPassword(smtpMailerConfig.password)
                 }
             }.buildMailer()
+    }
 
     init {
         @Suppress("TooGenericExceptionCaught")
         try {
             mailerClient.testConnection()
             logger.info("SMTP connection to ${smtpMailerConfig.host} has been set up successfully")
-        } catch (e: Exception) {
-            logger.error("Connection to ${smtpMailerConfig.host} cannot be set up")
-            throw e
+        } catch (ex: Exception) {
+            logger.error("Connection to ${smtpMailerConfig.host} cannot be set up", ex)
+            throw ex
         }
     }
 

@@ -15,8 +15,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
-import com.kuvaszuptime.kuvasz.services.PagerdutyAPIClient
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires

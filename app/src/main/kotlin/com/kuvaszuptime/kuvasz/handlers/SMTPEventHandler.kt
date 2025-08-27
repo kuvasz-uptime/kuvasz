@@ -9,8 +9,8 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
-import com.kuvaszuptime.kuvasz.services.SMTPMailer
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.SMTPMailer
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory

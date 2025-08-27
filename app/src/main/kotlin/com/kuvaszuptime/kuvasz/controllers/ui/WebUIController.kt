@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
 import com.kuvaszuptime.kuvasz.security.ui.UnauthorizedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.Hidden
 class WebUIController(
     private val appGlobals: AppGlobals,
     private val settingsRepository: SettingsRepository,
+    private val integrationsRepository: IntegrationRepository,
 ) {
 
     companion object {
@@ -46,4 +48,14 @@ class WebUIController(
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.IO)
     fun settings() = renderSettings(appGlobals, settingsRepository.getSettings())
+
+    @Get("/integrations")
+    @WebSecured
+    @Produces(MediaType.TEXT_HTML)
+    @ExecuteOn(TaskExecutors.IO)
+    fun integrations() = renderIntegrations(
+        globals = appGlobals,
+        integrations = integrationsRepository.getConfiguredIntegrationDtos().sortedBy { it.name },
+        settings = settingsRepository.getSettings(),
+    )
 }

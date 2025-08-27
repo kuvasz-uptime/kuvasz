@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 
 interface IntegrationProvider {
     val integrationType: IntegrationType

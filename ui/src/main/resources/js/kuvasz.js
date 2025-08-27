@@ -52,8 +52,44 @@ const reInitTooltips = () => {
     });
 };
 
+// Sanitizes text input by trimming whitespace and converting empty strings to null
+const sanitizeTextInput = (inputValue) => {
+  if (typeof inputValue !== 'string' || inputValue === null || inputValue === undefined) {
+    return null;
+  }
+  if (inputValue.trim() === '') {
+    return null;
+  }
+  return inputValue;
+};
+
+// Maps HTTP status codes to badge CSS classes
+const statusCodeToBadgeClass = (statusCode) => {
+    return statusCode.substring(0, 1) === '1' ? 'status-azure' :
+        statusCode.substring(0, 1) === '2' ? 'status-green' :
+        statusCode.substring(0, 1) === '3' ? 'status-yellow' :
+        statusCode.substring(0, 1) === '4' ? 'status-red' : '';
+};
+
+// Shows a toast notification using Bootstrap's toast component
+const showToast = (header, content, backgroundClass, autoHide) => {
+    const html =
+        `<div class="toast fade ${backgroundClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="${autoHide}" ${autoHide ? 'data-bs-delay="3000"' : ''}>
+            <div class="toast-header">
+                <strong class="me-auto">${header}</strong>
+                <button type="button" class="ms-2 btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">${content}</div>
+        </div>`.trim();
+    const toastElement = document.createElement('template');
+    toastElement.innerHTML = html;
+    const toastContainer = document.querySelector("#toast-container");
+    toastContainer.appendChild(toastElement.content.firstChild);
+    new tabler.Toast(toastContainer.lastElementChild).show();
+};
+
 // --------- Alpine.js x-data ---------
-const monitorList = (monitorId, isMonitorEnabled) => {
+const monitorListItem = (monitorId, isMonitorEnabled) => {
     return {
         monitorId: monitorId,
         isMonitorEnabled: isMonitorEnabled,
@@ -592,19 +628,36 @@ const upsertMonitorForm = (
     }
 };
 
-const sanitizeTextInput = (inputValue) => {
-  if (typeof inputValue !== 'string' || inputValue === null || inputValue === undefined) {
-    return null;
-  }
-  if (inputValue.trim() === '') {
-    return null;
-  }
-  return inputValue;
-};
+const integrationListItem = (integrationId) => {
+    return {
+        integrationId: integrationId,
+        wasTestRequestExecuted: false,
+        isTestRequestLoading: false,
+        testRequestError: null,
 
-const statusCodeToBadgeClass = (statusCode) => {
-    return statusCode.substring(0, 1) === '1' ? 'status-azure' :
-        statusCode.substring(0, 1) === '2' ? 'status-green' :
-        statusCode.substring(0, 1) === '3' ? 'status-yellow' :
-        statusCode.substring(0, 1) === '4' ? 'status-red' : '';
+        async sendTestRequest() {
+            this.isTestRequestLoading = true;
+            const response = await fetch('/api/v2/integrations/' + this.integrationId + '/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    this.testRequestError = null;
+                    showToast(this.integrationId, data.message, 'bg-success', true);
+                } else {
+                    this.testRequestError = data.message || 'Unknown error';
+                    showToast(this.integrationId, this.testRequestError, 'bg-danger', false);
+                }
+                this.wasTestRequestExecuted = true;
+                this.isTestRequestLoading = false;
+            } else {
+                this.wasTestRequestExecuted = false;
+                this.isTestRequestLoading = false;
+                console.error('Error sending test request:', response.statusText);
+                alert('An error occurred during sending a test request, refer to the console logs for the details.');
+            }
+        }
+    }
 };

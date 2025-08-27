@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.validation
 
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.InvalidIntegrationIDException
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import jakarta.inject.Singleton
 
 @Singleton

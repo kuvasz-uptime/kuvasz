@@ -6,7 +6,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.type
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.security.utils.SecurityService

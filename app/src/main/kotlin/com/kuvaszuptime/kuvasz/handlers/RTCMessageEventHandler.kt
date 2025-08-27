@@ -6,12 +6,13 @@ import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
-import com.kuvaszuptime.kuvasz.services.TextMessageService
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.TextMessageService
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import org.slf4j.Logger
 
 abstract class RTCMessageEventHandler(
@@ -74,7 +75,7 @@ abstract class RTCMessageEventHandler(
         }
 
     private fun Single<String>.handleResponse(): Disposable =
-        subscribe(
+        subscribeOn(Schedulers.io()).subscribe(
             {
                 logger.debug("The message to your configured webhook has been successfully sent")
             },

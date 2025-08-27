@@ -13,7 +13,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
-import com.kuvaszuptime.kuvasz.services.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import io.micronaut.context.annotation.Property
 import jakarta.inject.Singleton
 

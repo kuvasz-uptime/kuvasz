@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.ui.fragments
+package com.kuvaszuptime.kuvasz.ui.components
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
@@ -198,4 +198,12 @@ private fun SslStatus.renderLabel(): String = when (this) {
     SslStatus.VALID -> Messages.valid()
     SslStatus.WILL_EXPIRE -> Messages.expiresSoon()
     SslStatus.INVALID -> Messages.invalid()
+}
+
+internal fun FlowContent.readOnlyBadge(tooltipText: String) {
+    span {
+        classes(BADGE, TEXT_BLUE_LT_FG, BG_BLUE_LT, MS_2)
+        tooltip(tooltipText)
+        icon(Icon.LOCK_COG)
+    }
 }

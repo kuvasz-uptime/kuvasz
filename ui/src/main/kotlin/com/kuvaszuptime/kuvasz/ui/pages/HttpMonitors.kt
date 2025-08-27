@@ -64,11 +64,7 @@ internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
                             +Messages.httpMonitors()
                             // Read only notice
                             if (globals.editabilityState.areHttpMonitorsReadOnly()) {
-                                span {
-                                    classes(MS_2, TEXT_SECONDARY)
-                                    tooltip(title = Messages.readOnlyNotice())
-                                    icon(Icon.LOCK_COG)
-                                }
+                                readOnlyBadge(Messages.readOnlyHttpMonitors())
                             }
                         }
                     }

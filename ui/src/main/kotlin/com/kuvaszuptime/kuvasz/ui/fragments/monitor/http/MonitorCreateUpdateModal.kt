@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.checks.KnownHttpHeaders
 import com.kuvaszuptime.kuvasz.models.checks.SupportedExpectedHttpStatusCodes
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -742,12 +741,3 @@ private fun FlowContent.headersTable(
         }
     }
 }
-
-private val IntegrationType.icon: Icon
-    get() = when (this) {
-        IntegrationType.EMAIL -> Icon.ENVELOPE
-        IntegrationType.SLACK -> Icon.BRAND_SLACK
-        IntegrationType.DISCORD -> Icon.BRAND_DISCORD
-        IntegrationType.PAGERDUTY -> Icon.BRAND_PAGERDUTY
-        IntegrationType.TELEGRAM -> Icon.BRAND_TELEGRAM
-    }
