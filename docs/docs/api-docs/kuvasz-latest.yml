@@ -2166,6 +2166,7 @@ components:
       - app
       - authentication
       - metricsExport
+      - versionInfo
       type: object
       properties:
         authentication:
@@ -2185,6 +2186,8 @@ components:
           nullable: true
           allOf:
           - $ref: "#/components/schemas/SettingsDto.SmtpConfigDto"
+        versionInfo:
+          $ref: "#/components/schemas/VersionInfoDto"
     SettingsDto.AppSettingsDto:
       required:
       - editabilityState
@@ -2217,6 +2220,9 @@ components:
             are configured via YAML
           allOf:
           - $ref: "#/components/schemas/SettingsDto.AppSettingsDto.EditabilityStateDto"
+        updateChecksEnabled:
+          type: boolean
+          description: Whether automatic update checks are enabled
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly
@@ -2405,6 +2411,32 @@ components:
       enum:
       - UP
       - DOWN
+    VersionInfoDto:
+      required:
+      - installedVersion
+      - isUpToDate
+      - latestVersion
+      - latestVersionDetails
+      type: object
+      properties:
+        installedVersion:
+          type: string
+          description: The currently installed version of Kuvasz
+        latestVersion:
+          type: string
+          description: "The latest available version of Kuvasz, if update checks are\
+            \ enabled"
+          nullable: true
+        latestVersionDetails:
+          type: string
+          description: "A link to the changelog or release notes for the latest version,\
+            \ if update checks are enabled"
+          format: uri
+          nullable: true
+        isUpToDate:
+          type: boolean
+          description: "Whether the installed version is up to date. If update checks\
+            \ are disabled, it's always true"
   securitySchemes:
     apiKey:
       type: apiKey
