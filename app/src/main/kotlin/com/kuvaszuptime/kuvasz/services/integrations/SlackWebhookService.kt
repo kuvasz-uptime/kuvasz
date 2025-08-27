@@ -1,5 +1,6 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.integrations
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackWebhookMessage
@@ -26,10 +27,15 @@ class SlackWebhookClient(@Client private val client: HttpClient) {
 
 @Singleton
 @Requires(bean = SlackWebhookClient::class)
-class SlackWebhookService(private val client: SlackWebhookClient) : TextMessageService {
+class SlackWebhookService(private val client: SlackWebhookClient) :
+    TextMessageService,
+    TestableNotificationService<SlackNotificationConfig> {
 
     override fun sendMessage(integrationConfig: IntegrationConfig, content: String): Single<String> {
         val webhookUrl = (integrationConfig as SlackNotificationConfig).webhookUrl.toUri()
         return client.sendMessage(webhookUrl, SlackWebhookMessage(text = content))
     }
+
+    override fun sendTestMessage(integrationConfig: SlackNotificationConfig): Single<NotificationTestResult> =
+        sendMessage(integrationConfig, Messages.integrationTestMessage()).toNotificationTestResult()
 }

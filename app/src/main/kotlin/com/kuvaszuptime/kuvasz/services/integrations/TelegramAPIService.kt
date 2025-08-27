@@ -1,5 +1,6 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.integrations
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramAPIMessage
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
@@ -28,7 +29,7 @@ class TelegramAPIClient(@Client private val client: HttpClient) {
 @Singleton
 class TelegramAPIService(
     private val client: TelegramAPIClient,
-) : TextMessageService {
+) : TextMessageService, TestableNotificationService<TelegramNotificationConfig> {
     override fun sendMessage(integrationConfig: IntegrationConfig, content: String): Single<String> =
         (integrationConfig as? TelegramNotificationConfig)?.let { telegramConfig ->
             client.sendMessage(
@@ -38,6 +39,9 @@ class TelegramAPIService(
         } ?: Single.error(
             TelegramConfigurationException("Invalid integration configuration for Telegram: $integrationConfig")
         )
+
+    override fun sendTestMessage(integrationConfig: TelegramNotificationConfig): Single<NotificationTestResult> =
+        sendMessage(integrationConfig, Messages.integrationTestMessage()).toNotificationTestResult()
 }
 
 class TelegramConfigurationException(override val message: String?) : Exception(message)

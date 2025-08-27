@@ -1,13 +1,23 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
+import com.kuvaszuptime.kuvasz.models.dto.DiscordNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.PagerdutyConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.SlackNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.TelegramNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
+import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import io.micronaut.context.annotation.Context
@@ -119,6 +129,17 @@ class IntegrationRepository(
         configuredIntegrations.filter { (id, config) ->
             (config.global && config.enabled) || monitor.integrations.contains(id)
         }.values.map { IntegrationDetailsDto.fromConfig(it) }
+
+    fun getConfiguredIntegrationDtos(): List<IntegrationConfigDto> = configuredIntegrations.values
+        .map { config ->
+            when (config) {
+                is SlackNotificationConfig -> SlackNotificationConfigDto(config.id, config)
+                is DiscordNotificationConfig -> DiscordNotificationConfigDto(config.id, config)
+                is PagerdutyConfig -> PagerdutyConfigDto(config.id, config)
+                is EmailNotificationConfig -> EmailNotificationConfigDto(config.id, config)
+                is TelegramNotificationConfig -> TelegramNotificationConfigDto(config.id, config)
+            }
+        }
 }
 
 class IntegrationConfigException(message: String) : Exception(message)
