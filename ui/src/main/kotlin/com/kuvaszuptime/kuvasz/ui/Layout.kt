@@ -60,6 +60,7 @@ internal fun withLayout(
                         mainHeader(
                             isAuthenticated = globals.isAuthenticated(),
                             navbarMenuId = navbarMenuId,
+                            versionInfo = globals.versionInfo(),
                         )
                         // Navigation - only if logged in
                         if (globals.isAuthenticated()) {
@@ -81,7 +82,9 @@ internal fun withLayout(
                                 }
                             }
                             // Footer
-                            footer(globals.appVersion)
+                            if (globals.isAuthenticated()) {
+                                footer(globals.versionInfo())
+                            }
                         }
                     }
                     script(src = "/public/ext/js/tabler.1.4.0.min.js") {}

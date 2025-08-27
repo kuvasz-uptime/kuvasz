@@ -1,7 +1,9 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.layout
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -9,6 +11,7 @@ import kotlinx.html.*
 internal fun FlowContent.mainHeader(
     isAuthenticated: Boolean,
     navbarMenuId: String,
+    versionInfo: VersionInfo,
 ) {
     header {
         classes(NAVBAR, NAVBAR_EXPAND_MD, D_PRINT_NONE)
@@ -43,6 +46,10 @@ internal fun FlowContent.mainHeader(
 
             div {
                 classes(NAVBAR_NAV, FLEX_ROW, ORDER_MD_LAST)
+                div {
+                    classes(NAV_ITEM, D_MD_FLEX, ME_2)
+                    inlineVersionUpdateBadge(versionInfo)
+                }
                 // Dark and light mode toggles
                 div {
                     classes(NAV_ITEM, D_MD_FLEX)

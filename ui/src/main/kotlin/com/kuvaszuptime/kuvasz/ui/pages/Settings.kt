@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -36,7 +37,11 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
             ) {
                 div {
                     classes(DIVIDE_Y)
-                    settingsLabel(label = Messages.appVersion(), value = settings.app.version)
+                    settingsLabel(label = Messages.appVersion(), value = settings.app.version) {
+                        // Showing the update icon if a new version is available
+                        inlineVersionUpdateBadge(globals.versionInfo())
+                    }
+                    settingsToggle(label = Messages.updateChecks(), checked = settings.app.updateChecksEnabled)
                     settingsLabel(label = Messages.language(), value = settings.app.language)
                     settingsLabel(
                         label = Messages.eventDataRetention(),
@@ -260,6 +265,7 @@ private fun FlowContent.settingsLabel(
     label: String,
     value: String,
     multi: Boolean = false,
+    extraContent: (SPAN.() -> Unit)? = null,
 ) {
     div {
         label {
@@ -272,6 +278,7 @@ private fun FlowContent.settingsLabel(
             span {
                 classes(COL_AUTO)
                 +value
+                extraContent?.let { it() }
             }
         }
     }

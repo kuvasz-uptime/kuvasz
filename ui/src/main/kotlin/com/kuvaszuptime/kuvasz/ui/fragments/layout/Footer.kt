@@ -1,13 +1,15 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.layout
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.footer(appVersion: String) {
+internal fun FlowContent.footer(versionInfo: VersionInfo) {
     footer {
         classes(CSSClass.FOOTER, FOOTER_TRANSPARENT, D_PRINT_NONE)
         div {
@@ -45,7 +47,10 @@ internal fun FlowContent.footer(appVersion: String) {
                     classes(COL_12, COL_LG_AUTO, MT_3, MT_LG_0)
                     ul {
                         classes(LIST_INLINE, LIST_INLINE_DOTS, MB_0)
-                        listItem(label = Messages.version(appVersion))
+                        listItem(label = Messages.version(versionInfo.installedVersion)) {
+                            // Showing the update icon if a new version is available
+                            inlineVersionUpdateBadge(versionInfo)
+                        }
                     }
                 }
             }
@@ -53,7 +58,13 @@ internal fun FlowContent.footer(appVersion: String) {
     }
 }
 
-private fun UL.listItem(label: String, link: String? = null, externalLink: Boolean = false, icon: Icon? = null) {
+private fun UL.listItem(
+    label: String,
+    link: String? = null,
+    externalLink: Boolean = false,
+    icon: Icon? = null,
+    extraContent: (LI.() -> Unit) = {},
+) {
     li {
         classes(LIST_INLINE_ITEM)
         if (!link.isNullOrEmpty()) {
@@ -76,5 +87,6 @@ private fun UL.listItem(label: String, link: String? = null, externalLink: Boole
         } else {
             +label
         }
+        extraContent()
     }
 }
