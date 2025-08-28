@@ -26,7 +26,7 @@ class VersionCheckScheduler(private val versionChecker: VersionChecker) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Scheduled(fixedDelay = "12h", initialDelay = "5s")
+    @Scheduled(fixedDelay = "12h", initialDelay = "2s")
     fun scheduleVersionCheck() {
         logger.debug("Checking for application updates...")
         runBlocking {

@@ -59,7 +59,7 @@ class SettingsControllerV2Test(
                 result.app.eventLoggingEnabled shouldBe true
                 result.app.version.shouldNotBeEmpty() shouldBe appGlobals.appVersion
                 result.app.editabilityState.areHttpMonitorsReadOnly shouldBe true
-                result.app.updateChecksEnabled shouldBe true
+                result.app.updateChecksEnabled shouldBe false
 
                 with(result.smtp.shouldNotBeNull()) {
                     host shouldBe "localhost"
