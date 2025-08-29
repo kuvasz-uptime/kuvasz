@@ -394,4 +394,80 @@ class StatCalculatorTest(
             }
         }
     }
+
+    given("the calculateHistoricalHttpUptimeStats(monitor) method") {
+
+        `when`("monitors with all the exposed statuses are present") {
+
+            val upMonitorInProgress = createMonitor(monitorRepository, enabled = true)
+            val upMonitor = createMonitor(monitorRepository, enabled = true)
+            val downMonitor = createMonitor(monitorRepository, enabled = true)
+            val pausedMonitor = createMonitor(monitorRepository, enabled = false)
+
+            // upMonitor's events: UP
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = upMonitor.id,
+                startedAt = getCurrentTimestamp().minusDays(10),
+                status = UptimeStatus.UP,
+                endedAt = null,
+            )
+
+            // downMonitor's events: DOWN
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = downMonitor.id,
+                startedAt = getCurrentTimestamp().minusDays(5),
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+            )
+
+            // pausedMonitor's events: UP (but it should not be counted)
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                startedAt = getCurrentTimestamp().minusDays(2),
+                status = UptimeStatus.UP,
+                endedAt = null,
+            )
+
+            then("it should correctly calculate the stats for all statuses") {
+                val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = upMonitorInProgress.id,
+                )
+                statsOfInProgressUpMonitor.incidents shouldBe 0
+                statsOfInProgressUpMonitor.affectedMonitors shouldBe 0
+                statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
+                statsOfInProgressUpMonitor.uptimeRatio shouldBe null
+
+                val statsOfUpMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = upMonitor.id,
+                )
+                statsOfUpMonitor.incidents shouldBe 0
+                statsOfUpMonitor.affectedMonitors shouldBe 0
+                statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
+                statsOfUpMonitor.uptimeRatio shouldBe 1.0
+
+                val statsOfDownMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = downMonitor.id,
+                )
+                statsOfDownMonitor.incidents shouldBe 1
+                statsOfDownMonitor.affectedMonitors shouldBe 1
+                statsOfDownMonitor.totalDowntimeSeconds shouldBe 432000 // 5 days in seconds
+                statsOfDownMonitor.uptimeRatio shouldBe 0.0
+
+                val statsOfPausedMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = pausedMonitor.id,
+                )
+                statsOfPausedMonitor.incidents shouldBe 0
+                statsOfPausedMonitor.affectedMonitors shouldBe 0
+                statsOfPausedMonitor.totalDowntimeSeconds shouldBe 0
+                statsOfPausedMonitor.uptimeRatio shouldBe null
+            }
+        }
+    }
 })
