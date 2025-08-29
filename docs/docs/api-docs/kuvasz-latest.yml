@@ -121,7 +121,7 @@ paths:
         explode: false
         schema:
           type: string
-          description: "A Java ISO-8601 Duration string, default P7D"
+          description: "An ISO-8601 Duration string, default P7D"
           nullable: true
       responses:
         "200":
@@ -291,7 +291,7 @@ paths:
         explode: false
         schema:
           type: string
-          description: "A Java ISO-8601 Duration string, default P1D"
+          description: "An ISO-8601 Duration string, default P1D"
           nullable: true
       responses:
         "200":
@@ -446,7 +446,7 @@ paths:
         explode: false
         schema:
           type: string
-          description: "A Java ISO-8601 Duration string, default P7D"
+          description: "An ISO-8601 Duration string, default P7D"
           nullable: true
       responses:
         "200":
@@ -849,8 +849,8 @@ components:
       properties:
         period:
           type: string
-          description: The period that was used for the calculation. A Java ISO-8601
-            Duration string.
+          description: The period that was used for the calculation. An ISO-8601 Duration
+            string.
         incidents:
           type: integer
           description: Total number of incidents recorded across all monitors.

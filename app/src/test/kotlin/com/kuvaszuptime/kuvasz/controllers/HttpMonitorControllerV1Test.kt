@@ -2031,7 +2031,7 @@ class HttpMonitorControllerV1Test(
                         affectedMonitors = 8313,
                         uptimeRatio = 0.12343784,
                         totalDowntimeSeconds = 123456789L,
-                        period = Duration.ofDays(7)
+                        period = Duration.ofDays(7).toString(),
                     )
                 )
             )

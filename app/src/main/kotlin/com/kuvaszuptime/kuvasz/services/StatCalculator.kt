@@ -115,7 +115,7 @@ class StatCalculator(
         }
 
         return HistoricalUptimeStatsDto(
-            period = period,
+            period = period.toString(),
             incidents = historicalIncidentCnt,
             affectedMonitors = monitorsWithIncidents.size,
             uptimeRatio = if (historicalUptimeSeconds + historicalDowntimeSeconds > 0) {

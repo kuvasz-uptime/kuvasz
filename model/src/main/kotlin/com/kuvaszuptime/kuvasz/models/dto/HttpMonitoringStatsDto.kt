@@ -79,10 +79,10 @@ data class HttpMonitoringStatsDto(
 data class HistoricalUptimeStatsDto(
     @param:Schema(
         implementation = Duration::class,
-        description = "The period that was used for the calculation. A Java ISO-8601 Duration string.",
+        description = "The period that was used for the calculation. An ISO-8601 Duration string.",
         required = true,
     )
-    val period: Duration,
+    val period: String,
     @param:Schema(description = "Total number of incidents recorded across all monitors.", required = true)
     val incidents: Int,
     @param:Schema(

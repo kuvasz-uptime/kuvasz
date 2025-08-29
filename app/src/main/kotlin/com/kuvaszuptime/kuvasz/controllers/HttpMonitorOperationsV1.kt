@@ -84,7 +84,7 @@ interface HttpMonitorOperationsV1 {
             required = false,
             schema = Schema(
                 implementation = Duration::class,
-                description = "A Java ISO-8601 Duration string, default P1D",
+                description = "An ISO-8601 Duration string, default P1D",
             )
         )
         period: Duration?,
@@ -102,7 +102,7 @@ interface HttpMonitorOperationsV1 {
             required = false,
             schema = Schema(
                 implementation = Duration::class,
-                description = "A Java ISO-8601 Duration string, default P7D",
+                description = "An ISO-8601 Duration string, default P7D",
             )
         )
         period: Duration?,

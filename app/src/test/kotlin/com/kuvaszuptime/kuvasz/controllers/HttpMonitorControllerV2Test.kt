@@ -669,7 +669,7 @@ class HttpMonitorControllerV2Test(
                             monitorId = monitor.id,
                         )
                     } returns HistoricalUptimeStatsDto(
-                        period = Duration.ofDays(1),
+                        period = Duration.ofDays(1).toString(),
                         incidents = 23,
                         affectedMonitors = 1,
                         uptimeRatio = 0.9823,
@@ -689,7 +689,7 @@ class HttpMonitorControllerV2Test(
                     // Latency logs should be sorted by their creation in descending order
                     response.latencyLogs[0].id shouldBeGreaterThan response.latencyLogs[1].id
                     // Uptime stats
-                    response.uptimeHistory.period shouldBe Duration.ofDays(1)
+                    response.uptimeHistory.period shouldBe "PT24H"
                     response.uptimeHistory.incidents shouldBe 23
                     response.uptimeHistory.affectedMonitors shouldBe 1
                     response.uptimeHistory.uptimeRatio shouldBe 0.9823
@@ -713,21 +713,22 @@ class HttpMonitorControllerV2Test(
 
                 then("it should take only the fresh records into consideration") {
 
+                    val testPeriod = Duration.ofMinutes(4)
                     val statCalculatorMock = getMock(statCalculator)
                     every {
                         statCalculatorMock.calculateHistoricalHttpUptimeStats(
-                            period = Duration.ofMinutes(4),
+                            period = testPeriod,
                             monitorId = monitor.id,
                         )
                     } returns HistoricalUptimeStatsDto(
-                        period = Duration.ofDays(7),
+                        period = testPeriod.toString(),
                         incidents = 23,
                         affectedMonitors = 1,
                         uptimeRatio = 0.9823,
                         totalDowntimeSeconds = 8442,
                     )
 
-                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, period = Duration.ofMinutes(4))
+                    val response = monitorClient.getMonitorStats(monitorId = monitor.id, period = testPeriod)
                     response.id shouldBe monitor.id
                     response.latencyHistoryEnabled shouldBe true
                     response.latencyStats?.averageLatencyInMs shouldBe 200
@@ -741,6 +742,8 @@ class HttpMonitorControllerV2Test(
                     response.latencyLogs[0].latencyInMs shouldBe 300
                     response.latencyLogs[1].latencyInMs shouldBe 200
                     response.latencyLogs[2].latencyInMs shouldBe 100
+
+                    response.uptimeHistory.period shouldBe "PT4M"
                 }
             }
 
@@ -761,7 +764,7 @@ class HttpMonitorControllerV2Test(
                             monitorId = monitor.id,
                         )
                     } returns HistoricalUptimeStatsDto(
-                        period = Duration.ofDays(7),
+                        period = Duration.ofDays(7).toString(),
                         incidents = 23,
                         affectedMonitors = 1,
                         uptimeRatio = 0.9823,
@@ -804,7 +807,7 @@ class HttpMonitorControllerV2Test(
                             monitorId = monitor.id,
                         )
                     } returns HistoricalUptimeStatsDto(
-                        period = Duration.ofDays(1),
+                        period = Duration.ofDays(1).toString(),
                         incidents = 23,
                         affectedMonitors = 1,
                         uptimeRatio = 0.9823,
@@ -823,7 +826,7 @@ class HttpMonitorControllerV2Test(
                     response.latencyLogs.shouldBeEmpty()
 
                     // Uptime stats
-                    response.uptimeHistory.period shouldBe Duration.ofDays(1)
+                    response.uptimeHistory.period shouldBe "PT24H"
                     response.uptimeHistory.incidents shouldBe 23
                     response.uptimeHistory.affectedMonitors shouldBe 1
                     response.uptimeHistory.uptimeRatio shouldBe 0.9823
@@ -2003,7 +2006,7 @@ class HttpMonitorControllerV2Test(
                         affectedMonitors = 8313,
                         uptimeRatio = 0.12343784,
                         totalDowntimeSeconds = 123456789L,
-                        period = Duration.ofDays(7),
+                        period = Duration.ofDays(7).toString(),
                     )
                 )
             )
