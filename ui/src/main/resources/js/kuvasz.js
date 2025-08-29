@@ -636,6 +636,7 @@ const integrationListItem = (integrationId) => {
         testRequestError: null,
 
         async sendTestRequest() {
+            if (this.isTestRequestLoading || this.wasTestRequestExecuted) return; // Prevent multiple clicks
             this.isTestRequestLoading = true;
             const response = await fetch('/api/v2/integrations/' + this.integrationId + '/test', {
                 method: 'POST',

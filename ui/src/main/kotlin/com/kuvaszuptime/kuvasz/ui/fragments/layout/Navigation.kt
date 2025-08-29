@@ -36,7 +36,7 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     icon = Icon.BINOCULARS,
                                     items = listOf(
                                         NavItem(
-                                            label = Messages.httpMonitors(),
+                                            label = "HTTP & SSL",
                                             link = "/http-monitors",
                                             icon = Icon.WORLD,
                                         ),

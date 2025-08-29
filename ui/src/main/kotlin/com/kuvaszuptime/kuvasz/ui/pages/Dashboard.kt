@@ -54,7 +54,7 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                         }
                         h2 {
                             classes(PAGE_TITLE)
-                            +Messages.http()
+                            +"HTTP"
                         }
                     }
                     div {
@@ -67,14 +67,22 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                                     classes(BTN, DROPDOWN_TOGGLE, BTN_PRIMARY)
                                     dropdownToggler()
                                     icon(Icon.PLUS)
+                                    span {
+                                        classes(D_NONE, D_MD_BLOCK)
+                                        +Messages.addNewMonitor()
+                                    }
                                 }
                                 div {
                                     classes(DROPDOWN_MENU)
                                     button {
+                                        val isReadOnly = globals.editabilityState.areHttpMonitorsReadOnly()
                                         classes(DROPDOWN_ITEM)
                                         modalOpener(createHttpModalId)
-                                        disabled = globals.editabilityState.areHttpMonitorsReadOnly()
-                                        +Messages.httpMonitor()
+                                        disabled = isReadOnly
+                                        +Messages.httpSslMonitor()
+                                        if (isReadOnly) {
+                                            readOnlyBadge(Messages.readOnlyHttpMonitors())
+                                        }
                                     }
                                 }
                             }
