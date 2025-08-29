@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.components
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
@@ -205,5 +206,16 @@ internal fun FlowContent.readOnlyBadge(tooltipText: String) {
         classes(BADGE, TEXT_BLUE_LT_FG, BG_BLUE_LT, MS_2)
         tooltip(tooltipText)
         icon(Icon.LOCK_COG)
+    }
+}
+
+internal fun FlowContent.inlineVersionUpdateBadge(versionInfo: VersionInfo) {
+    if (!versionInfo.isUpToDate && versionInfo.latestVersionDetails != null) {
+        a(href = versionInfo.latestVersionDetails.toString()) {
+            targetBlank()
+            classes(BADGE, BADGE_SM, BG_GREEN, MS_2, TEXT_GREEN_FG)
+            tooltip(Messages.newVersionAvailable(versionInfo.latestVersion.orEmpty()))
+            icon(Icon.UPLOAD)
+        }
     }
 }

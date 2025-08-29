@@ -36,7 +36,7 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     icon = Icon.BINOCULARS,
                                     items = listOf(
                                         NavItem(
-                                            label = Messages.httpMonitors(),
+                                            label = "HTTP & SSL",
                                             link = "/http-monitors",
                                             icon = Icon.WORLD,
                                         ),
@@ -54,12 +54,6 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     link = "/settings",
                                     externalLink = false
                                 )
-                                navItem(
-                                    label = Messages.docs(),
-                                    icon = Icon.BOOK,
-                                    link = "https://kuvasz-uptime.dev",
-                                    externalLink = true
-                                )
                             }
                         }
                         // Secondary nav on the right
@@ -68,12 +62,6 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                 classes(CSSClass.COL, COL_MD_AUTO)
                                 ul {
                                     classes(NAVBAR_NAV)
-                                    navItem(
-                                        label = Messages.sponsor(),
-                                        icon = Icon.HEART,
-                                        link = "https://kuvasz-uptime.dev/sponsoring/",
-                                        externalLink = true,
-                                    )
                                     navItem(
                                         label = Messages.signOut(),
                                         icon = Icon.LOGOUT_OUTLINE,

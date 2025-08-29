@@ -387,6 +387,26 @@ The language to use. If you would like to translate _Kuvasz_ to your desired lan
     - French (`fr`)
     - Polish (`pl`)
 
+### Check for updates
+
+<!-- md:version 3.0.0 -->
+<!-- md:default true -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.check-updates: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_CHECK_UPDATES=true
+    ```
+
+Toggles the automatic check for new versions of _Kuvasz_. If it's enabled, the application will **check for new releases in the background**, and if a new version is available, it will show a notification on the UI and populate the relevant information through the API too.
+
 ## Full configuration example
 
 You can find the full configuration example below, which includes all the options currently available. You can use it as a starting point for your own configuration.
@@ -426,6 +446,7 @@ You can find the full configuration example below, which includes all the option
       latency-data-retention-days: 7
       log-event-handler: true
       language: en
+      check-updates: true
     ---
     smtp-config:
       host: 'your.smtp.server'
@@ -452,6 +473,7 @@ You can find the full configuration example below, which includes all the option
     LATENCY_DATA_RETENTION_DAYS=7
     ENABLE_LOG_EVENT_HANDLER=true
     APP_LANGUAGE=en
+    ENABLE_CHECK_UPDATES=true
     TZ=UTC
     ENABLE_METRICS_EXPORT=true
     ENABLE_OTLP_EXPORT=true

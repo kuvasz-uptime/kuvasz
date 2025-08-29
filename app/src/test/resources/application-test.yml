@@ -16,3 +16,6 @@ datasources:
 logger:
   levels:
 #    org.jooq: DEBUG
+---
+# Disable the scheduled checks for updates in tests to avoid unnecessary noise and network calls during testing
+app-config.check-updates: false

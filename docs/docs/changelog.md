@@ -1,7 +1,3 @@
-!!!tip "Are you looking for 1.x.x changelogs?"
-
-    Prior to version 2.0.0, the changelogs were maintained **only in the** [**GitHub repository**](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
-
 ## To be released { id="to-be-released" data-toc-label="To be released" }
 
 ### Breaking changes
@@ -12,6 +8,7 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 ### New features
 
 - **Integrations** have their own section on the UI now, and they are also exposed under a new API endpoint (`GET /api/v2/integrations`). Furthermore, [**you can test them**](management/integrations.md#testing-integrations) directly from the UI, or via the API to make sure that they are working as expected, before you would enable them or assign them to monitors.
+- **Update notifications**: you can now [get notified about new releases](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
 
 ### Fixes
 

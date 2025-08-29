@@ -54,7 +54,7 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                             span {
                                 classes(STATUS, BG_BLUE_LT, TEXT_BLUE_LT_FG)
                                 icon(Icon.WORLD)
-                                +"HTTP"
+                                +"HTTP & SSL"
                             }
                         }
                         a(href = "#monitor-details-ssl-summary") {

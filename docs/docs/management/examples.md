@@ -114,6 +114,7 @@ app-config:
   latency-data-retention-days: 7
   log-event-handler: true
   language: en
+  check-updates: true
 ---
 smtp-config:
   host: 'your.smtp.server'

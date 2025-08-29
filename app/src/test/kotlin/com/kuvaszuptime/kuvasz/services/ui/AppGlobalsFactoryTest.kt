@@ -2,11 +2,14 @@ package com.kuvaszuptime.kuvasz.services.ui
 
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.security.utils.SecurityService
@@ -19,12 +22,24 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         every { enabledIntegrations } returns emptyMap()
         every { configuredIntegrations } returns emptyMap()
     }
+    val mockVersionChecker = mockk<VersionChecker> {
+        every { getVersionInfo() } returns VersionInfo(
+            installedVersion = BuildConfig.APP_VERSION,
+            latestVersion = "1.1.1",
+            latestVersionDetails = "https://kuvasz-uptime.dev/changelog/#1.1.1".toUri(),
+        )
+    }
 
     given("the AppGlobalsFactory") {
 
         `when`("when SecurityService is not available - (a.k.a. authentication is disabled)") {
 
-            val globals = AppGlobalsFactory().appGlobals(null, AppConfig(), emptyIntegrationRepository)
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+            )
 
             then("it should return the correctly hydrated view model") {
                 globals.appVersion shouldBe BuildConfig.APP_VERSION
@@ -38,7 +53,12 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             val mockSecurity = mockk<SecurityService> {
                 every { isAuthenticated } returns true
             }
-            val globals = AppGlobalsFactory().appGlobals(mockSecurity, AppConfig(), emptyIntegrationRepository)
+            val globals = AppGlobalsFactory().appGlobals(
+                mockSecurity,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker
+            )
 
             then("it should return the correctly hydrated view model") {
                 globals.appVersion shouldBe BuildConfig.APP_VERSION
@@ -52,7 +72,12 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             val mockSecurity = mockk<SecurityService> {
                 every { isAuthenticated } returns false
             }
-            val globals = AppGlobalsFactory().appGlobals(mockSecurity, AppConfig(), emptyIntegrationRepository)
+            val globals = AppGlobalsFactory().appGlobals(
+                mockSecurity,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker
+            )
 
             then("it should return the correctly hydrated view model") {
                 globals.appVersion shouldBe BuildConfig.APP_VERSION
@@ -65,7 +90,12 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         `when`("when the app is in read-only mode") {
             val appConfig = AppConfig()
             appConfig.disableHttpMonitorExternalWrite()
-            val globals = AppGlobalsFactory().appGlobals(null, appConfig, emptyIntegrationRepository)
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                appConfig,
+                emptyIntegrationRepository,
+                mockVersionChecker,
+            )
 
             then("it should return the correctly hydrated view model") {
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe true
@@ -74,11 +104,21 @@ class AppGlobalsFactoryTest : BehaviorSpec({
 
         `when`("when the app is in read-only mode but it's only set later") {
             val appConfig = AppConfig()
-            val globals = AppGlobalsFactory().appGlobals(null, appConfig, emptyIntegrationRepository)
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                appConfig,
+                emptyIntegrationRepository,
+                mockVersionChecker,
+            )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
 
             appConfig.disableHttpMonitorExternalWrite()
-            val globalsAfterUpdate = AppGlobalsFactory().appGlobals(null, appConfig, emptyIntegrationRepository)
+            val globalsAfterUpdate = AppGlobalsFactory().appGlobals(
+                null,
+                appConfig,
+                emptyIntegrationRepository,
+                mockVersionChecker,
+            )
 
             then("it should return the correctly hydrated view model") {
                 globalsAfterUpdate.editabilityState.areHttpMonitorsReadOnly() shouldBe true
@@ -97,7 +137,12 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 every { enabledIntegrations } returns enabledIntegrationsMock
                 every { configuredIntegrations } returns configuredIntegrationsMock
             }
-            val globals = AppGlobalsFactory().appGlobals(null, AppConfig(), mockIntegrationRepository)
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                mockIntegrationRepository,
+                mockVersionChecker
+            )
 
             then("it should return the correctly hydrated view model with integrations") {
                 globals.configuredIntegrations shouldBe configuredIntegrationsMock
@@ -107,6 +152,24 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     .groupBy { it.type }
                     .mapValues { (_, configs) -> configs.toSet() }
                     .toMap()
+            }
+        }
+
+        `when`("the version checker provides a full version info") {
+
+            then("it should return it") {
+
+                val globals = AppGlobalsFactory().appGlobals(
+                    null,
+                    AppConfig(),
+                    emptyIntegrationRepository,
+                    mockVersionChecker
+                )
+                globals.versionInfo() shouldBe VersionInfo(
+                    installedVersion = BuildConfig.APP_VERSION,
+                    latestVersion = "1.1.1",
+                    latestVersionDetails = "https://kuvasz-uptime.dev/changelog/#1.1.1".toUri(),
+                )
             }
         }
     }

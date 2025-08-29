@@ -57,11 +57,11 @@ internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
                         classes(CSSClass.COL)
                         div {
                             classes(PAGE_PRETITLE)
-                            +Messages.overview()
+                            +Messages.monitors()
                         }
                         h2 {
                             classes(PAGE_TITLE)
-                            +Messages.httpMonitors()
+                            +"HTTP & SSL"
                             // Read only notice
                             if (globals.editabilityState.areHttpMonitorsReadOnly()) {
                                 readOnlyBadge(Messages.readOnlyHttpMonitors())

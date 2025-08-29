@@ -2,13 +2,20 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
+import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.micronaut.context.annotation.Property
+import io.micronaut.test.annotation.MockBean
+import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.every
+import io.mockk.mockk
 
 @MicronautTest(
     environments = [
@@ -24,12 +31,23 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 @Property(name = "app-config.latency-data-retention-days", value = "6")
 @Property(name = "app-config.language", value = "en")
 @Property(name = "app-config.log-event-handler", value = "true")
-class SettingsControllerV2Test(settingsClient: SettingsClientV2, appGlobals: AppGlobals) : DatabaseBehaviorSpec({
+class SettingsControllerV2Test(
+    settingsClient: SettingsClientV2,
+    appGlobals: AppGlobals,
+    versionChecker: VersionChecker,
+) : DatabaseBehaviorSpec({
 
     given("the SettingsController") {
 
         `when`("the getSettings method is called") {
 
+            with(getMock(versionChecker)) {
+                every { getVersionInfo() } returns VersionInfo(
+                    installedVersion = appGlobals.appVersion,
+                    latestVersion = "123.456.789",
+                    latestVersionDetails = "https//something.com/details".toUri(),
+                )
+            }
             val result = settingsClient.getSettings()
 
             then("it should return the settings") {
@@ -41,6 +59,7 @@ class SettingsControllerV2Test(settingsClient: SettingsClientV2, appGlobals: App
                 result.app.eventLoggingEnabled shouldBe true
                 result.app.version.shouldNotBeEmpty() shouldBe appGlobals.appVersion
                 result.app.editabilityState.areHttpMonitorsReadOnly shouldBe true
+                result.app.updateChecksEnabled shouldBe false
 
                 with(result.smtp.shouldNotBeNull()) {
                     host shouldBe "localhost"
@@ -65,7 +84,16 @@ class SettingsControllerV2Test(settingsClient: SettingsClientV2, appGlobals: App
                         step shouldBe "PT30M"
                     }
                 }
+                with(result.versionInfo) {
+                    installedVersion shouldBe appGlobals.appVersion
+                    latestVersion shouldBe "123.456.789"
+                    latestVersionDetails.shouldNotBeNull().toString() shouldBe "https//something.com/details"
+                    isUpToDate shouldBe false
+                }
             }
         }
     }
-})
+}) {
+    @MockBean(VersionChecker::class)
+    fun versionChecker(): VersionChecker = mockk()
+}

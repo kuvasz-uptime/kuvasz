@@ -157,6 +157,15 @@ You have 3 options to [**manage your monitors**](../management/managing-monitors
 - using the **REST API**, which is more suitable for automation and integration with other systems
 - using the **YAML configuration**, which is useful if you would like to handle all of your configurations as code
 
+## Keeping _Kuvasz_ up-to-date
+
+To update _Kuvasz_ to the latest version, you just need to **bump the version of your image** and restart your container, if no other instructions were provided in the release notes.
+Furthermore, to make it easier to get notified about new releases, the UI will show a notification if a new version is available. 
+
+!!!question "Not using the Web UI?"
+
+    If you don't use the Web UI, you can also check for new releases on GitHub, or directly on the [API](../api-docs.md) of _Kuvasz_, under `GET /api/v2/settings`. You'll find the version related information in the response under the `versionInfo` key.
+
 ## Other installation methods
 
 If you use another container orchestration system (e.g. _k8s_, _Swarm_, etc.), you can still use the same image and the
