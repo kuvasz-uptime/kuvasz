@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -31,7 +32,6 @@ class WebUIHttpMonitorController(
     companion object {
         private const val SSL_EVENTS_COUNT = 5
         private const val UPTIME_EVENTS_COUNT = 5
-        private const val DASHBOARD_STATS_PERIOD_DEFAULT_DAYS = 7L
     }
 
     @Get("/http-monitors/fragments/stats")
@@ -39,7 +39,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitoringStats(): String {
-        val period = Duration.ofDays(DASHBOARD_STATS_PERIOD_DEFAULT_DAYS)
+        val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
 
         return renderMonitoringStats(
             monitoringStats = statCalculator.calculateOverallHttpStats(period),
@@ -66,7 +66,14 @@ class WebUIHttpMonitorController(
     fun httpMonitorDetails(@PathVariable monitorId: Long): String {
         val monitor = monitorCrudService.getMonitorDetails(monitorId)
 
-        return renderHttpMonitorDetailsPage(appGlobals, monitor)
+        return renderHttpMonitorDetailsPage(
+            appGlobals,
+            monitor,
+            stats = statCalculator.calculateHistoricalHttpUptimeStats(
+                period = Duration.ofDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
+                monitorId = monitor.id,
+            ),
+        )
     }
 
     @Get("/http-monitors/fragments/list")
@@ -87,7 +94,15 @@ class WebUIHttpMonitorController(
         val monitor = monitorCrudService.getMonitorDetails(monitorId)
         return buildString {
             append(renderHttpMonitorDetailsHeading(monitor))
-            append(renderUptimeSummary(monitor))
+            append(
+                renderUptimeSummary(
+                    monitor = monitor,
+                    stats = statCalculator.calculateHistoricalHttpUptimeStats(
+                        period = Duration.ofDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
+                        monitorId = monitor.id,
+                    )
+                )
+            )
             if (monitor.sslCheckEnabled) {
                 append(renderSSLSummary(monitor))
             }

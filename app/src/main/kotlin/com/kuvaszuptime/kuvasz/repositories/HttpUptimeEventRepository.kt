@@ -8,9 +8,11 @@ import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import java.time.Duration
 import java.time.OffsetDateTime
 
 @Singleton
@@ -98,13 +100,20 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
      * Fetches all uptime events that have ended or was open within the specified period and are associated with
      * enabled monitors.
      */
-    fun fetchAllInPeriod(periodStart: OffsetDateTime): List<HttpUptimeEventRecord> = dslContext
-        .select(HTTP_UPTIME_EVENT.asterisk())
-        .from(HTTP_UPTIME_EVENT)
-        .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
-        .where(DSL.coalesce(HTTP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-        .and(HTTP_MONITOR.ENABLED.isTrue)
-        .fetchInto(HttpUptimeEventRecord::class.java)
+    @Suppress("IgnoredReturnValue")
+    fun fetchAllInPeriod(period: Duration, monitorId: Long? = null): List<HttpUptimeEventRecord> {
+        val periodStart = getCurrentTimestamp().minus(period)
+        return dslContext
+            .select(HTTP_UPTIME_EVENT.asterisk())
+            .from(HTTP_UPTIME_EVENT)
+            .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
+            .where(DSL.coalesce(HTTP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            .and(HTTP_MONITOR.ENABLED.isTrue)
+            .apply {
+                monitorId?.let { and(HTTP_UPTIME_EVENT.MONITOR_ID.eq(it)) }
+            }
+            .fetchInto(HttpUptimeEventRecord::class.java)
+    }
 
     /**
      * Fetches the timestamp of the latest incident (DOWN status) for enabled monitors.

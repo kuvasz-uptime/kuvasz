@@ -240,7 +240,7 @@ data class LegacySettingsDto(
                 val url: String,
                 @param:Schema(
                     description = "The step for the metrics reporting as an ISO 8601 duration string",
-                    required = true
+                    required = true,
                 )
                 val step: String,
             )
@@ -348,7 +348,7 @@ data class SettingsDto(
                 val url: String,
                 @param:Schema(
                     description = "The step for the metrics reporting as an ISO 8601 duration string",
-                    required = true
+                    required = true,
                 )
                 val step: String,
             )

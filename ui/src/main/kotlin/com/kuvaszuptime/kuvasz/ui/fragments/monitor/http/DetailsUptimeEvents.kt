@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.durationBetween
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
@@ -46,7 +47,7 @@ internal fun FlowContent.detailsUptimeEvents(events: List<HttpUptimeEventDto>) {
                                 }
                                 td {
                                     classes(TEXT_NOWRAP, D_NONE, D_MD_TABLE_CELL)
-                                    +event.startedAt.durationBetween(event.endedAt ?: event.updatedAt)
+                                    +event.startedAt.durationBetween(event.endedAt ?: getCurrentTimestamp())
                                 }
                                 td {
                                     classes(TEXT_WRAP, D_NONE, D_MD_TABLE_CELL)

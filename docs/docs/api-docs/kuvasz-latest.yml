@@ -121,7 +121,7 @@ paths:
         explode: false
         schema:
           type: string
-          description: "A Java Duration string, default 7d"
+          description: "A Java ISO-8601 Duration string, default P7D"
           nullable: true
       responses:
         "200":
@@ -291,7 +291,7 @@ paths:
         explode: false
         schema:
           type: string
-          description: "A Java Duration string, default 1d"
+          description: "A Java ISO-8601 Duration string, default P1D"
           nullable: true
       responses:
         "200":
@@ -299,7 +299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpMonitorStatsDto"
+                $ref: "#/components/schemas/LegacyHttpMonitorStatsDto"
         "404":
           description: Not found
           content:
@@ -446,7 +446,7 @@ paths:
         explode: false
         schema:
           type: string
-          description: "A Java Duration string, default 7d"
+          description: "A Java ISO-8601 Duration string, default P7D"
           nullable: true
       responses:
         "200":
@@ -611,7 +611,7 @@ paths:
         explode: false
         schema:
           type: string
-          description: "A Java Duration string, default 1d"
+          description: "An ISO-8601 Duration string, default P1D"
           nullable: true
       responses:
         "200":
@@ -838,6 +838,36 @@ components:
           - UP
           - DOWN
           - UNKNOWN
+    HistoricalUptimeStatsDto:
+      required:
+      - affectedMonitors
+      - incidents
+      - period
+      - totalDowntimeSeconds
+      - uptimeRatio
+      type: object
+      properties:
+        period:
+          type: string
+          description: The period that was used for the calculation. A Java ISO-8601
+            Duration string.
+        incidents:
+          type: integer
+          description: Total number of incidents recorded across all monitors.
+          format: int32
+        affectedMonitors:
+          type: integer
+          description: Total number of monitors that have been affected by incidents.
+          format: int32
+        uptimeRatio:
+          type: number
+          description: The percentage of uptime across all monitors.
+          format: double
+          nullable: true
+        totalDowntimeSeconds:
+          type: integer
+          description: Total downtime in seconds across all monitors.
+          format: int64
     HttpMethod:
       type: string
       enum:
@@ -1312,6 +1342,8 @@ components:
       - id
       - latencyHistoryEnabled
       - latencyLogs
+      - latencyStats
+      - uptimeHistory
       type: object
       properties:
         id:
@@ -1321,36 +1353,15 @@ components:
         latencyHistoryEnabled:
           type: boolean
           description: Whether recording of latency is enabled for this monitor
-        averageLatencyInMs:
-          type: integer
-          description: The average latency in milliseconds for the monitor
-          format: int32
+        latencyStats:
+          description: Latency related statistics of the monitor in the given period
           nullable: true
-        minLatencyInMs:
-          type: integer
-          description: The minimum latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        maxLatencyInMs:
-          type: integer
-          description: The maximum latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p90LatencyInMs:
-          type: integer
-          description: The 90th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p95LatencyInMs:
-          type: integer
-          description: The 95th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p99LatencyInMs:
-          type: integer
-          description: The 99th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/LatencyStatsDto"
+        uptimeHistory:
+          description: Uptime related statistics of the monitor in the given period
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
         latencyLogs:
           type: array
           description: All the latency logs recorded for the monitor in the given
@@ -1584,32 +1595,7 @@ components:
         uptimeStats:
           description: Statistics about the historical uptime of all monitors.
           allOf:
-          - $ref: "#/components/schemas/HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats"
-    HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats:
-      required:
-      - affectedMonitors
-      - incidents
-      - totalDowntimeSeconds
-      - uptimeRatio
-      type: object
-      properties:
-        incidents:
-          type: integer
-          description: Total number of incidents recorded across all monitors.
-          format: int32
-        affectedMonitors:
-          type: integer
-          description: Total number of monitors that have been affected by incidents.
-          format: int32
-        uptimeRatio:
-          type: number
-          description: The percentage of uptime across all monitors.
-          format: double
-          nullable: true
-        totalDowntimeSeconds:
-          type: integer
-          description: Total downtime in seconds across all monitors.
-          format: int64
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
     HttpUptimeEventDto:
       required:
       - endedAt
@@ -1724,6 +1710,96 @@ components:
           type: string
           description: The timestamp when the latency was recorded
           format: date-time
+    LatencyStatsDto:
+      required:
+      - averageLatencyInMs
+      - maxLatencyInMs
+      - minLatencyInMs
+      - p90LatencyInMs
+      - p95LatencyInMs
+      - p99LatencyInMs
+      type: object
+      properties:
+        averageLatencyInMs:
+          type: integer
+          description: The average latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        minLatencyInMs:
+          type: integer
+          description: The minimum latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        maxLatencyInMs:
+          type: integer
+          description: The maximum latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p90LatencyInMs:
+          type: integer
+          description: The 90th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p95LatencyInMs:
+          type: integer
+          description: The 95th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p99LatencyInMs:
+          type: integer
+          description: The 99th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+    LegacyHttpMonitorStatsDto:
+      required:
+      - id
+      - latencyHistoryEnabled
+      - latencyLogs
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        latencyHistoryEnabled:
+          type: boolean
+          description: Whether recording of latency is enabled for this monitor
+        averageLatencyInMs:
+          type: integer
+          description: The average latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        minLatencyInMs:
+          type: integer
+          description: The minimum latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        maxLatencyInMs:
+          type: integer
+          description: The maximum latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p90LatencyInMs:
+          type: integer
+          description: The 90th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p95LatencyInMs:
+          type: integer
+          description: The 95th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        p99LatencyInMs:
+          type: integer
+          description: The 99th percentile latency in milliseconds for the monitor
+          format: int32
+          nullable: true
+        latencyLogs:
+          type: array
+          description: All the latency logs recorded for the monitor in the given
+            period
+          items:
+            $ref: "#/components/schemas/LatencyLogDto"
     LegacySettingsDto:
       required:
       - app

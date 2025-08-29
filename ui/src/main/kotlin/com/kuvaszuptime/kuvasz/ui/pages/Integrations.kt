@@ -16,7 +16,7 @@ import kotlinx.html.*
 fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfigDto>, settings: SettingsDto) =
     withLayout(
         globals,
-        title = Messages.settings(),
+        title = Messages.integrationsLabel(),
         pageTitle = { integrationsPageHeader() }
     ) {
         div {

@@ -80,6 +80,7 @@ internal enum class CSSClass(val className: String) {
     COL_MD_4("col-md-4"),
     COL_MD_6("col-md-6"),
     COL_MD_AUTO("col-md-auto"),
+    COL_SM_AUTO("col-sm-auto"),
     COL_SM_3("col-sm-3"),
     COL_SM_4("col-sm-4"),
     COL_SM_6("col-sm-6"),

@@ -17,6 +17,8 @@ import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.LatencyStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.LegacyHttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDeleteEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpdateEvent
@@ -26,6 +28,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import io.micronaut.validation.validator.Validator
@@ -48,6 +51,7 @@ class HttpMonitorCrudService(
     private val integrationIdValidator: IntegrationIdValidator,
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
+    private val statCalculator: StatCalculator,
 ) {
 
     private val objectMapper: ObjectMapper = jacksonObjectMapper()
@@ -176,11 +180,12 @@ class HttpMonitorCrudService(
                 sslEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
-    fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =
+    @Deprecated("Use getMonitorStats instead")
+    fun getLegacyMonitorStats(monitorId: Long, period: Duration): LegacyHttpMonitorStatsDto =
         monitorRepository.findById(monitorId)
             .orThrowNotFound(monitorId)
             .let { monitor ->
-                val statsDto = HttpMonitorStatsDto(
+                val statsDto = LegacyHttpMonitorStatsDto(
                     id = monitor.id,
                     latencyHistoryEnabled = monitor.latencyHistoryEnabled,
                     averageLatencyInMs = null,
@@ -203,6 +208,38 @@ class HttpMonitorCrudService(
                     p90LatencyInMs = metrics?.p90,
                     p95LatencyInMs = metrics?.p95,
                     p99LatencyInMs = metrics?.p99,
+                    latencyLogs = latencyLogRepository.fetchLatestByMonitorId(monitor.id, period)
+                )
+            }
+
+    fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =
+        monitorRepository.findById(monitorId)
+            .orThrowNotFound(monitorId)
+            .let { monitor ->
+                val uptimeHistory = statCalculator.calculateHistoricalHttpUptimeStats(period, monitorId)
+                val statsDto = HttpMonitorStatsDto(
+                    id = monitor.id,
+                    uptimeHistory = uptimeHistory,
+                    latencyHistoryEnabled = monitor.latencyHistoryEnabled,
+                    latencyStats = null,
+                    latencyLogs = emptyList()
+                )
+                if (!monitor.latencyHistoryEnabled) {
+                    return statsDto
+                }
+
+                val metrics = latencyLogRepository.getLatencyMetrics(monitor.id, period)
+                statsDto.copy(
+                    latencyStats = metrics?.let {
+                        LatencyStatsDto(
+                            averageLatencyInMs = metrics.avg,
+                            minLatencyInMs = metrics.min,
+                            maxLatencyInMs = metrics.max,
+                            p90LatencyInMs = metrics.p90,
+                            p95LatencyInMs = metrics.p95,
+                            p99LatencyInMs = metrics.p99,
+                        )
+                    },
                     latencyLogs = latencyLogRepository.fetchLatestByMonitorId(monitor.id, period)
                 )
             }

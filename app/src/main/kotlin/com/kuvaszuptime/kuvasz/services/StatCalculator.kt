@@ -3,25 +3,24 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import java.time.Duration
-import java.time.OffsetDateTime
 
 @Singleton
 class StatCalculator(
-    private val monitorCrudService: HttpMonitorCrudService,
+    private val httpMonitorRepository: HttpMonitorRepository,
     private val uptimeEventRepository: HttpUptimeEventRepository,
 ) {
     @Suppress("NestedBlockDepth")
     fun calculateOverallHttpStats(period: Duration): HttpMonitoringStatsDto {
-        val monitors = monitorCrudService.getMonitorsWithDetails()
-        val periodStart = getCurrentTimestamp().minus(period)
-        val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(periodStart)
+        val monitors = httpMonitorRepository.getMonitorsWithDetails()
+        val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(period)
         var downMonitors = 0
         var upMonitors = 0
         var pausedMonitors = 0
@@ -72,15 +71,31 @@ class StatCalculator(
                 )
             ),
             history = HttpMonitoringStatsDto.HistoricalMonitoringStats(
-                uptimeStats = calculateHistoricalHttpStats(periodStart, uptimeEvents)
+                uptimeStats = calculateHistoricalHttpUptimeStats(period, uptimeEvents)
             )
         )
     }
 
-    fun calculateHistoricalHttpStats(
-        periodStart: OffsetDateTime,
+    /**
+     * Calculates historical uptime statistics for a specific monitor over a given period.
+     */
+    fun calculateHistoricalHttpUptimeStats(
+        period: Duration,
+        monitorId: Long,
+    ): HistoricalUptimeStatsDto {
+        val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(period, monitorId)
+
+        return calculateHistoricalHttpUptimeStats(period, uptimeEvents)
+    }
+
+    /**
+     * Calculates historical uptime statistics based on a list of uptime events and a period's start time.
+     */
+    fun calculateHistoricalHttpUptimeStats(
+        period: Duration,
         uptimeEvents: List<HttpUptimeEventRecord>,
-    ): HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats {
+    ): HistoricalUptimeStatsDto {
+        val periodStart = getCurrentTimestamp().minus(period)
         val monitorsWithIncidents: MutableSet<Long> = mutableSetOf()
         var historicalIncidentCnt = 0
         var historicalUptimeSeconds = 0L
@@ -99,7 +114,8 @@ class StatCalculator(
             }
         }
 
-        return HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
+        return HistoricalUptimeStatsDto(
+            period = period,
             incidents = historicalIncidentCnt,
             affectedMonitors = monitorsWithIncidents.size,
             uptimeRatio = if (historicalUptimeSeconds + historicalDowntimeSeconds > 0) {

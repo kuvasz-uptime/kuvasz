@@ -8,13 +8,10 @@ import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
-import com.kuvaszuptime.kuvasz.util.formatAsInterval
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
-import java.math.RoundingMode
-
-private const val METRICS_PERIOD_DEFAULT_DAYS = 7L
 
 fun renderMonitoringStats(
     monitoringStats: HttpMonitoringStatsDto,
@@ -35,24 +32,28 @@ fun renderMonitoringStats(
             // Stats summary
             classes(ROW, ROW_CARDS)
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.HEART,
                 iconBackground = BG_GREEN_LT,
                 text = monitoringStats.actual.uptimeStats.up.toString(),
                 secondaryText = Messages.up()
             )
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.HEART_BROKEN,
                 iconBackground = BG_RED_LT,
                 text = monitoringStats.actual.uptimeStats.down.toString(),
                 secondaryText = Messages.down(),
             )
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.HEART_OFF,
                 iconBackground = BG_CYAN_LT,
                 text = monitoringStats.actual.uptimeStats.paused.toString(),
                 secondaryText = Messages.paused(),
             )
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.HEART_QUESTION,
                 iconBackground = BG_YELLOW_LT,
                 text = monitoringStats.actual.uptimeStats.inProgress.toString(),
@@ -61,39 +62,15 @@ fun renderMonitoringStats(
             // Historical stats
             h3 {
                 classes(MT_3, MB_0)
-                +Messages.metricsFromTheLast(Messages.xDays(METRICS_PERIOD_DEFAULT_DAYS))
+                +Messages.metrics()
+                subtitleBadge(
+                    Messages.lastXDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
+                )
             }
-            statCard(
-                icon = Icon.ALERT_TRIANGLE,
-                iconBackground = BG_RED_LT,
-                text = monitoringStats.history.uptimeStats.incidents.toString(),
-                secondaryText = Messages.incidents()
-            )
-            statCard(
-                icon = Icon.BINOCULARS,
-                iconBackground = BG_RED_LT,
-                text = monitoringStats.history.uptimeStats.affectedMonitors.toString(),
-                secondaryText = Messages.affectedMonitors(),
-            )
-            val uptimeRatioText = monitoringStats.history.uptimeStats.uptimeRatio?.let { ratio ->
-                (ratio * 100.toDouble()).toBigDecimal().setScale(2, RoundingMode.FLOOR).toString() + "%"
-            } ?: Messages.noData()
-            statCard(
-                icon = Icon.PERCENTAGE,
-                iconBackground = BG_GREEN_LT,
-                text = uptimeRatioText,
-                secondaryText = Messages.uptimeRatio(),
-            )
-            val totalDowntimeText = monitoringStats.history.uptimeStats.totalDowntimeSeconds
-                .takeIf { it > 0 }
-                ?.formatAsInterval()
-                ?: "-"
-            statCard(
-                icon = Icon.SUM,
-                iconBackground = BG_RED_LT,
-                text = totalDowntimeText,
-                secondaryText = Messages.totalDowntime(),
-            )
+            incidentsStatsCards(cssClasses = setOf(COL_6, COL_MD_3), monitoringStats.history.uptimeStats)
+            affectedMonitorsStatsCards(cssClasses = setOf(COL_6, COL_MD_3), monitoringStats.history.uptimeStats)
+            uptimeRatioStatsCards(cssClasses = setOf(COL_6, COL_MD_3), monitoringStats.history.uptimeStats)
+            totalDowntimeStatsCards(cssClasses = setOf(COL_6, COL_MD_3), monitoringStats.history.uptimeStats)
             // Down monitors table
             h3 {
                 classes(MT_3, MB_0)
@@ -129,24 +106,28 @@ fun renderMonitoringStats(
             }
             // SSL summary
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.LOCK_CLOSED,
                 iconBackground = BG_GREEN_LT,
                 text = monitoringStats.actual.sslStats.valid.toString(),
                 secondaryText = Messages.valid()
             )
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.LOCK_OPEN,
                 iconBackground = BG_RED_LT,
                 text = monitoringStats.actual.sslStats.invalid.toString(),
                 secondaryText = Messages.invalid(),
             )
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.TIMER,
                 iconBackground = BG_YELLOW_LT,
                 text = monitoringStats.actual.sslStats.willExpire.toString(),
                 secondaryText = Messages.expiresSoon(),
             )
             statCard(
+                cssClasses = setOf(COL_6, COL_MD_3),
                 icon = Icon.LOCK_QUESTION,
                 iconBackground = BG_ORANGE_LT,
                 text = monitoringStats.actual.sslStats.inProgress.toString(),
@@ -179,44 +160,6 @@ fun renderMonitoringStats(
             }
         }
     }
-
-private fun FlowContent.statCard(
-    icon: Icon,
-    iconBackground: CSSClass,
-    text: String,
-    secondaryText: String,
-) {
-    div {
-        classes(COL_6, COL_MD_3)
-        div {
-            classes(CARD, CARD_SM)
-            div {
-                classes(CARD_STAMP)
-                div {
-                    classes(CARD_STAMP_ICON, iconBackground)
-                    icon(icon)
-                }
-            }
-            div {
-                classes(CARD_BODY)
-                div {
-                    classes(ROW, ALIGN_ITEMS_CENTER, TEXT_CENTER)
-                    div {
-                        classes(CSSClass.COL)
-                        div {
-                            classes(CSSClass.H2)
-                            +text
-                        }
-                        div {
-                            classes(TEXT_SECONDARY, TEXT_UPPERCASE)
-                            +secondaryText
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 private fun FlowContent.downMonitorList(monitors: List<HttpMonitorDetailsDto>) =
     table {

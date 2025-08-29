@@ -219,3 +219,10 @@ internal fun FlowContent.inlineVersionUpdateBadge(versionInfo: VersionInfo) {
         }
     }
 }
+
+internal fun FlowContent.subtitleBadge(text: String) {
+    span {
+        classes(BADGE)
+        +text
+    }
+}

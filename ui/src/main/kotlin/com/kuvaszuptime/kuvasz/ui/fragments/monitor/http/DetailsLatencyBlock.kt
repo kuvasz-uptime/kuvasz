@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import kotlinx.html.*
 
 private fun FlowContent.latencyMetricCard(propertyName: String, label: String) {
@@ -30,14 +31,15 @@ private fun FlowContent.latencyMetricCard(propertyName: String, label: String) {
     }
 }
 
-internal fun FlowContent.detailsLatencyBlock(monitor: HttpMonitorDetailsDto) {
+internal fun FlowContent.detailsMetricsBlock(monitor: HttpMonitorDetailsDto) {
     div {
         xData(
-            """latencyBlock(
+            """httpMetricsBlock(
             |${monitor.id}, 
             |${monitor.enabled}, 
             |${monitor.uptimeCheckInterval}, 
-            |"${Messages.latencyChartNoData()}"
+            |"${Messages.latencyChartNoData()}",
+            |${UIDefaults.HTTP_MONITOR_LATENCY_STATS_PERIOD_HOURS}
             |)
             """.trimMargin()
         )
@@ -45,12 +47,15 @@ internal fun FlowContent.detailsLatencyBlock(monitor: HttpMonitorDetailsDto) {
 
         div {
             classes(ROW, ROW_CARDS, MB_3)
-            latencyMetricCard(propertyName = "lastResponse?.averageLatencyInMs", label = Messages.latencyAverage())
-            latencyMetricCard(propertyName = "lastResponse?.minLatencyInMs", label = "Min")
-            latencyMetricCard(propertyName = "lastResponse?.maxLatencyInMs", label = "Max")
-            latencyMetricCard(propertyName = "lastResponse?.p90LatencyInMs", label = "P90")
-            latencyMetricCard(propertyName = "lastResponse?.p95LatencyInMs", label = "P95")
-            latencyMetricCard(propertyName = "lastResponse?.p99LatencyInMs", label = "P99")
+            latencyMetricCard(
+                propertyName = "lastResponse?.latencyStats?.averageLatencyInMs",
+                label = Messages.latencyAverage(),
+            )
+            latencyMetricCard(propertyName = "lastResponse?.latencyStats?.minLatencyInMs", label = "Min")
+            latencyMetricCard(propertyName = "lastResponse?.latencyStats?.maxLatencyInMs", label = "Max")
+            latencyMetricCard(propertyName = "lastResponse?.latencyStats?.p90LatencyInMs", label = "P90")
+            latencyMetricCard(propertyName = "lastResponse?.latencyStats?.p95LatencyInMs", label = "P95")
+            latencyMetricCard(propertyName = "lastResponse?.latencyStats?.p99LatencyInMs", label = "P99")
         }
 
         div {
