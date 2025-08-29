@@ -16,9 +16,7 @@ class SSLValidatorTest : StringSpec(
         "validate should return the right result" {
             table(
                 headers("url", "isValid"),
-                row("https://github.com", true),
-                row("https://google.com", true),
-                row("https://akobor.me", true),
+                row("https://kuvasz-uptime.dev", true),
 
                 row("https://test-ev-rsa.ssl.com/", true),
                 row("https://test-dv-rsa.ssl.com/", true),
