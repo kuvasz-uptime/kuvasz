@@ -1,0 +1,103 @@
+package com.kuvaszuptime.kuvasz.repositories
+
+import com.kuvaszuptime.kuvasz.jooq.Tables.SSL_EVENT
+import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.dto.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.IncidentStatus
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import jakarta.inject.Singleton
+import org.jooq.DSLContext
+import org.jooq.impl.DSL
+import org.jooq.kotlin.and
+import java.time.Duration
+import java.time.OffsetDateTime
+
+@Singleton
+class IncidentRepository(private val dslContext: DSLContext) {
+
+    /**
+     * Fetches incidents, sorted by their update date in descending order,
+     * optionally filtered by [monitorId] and/or [period], and whether to include resolved incidents.
+     * Returns monitor-type agnostic incident data.
+     *
+     * @param monitorId Optional ID of the monitor to filter incidents.
+     * @param period Optional duration to filter incidents that were open during this time frame.
+     * @param includeResolved Whether to include resolved incidents.
+     *
+     * @return List of [IncidentDto] matching the criteria.
+     */
+    @Suppress("IgnoredReturnValue")
+    fun getIncidents(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean,
+    ): List<IncidentDto> {
+        val periodStart: OffsetDateTime? = period?.let { getCurrentTimestamp().minus(it) }
+        val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
+        return dslContext
+            // HTTP incidents
+            .select(
+                HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
+                HTTP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+                HTTP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
+                DSL.inline(IncidentType.HTTP.name).`as`(IncidentDto::incidentType.name),
+                DSL.`when`(HTTP_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
+                    .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
+                HTTP_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
+                HTTP_UPTIME_EVENT.STARTED_AT.`as`(IncidentDto::startedAt.name),
+                HTTP_UPTIME_EVENT.ENDED_AT.`as`(IncidentDto::endedAt.name),
+                HTTP_UPTIME_EVENT.UPDATED_AT.`as`(IncidentDto::updatedAt.name),
+            )
+            .from(HTTP_UPTIME_EVENT)
+            .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
+            .where(HTTP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+            .and(HTTP_MONITOR.ENABLED.isTrue)
+            .apply {
+                // Filter for monitors
+                monitorId?.let { and(HTTP_MONITOR.ID.eq(it)) }
+                // Filter for events that were open at any point during the specified period
+                periodStart?.let { and(DSL.coalesce(HTTP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(it)) }
+                // Filter out resolved incidents if not requested
+                if (!includeResolved) {
+                    and(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
+                }
+            }
+            // SSL incidents
+            .unionAll(
+                dslContext
+                    .select(
+                        HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
+                        HTTP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+                        DSL.field(HTTP_MONITOR.ENABLED.and(HTTP_MONITOR.SSL_CHECK_ENABLED))
+                            .`as`(IncidentDto::isMonitorEnabled.name),
+                        DSL.inline(IncidentType.SSL.name).`as`(IncidentDto::incidentType.name),
+                        DSL.`when`(SSL_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
+                            .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
+                        SSL_EVENT.ERROR.`as`(IncidentDto::details.name),
+                        SSL_EVENT.STARTED_AT.`as`(IncidentDto::startedAt.name),
+                        SSL_EVENT.ENDED_AT.`as`(IncidentDto::endedAt.name),
+                        SSL_EVENT.UPDATED_AT.`as`(IncidentDto::updatedAt.name),
+                    )
+                    .from(SSL_EVENT)
+                    .join(HTTP_MONITOR).on(SSL_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
+                    .where(SSL_EVENT.STATUS.eq(SslStatus.INVALID))
+                    .and(HTTP_MONITOR.ENABLED.isTrue)
+                    .apply {
+                        // Filter for monitors
+                        monitorId?.let { and(HTTP_MONITOR.ID.eq(it)) }
+                        // Filter for events that were open at any point during the specified period
+                        periodStart?.let { and(DSL.coalesce(SSL_EVENT.ENDED_AT, DSL.now()).greaterThan(it)) }
+                        // Filter out resolved incidents if not requested
+                        if (!includeResolved) {
+                            and(SSL_EVENT.ENDED_AT.isNull)
+                        }
+                    }
+            )
+            .orderBy(DSL.field(orderFieldName).desc())
+            .fetchInto(IncidentDto::class.java)
+    }
+}

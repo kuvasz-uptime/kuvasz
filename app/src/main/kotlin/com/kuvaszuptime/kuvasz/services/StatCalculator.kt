@@ -125,7 +125,7 @@ class StatCalculator(
             incidents = historicalIncidentCnt,
             affectedMonitors = monitorsWithIncidents.size,
             uptimeRatio = if (totalMeasuredSeconds > 0) {
-                historicalUptimeSeconds.toDouble() / (totalMeasuredSeconds)
+                historicalUptimeSeconds.toDouble() / totalMeasuredSeconds
             } else {
                 null
             },

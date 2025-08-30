@@ -102,7 +102,7 @@ internal enum class CSSClass(val className: String) {
     D_MD_TABLE_CELL("d-md-table-cell"),
     D_NONE("d-none"),
     D_NONE_NAVBAR_HORIZONTAL("d-none-navbar-horizontal"),
-    D_PRINT_NONE("d-print-none"),
+    D_SM_TABLE_CELL("d-sm-table-cell"),
     END_0("end-0"),
     FLEX_COLUMN("flex-column"),
     FLEX_FILL("flex-fill"),
@@ -248,6 +248,7 @@ internal enum class CSSClass(val className: String) {
     TEXT_UPPERCASE("text-uppercase"),
     TEXT_WRAP("text-wrap"),
     TEXT_YELLOW("text-yellow"),
+    TEXT_YELLOW_LT_FG("text-yellow-lt-fg"),
     TOAST_CONTAINER("toast-container"),
     W_100("w-100"),
 }

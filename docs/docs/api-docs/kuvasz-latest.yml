@@ -654,6 +654,46 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/incidents:
+    get:
+      tags:
+      - Incidents
+      summary: Get all incidents
+      operationId: getIncidents
+      parameters:
+      - name: monitorId
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int64
+          nullable: true
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      - name: includeResolved
+        in: query
+        description: "If false, only ongoing incidents are returned, default true"
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IncidentDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/integrations:
     get:
       tags:
@@ -1631,6 +1671,64 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
+    IncidentDto:
+      required:
+      - details
+      - endedAt
+      - incidentType
+      - isMonitorEnabled
+      - monitorId
+      - monitorName
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        monitorId:
+          type: integer
+          description: ID of the monitor this incident belongs to
+          format: int64
+        monitorName:
+          type: string
+          description: Name of the monitor this incident belongs to
+        isMonitorEnabled:
+          type: boolean
+          description: Whether the monitor related to the incident is enabled
+        incidentType:
+          description: Type of the incident
+          allOf:
+          - $ref: "#/components/schemas/IncidentType"
+        status:
+          description: Status of the incident
+          allOf:
+          - $ref: "#/components/schemas/IncidentStatus"
+        details:
+          type: string
+          description: "Details about the incident, e.g. error message"
+          nullable: true
+        startedAt:
+          type: string
+          description: When the incident started
+          format: date-time
+        endedAt:
+          type: string
+          description: "When the incident ended, null if ongoing"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: When the incident was last updated
+          format: date-time
+    IncidentStatus:
+      type: string
+      enum:
+      - ONGOING
+      - RESOLVED
+    IncidentType:
+      type: string
+      enum:
+      - HTTP
+      - SSL
     IntegrationConfigDto:
       required:
       - id

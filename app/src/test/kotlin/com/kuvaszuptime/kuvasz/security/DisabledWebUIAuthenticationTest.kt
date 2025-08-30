@@ -38,6 +38,7 @@ class DisabledWebUIAuthenticationTest(
             row("/http-monitors/fragments/stats"),
             row("/settings"),
             row("/integrations"),
+            row("/incidents"),
         ).forAll { url ->
             val response = client.exchange(url).awaitFirst()
 

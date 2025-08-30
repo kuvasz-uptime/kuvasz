@@ -43,6 +43,12 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     )
                                 )
                                 navItem(
+                                    label = Messages.incidents(),
+                                    icon = Icon.FLAME,
+                                    link = "/incidents",
+                                    externalLink = false
+                                )
+                                navItem(
                                     label = Messages.integrationsLabel(),
                                     icon = Icon.PLUG,
                                     link = "/integrations",

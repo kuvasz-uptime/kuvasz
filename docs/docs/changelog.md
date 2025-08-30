@@ -8,7 +8,17 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 ### New features
 
 - **Integrations** have their own section on the UI now, and they are also exposed under a new API endpoint (`GET /api/v2/integrations`). Furthermore, [**you can test them**](management/integrations.md#testing-integrations) directly from the UI, or via the API to make sure that they are working as expected, before you would enable them or assign them to monitors.
-- **Update notifications**: you can now [get notified about new releases](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
+
+![Kuvasz integrations management UI](images/integrations/integrations_list.webp)
+
+- **Update notifications**: you can now [**get notified about new releases**](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
+- **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](./api-docs.md)), not just as cumulated metrics across all monitors.
+
+![Kuvasz monitor-level metrics UI](images/features/monitor-metrics.webp)
+
+- **Incidents**: there is a brand new section on the UI, and a dedicated endpoint under `GET /api/v2/incidents` to see/fetch **all your incidents in one single place**, where you can also filter them by a monitor, or by a time range.
+
+![Kuvasz incident list UI](images/ui/incident_list.webp)
 
 ### Fixes
 

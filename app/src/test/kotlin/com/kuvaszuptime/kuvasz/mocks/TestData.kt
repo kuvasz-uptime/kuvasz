@@ -109,7 +109,8 @@ fun createSSLEventRecord(
             .setSslExpiryDate(sslExpiryDate)
             .setError(error)
     )
-    .execute()
+    .returning(SSL_EVENT.asterisk())
+    .fetchOneOrThrow<SslEventRecord>()
 
 fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)) =
     CertificateInfo(validTo)
