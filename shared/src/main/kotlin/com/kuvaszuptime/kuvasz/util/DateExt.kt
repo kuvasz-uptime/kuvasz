@@ -109,7 +109,7 @@ fun OffsetDateTime.timeAgo(reference: OffsetDateTime = getCurrentTimestamp()): S
 fun OffsetDateTime.durationBetween(
     end: OffsetDateTime = getCurrentTimestamp()
 ): String {
-    val duration = java.time.Duration.between(this, end).toKotlinDuration()
+    val duration = this.diffToDuration(end)
     return duration.formatAsInterval()
 }
 
@@ -139,4 +139,23 @@ private fun Duration.formatAsInterval(): String {
         if (minutes > 1) Messages.minutesInterval(minutes) else if (minutes == 1L) Messages.minuteInterval(minutes) else null,
         if (seconds > 1) Messages.secondsInterval(seconds) else if (seconds == 1L) Messages.secondInterval(seconds) else null,
     ).asSequence().take(2).joinToString(" ")
+}
+
+/**
+ * Takes a Java Duration and formats it as a simple human-readable string, e.g. "5 minutes", "2 hours", "1 day".
+ * Always picks the largest fitting time unit for simplicity, better to use it for durations where we're in control
+ * of the value through the UI (e.g. user-selected, predefined intervals).
+ */
+fun JavaDuration.formatAsSimpleInterval(): String {
+    val duration = this.toKotlinDuration()
+    return when {
+        duration.inWholeSeconds <= 1L -> Messages.secondInterval(duration.inWholeSeconds)
+        duration.inWholeSeconds < SECONDS_IN_A_MINUTE -> Messages.secondsInterval(duration.inWholeSeconds)
+        duration.inWholeMinutes == 1L -> Messages.minuteInterval(1)
+        duration.inWholeMinutes < MINUTES_IN_AN_HOUR -> Messages.minutesInterval(duration.inWholeMinutes)
+        duration.inWholeHours == 1L -> Messages.hourInterval(1)
+        duration.inWholeHours < HOURS_IN_A_DAY -> Messages.hoursInterval(duration.inWholeHours)
+        duration.inWholeDays == 1L -> Messages.dayInterval(1)
+        else -> Messages.daysInterval(duration.inWholeDays)
+    }
 }

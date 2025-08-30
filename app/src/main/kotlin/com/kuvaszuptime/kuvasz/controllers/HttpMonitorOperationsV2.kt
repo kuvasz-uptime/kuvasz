@@ -79,7 +79,10 @@ interface HttpMonitorOperationsV2 {
         @QueryValue
         @Parameter(
             required = false,
-            schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 1d")
+            schema = Schema(
+                implementation = Duration::class,
+                description = "An ISO-8601 Duration string, default P1D",
+            )
         )
         period: Duration?,
     ): HttpMonitorStatsDto
@@ -90,7 +93,10 @@ interface HttpMonitorOperationsV2 {
         @QueryValue
         @Parameter(
             required = false,
-            schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 7d")
+            schema = Schema(
+                implementation = Duration::class,
+                description = "An ISO-8601 Duration string, default P7D",
+            )
         )
         period: Duration?,
     ): HttpMonitoringStatsDto

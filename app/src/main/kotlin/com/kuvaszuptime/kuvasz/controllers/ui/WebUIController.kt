@@ -2,11 +2,13 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
 import com.kuvaszuptime.kuvasz.security.ui.UnauthorizedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.ui.pages.*
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -15,6 +17,7 @@ import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
+import java.time.Duration
 
 @Controller("/")
 @Hidden
@@ -22,6 +25,7 @@ class WebUIController(
     private val appGlobals: AppGlobals,
     private val settingsRepository: SettingsRepository,
     private val integrationsRepository: IntegrationRepository,
+    private val incidentRepository: IncidentRepository,
 ) {
 
     companion object {
@@ -58,4 +62,21 @@ class WebUIController(
         integrations = integrationsRepository.getConfiguredIntegrationDtos().sortedBy { it.name },
         settings = settingsRepository.getSettings(),
     )
+
+    @Get("/incidents")
+    @WebSecured
+    @Produces(MediaType.TEXT_HTML)
+    @ExecuteOn(TaskExecutors.IO)
+    fun incidents(@QueryValue period: Duration?): String {
+        val effectivePeriod = period ?: Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
+        return renderIncidents(
+            globals = appGlobals,
+            period = effectivePeriod,
+            incidents = incidentRepository.getIncidents(
+                monitorId = null,
+                period = effectivePeriod,
+                includeResolved = true,
+            )
+        )
+    }
 }

@@ -4,12 +4,14 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -26,12 +28,12 @@ class WebUIHttpMonitorController(
     private val monitorCrudService: HttpMonitorCrudService,
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
+    private val monitorRepository: HttpMonitorRepository,
 ) {
 
     companion object {
         private const val SSL_EVENTS_COUNT = 5
         private const val UPTIME_EVENTS_COUNT = 5
-        private const val DASHBOARD_STATS_PERIOD_DEFAULT_DAYS = 7L
     }
 
     @Get("/http-monitors/fragments/stats")
@@ -39,7 +41,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitoringStats(): String {
-        val period = Duration.ofDays(DASHBOARD_STATS_PERIOD_DEFAULT_DAYS)
+        val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
 
         return renderMonitoringStats(
             monitoringStats = statCalculator.calculateOverallHttpStats(period),
@@ -66,7 +68,14 @@ class WebUIHttpMonitorController(
     fun httpMonitorDetails(@PathVariable monitorId: Long): String {
         val monitor = monitorCrudService.getMonitorDetails(monitorId)
 
-        return renderHttpMonitorDetailsPage(appGlobals, monitor)
+        return renderHttpMonitorDetailsPage(
+            appGlobals,
+            monitor,
+            stats = statCalculator.calculateHistoricalHttpUptimeStats(
+                period = Duration.ofDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
+                monitorId = monitor.id,
+            ),
+        )
     }
 
     @Get("/http-monitors/fragments/list")
@@ -87,7 +96,15 @@ class WebUIHttpMonitorController(
         val monitor = monitorCrudService.getMonitorDetails(monitorId)
         return buildString {
             append(renderHttpMonitorDetailsHeading(monitor))
-            append(renderUptimeSummary(monitor))
+            append(
+                renderUptimeSummary(
+                    monitor = monitor,
+                    stats = statCalculator.calculateHistoricalHttpUptimeStats(
+                        period = Duration.ofDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
+                        monitorId = monitor.id,
+                    )
+                )
+            )
             if (monitor.sslCheckEnabled) {
                 append(renderSSLSummary(monitor))
             }
@@ -98,17 +115,23 @@ class WebUIHttpMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
-    fun httpMonitorUptimeEvents(@PathVariable monitorId: Long): String =
-        renderHttpUptimeEvents(
-            events = monitorCrudService.getUptimeEventsByMonitorId(monitorId, UPTIME_EVENTS_COUNT)
-        )
+    fun httpMonitorUptimeEvents(@PathVariable monitorId: Long) =
+        monitorRepository.findById(monitorId)?.let { monitor ->
+            renderHttpUptimeEvents(
+                isMonitorEnabled = monitor.enabled,
+                events = monitorCrudService.getUptimeEventsByMonitorId(monitorId, UPTIME_EVENTS_COUNT)
+            )
+        }
 
     @Get("/http-monitors/fragments/details-ssl-events/{monitorId}")
     @WebSecured
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorSSLEvents(@PathVariable monitorId: Long) =
-        renderSSLEvents(
-            events = monitorCrudService.getSSLEventsByMonitorId(monitorId, SSL_EVENTS_COUNT)
-        )
+        monitorRepository.findById(monitorId)?.let { monitor ->
+            renderSSLEvents(
+                isSSLCheckEnabled = monitor.enabled && monitor.sslCheckEnabled,
+                events = monitorCrudService.getSSLEventsByMonitorId(monitorId, SSL_EVENTS_COUNT)
+            )
+        }
 }

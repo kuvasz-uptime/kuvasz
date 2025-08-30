@@ -3,18 +3,20 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 import com.iodesystems.htmx.Htmx.Companion.hx
 import com.iodesystems.htmx.HtmxAttrs
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import kotlinx.html.*
 import kotlin.time.Duration.Companion.seconds
 
-internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto) {
+internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) {
     div {
         id = "monitor-details-content"
         // Uptime summary
         h2 { +Messages.uptimeBlockTitle() }
-        detailsUptimeSummary(monitor)
+        detailsUptimeSummary(monitor, stats)
         // Uptime events
         h3 { +Messages.recentEventsBlockTitle() }
         div {
@@ -36,10 +38,10 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
                 +Messages.latencyBlockTitle()
                 span {
                     classes(BADGE)
-                    +Messages.latencyBlockSubtitle()
+                    +Messages.lastXHours(UIDefaults.HTTP_MONITOR_LATENCY_STATS_PERIOD_HOURS)
                 }
             }
-            detailsLatencyBlock(monitor)
+            detailsMetricsBlock(monitor)
         }
         // SSL check metrics
         if (monitor.sslCheckEnabled) {

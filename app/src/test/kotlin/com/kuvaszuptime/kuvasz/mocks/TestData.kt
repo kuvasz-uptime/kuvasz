@@ -72,6 +72,8 @@ fun createUptimeEventRecord(
     status: UptimeStatus = UptimeStatus.UP,
     startedAt: OffsetDateTime,
     endedAt: OffsetDateTime?,
+    error: String? = null,
+    updatedAt: OffsetDateTime? = null,
 ) = dslContext
     .insertInto(HTTP_UPTIME_EVENT)
     .set(
@@ -79,8 +81,9 @@ fun createUptimeEventRecord(
             .setMonitorId(monitorId)
             .setStatus(status)
             .setStartedAt(startedAt)
-            .setUpdatedAt(endedAt ?: startedAt)
+            .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
             .setEndedAt(endedAt)
+            .setError(error)
     )
     .returning(HTTP_UPTIME_EVENT.asterisk())
     .fetchOneOrThrow<HttpUptimeEventRecord>()
@@ -92,6 +95,8 @@ fun createSSLEventRecord(
     startedAt: OffsetDateTime,
     endedAt: OffsetDateTime?,
     sslExpiryDate: OffsetDateTime? = null,
+    error: String? = null,
+    updatedAt: OffsetDateTime? = null,
 ) = dslContext
     .insertInto(SSL_EVENT)
     .set(
@@ -99,11 +104,13 @@ fun createSSLEventRecord(
             .setMonitorId(monitorId)
             .setStatus(status)
             .setStartedAt(startedAt)
-            .setUpdatedAt(endedAt ?: startedAt)
+            .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
             .setEndedAt(endedAt)
             .setSslExpiryDate(sslExpiryDate)
+            .setError(error)
     )
-    .execute()
+    .returning(SSL_EVENT.asterisk())
+    .fetchOneOrThrow<SslEventRecord>()
 
 fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)) =
     CertificateInfo(validTo)

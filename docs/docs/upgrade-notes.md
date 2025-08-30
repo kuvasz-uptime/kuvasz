@@ -90,4 +90,4 @@ Also, the following configuration properties changed as well, make sure to updat
 
 #### Labels
 
-The `url` label has been renamed to `target` on all gauges, to better reflect its purpose in a generic way (e.g. it can be an IP address as well).
+The `url` label has been renamed to `target` on all gauges, to better reflect its purpose in a generic way.

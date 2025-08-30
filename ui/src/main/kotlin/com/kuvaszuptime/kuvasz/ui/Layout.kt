@@ -70,7 +70,7 @@ internal fun withLayout(
                             classes(PAGE_WRAPPER)
                             // Page header
                             div {
-                                classes(PAGE_HEADER, D_PRINT_NONE)
+                                classes(PAGE_HEADER)
                                 pageTitle()
                             }
                             // Page body

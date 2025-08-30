@@ -12,9 +12,9 @@ import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.LegacyHttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
@@ -196,7 +196,7 @@ class HttpMonitorControllerV1(
         ApiResponse(
             responseCode = "200",
             description = "Successful query",
-            content = [Content(schema = Schema(implementation = HttpMonitorStatsDto::class))]
+            content = [Content(schema = Schema(implementation = LegacyHttpMonitorStatsDto::class))]
         ),
         ApiResponse(
             responseCode = "404",
@@ -208,9 +208,9 @@ class HttpMonitorControllerV1(
     override fun getMonitorStats(
         monitorId: Long,
         @QueryValue period: Duration?,
-    ): HttpMonitorStatsDto {
+    ): LegacyHttpMonitorStatsDto {
         val effectivePeriod = period ?: Duration.ofDays(MONITOR_STATS_PERIOD_DEFAULT_DAYS)
-        return monitorCrudService.getMonitorStats(
+        return monitorCrudService.getLegacyMonitorStats(
             monitorId = monitorId,
             period = effectivePeriod,
         )

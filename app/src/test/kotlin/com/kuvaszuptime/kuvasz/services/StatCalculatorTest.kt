@@ -28,61 +28,63 @@ class StatCalculatorTest(
             val enabledUpMonitor = createMonitor(monitorRepository, enabled = true)
             val enabledDownMonitor = createMonitor(monitorRepository, enabled = true)
             val pausedMonitor = createMonitor(monitorRepository, enabled = false)
+            val now = getCurrentTimestamp()
 
             // enabledUpMonitor's incidents
             createUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = enabledUpMonitor.id,
-                startedAt = getCurrentTimestamp().minusDays(10),
+                startedAt = now.minusDays(10),
                 status = UptimeStatus.DOWN,
-                endedAt = getCurrentTimestamp().minusDays(5),
+                endedAt = now.minusDays(5), // 5 days DOWN, 1 day in the period
             )
             createUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = enabledUpMonitor.id,
-                startedAt = getCurrentTimestamp().minusDays(5),
+                startedAt = now.minusDays(5),
                 status = UptimeStatus.UP,
-                endedAt = null,
+                endedAt = null, // 5 days UP
             )
             createSSLEventRecord(
                 dslContext = dslContext,
                 monitorId = enabledUpMonitor.id,
                 status = SslStatus.INVALID,
-                startedAt = getCurrentTimestamp().minusDays(10),
+                startedAt = now.minusDays(10),
                 endedAt = null,
             )
             // enabledDownMonitor's incidents
             createUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = enabledDownMonitor.id,
-                startedAt = getCurrentTimestamp().minusHours(3),
+                startedAt = now.minusHours(12),
                 status = UptimeStatus.DOWN,
-                endedAt = null,
+                endedAt = null, // 0.5 day DOWN
             )
             createSSLEventRecord(
                 dslContext = dslContext,
                 monitorId = enabledDownMonitor.id,
                 status = SslStatus.VALID,
-                startedAt = getCurrentTimestamp().minusDays(10),
+                startedAt = now.minusDays(10),
                 endedAt = null,
             )
             // pausedMonitor's incidents
             createUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = pausedMonitor.id,
-                startedAt = getCurrentTimestamp().minusDays(2),
+                startedAt = now.minusDays(2),
                 status = UptimeStatus.DOWN,
                 endedAt = null,
+                updatedAt = now.minusDays(1), // 1 day DOWN
             )
             createSSLEventRecord(
                 dslContext = dslContext,
                 monitorId = pausedMonitor.id,
                 status = SslStatus.VALID,
-                startedAt = getCurrentTimestamp().minusDays(2),
+                startedAt = now.minusDays(2),
                 endedAt = null,
             )
 
-            then("it should ignore them in the statistics") {
+            then("it should count their uptime based on the events' update date in the statistics") {
                 val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
                 stats.actual.uptimeStats.total shouldBe 3 // 2 enabled monitors + 1 paused monitor
                 stats.actual.uptimeStats.down shouldBe 1
@@ -95,8 +97,12 @@ class StatCalculatorTest(
                 stats.actual.sslStats.willExpire shouldBe 0
                 stats.actual.sslStats.inProgress shouldBe 0
 
-                stats.history.uptimeStats.incidents shouldBe 2
-                stats.history.uptimeStats.affectedMonitors shouldBe 2
+                stats.history.uptimeStats.incidents shouldBe 3
+                stats.history.uptimeStats.affectedMonitors shouldBe 3
+                // 2.5 days DOWN inside the period
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 60 * 60 * 60
+                // 5 days UP, 2.5 days DOWN
+                stats.history.uptimeStats.uptimeRatio shouldBe 5.toDouble() / 7.5
             }
         }
 
@@ -391,6 +397,92 @@ class StatCalculatorTest(
                 // 5 days + 2 days in seconds
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 + 2 * 24 * 60 * 60
                 stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
+            }
+        }
+    }
+
+    given("the calculateHistoricalHttpUptimeStats(monitor) method") {
+
+        `when`("monitors with all the exposed statuses are present") {
+
+            val now = getCurrentTimestamp()
+            val upMonitorInProgress = createMonitor(monitorRepository, enabled = true)
+            val upMonitor = createMonitor(monitorRepository, enabled = true)
+            val downMonitor = createMonitor(monitorRepository, enabled = true)
+            val pausedMonitor = createMonitor(monitorRepository, enabled = false)
+
+            // upMonitor's events: UP
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = upMonitor.id,
+                startedAt = now.minusDays(10),
+                status = UptimeStatus.UP,
+                endedAt = null,
+            )
+
+            // downMonitor's events: DOWN
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = downMonitor.id,
+                startedAt = now.minusDays(5),
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+            )
+
+            // pausedMonitor's events: UP (it should be counted until it's update date, because it's ongoing)
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                startedAt = now.minusDays(2),
+                status = UptimeStatus.UP,
+                endedAt = null,
+                updatedAt = now.minusDays(1),
+            )
+            // pausedMonitor's events: DOWN (it should be counted until it's end date)
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                startedAt = now.minusDays(3),
+                status = UptimeStatus.DOWN,
+                endedAt = now.minusDays(2),
+            )
+
+            then("it should correctly calculate the stats for all statuses") {
+                val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = upMonitorInProgress.id,
+                )
+                statsOfInProgressUpMonitor.incidents shouldBe 0
+                statsOfInProgressUpMonitor.affectedMonitors shouldBe 0
+                statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
+                statsOfInProgressUpMonitor.uptimeRatio shouldBe null
+
+                val statsOfUpMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = upMonitor.id,
+                )
+                statsOfUpMonitor.incidents shouldBe 0
+                statsOfUpMonitor.affectedMonitors shouldBe 0
+                statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
+                statsOfUpMonitor.uptimeRatio shouldBe 1.0
+
+                val statsOfDownMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = downMonitor.id,
+                )
+                statsOfDownMonitor.incidents shouldBe 1
+                statsOfDownMonitor.affectedMonitors shouldBe 1
+                statsOfDownMonitor.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 // 5 days
+                statsOfDownMonitor.uptimeRatio shouldBe 0.0
+
+                val statsOfPausedMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = pausedMonitor.id,
+                )
+                statsOfPausedMonitor.incidents shouldBe 1
+                statsOfPausedMonitor.affectedMonitors shouldBe 1
+                statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
+                statsOfPausedMonitor.uptimeRatio shouldBe 0.5
             }
         }
     }

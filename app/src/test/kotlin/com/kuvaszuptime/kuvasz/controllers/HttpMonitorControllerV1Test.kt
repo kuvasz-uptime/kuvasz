@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
+import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
@@ -71,7 +72,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
 
 @MicronautTest(environments = ["full-integrations-setup"])
-class HttpMonitorControllerTestV1(
+class HttpMonitorControllerV1Test(
     @param:Client("/") private val client: HttpClient,
     private val monitorClient: HttpMonitorClientV1,
     private val monitorRepository: HttpMonitorRepository,
@@ -2025,11 +2026,12 @@ class HttpMonitorControllerTestV1(
                     )
                 ),
                 history = HttpMonitoringStatsDto.HistoricalMonitoringStats(
-                    uptimeStats = HttpMonitoringStatsDto.HistoricalMonitoringStats.HistoricalUptimeStats(
+                    uptimeStats = HistoricalUptimeStatsDto(
                         incidents = 7630,
                         affectedMonitors = 8313,
                         uptimeRatio = 0.12343784,
                         totalDowntimeSeconds = 123456789L,
+                        period = Duration.ofDays(7).toString(),
                     )
                 )
             )

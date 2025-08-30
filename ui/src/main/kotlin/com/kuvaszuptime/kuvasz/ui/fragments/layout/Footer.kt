@@ -11,7 +11,7 @@ import kotlinx.html.*
 
 internal fun FlowContent.footer(versionInfo: VersionInfo) {
     footer {
-        classes(CSSClass.FOOTER, FOOTER_TRANSPARENT, D_PRINT_NONE)
+        classes(CSSClass.FOOTER, FOOTER_TRANSPARENT)
         div {
             classes(CONTAINER_XL)
             div {

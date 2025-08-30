@@ -6,9 +6,9 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.LegacyHttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import io.micronaut.http.client.annotation.Client
 import java.time.Duration
@@ -34,7 +34,7 @@ interface HttpMonitorClientV1 : HttpMonitorOperationsV1 {
 
     override fun getSSLEvents(monitorId: Long): List<SSLEventDto>
 
-    override fun getMonitorStats(monitorId: Long, period: Duration?): HttpMonitorStatsDto
+    override fun getMonitorStats(monitorId: Long, period: Duration?): LegacyHttpMonitorStatsDto
 
     override fun getMonitoringStats(period: Duration?): HttpMonitoringStatsDto
 }

@@ -6,14 +6,15 @@ import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
-import com.kuvaszuptime.kuvasz.util.durationBetween
+import com.kuvaszuptime.kuvasz.util.formatAsInterval
+import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderHttpUptimeEvents(events: List<HttpUptimeEventDto>): String =
-    buildString { appendHTML().div { detailsUptimeEvents(events) } }
+fun renderHttpUptimeEvents(isMonitorEnabled: Boolean, events: List<HttpUptimeEventDto>): String =
+    buildString { appendHTML().div { detailsUptimeEvents(isMonitorEnabled, events) } }
 
-internal fun FlowContent.detailsUptimeEvents(events: List<HttpUptimeEventDto>) {
+internal fun FlowContent.detailsUptimeEvents(isMonitorEnabled: Boolean, events: List<HttpUptimeEventDto>) {
     div {
         classes(COL_12)
         div {
@@ -26,10 +27,7 @@ internal fun FlowContent.detailsUptimeEvents(events: List<HttpUptimeEventDto>) {
                         tr {
                             th { +Messages.status() }
                             th { +Messages.startedAt() }
-                            th {
-                                classes(D_NONE, D_MD_TABLE_CELL)
-                                +Messages.duration()
-                            }
+                            th { +Messages.duration() }
                             th {
                                 classes(D_NONE, D_MD_TABLE_CELL)
                                 +Messages.details()
@@ -45,8 +43,12 @@ internal fun FlowContent.detailsUptimeEvents(events: List<HttpUptimeEventDto>) {
                                     +event.startedAt.toDateTimeString()
                                 }
                                 td {
-                                    classes(TEXT_NOWRAP, D_NONE, D_MD_TABLE_CELL)
-                                    +event.startedAt.durationBetween(event.endedAt ?: event.updatedAt)
+                                    +getDurationOfEvent(
+                                        isMonitorEnabled = isMonitorEnabled,
+                                        startedAt = event.startedAt,
+                                        endedAt = event.endedAt,
+                                        updatedAt = event.updatedAt,
+                                    ).formatAsInterval()
                                 }
                                 td {
                                     classes(TEXT_WRAP, D_NONE, D_MD_TABLE_CELL)

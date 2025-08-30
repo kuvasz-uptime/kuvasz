@@ -14,7 +14,7 @@ internal fun FlowContent.mainHeader(
     versionInfo: VersionInfo,
 ) {
     header {
-        classes(NAVBAR, NAVBAR_EXPAND_MD, D_PRINT_NONE)
+        classes(NAVBAR, NAVBAR_EXPAND_MD)
         div {
             classes(CONTAINER_XL)
             // Navbar toggler

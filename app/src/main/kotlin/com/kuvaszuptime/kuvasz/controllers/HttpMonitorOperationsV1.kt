@@ -6,10 +6,10 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.LegacyHttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Delete
@@ -82,10 +82,13 @@ interface HttpMonitorOperationsV1 {
         @QueryValue
         @Parameter(
             required = false,
-            schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 1d")
+            schema = Schema(
+                implementation = Duration::class,
+                description = "An ISO-8601 Duration string, default P1D",
+            )
         )
         period: Duration?,
-    ): HttpMonitorStatsDto
+    ): LegacyHttpMonitorStatsDto
 
     @Operation(summary = "Download the export of all monitors in YAML format", deprecated = true)
     @Get("/export/yaml")
@@ -97,7 +100,10 @@ interface HttpMonitorOperationsV1 {
         @QueryValue
         @Parameter(
             required = false,
-            schema = Schema(implementation = Duration::class, description = "A Java Duration string, default 7d")
+            schema = Schema(
+                implementation = Duration::class,
+                description = "An ISO-8601 Duration string, default P7D",
+            )
         )
         period: Duration?,
     ): HttpMonitoringStatsDto

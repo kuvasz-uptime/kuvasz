@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.pages
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -12,13 +13,17 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-fun renderHttpMonitorDetailsPage(globals: AppGlobals, monitor: HttpMonitorDetailsDto): String {
+fun renderHttpMonitorDetailsPage(
+    globals: AppGlobals,
+    monitor: HttpMonitorDetailsDto,
+    stats: HistoricalUptimeStatsDto,
+): String {
     return withLayout(
         globals,
         title = monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH),
         pageTitle = { httpMonitorDetailsHeader(monitor, globals) }
     ) {
-        httpMonitorDetailsContent(monitor)
+        httpMonitorDetailsContent(monitor, stats)
     }
 }
 
@@ -37,7 +42,7 @@ internal fun HtmlBlockTag.httpMonitorDetailsHeader(
             httpMonitorDetailsHeading(monitor)
 
             div {
-                classes(COL_MD_AUTO, MS_AUTO, D_PRINT_NONE)
+                classes(COL_MD_AUTO, MS_AUTO)
                 div {
                     classes(BTN_LIST)
                     if (!globals.editabilityState.areHttpMonitorsReadOnly()) {

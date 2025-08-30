@@ -200,12 +200,12 @@ const refreshDashboard = () => {
     sendHtmxEvent('#monitoring-dashboard', 'refresh-dashboard');
 };
 
-const latencyBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel) => {
+const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
     return {
         isMonitorEnabled,
         chart: null,
         previousData: null,
-        endpointUrl: '/api/v2/http-monitors/' + monitorId + '/stats?period=1d',
+        endpointUrl: `/api/v2/http-monitors/${monitorId}/stats?period=PT${statPeriodInHours}H`,
         pollInterval: uptimeCheckInterval * 1000,
         isAutoRefreshEnabled: false,
         intervalId: null,

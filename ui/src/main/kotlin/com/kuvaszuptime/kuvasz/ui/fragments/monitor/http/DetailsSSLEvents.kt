@@ -6,14 +6,15 @@ import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
-import com.kuvaszuptime.kuvasz.util.durationBetween
+import com.kuvaszuptime.kuvasz.util.formatAsInterval
+import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderSSLEvents(events: List<SSLEventDto>): String =
-    buildString { appendHTML().div { detailsSSLEvents(events) } }
+fun renderSSLEvents(isSSLCheckEnabled: Boolean, events: List<SSLEventDto>): String =
+    buildString { appendHTML().div { detailsSSLEvents(isSSLCheckEnabled, events) } }
 
-internal fun FlowContent.detailsSSLEvents(events: List<SSLEventDto>) {
+internal fun FlowContent.detailsSSLEvents(isSSLCheckEnabled: Boolean, events: List<SSLEventDto>) {
     div {
         classes(COL_12)
         div {
@@ -26,10 +27,7 @@ internal fun FlowContent.detailsSSLEvents(events: List<SSLEventDto>) {
                         tr {
                             th { +Messages.status() }
                             th { +Messages.startedAt() }
-                            th {
-                                classes(D_NONE, D_MD_TABLE_CELL)
-                                +Messages.duration()
-                            }
+                            th { +Messages.duration() }
                             th {
                                 classes(D_NONE, D_MD_TABLE_CELL)
                                 +Messages.details()
@@ -45,8 +43,12 @@ internal fun FlowContent.detailsSSLEvents(events: List<SSLEventDto>) {
                                     +event.startedAt.toDateTimeString()
                                 }
                                 td {
-                                    classes(TEXT_NOWRAP, D_NONE, D_MD_TABLE_CELL)
-                                    +event.startedAt.durationBetween(event.endedAt ?: event.updatedAt)
+                                    +getDurationOfEvent(
+                                        isMonitorEnabled = isSSLCheckEnabled,
+                                        startedAt = event.startedAt,
+                                        endedAt = event.endedAt,
+                                        updatedAt = event.updatedAt,
+                                    ).formatAsInterval()
                                 }
                                 td {
                                     classes(TEXT_WRAP, D_NONE, D_MD_TABLE_CELL)
