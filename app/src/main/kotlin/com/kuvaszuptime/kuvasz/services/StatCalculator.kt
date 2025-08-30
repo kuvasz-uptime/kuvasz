@@ -2,15 +2,15 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
-import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import jakarta.inject.Singleton
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @Singleton
 class StatCalculator(
@@ -93,7 +93,7 @@ class StatCalculator(
      */
     fun calculateHistoricalHttpUptimeStats(
         period: Duration,
-        uptimeEvents: List<HttpUptimeEventRecord>,
+        uptimeEvents: List<UptimeEventCalculationContext>,
     ): HistoricalUptimeStatsDto {
         val periodStart = getCurrentTimestamp().minus(period)
         val monitorsWithIncidents: MutableSet<Long> = mutableSetOf()
@@ -102,8 +102,13 @@ class StatCalculator(
         var historicalDowntimeSeconds = 0L
 
         uptimeEvents.forEach { uptimeEvent ->
-            val duration = maxOf(uptimeEvent.startedAt, periodStart)
-                .diffToDuration(uptimeEvent.endedAt ?: getCurrentTimestamp()).inWholeSeconds
+            val effectiveStartDate = maxOf(uptimeEvent.startedAt, periodStart)
+            val duration = getDurationOfEvent(
+                isMonitorEnabled = uptimeEvent.isMonitorEnabled,
+                startedAt = effectiveStartDate,
+                endedAt = uptimeEvent.endedAt,
+                updatedAt = uptimeEvent.updatedAt,
+            )
 
             if (uptimeEvent.status == UptimeStatus.DOWN) {
                 monitorsWithIncidents.add(uptimeEvent.monitorId)
@@ -113,13 +118,14 @@ class StatCalculator(
                 historicalUptimeSeconds += duration
             }
         }
+        val totalMeasuredSeconds = historicalUptimeSeconds + historicalDowntimeSeconds
 
         return HistoricalUptimeStatsDto(
             period = period.toString(),
             incidents = historicalIncidentCnt,
             affectedMonitors = monitorsWithIncidents.size,
-            uptimeRatio = if (historicalUptimeSeconds + historicalDowntimeSeconds > 0) {
-                historicalUptimeSeconds.toDouble() / (historicalUptimeSeconds + historicalDowntimeSeconds)
+            uptimeRatio = if (totalMeasuredSeconds > 0) {
+                historicalUptimeSeconds.toDouble() / (totalMeasuredSeconds)
             } else {
                 null
             },
@@ -127,3 +133,12 @@ class StatCalculator(
         )
     }
 }
+
+data class UptimeEventCalculationContext(
+    val monitorId: Long,
+    val isMonitorEnabled: Boolean,
+    val status: UptimeStatus,
+    val startedAt: OffsetDateTime,
+    val endedAt: OffsetDateTime?,
+    val updatedAt: OffsetDateTime,
+)

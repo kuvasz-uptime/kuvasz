@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -97,22 +98,27 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
         .fetchInto(HttpUptimeEventDto::class.java)
 
     /**
-     * Fetches all uptime events that have ended or was open within the specified period and are associated with
-     * enabled monitors.
+     * Fetches all uptime events that have ended or was open within the specified period.
      */
     @Suppress("IgnoredReturnValue")
-    fun fetchAllInPeriod(period: Duration, monitorId: Long? = null): List<HttpUptimeEventRecord> {
+    fun fetchAllInPeriod(period: Duration, monitorId: Long? = null): List<UptimeEventCalculationContext> {
         val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
-            .select(HTTP_UPTIME_EVENT.asterisk())
+            .select(
+                HTTP_MONITOR.ID.`as`(UptimeEventCalculationContext::monitorId.name),
+                HTTP_MONITOR.ENABLED.`as`(UptimeEventCalculationContext::isMonitorEnabled.name),
+                HTTP_UPTIME_EVENT.STATUS.`as`(UptimeEventCalculationContext::status.name),
+                HTTP_UPTIME_EVENT.STARTED_AT.`as`(UptimeEventCalculationContext::startedAt.name),
+                HTTP_UPTIME_EVENT.ENDED_AT.`as`(UptimeEventCalculationContext::endedAt.name),
+                HTTP_UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventCalculationContext::updatedAt.name),
+            )
             .from(HTTP_UPTIME_EVENT)
             .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
             .where(DSL.coalesce(HTTP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            .and(HTTP_MONITOR.ENABLED.isTrue)
             .apply {
                 monitorId?.let { and(HTTP_UPTIME_EVENT.MONITOR_ID.eq(it)) }
             }
-            .fetchInto(HttpUptimeEventRecord::class.java)
+            .fetchInto(UptimeEventCalculationContext::class.java)
     }
 
     /**

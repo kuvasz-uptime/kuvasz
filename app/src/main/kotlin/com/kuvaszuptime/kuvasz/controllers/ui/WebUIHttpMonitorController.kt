@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
@@ -27,6 +28,7 @@ class WebUIHttpMonitorController(
     private val monitorCrudService: HttpMonitorCrudService,
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
+    private val monitorRepository: HttpMonitorRepository,
 ) {
 
     companion object {
@@ -113,17 +115,23 @@ class WebUIHttpMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
-    fun httpMonitorUptimeEvents(@PathVariable monitorId: Long): String =
-        renderHttpUptimeEvents(
-            events = monitorCrudService.getUptimeEventsByMonitorId(monitorId, UPTIME_EVENTS_COUNT)
-        )
+    fun httpMonitorUptimeEvents(@PathVariable monitorId: Long) =
+        monitorRepository.findById(monitorId)?.let { monitor ->
+            renderHttpUptimeEvents(
+                isMonitorEnabled = monitor.enabled,
+                events = monitorCrudService.getUptimeEventsByMonitorId(monitorId, UPTIME_EVENTS_COUNT)
+            )
+        }
 
     @Get("/http-monitors/fragments/details-ssl-events/{monitorId}")
     @WebSecured
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorSSLEvents(@PathVariable monitorId: Long) =
-        renderSSLEvents(
-            events = monitorCrudService.getSSLEventsByMonitorId(monitorId, SSL_EVENTS_COUNT)
-        )
+        monitorRepository.findById(monitorId)?.let { monitor ->
+            renderSSLEvents(
+                isSSLCheckEnabled = monitor.enabled && monitor.sslCheckEnabled,
+                events = monitorCrudService.getSSLEventsByMonitorId(monitorId, SSL_EVENTS_COUNT)
+            )
+        }
 }
