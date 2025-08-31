@@ -69,7 +69,7 @@ class WebUIController(
     @ExecuteOn(TaskExecutors.IO)
     fun incidents(@QueryValue period: Duration?): String {
         val effectivePeriod = period ?: Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
-        return renderIncidents(
+        return renderIncidentsPage(
             globals = appGlobals,
             period = effectivePeriod,
             incidents = incidentRepository.getIncidents(
