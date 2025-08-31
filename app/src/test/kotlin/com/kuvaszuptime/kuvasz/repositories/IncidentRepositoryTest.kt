@@ -379,7 +379,7 @@ class IncidentRepositoryTest(
             then("it should return the incident of that monitor only") {
 
                 val monitor1 = createMonitor(httpMonitorRepository)
-                val monitor2 = createMonitor(httpMonitorRepository)
+                val monitor2 = createMonitor(httpMonitorRepository, enabled = false)
 
                 val openDownMonitor1 = createUptimeEventRecord(
                     dslContext,
@@ -410,7 +410,7 @@ class IncidentRepositoryTest(
                     endedAt = getCurrentTimestamp().minusDays(5),
                 )
 
-                createUptimeEventRecord(
+                val openDownMonitor2 = createUptimeEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = UptimeStatus.DOWN,
@@ -425,7 +425,7 @@ class IncidentRepositoryTest(
                     startedAt = getCurrentTimestamp().minusDays(6),
                     endedAt = getCurrentTimestamp().minusDays(4),
                 )
-                createSSLEventRecord(
+                val openInvalidMonitor2 = createSSLEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = SslStatus.INVALID,
@@ -457,6 +457,26 @@ class IncidentRepositoryTest(
                     openInvalidSSLMonitor1.monitorId shouldBe openInvalidMonitor1.monitorId
                     openInvalidSSLMonitor1.status shouldBe IncidentStatus.ONGOING
                     openInvalidSSLMonitor1.incidentType shouldBe IncidentType.SSL
+                }
+
+                // Should return events for the disabled monitor as well
+                val incidentsOfMonitor2 = incidentRepository.getIncidents(
+                    includeResolved = false,
+                    monitorId = monitor2.id,
+                )
+
+                incidentsOfMonitor2 shouldHaveSize 2
+
+                incidentsOfMonitor2.forOne { openMonitor2 ->
+                    openMonitor2.monitorId shouldBe openDownMonitor2.monitorId
+                    openMonitor2.status shouldBe IncidentStatus.ONGOING
+                    openMonitor2.incidentType shouldBe IncidentType.HTTP
+                }
+
+                incidentsOfMonitor2.forOne { openInvalidSSLMonitor2 ->
+                    openInvalidSSLMonitor2.monitorId shouldBe openInvalidMonitor2.monitorId
+                    openInvalidSSLMonitor2.status shouldBe IncidentStatus.ONGOING
+                    openInvalidSSLMonitor2.incidentType shouldBe IncidentType.SSL
                 }
             }
         }

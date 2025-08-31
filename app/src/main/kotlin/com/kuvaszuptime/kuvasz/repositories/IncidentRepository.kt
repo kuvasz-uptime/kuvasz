@@ -66,10 +66,13 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .from(HTTP_UPTIME_EVENT)
         .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
         .where(HTTP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-        .and(HTTP_MONITOR.ENABLED.isTrue)
         .apply {
             // Filter for monitors
-            monitorId?.let { and(HTTP_MONITOR.ID.eq(it)) }
+            if (monitorId != null) {
+                and(HTTP_MONITOR.ID.eq(monitorId))
+            } else {
+                and(HTTP_MONITOR.ENABLED.isTrue)
+            }
             // Filter for events that were open at any point during the specified period
             period?.let {
                 val periodStart = getCurrentTimestamp().minus(period)
@@ -103,10 +106,13 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .from(SSL_EVENT)
         .join(HTTP_MONITOR).on(SSL_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
         .where(SSL_EVENT.STATUS.eq(SslStatus.INVALID))
-        .and(HTTP_MONITOR.ENABLED.isTrue)
         .apply {
             // Filter for monitors
-            monitorId?.let { and(HTTP_MONITOR.ID.eq(it)) }
+            if (monitorId != null) {
+                and(HTTP_MONITOR.ID.eq(monitorId))
+            } else {
+                and(HTTP_MONITOR.ENABLED.isTrue).and(HTTP_MONITOR.SSL_CHECK_ENABLED.isTrue)
+            }
             // Filter for events that were open at any point during the specified period
             period?.let {
                 val periodStart = getCurrentTimestamp().minus(period)
