@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
@@ -29,12 +30,8 @@ class WebUIHttpMonitorController(
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
     private val monitorRepository: HttpMonitorRepository,
+    private val incidentRepository: IncidentRepository,
 ) {
-
-    companion object {
-        private const val SSL_EVENTS_COUNT = 5
-        private const val UPTIME_EVENTS_COUNT = 5
-    }
 
     @Get("/http-monitors/fragments/stats")
     @WebSecured
@@ -111,27 +108,33 @@ class WebUIHttpMonitorController(
         }
     }
 
-    @Get("/http-monitors/fragments/details-uptime-events/{monitorId}")
+    @Get("/http-monitors/fragments/details-uptime-incidents/{monitorId}")
     @WebSecured
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
-    fun httpMonitorUptimeEvents(@PathVariable monitorId: Long) =
+    fun httpMonitorUptimeIncidents(@PathVariable monitorId: Long) =
         monitorRepository.findById(monitorId)?.let { monitor ->
-            renderHttpUptimeEvents(
-                isMonitorEnabled = monitor.enabled,
-                events = monitorCrudService.getUptimeEventsByMonitorId(monitorId, UPTIME_EVENTS_COUNT)
+            renderIncidents(
+                incidents = incidentRepository.getHttpUptimeIncidents(
+                    monitor.id,
+                    period = Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS),
+                    includeResolved = true,
+                )
             )
         }
 
-    @Get("/http-monitors/fragments/details-ssl-events/{monitorId}")
+    @Get("/http-monitors/fragments/details-ssl-incidents/{monitorId}")
     @WebSecured
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
-    fun httpMonitorSSLEvents(@PathVariable monitorId: Long) =
+    fun httpMonitorSSLIncidents(@PathVariable monitorId: Long) =
         monitorRepository.findById(monitorId)?.let { monitor ->
-            renderSSLEvents(
-                isSSLCheckEnabled = monitor.enabled && monitor.sslCheckEnabled,
-                events = monitorCrudService.getSSLEventsByMonitorId(monitorId, SSL_EVENTS_COUNT)
+            renderIncidents(
+                incidents = incidentRepository.getSslIncidents(
+                    monitor.id,
+                    period = Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS),
+                    includeResolved = true,
+                )
             )
         }
 }

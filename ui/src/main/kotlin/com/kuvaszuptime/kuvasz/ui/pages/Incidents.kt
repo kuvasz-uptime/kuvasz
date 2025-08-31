@@ -15,7 +15,7 @@ import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import kotlinx.html.*
 import java.time.Duration
 
-fun renderIncidents(globals: AppGlobals, period: Duration, incidents: List<IncidentDto>): String {
+fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<IncidentDto>): String {
     val formattedPeriod = period.formatAsSimpleInterval()
     return withLayout(
         globals,
@@ -147,7 +147,7 @@ private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
     }
 }
 
-private fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
+fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
     span {
         classes {
             mutableSetOf(STATUS).apply {

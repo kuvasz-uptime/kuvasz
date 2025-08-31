@@ -8,7 +8,9 @@ import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
+import com.kuvaszuptime.kuvasz.util.formatAsSimpleInterval
 import kotlinx.html.*
+import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) {
@@ -17,13 +19,21 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
         // Uptime summary
         h2 { +Messages.uptimeBlockTitle() }
         detailsUptimeSummary(monitor, stats)
-        // Uptime events
-        h3 { +Messages.recentEventsBlockTitle() }
+        // Uptime incidents
+        h3 {
+            +Messages.incidents()
+            span {
+                classes(BADGE)
+                +Messages.lastX(
+                    Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS).formatAsSimpleInterval()
+                )
+            }
+        }
         div {
             classes(ROW, ROW_CARDS, MB_3)
             id = "monitor-details-uptime-events"
             hx {
-                get("/http-monitors/fragments/details-uptime-events/${monitor.id}")
+                get("/http-monitors/fragments/details-uptime-incidents/${monitor.id}")
                 trigger {
                     load()
                     every(15.seconds)
@@ -47,12 +57,21 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
         if (monitor.sslCheckEnabled) {
             h2 { +Messages.sslBlockTitle() }
             detailsSSLSummary(monitor)
-            h3 { +Messages.recentEventsBlockTitle() }
+            // SSL incidents
+            h3 {
+                +Messages.incidents()
+                span {
+                    classes(BADGE)
+                    +Messages.lastX(
+                        Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS).formatAsSimpleInterval()
+                    )
+                }
+            }
             div {
                 classes(ROW, ROW_CARDS, MB_3)
                 id = "monitor-details-ssl-events"
                 hx {
-                    get("/http-monitors/fragments/details-ssl-events/${monitor.id}")
+                    get("/http-monitors/fragments/details-ssl-incidents/${monitor.id}")
                     trigger {
                         load()
                         every(15.seconds)
