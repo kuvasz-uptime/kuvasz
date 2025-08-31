@@ -29,7 +29,6 @@ class IncidentRepository(private val dslContext: DSLContext) {
      *
      * @return List of [IncidentDto] matching the criteria.
      */
-    @Suppress("IgnoredReturnValue")
     fun getIncidents(
         monitorId: Long? = null,
         period: Duration? = null,
@@ -46,6 +45,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .fetchInto(IncidentDto::class.java)
     }
 
+    @Suppress("IgnoredReturnValue")
     private fun DSLContext.httpUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
@@ -81,6 +81,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
             }
         }
 
+    @Suppress("IgnoredReturnValue")
     private fun DSLContext.sslIncidentsSelect(
         monitorId: Long? = null,
         period: Duration? = null,
