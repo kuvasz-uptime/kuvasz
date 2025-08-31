@@ -27,6 +27,7 @@ class TelegramAPIClient(@Client private val client: HttpClient) {
 }
 
 @Singleton
+@Requires(bean = TelegramAPIClient::class)
 class TelegramAPIService(
     private val client: TelegramAPIClient,
 ) : TextMessageService, TestableNotificationService<TelegramNotificationConfig> {
