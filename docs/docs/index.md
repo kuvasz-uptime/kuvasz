@@ -165,6 +165,3 @@ on [**Wikipedia**](https://en.wikipedia.org/wiki/Kuvasz){ target="_blank" }.
 ## Do you like it?
 
 While _Kuvasz_ is free and open-source, it still requires a lot of time and effort to maintain and develop. If you like it, please consider our [**sponsoring**](sponsoring.md) options.
-
-## Do you have a question?
-Let's go to the [**GitHub discussions**](https://github.com/kuvasz-uptime/kuvasz/discussions){ target="_blank" } or to our [**Discord server**](https://discord.com/invite/hMkyGPyU32){ target="_blank" }!

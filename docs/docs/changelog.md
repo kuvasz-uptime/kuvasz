@@ -1,4 +1,4 @@
-## To be released { id="to-be-released" data-toc-label="To be released" }
+## 3.0.0 <small>2025-08-31</small> { id="3.0.0" data-toc-label="3.0.0" }
 
 ### Breaking changes
 
