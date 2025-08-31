@@ -1,12 +1,12 @@
-## Upgrade from v2.x.x to v3.0.0
+## Upgrade from v2.x.x to v3.x.x
 
 !!!tip
 
-    When you're not using the API, or the Metrics exporters and you didn't configure any monitors via YAML, you don't need to do anything to upgrade to version 3.0.0!
+    When you're not using the API, or the Metrics exporters and you didn't configure any monitors via YAML, you don't need to do anything to upgrade to version 3.x.x!
 
 ### YAML monitor config <!-- md:config management/http-monitors.md -->
 
-The `monitors` property to define your monitors in your YAML configuration file has been renamed to `http-monitors` to better reflect its purpose. To make your existing file work with version 3.0.0, it's enough to **just rename the property**, no other changes are needed.
+The `monitors` property to define your monitors in your YAML configuration file has been renamed to `http-monitors` to better reflect its purpose. To make your existing file work with version 3.x.x, it's enough to **just rename the property**, no other changes are needed.
 
 ```yaml hl_lines="2 10"
 # v2.x.x
@@ -17,7 +17,7 @@ monitors:
   integrations:
     - "email:my-email-integration"
     - "slack:my-slack-integration"
-# v3.0.0
+# v3.x,x
 http-monitors:
 - name: "My Monitor"
 # ...

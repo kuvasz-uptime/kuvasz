@@ -1,8 +1,8 @@
-## 3.0.0 <small>2025-08-31</small> { id="3.0.0" data-toc-label="3.0.0" }
+## 3.0.1 <small>2025-08-31</small> { id="3.0.1" data-toc-label="3.0.1" }
 
 ### Breaking changes
 
-This is a major release that paths the way for **new monitor types** in the future, by handling the already existing HTTP monitors in a more explicit way. There are a few breaking changes in there, so please **refer to the** [**Upgrade notes**](upgrade-notes.md#upgrade-from-v2xx-to-v300) for more details. 
+This is a major release that paths the way for **new monitor types** in the future, by handling the already existing HTTP monitors in a more explicit way. There are a few breaking changes in there, so please **refer to the** [**Upgrade notes**](upgrade-notes.md#upgrade-from-v2xx-to-v3xx) for more details. 
 Don't be afraid, the upgrade process is straightforward and well-documented, and if you follow the steps, everything should go smoothly.
 
 ### New features

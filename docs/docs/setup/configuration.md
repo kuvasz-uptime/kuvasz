@@ -389,7 +389,7 @@ The language to use. If you would like to translate _Kuvasz_ to your desired lan
 
 ### Check for updates
 
-<!-- md:version 3.0.0 -->
+<!-- md:version 3.0.1 -->
 <!-- md:default true -->
 <!-- md:type `boolean` -->
 
