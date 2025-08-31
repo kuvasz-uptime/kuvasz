@@ -106,6 +106,90 @@ class StatCalculatorTest(
             }
         }
 
+        `when`("there is a paused monitor - last update before the period") {
+
+            val enabledUpMonitor = createMonitor(monitorRepository, enabled = true)
+            val enabledDownMonitor = createMonitor(monitorRepository, enabled = true)
+            val pausedMonitor = createMonitor(monitorRepository, enabled = false)
+            val now = getCurrentTimestamp()
+
+            // enabledUpMonitor's incidents
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledUpMonitor.id,
+                startedAt = now.minusDays(10),
+                status = UptimeStatus.DOWN,
+                endedAt = now.minusDays(5), // 5 days DOWN, 1 day in the period
+            )
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledUpMonitor.id,
+                startedAt = now.minusDays(5),
+                status = UptimeStatus.UP,
+                endedAt = null, // 5 days UP
+            )
+            createSSLEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledUpMonitor.id,
+                status = SslStatus.INVALID,
+                startedAt = now.minusDays(10),
+                endedAt = null,
+            )
+            // enabledDownMonitor's incidents
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledDownMonitor.id,
+                startedAt = now.minusHours(12),
+                status = UptimeStatus.DOWN,
+                endedAt = null, // 0.5 day DOWN
+            )
+            createSSLEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledDownMonitor.id,
+                status = SslStatus.VALID,
+                startedAt = now.minusDays(10),
+                endedAt = null,
+            )
+            // pausedMonitor's incidents
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                startedAt = now.minusDays(12),
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+                updatedAt = now.minusDays(8),
+            )
+            createSSLEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                status = SslStatus.VALID,
+                startedAt = now.minusDays(10),
+                endedAt = null,
+                updatedAt = now.minusDays(7)
+            )
+
+            then("it should not count the obsolete events from the paused monitor") {
+                val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
+                stats.actual.uptimeStats.total shouldBe 3 // 2 enabled monitors + 1 paused monitor
+                stats.actual.uptimeStats.down shouldBe 1
+                stats.actual.uptimeStats.up shouldBe 1
+                stats.actual.uptimeStats.paused shouldBe 1
+                stats.actual.uptimeStats.inProgress shouldBe 0
+
+                stats.actual.sslStats.valid shouldBe 1
+                stats.actual.sslStats.invalid shouldBe 1
+                stats.actual.sslStats.willExpire shouldBe 0
+                stats.actual.sslStats.inProgress shouldBe 0
+
+                stats.history.uptimeStats.incidents shouldBe 2
+                stats.history.uptimeStats.affectedMonitors shouldBe 2
+                // 1.5 days DOWN inside the period
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 36 * 60 * 60
+                // 5 days UP, 1.5 days DOWN
+                stats.history.uptimeStats.uptimeRatio shouldBe 5.toDouble() / 6.5
+            }
+        }
+
         `when`("there is a monitor that was just created") {
 
             createMonitor(monitorRepository, enabled = true, sslCheckEnabled = true)
@@ -410,6 +494,7 @@ class StatCalculatorTest(
             val upMonitor = createMonitor(monitorRepository, enabled = true)
             val downMonitor = createMonitor(monitorRepository, enabled = true)
             val pausedMonitor = createMonitor(monitorRepository, enabled = false)
+            val pausedMonitor2 = createMonitor(monitorRepository, enabled = false)
 
             // upMonitor's events: UP
             createUptimeEventRecord(
@@ -445,6 +530,16 @@ class StatCalculatorTest(
                 startedAt = now.minusDays(3),
                 status = UptimeStatus.DOWN,
                 endedAt = now.minusDays(2),
+            )
+
+            // pausedMonitor2's events: DOWN, but update date is before the period, so it should not be counted
+            createUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor2.id,
+                startedAt = now.minusDays(10),
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+                updatedAt = now.minusDays(7),
             )
 
             then("it should correctly calculate the stats for all statuses") {
@@ -483,6 +578,15 @@ class StatCalculatorTest(
                 statsOfPausedMonitor.affectedMonitors shouldBe 1
                 statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
                 statsOfPausedMonitor.uptimeRatio shouldBe 0.5
+
+                val statsOfPausedMonitor2 = statCalculator.calculateHistoricalHttpUptimeStats(
+                    period = Duration.ofDays(6),
+                    monitorId = pausedMonitor2.id,
+                )
+                statsOfPausedMonitor2.incidents shouldBe 0
+                statsOfPausedMonitor2.affectedMonitors shouldBe 0
+                statsOfPausedMonitor2.totalDowntimeSeconds shouldBe 0
+                statsOfPausedMonitor2.uptimeRatio shouldBe null
             }
         }
     }

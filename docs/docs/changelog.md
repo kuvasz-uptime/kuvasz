@@ -1,3 +1,10 @@
+## 3.0.2 <small>2025-08-31</small> { id="3.0.2" data-toc-label="3.0.2" }
+
+### Fixes
+
+- Fixed a bug where the historical HTTP uptime stats could contain incorrect values in case a paused monitor's ongoing incident was updated before the requested time range of stats
+- Fixed a bug where the monitor-specific incidents were not returned in case of a paused monitor
+
 ## 3.0.1 <small>2025-08-31</small> { id="3.0.1" data-toc-label="3.0.1" }
 
 ### Breaking changes

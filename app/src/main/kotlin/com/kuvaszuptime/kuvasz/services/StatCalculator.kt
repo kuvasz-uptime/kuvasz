@@ -102,6 +102,10 @@ class StatCalculator(
         var historicalDowntimeSeconds = 0L
 
         uptimeEvents.forEach { uptimeEvent ->
+            if (!uptimeEvent.isMonitorEnabled && uptimeEvent.updatedAt.isBefore(periodStart)) {
+                // If the monitor was disabled and the last update was before the period then we skip this event
+                return@forEach
+            }
             val effectiveStartDate = maxOf(uptimeEvent.startedAt, periodStart)
             val duration = getDurationOfEvent(
                 isMonitorEnabled = uptimeEvent.isMonitorEnabled,
