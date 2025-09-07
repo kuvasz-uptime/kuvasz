@@ -638,7 +638,8 @@ const integrationListItem = (integrationId) => {
         async sendTestRequest() {
             if (this.isTestRequestLoading || this.wasTestRequestExecuted) return; // Prevent multiple clicks
             this.isTestRequestLoading = true;
-            const response = await fetch('/api/v2/integrations/' + this.integrationId + '/test', {
+            const encodedIntegrationId = encodeURIComponent(this.integrationId);
+            const response = await fetch('/api/v2/integrations/' + encodedIntegrationId + '/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             })
