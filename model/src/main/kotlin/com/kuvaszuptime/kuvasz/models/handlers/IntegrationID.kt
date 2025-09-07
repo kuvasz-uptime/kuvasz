@@ -29,7 +29,7 @@ data class IntegrationID(
 
         @JsonDeserialize
         fun fromString(identifier: String): IntegrationID? =
-            identifier.split(":")
+            identifier.split(":", limit = 2)
                 .takeIf { it.size == 2 }
                 ?.let { (stringType, name) ->
                     val enumType = IntegrationType.fromIdentifier(stringType) ?: return null

@@ -39,7 +39,7 @@ integrations:
       integration-key: fedcba0987654321fedcba0987654321
       enabled: false
   telegram:
-    - name: test_implicitly_enabled
+    - name: "test: implicitly enabled"
       api-token: 123456789:ABCdefGhIJKlmnoPQRstuVWXyZ
       chat-id: -1001234567890
     - name: global

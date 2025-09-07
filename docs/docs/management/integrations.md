@@ -30,16 +30,12 @@ All the integrations **share some common, generic settings
 <!-- md:type `string` -->
 <!-- md:yaml_prop `name` -->
 
-The name of the integration. It must be **unique across the given type** of integration, so you can have multiple Slack integrations, for example, but they must have different names, and vice versa: you can have multiple integrations of different types with the same name.
-
-!!! warning
-
-    The name can contain only alphanumeric characters (`a-z`, `A-Z`, `0-9`), underscores (`_`), or dashes (`-`).
+The name of the integration. It must be **unique across the given type** of integration, so you can have multiple Slack integrations, for example, but they must have different names, and vice versa: you can have multiple integrations of different types with the same name. **Can't be a blank string!**
 
 ```yaml hl_lines="3"
 integrations:
   pagerduty:
-    - name: pd_global
+    - name: "PD global integration"
       integration-key: YourOwnIntegrationKey
 ```
 

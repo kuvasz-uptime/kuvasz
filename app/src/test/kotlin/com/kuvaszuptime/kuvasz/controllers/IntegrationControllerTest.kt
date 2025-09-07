@@ -138,9 +138,9 @@ class IntegrationControllerTest(
                 implicitlyEnabledTelegram.shouldBeInstanceOf<TelegramNotificationConfigDto>()
                 implicitlyEnabledTelegram.id shouldBe IntegrationID(
                     IntegrationType.TELEGRAM,
-                    "test_implicitly_enabled"
+                    "test: implicitly enabled"
                 )
-                implicitlyEnabledTelegram.name shouldBe "test_implicitly_enabled"
+                implicitlyEnabledTelegram.name shouldBe "test: implicitly enabled"
                 implicitlyEnabledTelegram.enabled shouldBe true
                 implicitlyEnabledTelegram.global shouldBe false
                 implicitlyEnabledTelegram.chatId shouldBe "-1001234567890"
