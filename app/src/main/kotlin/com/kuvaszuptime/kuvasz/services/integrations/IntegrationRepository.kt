@@ -32,17 +32,14 @@ class IntegrationRepository(
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
-    // Regex to validate integration names (alphanumeric, hyphens and underscores only)
-    private val integrationNameRegex = Regex("^[a-zA-Z0-9_-]+$")
-
     val configuredIntegrations: IntegrationMap by lazy {
         val result = mutableMapOf<IntegrationID, IntegrationConfig>()
         integrationConfigs.forEach { integrationConfig ->
             // Validate integration names
-            if (!integrationConfig.name.matches(integrationNameRegex)) {
+            if (integrationConfig.name.isBlank()) {
                 throw IntegrationConfigException(
                     "Invalid integration name [${integrationConfig.name}]. " +
-                        "Integration names must be alphanumeric and can contain underscores or hyphens only."
+                        "Integration name must be a non-blank string."
                 )
             }
             // Check for duplicate integration IDs

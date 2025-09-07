@@ -1,3 +1,9 @@
+## To be released <small>2025-xx-xx</small> { id="to-be-released" data-toc-label="To be released" }
+
+### New features
+
+- [**Integration names**](management/integrations.md#name) can be totally **arbitrary** now, the previous restriction of containing only alphanumeric characters, hyphens and underscores has been lifted.
+
 ## 3.0.2 <small>2025-08-31</small> { id="3.0.2" data-toc-label="3.0.2" }
 
 ### Fixes

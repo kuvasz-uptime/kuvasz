@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import com.kuvaszuptime.kuvasz.testutils.getBean
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.inspectors.forOne
@@ -131,10 +132,10 @@ class IntegrationBootstrappingTest : StringSpec({
                 forOne { implicitlyEnabledTelegram ->
                     implicitlyEnabledTelegram.key shouldBe IntegrationID(
                         IntegrationType.TELEGRAM,
-                        "test_implicitly_enabled"
+                        "test: implicitly enabled"
                     )
                     val config = implicitlyEnabledTelegram.value as TelegramNotificationConfig
-                    config.name shouldBe "test_implicitly_enabled"
+                    config.name shouldBe "test: implicitly enabled"
                     config.type shouldBe IntegrationType.TELEGRAM
                     config.apiToken shouldBe "123456789:ABCdefGhIJKlmnoPQRstuVWXyZ"
                     config.chatId shouldBe "-1001234567890"
@@ -231,10 +232,10 @@ class IntegrationBootstrappingTest : StringSpec({
                 forOne { implicitlyEnabledTelegram ->
                     implicitlyEnabledTelegram.key shouldBe IntegrationID(
                         IntegrationType.TELEGRAM,
-                        "test_implicitly_enabled"
+                        "test: implicitly enabled"
                     )
                     val config = implicitlyEnabledTelegram.value as TelegramNotificationConfig
-                    config.name shouldBe "test_implicitly_enabled"
+                    config.name shouldBe "test: implicitly enabled"
                     config.type shouldBe IntegrationType.TELEGRAM
                     config.apiToken shouldBe "123456789:ABCdefGhIJKlmnoPQRstuVWXyZ"
                     config.chatId shouldBe "-1001234567890"
@@ -299,6 +300,42 @@ class IntegrationBootstrappingTest : StringSpec({
         }
     }
 
+    "app should be able to start with complex integration names" {
+        val ctx = shouldNotThrowAny {
+            ApplicationContext.run("complex-integration-name")
+        }
+
+        with(ctx.getBean<IntegrationRepository>()) {
+            configuredIntegrations shouldHaveSize 2
+            enabledIntegrations shouldHaveSize 2
+            enabledIntegrationsByType shouldHaveSize 1
+            globallyEnabledIntegrationsByType shouldHaveSize 1
+
+            with(configuredIntegrations) {
+                forOne { slackWithComplexName ->
+                    val expectedName = "ThisOneContéins!SpecialChara#cters\$AndColons:Spaces Toő"
+                    slackWithComplexName.key shouldBe IntegrationID(IntegrationType.SLACK, expectedName)
+                    val config = slackWithComplexName.value as SlackNotificationConfig
+                    config.name shouldBe expectedName
+                    config.type shouldBe IntegrationType.SLACK
+                    config.webhookUrl shouldBe "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledSlack ->
+                    val expectedName = "Global2"
+                    globallyEnabledSlack.key shouldBe IntegrationID(IntegrationType.SLACK, expectedName)
+                    val config = globallyEnabledSlack.value as SlackNotificationConfig
+                    config.name shouldBe expectedName
+                    config.type shouldBe IntegrationType.SLACK
+                    config.webhookUrl shouldBe "https://hooks.slack.com/services/T00000000/B00000000/YYYYYYYYYY"
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
+            }
+        }
+    }
+
     "app should not start if there are integrations with the same name and type" {
         val ex = shouldThrow<BeanInstantiationException> {
             ApplicationContext.run("duplicate-integrations")
@@ -310,11 +347,11 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there is at least one integration with a badly formatted name" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("invalid-integration-name")
+            ApplicationContext.run("blank-integration-name")
         }
 
-        ex.message shouldContain "Invalid integration name [ThisOneContains!SpecialChara#cters\$]. " +
-            "Integration names must be alphanumeric and can contain underscores or hyphens only."
+        ex.message shouldContain "Invalid integration name [ \n" +
+            " ]. Integration name must be a non-blank string."
     }
 
     "app should not start if there is an invalid integration config" {

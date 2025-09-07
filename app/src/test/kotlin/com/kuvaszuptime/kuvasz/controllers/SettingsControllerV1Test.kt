@@ -129,9 +129,9 @@ class SettingsControllerV1Test(settingsClient: SettingsClientV1, appGlobals: App
                         forOne { implicitlyEnabled ->
                             implicitlyEnabled.id shouldBe IntegrationID(
                                 IntegrationType.TELEGRAM,
-                                "test_implicitly_enabled"
+                                "test: implicitly enabled"
                             )
-                            implicitlyEnabled.name shouldBe "test_implicitly_enabled"
+                            implicitlyEnabled.name shouldBe "test: implicitly enabled"
                             implicitlyEnabled.enabled shouldBe true
                             implicitlyEnabled.global shouldBe false
                             implicitlyEnabled.chatId shouldBe "-1001234567890"
