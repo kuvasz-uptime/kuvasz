@@ -8,10 +8,12 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord;
 
 import org.jooq.ForeignKey;
 import org.jooq.TableField;
@@ -39,6 +41,8 @@ public class Keys {
     public static final UniqueKey<HttpUptimeEventRecord> UPTIME_EVENT_PKEY = Internal.createUniqueKey(HttpUptimeEvent.HTTP_UPTIME_EVENT, DSL.name("uptime_event_pkey"), new TableField[] { HttpUptimeEvent.HTTP_UPTIME_EVENT.ID }, true);
     public static final UniqueKey<SslEventRecord> SSL_EVENT_KEY = Internal.createUniqueKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_key"), new TableField[] { SslEvent.SSL_EVENT.MONITOR_ID, SslEvent.SSL_EVENT.STATUS, SslEvent.SSL_EVENT.ENDED_AT }, true);
     public static final UniqueKey<SslEventRecord> SSL_EVENT_PKEY = Internal.createUniqueKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_pkey"), new TableField[] { SslEvent.SSL_EVENT.ID }, true);
+    public static final UniqueKey<StatusPageRecord> STATUS_PAGE_PKEY = Internal.createUniqueKey(StatusPage.STATUS_PAGE, DSL.name("status_page_pkey"), new TableField[] { StatusPage.STATUS_PAGE.ID }, true);
+    public static final UniqueKey<StatusPageRecord> STATUS_PAGE_SLUG_KEY = Internal.createUniqueKey(StatusPage.STATUS_PAGE, DSL.name("status_page_slug_key"), new TableField[] { StatusPage.STATUS_PAGE.SLUG }, true);
 
     // -------------------------------------------------------------------------
     // FOREIGN KEY definitions
