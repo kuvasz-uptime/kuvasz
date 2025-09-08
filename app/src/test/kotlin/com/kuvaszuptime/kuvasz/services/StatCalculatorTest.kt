@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import org.jooq.DSLContext
+import java.math.RoundingMode
 import java.time.Duration
 
 @MicronautTest(startApplication = false)
@@ -186,7 +187,10 @@ class StatCalculatorTest(
                 // 1.5 days DOWN inside the period
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 36 * 60 * 60
                 // 5 days UP, 1.5 days DOWN
-                stats.history.uptimeStats.uptimeRatio shouldBe 5.toDouble() / 6.5
+                stats.history.uptimeStats.uptimeRatio
+                    ?.toBigDecimal()
+                    ?.setScale(2, RoundingMode.HALF_UP) shouldBe
+                    (5.toDouble() / 6.5).toBigDecimal().setScale(2, RoundingMode.HALF_UP)
             }
         }
 

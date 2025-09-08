@@ -41,7 +41,6 @@ data class MonitorID(
 class InvalidMonitorIDException(id: String) :
     IllegalArgumentException("Invalid monitor ID format: $id. Expected format is 'type:name'.")
 
-// TODO see if we really need it
 @Singleton
 class MonitorIDTypeConverter : TypeConverter<String, MonitorID> {
     override fun convert(
