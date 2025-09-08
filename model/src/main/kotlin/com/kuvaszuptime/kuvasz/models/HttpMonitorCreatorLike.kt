@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.models
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
-import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
@@ -19,15 +19,15 @@ import jakarta.validation.constraints.PositiveOrZero
 
 @Suppress("ComplexInterface")
 interface HttpMonitorCreatorLike {
-    @get:NotBlank(message = ValidationMessages.NAME_NOT_BLANK)
+    @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String
 
-    @get:NotNull(message = ValidationMessages.URL_NOT_NULL)
-    @get:Pattern(regexp = Validation.URI_REGEX, message = ValidationMessages.URL_PATTERN)
+    @get:NotNull(message = MonitorValidationMessages.URL_NOT_NULL)
+    @get:Pattern(regexp = Validation.URI_REGEX, message = MonitorValidationMessages.URL_PATTERN)
     val url: String
 
-    @get:NotNull(message = ValidationMessages.UPTIME_CHECK_INTERVAL_NOT_NULL)
-    @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL, message = ValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
+    @get:NotNull(message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_NOT_NULL)
+    @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL, message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
     val uptimeCheckInterval: Int
     val enabled: Boolean
     val sslCheckEnabled: Boolean
@@ -36,8 +36,8 @@ interface HttpMonitorCreatorLike {
     val forceNoCache: Boolean
     val followRedirects: Boolean
 
-    @get:NotNull(message = ValidationMessages.SSL_EXPIRY_THRESHOLD_NOT_NULL)
-    @get:PositiveOrZero(message = ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
+    @get:NotNull(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_NOT_NULL)
+    @get:PositiveOrZero(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
     val sslExpiryThreshold: Int
 
     val integrations: List<String>?
@@ -45,10 +45,10 @@ interface HttpMonitorCreatorLike {
     @get:SupportedStatusCodes
     val expectedStatusCodes: List<Int>?
 
-    @get:Positive(message = ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE)
+    @get:Positive(message = MonitorValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE)
     @get:Max(
         Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS,
-        message = ValidationMessages.RESPONSE_TIME_THRESHOLD_MAX,
+        message = MonitorValidationMessages.RESPONSE_TIME_THRESHOLD_MAX,
     )
     val responseTimeThresholdMillis: Int?
     val expectedKeyword: String?

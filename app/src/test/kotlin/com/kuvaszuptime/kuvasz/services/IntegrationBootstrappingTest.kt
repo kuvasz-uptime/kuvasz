@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -360,7 +360,7 @@ class IntegrationBootstrappingTest : StringSpec({
         }
 
         ex.message shouldContain "SlackNotificationConfig.getWebhookUrl - " +
-            ValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
+            IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
 })
 

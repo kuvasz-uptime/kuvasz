@@ -20,15 +20,15 @@ import jakarta.validation.constraints.PositiveOrZero
 @Introspected
 data class HttpMonitorUpdateDto(
     @param:Schema(description = HttpMonitorDocs.NAME, required = false, nullable = false)
-    @get:NotBlank(message = ValidationMessages.NAME_NOT_BLANK)
+    @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String?,
 
     @param:Schema(description = HttpMonitorDocs.URL, required = false, nullable = false)
-    @get:Pattern(regexp = URI_REGEX, message = ValidationMessages.URL_PATTERN)
-    @get:NotNull(message = ValidationMessages.URL_NOT_NULL)
+    @get:Pattern(regexp = URI_REGEX, message = MonitorValidationMessages.URL_PATTERN)
+    @get:NotNull(message = MonitorValidationMessages.URL_NOT_NULL)
     val url: String?,
 
-    @get:Min(MIN_UPTIME_CHECK_INTERVAL, message = ValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
+    @get:Min(MIN_UPTIME_CHECK_INTERVAL, message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
     @get:NotNull
     @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = false, nullable = false)
     val uptimeCheckInterval: Int?,
@@ -58,7 +58,7 @@ data class HttpMonitorUpdateDto(
     val followRedirects: Boolean?,
 
     @get:NotNull
-    @get:PositiveOrZero(message = ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
+    @get:PositiveOrZero(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = false, nullable = false)
     val sslExpiryThreshold: Int?,
 
@@ -69,8 +69,11 @@ data class HttpMonitorUpdateDto(
     @param:Schema(description = HttpMonitorDocs.EXPECTED_STATUS_CODES, required = false, nullable = true)
     val expectedStatusCodes: List<Int>?,
 
-    @get:Positive(message = ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE)
-    @get:Max(Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS, message = ValidationMessages.RESPONSE_TIME_THRESHOLD_MAX)
+    @get:Positive(message = MonitorValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE)
+    @get:Max(
+        Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS,
+        message = MonitorValidationMessages.RESPONSE_TIME_THRESHOLD_MAX
+    )
     @param:Schema(description = HttpMonitorDocs.RESPONSE_TIME_THRESHOLD, required = false, nullable = true)
     val responseTimeThresholdMillis: Int?,
 

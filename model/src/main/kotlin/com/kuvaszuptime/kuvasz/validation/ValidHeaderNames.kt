@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.validation
 
-import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
@@ -9,7 +9,7 @@ import jakarta.validation.Constraint
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [])
 annotation class ValidHeaderNames(
-    val message: String = ValidationMessages.VALID_HEADER_NAMES,
+    val message: String = MonitorValidationMessages.VALID_HEADER_NAMES,
 )
 
 @Factory

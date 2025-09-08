@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.config
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDefaults
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
@@ -31,7 +32,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getName - ${ValidationMessages.NAME_NOT_BLANK}"
+                    "MonitorConfig.getName - ${MonitorValidationMessages.NAME_NOT_BLANK}"
             }
         }
 
@@ -41,7 +42,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUrl - ${ValidationMessages.URL_PATTERN}"
+                    "MonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
             }
         }
 
@@ -51,7 +52,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUrl - ${ValidationMessages.URL_PATTERN}"
+                    "MonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
             }
         }
 
@@ -71,7 +72,8 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getSslExpiryThreshold - ${ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO}"
+                    "MonitorConfig.getSslExpiryThreshold - " +
+                    MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
             }
         }
 
@@ -81,7 +83,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "getExpectedStatusCodes - ${ValidationMessages.SUPPORTED_STATUS_CODES}"
+                    "getExpectedStatusCodes - ${MonitorValidationMessages.SUPPORTED_STATUS_CODES}"
             }
         }
 
@@ -102,7 +104,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getRequestHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
+                    "MonitorConfig.getRequestHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
             }
         }
 
@@ -112,7 +114,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getExpectedHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
+                    "MonitorConfig.getExpectedHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
             }
         }
 

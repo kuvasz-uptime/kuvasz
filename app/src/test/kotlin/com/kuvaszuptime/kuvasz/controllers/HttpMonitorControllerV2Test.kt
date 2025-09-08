@@ -16,6 +16,7 @@ import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
@@ -1005,7 +1006,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.URL_PATTERN
+                    exceptionToMessage(response) shouldContain MonitorValidationMessages.URL_PATTERN
                 }
             }
 
@@ -1042,7 +1043,8 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
+                    exceptionToMessage(response) shouldContain
+                        MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
                 }
             }
 
@@ -1101,7 +1103,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.SUPPORTED_STATUS_CODES
+                    exceptionToMessage(response) shouldContain MonitorValidationMessages.SUPPORTED_STATUS_CODES
                 }
             }
 
@@ -1120,7 +1122,8 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
+                    exceptionToMessage(response) shouldContain
+                        MonitorValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
                 }
             }
 
@@ -1159,7 +1162,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -1178,7 +1181,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -1750,7 +1753,8 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
-                    ex.response.getBodyAs<String>() shouldContain ValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
+                    ex.response.getBodyAs<String>() shouldContain
+                        MonitorValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
                     monitorInDb.name shouldBe createdMonitor.name
                 }
             }
@@ -1777,7 +1781,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.SUPPORTED_STATUS_CODES
+                    exceptionToMessage(response) shouldContain MonitorValidationMessages.SUPPORTED_STATUS_CODES
                     monitorInDb.expectedStatusCodes shouldContainExactlyInAnyOrder
                         createdMonitor.expectedStatusCodes.toTypedArray()
                 }
@@ -1806,7 +1810,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.requestHeadersAsMap() shouldContainExactly createdMonitor.requestHeaders
                 }
             }
@@ -1834,7 +1838,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.expectedHeadersAsMap() shouldContainExactly createdMonitor.expectedHeaders
                 }
             }
