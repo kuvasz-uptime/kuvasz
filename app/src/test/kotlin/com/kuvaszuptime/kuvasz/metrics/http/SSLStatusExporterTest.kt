@@ -20,7 +20,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
         given("an enabled SSL status exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -74,7 +74,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -152,7 +152,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),

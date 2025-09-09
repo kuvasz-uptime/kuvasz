@@ -39,7 +39,7 @@ import org.jooq.DSLContext
  *
  * So take care when dealing with it, because it might break other tests too if not handled properly
  */
-class AppBootstrappingYamlConfigTest : StringSpec({
+class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
 
     var appContext: ApplicationContext? = null
 
@@ -55,7 +55,7 @@ class AppBootstrappingYamlConfigTest : StringSpec({
     afterSpec {
         // Doing a final manual cleanup after all tests to make sure that we don't leave any data behind that would
         // influence the consecutive tests
-        val ephemeralAppContext = ApplicationContext.run()
+        val ephemeralAppContext = ApplicationContext.run("test")
         ephemeralAppContext.getBean<DSLContext>().resetDatabase()
         ephemeralAppContext.stop()
     }

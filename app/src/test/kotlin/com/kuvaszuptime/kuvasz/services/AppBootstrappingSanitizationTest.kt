@@ -44,7 +44,7 @@ class AppBootstrappingSanitizationTest(
         )
 
         // Simulating the restart of the application
-        shouldNotThrowAny { ApplicationContext.run("full-integrations-setup") }
+        shouldNotThrowAny { ApplicationContext.run("full-integrations-setup", "test") }
         val sanitizedMonitor = monitorRepository.findById(monitor.id).shouldNotBeNull()
 
         // The configured ones should be kept, even the disabled one

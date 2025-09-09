@@ -16,7 +16,7 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
         given("an enabled latency exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithLatency = createMonitor(
                     getMonitorRepository(),
@@ -59,7 +59,7 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithLatency = createMonitor(
                     getMonitorRepository(),
@@ -109,7 +109,7 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithLatency = createMonitor(
                     getMonitorRepository(),

@@ -47,7 +47,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         // Doing a final manual cleanup after each tests to make sure that we don't leave any data behind that would
         // influence the consecutive tests
-        val ephemeralAppContext = ApplicationContext.run()
+        val ephemeralAppContext = ApplicationContext.run("test")
         ephemeralAppContext.getBean<DSLContext>().resetDatabase()
         ephemeralAppContext.stop()
         // Stopping the app context after each test, so we can practically simulate the app restart
@@ -57,7 +57,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
 
     fun restartAppContextWithMetrics() {
         appContext.shouldNotBeNull().stop()
-        appContext = ApplicationContext.run(env)
+        appContext = ApplicationContext.run(env, "test")
     }
 
     infix fun <T : Any> Meter.shouldHaveValue(expectedValue: T) {

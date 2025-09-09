@@ -17,7 +17,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
         given("an enabled status exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -70,7 +70,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -149,7 +149,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),

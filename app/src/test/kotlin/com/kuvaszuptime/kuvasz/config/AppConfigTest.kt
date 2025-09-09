@@ -21,7 +21,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        ApplicationContext.run(properties, "test")
                     }
                     exceptionToMessage(exception) shouldContain
                         "Error resolving property value [app-config.event-data-retention-days]"
@@ -38,7 +38,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        ApplicationContext.run(properties, "test")
                     }
                     exceptionToMessage(exception) shouldContain "Event data retention must be at least 1 days"
                 }
@@ -54,7 +54,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        ApplicationContext.run(properties, "test")
                     }
                     exceptionToMessage(exception) shouldContain
                         "Error resolving property value [app-config.latency-data-retention-days]"
@@ -71,7 +71,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        ApplicationContext.run(properties, "test")
                     }
                     exceptionToMessage(exception) shouldContain "Latency data retention must be at least 1 days"
                 }

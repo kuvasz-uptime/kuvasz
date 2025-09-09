@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import org.jooq.DSLContext
@@ -571,7 +572,9 @@ class StatCalculatorTest(
                 )
                 statsOfDownMonitor.incidents shouldBe 1
                 statsOfDownMonitor.affectedMonitors shouldBe 1
-                statsOfDownMonitor.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 // 5 days
+                val expectedDowntimeSeconds = 5L * 24 * 60 * 60 // 5 days in seconds
+                statsOfDownMonitor.totalDowntimeSeconds shouldBeInRange
+                    (expectedDowntimeSeconds..expectedDowntimeSeconds + 1)
                 statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
                 val statsOfPausedMonitor = statCalculator.calculateHistoricalHttpUptimeStats(

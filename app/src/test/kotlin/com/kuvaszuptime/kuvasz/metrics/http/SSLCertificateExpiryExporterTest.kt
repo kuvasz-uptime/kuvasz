@@ -18,7 +18,7 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
         given("an enabled SSL expiry exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithExpiry = createMonitor(
                     getMonitorRepository(),
@@ -74,7 +74,7 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithExpiry = createMonitor(
                     getMonitorRepository(),
@@ -154,7 +154,7 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run()
+                appContext = ApplicationContext.run("test")
 
                 val enabledMonitorWithExpiry = createMonitor(
                     getMonitorRepository(),

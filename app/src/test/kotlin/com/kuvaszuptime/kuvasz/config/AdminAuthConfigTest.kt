@@ -24,7 +24,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    ApplicationContext.run(properties, "test")
                 }
                 exceptionToMessage(exception) shouldContain "Admin password must be at least 12 characters"
             }
@@ -51,10 +51,10 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception1 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties1)
+                    ApplicationContext.run(properties1, "test")
                 }
                 val exception2 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties2)
+                    ApplicationContext.run(properties2, "test")
                 }
                 exceptionToMessage(exception1) shouldContain "Admin username must not be blank"
                 exceptionToMessage(exception2) shouldContain "Admin password must not be blank"
@@ -73,7 +73,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    ApplicationContext.run(properties, "test")
                 }
                 exceptionToMessage(exception) shouldContain "Admin API key must be at least 16 characters"
             }
@@ -100,10 +100,10 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception1 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    ApplicationContext.run(properties, "test")
                 }
                 val exception2 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties2)
+                    ApplicationContext.run(properties2, "test")
                 }
                 exceptionToMessage(exception1) shouldContain "Admin API key must not be blank"
                 exceptionToMessage(exception2) shouldContain "Admin API key must not be blank"
@@ -122,7 +122,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    ApplicationContext.run(properties, "test")
                 }
                 exceptionToMessage(exception) shouldContain "Admin username and password should not be equal"
             }
@@ -140,7 +140,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should not throw an exception") {
                 shouldNotThrowAny {
-                    ApplicationContext.run(properties)
+                    ApplicationContext.run(properties, "test")
                 }
             }
         }
@@ -156,7 +156,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should not throw an exception") {
                 shouldNotThrowAny {
-                    ApplicationContext.run(properties)
+                    ApplicationContext.run(properties, "test")
                 }
             }
         }

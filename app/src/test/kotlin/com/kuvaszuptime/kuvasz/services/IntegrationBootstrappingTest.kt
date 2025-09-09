@@ -28,7 +28,7 @@ import io.micronaut.context.exceptions.BeanInstantiationException
 class IntegrationBootstrappingTest : StringSpec({
 
     "IntegrationRepository should load the integrations from YAML upon startup if they are all valid" {
-        val ctx = ApplicationContext.run("full-integrations-setup")
+        val ctx = ApplicationContext.run("full-integrations-setup", "test")
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 15
@@ -290,7 +290,7 @@ class IntegrationBootstrappingTest : StringSpec({
     }
 
     "app should be able to start if there are no integrations configured" {
-        val ctx = ApplicationContext.run()
+        val ctx = ApplicationContext.run("test")
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 0
@@ -302,7 +302,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should be able to start with complex integration names" {
         val ctx = shouldNotThrowAny {
-            ApplicationContext.run("complex-integration-name")
+            ApplicationContext.run("complex-integration-name", "test")
         }
 
         with(ctx.getBean<IntegrationRepository>()) {
@@ -338,7 +338,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there are integrations with the same name and type" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("duplicate-integrations")
+            ApplicationContext.run("duplicate-integrations", "test")
         }
 
         ex.message shouldContain "Duplicate integration configuration found for pagerduty:test. " +
@@ -347,7 +347,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there is at least one integration with a badly formatted name" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("blank-integration-name")
+            ApplicationContext.run("blank-integration-name", "test")
         }
 
         ex.message shouldContain "Invalid integration name [ \n" +
@@ -356,7 +356,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there is an invalid integration config" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("invalid-integration-config")
+            ApplicationContext.run("invalid-integration-config", "test")
         }
 
         ex.message shouldContain "SlackNotificationConfig.getWebhookUrl - " +
@@ -366,7 +366,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
 class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
     "EmailConfigs should not be loaded into enabledConfigurations if SMTP is not configured" {
-        val ctx = ApplicationContext.run("full-integrations-setup")
+        val ctx = ApplicationContext.run("full-integrations-setup", "test")
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 15

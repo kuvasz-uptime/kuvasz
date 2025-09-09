@@ -28,7 +28,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("name is an empty string") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-blank-name")
+                ApplicationContext.run("monitor-blank-name", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -38,7 +38,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("url is an empty string") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-blank-url")
+                ApplicationContext.run("monitor-blank-url", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -48,7 +48,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("url is not a valid URL") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-invalid-url")
+                ApplicationContext.run("monitor-invalid-url", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -58,7 +58,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("uptimeCheckInterval is less than 60 seconds") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-short-uptime-check-interval")
+                ApplicationContext.run("monitor-short-uptime-check-interval", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -68,7 +68,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("sslExpiryThreshold is less than 0 day") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-negative-ssl-expiry-threshold")
+                ApplicationContext.run("monitor-negative-ssl-expiry-threshold", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -79,7 +79,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("expectedStatusCodes contains an unsupported status code") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-invalid-status-code")
+                ApplicationContext.run("monitor-invalid-status-code", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -89,7 +89,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("responseTimeThresholdMillis is invalid") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-invalid-response-time-threshold")
+                ApplicationContext.run("monitor-invalid-response-time-threshold", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -100,7 +100,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("requestHeaders contains an invalid header") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-invalid-request-header")
+                ApplicationContext.run("monitor-invalid-request-header", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -110,7 +110,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("expectedHeaders contains an invalid header") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-invalid-expected-header")
+                ApplicationContext.run("monitor-invalid-expected-header", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -120,7 +120,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("requestBody is not a well-formed JSON") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("monitor-invalid-request-body")
+                ApplicationContext.run("monitor-invalid-request-body", "test")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
