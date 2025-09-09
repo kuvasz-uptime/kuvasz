@@ -33,11 +33,19 @@ class AppConfig {
 
     private var isHttpMonitorExternalWriteDisabled = false
 
+    private var isStatusPageExternalWriteDisabled = false
+
     var uptimeCheckLockTimeoutMs: Long = UPTIME_CHECK_LOCK_TIMEOUT_MS
 
     fun disableHttpMonitorExternalWrite() {
         isHttpMonitorExternalWriteDisabled = true
     }
 
+    fun disableStatusPageExternalWrite() {
+        isStatusPageExternalWriteDisabled = true
+    }
+
     fun isHttpMonitorExternalWriteDisabled() = isHttpMonitorExternalWriteDisabled
+
+    fun isStatusPageExternalWriteDisabled() = isStatusPageExternalWriteDisabled
 }

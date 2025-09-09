@@ -22,7 +22,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
  * These tests are meant to check if a wrongly configured MonitorConfig in the YAML files
  * really hinders the application from starting as expected.
  */
-class MonitorConfigValidationTest : BehaviorSpec({
+class HttpMonitorConfigValidationTest : BehaviorSpec({
 
     given("a MonitorConfig bean") {
 
@@ -137,7 +137,7 @@ class MonitorConfigValidationTest : BehaviorSpec({
  * It extends a DatabaseBehaviorSpec to delete the inserted monitor properly to not affect other tests
  */
 @MicronautTest(startApplication = false, environments = ["monitor-without-defaults"])
-class MonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : DatabaseBehaviorSpec({
+class HttpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : DatabaseBehaviorSpec({
 
     given("a MonitorConfig bean") {
 

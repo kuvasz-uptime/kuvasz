@@ -189,8 +189,8 @@ class StatCalculatorTest(
                 // 5 days UP, 1.5 days DOWN
                 stats.history.uptimeStats.uptimeRatio
                     ?.toBigDecimal()
-                    ?.setScale(2, RoundingMode.HALF_UP) shouldBe
-                    (5.toDouble() / 6.5).toBigDecimal().setScale(2, RoundingMode.HALF_UP)
+                    ?.setScale(4, RoundingMode.HALF_UP) shouldBe
+                    (5.toDouble() / 6.5).toBigDecimal().setScale(4, RoundingMode.HALF_UP)
             }
         }
 

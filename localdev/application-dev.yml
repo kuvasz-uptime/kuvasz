@@ -63,3 +63,24 @@ http-monitors:
     uptime-check-interval: 60
     request-method: HEAD
     enabled: false
+  - name: "Tralala #!: j[ő"
+    url: https://akobor.me
+    uptime-check-interval: 60
+    request-method: GET
+    enabled: false
+status-pages:
+  default:
+    enabled: true
+    title: "Kuvasz Status"
+  configs:
+    - title: "Example Status Page"
+      slug: "example-status"
+      enabled: false
+      monitors:
+        - "http:Tralala #!: j[ő"
+    - title: "Example Status Page 2"
+      slug: "example-status2"
+      enabled: true
+      monitors:
+        - "http:test1"
+        - "http:test2"

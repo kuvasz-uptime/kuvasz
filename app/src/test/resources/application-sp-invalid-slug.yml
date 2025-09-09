@@ -1,0 +1,11 @@
+http-monitors:
+  - name: test1
+    url: https://demo.kuvasz-uptime.dev
+    uptime-check-interval: 120
+status-pages:
+  configs:
+    - title: "Invalid Slug Status Page"
+      slug: "áfsd fda"
+      enabled: true
+      monitors:
+        - "http:test1"

@@ -1,0 +1,20 @@
+status-pages:
+  default:
+    enabled: true
+    title: "Kuvasz Status"
+  configs:
+    - title: "Example Status Page"
+      slug: "example-status"
+      enabled: false
+      monitors:
+        - "http:Test monitor 1"
+        - "http:Test monitor 2"
+    - title: "Example Status Page 2"
+      slug: "example-status2"
+      enabled: true
+      monitors:
+        - "http:Test monitor 1"
+    - title: "Example Status Page 3"
+      slug: "example_status3"
+      monitors:
+        - "http:Test monitor 2"

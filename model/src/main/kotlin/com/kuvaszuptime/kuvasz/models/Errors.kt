@@ -24,6 +24,10 @@ class MonitorDuplicatedException(
     override val message: String? = "There is already a monitor with the given name"
 ) : DuplicationException()
 
+class StatusPageDuplicatedException(
+    override val message: String? = "There is already a status page with the given slug"
+) : DuplicationException()
+
 class SchedulingException(
     override val message: String? = "Scheduling checks for the monitor did not succeed"
 ) : Exception()
