@@ -287,6 +287,7 @@ class IntegrationBootstrappingTest : StringSpec({
                 integrationKey shouldBe "abcdef1234567890abcdef1234567890"
             }
         }
+        ctx.close()
     }
 
     "app should be able to start if there are no integrations configured" {
@@ -298,6 +299,7 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType shouldHaveSize 0
             globallyEnabledIntegrationsByType shouldHaveSize 0
         }
+        ctx.close()
     }
 
     "app should be able to start with complex integration names" {
@@ -334,6 +336,7 @@ class IntegrationBootstrappingTest : StringSpec({
                 }
             }
         }
+        ctx.close()
     }
 
     "app should not start if there are integrations with the same name and type" {
@@ -382,5 +385,6 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
             enabledIntegrations[implicitlyEnabledId].shouldBeNull()
             enabledIntegrations[globallyEnabledId].shouldBeNull()
         }
+        ctx.close()
     }
 })

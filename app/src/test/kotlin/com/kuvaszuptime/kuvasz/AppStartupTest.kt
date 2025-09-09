@@ -22,6 +22,7 @@ class AppStartupTest : BehaviorSpec({
 
                 val ctx = shouldNotThrowAny { ApplicationContext.run("test") }
                 shouldThrow<NoSuchBeanException> { ctx.getBean<MeterRegistry>() }
+                ctx.close()
             }
         }
 
@@ -41,6 +42,7 @@ class AppStartupTest : BehaviorSpec({
 
                 ctx.getBean<MeterRegistry>().shouldNotBeNull()
                 ctx.getBeansOfType(HttpMetricsExporter::class.java) shouldHaveSize 4
+                ctx.close()
             }
         }
 
@@ -56,7 +58,7 @@ class AppStartupTest : BehaviorSpec({
                     "metrics-exports.ssl-status" to true,
                     "metrics-exports.ssl-expiry" to true
                 )
-                val ctx = shouldNotThrowAny { ApplicationContext.run(properties, "test") }
+                val ctx = shouldNotThrowAny { autoClose(ApplicationContext.run(properties, "test")) }
 
                 shouldThrow<NoSuchBeanException> { ctx.getBean<MeterRegistry>() }
                 ctx.getBeansOfType(HttpMetricsExporter::class.java).shouldBeEmpty()

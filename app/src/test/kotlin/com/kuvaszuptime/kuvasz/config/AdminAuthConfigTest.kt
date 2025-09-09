@@ -140,7 +140,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should not throw an exception") {
                 shouldNotThrowAny {
-                    ApplicationContext.run(properties, "test")
+                    ApplicationContext.run(properties, "test").close()
                 }
             }
         }
@@ -156,7 +156,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should not throw an exception") {
                 shouldNotThrowAny {
-                    ApplicationContext.run(properties, "test")
+                    ApplicationContext.run(properties, "test").close()
                 }
             }
         }
