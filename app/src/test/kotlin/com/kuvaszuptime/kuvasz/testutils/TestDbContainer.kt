@@ -14,6 +14,8 @@ class TestDbContainer : PostgreSQLContainer<TestDbContainer>("postgres:17-alpine
                 System.setProperty("datasources.default.url", instance.jdbcUrl)
                 System.setProperty("datasources.default.username", instance.username)
                 System.setProperty("datasources.default.password", instance.password)
+                // Prevent exhausting connections
+                System.setProperty("datasources.default.maximum-pool-size", "3")
             }
         }
 
