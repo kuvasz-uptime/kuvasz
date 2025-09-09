@@ -574,7 +574,7 @@ class StatCalculatorTest(
                 statsOfDownMonitor.affectedMonitors shouldBe 1
                 val expectedDowntimeSeconds = 5L * 24 * 60 * 60 // 5 days in seconds
                 statsOfDownMonitor.totalDowntimeSeconds shouldBeInRange
-                    (expectedDowntimeSeconds..expectedDowntimeSeconds + 1)
+                    expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                 statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
                 val statsOfPausedMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
