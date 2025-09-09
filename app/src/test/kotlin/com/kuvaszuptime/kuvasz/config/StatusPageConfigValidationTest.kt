@@ -26,7 +26,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("slug is a blank string") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("sp-blank-slug")
+                ApplicationContext.run("test", "sp-blank-slug")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -36,7 +36,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("slug has invalid characters") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("sp-invalid-slug")
+                ApplicationContext.run("test", "sp-invalid-slug")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -46,7 +46,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("title is a blank string") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("sp-blank-title")
+                ApplicationContext.run("test", "sp-blank-title")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -56,7 +56,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("monitors contain an invalid monitor ID") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("sp-missing-monitor")
+                ApplicationContext.run("test", "sp-missing-monitor")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
