@@ -137,3 +137,7 @@ metrics-exports:
   http-latest-latency: ${ENABLE_HTTP_LATEST_LATENCY_EXPORT:`false`}
   ssl-status: ${ENABLE_SSL_STATUS_EXPORT:`false`}
   ssl-expiry: ${ENABLE_SSL_EXPIRY_EXPORT:`false`}
+---
+default-status-page:
+  enabled: ${ENABLE_DEFAULT_STATUS_PAGE:`false`}
+  title: ${DEFAULT_STATUS_PAGE_TITLE:`Status - Kuvasz Uptime`}

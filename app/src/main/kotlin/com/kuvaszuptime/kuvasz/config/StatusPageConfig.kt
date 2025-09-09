@@ -6,22 +6,8 @@ import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
 
-private const val STATUS_PAGES_CONFIG_PREFIX = "status-pages"
-
-/**
- * status-pages:
- *   default:
- *     enabled: true
- *     title: "Kuvasz Status"
- *   configs:
- *     - title: "Example Status Page"
- *       slug: "example-status"
- *       monitors:
- *         - "http:Test monitor 1"
- *         - "http:Test monitor 2"
- */
-@ConfigurationProperties(StatusPageDefaultConfig.CONFIG_PREFIX)
-interface StatusPageDefaultConfig {
+@ConfigurationProperties(DefaultStatusPageConfig.CONFIG_PREFIX)
+interface DefaultStatusPageConfig {
 
     @get:Bindable(defaultValue = StatusPageConfigDefaults.DEFAULT_PAGE_ENABLED.toString())
     val enabled: Boolean
@@ -30,7 +16,7 @@ interface StatusPageDefaultConfig {
     val title: String
 
     companion object {
-        private const val CONFIG_PREFIX = "$STATUS_PAGES_CONFIG_PREFIX.default"
+        private const val CONFIG_PREFIX = "default-status-page"
     }
 }
 
@@ -49,7 +35,7 @@ interface StatusPageConfig : StatusPageCreator {
     override val enabled: Boolean
 
     companion object {
-        const val CONFIG_PREFIX = "$STATUS_PAGES_CONFIG_PREFIX.configs"
+        const val CONFIG_PREFIX = "status-pages"
     }
 }
 

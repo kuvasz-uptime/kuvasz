@@ -3,9 +3,8 @@ http-monitors:
     url: https://demo.kuvasz-uptime.dev
     uptime-check-interval: 120
 status-pages:
-  configs:
-    - title: "Blank Slug Status Page"
-      slug: "\n"
-      enabled: true
-      monitors:
-        - "http:test1"
+  - title: "Blank Slug Status Page"
+    slug: "\n"
+    enabled: true
+    monitors:
+      - "http:test1"

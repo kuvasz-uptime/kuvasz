@@ -3,8 +3,7 @@ http-monitors:
     url: https://demo.kuvasz-uptime.dev
     uptime-check-interval: 120
 status-pages:
-  configs:
-    - title: "Missing Monitor Status Page"
-      slug: "valid-slug"
-      monitors:
-        - "http:test2"
+  - title: "Missing Monitor Status Page"
+    slug: "valid-slug"
+    monitors:
+      - "http:test2"

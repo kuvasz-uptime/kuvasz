@@ -87,7 +87,7 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
                 statusPageConfig.slug shouldBe "valid_slug"
                 statusPageConfig.monitors.shouldBeNull()
 
-                val statusPageDefaultConfig = applicationContext.getBean<StatusPageDefaultConfig>()
+                val statusPageDefaultConfig = applicationContext.getBean<DefaultStatusPageConfig>()
                 statusPageDefaultConfig.enabled shouldBe StatusPageConfigDefaults.DEFAULT_PAGE_ENABLED
                 statusPageDefaultConfig.title shouldBe StatusPageConfigDefaults.TITLE
             }
@@ -99,16 +99,16 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
  * These tests are meant to check if a StatusPagesConfig is overriding the default values correctly.
  */
 @MicronautTest(startApplication = false)
-@Property(name = "status-pages.default.enabled", value = StringUtils.TRUE)
-@Property(name = "status-pages.default.title", value = "Something custom")
-class StatusPagesConfigTest(applicationContext: ApplicationContext) : BehaviorSpec({
+@Property(name = "default-status-page.enabled", value = StringUtils.TRUE)
+@Property(name = "default-status-page.title", value = "Something custom")
+class DefaultStatusPageConfigTest(applicationContext: ApplicationContext) : BehaviorSpec({
 
-    given("the StatusPagesConfig bean") {
+    given("the DefaultStatusPagesConfig bean") {
 
         `when`("properties are explicitly set in the YAML") {
 
             then("it should use them over the default values") {
-                val statusPageDefaultConfig = applicationContext.getBean<StatusPageDefaultConfig>()
+                val statusPageDefaultConfig = applicationContext.getBean<DefaultStatusPageConfig>()
                 statusPageDefaultConfig.enabled shouldBe true
                 statusPageDefaultConfig.title shouldBe "Something custom"
             }

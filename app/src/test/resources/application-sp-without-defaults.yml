@@ -1,3 +1,2 @@
 status-pages:
-  configs:
-    - slug: "valid_slug"
+  - slug: "valid_slug"
