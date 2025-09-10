@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -55,7 +56,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
     afterSpec {
         // Doing a final manual cleanup after all tests to make sure that we don't leave any data behind that would
         // influence the consecutive tests
-        val ephemeralAppContext = ApplicationContext.run("test")
+        val ephemeralAppContext = testAppContext()
         ephemeralAppContext.getBean<DSLContext>().resetDatabase()
         ephemeralAppContext.stop()
     }
@@ -70,7 +71,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
      * no matter what happened before.
      */
     fun executeAndAssertTheFirstStep() {
-        appContext = ApplicationContext.run("test", "yaml-monitors", "full-integrations-setup")
+        appContext = testAppContext("yaml-monitors", "full-integrations-setup")
         val checkScheduler = getCheckScheduler()
         val monitorRepository = getMonitorRepository()
 
@@ -157,7 +158,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
         // Waiting a whole second to make sure that the updatedAt timestamp is different from the createdAt timestamp
         delay(1000)
 
-        appContext = ApplicationContext.run("test", "yaml-monitors-changed")
+        appContext = testAppContext("yaml-monitors-changed")
         val checkScheduler = getCheckScheduler()
         val monitorRepository = getMonitorRepository()
 
@@ -250,7 +251,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
      * after a successful import one would like to remove the YAML config and re-enable the external writes to them
      */
     "3. step: the app is restarted with an empty YAML config for the monitors" {
-        appContext = ApplicationContext.run("test", "yaml-monitors-empty")
+        appContext = testAppContext("yaml-monitors-empty")
         val checkScheduler = getCheckScheduler()
         val monitorRepository = getMonitorRepository()
 
@@ -293,7 +294,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
      */
     "5. step: the app started with some monitors in the YAML, but there is a non-existing integration on one of them" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("test", "yaml-monitors-missing-integration", "full-integrations-setup")
+            testAppContext("yaml-monitors-missing-integration", "full-integrations-setup")
         }
 
         ex.message shouldContain "Non-existing integration ID found: slack:non-existing."

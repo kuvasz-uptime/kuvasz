@@ -19,7 +19,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
-@MicronautTest(environments = ["test", "yaml-monitors", "full-integrations-setup"])
+@MicronautTest(environments = ["yaml-monitors", "full-integrations-setup"])
 class HttpMonitorMutabilityTest(
     @Client("/") private val client: HttpClient,
 ) : DatabaseStringSpec({

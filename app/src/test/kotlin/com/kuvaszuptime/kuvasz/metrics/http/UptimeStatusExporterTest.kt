@@ -4,11 +4,11 @@ import com.kuvaszuptime.kuvasz.metrics.ExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.micronaut.context.ApplicationContext
 import io.micronaut.http.HttpStatus
 
 class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
@@ -17,7 +17,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
         given("an enabled status exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run("test")
+                appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -70,7 +70,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run("test")
+                appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -149,7 +149,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run("test")
+                appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),

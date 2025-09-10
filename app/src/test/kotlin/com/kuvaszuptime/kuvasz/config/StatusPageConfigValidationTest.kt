@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
+import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
@@ -26,7 +27,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("slug is a blank string") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("test", "sp-blank-slug")
+                testAppContext("sp-blank-slug")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -36,7 +37,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("slug has invalid characters") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("test", "sp-invalid-slug")
+                testAppContext("sp-invalid-slug")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -46,7 +47,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("title is a blank string") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("test", "sp-blank-title")
+                testAppContext("sp-blank-title")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
@@ -56,7 +57,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("monitors contain an invalid monitor ID") {
             val exception = shouldThrow<BeanInstantiationException> {
-                ApplicationContext.run("test", "sp-missing-monitor")
+                testAppContext("sp-missing-monitor")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain

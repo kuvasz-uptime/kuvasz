@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -21,14 +22,13 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.micronaut.context.ApplicationContext
 import io.micronaut.context.exceptions.BeanInstantiationException
 
 @SMTPTest
 class IntegrationBootstrappingTest : StringSpec({
 
     "IntegrationRepository should load the integrations from YAML upon startup if they are all valid" {
-        val ctx = ApplicationContext.run("full-integrations-setup", "test")
+        val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 15
@@ -287,11 +287,10 @@ class IntegrationBootstrappingTest : StringSpec({
                 integrationKey shouldBe "abcdef1234567890abcdef1234567890"
             }
         }
-        ctx.close()
     }
 
     "app should be able to start if there are no integrations configured" {
-        val ctx = ApplicationContext.run("test")
+        val ctx = testAppContext()
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 0
@@ -299,12 +298,11 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType shouldHaveSize 0
             globallyEnabledIntegrationsByType shouldHaveSize 0
         }
-        ctx.close()
     }
 
     "app should be able to start with complex integration names" {
         val ctx = shouldNotThrowAny {
-            ApplicationContext.run("complex-integration-name", "test")
+            testAppContext("complex-integration-name")
         }
 
         with(ctx.getBean<IntegrationRepository>()) {
@@ -336,12 +334,11 @@ class IntegrationBootstrappingTest : StringSpec({
                 }
             }
         }
-        ctx.close()
     }
 
     "app should not start if there are integrations with the same name and type" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("duplicate-integrations", "test")
+            testAppContext("duplicate-integrations")
         }
 
         ex.message shouldContain "Duplicate integration configuration found for pagerduty:test. " +
@@ -350,7 +347,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there is at least one integration with a badly formatted name" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("blank-integration-name", "test")
+            testAppContext("blank-integration-name")
         }
 
         ex.message shouldContain "Invalid integration name [ \n" +
@@ -359,7 +356,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there is an invalid integration config" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("invalid-integration-config", "test")
+            testAppContext("invalid-integration-config")
         }
 
         ex.message shouldContain "SlackNotificationConfig.getWebhookUrl - " +
@@ -369,7 +366,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
 class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
     "EmailConfigs should not be loaded into enabledConfigurations if SMTP is not configured" {
-        val ctx = ApplicationContext.run("full-integrations-setup", "test")
+        val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 15
@@ -385,6 +382,5 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
             enabledIntegrations[implicitlyEnabledId].shouldBeNull()
             enabledIntegrations[globallyEnabledId].shouldBeNull()
         }
-        ctx.close()
     }
 })

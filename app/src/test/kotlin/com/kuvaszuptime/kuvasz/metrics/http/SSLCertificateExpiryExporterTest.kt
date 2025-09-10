@@ -5,11 +5,11 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.micronaut.context.ApplicationContext
 import java.time.OffsetDateTime
 
 class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expiry") {
@@ -18,7 +18,7 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
         given("an enabled SSL expiry exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run("test")
+                appContext = testAppContext()
 
                 val enabledMonitorWithExpiry = createMonitor(
                     getMonitorRepository(),
@@ -74,7 +74,7 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run("test")
+                appContext = testAppContext()
 
                 val enabledMonitorWithExpiry = createMonitor(
                     getMonitorRepository(),
@@ -154,7 +154,7 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run("test")
+                appContext = testAppContext()
 
                 val enabledMonitorWithExpiry = createMonitor(
                     getMonitorRepository(),

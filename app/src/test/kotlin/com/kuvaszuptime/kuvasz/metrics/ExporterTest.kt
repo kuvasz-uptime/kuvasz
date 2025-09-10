@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.test.TestCase
@@ -47,7 +48,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         // Doing a final manual cleanup after each tests to make sure that we don't leave any data behind that would
         // influence the consecutive tests
-        val ephemeralAppContext = ApplicationContext.run("test")
+        val ephemeralAppContext = testAppContext()
         ephemeralAppContext.getBean<DSLContext>().resetDatabase()
         ephemeralAppContext.stop()
         // Stopping the app context after each test, so we can practically simulate the app restart
@@ -57,7 +58,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
 
     fun restartAppContextWithMetrics() {
         appContext.shouldNotBeNull().stop()
-        appContext = ApplicationContext.run(env, "test")
+        appContext = testAppContext(env)
     }
 
     infix fun <T : Any> Meter.shouldHaveValue(expectedValue: T) {

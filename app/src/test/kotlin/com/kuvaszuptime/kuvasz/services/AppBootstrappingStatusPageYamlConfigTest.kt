@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorID
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
+import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -45,7 +46,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
     afterSpec {
         // Doing a final manual cleanup after all tests to make sure that we don't leave any data behind that would
         // influence the consecutive tests
-        val ephemeralAppContext = ApplicationContext.run("test")
+        val ephemeralAppContext = testAppContext()
         ephemeralAppContext.getBean<DSLContext>().resetDatabase()
         ephemeralAppContext.stop()
     }
@@ -58,8 +59,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
      * no matter what happened before.
      */
     fun executeAndAssertTheFirstStep() {
-        appContext = ApplicationContext.run(
-            "test",
+        appContext = testAppContext(
             "yaml-monitors",
             "status-pages",
             "full-integrations-setup",
@@ -122,8 +122,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
         // Waiting a whole second to make sure that the updatedAt timestamp is different from the createdAt timestamp
         delay(1000)
 
-        appContext = ApplicationContext.run(
-            "test",
+        appContext = testAppContext(
             "yaml-monitors",
             "status-pages-changed",
             "full-integrations-setup",
@@ -183,8 +182,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
      * after a successful import one would like to remove the YAML config and re-enable the external writes to them
      */
     "3. step: the app is restarted with an empty YAML config for the status pages" {
-        appContext = ApplicationContext.run(
-            "test",
+        appContext = testAppContext(
             "yaml-monitors",
             "status-pages-empty",
             "full-integrations-setup",
@@ -225,8 +223,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
      */
     "5. step: the app started with some status pages in the YAML, but there is a non-existing monitor on one of them" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run(
-                "test",
+            testAppContext(
                 "yaml-monitors",
                 "status-pages-missing-monitor",
                 "full-integrations-setup",
