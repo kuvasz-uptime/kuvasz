@@ -5,10 +5,13 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.MonitorID
 import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -114,3 +117,21 @@ fun createSSLEventRecord(
 
 fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)) =
     CertificateInfo(validTo)
+
+fun createStatusPage(
+    dslContext: DSLContext,
+    title: String = "Status Page",
+    slug: String = UUID.randomUUID().toString(),
+    enabled: Boolean = false,
+    monitors: List<MonitorID> = emptyList(),
+) = dslContext
+    .insertInto(STATUS_PAGE)
+    .set(
+        StatusPageRecord()
+            .setTitle(title)
+            .setSlug(slug)
+            .setEnabled(enabled)
+            .setMonitors(monitors.toTypedArray())
+    )
+    .returning(STATUS_PAGE.asterisk())
+    .fetchOneOrThrow<StatusPageRecord>()

@@ -9,8 +9,11 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
+import com.kuvaszuptime.kuvasz.models.MonitorID
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
@@ -25,6 +28,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
@@ -39,12 +43,15 @@ import io.kotest.core.test.TestResult
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.date.shouldBeAfter
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainExactly
+import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -62,6 +69,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
 
@@ -74,6 +82,7 @@ class HttpMonitorControllerV2Test(
     private val checkScheduler: HttpCheckScheduler,
     private val statCalculator: StatCalculator,
     private val eventDispatcher: EventDispatcher,
+    private val statusPageRepository: StatusPageRepository,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
@@ -1232,6 +1241,73 @@ class HttpMonitorControllerV2Test(
                     // A delete event should be dispatched
                     val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.monitorId shouldBe createdMonitor.id
+                }
+            }
+
+            `when`("it is called with an existing monitor that belongs to more than one status page") {
+                val monitorToCreate = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true
+                )
+                val createdMonitor = monitorClient.createMonitor(monitorToCreate)
+                val anotherMonitor = monitorClient.createMonitor(
+                    monitorToCreate.copy(name = "another_test_monitor")
+                )
+                val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/http-monitors/${createdMonitor.id}")
+                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
+                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val statusPage1 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, createdMonitor.name)
+                    )
+                )
+                val statusPage2 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, createdMonitor.name),
+                        MonitorID(MonitorType.HTTP_SSL, anotherMonitor.name),
+                    )
+                )
+                val statusPageWithoutDeletedMonitor = createStatusPage(
+                    dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, anotherMonitor.name),
+                    )
+                )
+                delay(1000) // Make sure that the status page update time is after the creation time
+
+                val response = client.exchange(deleteRequest).awaitFirst()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)
+
+                then("it should delete the monitor from the status pages and also remove the checks of it") {
+                    response.status shouldBe HttpStatus.NO_CONTENT
+                    monitorInDb shouldBe null
+
+                    checkScheduler.getScheduledUptimeChecks().shouldNotContainKey(createdMonitor.id)
+                    checkScheduler.getScheduledSSLChecks().shouldNotContainKey(createdMonitor.id)
+
+                    // A delete event should be dispatched
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
+                    expectedEvent.monitorId shouldBe createdMonitor.id
+
+                    // The monitor should be removed from both of the status pages
+                    val statusPage1InDb = statusPageRepository.findById(statusPage1.id).shouldNotBeNull()
+                    statusPage1InDb.monitors.shouldBeEmpty()
+                    statusPage1InDb.updatedAt shouldBeAfter statusPage1InDb.createdAt
+
+                    val statusPage2InDb = statusPageRepository.findById(statusPage2.id).shouldNotBeNull()
+                    statusPage2InDb.monitors.shouldContainExactly(
+                        MonitorID(MonitorType.HTTP_SSL, anotherMonitor.name)
+                    )
+                    statusPage2InDb.updatedAt shouldBeAfter statusPage2InDb.createdAt
+
+                    val statusPage3InDb = statusPageRepository.findById(statusPageWithoutDeletedMonitor.id)
+                        .shouldNotBeNull()
+                    statusPage3InDb.monitors.shouldContainExactly(statusPageWithoutDeletedMonitor.monitors)
+                    statusPage3InDb.updatedAt shouldBe statusPage3InDb.createdAt // Not updated
                 }
             }
 
