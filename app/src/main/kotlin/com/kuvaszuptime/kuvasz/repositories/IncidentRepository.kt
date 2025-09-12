@@ -6,8 +6,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.IncidentType
-import com.kuvaszuptime.kuvasz.models.dto.IncidentDto
-import com.kuvaszuptime.kuvasz.models.dto.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext

@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.jooq
 
-import com.kuvaszuptime.kuvasz.models.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import org.jooq.Converter
 
 @Suppress("UseOrEmpty")

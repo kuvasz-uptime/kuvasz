@@ -4,11 +4,11 @@ import arrow.core.Either
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.CertificateInfo
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository

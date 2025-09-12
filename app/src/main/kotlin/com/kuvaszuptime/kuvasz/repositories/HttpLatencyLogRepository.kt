@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.Tables.HTTP_LATENCY_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord
-import com.kuvaszuptime.kuvasz.models.dto.LatencyLogDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyLogDto
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton

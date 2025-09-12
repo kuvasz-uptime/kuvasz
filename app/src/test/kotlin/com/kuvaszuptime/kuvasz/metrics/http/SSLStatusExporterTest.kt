@@ -2,11 +2,11 @@ package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.metrics.ExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.CertificateInfo
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne

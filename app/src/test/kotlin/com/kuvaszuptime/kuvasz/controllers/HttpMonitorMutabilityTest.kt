@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.data.forAll
 import io.kotest.data.headers

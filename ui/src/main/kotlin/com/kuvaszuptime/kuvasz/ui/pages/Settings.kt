@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.pages
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*

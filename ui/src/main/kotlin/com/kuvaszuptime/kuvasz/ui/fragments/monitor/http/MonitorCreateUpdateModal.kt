@@ -5,7 +5,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.checks.KnownHttpHeaders
 import com.kuvaszuptime.kuvasz.models.checks.SupportedExpectedHttpStatusCodes
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*

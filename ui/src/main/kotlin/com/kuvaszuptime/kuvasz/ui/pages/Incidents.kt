@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz.ui.pages
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.IncidentType
-import com.kuvaszuptime.kuvasz.models.dto.IncidentDto
-import com.kuvaszuptime.kuvasz.models.dto.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*

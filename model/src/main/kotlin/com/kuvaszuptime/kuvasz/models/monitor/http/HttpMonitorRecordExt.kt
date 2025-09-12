@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.monitor.http
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.kuvaszuptime.kuvasz.jooq.JsonNodeToMapConverter

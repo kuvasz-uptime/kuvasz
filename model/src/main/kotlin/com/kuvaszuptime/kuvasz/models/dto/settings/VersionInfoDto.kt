@@ -1,6 +1,6 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.settings
 
-import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import java.net.URI

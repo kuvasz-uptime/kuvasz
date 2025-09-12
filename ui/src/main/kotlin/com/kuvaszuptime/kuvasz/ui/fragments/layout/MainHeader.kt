@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.layout
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*

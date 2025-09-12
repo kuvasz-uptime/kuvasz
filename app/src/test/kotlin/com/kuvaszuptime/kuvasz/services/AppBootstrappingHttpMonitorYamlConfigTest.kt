@@ -3,12 +3,12 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDefaults
-import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
-import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler

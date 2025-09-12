@@ -1,8 +1,10 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import io.micronaut.core.annotation.Introspected
 
 @Introspected

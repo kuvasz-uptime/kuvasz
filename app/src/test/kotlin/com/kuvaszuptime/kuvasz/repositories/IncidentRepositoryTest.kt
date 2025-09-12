@@ -7,7 +7,7 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
-import com.kuvaszuptime.kuvasz.models.dto.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forOne

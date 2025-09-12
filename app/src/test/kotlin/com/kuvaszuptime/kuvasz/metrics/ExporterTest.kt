@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.metrics
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository

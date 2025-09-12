@@ -2,11 +2,11 @@ package com.kuvaszuptime.kuvasz.services.ui
 
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.toUri

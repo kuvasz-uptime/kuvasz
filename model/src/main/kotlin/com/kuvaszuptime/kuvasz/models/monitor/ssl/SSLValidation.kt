@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models
+package com.kuvaszuptime.kuvasz.models.monitor.ssl
 
 import java.time.OffsetDateTime
 

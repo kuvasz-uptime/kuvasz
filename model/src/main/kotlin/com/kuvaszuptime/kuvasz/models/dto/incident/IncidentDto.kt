@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.incident
 
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import io.micronaut.core.annotation.Introspected

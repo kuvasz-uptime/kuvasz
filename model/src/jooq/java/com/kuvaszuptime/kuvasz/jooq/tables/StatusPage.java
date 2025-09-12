@@ -9,7 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
 import com.kuvaszuptime.kuvasz.jooq.TextArrayToMonitorIdArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord;
-import com.kuvaszuptime.kuvasz.models.MonitorID;
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;

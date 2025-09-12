@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.validation
 
-import com.kuvaszuptime.kuvasz.models.MonitorID
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import jakarta.inject.Singleton
 

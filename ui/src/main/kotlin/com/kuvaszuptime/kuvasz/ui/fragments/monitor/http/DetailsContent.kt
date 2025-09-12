@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 import com.iodesystems.htmx.Htmx.Companion.hx
 import com.iodesystems.htmx.HtmxAttrs
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults

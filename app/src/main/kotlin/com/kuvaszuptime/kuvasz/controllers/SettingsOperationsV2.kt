@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import io.micronaut.http.annotation.Get
 import io.swagger.v3.oas.annotations.Operation
 

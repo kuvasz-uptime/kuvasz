@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.models.dto
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldBeEmpty

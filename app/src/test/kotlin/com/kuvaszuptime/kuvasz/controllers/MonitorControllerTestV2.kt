@@ -6,9 +6,9 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
-import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
-import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.inspectors.forOne

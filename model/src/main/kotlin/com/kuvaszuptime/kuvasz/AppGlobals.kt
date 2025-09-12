@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz
 
-import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import de.comahe.i18n4k.Locale
 import de.comahe.i18n4k.config.I18n4kConfigDefault
 import de.comahe.i18n4k.i18n4k

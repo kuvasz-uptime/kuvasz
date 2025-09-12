@@ -2,10 +2,10 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.UptimeCheckException
-import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri

@@ -3,10 +3,10 @@ package com.kuvaszuptime.kuvasz.ui.components
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.VersionInfo
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
-import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*

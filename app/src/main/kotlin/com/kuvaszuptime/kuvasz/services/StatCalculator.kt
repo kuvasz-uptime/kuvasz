@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp

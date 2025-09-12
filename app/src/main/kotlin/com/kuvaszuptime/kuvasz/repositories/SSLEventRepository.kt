@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
-import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.WithCertInfo

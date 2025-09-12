@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import com.kuvaszuptime.kuvasz.util.toUri

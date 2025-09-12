@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
-import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires

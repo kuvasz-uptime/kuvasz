@@ -5,7 +5,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables.records;
 
 
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
-import com.kuvaszuptime.kuvasz.models.MonitorID;
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID;
 
 import java.time.OffsetDateTime;
 

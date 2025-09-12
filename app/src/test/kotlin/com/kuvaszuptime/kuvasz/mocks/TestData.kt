@@ -10,10 +10,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
-import com.kuvaszuptime.kuvasz.models.CertificateInfo
-import com.kuvaszuptime.kuvasz.models.MonitorID
-import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp

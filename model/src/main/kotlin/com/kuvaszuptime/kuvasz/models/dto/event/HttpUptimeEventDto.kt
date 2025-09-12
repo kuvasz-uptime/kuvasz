@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.event
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import io.micronaut.core.annotation.Introspected

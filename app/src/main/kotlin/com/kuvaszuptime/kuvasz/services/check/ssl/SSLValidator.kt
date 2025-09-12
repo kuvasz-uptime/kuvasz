@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services.check.ssl
 
 import arrow.core.Either
-import com.kuvaszuptime.kuvasz.models.CertificateInfo
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory

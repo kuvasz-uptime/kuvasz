@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.dto.IntegrationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.services.integrations.NotificationTestResult
 import io.micronaut.http.annotation.Get

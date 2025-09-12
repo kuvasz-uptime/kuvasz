@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.dto.LegacySettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.LegacySettingsDto
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller

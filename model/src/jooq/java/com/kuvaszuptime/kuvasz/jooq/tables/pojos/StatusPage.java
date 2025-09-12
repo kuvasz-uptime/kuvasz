@@ -4,7 +4,7 @@
 package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
-import com.kuvaszuptime.kuvasz.models.MonitorID;
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;

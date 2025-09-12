@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
-import com.kuvaszuptime.kuvasz.models.dto.LegacySettingsDto
-import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
-import com.kuvaszuptime.kuvasz.models.dto.VersionInfoDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.LegacySettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.VersionInfoDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig

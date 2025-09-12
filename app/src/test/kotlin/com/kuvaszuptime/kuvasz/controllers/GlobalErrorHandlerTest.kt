@@ -4,8 +4,8 @@ import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow

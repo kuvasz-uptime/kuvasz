@@ -2,9 +2,9 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage

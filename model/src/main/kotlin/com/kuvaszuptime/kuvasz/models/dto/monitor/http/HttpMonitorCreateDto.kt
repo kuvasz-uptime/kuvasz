@@ -1,7 +1,8 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.HttpMonitorCreatorLike
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDocs
+import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreatorLike
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 

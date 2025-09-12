@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.models.statuspage
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
-import com.kuvaszuptime.kuvasz.models.MonitorID
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 

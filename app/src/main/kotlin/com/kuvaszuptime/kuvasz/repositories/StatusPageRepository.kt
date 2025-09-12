@@ -5,9 +5,9 @@ import com.kuvaszuptime.kuvasz.jooq.Keys.STATUS_PAGE_SLUG_KEY
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
-import com.kuvaszuptime.kuvasz.models.MonitorID
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.StatusPageDuplicatedException
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError

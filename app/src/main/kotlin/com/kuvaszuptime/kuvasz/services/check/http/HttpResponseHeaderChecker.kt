@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.models.ExpectedHeaderNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
-import com.kuvaszuptime.kuvasz.models.dto.expectedHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import jakarta.inject.Singleton

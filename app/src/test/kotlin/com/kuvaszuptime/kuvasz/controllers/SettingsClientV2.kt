@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import io.micronaut.http.client.annotation.Client
 
 @Client("/api/v2/settings")

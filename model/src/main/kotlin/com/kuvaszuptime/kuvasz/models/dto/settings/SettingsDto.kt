@@ -1,5 +1,6 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.settings
 
+import com.kuvaszuptime.kuvasz.models.dto.IntegrationDocs
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID

@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.controllers
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.IntegrationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig

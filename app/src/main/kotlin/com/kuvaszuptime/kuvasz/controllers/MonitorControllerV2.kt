@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller

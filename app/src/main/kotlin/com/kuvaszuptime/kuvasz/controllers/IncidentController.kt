@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.models.dto.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller

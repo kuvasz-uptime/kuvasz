@@ -1,8 +1,9 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType

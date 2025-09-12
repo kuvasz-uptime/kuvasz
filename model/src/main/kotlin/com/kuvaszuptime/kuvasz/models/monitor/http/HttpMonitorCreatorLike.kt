@@ -1,10 +1,9 @@
-package com.kuvaszuptime.kuvasz.models
+package com.kuvaszuptime.kuvasz.models.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
-import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
