@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
         Tag(name = "Settings (V1, deprecated)"),
         Tag(name = "Settings"),
         Tag(name = "Integrations"),
+        Tag(name = "Status pages"),
     ]
 )
 @SecuritySchemes(

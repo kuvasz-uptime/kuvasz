@@ -6,6 +6,11 @@ import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
 
+/**
+ * default-status-page:
+ *   enabled: true
+ *   title: "Status - Kuvasz Uptime"
+ */
 @ConfigurationProperties(DefaultStatusPageConfig.CONFIG_PREFIX)
 interface DefaultStatusPageConfig {
 
@@ -20,6 +25,15 @@ interface DefaultStatusPageConfig {
     }
 }
 
+/**
+ * status-pages:
+ *   - title: "Example Status Page"
+ *     slug: "example-status"
+ *     enabled: true
+ *     monitors:
+ *       - "http:Test monitor 1"
+ *       - "http:Test monitor 2"
+ */
 @EachProperty(StatusPageConfig.CONFIG_PREFIX, list = true)
 @Introspected
 interface StatusPageConfig : StatusPageCreator {

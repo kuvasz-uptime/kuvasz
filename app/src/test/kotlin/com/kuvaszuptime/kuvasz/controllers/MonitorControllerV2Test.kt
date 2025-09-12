@@ -27,7 +27,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest(environments = ["full-integrations-setup"])
-class MonitorControllerTestV2(
+class MonitorControllerV2Test(
     @param:Client("/") private val client: HttpClient,
     private val monitorRepository: HttpMonitorRepository,
 ) : DatabaseBehaviorSpec() {

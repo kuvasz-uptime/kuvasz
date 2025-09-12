@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.config.StatusPageConfig
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCrudService
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Produces
@@ -18,17 +18,17 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 
-@Controller("$API_V2_PREFIX/monitors", produces = [MediaType.APPLICATION_JSON])
+@Controller("$API_V2_PREFIX/status-pages", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "Monitors")
+@Tag(name = "Status pages")
 @SecurityRequirements(
     SecurityRequirement(name = "apiKey"),
     SecurityRequirement(name = "bearerAuth")
 )
-class MonitorControllerV2(
-    private val monitorCrudService: HttpMonitorCrudService,
+class StatusPageController(
+    private val statusPageCrudService: StatusPageCrudService,
     private val exportHandler: ExportHandler,
-) : MonitorOperationsV2 {
+) : StatusPageOperations {
 
     @ApiResponses(
         ApiResponse(
@@ -39,16 +39,16 @@ class MonitorControllerV2(
     )
     @Produces(MediaType.APPLICATION_YAML)
     @ExecuteOn(TaskExecutors.IO)
-    override fun getYamlMonitorsExport(): SystemFile {
+    override fun getYamlStatusPagesExport(): SystemFile {
         val export = mapOf(
-            HttpMonitorConfig.CONFIG_PREFIX to monitorCrudService.getHttpMonitorsExport()
-                .map { HttpMonitorExportDto.fromMonitorRecord(it) }
+            StatusPageConfig.CONFIG_PREFIX to statusPageCrudService.getStatusPagesExport()
+                .map { StatusPageExportDto.fromStatusPageRecord(it) }
         )
 
         return exportHandler.createYamlFileFrom(fileNamePrefix = EXPORT_FILE_NAME_PREFIX, content = export)
     }
 
     companion object {
-        private const val EXPORT_FILE_NAME_PREFIX = "kuvasz-monitors-export-"
+        private const val EXPORT_FILE_NAME_PREFIX = "kuvasz-status-pages-export-"
     }
 }

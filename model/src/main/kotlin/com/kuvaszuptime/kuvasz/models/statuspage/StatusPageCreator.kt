@@ -7,18 +7,6 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 
-/**
- * status-pages:
- *   default:
- *     enabled: true
- *     title: "Kuvasz Status"
- *   configs:
- *     - title: "Example Status Page"
- *       slug: "example-status"
- *       monitors:
- *         - "http:Test monitor 1"
- *         - "http:Test monitor 2"
- */
 interface StatusPageCreator {
     @get:NotBlank(message = StatusPageValidationMessages.TITLE_NOT_BLANK)
     val title: String

@@ -328,7 +328,13 @@ private fun HtmlBlockTag.settingsPageHeader() {
                                         classes(DROPDOWN_ITEM)
                                         attributes["download"] = "true"
                                         icon(Icon.DOWNLOAD)
-                                        +Messages.downloadYamlBackup()
+                                        +Messages.downloadMonitorBackup()
+                                    }
+                                    a(href = "/api/v2/status-pages/export/yaml") {
+                                        classes(DROPDOWN_ITEM)
+                                        attributes["download"] = "true"
+                                        icon(Icon.DOWNLOAD)
+                                        +Messages.downloadStatusPageBackup()
                                     }
                                 }
                             }

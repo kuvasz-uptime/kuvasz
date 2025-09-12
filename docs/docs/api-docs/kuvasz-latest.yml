@@ -10,6 +10,7 @@ tags:
 - name: "Settings (V1, deprecated)"
 - name: Settings
 - name: Integrations
+- name: Status pages
 paths:
   /api/v1/monitors:
     get:
@@ -763,6 +764,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SettingsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/status-pages/export/yaml:
+    get:
+      tags:
+      - Status pages
+      summary: Download the export of all status pages in YAML format
+      operationId: getYamlStatusPagesExport
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/x-yaml: {}
       security:
       - apiKey: []
       - bearerAuth: []
