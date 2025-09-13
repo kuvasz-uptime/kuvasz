@@ -1,22 +1,9 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDocs
-import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreatorLike
+import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
-
-object HttpMonitorDefaults {
-    const val MONITOR_ENABLED = true
-    const val SSL_CHECK_ENABLED = false
-    const val REQUEST_METHOD = "GET"
-    const val LATENCY_HISTORY_ENABLED = true
-    const val FORCE_NO_CACHE = true
-    const val FOLLOW_REDIRECTS = true
-    const val SSL_EXPIRY_THRESHOLD_DAYS = 30
-    const val EXPECTED_KEYWORD_CASE_SENSITIVE = false
-    const val EXPECTED_KEYWORD_NEGATED = false
-}
 
 @Introspected
 data class HttpMonitorCreateDto(
@@ -93,4 +80,4 @@ data class HttpMonitorCreateDto(
 
     @param:Schema(description = HttpMonitorDocs.REQUEST_BODY, required = false, nullable = true)
     override val requestBody: String? = null,
-) : HttpMonitorCreatorLike
+) : HttpMonitorCreator

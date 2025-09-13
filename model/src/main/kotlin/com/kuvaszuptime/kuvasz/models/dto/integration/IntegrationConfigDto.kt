@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.models.dto.integration
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.kuvaszuptime.kuvasz.models.dto.IntegrationDocs
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID

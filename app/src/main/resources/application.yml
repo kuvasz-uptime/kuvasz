@@ -140,4 +140,4 @@ metrics-exports:
 ---
 default-status-page:
   enabled: ${ENABLE_DEFAULT_STATUS_PAGE:`false`}
-  title: ${DEFAULT_STATUS_PAGE_TITLE:`Status - Kuvasz Uptime`}
+  title: ${DEFAULT_STATUS_PAGE_TITLE:`System status`}

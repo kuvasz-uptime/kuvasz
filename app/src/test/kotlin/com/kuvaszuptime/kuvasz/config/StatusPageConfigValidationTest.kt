@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageConfigDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage

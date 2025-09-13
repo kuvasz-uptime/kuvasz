@@ -3,6 +3,7 @@
 package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.core.JsonParseException
+import com.kuvaszuptime.kuvasz.controllers.monitor.ReadOnlyMonitorException
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.DASHBOARD_PATH
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.LOGIN_PATH
 import com.kuvaszuptime.kuvasz.models.DuplicationException

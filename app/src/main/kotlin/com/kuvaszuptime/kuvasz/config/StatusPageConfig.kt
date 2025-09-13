@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageConfigDefaults
 import com.kuvaszuptime.kuvasz.models.statuspage.StatusPageCreator
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.EachProperty
@@ -51,10 +52,4 @@ interface StatusPageConfig : StatusPageCreator {
     companion object {
         const val CONFIG_PREFIX = "status-pages"
     }
-}
-
-object StatusPageConfigDefaults {
-    const val DEFAULT_PAGE_ENABLED = false
-    const val CUSTOM_PAGE_ENABLED = true
-    const val TITLE = "Status - Kuvasz Uptime"
 }
