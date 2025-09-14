@@ -97,7 +97,7 @@ jooq {
                                 includeExpression = "HTTP_MONITOR.INTEGRATIONS"
                             }
                             forcedType {
-                                userType = "com.kuvaszuptime.kuvasz.models.MonitorID[]"
+                                userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToMonitorIdArrayConverter"
                                 isGenericConverter = false
                                 includeExpression = "STATUS_PAGE.MONITORS"
