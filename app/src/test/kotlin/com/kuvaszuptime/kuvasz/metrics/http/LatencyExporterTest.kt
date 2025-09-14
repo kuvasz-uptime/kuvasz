@@ -149,10 +149,10 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
                 meterRegistry().meters shouldHaveSize 3
 
                 // Simulating the events
-                monitorCrudService().updateMonitor(enabledMonitorWithLatency.id, monitorDisableUpdate)
-                monitorCrudService().updateMonitor(anotherEnabledMonitorWithLatency.id, monitorNameUpdate)
-                monitorCrudService().updateMonitor(disabledMonitorWithLatency.id, monitorEnableUpdate)
-                monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithLatency.id)
+                httpMonitorActions().updateMonitor(enabledMonitorWithLatency.id, monitorDisableUpdate)
+                httpMonitorActions().updateMonitor(anotherEnabledMonitorWithLatency.id, monitorNameUpdate)
+                httpMonitorActions().updateMonitor(disabledMonitorWithLatency.id, monitorEnableUpdate)
+                httpMonitorActions().deleteMonitorById(yetAnotherEnabledMonitorWithLatency.id)
 
                 val registeredMeters = meterRegistry().meters
 

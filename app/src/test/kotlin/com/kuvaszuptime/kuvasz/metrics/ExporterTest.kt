@@ -9,7 +9,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.core.spec.style.BehaviorSpec
@@ -32,7 +32,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
     fun latencyLogRepository() = appContext?.getBean<HttpLatencyLogRepository>().shouldNotBeNull()
     fun meterRegistry() = appContext?.getBean<MeterRegistry>().shouldNotBeNull()
     fun eventDispatcher() = appContext?.getBean<EventDispatcher>().shouldNotBeNull()
-    fun monitorCrudService() = appContext?.getBean<HttpMonitorCrudService>().shouldNotBeNull()
+    fun httpMonitorActions() = appContext?.getBean<HttpMonitorActions>().shouldNotBeNull()
     fun sslEventRepository() = appContext?.getBean<SSLEventRepository>().shouldNotBeNull()
     fun uptimeEventRepository() = appContext?.getBean<HttpUptimeEventRepository>().shouldNotBeNull()
 

@@ -218,10 +218,10 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 meterRegistry().meters shouldHaveSize 3
 
                 // Simulating the events
-                monitorCrudService().updateMonitor(enabledMonitorWithStatus.id, monitorDisableUpdate)
-                monitorCrudService().updateMonitor(anotherEnabledMonitorWithStatus.id, monitorNameUpdate)
-                monitorCrudService().updateMonitor(disabledMonitorWithStatus.id, monitorSSLEnableUpdate)
-                monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithStatus.id)
+                httpMonitorActions().updateMonitor(enabledMonitorWithStatus.id, monitorDisableUpdate)
+                httpMonitorActions().updateMonitor(anotherEnabledMonitorWithStatus.id, monitorNameUpdate)
+                httpMonitorActions().updateMonitor(disabledMonitorWithStatus.id, monitorSSLEnableUpdate)
+                httpMonitorActions().deleteMonitorById(yetAnotherEnabledMonitorWithStatus.id)
 
                 val registeredMeters = meterRegistry().meters
 

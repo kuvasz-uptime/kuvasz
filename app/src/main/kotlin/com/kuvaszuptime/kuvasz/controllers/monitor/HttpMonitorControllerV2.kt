@@ -14,7 +14,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.services.StatCalculator
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -42,7 +42,7 @@ import java.time.Duration
     SecurityRequirement(name = "bearerAuth")
 )
 class HttpMonitorControllerV2(
-    private val monitorCrudService: HttpMonitorCrudService,
+    private val monitorActions: HttpMonitorActions,
     private val statCalculator: StatCalculator,
 ) : HttpMonitorOperationsV2 {
 
@@ -60,7 +60,7 @@ class HttpMonitorControllerV2(
         @QueryValue sslStatus: List<SslStatus>?,
         @QueryValue sslCheckEnabled: Boolean?,
     ): List<HttpMonitorDetailsDto> =
-        monitorCrudService.getMonitorsWithDetails(
+        monitorActions.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
             sslStatus = sslStatus.orEmpty(),
@@ -81,7 +81,7 @@ class HttpMonitorControllerV2(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto =
-        monitorCrudService.getMonitorDetails(monitorId)
+        monitorActions.getMonitorDetails(monitorId)
 
     @Status(HttpStatus.CREATED)
     @ApiResponses(
@@ -104,7 +104,7 @@ class HttpMonitorControllerV2(
     @ExecuteOn(TaskExecutors.IO)
     @CheckHttpMonitorsWritable
     override fun createMonitor(@Valid monitor: HttpMonitorCreateDto): HttpMonitorDto {
-        val createdMonitor = monitorCrudService.createMonitor(monitor)
+        val createdMonitor = monitorActions.createMonitor(monitor)
         return HttpMonitorDto.fromMonitorRecord(createdMonitor)
     }
 
@@ -127,7 +127,7 @@ class HttpMonitorControllerV2(
     )
     @ExecuteOn(TaskExecutors.IO)
     @CheckHttpMonitorsWritable
-    override fun deleteMonitor(monitorId: Long) = monitorCrudService.deleteMonitorById(monitorId)
+    override fun deleteMonitor(monitorId: Long) = monitorActions.deleteMonitorById(monitorId)
 
     @ApiResponses(
         ApiResponse(
@@ -154,7 +154,7 @@ class HttpMonitorControllerV2(
     @ExecuteOn(TaskExecutors.IO)
     @CheckHttpMonitorsWritable
     override fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorDto {
-        val updatedMonitor = monitorCrudService.updateMonitor(monitorId, updates)
+        val updatedMonitor = monitorActions.updateMonitor(monitorId, updates)
         return HttpMonitorDto.fromMonitorRecord(updatedMonitor)
     }
 
@@ -167,7 +167,7 @@ class HttpMonitorControllerV2(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun getUptimeEvents(monitorId: Long): List<HttpUptimeEventDto> =
-        monitorCrudService.getUptimeEventsByMonitorId(monitorId)
+        monitorActions.getUptimeEventsByMonitorId(monitorId)
 
     @ApiResponses(
         ApiResponse(
@@ -178,7 +178,7 @@ class HttpMonitorControllerV2(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun getSSLEvents(monitorId: Long): List<SSLEventDto> =
-        monitorCrudService.getSSLEventsByMonitorId(monitorId)
+        monitorActions.getSSLEventsByMonitorId(monitorId)
 
     @ApiResponses(
         ApiResponse(
@@ -198,7 +198,7 @@ class HttpMonitorControllerV2(
         @QueryValue period: Duration?,
     ): HttpMonitorStatsDto {
         val effectivePeriod = period ?: Duration.ofDays(MONITOR_STATS_PERIOD_DEFAULT_DAYS)
-        return monitorCrudService.getMonitorStats(
+        return monitorActions.getMonitorStats(
             monitorId = monitorId,
             period = effectivePeriod,
         )

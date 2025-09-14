@@ -40,7 +40,7 @@ import org.jooq.exception.DataAccessException
 import java.time.Duration
 
 @Singleton
-class HttpMonitorCrudService(
+class HttpMonitorActions(
     private val monitorRepository: HttpMonitorRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
     private val checkScheduler: HttpCheckScheduler,

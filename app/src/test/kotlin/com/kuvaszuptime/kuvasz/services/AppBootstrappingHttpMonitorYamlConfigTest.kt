@@ -12,7 +12,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldThrow
@@ -64,7 +64,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
     fun getCheckScheduler() = appContext?.getBean<HttpCheckScheduler>().shouldNotBeNull()
     fun getMonitorRepository() = appContext?.getBean<HttpMonitorRepository>().shouldNotBeNull()
     fun getAppConfig() = appContext?.getBean<AppConfig>().shouldNotBeNull()
-    fun getMonitorCrudService() = appContext?.getBean<HttpMonitorCrudService>().shouldNotBeNull()
+    fun getMonitorActions() = appContext?.getBean<HttpMonitorActions>().shouldNotBeNull()
 
     /**
      * The whole test logic for the first step is reused, because we test that we get the same outcome in a later step,
@@ -266,7 +266,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
         scheduledSSLChecks.shouldHaveSize(1)
 
         // Creating a monitor by hand during runtime that should be persisted & scheduled
-        getMonitorCrudService().createMonitor(
+        getMonitorActions().createMonitor(
             HttpMonitorCreateDto(
                 name = "manual_monitor",
                 url = "http://example.dev",

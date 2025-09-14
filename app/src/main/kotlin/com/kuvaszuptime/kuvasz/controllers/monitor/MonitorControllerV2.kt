@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
     SecurityRequirement(name = "bearerAuth")
 )
 class MonitorControllerV2(
-    private val monitorCrudService: HttpMonitorCrudService,
+    private val httpMonitorActions: HttpMonitorActions,
     private val exportHandler: ExportHandler,
 ) : MonitorOperationsV2 {
 
@@ -42,7 +42,7 @@ class MonitorControllerV2(
     @ExecuteOn(TaskExecutors.IO)
     override fun getYamlMonitorsExport(): SystemFile {
         val export = mapOf(
-            HttpMonitorConfig.CONFIG_PREFIX to monitorCrudService.getHttpMonitorsExport()
+            HttpMonitorConfig.CONFIG_PREFIX to httpMonitorActions.getHttpMonitorsExport()
                 .map { HttpMonitorExportDto.fromMonitorRecord(it) }
         )
 

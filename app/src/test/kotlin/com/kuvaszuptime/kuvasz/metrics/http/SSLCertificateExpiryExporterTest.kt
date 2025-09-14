@@ -224,10 +224,10 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                 meterRegistry().meters shouldHaveSize 3
 
                 // Simulating the events
-                monitorCrudService().updateMonitor(enabledMonitorWithExpiry.id, monitorDisableUpdate)
-                monitorCrudService().updateMonitor(anotherEnabledMonitorWithExpiry.id, monitorNameUpdate)
-                monitorCrudService().updateMonitor(disabledMonitorWithExpiry.id, monitorSSLEnableUpdate)
-                monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithExpiry.id)
+                httpMonitorActions().updateMonitor(enabledMonitorWithExpiry.id, monitorDisableUpdate)
+                httpMonitorActions().updateMonitor(anotherEnabledMonitorWithExpiry.id, monitorNameUpdate)
+                httpMonitorActions().updateMonitor(disabledMonitorWithExpiry.id, monitorSSLEnableUpdate)
+                httpMonitorActions().deleteMonitorById(yetAnotherEnabledMonitorWithExpiry.id)
 
                 val registeredMeters = meterRegistry().meters
 
