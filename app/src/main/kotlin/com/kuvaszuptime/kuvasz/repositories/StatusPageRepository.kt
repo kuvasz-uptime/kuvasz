@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.StatusPageDuplicatedException
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
@@ -24,13 +23,15 @@ class StatusPageRepository(private val dslContext: DSLContext) {
         .and(STATUS_PAGE.ENABLED.eq(enabled))
         .fetchOne()
 
-    fun findById(id: Long): StatusPageRecord? = dslContext
+    fun findById(id: Long, txCtx: DSLContext = dslContext): StatusPageRecord? = txCtx
         .selectFrom(STATUS_PAGE)
         .where(STATUS_PAGE.ID.eq(id))
         .fetchOne()
 
-    fun fetchAll(): List<StatusPageRecord> = dslContext
+    @Suppress("IgnoredReturnValue")
+    fun fetchAll(enabled: Boolean? = null): List<StatusPageRecord> = dslContext
         .selectFrom(STATUS_PAGE)
+        .apply { if (enabled != null) where(STATUS_PAGE.ENABLED.eq(enabled)) }
         .fetch()
 
     fun deleteById(id: Long, ctx: DSLContext = dslContext): Int = ctx
@@ -84,14 +85,6 @@ class StatusPageRepository(private val dslContext: DSLContext) {
         .set(STATUS_PAGE.UPDATED_AT, getCurrentTimestamp())
         .returning(STATUS_PAGE.asterisk())
         .fetchOneOrThrow()
-
-    fun updateMonitors(statusPageId: Long, newMonitors: Array<MonitorID>) {
-        dslContext
-            .update(STATUS_PAGE)
-            .set(STATUS_PAGE.MONITORS, newMonitors)
-            .where(STATUS_PAGE.ID.eq(statusPageId))
-            .execute()
-    }
 
     /**
      * Deletes all status pages except the ones with the given IDs.

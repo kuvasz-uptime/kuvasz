@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageConfigDefaults
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
@@ -84,14 +84,14 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
 
             then("it should fall back to the right default values") {
                 val statusPageConfig = applicationContext.getBean<StatusPageConfig>()
-                statusPageConfig.enabled shouldBe StatusPageConfigDefaults.CUSTOM_PAGE_ENABLED
-                statusPageConfig.title shouldBe StatusPageConfigDefaults.TITLE
+                statusPageConfig.enabled shouldBe StatusPageDefaults.CUSTOM_PAGE_ENABLED
+                statusPageConfig.title shouldBe StatusPageDefaults.TITLE
                 statusPageConfig.slug shouldBe "valid_slug"
                 statusPageConfig.monitors.shouldBeNull()
 
                 val statusPageDefaultConfig = applicationContext.getBean<DefaultStatusPageConfig>()
-                statusPageDefaultConfig.enabled shouldBe StatusPageConfigDefaults.DEFAULT_PAGE_ENABLED
-                statusPageDefaultConfig.title shouldBe StatusPageConfigDefaults.TITLE
+                statusPageDefaultConfig.enabled shouldBe StatusPageDefaults.DEFAULT_PAGE_ENABLED
+                statusPageDefaultConfig.title shouldBe StatusPageDefaults.TITLE
             }
         }
     }

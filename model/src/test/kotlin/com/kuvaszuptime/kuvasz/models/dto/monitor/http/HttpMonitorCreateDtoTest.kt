@@ -1,29 +1,18 @@
-package com.kuvaszuptime.kuvasz.models.dto
+package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.micronaut.validation.validator.DefaultValidator
-import jakarta.validation.ConstraintViolation
 
 @MicronautTest(startApplication = false)
-class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
-
-    fun Set<ConstraintViolation<HttpMonitorCreateDto>>.shouldHaveSingleError(
-        propertyPath: String,
-        message: String,
-    ) {
-        this.size shouldBe 1
-        this.first().let { error ->
-            error.propertyPath.toString() shouldBe propertyPath
-            error.message shouldBe message
-        }
-    }
+class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 
     given("the validation setup of a MonitorCreateDto") {
 
@@ -327,7 +316,7 @@ class MonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
     }
 })
 
-class MonitorCreateDtoDefaultsTest : BehaviorSpec({
+class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
 
     given("a MonitorCreateDto with default values") {
         val dto = HttpMonitorCreateDto(

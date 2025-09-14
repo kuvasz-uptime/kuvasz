@@ -1,7 +1,7 @@
-package com.kuvaszuptime.kuvasz.controllers.monitor
+package com.kuvaszuptime.kuvasz.controllers.statuspage
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
+import com.kuvaszuptime.kuvasz.models.ReadOnlyStatusPageException
 import io.micronaut.aop.Around
 import io.micronaut.aop.InterceptorBean
 import io.micronaut.aop.MethodInterceptor
@@ -13,15 +13,15 @@ import jakarta.inject.Singleton
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
 @Around
-annotation class CheckHttpMonitorsWritable
+annotation class CheckStatusPagesWritable
 
 @Singleton
-@InterceptorBean(CheckHttpMonitorsWritable::class)
-class HttpMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
+@InterceptorBean(CheckStatusPagesWritable::class)
+class StatusPageWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
 
     override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
-        context.findAnnotation(CheckHttpMonitorsWritable::class.java).ifPresent { _ ->
-            if (appConfig.isHttpMonitorExternalWriteDisabled()) throw ReadOnlyMonitorException()
+        context.findAnnotation(CheckStatusPagesWritable::class.java).ifPresent { _ ->
+            if (appConfig.isStatusPageExternalWriteDisabled()) throw ReadOnlyStatusPageException()
         }
         return context.proceed()
     }

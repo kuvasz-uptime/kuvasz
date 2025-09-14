@@ -3,19 +3,21 @@
 package com.kuvaszuptime.kuvasz.controllers
 
 import com.fasterxml.jackson.core.JsonParseException
-import com.kuvaszuptime.kuvasz.controllers.monitor.ReadOnlyMonitorException
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.DASHBOARD_PATH
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.LOGIN_PATH
 import com.kuvaszuptime.kuvasz.models.DuplicationException
-import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
+import com.kuvaszuptime.kuvasz.models.ReadOnlyResourceException
+import com.kuvaszuptime.kuvasz.models.ResourceNotFoundException
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.handlers.InvalidIntegrationIDException
+import com.kuvaszuptime.kuvasz.models.monitor.InvalidMonitorIdException
 import com.kuvaszuptime.kuvasz.security.ui.AlreadyLoggedInError
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthError
 import com.kuvaszuptime.kuvasz.util.toUri
 import com.kuvaszuptime.kuvasz.validation.NonExistingIntegrationIdException
+import com.kuvaszuptime.kuvasz.validation.NonExistingMonitorIdException
 import io.micronaut.core.convert.exceptions.ConversionErrorException
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -30,7 +32,7 @@ import jakarta.validation.ValidationException
 class GlobalErrorHandler {
 
     @Error(global = true)
-    fun notFoundExceptionHandler(request: HttpRequest<*>, ex: MonitorNotFoundException): HttpResponse<ServiceError> {
+    fun notFoundExceptionHandler(request: HttpRequest<*>, ex: ResourceNotFoundException): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.notFound(error)
     }
@@ -70,16 +72,16 @@ class GlobalErrorHandler {
     }
 
     @Error(global = true)
-    fun readOnlyMonitorExceptionHandler(
+    fun readOnlyResourceExceptionHandler(
         request: HttpRequest<*>,
-        ex: ReadOnlyMonitorException
+        ex: ReadOnlyResourceException
     ): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.status<ServiceError>(HttpStatus.METHOD_NOT_ALLOWED).body(error)
     }
 
     @Error(global = true)
-    fun nonExistingIntegrationExceptionHandler(
+    fun nonExistingIntegrationIdExceptionHandler(
         request: HttpRequest<*>,
         ex: NonExistingIntegrationIdException
     ): HttpResponse<ServiceError> {
@@ -88,9 +90,27 @@ class GlobalErrorHandler {
     }
 
     @Error(global = true)
-    fun invalidIntegrationIDExceptionHandler(
+    fun invalidIntegrationIdExceptionHandler(
         request: HttpRequest<*>,
         ex: InvalidIntegrationIDException
+    ): HttpResponse<ServiceError> {
+        val error = ServiceError(ex.message)
+        return HttpResponse.status<ServiceError>(HttpStatus.BAD_REQUEST).body(error)
+    }
+
+    @Error(global = true)
+    fun nonExistingMonitorIdExceptionHandler(
+        request: HttpRequest<*>,
+        ex: NonExistingMonitorIdException
+    ): HttpResponse<ServiceError> {
+        val error = ServiceError(ex.message)
+        return HttpResponse.status<ServiceError>(HttpStatus.BAD_REQUEST).body(error)
+    }
+
+    @Error(global = true)
+    fun invalidMonitorIdExceptionHandler(
+        request: HttpRequest<*>,
+        ex: InvalidMonitorIdException,
     ): HttpResponse<ServiceError> {
         val error = ServiceError(ex.message)
         return HttpResponse.status<ServiceError>(HttpStatus.BAD_REQUEST).body(error)

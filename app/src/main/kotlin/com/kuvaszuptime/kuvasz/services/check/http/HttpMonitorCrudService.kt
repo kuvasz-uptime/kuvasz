@@ -11,7 +11,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
-import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
+import com.kuvaszuptime.kuvasz.models.HttpMonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
@@ -31,9 +31,9 @@ import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
+import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
-import jakarta.validation.ValidationException
 import org.jooq.DSLContext
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
@@ -60,7 +60,7 @@ class HttpMonitorCrudService(
 
     fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
-            monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
+            monitorRepository.getMonitorWithDetails(monitorId) ?: throw HttpMonitorNotFoundException(monitorId)
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
             nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
@@ -124,12 +124,7 @@ class HttpMonitorCrudService(
                     val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
 
                     objectMapper.convertValue<HttpMonitorUpdateDto>(updatedMonitor).let { toValidate ->
-                        val errors = validator.validate(toValidate)
-                        if (errors.isNotEmpty()) {
-                            throw ValidationException(
-                                "Validation failed: ${errors.joinToString { "${it.propertyPath}: ${it.message}" }}"
-                            )
-                        }
+                        validator.validate(toValidate).throwIfNotEmpty()
                     }
                     // Validate the raw integrations from the DTO
                     updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
@@ -245,7 +240,7 @@ class HttpMonitorCrudService(
             }
 
     private fun HttpMonitorRecord?.orThrowNotFound(monitorId: Long): HttpMonitorRecord =
-        this ?: throw MonitorNotFoundException(monitorId)
+        this ?: throw HttpMonitorNotFoundException(monitorId)
 
     fun getHttpMonitorsExport(): List<HttpMonitorRecord> = monitorRepository.fetchAll()
 }

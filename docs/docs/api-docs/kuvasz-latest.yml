@@ -85,8 +85,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -187,8 +187,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -238,8 +238,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -426,8 +426,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -510,8 +510,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -560,8 +560,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -767,6 +767,65 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/status-pages:
+    get:
+      tags:
+      - Status pages
+      summary: Get all status pages
+      operationId: getStatusPages
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusPageDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - Status pages
+      summary: Create a status page
+      operationId: createStatuspage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusPageCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/status-pages/export/yaml:
     get:
       tags:
@@ -778,6 +837,116 @@ paths:
           description: Successful query
           content:
             application/x-yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/status-pages/{statusPageId}:
+    get:
+      tags:
+      - Status pages
+      summary: Get a status page
+      operationId: getStatusPage
+      parameters:
+      - name: statusPageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - Status pages
+      summary: Delete a status page by ID
+      operationId: deleteStatusPage
+      parameters:
+      - name: statusPageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - Status pages
+      summary: Update a status page by ID
+      description: Updates the status page with the given ID. Only fields that are
+        present in the request body will be updated. Fields not present in the request
+        body will remain unchanged.
+      operationId: updateStatusPage
+      parameters:
+      - name: statusPageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusPageUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -2564,6 +2733,105 @@ components:
       - VALID
       - INVALID
       - WILL_EXPIRE
+    StatusPageCreateDto:
+      required:
+      - slug
+      type: object
+      properties:
+        title:
+          minLength: 1
+          type: string
+          description: Title of the status page
+          x-size-message: Status page title must not be blank
+          default: System status
+        slug:
+          minLength: 1
+          pattern: "^[a-zA-Z0-9_-]{1,50}$"
+          type: string
+          description: "Unique slug of the status page, used in the URL"
+          x-pattern-message: "Status page slug must be 1-50 characters long and can\
+            \ only contain letters, numbers, hyphens, and underscores"
+          x-size-message: Status page slug must not be blank
+        enabled:
+          type: boolean
+          description: Whether the status page is enabled
+          default: true
+        monitors:
+          type: array
+          description: Set of monitor IDs that are included in the status page
+          nullable: true
+          items:
+            type: string
+    StatusPageDto:
+      required:
+      - createdAt
+      - enabled
+      - id
+      - monitors
+      - slug
+      - title
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the status page
+          format: int64
+        title:
+          type: string
+          description: Title of the status page
+        slug:
+          type: string
+          description: "Unique slug of the status page, used in the URL"
+        enabled:
+          type: boolean
+          description: Whether the status page is enabled
+        monitors:
+          type: array
+          description: Set of monitor IDs that are included in the status page
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        createdAt:
+          type: string
+          description: Timestamp of when the status page was created
+          format: date-time
+        updatedAt:
+          type: string
+          description: Timestamp of when the status page was last updated
+          format: date-time
+          nullable: true
+    StatusPageUpdateDto:
+      type: object
+      properties:
+        title:
+          minLength: 1
+          type: string
+          description: Title of the status page
+          nullable: false
+          x-size-message: Status page title must not be blank
+        slug:
+          minLength: 1
+          pattern: "^[a-zA-Z0-9_-]{1,50}$"
+          type: string
+          description: "Unique slug of the status page, used in the URL"
+          nullable: false
+          x-pattern-message: "Status page slug must be 1-50 characters long and can\
+            \ only contain letters, numbers, hyphens, and underscores"
+          x-size-message: Status page slug must not be blank
+        enabled:
+          type: boolean
+          description: Whether the status page is enabled
+          nullable: false
+        monitors:
+          type: array
+          description: Set of monitor IDs that are included in the status page
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
     TelegramNotificationConfigDto:
       required:
       - chatId

@@ -54,4 +54,6 @@ object HttpMonitorDocs {
             "case-insensitive for the header names, but the values must match exactly"
     const val REQUEST_BODY = "The body of the request to be sent, which is used for POST, PATCH and PUT requests. " +
         "Currently only valid JSON bodies are supported."
+    const val MONITORS_405_REASON =
+        "HTTP monitors are in read-only mode, because they are loaded from a YAML config file"
 }

@@ -122,7 +122,7 @@ fun createStatusPage(
     dslContext: DSLContext,
     title: String = "Status Page",
     slug: String = UUID.randomUUID().toString(),
-    enabled: Boolean = false,
+    enabled: Boolean = true,
     monitors: List<MonitorID> = emptyList(),
 ) = dslContext
     .insertInto(STATUS_PAGE)

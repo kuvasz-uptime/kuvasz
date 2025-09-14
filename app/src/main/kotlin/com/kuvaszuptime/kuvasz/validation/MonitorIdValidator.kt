@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.validation
 
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.InvalidMonitorIdException
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import jakarta.inject.Singleton
@@ -30,9 +31,10 @@ class MonitorIdValidator(private val httpMonitorRepository: HttpMonitorRepositor
      *
      * @return a set of valid monitor IDs.
      * @throws NonExistingMonitorIdException if any of the provided IDs are not existing.
+     * @throws InvalidMonitorIdException if any of the provided IDs are not valid.
      */
     fun validateMonitorIds(rawIds: List<String>): Set<MonitorID> = rawIds.map { id ->
-        MonitorID.fromString(id)?.checkIfConfigured() ?: throw NonExistingMonitorIdException(id)
+        MonitorID.fromString(id)?.checkIfConfigured() ?: throw InvalidMonitorIdException(id)
     }.toSet()
 }
 

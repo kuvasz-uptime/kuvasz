@@ -7,10 +7,15 @@ data class ServiceError(
     val message: String? = "Something bad happened :("
 )
 
-class MonitorNotFoundException(
-    private val monitorId: Long,
-    override val message: String? = "There is no monitor with ID: $monitorId"
-) : Exception()
+sealed class ResourceNotFoundException : Exception()
+
+sealed class MonitorNotFoundException(
+    val monitorType: MonitorType,
+    val monitorId: Long,
+    override val message: String? = "There is no ${monitorType.identifier.uppercase()} monitor with ID: $monitorId",
+) : ResourceNotFoundException()
+
+class HttpMonitorNotFoundException(monitorId: Long) : MonitorNotFoundException(MonitorType.HTTP_SSL, monitorId)
 
 open class PersistenceException(
     override val message: String? = "Something bad happened in the database :("
@@ -22,10 +27,6 @@ open class DuplicationException(
 
 class MonitorDuplicatedException(
     override val message: String? = "There is already a monitor with the given name"
-) : DuplicationException()
-
-class StatusPageDuplicatedException(
-    override val message: String? = "There is already a status page with the given slug"
 ) : DuplicationException()
 
 class SchedulingException(
@@ -60,3 +61,24 @@ class ExpectedHeaderNotFoundException(
     val failingHeaders: List<String>,
     override val message: String? = "Response headers did not match the expected headers: $failingHeaders"
 ) : UptimeCheckException()
+
+class StatusPageDuplicatedException(
+    override val message: String? = "There is already a status page with the given slug"
+) : DuplicationException()
+
+class StatusPageNotFoundException(
+    val statusPageId: Long,
+    override val message: String? = "There is no status page with ID: $statusPageId",
+) : ResourceNotFoundException()
+
+sealed class ReadOnlyResourceException(override val message: String) : Exception()
+
+class ReadOnlyMonitorException : ReadOnlyResourceException(
+    "The monitors were configured via a YAML file. " +
+        "You cannot modify them via the API. Please change the configuration in the YAML file and restart the server."
+)
+
+class ReadOnlyStatusPageException : ReadOnlyResourceException(
+    "The status pages were configured via a YAML file. " +
+        "You cannot modify them via the API. Please change the configuration in the YAML file and restart the server."
+)

@@ -81,6 +81,10 @@ micronaut:
       uptime-check:
         num-threads: 4
         prefer-native-transport: false
+  caches:
+    status-pages:
+      expire-after-write: ${STATUS_PAGE_CACHE_EXPIRES_AFTER:`PT5M`}
+      maximum-size: ${STATUS_PAGE_CACHE_MAX_SIZE:`100`}
 endpoints:
   all.path: /api/v2/
   health:

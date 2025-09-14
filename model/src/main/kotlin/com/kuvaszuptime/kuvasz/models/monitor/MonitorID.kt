@@ -26,7 +26,7 @@ data class MonitorID(
         @JvmStatic
         @JsonCreator
         fun jsonCreator(identifier: String): MonitorID =
-            fromString(identifier) ?: throw InvalidMonitorIDException(identifier)
+            fromString(identifier) ?: throw InvalidMonitorIdException(identifier)
 
         @JsonDeserialize
         fun fromString(identifier: String): MonitorID? =
@@ -39,11 +39,11 @@ data class MonitorID(
     }
 }
 
-class InvalidMonitorIDException(id: String) :
+class InvalidMonitorIdException(id: String) :
     IllegalArgumentException("Invalid monitor ID format: $id. Expected format is 'type:name'.")
 
 @Singleton
-class MonitorIDTypeConverter : TypeConverter<String, MonitorID> {
+class MonitorIdTypeConverter : TypeConverter<String, MonitorID> {
     override fun convert(
         `object`: String,
         targetType: Class<MonitorID>,

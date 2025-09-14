@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDocs.MONITORS_405_REASON
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
@@ -110,7 +111,7 @@ class HttpMonitorControllerV1(
         ),
         ApiResponse(
             responseCode = "405",
-            description = "Monitors are in read-only mode, because they are loaded from a YAML config file",
+            description = MONITORS_405_REASON,
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
@@ -134,7 +135,7 @@ class HttpMonitorControllerV1(
         ),
         ApiResponse(
             responseCode = "405",
-            description = "Monitors are in read-only mode, because they are loaded from a YAML config file",
+            description = MONITORS_405_REASON,
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
@@ -160,7 +161,7 @@ class HttpMonitorControllerV1(
         ),
         ApiResponse(
             responseCode = "405",
-            description = "Monitors are in read-only mode, because they are loaded from a YAML config file",
+            description = MONITORS_405_REASON,
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
