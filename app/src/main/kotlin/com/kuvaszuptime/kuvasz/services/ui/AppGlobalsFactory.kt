@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -20,9 +21,11 @@ class AppGlobalsFactory {
         appConfig: AppConfig,
         integrationRepository: IntegrationRepository,
         versionChecker: VersionChecker,
+        defaultStatusPageConfig: DefaultStatusPageConfig,
     ) = AppGlobals(
         editabilityState = AppGlobals.EditabilityState(
-            areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() }
+            areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() },
+            areStatusPagesReadOnly = { appConfig.isStatusPageExternalWriteDisabled() },
         ),
         isAuthenticated = { securityService?.isAuthenticated ?: true },
         isAuthEnabled = securityService != null,
@@ -36,6 +39,10 @@ class AppGlobalsFactory {
             .groupBy { it.type }
             .mapValues { (_, configs) -> configs.toSet() }
             .toMap(),
-        versionInfo = { versionChecker.getVersionInfo() }
+        versionInfo = { versionChecker.getVersionInfo() },
+        defaultStatusPageSettings = AppGlobals.DefaultStatusPageSettings(
+            title = defaultStatusPageConfig.title,
+            enabled = defaultStatusPageConfig.enabled,
+        )
     )
 }

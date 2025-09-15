@@ -18,6 +18,7 @@ data class AppGlobals(
     val configuredIntegrationsByType: Map<IntegrationType, Set<IntegrationConfig>>,
     val editabilityState: EditabilityState,
     val versionInfo: () -> VersionInfo,
+    val defaultStatusPageSettings: DefaultStatusPageSettings,
 ) {
     init {
         // Setting up the locale for i18n messages
@@ -28,5 +29,11 @@ data class AppGlobals(
 
     data class EditabilityState(
         val areHttpMonitorsReadOnly: () -> Boolean,
+        val areStatusPagesReadOnly: () -> Boolean,
+    )
+
+    data class DefaultStatusPageSettings(
+        val title: String,
+        val enabled: Boolean,
     )
 }

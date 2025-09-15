@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.ui
 
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -29,6 +30,10 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             latestVersionDetails = "https://kuvasz-uptime.dev/changelog/#1.1.1".toUri(),
         )
     }
+    val mockDefaultPageSettings = mockk<DefaultStatusPageConfig> {
+        every { title } returns "My Status Page"
+        every { enabled } returns true
+    }
 
     given("the AppGlobalsFactory") {
 
@@ -39,6 +44,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 AppConfig(),
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -57,7 +63,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockSecurity,
                 AppConfig(),
                 emptyIntegrationRepository,
-                mockVersionChecker
+                mockVersionChecker,
+                mockDefaultPageSettings,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -76,7 +83,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockSecurity,
                 AppConfig(),
                 emptyIntegrationRepository,
-                mockVersionChecker
+                mockVersionChecker,
+                mockDefaultPageSettings,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -95,6 +103,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 appConfig,
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -109,19 +118,24 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 appConfig,
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+            globals.editabilityState.areStatusPagesReadOnly() shouldBe false
 
             appConfig.disableHttpMonitorExternalWrite()
+            appConfig.disableStatusPageExternalWrite()
             val globalsAfterUpdate = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
             )
 
             then("it should return the correctly hydrated view model") {
                 globalsAfterUpdate.editabilityState.areHttpMonitorsReadOnly() shouldBe true
+                globalsAfterUpdate.editabilityState.areStatusPagesReadOnly() shouldBe true
             }
         }
 
@@ -141,7 +155,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 null,
                 AppConfig(),
                 mockIntegrationRepository,
-                mockVersionChecker
+                mockVersionChecker,
+                mockDefaultPageSettings,
             )
 
             then("it should return the correctly hydrated view model with integrations") {
@@ -163,13 +178,29 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     null,
                     AppConfig(),
                     emptyIntegrationRepository,
-                    mockVersionChecker
+                    mockVersionChecker,
+                    mockDefaultPageSettings,
                 )
                 globals.versionInfo() shouldBe VersionInfo(
                     installedVersion = BuildConfig.APP_VERSION,
                     latestVersion = "1.1.1",
                     latestVersionDetails = "https://kuvasz-uptime.dev/changelog/#1.1.1".toUri(),
                 )
+            }
+        }
+
+        `when`("the default status page settings are not the defaults") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+            )
+
+            then("it should return the correct default status page settings") {
+                globals.defaultStatusPageSettings.title shouldBe "My Status Page"
+                globals.defaultStatusPageSettings.enabled shouldBe true
             }
         }
     }
