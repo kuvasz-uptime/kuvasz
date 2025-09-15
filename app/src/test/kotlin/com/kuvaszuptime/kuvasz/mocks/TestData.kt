@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
@@ -122,7 +123,7 @@ fun createStatusPage(
     dslContext: DSLContext,
     title: String = "Status Page",
     slug: String = UUID.randomUUID().toString(),
-    enabled: Boolean = true,
+    enabled: Boolean = StatusPageDefaults.CUSTOM_PAGE_ENABLED,
     monitors: List<MonitorID> = emptyList(),
 ) = dslContext
     .insertInto(STATUS_PAGE)

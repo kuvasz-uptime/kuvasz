@@ -198,7 +198,12 @@ class StatusPageControllerTest(
             }
 
             `when`("enabled parameter is set to true") {
-                val enabledPage = createStatusPage(dslContext, title = "Enabled Page", slug = "enabled-page")
+                val enabledPage = createStatusPage(
+                    dslContext,
+                    enabled = true,
+                    title = "Enabled Page",
+                    slug = "enabled-page",
+                )
                 createStatusPage(dslContext, enabled = false, title = "Disabled Page", slug = "disabled-page")
 
                 val response = statusPageClient.getStatusPages(enabled = true)
@@ -215,7 +220,12 @@ class StatusPageControllerTest(
             }
 
             `when`("enabled parameter is set to false") {
-                createStatusPage(dslContext, title = "Enabled Page", slug = "enabled-page")
+                createStatusPage(
+                    dslContext,
+                    enabled = true,
+                    title = "Enabled Page",
+                    slug = "enabled-page",
+                )
                 val disabledPage = createStatusPage(
                     dslContext,
                     enabled = false,
@@ -296,7 +306,7 @@ class StatusPageControllerTest(
                     pageInDb.title shouldBe createdMonitor.title
                     pageInDb.slug shouldBe "status-page-1"
                     pageInDb.slug shouldBe createdMonitor.slug
-                    pageInDb.enabled shouldBe true
+                    pageInDb.enabled shouldBe false
                     pageInDb.enabled shouldBe createdMonitor.enabled
                     pageInDb.createdAt shouldBe createdMonitor.createdAt
                     pageInDb.updatedAt shouldBe pageInDb.createdAt

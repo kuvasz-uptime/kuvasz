@@ -2755,7 +2755,7 @@ components:
         enabled:
           type: boolean
           description: Whether the status page is enabled
-          default: true
+          default: false
         monitors:
           type: array
           description: Set of monitor IDs that are included in the status page

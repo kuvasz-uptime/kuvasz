@@ -93,7 +93,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
         pagesInDb.forOne { thirdPage ->
             thirdPage.slug shouldBe "status-page-3"
             thirdPage.title shouldBe "Status Page 3"
-            thirdPage.enabled shouldBe true
+            thirdPage.enabled shouldBe false
             thirdPage.monitors shouldContainExactlyInAnyOrder arrayOf(
                 MonitorID(MonitorType.HTTP_SSL, "test3"),
                 MonitorID(MonitorType.HTTP_SSL, "test1"),
@@ -154,7 +154,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
                 MonitorID(MonitorType.HTTP_SSL, "test3"),
                 MonitorID(MonitorType.HTTP_SSL, "test1"),
             )
-            untouchedPage.enabled shouldBe true
+            untouchedPage.enabled shouldBe false
             untouchedPage.updatedAt shouldBeAfter untouchedPage.createdAt
 
             statusPagesAfterTheFirstStep.single { it.slug == untouchedPage.slug }.id shouldBe untouchedPage.id
