@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 
 @Singleton
@@ -29,9 +30,15 @@ class StatusPageRepository(private val dslContext: DSLContext) {
         .fetchOne()
 
     @Suppress("IgnoredReturnValue")
-    fun fetchAll(enabled: Boolean? = null): List<StatusPageRecord> = dslContext
+    fun fetchAll(
+        enabled: Boolean? = null,
+        sortedBy: SortField<*>? = null,
+    ): List<StatusPageRecord> = dslContext
         .selectFrom(STATUS_PAGE)
-        .apply { if (enabled != null) where(STATUS_PAGE.ENABLED.eq(enabled)) }
+        .apply {
+            enabled?.let { where(STATUS_PAGE.ENABLED.eq(enabled)) }
+            sortedBy?.let { orderBy(sortedBy) }
+        }
         .fetch()
 
     fun deleteById(id: Long, ctx: DSLContext = dslContext): Int = ctx

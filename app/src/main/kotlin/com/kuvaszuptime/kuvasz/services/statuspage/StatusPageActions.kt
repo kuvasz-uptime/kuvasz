@@ -26,6 +26,7 @@ import io.micronaut.cache.annotation.Cacheable
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import java.time.LocalDate
 
@@ -44,8 +45,12 @@ class StatusPageActions(
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .registerModules(JavaTimeModule())
 
-    fun getStatusPages(enabled: Boolean?): List<StatusPageDto> =
-        statusPageRepository.fetchAll(enabled).map { StatusPageDto.fromStatusPageRecord(it) }
+    fun getStatusPages(
+        enabled: Boolean?,
+        sortedBy: SortField<*>? = null,
+    ): List<StatusPageDto> =
+        statusPageRepository.fetchAll(enabled, sortedBy)
+            .map { StatusPageDto.fromStatusPageRecord(it) }
 
     fun getStatusPage(statusPageId: Long): StatusPageDto =
         statusPageRepository.findById(statusPageId)?.let { StatusPageDto.fromStatusPageRecord(it) }
