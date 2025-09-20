@@ -25,7 +25,7 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 ![Kuvasz integrations management UI](images/integrations/integrations_list.webp)
 
 - **Update notifications**: you can now [**get notified about new releases**](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
-- **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](./api-docs.md)), not just as cumulated metrics across all monitors.
+- **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](https://api-docs.kuvasz-uptime.dev)), not just as cumulated metrics across all monitors.
 
 ![Kuvasz monitor-level metrics UI](images/features/monitor-metrics.webp)
 

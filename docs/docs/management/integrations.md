@@ -286,7 +286,7 @@ integrations:
 It's vital to ensure that your integrations are correctly set up to receive notifications. You can **test your integrations** (even the disabled ones) directly either:
 
 - From the **web interface** by navigating to the _Integrations_ page and clicking the :octicons-check-circle-16: button next to the integration you want to test. In this case you'll see the result in a visual way, at the same place where you initiated the test.
-- Via the [**API**](../api-docs.md) by sending a `POST` request to `/api/v2/integrations/{integrationId}/test`, where `{integrationId}` is the ID of the integration you want to test (for example, `slack:your-desired-name`). In this case the payload of the response should be straightforward to understand whether the test was successful or not.
+- Via the [**API**](https://api-docs.kuvasz-uptime.dev){target="_blank"} by sending a `POST` request to `/api/v2/integrations/{integrationId}/test`, where `{integrationId}` is the ID of the integration you want to test (for example, `slack:your-desired-name`). In this case the payload of the response should be straightforward to understand whether the test was successful or not.
 
 !!!info "Testing PagerDuty integrations"
 

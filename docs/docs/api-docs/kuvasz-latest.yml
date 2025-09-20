@@ -1,7 +1,14 @@
 openapi: 3.0.1
 info:
   title: Kuvasz Uptime
+  description: "Kuvasz Uptime is an open-source, self-hostable uptime monitoring and\
+    \ status page service."
+  contact:
+    name: Official Documentation
+    url: https://kuvasz-uptime.dev
   version: latest
+  x-logo:
+    url: https://github.com/kuvasz-uptime/kuvasz/raw/main/docs/docs/images/kuvasz-banner-light.webp
 tags:
 - name: Management
 - name: Monitors

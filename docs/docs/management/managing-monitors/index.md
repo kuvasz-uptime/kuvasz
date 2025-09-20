@@ -43,7 +43,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
  
     It might be beneficial to use the REST API of _Kuvasz_ if you would like to **build a low-level integration**.
 
-    This section won't go into details about the API or about exact API calls, since it's **well documented and must be self-explanatory**. You can find more information about the available endpoints and their usage in the [**API documentation**](../../api-docs.md).
+    This section won't go into details about the API or about exact API calls, since it's **well documented and must be self-explanatory**. You can find more information about the available endpoints and their usage in the [**API documentation**](https://api-docs.kuvasz-uptime.dev){target="_blank"}.
 
 ## Available monitor types
 
