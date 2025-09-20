@@ -33,7 +33,7 @@ class StatusPageMutabilityTest(
             MonitorID(MonitorType.HTTP_SSL, "test1").toString()
         ),
     )
-    val statusPageUpdateDto = JsonNodeFactory.instance.objectNode().put(StatusPageUpdateDto::enabled.name, false)
+    val statusPageUpdateDto = JsonNodeFactory.instance.objectNode().put(StatusPageUpdateDto::public.name, false)
 
     "all the API endpoints that mutate status pages should return a 405 if the pages are configured via YAML" {
 
