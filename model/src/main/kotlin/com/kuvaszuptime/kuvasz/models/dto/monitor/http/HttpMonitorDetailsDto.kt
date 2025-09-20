@@ -83,6 +83,8 @@ data class HttpMonitorDetailsDto(
     val expectedHeaders: Map<String, String>,
     @param:Schema(description = HttpMonitorDocs.REQUEST_BODY, required = true, nullable = true)
     val requestBody: String? = null,
+    @param:Schema(description = HttpMonitorDocs.STATUS_PAGES, required = true)
+    val statusPages: Set<String>,
 )
 
 data class IntegrationDetailsDto(

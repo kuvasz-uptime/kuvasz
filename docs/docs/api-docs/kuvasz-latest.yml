@@ -180,6 +180,12 @@ paths:
       responses:
         "204":
           description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
         "404":
           description: Not found
           content:
@@ -503,6 +509,12 @@ paths:
       responses:
         "204":
           description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
         "404":
           description: Not found
           content:
@@ -774,7 +786,7 @@ paths:
       summary: Get all status pages
       operationId: getStatusPages
       parameters:
-      - name: enabled
+      - name: public
         in: query
         explode: false
         schema:
@@ -991,6 +1003,11 @@ paths:
       - bearerAuth: []
 components:
   schemas:
+    ApiErrorCode:
+      type: string
+      enum:
+      - MONITOR_NAME_CANNOT_BE_CHANGED
+      - MONITOR_CANNOT_BE_DELETED
     DiscordNotificationConfigDto:
       required:
       - enabled
@@ -1257,6 +1274,7 @@ components:
       - sslStatus
       - sslStatusStartedAt
       - sslValidUntil
+      - statusPages
       - updatedAt
       - uptimeCheckInterval
       - uptimeError
@@ -1431,6 +1449,11 @@ components:
           description: "The body of the request to be sent, which is used for POST,\
             \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
           nullable: true
+        statusPages:
+          type: array
+          description: List of slugs of the status pages the monitor is assigned to
+          items:
+            type: string
     HttpMonitorDto:
       required:
       - createdAt
@@ -2519,6 +2542,10 @@ components:
         message:
           type: string
           nullable: true
+        errorCode:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/ApiErrorCode"
     SettingsDto:
       required:
       - app
@@ -2584,11 +2611,15 @@ components:
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly
+      - areStatusPagesReadOnly
       type: object
       properties:
         areHttpMonitorsReadOnly:
           type: boolean
           description: Whether the HTTP monitors are in read-only mode
+        areStatusPagesReadOnly:
+          type: boolean
+          description: Whether the status pages are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge
@@ -2736,6 +2767,7 @@ components:
     StatusPageCreateDto:
       required:
       - slug
+      - title
       type: object
       properties:
         title:
@@ -2743,18 +2775,27 @@ components:
           type: string
           description: Title of the status page
           x-size-message: Status page title must not be blank
-          default: System status
         slug:
           minLength: 1
-          pattern: "^[a-zA-Z0-9_-]{1,50}$"
+          pattern: "^[a-z0-9_-]{1,50}$"
           type: string
           description: "Unique slug of the status page, used in the URL"
           x-pattern-message: "Status page slug must be 1-50 characters long and can\
             \ only contain letters, numbers, hyphens, and underscores"
           x-size-message: Status page slug must not be blank
-        enabled:
+        customLogoUrl:
+          type: string
+          description: The absolute URL of the custom logo displayed on the status
+            page
+          nullable: true
+        customFaviconUrl:
+          type: string
+          description: The absolute URL of the custom favicon displayed on the status
+            page. Only PNG format is supported.
+          nullable: true
+        public:
           type: boolean
-          description: Whether the status page is enabled
+          description: Whether the status page is publicly accessible
           default: false
         monitors:
           type: array
@@ -2765,9 +2806,11 @@ components:
     StatusPageDto:
       required:
       - createdAt
-      - enabled
+      - customFaviconUrl
+      - customLogoUrl
       - id
       - monitors
+      - public
       - slug
       - title
       - updatedAt
@@ -2783,9 +2826,19 @@ components:
         slug:
           type: string
           description: "Unique slug of the status page, used in the URL"
-        enabled:
+        customLogoUrl:
+          type: string
+          description: The absolute URL of the custom logo displayed on the status
+            page
+          nullable: true
+        customFaviconUrl:
+          type: string
+          description: The absolute URL of the custom favicon displayed on the status
+            page. Only PNG format is supported.
+          nullable: true
+        public:
           type: boolean
-          description: Whether the status page is enabled
+          description: Whether the status page is publicly accessible
         monitors:
           type: array
           description: Set of monitor IDs that are included in the status page
@@ -2813,16 +2866,26 @@ components:
           x-size-message: Status page title must not be blank
         slug:
           minLength: 1
-          pattern: "^[a-zA-Z0-9_-]{1,50}$"
+          pattern: "^[a-z0-9_-]{1,50}$"
           type: string
           description: "Unique slug of the status page, used in the URL"
           nullable: false
           x-pattern-message: "Status page slug must be 1-50 characters long and can\
             \ only contain letters, numbers, hyphens, and underscores"
           x-size-message: Status page slug must not be blank
-        enabled:
+        customLogoUrl:
+          type: string
+          description: The absolute URL of the custom logo displayed on the status
+            page
+          nullable: true
+        customFaviconUrl:
+          type: string
+          description: The absolute URL of the custom favicon displayed on the status
+            page. Only PNG format is supported.
+          nullable: true
+        public:
           type: boolean
-          description: Whether the status page is enabled
+          description: Whether the status page is publicly accessible
           nullable: false
         monitors:
           type: array

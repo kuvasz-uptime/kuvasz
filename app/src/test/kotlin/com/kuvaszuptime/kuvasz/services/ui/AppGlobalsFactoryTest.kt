@@ -3,12 +3,16 @@ package com.kuvaszuptime.kuvasz.services.ui
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
+import com.kuvaszuptime.kuvasz.services.check.http.MonitorActions
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
@@ -32,7 +36,12 @@ class AppGlobalsFactoryTest : BehaviorSpec({
     }
     val mockDefaultPageSettings = mockk<DefaultStatusPageConfig> {
         every { title } returns "My Status Page"
-        every { enabled } returns true
+        every { public } returns true
+    }
+    val mockkMonitorActions = mockk<MonitorActions> {
+        every { getConfiguredMonitors(HTTP_MONITOR.NAME.asc()) } returns listOf(
+            MonitorID(MonitorType.HTTP_SSL, "something")
+        )
     }
 
     given("the AppGlobalsFactory") {
@@ -45,6 +54,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -65,6 +75,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -85,6 +96,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -104,6 +116,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -119,6 +132,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
@@ -131,6 +145,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -157,6 +172,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model with integrations") {
@@ -180,6 +196,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     emptyIntegrationRepository,
                     mockVersionChecker,
                     mockDefaultPageSettings,
+                    mockkMonitorActions,
                 )
                 globals.versionInfo() shouldBe VersionInfo(
                     installedVersion = BuildConfig.APP_VERSION,
@@ -196,11 +213,29 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correct default status page settings") {
                 globals.defaultStatusPageSettings.title shouldBe "My Status Page"
-                globals.defaultStatusPageSettings.enabled shouldBe true
+                globals.defaultStatusPageSettings.public shouldBe true
+            }
+        }
+
+        `when`("there are enabled monitors") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+            )
+
+            then("it should return the correct list of enabled monitors") {
+                globals.configuredMonitors() shouldBe listOf(
+                    MonitorID(MonitorType.HTTP_SSL, "something")
+                )
             }
         }
     }

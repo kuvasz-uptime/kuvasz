@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.monitor
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import io.micronaut.core.convert.ConversionContext
 import io.micronaut.core.convert.TypeConverter
@@ -36,6 +37,11 @@ data class MonitorID(
                     val enumType = MonitorType.Companion.fromIdentifier(stringType) ?: return null
                     MonitorID(type = enumType, name = name)
                 }
+
+        fun fromHttpMonitor(record: HttpMonitorRecord) = MonitorID(
+            type = MonitorType.HTTP_SSL,
+            name = record.name,
+        )
     }
 }
 

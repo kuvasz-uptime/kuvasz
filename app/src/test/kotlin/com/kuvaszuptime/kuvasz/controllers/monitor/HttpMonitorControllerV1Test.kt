@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -15,8 +16,10 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HistoricalUptimeStatsDto
@@ -90,6 +93,7 @@ class HttpMonitorControllerV1Test(
     private val statCalculator: StatCalculator,
     private val eventDispatcher: EventDispatcher,
     private val statusPageRepository: StatusPageRepository,
+    private val appConfig: AppConfig,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
@@ -121,6 +125,14 @@ class HttpMonitorControllerV1Test(
                     monitorId = monitor.id,
                     startedAt = now,
                     endedAt = null
+                )
+                val statusPage1 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                )
+                val statusPage2 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
                 )
 
                 val response = monitorClient.getMonitorsWithDetails(
@@ -160,6 +172,10 @@ class HttpMonitorControllerV1Test(
                     responseItem.requestHeaders.shouldBeEmpty()
                     responseItem.expectedHeaders.shouldBeEmpty()
                     responseItem.requestBody.shouldBeNull()
+                    responseItem.statusPages.shouldContainExactlyInAnyOrder(
+                        statusPage1.slug,
+                        statusPage2.slug,
+                    )
 
                     // Integrations
                     responseItem.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -531,6 +547,14 @@ class HttpMonitorControllerV1Test(
                     endedAt = null,
                     sslExpiryDate = sslExpiryDate,
                 )
+                val statusPage1 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                )
+                val statusPage2 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                )
 
                 then("it should return it") {
                     val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
@@ -566,6 +590,10 @@ class HttpMonitorControllerV1Test(
                         "Another-Expected-Header" to "AnotherExpectedValue"
                     )
                     response.requestBody shouldBe "{\"key\": \"value\"}"
+                    response.statusPages.shouldContainExactlyInAnyOrder(
+                        statusPage1.slug,
+                        statusPage2.slug,
+                    )
 
                     // Integrations
                     response.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -1243,6 +1271,45 @@ class HttpMonitorControllerV1Test(
                 }
             }
 
+            `when`("it is called with an existing monitor that belongs to a non-writable status page") {
+                val monitorToCreate = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true
+                )
+                val createdMonitor = monitorClient.createMonitor(monitorToCreate)
+                val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/http-monitors/${createdMonitor.id}")
+                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
+                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val statusPage1 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, createdMonitor.name)
+                    )
+                )
+                delay(1000) // Make sure that the status page update time might be after the creation time
+                appConfig.disableStatusPageExternalWrite()
+
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange(deleteRequest).awaitFirst() }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id)
+
+                then("it should reject the deletion and return a 400") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<ServiceError>()?.errorCode shouldBe ApiErrorCode.MONITOR_CANNOT_BE_DELETED
+                    monitorInDb.shouldNotBeNull()
+
+                    // A delete event should not be dispatched
+                    subscriber.assertNoValues()
+
+                    // The monitor should be removed from both of the status pages
+                    val statusPage1InDb = statusPageRepository.findById(statusPage1.id).shouldNotBeNull()
+                    statusPage1InDb.monitors shouldBe statusPage1.monitors
+                    statusPage1InDb.updatedAt shouldBe statusPage1InDb.createdAt
+                    appConfig.enableStatusPageExternalWrite()
+                }
+            }
+
             `when`("it is called with a non existing monitor ID") {
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v1/monitors/123232")
                 val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
@@ -1521,6 +1588,122 @@ class HttpMonitorControllerV1Test(
                 then("it should return a 409") {
                     response.status shouldBe HttpStatus.CONFLICT
                     monitorInDb.name shouldBe firstCreatedMonitor.name
+                }
+            }
+
+            `when`("it is called to update a monitor's name that is also present on a status page - writable") {
+
+                val monitor1 = createMonitor(
+                    monitorRepository,
+                    monitorName = "monitor1",
+                )
+                val monitor2 = createMonitor(
+                    monitorRepository,
+                    monitorName = "monitor2",
+                )
+                val statusPage1 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, monitor1.name),
+                        MonitorID(MonitorType.HTTP_SSL, monitor2.name),
+                    )
+                )
+                val statusPage2 = createStatusPage(
+                    dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, monitor2.name),
+                    )
+                )
+
+                delay(1000) // Make sure that the status page update time is after the creation time
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(HttpMonitorUpdateDto::name.name, "updated_monitor1")
+
+                monitorClient.updateMonitor(monitor1.id, updateDto)
+                val monitorInDb = monitorRepository.findById(monitor1.id).shouldNotBeNull()
+                val statusPage1InDb = statusPageRepository.findById(statusPage1.id).shouldNotBeNull()
+                val statusPage2InDb = statusPageRepository.findById(statusPage2.id).shouldNotBeNull()
+
+                then("it should update the monitor and also update the monitor reference on the status pages") {
+                    monitorInDb.name shouldBe "updated_monitor1"
+
+                    statusPage1InDb.monitors.shouldContainExactly(
+                        MonitorID(MonitorType.HTTP_SSL, "updated_monitor1"),
+                        MonitorID(MonitorType.HTTP_SSL, monitor2.name),
+                    )
+                    statusPage1InDb.updatedAt shouldBeAfter statusPage1InDb.createdAt
+
+                    statusPage2InDb.monitors.shouldContainExactly(
+                        MonitorID(MonitorType.HTTP_SSL, monitor2.name),
+                    )
+                    statusPage2InDb.updatedAt shouldBe statusPage2InDb.createdAt // Not updated
+                }
+            }
+
+            `when`("it is called to update a monitor's name that is NOT present on a non-writable status page") {
+
+                val monitor1 = createMonitor(
+                    monitorRepository,
+                    monitorName = "monitor1",
+                )
+                val monitor2 = createMonitor(
+                    monitorRepository,
+                    monitorName = "monitor2",
+                )
+                createStatusPage(
+                    dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, monitor2.name),
+                    )
+                )
+
+                appConfig.disableStatusPageExternalWrite()
+
+                delay(1000) // Make sure that the status page update time is after the creation time
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(HttpMonitorUpdateDto::name.name, "updated_monitor1")
+
+                monitorClient.updateMonitor(monitor1.id, updateDto)
+                val monitorInDb = monitorRepository.findById(monitor1.id).shouldNotBeNull()
+
+                then("it should update the monitor") {
+                    monitorInDb.name shouldBe "updated_monitor1"
+                    appConfig.enableStatusPageExternalWrite()
+                }
+            }
+
+            `when`("it is called to update a monitor's name that is present on a non-writable a status page") {
+
+                val createdMonitor = createMonitor(
+                    monitorRepository,
+                    monitorName = "monitor1",
+                )
+                createStatusPage(
+                    dslContext,
+                    public = false,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, createdMonitor.name),
+                    )
+                )
+                appConfig.disableStatusPageExternalWrite()
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(HttpMonitorUpdateDto::name.name, "updated_monitor1")
+
+                val ex = shouldThrow<HttpClientResponseException> {
+                    monitorClient.updateMonitor(createdMonitor.id, updateDto)
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+
+                then("it should not let the update happen and return a 400") {
+
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    with(ex.response.getBodyAs<ServiceError>().shouldNotBeNull()) {
+                        message shouldContain "The monitor's name cannot be changed, because it's already " +
+                            "referenced in the YAML file by a status page."
+                        errorCode shouldBe ApiErrorCode.MONITOR_NAME_CANNOT_BE_CHANGED
+                    }
+                    monitorInDb.name shouldBe createdMonitor.name
+                    appConfig.enableStatusPageExternalWrite()
                 }
             }
 

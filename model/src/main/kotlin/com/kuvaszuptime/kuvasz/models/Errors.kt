@@ -4,7 +4,8 @@ import io.micronaut.core.annotation.Introspected
 
 @Introspected
 data class ServiceError(
-    val message: String? = "Something bad happened :("
+    val message: String? = "Something bad happened :(",
+    val errorCode: ApiErrorCode? = null
 )
 
 sealed class ResourceNotFoundException : Exception()
@@ -82,3 +83,9 @@ class ReadOnlyStatusPageException : ReadOnlyResourceException(
     "The status pages were configured via a YAML file. " +
         "You cannot modify them via the API. Please change the configuration in the YAML file and restart the server."
 )
+
+class ReadOnlyMonitorNameException : RuntimeException(
+    "The monitor's name cannot be changed, because it's already referenced in the YAML file by a status page."
+)
+
+class MonitorCannotBeDeletedException(override val message: String) : RuntimeException(message)

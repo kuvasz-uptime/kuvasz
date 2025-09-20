@@ -115,6 +115,11 @@ class HttpMonitorControllerV2(
             description = "Successful deletion"
         ),
         ApiResponse(
+            responseCode = "400",
+            description = "Bad request",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        ),
+        ApiResponse(
             responseCode = "404",
             description = "Not found",
             content = [Content(schema = Schema(implementation = ServiceError::class))]
