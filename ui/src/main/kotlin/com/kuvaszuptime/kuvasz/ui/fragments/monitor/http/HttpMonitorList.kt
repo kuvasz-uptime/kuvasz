@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
+import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
@@ -12,8 +13,12 @@ import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderHttpMonitorList(monitors: List<HttpMonitorDetailsDto>, isReadOnlyMode: Boolean): String =
+fun renderHttpMonitorList(
+    monitors: List<HttpMonitorDetailsDto>,
+    editabilityState: AppGlobals.EditabilityState,
+): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
+        val isReadOnlyMode = editabilityState.areHttpMonitorsReadOnly()
         if (monitors.isNotEmpty()) {
             div {
                 classes(CARD_TABLE, TABLE_RESPONSIVE)
