@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.exceptionToMessage
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.nulls.shouldBeNull
@@ -58,12 +59,20 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
 
         `when`("monitors contain an invalid monitor ID") {
             val exception = shouldThrow<BeanInstantiationException> {
-                testAppContext("sp-missing-monitor")
+                testAppContext("sp-invalid-monitor")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "Non-existing monitor ID found: http:test2. " +
-                    "Make sure the monitor is defined before referencing it."
+                    "Invalid monitor ID format: htt:test1. Expected format is 'type:name'"
+            }
+        }
+
+        `when`("monitors contain a missing monitor ID") {
+
+            then("AppContext should NOT throw a BeanInstantiationException") {
+                shouldNotThrowAny {
+                    testAppContext("sp-missing-monitor")
+                }
             }
         }
     }
@@ -84,13 +93,15 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
 
             then("it should fall back to the right default values") {
                 val statusPageConfig = applicationContext.getBean<StatusPageConfig>()
-                statusPageConfig.enabled shouldBe StatusPageDefaults.CUSTOM_PAGE_ENABLED
-                statusPageConfig.title shouldBe StatusPageDefaults.TITLE
+                statusPageConfig.public shouldBe StatusPageDefaults.CUSTOM_PAGE_PUBLIC
+                statusPageConfig.title shouldBe "Valid Title"
                 statusPageConfig.slug shouldBe "valid_slug"
+                statusPageConfig.customLogoUrl.shouldBeNull()
+                statusPageConfig.customFaviconUrl.shouldBeNull()
                 statusPageConfig.monitors.shouldBeNull()
 
                 val statusPageDefaultConfig = applicationContext.getBean<DefaultStatusPageConfig>()
-                statusPageDefaultConfig.enabled shouldBe StatusPageDefaults.DEFAULT_PAGE_ENABLED
+                statusPageDefaultConfig.public shouldBe StatusPageDefaults.DEFAULT_PAGE_PUBLIC
                 statusPageDefaultConfig.title shouldBe StatusPageDefaults.TITLE
             }
         }
@@ -101,8 +112,10 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
  * These tests are meant to check if a StatusPagesConfig is overriding the default values correctly.
  */
 @MicronautTest(startApplication = false)
-@Property(name = "default-status-page.enabled", value = StringUtils.TRUE)
+@Property(name = "default-status-page.public", value = StringUtils.TRUE)
 @Property(name = "default-status-page.title", value = "Something custom")
+@Property(name = "default-status-page.custom-logo-url", value = "https://example.com/logo.png")
+@Property(name = "default-status-page.custom-favicon-url", value = "https://example.com/favicon.png")
 class DefaultStatusPageConfigTest(applicationContext: ApplicationContext) : BehaviorSpec({
 
     given("the DefaultStatusPagesConfig bean") {
@@ -111,8 +124,10 @@ class DefaultStatusPageConfigTest(applicationContext: ApplicationContext) : Beha
 
             then("it should use them over the default values") {
                 val statusPageDefaultConfig = applicationContext.getBean<DefaultStatusPageConfig>()
-                statusPageDefaultConfig.enabled shouldBe true
+                statusPageDefaultConfig.public shouldBe true
                 statusPageDefaultConfig.title shouldBe "Something custom"
+                statusPageDefaultConfig.customLogoUrl shouldBe "https://example.com/logo.png"
+                statusPageDefaultConfig.customFaviconUrl shouldBe "https://example.com/favicon.png"
             }
         }
     }

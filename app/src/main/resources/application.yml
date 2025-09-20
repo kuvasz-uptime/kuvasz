@@ -143,5 +143,5 @@ metrics-exports:
   ssl-expiry: ${ENABLE_SSL_EXPIRY_EXPORT:`false`}
 ---
 default-status-page:
-  enabled: ${ENABLE_DEFAULT_STATUS_PAGE:`false`}
+  public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}
   title: ${DEFAULT_STATUS_PAGE_TITLE:`System status`}

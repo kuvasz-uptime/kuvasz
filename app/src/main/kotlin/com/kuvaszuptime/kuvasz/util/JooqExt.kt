@@ -21,3 +21,9 @@ fun <R : TableRecord<R>> InsertResultStep<R>.fetchOneOrThrow(): R =
 
 fun <R : TableRecord<R>> UpdateResultStep<R>.fetchOneOrThrow(): R =
     fetchOne() ?: throw NoDataFoundException()
+
+fun extractCauseInTransaction(ex: DataAccessException): Throwable {
+    // Cause is encapsulated in the DataAccessException inside a transaction, so we need to unwrap it again here
+    // because we're interested in the DuplicationErrors on the call site
+    return ex.cause ?: ex
+}

@@ -22,9 +22,9 @@ interface StatusPageOperations {
     @Operation(summary = "Get all status pages")
     @Get("/")
     fun getStatusPages(
-        @QueryValue
+        @QueryValue("public") // Need to specify explicitly because of an internal bug in Micronaut
         @Parameter(required = false)
-        enabled: Boolean?,
+        public: Boolean?,
     ): List<StatusPageDto>
 
     @Operation(summary = "Get a status page")

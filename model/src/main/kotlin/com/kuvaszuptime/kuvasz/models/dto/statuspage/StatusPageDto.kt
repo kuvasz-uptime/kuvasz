@@ -14,8 +14,12 @@ data class StatusPageDto(
     val title: String,
     @param:Schema(description = StatusPageDocs.SLUG, required = true)
     val slug: String,
-    @param:Schema(description = StatusPageDocs.ENABLED, required = true)
-    val enabled: Boolean,
+    @param:Schema(description = StatusPageDocs.CUSTOM_LOGO_URL, required = true)
+    val customLogoUrl: String?,
+    @param:Schema(description = StatusPageDocs.CUSTOM_FAVICON_URL, required = true)
+    val customFaviconUrl: String?,
+    @param:Schema(description = StatusPageDocs.PUBLIC, required = true)
+    val public: Boolean,
     @param:Schema(description = StatusPageDocs.MONITORS, required = true)
     val monitors: Set<MonitorID>,
     @param:Schema(description = StatusPageDocs.CREATED_AT, required = true)
@@ -29,7 +33,9 @@ data class StatusPageDto(
                 id = record.id,
                 title = record.title,
                 slug = record.slug,
-                enabled = record.enabled,
+                customLogoUrl = record.customLogoUrl,
+                customFaviconUrl = record.customFaviconUrl,
+                public = record.public,
                 monitors = record.monitors.toSet(),
                 createdAt = record.createdAt,
                 updatedAt = record.updatedAt,

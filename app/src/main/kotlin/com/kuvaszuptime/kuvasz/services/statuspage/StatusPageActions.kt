@@ -52,7 +52,7 @@ class StatusPageActions(
         statusPageRepository.fetchAll(enabled, sortedBy)
             .map { StatusPageDto.fromStatusPageRecord(it) }
 
-    fun getStatusPage(statusPageId: Long): StatusPageDto =
+    fun getStatusPageById(statusPageId: Long): StatusPageDto =
         statusPageRepository.findById(statusPageId)?.let { StatusPageDto.fromStatusPageRecord(it) }
             ?: throw StatusPageNotFoundException(statusPageId)
 

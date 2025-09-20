@@ -73,9 +73,19 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
     public final TableField<StatusPageRecord, String> SLUG = createField(DSL.name("slug"), SQLDataType.CLOB.nullable(false), this, "");
 
     /**
-     * The column <code>kuvasz.status_page.enabled</code>.
+     * The column <code>kuvasz.status_page.custom_logo_url</code>.
      */
-    public final TableField<StatusPageRecord, Boolean> ENABLED = createField(DSL.name("enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
+    public final TableField<StatusPageRecord, String> CUSTOM_LOGO_URL = createField(DSL.name("custom_logo_url"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>kuvasz.status_page.custom_favicon_url</code>.
+     */
+    public final TableField<StatusPageRecord, String> CUSTOM_FAVICON_URL = createField(DSL.name("custom_favicon_url"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>kuvasz.status_page.public</code>.
+     */
+    public final TableField<StatusPageRecord, Boolean> PUBLIC = createField(DSL.name("public"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
     /**
      * The column <code>kuvasz.status_page.monitors</code>.

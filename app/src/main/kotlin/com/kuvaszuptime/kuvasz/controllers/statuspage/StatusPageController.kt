@@ -49,7 +49,7 @@ class StatusPageController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getStatusPages(enabled: Boolean?): List<StatusPageDto> = statusPageActions.getStatusPages(enabled)
+    override fun getStatusPages(public: Boolean?): List<StatusPageDto> = statusPageActions.getStatusPages(public)
 
     @ApiResponses(
         ApiResponse(
@@ -64,7 +64,7 @@ class StatusPageController(
         )
     )
     @ExecuteOn(TaskExecutors.IO)
-    override fun getStatusPage(statusPageId: Long): StatusPageDto = statusPageActions.getStatusPage(statusPageId)
+    override fun getStatusPage(statusPageId: Long): StatusPageDto = statusPageActions.getStatusPageById(statusPageId)
 
     @Status(HttpStatus.CREATED)
     @ApiResponses(

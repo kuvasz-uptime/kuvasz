@@ -9,14 +9,20 @@ import io.micronaut.core.bind.annotation.Bindable
 
 /**
  * default-status-page:
- *   enabled: true
+ *   public: true
  *   title: "Status - Kuvasz Uptime"
+ *   custom-logo-url: "https://example.com/logo.png"
+ *   custom-favicon-url: "https://example.com/favicon.png"
  */
 @ConfigurationProperties(DefaultStatusPageConfig.CONFIG_PREFIX)
 interface DefaultStatusPageConfig {
 
-    @get:Bindable(defaultValue = StatusPageDefaults.DEFAULT_PAGE_ENABLED.toString())
-    val enabled: Boolean
+    @get:Bindable(defaultValue = StatusPageDefaults.DEFAULT_PAGE_PUBLIC.toString())
+    val public: Boolean
+
+    val customLogoUrl: String?
+
+    val customFaviconUrl: String?
 
     @get:Bindable(defaultValue = StatusPageDefaults.TITLE)
     val title: String
@@ -30,7 +36,9 @@ interface DefaultStatusPageConfig {
  * status-pages:
  *   - title: "Example Status Page"
  *     slug: "example-status"
- *     enabled: true
+ *     public: true
+ *     custom-logo-url: "https://example.com/logo.png"
+ *     custom-favicon-url: "https://example.com/favicon.png"
  *     monitors:
  *       - "http:Test monitor 1"
  *       - "http:Test monitor 2"
@@ -39,15 +47,18 @@ interface DefaultStatusPageConfig {
 @Introspected
 interface StatusPageConfig : StatusPageCreator {
 
-    @get:Bindable(defaultValue = StatusPageDefaults.TITLE)
     override val title: String
 
     override val slug: String
 
+    override val customLogoUrl: String?
+
+    override val customFaviconUrl: String?
+
     override val monitors: List<String>?
 
-    @get:Bindable(defaultValue = StatusPageDefaults.CUSTOM_PAGE_ENABLED.toString())
-    override val enabled: Boolean
+    @get:Bindable(defaultValue = StatusPageDefaults.CUSTOM_PAGE_PUBLIC.toString())
+    override val public: Boolean
 
     companion object {
         const val CONFIG_PREFIX = "status-pages"

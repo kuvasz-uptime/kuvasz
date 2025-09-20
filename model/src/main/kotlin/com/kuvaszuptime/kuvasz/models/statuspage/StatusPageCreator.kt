@@ -14,7 +14,9 @@ interface StatusPageCreator {
     @get:NotBlank(message = StatusPageValidationMessages.SLUG_NOT_BLANK)
     @get:Pattern(regexp = Validation.SLUG_REGEX, message = StatusPageValidationMessages.SLUG_PATTERN)
     val slug: String
-    val enabled: Boolean
+    val customLogoUrl: String?
+    val customFaviconUrl: String?
+    val public: Boolean
     val monitors: List<String>?
 }
 
@@ -22,5 +24,7 @@ fun StatusPageCreator.toStatusPageRecord(validatedMonitors: Set<MonitorID>): Sta
     StatusPageRecord()
         .setTitle(title)
         .setSlug(slug)
-        .setEnabled(enabled)
+        .setCustomLogoUrl(customLogoUrl)
+        .setCustomFaviconUrl(customFaviconUrl)
+        .setPublic(public)
         .setMonitors(validatedMonitors.toTypedArray())

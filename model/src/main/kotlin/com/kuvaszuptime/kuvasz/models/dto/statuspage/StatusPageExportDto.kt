@@ -8,7 +8,9 @@ import io.micronaut.core.annotation.Introspected
 data class StatusPageExportDto(
     val title: String,
     val slug: String,
-    val enabled: Boolean,
+    val customLogoUrl: String?,
+    val customFaviconUrl: String?,
+    val public: Boolean,
     val monitors: Set<MonitorID>,
 ) {
     companion object {
@@ -16,7 +18,9 @@ data class StatusPageExportDto(
             StatusPageExportDto(
                 title = record.title,
                 slug = record.slug,
-                enabled = record.enabled,
+                customLogoUrl = record.customLogoUrl,
+                customFaviconUrl = record.customFaviconUrl,
+                public = record.public,
                 monitors = record.monitors.toSet(),
             )
     }

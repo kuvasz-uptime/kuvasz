@@ -67,25 +67,55 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
     }
 
     /**
-     * Setter for <code>kuvasz.status_page.enabled</code>.
+     * Setter for <code>kuvasz.status_page.custom_logo_url</code>.
      */
-    public StatusPageRecord setEnabled(Boolean value) {
+    public StatusPageRecord setCustomLogoUrl(String value) {
         set(3, value);
         return this;
     }
 
     /**
-     * Getter for <code>kuvasz.status_page.enabled</code>.
+     * Getter for <code>kuvasz.status_page.custom_logo_url</code>.
      */
-    public Boolean getEnabled() {
-        return (Boolean) get(3);
+    public String getCustomLogoUrl() {
+        return (String) get(3);
+    }
+
+    /**
+     * Setter for <code>kuvasz.status_page.custom_favicon_url</code>.
+     */
+    public StatusPageRecord setCustomFaviconUrl(String value) {
+        set(4, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.custom_favicon_url</code>.
+     */
+    public String getCustomFaviconUrl() {
+        return (String) get(4);
+    }
+
+    /**
+     * Setter for <code>kuvasz.status_page.public</code>.
+     */
+    public StatusPageRecord setPublic(Boolean value) {
+        set(5, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.public</code>.
+     */
+    public Boolean getPublic() {
+        return (Boolean) get(5);
     }
 
     /**
      * Setter for <code>kuvasz.status_page.monitors</code>.
      */
     public StatusPageRecord setMonitors(MonitorID[] value) {
-        set(4, value);
+        set(6, value);
         return this;
     }
 
@@ -93,14 +123,14 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
      * Getter for <code>kuvasz.status_page.monitors</code>.
      */
     public MonitorID[] getMonitors() {
-        return (MonitorID[]) get(4);
+        return (MonitorID[]) get(6);
     }
 
     /**
      * Setter for <code>kuvasz.status_page.created_at</code>.
      */
     public StatusPageRecord setCreatedAt(OffsetDateTime value) {
-        set(5, value);
+        set(7, value);
         return this;
     }
 
@@ -108,14 +138,14 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
      * Getter for <code>kuvasz.status_page.created_at</code>.
      */
     public OffsetDateTime getCreatedAt() {
-        return (OffsetDateTime) get(5);
+        return (OffsetDateTime) get(7);
     }
 
     /**
      * Setter for <code>kuvasz.status_page.updated_at</code>.
      */
     public StatusPageRecord setUpdatedAt(OffsetDateTime value) {
-        set(6, value);
+        set(8, value);
         return this;
     }
 
@@ -123,7 +153,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
      * Getter for <code>kuvasz.status_page.updated_at</code>.
      */
     public OffsetDateTime getUpdatedAt() {
-        return (OffsetDateTime) get(6);
+        return (OffsetDateTime) get(8);
     }
 
     // -------------------------------------------------------------------------
@@ -149,13 +179,15 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
     /**
      * Create a detached, initialised StatusPageRecord
      */
-    public StatusPageRecord(Long id, String title, String slug, Boolean enabled, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public StatusPageRecord(Long id, String title, String slug, String customLogoUrl, String customFaviconUrl, Boolean public_, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
         super(StatusPage.STATUS_PAGE);
 
         setId(id);
         setTitle(title);
         setSlug(slug);
-        setEnabled(enabled);
+        setCustomLogoUrl(customLogoUrl);
+        setCustomFaviconUrl(customFaviconUrl);
+        setPublic(public_);
         setMonitors(monitors);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
@@ -172,7 +204,9 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
             setId(value.getId());
             setTitle(value.getTitle());
             setSlug(value.getSlug());
-            setEnabled(value.getEnabled());
+            setCustomLogoUrl(value.getCustomLogoUrl());
+            setCustomFaviconUrl(value.getCustomFaviconUrl());
+            setPublic(value.getPublic());
             setMonitors(value.getMonitors());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());

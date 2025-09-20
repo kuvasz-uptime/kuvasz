@@ -22,7 +22,9 @@ public class StatusPage implements Serializable {
     private Long id;
     private String title;
     private String slug;
-    private Boolean enabled;
+    private String customLogoUrl;
+    private String customFaviconUrl;
+    private Boolean public_;
     private MonitorID[] monitors;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
@@ -33,7 +35,9 @@ public class StatusPage implements Serializable {
         this.id = value.id;
         this.title = value.title;
         this.slug = value.slug;
-        this.enabled = value.enabled;
+        this.customLogoUrl = value.customLogoUrl;
+        this.customFaviconUrl = value.customFaviconUrl;
+        this.public_ = value.public_;
         this.monitors = value.monitors;
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
@@ -43,7 +47,9 @@ public class StatusPage implements Serializable {
         Long id,
         String title,
         String slug,
-        Boolean enabled,
+        String customLogoUrl,
+        String customFaviconUrl,
+        Boolean public_,
         MonitorID[] monitors,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
@@ -51,7 +57,9 @@ public class StatusPage implements Serializable {
         this.id = id;
         this.title = title;
         this.slug = slug;
-        this.enabled = enabled;
+        this.customLogoUrl = customLogoUrl;
+        this.customFaviconUrl = customFaviconUrl;
+        this.public_ = public_;
         this.monitors = monitors;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -103,17 +111,47 @@ public class StatusPage implements Serializable {
     }
 
     /**
-     * Getter for <code>kuvasz.status_page.enabled</code>.
+     * Getter for <code>kuvasz.status_page.custom_logo_url</code>.
      */
-    public Boolean getEnabled() {
-        return this.enabled;
+    public String getCustomLogoUrl() {
+        return this.customLogoUrl;
     }
 
     /**
-     * Setter for <code>kuvasz.status_page.enabled</code>.
+     * Setter for <code>kuvasz.status_page.custom_logo_url</code>.
      */
-    public StatusPage setEnabled(Boolean enabled) {
-        this.enabled = enabled;
+    public StatusPage setCustomLogoUrl(String customLogoUrl) {
+        this.customLogoUrl = customLogoUrl;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.custom_favicon_url</code>.
+     */
+    public String getCustomFaviconUrl() {
+        return this.customFaviconUrl;
+    }
+
+    /**
+     * Setter for <code>kuvasz.status_page.custom_favicon_url</code>.
+     */
+    public StatusPage setCustomFaviconUrl(String customFaviconUrl) {
+        this.customFaviconUrl = customFaviconUrl;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.public</code>.
+     */
+    public Boolean getPublic() {
+        return this.public_;
+    }
+
+    /**
+     * Setter for <code>kuvasz.status_page.public</code>.
+     */
+    public StatusPage setPublic(Boolean public_) {
+        this.public_ = public_;
         return this;
     }
 
@@ -189,11 +227,23 @@ public class StatusPage implements Serializable {
         }
         else if (!this.slug.equals(other.slug))
             return false;
-        if (this.enabled == null) {
-            if (other.enabled != null)
+        if (this.customLogoUrl == null) {
+            if (other.customLogoUrl != null)
                 return false;
         }
-        else if (!this.enabled.equals(other.enabled))
+        else if (!this.customLogoUrl.equals(other.customLogoUrl))
+            return false;
+        if (this.customFaviconUrl == null) {
+            if (other.customFaviconUrl != null)
+                return false;
+        }
+        else if (!this.customFaviconUrl.equals(other.customFaviconUrl))
+            return false;
+        if (this.public_ == null) {
+            if (other.public_ != null)
+                return false;
+        }
+        else if (!this.public_.equals(other.public_))
             return false;
         if (this.monitors == null) {
             if (other.monitors != null)
@@ -223,7 +273,9 @@ public class StatusPage implements Serializable {
         result = prime * result + ((this.id == null) ? 0 : this.id.hashCode());
         result = prime * result + ((this.title == null) ? 0 : this.title.hashCode());
         result = prime * result + ((this.slug == null) ? 0 : this.slug.hashCode());
-        result = prime * result + ((this.enabled == null) ? 0 : this.enabled.hashCode());
+        result = prime * result + ((this.customLogoUrl == null) ? 0 : this.customLogoUrl.hashCode());
+        result = prime * result + ((this.customFaviconUrl == null) ? 0 : this.customFaviconUrl.hashCode());
+        result = prime * result + ((this.public_ == null) ? 0 : this.public_.hashCode());
         result = prime * result + ((this.monitors == null) ? 0 : Arrays.deepHashCode(this.monitors));
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
@@ -237,7 +289,9 @@ public class StatusPage implements Serializable {
         sb.append(id);
         sb.append(", ").append(title);
         sb.append(", ").append(slug);
-        sb.append(", ").append(enabled);
+        sb.append(", ").append(customLogoUrl);
+        sb.append(", ").append(customFaviconUrl);
+        sb.append(", ").append(public_);
         sb.append(", ").append(Arrays.deepToString(monitors));
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);

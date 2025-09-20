@@ -123,15 +123,19 @@ fun createStatusPage(
     dslContext: DSLContext,
     title: String = "Status Page",
     slug: String = UUID.randomUUID().toString(),
-    enabled: Boolean = StatusPageDefaults.CUSTOM_PAGE_ENABLED,
+    public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
     monitors: List<MonitorID> = emptyList(),
+    customLogoUrl: String? = null,
+    customFaviconUrl: String? = null,
 ) = dslContext
     .insertInto(STATUS_PAGE)
     .set(
         StatusPageRecord()
             .setTitle(title)
             .setSlug(slug)
-            .setEnabled(enabled)
+            .setCustomLogoUrl(customLogoUrl)
+            .setCustomFaviconUrl(customFaviconUrl)
+            .setPublic(public)
             .setMonitors(monitors.toTypedArray())
     )
     .returning(STATUS_PAGE.asterisk())

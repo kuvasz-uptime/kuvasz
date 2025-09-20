@@ -5,8 +5,11 @@ package com.kuvaszuptime.kuvasz.controllers
 import com.fasterxml.jackson.core.JsonParseException
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.DASHBOARD_PATH
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.LOGIN_PATH
+import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.DuplicationException
+import com.kuvaszuptime.kuvasz.models.MonitorCannotBeDeletedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
+import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.ReadOnlyResourceException
 import com.kuvaszuptime.kuvasz.models.ResourceNotFoundException
 import com.kuvaszuptime.kuvasz.models.SchedulingException
@@ -17,7 +20,6 @@ import com.kuvaszuptime.kuvasz.security.ui.AlreadyLoggedInError
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthError
 import com.kuvaszuptime.kuvasz.util.toUri
 import com.kuvaszuptime.kuvasz.validation.NonExistingIntegrationIdException
-import com.kuvaszuptime.kuvasz.validation.NonExistingMonitorIdException
 import io.micronaut.core.convert.exceptions.ConversionErrorException
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -99,15 +101,6 @@ class GlobalErrorHandler {
     }
 
     @Error(global = true)
-    fun nonExistingMonitorIdExceptionHandler(
-        request: HttpRequest<*>,
-        ex: NonExistingMonitorIdException
-    ): HttpResponse<ServiceError> {
-        val error = ServiceError(ex.message)
-        return HttpResponse.status<ServiceError>(HttpStatus.BAD_REQUEST).body(error)
-    }
-
-    @Error(global = true)
     fun invalidMonitorIdExceptionHandler(
         request: HttpRequest<*>,
         ex: InvalidMonitorIdException,
@@ -133,4 +126,14 @@ class GlobalErrorHandler {
     @Suppress("UnusedParameter")
     fun alreadyLoggedInError(request: HttpRequest<*>, authError: AlreadyLoggedInError): HttpResponse<*> =
         HttpResponse.seeOther<Any>(DASHBOARD_PATH.toUri())
+
+    @Error(global = true)
+    @Suppress("UnusedParameter")
+    fun readOnlyMonitorNameError(request: HttpRequest<*>, ex: ReadOnlyMonitorNameException): HttpResponse<*> =
+        HttpResponse.badRequest(ServiceError(ex.message, ApiErrorCode.MONITOR_NAME_CANNOT_BE_CHANGED))
+
+    @Error(global = true)
+    @Suppress("UnusedParameter")
+    fun monitorCannotBeDeletedError(request: HttpRequest<*>, ex: MonitorCannotBeDeletedException): HttpResponse<*> =
+        HttpResponse.badRequest(ServiceError(ex.message, ApiErrorCode.MONITOR_CANNOT_BE_DELETED))
 }

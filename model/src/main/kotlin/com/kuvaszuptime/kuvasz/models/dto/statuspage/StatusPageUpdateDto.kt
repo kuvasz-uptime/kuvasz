@@ -20,9 +20,15 @@ data class StatusPageUpdateDto(
     @get:Pattern(regexp = Validation.SLUG_REGEX, message = StatusPageValidationMessages.SLUG_PATTERN)
     val slug: String?,
 
+    @param:Schema(description = StatusPageDocs.CUSTOM_LOGO_URL, required = false, nullable = true)
+    val customLogoUrl: String?,
+
+    @param:Schema(description = StatusPageDocs.CUSTOM_FAVICON_URL, required = false, nullable = true)
+    val customFaviconUrl: String?,
+
     @get:NotNull
-    @param:Schema(description = StatusPageDocs.ENABLED, required = false, nullable = false)
-    val enabled: Boolean?,
+    @param:Schema(description = StatusPageDocs.PUBLIC, required = false, nullable = false)
+    val public: Boolean?,
 
     @param:Schema(description = StatusPageDocs.MONITORS, required = false, nullable = true)
     val monitors: Set<MonitorID>?,

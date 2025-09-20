@@ -73,6 +73,8 @@ class StatusPageControllerTest(
                     dslContext,
                     title = "Status Page 1",
                     slug = "status-page-1",
+                    customLogoUrl = "https://example.com/logo.png",
+                    customFaviconUrl = "https://example.com/favicon.png",
                     monitors = listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name),
@@ -115,7 +117,9 @@ class StatusPageControllerTest(
                     parsedPages.forOne { page1 ->
                         page1.title shouldBe statusPage1.title
                         page1.slug shouldBe statusPage1.slug
-                        page1.enabled shouldBe statusPage1.enabled
+                        page1.public shouldBe statusPage1.public
+                        page1.customLogoUrl shouldBe statusPage1.customLogoUrl
+                        page1.customFaviconUrl shouldBe statusPage1.customFaviconUrl
                         page1.monitors.shouldContainExactlyInAnyOrder(
                             listOf(
                                 MonitorID(MonitorType.HTTP_SSL, monitor.name),
@@ -126,13 +130,17 @@ class StatusPageControllerTest(
                     parsedPages.forOne { page2 ->
                         page2.title shouldBe statusPage2.title
                         page2.slug shouldBe statusPage2.slug
-                        page2.enabled shouldBe statusPage2.enabled
+                        page2.customLogoUrl shouldBe statusPage2.customLogoUrl
+                        page2.customFaviconUrl shouldBe statusPage2.customFaviconUrl
+                        page2.public shouldBe statusPage2.public
                         page2.monitors.shouldBeEmpty()
                     }
                     parsedPages.forOne { page3 ->
                         page3.title shouldBe statusPage3.title
                         page3.slug shouldBe statusPage3.slug
-                        page3.enabled shouldBe statusPage3.enabled
+                        page3.customLogoUrl shouldBe statusPage3.customLogoUrl
+                        page3.customFaviconUrl shouldBe statusPage3.customFaviconUrl
+                        page3.public shouldBe statusPage3.public
                         page3.monitors shouldHaveSingleElement
                             MonitorID(MonitorType.HTTP_SSL, monitor.name)
                     }
@@ -163,18 +171,20 @@ class StatusPageControllerTest(
                     dslContext,
                     title = "Status Page 1",
                     slug = "status-page-1",
+                    customLogoUrl = "https://example.com/logo.png",
+                    customFaviconUrl = "https://example.com/favicon.png",
                     monitors = listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
                     ),
                 )
                 val page2 = createStatusPage(
                     dslContext,
-                    enabled = false,
+                    public = false,
                     title = "Status Page 2",
                     slug = "status-page-2",
                 )
 
-                val response = statusPageClient.getStatusPages(enabled = null)
+                val response = statusPageClient.getStatusPages(public = null)
 
                 then("it should return them") {
                     response shouldHaveSize 2
@@ -182,7 +192,9 @@ class StatusPageControllerTest(
                         firstPage.id shouldBe page.id
                         firstPage.title shouldBe page.title
                         firstPage.slug shouldBe page.slug
-                        firstPage.enabled shouldBe page.enabled
+                        firstPage.customLogoUrl shouldBe page.customLogoUrl
+                        firstPage.customFaviconUrl shouldBe page.customFaviconUrl
+                        firstPage.public shouldBe page.public
                         firstPage.monitors shouldContainExactly listOf(
                             MonitorID(MonitorType.HTTP_SSL, monitor.name)
                         )
@@ -191,49 +203,51 @@ class StatusPageControllerTest(
                         secondPage.id shouldBe page2.id
                         secondPage.title shouldBe page2.title
                         secondPage.slug shouldBe page2.slug
-                        secondPage.enabled shouldBe page2.enabled
+                        secondPage.customLogoUrl shouldBe page2.customLogoUrl
+                        secondPage.customFaviconUrl shouldBe page2.customFaviconUrl
+                        secondPage.public shouldBe page2.public
                         secondPage.monitors.shouldBeEmpty()
                     }
                 }
             }
 
-            `when`("enabled parameter is set to true") {
-                val enabledPage = createStatusPage(
+            `when`("public parameter is set to true") {
+                val publicPage = createStatusPage(
                     dslContext,
-                    enabled = true,
-                    title = "Enabled Page",
-                    slug = "enabled-page",
+                    public = true,
+                    title = "Public Page",
+                    slug = "public-page",
                 )
-                createStatusPage(dslContext, enabled = false, title = "Disabled Page", slug = "disabled-page")
+                createStatusPage(dslContext, public = false, title = "Private Page", slug = "private-page")
 
-                val response = statusPageClient.getStatusPages(enabled = true)
+                val response = statusPageClient.getStatusPages(public = true)
 
-                then("it should return only the enabled status pages") {
+                then("it should return only the public status pages") {
                     response shouldHaveSize 1
                     val responseItem = response.first()
-                    responseItem.id shouldBe enabledPage.id
-                    responseItem.title shouldBe enabledPage.title
-                    responseItem.slug shouldBe enabledPage.slug
-                    responseItem.enabled shouldBe enabledPage.enabled
+                    responseItem.id shouldBe publicPage.id
+                    responseItem.title shouldBe publicPage.title
+                    responseItem.slug shouldBe publicPage.slug
+                    responseItem.public shouldBe publicPage.public
                     responseItem.monitors.shouldBeEmpty()
                 }
             }
 
-            `when`("enabled parameter is set to false") {
+            `when`("public parameter is set to false") {
                 createStatusPage(
                     dslContext,
-                    enabled = true,
-                    title = "Enabled Page",
-                    slug = "enabled-page",
+                    public = true,
+                    title = "Public Page",
+                    slug = "public-page",
                 )
                 val disabledPage = createStatusPage(
                     dslContext,
-                    enabled = false,
+                    public = false,
                     title = "Disabled Page",
                     slug = "disabled-page"
                 )
 
-                val response = statusPageClient.getStatusPages(enabled = false)
+                val response = statusPageClient.getStatusPages(public = false)
 
                 then("it should return only the disabled status pages") {
                     response shouldHaveSize 1
@@ -241,13 +255,13 @@ class StatusPageControllerTest(
                     responseItem.id shouldBe disabledPage.id
                     responseItem.title shouldBe disabledPage.title
                     responseItem.slug shouldBe disabledPage.slug
-                    responseItem.enabled shouldBe disabledPage.enabled
+                    responseItem.public shouldBe disabledPage.public
                     responseItem.monitors.shouldBeEmpty()
                 }
             }
 
             `when`("there isn't any status page in the database") {
-                val response = statusPageClient.getStatusPages(enabled = null)
+                val response = statusPageClient.getStatusPages(public = null)
 
                 then("it should return an empty list") {
                     response.shouldBeEmpty()
@@ -273,7 +287,7 @@ class StatusPageControllerTest(
                     response.id shouldBe statusPage.id
                     response.title shouldBe statusPage.title
                     response.slug shouldBe statusPage.slug
-                    response.enabled shouldBe statusPage.enabled
+                    response.public shouldBe statusPage.public
                     response.monitors shouldContainExactly listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name)
                     )
@@ -296,6 +310,8 @@ class StatusPageControllerTest(
                 val pageToCreate = StatusPageCreateDto(
                     title = "Status Page 1",
                     slug = "status-page-1",
+                    customLogoUrl = "https://example.com/logo.png",
+                    customFaviconUrl = "https://example.com/favicon.png",
                 )
                 val createdMonitor = statusPageClient.createStatuspage(pageToCreate)
 
@@ -306,8 +322,12 @@ class StatusPageControllerTest(
                     pageInDb.title shouldBe createdMonitor.title
                     pageInDb.slug shouldBe "status-page-1"
                     pageInDb.slug shouldBe createdMonitor.slug
-                    pageInDb.enabled shouldBe false
-                    pageInDb.enabled shouldBe createdMonitor.enabled
+                    pageInDb.customLogoUrl shouldBe "https://example.com/logo.png"
+                    pageInDb.customLogoUrl shouldBe createdMonitor.customLogoUrl
+                    pageInDb.customFaviconUrl shouldBe "https://example.com/favicon.png"
+                    pageInDb.customFaviconUrl shouldBe createdMonitor.customFaviconUrl
+                    pageInDb.public shouldBe false
+                    pageInDb.public shouldBe createdMonitor.public
                     pageInDb.createdAt shouldBe createdMonitor.createdAt
                     pageInDb.updatedAt shouldBe pageInDb.createdAt
                     pageInDb.monitors.shouldBeEmpty()
@@ -320,7 +340,7 @@ class StatusPageControllerTest(
                 val pageToCreate = StatusPageCreateDto(
                     title = "Status Page 1",
                     slug = "status-page-1",
-                    enabled = false,
+                    public = false,
                     monitors = listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name).toString(),
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name).toString(),
@@ -334,8 +354,8 @@ class StatusPageControllerTest(
                     pageInDb.title shouldBe createdPage.title
                     pageInDb.slug shouldBe "status-page-1"
                     pageInDb.slug shouldBe createdPage.slug
-                    pageInDb.enabled shouldBe false
-                    pageInDb.enabled shouldBe createdPage.enabled
+                    pageInDb.public shouldBe false
+                    pageInDb.public shouldBe createdPage.public
                     pageInDb.createdAt shouldBe createdPage.createdAt
                     pageInDb.updatedAt shouldBe pageInDb.createdAt
                     pageInDb.monitors shouldContainExactly arrayOf(
@@ -397,21 +417,20 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a non-existing monitor") {
+                val monitor = createMonitor(monitorRepository)
                 val pageToCreate = StatusPageCreateDto(
                     title = "Status Page 1",
                     slug = "status-page-1",
-                    monitors = listOf("http:non-existing-monitor")
+                    monitors = listOf(
+                        "http:non-existing-monitor",
+                        "http:${monitor.name}"
+                    )
                 )
 
-                val response = shouldThrow<HttpClientResponseException> {
-                    statusPageClient.createStatuspage(pageToCreate)
-                }
+                val response = statusPageClient.createStatuspage(pageToCreate)
 
-                then("it should return a 400") {
-                    response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
-                        "Non-existing monitor ID found: http:non-existing-monitor. " +
-                        "Make sure the monitor is defined before referencing it."
+                then("it should filter it out and persist the existing one") {
+                    response.monitors shouldHaveSingleElement MonitorID(MonitorType.HTTP_SSL, monitor.name)
                 }
             }
         }
@@ -456,13 +475,17 @@ class StatusPageControllerTest(
                     dslContext,
                     title = "Status Page 1",
                     slug = "status-page-1",
+                    customLogoUrl = "https://example.com/logo.png",
+                    customFaviconUrl = "https://example.com/favicon.png",
                 )
                 val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
                 val monitor2 = createMonitor(monitorRepository, monitorName = "monitor2")
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(StatusPageUpdateDto::enabled.name, false)
+                    .put(StatusPageUpdateDto::public.name, false)
                     .put(StatusPageUpdateDto::title.name, "Updated Status Page")
                     .put(StatusPageUpdateDto::slug.name, "updated-status-page")
+                    .put(StatusPageUpdateDto::customLogoUrl.name, "https://example.com/logo2.png")
+                    .put(StatusPageUpdateDto::customFaviconUrl.name, "https://example.com/favicon2.png")
                     .set<ObjectNode>(
                         StatusPageUpdateDto::monitors.name,
                         mapper
@@ -479,7 +502,9 @@ class StatusPageControllerTest(
 
                     statusPageInDb.title shouldBe "Updated Status Page"
                     statusPageInDb.slug shouldBe "updated-status-page"
-                    statusPageInDb.enabled shouldBe false
+                    statusPageInDb.customLogoUrl shouldBe "https://example.com/logo2.png"
+                    statusPageInDb.customFaviconUrl shouldBe "https://example.com/favicon2.png"
+                    statusPageInDb.public shouldBe false
                     statusPageInDb.createdAt shouldBe statusPage.createdAt
                     statusPageInDb.updatedAt shouldBeAfter statusPage.createdAt
                     statusPageInDb.monitors shouldContainExactly arrayOf(
@@ -527,17 +552,17 @@ class StatusPageControllerTest(
                     )
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .put(StatusPageUpdateDto::enabled.name, false)
+                    .put(StatusPageUpdateDto::public.name, false)
 
                 val updatedPage = statusPageClient.updateStatusPage(statusPage.id, updateDto)
                 val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
 
                 then("the monitors should remain unchanged") {
-                    updatedPage.enabled shouldBe false
+                    updatedPage.public shouldBe false
                     updatedPage.monitors shouldContainExactly listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name)
                     )
-                    statusPageInDb.enabled shouldBe updatedPage.enabled
+                    statusPageInDb.public shouldBe updatedPage.public
                     statusPageInDb.monitors shouldContainExactly arrayOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name)
                     )
@@ -599,7 +624,7 @@ class StatusPageControllerTest(
                     slug = "status-page-1",
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .putNull(StatusPageUpdateDto::enabled.name)
+                    .putNull(StatusPageUpdateDto::public.name)
                 val response = shouldThrow<HttpClientResponseException> {
                     statusPageClient.updateStatusPage(statusPage.id, updateDto)
                 }
@@ -607,8 +632,8 @@ class StatusPageControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Validation failed: enabled: must not be null"
-                    statusPageInDb.enabled shouldBe statusPage.enabled
+                    exceptionToMessage(response) shouldContain "Validation failed: public: must not be null"
+                    statusPageInDb.public shouldBe statusPage.public
                 }
             }
 
@@ -680,6 +705,7 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a non-existing monitor") {
+                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
@@ -691,18 +717,15 @@ class StatusPageControllerTest(
                         mapper
                             .createArrayNode()
                             .add("http:non-existing-monitor")
+                            .add("http:${monitor.name}")
                     )
-                val response = shouldThrow<HttpClientResponseException> {
-                    statusPageClient.updateStatusPage(statusPage.id, updateDto)
-                }
+                val response = statusPageClient.updateStatusPage(statusPage.id, updateDto)
                 val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
 
-                then("it should return a 400") {
-                    response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
-                        "Non-existing monitor ID found: http:non-existing-monitor. " +
-                        "Make sure the monitor is defined before referencing it."
-                    statusPageInDb.monitors.shouldBeEmpty()
+                then("it should ignore the non-existing monitor") {
+                    val expectedMonitorId = MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                    response.monitors shouldHaveSingleElement expectedMonitorId
+                    statusPageInDb.monitors shouldHaveSingleElement expectedMonitorId
                 }
             }
 

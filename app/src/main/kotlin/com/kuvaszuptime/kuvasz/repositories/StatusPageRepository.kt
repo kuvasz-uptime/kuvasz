@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.StatusPageDuplicatedException
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
@@ -18,10 +19,11 @@ import org.jooq.exception.DataAccessException
 @Singleton
 class StatusPageRepository(private val dslContext: DSLContext) {
 
-    fun findBySlug(slug: String, enabled: Boolean, ctx: DSLContext = dslContext): StatusPageRecord? = ctx
+    @Suppress("IgnoredReturnValue")
+    fun findBySlug(slug: String, public: Boolean? = null): StatusPageRecord? = dslContext
         .selectFrom(STATUS_PAGE)
         .where(STATUS_PAGE.SLUG.eq(slug))
-        .and(STATUS_PAGE.ENABLED.eq(enabled))
+        .apply { public?.let { and(STATUS_PAGE.PUBLIC.eq(public)) } }
         .fetchOne()
 
     fun findById(id: Long, txCtx: DSLContext = dslContext): StatusPageRecord? = txCtx
@@ -31,12 +33,12 @@ class StatusPageRepository(private val dslContext: DSLContext) {
 
     @Suppress("IgnoredReturnValue")
     fun fetchAll(
-        enabled: Boolean? = null,
+        public: Boolean? = null,
         sortedBy: SortField<*>? = null,
     ): List<StatusPageRecord> = dslContext
         .selectFrom(STATUS_PAGE)
         .apply {
-            enabled?.let { where(STATUS_PAGE.ENABLED.eq(enabled)) }
+            public?.let { where(STATUS_PAGE.PUBLIC.eq(public)) }
             sortedBy?.let { orderBy(sortedBy) }
         }
         .fetch()
@@ -69,7 +71,9 @@ class StatusPageRepository(private val dslContext: DSLContext) {
                     .update(STATUS_PAGE)
                     .set(STATUS_PAGE.SLUG, updatedStatusPage.slug)
                     .set(STATUS_PAGE.TITLE, updatedStatusPage.title)
-                    .set(STATUS_PAGE.ENABLED, updatedStatusPage.enabled)
+                    .set(STATUS_PAGE.CUSTOM_LOGO_URL, updatedStatusPage.customLogoUrl)
+                    .set(STATUS_PAGE.CUSTOM_FAVICON_URL, updatedStatusPage.customFaviconUrl)
+                    .set(STATUS_PAGE.PUBLIC, updatedStatusPage.public)
                     .set(STATUS_PAGE.MONITORS, updatedStatusPage.monitors)
                     .set(STATUS_PAGE.UPDATED_AT, getCurrentTimestamp())
                     .where(STATUS_PAGE.ID.eq(updatedStatusPage.id))
@@ -114,4 +118,9 @@ class StatusPageRepository(private val dslContext: DSLContext) {
             }
         )
     }
+
+    fun getStatusPagesOfMonitor(monitorId: MonitorID): List<StatusPageRecord> = dslContext
+        .selectFrom(STATUS_PAGE)
+        .where(STATUS_PAGE.MONITORS.contains(arrayOf(monitorId)))
+        .fetch()
 }
