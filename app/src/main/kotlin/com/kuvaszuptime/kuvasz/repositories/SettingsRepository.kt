@@ -94,7 +94,8 @@ class SettingsRepository(
                 language = appConfig.language,
                 eventLoggingEnabled = appConfig.logEventHandler,
                 editabilityState = SettingsDto.AppSettingsDto.EditabilityStateDto(
-                    areHttpMonitorsReadOnly = appConfig.isHttpMonitorExternalWriteDisabled()
+                    areHttpMonitorsReadOnly = appConfig.isHttpMonitorExternalWriteDisabled(),
+                    areStatusPagesReadOnly = appConfig.isStatusPageExternalWriteDisabled(),
                 ),
                 updateChecksEnabled = appConfig.checkUpdates,
             ),

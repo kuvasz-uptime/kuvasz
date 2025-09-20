@@ -292,6 +292,9 @@ data class SettingsDto(
         data class EditabilityStateDto(
             @param:Schema(description = "Whether the HTTP monitors are in read-only mode", required = true)
             val areHttpMonitorsReadOnly: Boolean,
+
+            @param:Schema(description = "Whether the status pages are in read-only mode", required = true)
+            val areStatusPagesReadOnly: Boolean,
         )
     }
 

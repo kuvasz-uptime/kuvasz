@@ -3,8 +3,7 @@ http-monitors:
     url: https://demo.kuvasz-uptime.dev
     uptime-check-interval: 120
 status-pages:
-  - title: "Blank Slug Status Page"
-    slug: "\n"
-    public: true
+  - title: "Invalid Monitor ID Status Page"
+    slug: "valid-slug"
     monitors:
-      - "http:test1"
+      - "htt:test1"

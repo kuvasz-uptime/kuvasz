@@ -5,6 +5,6 @@ http-monitors:
 status-pages:
   - title: "Invalid Slug Status Page"
     slug: "áfsd fda"
-    enabled: true
+    public: true
     monitors:
       - "http:test1"

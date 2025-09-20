@@ -23,6 +23,7 @@ import io.mockk.mockk
         "yaml-monitors",
         "enabled-metrics-otlp",
         "enabled-metrics-prometheus",
+        "status-pages",
     ]
 )
 @SMTPTest
@@ -59,6 +60,7 @@ class SettingsControllerV2Test(
                 result.app.eventLoggingEnabled shouldBe true
                 result.app.version.shouldNotBeEmpty() shouldBe appGlobals.appVersion
                 result.app.editabilityState.areHttpMonitorsReadOnly shouldBe true
+                result.app.editabilityState.areStatusPagesReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false
 
                 with(result.smtp.shouldNotBeNull()) {
