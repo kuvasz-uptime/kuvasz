@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.ui.pages
+package com.kuvaszuptime.kuvasz.ui.pages.monitor.http
 
 import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.AppGlobals
@@ -84,7 +84,7 @@ internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
                                     modalOpener(createHttpModalId)
                                 }
                             }
-                            compactIconButton(Icon.REFRESH, onClick = "refreshMonitorList()") {}
+                            compactIconButton(Icon.REFRESH, onClick = "refreshHttpMonitorList()") {}
                         }
                     }
                 }

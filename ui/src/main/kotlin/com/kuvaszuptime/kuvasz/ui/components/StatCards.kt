@@ -8,7 +8,6 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
 import kotlinx.html.*
-import java.math.RoundingMode
 
 internal fun FlowContent.statCard(
     cssClasses: Set<CSSClass>,
@@ -68,9 +67,7 @@ internal fun FlowContent.affectedMonitorsStatsCards(cssClasses: Set<CSSClass>, s
     )
 
 internal fun FlowContent.uptimeRatioStatsCards(cssClasses: Set<CSSClass>, stats: HistoricalUptimeStatsDto) {
-    val uptimeRatioText = stats.uptimeRatio?.let { ratio ->
-        (ratio * 100.toDouble()).toBigDecimal().setScale(2, RoundingMode.FLOOR).toString() + "%"
-    } ?: Messages.noData()
+    val uptimeRatioText = stats.uptimeRatio?.formatAsPercentage() ?: Messages.noData()
     statCard(
         cssClasses,
         icon = Icon.PERCENTAGE,

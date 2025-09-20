@@ -63,7 +63,7 @@ fun renderMonitoringStats(
             h3 {
                 classes(MT_3, MB_0)
                 +Messages.metrics()
-                subtitleBadge(
+                inlineBadge(
                     Messages.lastXDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
                 )
             }

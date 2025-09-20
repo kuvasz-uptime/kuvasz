@@ -44,17 +44,22 @@ fun renderHttpMonitorList(
                                 +Messages.nextUptimeCheck()
                             }
                             if (!isReadOnlyMode) {
-                                th {
-                                    classes(TEXT_CENTER)
-                                    +Messages.actions()
-                                }
+                                // Actions
+                                th {}
                             }
                         }
                     }
                     tbody {
                         monitors.forEach { monitor ->
                             tr {
-                                xData("monitorListItem(${monitor.id}, ${monitor.enabled})")
+                                xData(
+                                    """httpMonitorListItem(
+                                    |${monitor.id}, 
+                                    |${monitor.enabled}, 
+                                    |${monitor.statusPages.isNotEmpty()}
+                                    |)
+                                    """.trimMargin()
+                                )
                                 td {
                                     a(href = "/http-monitors/${monitor.id}") {
                                         classes(TEXT_RESET)
@@ -117,7 +122,14 @@ fun renderHttpMonitorList(
                                                 modalOpener(deleteModalId)
                                             }
                                         }
-                                        deleteMonitorModal(modalId = deleteModalId, monitorName = monitor.name)
+                                        // Delete modal
+                                        val isDeleteDisabled = monitor.statusPages.isNotEmpty() &&
+                                            editabilityState.areStatusPagesReadOnly()
+                                        deleteMonitorModal(
+                                            modalId = deleteModalId,
+                                            monitorName = monitor.name,
+                                            isDeleteDisabled = isDeleteDisabled,
+                                        )
                                     }
                                 }
                             }

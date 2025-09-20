@@ -14,10 +14,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (linkPath === "") {
             linkPath = '/';
         }
-        if (currentPath == linkPath
+        if (currentPath === linkPath
             || (currentPath.startsWith(linkPath) && linkPath !== "/")
             || (currentPath.startsWith('/http-monitors') && linkPath === '#navbar-monitors')
-            ) {
+        ) {
             link.parentNode.classList.add('active');
         }
     });
@@ -44,7 +44,7 @@ const reInitTooltips = () => {
             tooltipInstance.dispose();
         }
         let options = {
-            delay: { show: 50, hide: 50 },
+            delay: {show: 50, hide: 50},
             html: tooltipTriggerEl.getAttribute("data-bs-html") === "true" ?? false,
             placement: tooltipTriggerEl.getAttribute('data-bs-placement') ?? 'auto'
         };
@@ -54,21 +54,33 @@ const reInitTooltips = () => {
 
 // Sanitizes text input by trimming whitespace and converting empty strings to null
 const sanitizeTextInput = (inputValue) => {
-  if (typeof inputValue !== 'string' || inputValue === null || inputValue === undefined) {
-    return null;
-  }
-  if (inputValue.trim() === '') {
-    return null;
-  }
-  return inputValue;
+    if (typeof inputValue !== 'string') {
+        return null;
+    }
+    if (inputValue.trim() === '') {
+        return null;
+    }
+    return inputValue;
+};
+
+// Splits a string by a delimiter and return the parts over the limit as the last element, as they were in the
+// original string
+const splitWithLimit = (str, delimiter, limit) => {
+    const parts = str.split(delimiter);
+    if (parts.length <= limit) {
+        return parts;
+    }
+    const limitedParts = parts.slice(0, limit - 1);
+    limitedParts.push(parts.slice(limit - 1).join(delimiter));
+    return limitedParts;
 };
 
 // Maps HTTP status codes to badge CSS classes
 const statusCodeToBadgeClass = (statusCode) => {
     return statusCode.substring(0, 1) === '1' ? 'status-azure' :
         statusCode.substring(0, 1) === '2' ? 'status-green' :
-        statusCode.substring(0, 1) === '3' ? 'status-yellow' :
-        statusCode.substring(0, 1) === '4' ? 'status-red' : '';
+            statusCode.substring(0, 1) === '3' ? 'status-yellow' :
+                statusCode.substring(0, 1) === '4' ? 'status-red' : '';
 };
 
 // Shows a toast notification using Bootstrap's toast component
@@ -89,110 +101,129 @@ const showToast = (header, content, backgroundClass, autoHide) => {
 };
 
 // --------- Alpine.js x-data ---------
-const monitorListItem = (monitorId, isMonitorEnabled) => {
+const httpMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) => {
     return {
         monitorId: monitorId,
         isMonitorEnabled: isMonitorEnabled,
+        assignedToStatusPage: assignedToStatusPage,
         isRequestLoading: false,
         toggleMonitor() {
-            this.isRequestLoading = true;
-            fetch('/api/v2/http-monitors/' + this.monitorId, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled: !this.isMonitorEnabled })
-            }).then(response => {
-                if (response.ok) {
-                    refreshMonitorList();
-                } else {
-                    console.error('Error toggling monitor:', response.statusText);
-                    alert('An error occurred while toggling the monitor.');
-                }
-            }).catch(error => {
-                this.isRequestLoading = false;
-                console.error('Error toggling monitor:', error);
-                alert('An error occurred while toggling the monitor.');
-            });
+            patchHttpMonitorRequest(
+                this.monitorId,
+                {enabled: !this.isMonitorEnabled},
+                () => this.isRequestLoading = true,
+                () => refreshHttpMonitorList(),
+                () => this.isRequestLoading = false
+            );
         },
         deleteMonitor() {
-            this.isRequestLoading = true;
-            fetch('/api/v2/http-monitors/' + this.monitorId, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' }
-            }).then(response => {
-                if (response.ok) {
-                    refreshMonitorList();
-                } else {
-                    console.error('Error deleting monitor:', response.statusText);
-                    alert('An error occurred while deleting the monitor.');
-                }
-            });
+            deleteHttpMonitorRequest(
+                this.monitorId,
+                () => this.isRequestLoading = true,
+                () => refreshHttpMonitorList(),
+            );
         }
     }
 };
 
-const monitorDetails = (monitorId, isMonitorEnabled) => {
+const statusPageListItem = (statusPageId, isStatusPagePublic) => {
+    return {
+        statusPageId: statusPageId,
+        isStatusPagePublic: isStatusPagePublic,
+        isRequestLoading: false,
+        toggleStatusPageVisibility() {
+            patchStatusPageRequest(
+                this.statusPageId,
+                {public: !this.isStatusPagePublic},
+                () => this.isRequestLoading = true,
+                () => refreshStatusPageList(),
+                () => this.isRequestLoading = false
+            );
+        },
+        deleteStatusPage() {
+            deleteStatusPageRequest(
+                this.statusPageId,
+                () => this.isRequestLoading = true,
+                () => refreshStatusPageList(),
+            );
+        }
+    }
+};
+
+const httpMonitorDetails = (monitorId, isMonitorEnabled) => {
     return {
         monitorId,
         isMonitorEnabled,
         isRequestLoading: false,
 
         toggleMonitor() {
-            this.isRequestLoading = true;
-            fetch('/api/v2/http-monitors/' + this.monitorId, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ enabled: !this.isMonitorEnabled })
-            }).then(response => {
-                if (response.ok) {
+            patchHttpMonitorRequest(
+                this.monitorId,
+                {enabled: !this.isMonitorEnabled},
+                () => this.isRequestLoading = true,
+                () => {
                     this.isRequestLoading = false;
                     this.isMonitorEnabled = !this.isMonitorEnabled;
                     this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
                     console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
-                    refreshMonitorDetailStatus();
-                } else {
-                    console.error('Error toggling monitor:', response.statusText);
-                    alert('An error occurred while toggling the monitor, refer to the console for more details');
-                    this.isRequestLoading = false;
-                }
-            })
-                .catch(error => {
-                    this.isRequestLoading = false;
-                    console.error('Error toggling monitor:', error);
-                    alert('An error occurred while toggling the monitor. Please try again.');
-                })
+                    refreshHttpMonitorDetailStatus();
+                },
+                () => this.isRequestLoading = false
+            );
         },
 
         deleteMonitor() {
+            deleteHttpMonitorRequest(
+                this.monitorId,
+                () => this.isRequestLoading = true,
+                () => window.location.href = '/http-monitors',
+                () => this.isRequestLoading = false
+            );
             this.isRequestLoading = true;
-            fetch('/api/v2/http-monitors/' + this.monitorId, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-                .then(response => {
-                    if (response.ok) {
-                        window.location.href = '/http-monitors';
-                    } else {
-                        this.isRequestLoading = false;
-                        console.error('Error deleting monitor:', response.statusText);
-                        alert('An error occurred while deleting the monitor, refer to the console for more details');
-                    }
-                })
+        }
+    }
+};
+
+const statusPageDetails = (statusPageId, isStatusPagePublic) => {
+    return {
+        statusPageId,
+        isStatusPagePublic,
+        isRequestLoading: false,
+
+        toggleStatusPageVisibility() {
+            patchStatusPageRequest(
+                this.statusPageId,
+                {public: !this.isStatusPagePublic},
+                () => this.isRequestLoading = true,
+                () => window.location.reload(),
+                () => this.isRequestLoading = false
+            );
+        },
+
+        deleteStatusPage() {
+            deleteStatusPageRequest(
+                this.statusPageId,
+                () => this.isRequestLoading = true,
+                () => window.location.href = '/status-pages',
+                () => this.isRequestLoading = false
+            );
         }
     }
 };
 
 // Refreshes the monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
-const refreshMonitorDetailStatus = () => {
+const refreshHttpMonitorDetailStatus = () => {
     sendHtmxEvent('#monitor-detail-heading', 'refresh-monitor-detail-status');
 };
 
 // Refreshes the monitor list by triggering an HTMX event
-const refreshMonitorList = () => {
+const refreshHttpMonitorList = () => {
     sendHtmxEvent('#monitors-list', 'refresh-monitor-list');
+};
+
+// Refreshes the status page list by triggering an HTMX event
+const refreshStatusPageList = () => {
+    sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
 };
 
 // Refreshes the dashboard by triggering an HTMX event
@@ -376,13 +407,18 @@ const isValidUrl = (url) => {
     return urlPattern.test(url);
 };
 
-const upsertMonitorForm = (
+const isValidSlug = (slug) => {
+    const slugPattern = /^[a-z0-9_-]{1,50}/;
+    return slugPattern.test(slug);
+}
+
+const upsertHttpMonitorForm = (
     monitor,
     errorMessages,
     acceptedStatusCodeSelectId,
     supportedHttpStatusCodes,
     globalIntegrationCount
-  ) => {
+) => {
     const originalMonitor = monitor || null;
     return {
         errorMessages: errorMessages || {},
@@ -407,7 +443,7 @@ const upsertMonitorForm = (
             this.followRedirects = (originalMonitor?.followRedirects != null ? originalMonitor?.followRedirects : true);
             this.requestMethod = originalMonitor?.requestMethod || 'GET';
             this.integrations = originalMonitor?.integrations || [];
-            this.selectedHttpStatusCodes = originalMonitor?.expectedStatusCodes?.map (code => code.toString()) || [];
+            this.selectedHttpStatusCodes = originalMonitor?.expectedStatusCodes?.map(code => code.toString()) || [];
             this.expectedKeyword = originalMonitor?.expectedKeyword || null;
             this.expectedKeywordCaseSensitive = originalMonitor?.expectedKeywordCaseSensitive || false;
             this.expectedKeywordNegated = originalMonitor?.expectedKeywordNegated || false;
@@ -422,14 +458,11 @@ const upsertMonitorForm = (
             this.newExpectedHeaderValue = '';
             this.isExpectedHeaderAddable = false;
             this.errors = {};
-            // Resetting the TomSelect component, otherwise the state of the select won't be cleared
-            // Without this, the previously selected values will remain in the select box, and also in alpine's state,
-            // because TomSelect re-initializes the select element, which then will be bound to alpine, and we're in a
-            // loop then.
-            const httpStatusSelect = document.getElementById(acceptedStatusCodeSelectId);
-            httpStatusSelect?.tomselect?.clear(true);
-            this.selectedHttpStatusCodes.forEach(code => {
-                httpStatusSelect?.tomselect?.addItem(code, true);
+
+            resetTomSelectState(acceptedStatusCodeSelectId, (ts) => {
+                this.selectedHttpStatusCodes.forEach(code => {
+                    ts.addItem(code, true);
+                });
             });
         },
 
@@ -592,9 +625,7 @@ const upsertMonitorForm = (
 
                 const response = await fetch(url, {
                     method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: jsonContentHeaders,
                     body: JSON.stringify(body)
                 });
 
@@ -613,6 +644,12 @@ const upsertMonitorForm = (
                         this.isRequestLoading = false;
                         console.debug('Monitor with this name already exists');
                         this.errors.name = this.errorMessages.nameAlreadyExists;
+                    } else if (response.status === 400) {
+                        const errorData = await response.json();
+                        this.isRequestLoading = false;
+                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
+                            this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        }
                     } else {
                         console.error('Error creating/updating monitor:', response.statusText);
                         alert('An error occurred while creating/updating the monitor, refer to the console for more details');
@@ -623,6 +660,129 @@ const upsertMonitorForm = (
                 this.isRequestLoading = false;
                 console.error('Error creating monitor:', error);
                 alert('An error occurred while creating/updating the monitor. Please try again.');
+            }
+        }
+    }
+};
+
+const upsertStatusPageForm = (
+    statusPage,
+    errorMessages,
+    monitorSelectId,
+    selectableMonitors,
+) => {
+    const originalStatusPage = statusPage || null;
+    return {
+        errorMessages: errorMessages || {},
+        isRequestLoading: false,
+        isUpdate: !!statusPage,
+        selectableMonitors: selectableMonitors || [],
+        imagePreviewState: {},
+
+        init() {
+            this.resetState();
+            console.debug('Status page form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
+        },
+
+        resetState() {
+            this.title = originalStatusPage?.title || '';
+            this.slug = originalStatusPage?.slug || '';
+            this.customLogoUrl = originalStatusPage?.customLogoUrl || null;
+            this.customFaviconUrl = originalStatusPage?.customFaviconUrl || null;
+            this.selectedMonitors = originalStatusPage?.monitors || [];
+            this.public = (originalStatusPage?.public != null ? originalStatusPage?.public : false);
+            this.errors = {};
+
+            resetTomSelectState(monitorSelectId, (ts) => {
+                this.selectedMonitors.forEach(monitor => {
+                    ts.addItem(monitor, true);
+                });
+            });
+            console.log(this.customFaviconUrl, this.customLogoUrl, this.imagePreviewState);
+        },
+
+        validate() {
+            this.errors = {};
+            this.validateTitle();
+            this.validateSlug();
+        },
+
+        validateTitle() {
+            if (!this.title) {
+                this.errors.title = errorMessages.titleRequired;
+            } else {
+                this.errors.title = null;
+            }
+        },
+
+        validateSlug() {
+            if (!this.slug) {
+                this.errors.slug = errorMessages.slugRequired;
+            } else if (!isValidSlug(this.slug)) {
+                this.errors.slug = errorMessages.slugInvalid;
+            } else {
+                this.errors.slug = null;
+            }
+        },
+
+        submitForm() {
+            this.validate();
+            if (hasNonNullValue(this.errors)) {
+                console.debug('Form validation failed:', this.errors);
+                return;
+            }
+
+            this.upsertStatusPage();
+        },
+
+        async upsertStatusPage() {
+            try {
+                this.isRequestLoading = true;
+                const body = {
+                    title: this.title,
+                    slug: this.slug,
+                    customLogoUrl: this.customLogoUrl,
+                    customFaviconUrl: this.customFaviconUrl,
+                    monitors: this.selectedMonitors,
+                    public: this.public
+                };
+
+                console.debug('Submitting status page form with data:', body);
+
+                const url = this.isUpdate ? '/api/v2/status-pages/' + statusPage.id : '/api/v2/status-pages';
+                const method = this.isUpdate ? 'PATCH' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: jsonContentHeaders,
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    this.isRequestLoading = false;
+                    const responseData = await response.json();
+                    console.debug('Status page was created/updated successfully, redirecting to the details', responseData);
+
+                    if (this.isUpdate) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/status-pages/' + responseData.id;
+                    }
+                } else {
+                    if (response.status === 409) {
+                        this.isRequestLoading = false;
+                        console.debug('Status page with this name already exists');
+                        this.errors.slug = this.errorMessages.slugAlreadyExists;
+                    } else {
+                        this.isRequestLoading = false;
+                        console.error('Error creating/updating status page:', response.statusText);
+                        alert('An error occurred while creating/updating the status page, refer to the console for more details');
+                    }
+                }
+            } catch (error) {
+                this.isRequestLoading = false;
+                console.error('Error creating status page:', error);
+                alert('An error occurred while creating/updating the status page. Please try again.');
             }
         }
     }
@@ -641,7 +801,7 @@ const integrationListItem = (integrationId) => {
             const encodedIntegrationId = encodeURIComponent(this.integrationId);
             const response = await fetch('/api/v2/integrations/' + encodedIntegrationId + '/test', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: jsonContentHeaders
             })
             if (response.ok) {
                 const data = await response.json();
@@ -662,4 +822,144 @@ const integrationListItem = (integrationId) => {
             }
         }
     }
+};
+
+// TomSelect helpers & renderers
+
+/*
+ Resetting the TomSelect component, otherwise the state of the select won't be cleared
+ Without this, the previously selected values will remain in the select box, and also in alpine's state,
+ because TomSelect re-initializes the select element, which then will be bound to alpine, and we're in a
+ loop then.
+*/
+const resetTomSelectState = (elementId, afterReset = (tomSelectInstance) => {
+}) => {
+    const monitorSelect = document.getElementById(elementId);
+    monitorSelect?.tomselect?.clear(true);
+    if (monitorSelect?.tomselect instanceof TomSelect) {
+        afterReset(monitorSelect.tomselect);
+    }
+};
+
+const renderMonitorOption = (data, escape) => {
+    const parts = splitWithLimit(data.value, ':', 2);
+    const type = parts[0];
+    const name = parts[1];
+    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : '';
+    return `<div><span class="badge me-2 ${badgeColor}">${type.toUpperCase()}</span>${name}</div>`;
+};
+
+const renderStatusCodeOption = (data, escape) => {
+    const statusClass = statusCodeToBadgeClass(data.value);
+    return `<div><span class="status-dot ${statusClass} me-2"></span>${escape(data.text)}</div>`;
+};
+
+const renderStatusCodeItem = (data, escape) => {
+    const statusClass = statusCodeToBadgeClass(data.value);
+    return `<div><span class="status-dot ${statusClass} me-2"></span>${escape(data.value)}</div>`;
+};
+
+// API calls
+const jsonContentHeaders = {'Content-Type': 'application/json'};
+
+const deleteHttpMonitorRequest = (
+    monitorId,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
+) => {
+    beforeRequest();
+    fetch('/api/v2/http-monitors/' + monitorId, {
+        method: 'DELETE',
+        headers: jsonContentHeaders
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error deleting monitor:', response.statusText);
+            alert('An error occurred while deleting the monitor.');
+        }
+    });
+};
+
+const patchHttpMonitorRequest = (
+    monitorId,
+    body,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
+) => {
+    this.isRequestLoading = true;
+    fetch('/api/v2/http-monitors/' + monitorId, {
+        method: 'PATCH',
+        headers: jsonContentHeaders,
+        body: JSON.stringify(body)
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error toggling monitor:', response.statusText);
+            alert('An error occurred while toggling the monitor.');
+        }
+    }).catch(error => {
+        onError();
+        console.error('Error toggling monitor:', error);
+        alert('An error occurred while toggling the monitor.');
+    });
+};
+
+const deleteStatusPageRequest = (
+    statusPageId,
+    beforeRequest = () => {},
+    onSuccess = () => {},
+    onError = () => {}
+) => {
+    beforeRequest();
+    fetch('/api/v2/status-pages/' + statusPageId, {
+        method: 'DELETE',
+        headers: jsonContentHeaders
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error deleting status page:', response.statusText);
+            alert('An error occurred while deleting the status page.');
+        }
+    });
+};
+
+const patchStatusPageRequest = (
+    statusPageId,
+    body,
+    beforeRequest = () => {},
+    onSuccess = () => {},
+    onError = () => {}
+) => {
+    beforeRequest();
+    fetch('/api/v2/status-pages/' + statusPageId, {
+        method: 'PATCH',
+        headers: jsonContentHeaders,
+        body: JSON.stringify(body)
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error toggling status page:', response.statusText);
+            alert('An error occurred while toggling the status page.');
+        }
+    }).catch(error => {
+        onError();
+        console.error('Error toggling status page:', error);
+        alert('An error occurred while toggling the status page.');
+    });
 };

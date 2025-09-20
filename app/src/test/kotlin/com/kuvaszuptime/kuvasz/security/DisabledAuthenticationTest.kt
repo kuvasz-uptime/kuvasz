@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.security
 
+import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -16,7 +18,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 @MicronautTest(environments = ["enabled-metrics-prometheus"])
 @Property(name = "micronaut.security.enabled", value = "false")
 class DisabledAuthenticationTest(
-    @Client("/") private val client: HttpClient,
+    @param:Client("/") private val client: HttpClient,
 ) : BehaviorSpec(
     {
         given("a public API endpoint") {
@@ -92,3 +94,75 @@ class DisabledAuthenticationTest(
         }
     }
 )
+
+@MicronautTest(environments = ["full-default-status-page-config"])
+@Property(name = "micronaut.security.enabled", value = "false")
+class DisabledAuthenticationPublicStatusPageTest(
+    @param:Client("/") private val client: HttpClient,
+) : DatabaseBehaviorSpec() {
+    init {
+
+        given("a public default status page") {
+
+            `when`("an anonymous user requests it") {
+                val response = client.exchange("/status").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        given("a public custom status page") {
+
+            val statusPage = createStatusPage(
+                dslContext,
+                public = true,
+            )
+
+            `when`("an anonymous user requests it") {
+                val response = client.exchange("/status/${statusPage.slug}").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+    }
+}
+
+@MicronautTest(environments = ["private-default-status-page-config"])
+@Property(name = "micronaut.security.enabled", value = "false")
+class DisabledAuthenticationPrivateStatusPageTest(
+    @param:Client("/") private val client: HttpClient,
+) : DatabaseBehaviorSpec() {
+    init {
+
+        given("a private default status page") {
+
+            `when`("an anonymous user requests it") {
+                val response = client.exchange("/status").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        given("a private custom status page") {
+
+            val statusPage = createStatusPage(
+                dslContext,
+                public = false,
+            )
+
+            `when`("an anonymous user requests it") {
+                val response = client.exchange("/status/${statusPage.slug}").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+    }
+}

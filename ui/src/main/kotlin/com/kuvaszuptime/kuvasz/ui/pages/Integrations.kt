@@ -89,7 +89,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 } else if (integration.global) {
                                                     Icon.WORLD
                                                 } else {
-                                                    Icon.CIRCLE_CHECK
+                                                    Icon.CIRCLE_CHECK_FILLED
                                                 }
                                                 val colorClass: CSSClass? = if (issue != null) {
                                                     TEXT_RED
@@ -136,7 +136,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                     button {
                                                         classes(TEXT_GREEN, BTN, BTN_ICON)
                                                         disabled = true
-                                                        icon(Icon.CIRCLE_CHECK)
+                                                        icon(Icon.CIRCLE_CHECK_FILLED)
                                                     }
                                                 }
                                                 // Result state, test request failed

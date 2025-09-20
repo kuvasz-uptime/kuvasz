@@ -23,3 +23,13 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 [data-bs-theme=light] .ts-wrapper .ts-dropdown .option.active {
     background-color: var(--tblr-gray-100) !important;
 }
+
+/* Image preview form element */
+.img-preview {
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    height: 42px;
+    width: 42px;
+    padding: 5px; /* Leaves 32 x 32px for the image */
+    object-fit: contain;
+}

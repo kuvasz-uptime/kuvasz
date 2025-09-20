@@ -137,7 +137,7 @@ fun FlowContent.detailsUptimeSummary(monitor: HttpMonitorDetailsDto, stats: Hist
             h3 {
                 classes(MT_3, MB_0)
                 +Messages.metrics()
-                subtitleBadge(
+                inlineBadge(
                     Messages.lastXDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS)
                 )
             }
@@ -148,15 +148,19 @@ fun FlowContent.detailsUptimeSummary(monitor: HttpMonitorDetailsDto, stats: Hist
     }
 }
 
-private fun getUptimeCardStatusClass(monitor: HttpMonitorDetailsDto): CSSClass? {
-    return when {
-        !monitor.enabled -> BG_CYAN
-        monitor.uptimeStatus == null -> BG_WARNING
-        monitor.uptimeStatus == UptimeStatus.UP -> BG_SUCCESS
-        monitor.uptimeStatus == UptimeStatus.DOWN -> BG_DANGER
-        else -> null
+private fun getUptimeCardStatusClass(monitor: HttpMonitorDetailsDto): CSSClass? =
+    if (!monitor.enabled) {
+        BG_CYAN
+    } else {
+        monitor.uptimeStatus.cardStatusClass()
     }
-}
+
+internal fun UptimeStatus?.cardStatusClass(): CSSClass =
+    when (this) {
+        UptimeStatus.UP -> BG_SUCCESS
+        UptimeStatus.DOWN -> BG_DANGER
+        null -> BG_WARNING
+    }
 
 private fun getUptimeCardIcon(monitor: HttpMonitorDetailsDto): Icon {
     return when {

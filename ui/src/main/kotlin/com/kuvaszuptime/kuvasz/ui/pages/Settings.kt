@@ -61,6 +61,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         label = Messages.httpMonitorsReadOnlyMode(),
                         checked = settings.app.editabilityState.areHttpMonitorsReadOnly
                     )
+                    settingsToggle(
+                        label = Messages.statusPagesReadOnlyMode(),
+                        checked = settings.app.editabilityState.areStatusPagesReadOnly
+                    )
                 }
             }
             // Integration settings

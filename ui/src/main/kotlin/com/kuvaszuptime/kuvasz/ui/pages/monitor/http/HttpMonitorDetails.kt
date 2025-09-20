@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.ui.pages
+package com.kuvaszuptime.kuvasz.ui.pages.monitor.http
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
@@ -36,7 +36,7 @@ internal fun HtmlBlockTag.httpMonitorDetailsHeader(
 
     div {
         classes(CONTAINER)
-        xData("monitorDetails(${monitor.id}, ${monitor.enabled})")
+        xData("httpMonitorDetails(${monitor.id}, ${monitor.enabled})")
         div {
             classes(ROW, G_3, ALIGN_ITEMS_CENTER)
             httpMonitorDetailsHeading(monitor)

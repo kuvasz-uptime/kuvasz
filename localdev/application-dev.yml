@@ -69,17 +69,5 @@ http-monitors:
     request-method: GET
     enabled: false
 default-status-page:
-  enabled: true
-  title: "Kuvasz Status"
-status-pages:
-  - title: "Example Status Page"
-    slug: "example-status"
-    enabled: false
-    monitors:
-      - "http:Tralala #!: j[ő"
-  - title: "Example Status Page 2"
-    slug: "example-status2"
-    enabled: true
-    monitors:
-      - "http:test1"
-      - "http:test2"
+  public: true
+  title: "Default System Status"

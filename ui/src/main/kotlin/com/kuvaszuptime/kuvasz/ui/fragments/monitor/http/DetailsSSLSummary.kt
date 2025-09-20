@@ -98,8 +98,7 @@ internal fun FlowContent.detailsSSLSummary(monitor: HttpMonitorDetailsDto) {
                     }
                     h4 {
                         classes(M_0)
-                        monitor.lastSSLCheck?.let { +it.timeAgo() }
-                            ?: +Messages.waitingForCheck()
+                        +(monitor.lastSSLCheck?.timeAgo() ?: Messages.waitingForCheck())
                     }
                 }
             }
