@@ -21,6 +21,7 @@ micronaut:
       processor.enabled: false
       uptime.enabled: false
       web.enabled: false
+      cache.enabled: false
   application:
     name: kuvasz
   openapi:
