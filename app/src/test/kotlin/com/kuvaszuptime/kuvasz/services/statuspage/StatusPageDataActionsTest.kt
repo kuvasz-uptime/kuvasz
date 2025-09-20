@@ -221,7 +221,7 @@ class StatusPageDataActionsTest(
         fun statusPageRecord() = StatusPageRecord().apply {
             id = 1L
             slug = "example-status"
-            title = "Example status page"
+            title = "Something custom"
             customLogoUrl = "https://custom.logo"
             customFaviconUrl = "https://custom.favicon"
             public = true
@@ -288,7 +288,7 @@ class StatusPageDataActionsTest(
             then("it should fetch the monitors from the providers and return PENDING as system status") {
 
                 result.monitors shouldContainExactlyInAnyOrder mockMonitorList
-                result.title shouldBe "Example status page"
+                result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
                 result.systemStatus shouldBe SystemStatus.PENDING
@@ -336,7 +336,7 @@ class StatusPageDataActionsTest(
             then("it should fetch the monitors from the providers and return PARTIAL_OUTAGE as system status") {
 
                 result.monitors shouldContainExactlyInAnyOrder mockMonitorList
-                result.title shouldBe "Example status page"
+                result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
                 result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
@@ -384,7 +384,7 @@ class StatusPageDataActionsTest(
             then("it should fetch the monitors from the providers and return MAJOR_OUTAGE as system status") {
 
                 result.monitors shouldContainExactlyInAnyOrder mockMonitorList
-                result.title shouldBe "Example status page"
+                result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
                 result.systemStatus shouldBe SystemStatus.MAJOR_OUTAGE
@@ -432,7 +432,7 @@ class StatusPageDataActionsTest(
             then("it should fetch the monitors from the providers and return OPERATIONAL as system status") {
 
                 result.monitors shouldContainExactlyInAnyOrder mockMonitorList
-                result.title shouldBe "Example status page"
+                result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
                 result.systemStatus shouldBe SystemStatus.OPERATIONAL

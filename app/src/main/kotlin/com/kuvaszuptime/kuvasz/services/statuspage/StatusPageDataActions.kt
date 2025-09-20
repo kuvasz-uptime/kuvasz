@@ -74,7 +74,7 @@ class StatusPageDataActions(
         }
 
         return StatusPageDataDto(
-            title = "Example status page",
+            title = statusPage.title,
             customLogoUrl = statusPage.customLogoUrl,
             customFaviconUrl = statusPage.customFaviconUrl,
             generatedAt = getCurrentTimestamp(),
