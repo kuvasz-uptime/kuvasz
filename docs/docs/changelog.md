@@ -2,7 +2,17 @@
 
 ### New features
 
+- [**Status pages**](features/status-pages.md): You can create public and also private, brandable status pages for your monitors, to keep your customers or your own team informed about the status of your services. See the [**Managing status pages**](management/status-pages.md) section for more details regarding the configuration options.
+
+![Status page in Kuvasz](images/ui/status_page.webp)
+
+### Improvements
+
 - [**Integration names**](management/integrations.md#name) can be totally **arbitrary** now, the previous restriction of containing only alphanumeric characters, hyphens and underscores has been lifted.
+- **Added recipes & examples**:
+    - How to [**use a reverse proxy**](management/examples.md#exposing-status-pages-on-subdomains-behind-a-reverse-proxy) for the status pages
+    - How to [**backup and restore your monitors and status pages**](management/examples.md#backup-restore-with-yaml)
+    - How to [**include your custom/private certificates**](management/examples.md#providing-a-custom-root-certificate-for-ssl-checks) in the Docker image, to be able to monitor endpoints with such certs
 
 ## 3.0.2 <small>2025-08-31</small> { id="3.0.2" data-toc-label="3.0.2" }
 

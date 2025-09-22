@@ -94,13 +94,76 @@ binary_sensor:
 
 ![HA connectivity](../images/examples/ha_connectivity.webp)
 
+## Exposing status pages on subdomains behind a reverse proxy
+
+If you want to expose your status pages on subdomains (e.g. `status.yourdomain.com`), you can do so by using a reverse proxy (e.g. _Caddy_, _Nginx_, _Traefik_, etc.). Here is an example configuration for _Caddy_:
+
+```yaml
+status.your-domain.com {
+    reverse_proxy {YOUR_KUVASZ_HOST}:8080
+    rewrite /public/* {uri} # (1)!
+    rewrite * /status{uri} # (2)!
+}
+```
+
+1.  This is needed to serve the static assets (CSS, JS, images, etc.) correctly.
+2.  This will rewrite all requests to `/status`, which is the path where the status pages are served.
+
+The configuration snippet above exposes the default status page (that is located under `/status` on _Kuvasz_) on the root of the configured subdomain (i.e. `status.your-domain.com`), and also proxies the other status pages (e.g. `/status/your-custom-status-page`) on requesting `status.your-domain.com/your-custom-status-page`.
+
+## Providing a custom root certificate for SSL checks
+
+If you want to use a **custom root certificate** for SSL checks (e.g. if you're using a self-signed certificate, or a private CA), you can provide it by modifying the _Java Keystore_ (JKS) in use, to add your custom root certificate to it.
+
+The advantage of this approach is, that you only need to do the following steps when:
+
+- you have a new cert, or you would like to update the existing custom one
+- we change the base image of the _Docker_ build (should not happen in the near future)
+- we change the Java version in the project (happens really not that often)
+
+Otherwise you can just use your own "patched" `cacerts` for every new version of Kuvasz.
+
+### Preparing the custom `cacerts` file
+
+```shell
+# 1. Pull the current base image
+docker pull bellsoft/liberica-runtime-container:jre-21-cds-slim-musl
+# 2. Copy the "original" cacerts to a local file
+docker run --rm --entrypoint cat bellsoft/liberica-runtime-container:jre-21-cds-slim-musl /usr/lib/jvm/liberica21-container-jre/lib/security/cacerts > cacerts
+# 3. This is the tricky step: we attach back the current folder where the cacerts, and also the custom certificate should exist and we add the custom certificate to the keystore
+docker run --rm -v `pwd`:/tmp/certs bellsoft/liberica-runtime-container:jre-21-cds-slim-musl sh -c 'cd /tmp/certs && keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts -importcert -alias your-custom-alias -file your-custom-cert.crt'
+```
+
+Watch out for `your-custom-alias` and `your-custom-cert.crt` in the example, these are the moving parts, depending on your own preferences.
+
+### Attaching the modified `cacerts` to Kuvasz
+
+This is easier, and quite straightforward, you just need to mount another volume with your `cacerts` file from the steps above:
+
+```yaml
+# ...
+volumes:
+  - /path/to/your/cacerts:/usr/lib/jvm/liberica21-container-jre/lib/security/cacerts:ro
+# ...
+```
+Make sure that you completely re-create your container after these changes!
+
+## Backup & Restore with YAML
+
+It might be useful to create sometimes a backup from your monitors and status pages in case you didn't configure them via a YAML file, because later you might want to switch to that method, or you just want to make it possible to restore them in case of an accidental deletion, for example.
+
+1. To do so, you can use the **Web UI** (_Settings > Backup & Restore_) or the **API** ([Monitors](https://api-docs.kuvasz-uptime.dev/#tag/Monitors/operation/getYamlMonitorsExport_1){target="_blank"}, [Status pages](https://api-docs.kuvasz-uptime.dev/#tag/Status-pages/operation/getYamlStatusPagesExport){target="_blank"}).
+The response in both cases will be **a _YAML_ file, which you can save to a safe place**. 
+2. To restore those files, you can just simply **copy the content of them as-is into your own YAML configuration file**, and restart your instance of _Kuvasz_.
+3. If you would like to **continue using the UI or the API** to manage your monitors and status pages, you can just remove the corresponding sections from your YAML configuration file (you don't even need to restart your instance, just save the file, because on the next restart the monitors and status pages defined in the database will be kept).
+
 ## Full YAML example (app-config + monitors + integrations)
 
 This is just a full example of a _YAML_ configuration file, which you can use as a **starting point** for your own configuration. You can copy and paste it into your own configuration file, and then modify it to suit your needs, but always make sure that **you read the corresponding documentation** sections for each feature or integration you want to use.
 
 !!! warning
 
-    Be aware that if you define your monitors via _YAML_, you **cannot use the Web UI** to modify them, you can only view them there!
+    Be aware that if you define your monitors or your status pages via _YAML_, you **cannot use the Web UI** to modify them, you can only view them there!
 
 ```yaml
 micronaut.security.enabled: true
@@ -175,4 +238,19 @@ http-monitors:
   - name: "minimal configuration example"
     url: "https://kuvasz-uptime.dev"
     uptime-check-interval: 5
+---
+default-status-page:
+  public: true
+  title: "Status - Kuvasz Uptime"
+  custom-logo-url: "https://example.com/logo.png"
+  custom-favicon-url: "https://example.com/favicon.png"
+status-pages:
+  - title: "Example Status Page"
+    slug: "example-status"
+    public: true
+    custom-logo-url: "https://example.com/logo.png"
+    custom-favicon-url: "https://example.com/favicon.png"
+    monitors:
+      - "http:full configuration example"
+      - "http:minimal configuration example"
 ```
