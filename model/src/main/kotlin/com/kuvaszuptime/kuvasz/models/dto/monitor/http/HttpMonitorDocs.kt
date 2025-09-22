@@ -56,5 +56,5 @@ object HttpMonitorDocs {
         "Currently only valid JSON bodies are supported."
     const val MONITORS_405_REASON =
         "HTTP monitors are in read-only mode, because they are loaded from a YAML config file"
-    const val STATUS_PAGES = "List of slugs of the status pages the monitor is assigned to"
+    const val STATUS_PAGES = "List of slugs of the status pages the monitor is explicitly assigned to"
 }

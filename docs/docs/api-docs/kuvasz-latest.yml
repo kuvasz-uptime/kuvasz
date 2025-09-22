@@ -1458,7 +1458,8 @@ components:
           nullable: true
         statusPages:
           type: array
-          description: List of slugs of the status pages the monitor is assigned to
+          description: List of slugs of the status pages the monitor is explicitly
+            assigned to
           items:
             type: string
     HttpMonitorDto:

@@ -164,7 +164,7 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
 
 !!!question "Not using the Web UI?"
 
-    If you don't use the Web UI, you can also check for new releases on GitHub, or directly on the [API](https://api-docs.kuvasz-uptime.dev){target="_blank"} of _Kuvasz_, under `GET /api/v2/settings`. You'll find the version related information in the response under the `versionInfo` key.
+    If you don't use the Web UI, you can also check for new releases on GitHub, or directly on the [API](https://api-docs.kuvasz-uptime.dev){target="blank"} of _Kuvasz_, under `GET /api/v2/settings`. You'll find the version related information in the response under the `versionInfo` key.
 
 ## Other installation methods
 

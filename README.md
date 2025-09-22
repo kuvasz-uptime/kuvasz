@@ -22,7 +22,7 @@ Use the following credentials to log in:
 
 ## ℹ️  What is Kuvasz?
 
-**Kuvasz** [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service, designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, and PagerDuty.
+**Kuvasz** [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages, designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, and PagerDuty.
 
 ![Kuvasz](docs/docs/images/feature_carousel.webp)
 
@@ -39,6 +39,7 @@ If you want to get started quickly, please refer to the [**Installation guide**]
 - **HTTP(S) monitoring**: Monitor the availability and performance of your websites and services by sending HTTP(S) requests.
 - **SSL certification monitoring**: Automatically check the SSL certificates of your monitored services to ensure they are valid and not expired.
 - **Notifications on a per-monitor basis**: Configure different notification channels for each monitor, allowing you to tailor alerts to your specific needs.
+- **Status pages**: Create public or private status pages to keep your users or your own team informed about the status of your services.
 - **Sleek UI**: Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.
 - **Full-fledged REST API**: Manage your monitors, check their status, and more through a powerful API.
 - **Metrics exporters**: Export your metrics to _OpenTelemetry_ and _Prometheus_ for better observability and integration with your existing monitoring stack.
@@ -57,7 +58,7 @@ If you want to get started quickly, please refer to the [**Installation guide**]
 | REST API                                  |       ✅       |        ✅         |        ✅         |
 | Prometheus & OpenTelemetry exporters      |       ✅       |        ❌         |        ❌         |
 | Backups & YAML configuration              |       ✅       |        ❌         |        ❌         |
-| Status pages                              |      📆       |      only 1      |      only 3      |
+| Status pages                              |       ✅       |      only 1      |      only 3      |
 | Maintenance windows                       |      📆       |        ❌         |        ✅         |
 | **HTTPs monitoring**                      |               |                  |                  |
 | Keyword matching                          |       ✅       |        ✅         |        ✅         |
