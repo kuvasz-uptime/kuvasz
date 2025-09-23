@@ -84,6 +84,7 @@ nav:
   - Features:
       - HTTP monitoring: features/http-monitoring.md
       - SSL monitoring: features/ssl-monitoring.md
+      - Status pages: features/status-pages.md
       - Notifications: features/notifications.md
       - Web UI: features/ui.md
       - Flexibility: features/flexibility.md
@@ -97,6 +98,7 @@ nav:
       - Managing monitors:
           - management/managing-monitors/index.md
           - Manage HTTP & SSL monitors: management/http-monitors.md
+      - Status pages: management/status-pages.md
       - Metrics exporters: management/metrics-exporters.md
       - Recipes & examples: management/examples.md
   - API docs ⏏: https://api-docs.kuvasz-uptime.dev

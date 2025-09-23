@@ -149,3 +149,5 @@ metrics-exports:
 default-status-page:
   public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}
   title: ${DEFAULT_STATUS_PAGE_TITLE:`System status`}
+  custom-logo-url: ${DEFAULT_STATUS_PAGE_LOGO_URL:}
+  custom-favicon-url: ${DEFAULT_STATUS_PAGE_FAVICON_URL:}

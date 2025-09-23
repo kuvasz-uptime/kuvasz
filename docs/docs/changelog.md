@@ -1,4 +1,4 @@
-## To be released <small>2025-xx-xx</small> { id="to-be-released" data-toc-label="To be released" }
+## 3.1.0 <small>2025-09-23</small> { id="3.1.0" data-toc-label="3.1.0" }
 
 ### New features
 
@@ -13,6 +13,7 @@
     - How to [**use a reverse proxy**](management/examples.md#exposing-status-pages-on-subdomains-behind-a-reverse-proxy) for the status pages
     - How to [**backup and restore your monitors and status pages**](management/examples.md#backup-restore-with-yaml)
     - How to [**include your custom/private certificates**](management/examples.md#providing-a-custom-root-certificate-for-ssl-checks) in the Docker image, to be able to monitor endpoints with such certs
+- The API docs are having a [**dedicated site**](https://api-docs.kuvasz-uptime.dev){ target="_blank" } now to make them easier to find and browse. 
 
 ## 3.0.2 <small>2025-08-31</small> { id="3.0.2" data-toc-label="3.0.2" }
 
