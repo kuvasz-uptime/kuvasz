@@ -3,11 +3,11 @@ package com.kuvaszuptime.kuvasz.metrics.http
 import com.kuvaszuptime.kuvasz.metrics.ExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.micronaut.context.ApplicationContext
 import io.micronaut.http.HttpStatus
 
 class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
@@ -16,7 +16,7 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
         given("an enabled latency exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run()
+                appContext = testAppContext()
 
                 val enabledMonitorWithLatency = createMonitor(
                     getMonitorRepository(),
@@ -59,7 +59,7 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run()
+                appContext = testAppContext()
 
                 val enabledMonitorWithLatency = createMonitor(
                     getMonitorRepository(),
@@ -109,7 +109,7 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run()
+                appContext = testAppContext()
 
                 val enabledMonitorWithLatency = createMonitor(
                     getMonitorRepository(),
@@ -149,10 +149,10 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
                 meterRegistry().meters shouldHaveSize 3
 
                 // Simulating the events
-                monitorCrudService().updateMonitor(enabledMonitorWithLatency.id, monitorDisableUpdate)
-                monitorCrudService().updateMonitor(anotherEnabledMonitorWithLatency.id, monitorNameUpdate)
-                monitorCrudService().updateMonitor(disabledMonitorWithLatency.id, monitorEnableUpdate)
-                monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithLatency.id)
+                httpMonitorActions().updateMonitor(enabledMonitorWithLatency.id, monitorDisableUpdate)
+                httpMonitorActions().updateMonitor(anotherEnabledMonitorWithLatency.id, monitorNameUpdate)
+                httpMonitorActions().updateMonitor(disabledMonitorWithLatency.id, monitorEnableUpdate)
+                httpMonitorActions().deleteMonitorById(yetAnotherEnabledMonitorWithLatency.id)
 
                 val registeredMeters = meterRegistry().meters
 

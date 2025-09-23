@@ -1,9 +1,10 @@
 package com.kuvaszuptime.kuvasz
 
-import com.kuvaszuptime.kuvasz.models.VersionInfo
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import de.comahe.i18n4k.Locale
 import de.comahe.i18n4k.config.I18n4kConfigDefault
 import de.comahe.i18n4k.i18n4k
@@ -18,6 +19,8 @@ data class AppGlobals(
     val configuredIntegrationsByType: Map<IntegrationType, Set<IntegrationConfig>>,
     val editabilityState: EditabilityState,
     val versionInfo: () -> VersionInfo,
+    val defaultStatusPageSettings: DefaultStatusPageSettings,
+    val configuredMonitors: () -> List<MonitorID>,
 ) {
     init {
         // Setting up the locale for i18n messages
@@ -28,5 +31,11 @@ data class AppGlobals(
 
     data class EditabilityState(
         val areHttpMonitorsReadOnly: () -> Boolean,
+        val areStatusPagesReadOnly: () -> Boolean,
+    )
+
+    data class DefaultStatusPageSettings(
+        val title: String,
+        val public: Boolean,
     )
 }

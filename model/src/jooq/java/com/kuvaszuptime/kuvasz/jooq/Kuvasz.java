@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +54,11 @@ public class Kuvasz extends SchemaImpl {
     public final SslEvent SSL_EVENT = SslEvent.SSL_EVENT;
 
     /**
+     * The table <code>kuvasz.status_page</code>.
+     */
+    public final StatusPage STATUS_PAGE = StatusPage.STATUS_PAGE;
+
+    /**
      * No further instances allowed
      */
     private Kuvasz() {
@@ -80,7 +86,8 @@ public class Kuvasz extends SchemaImpl {
             HttpLatencyLog.HTTP_LATENCY_LOG,
             HttpMonitor.HTTP_MONITOR,
             HttpUptimeEvent.HTTP_UPTIME_EVENT,
-            SslEvent.SSL_EVENT
+            SslEvent.SSL_EVENT,
+            StatusPage.STATUS_PAGE
         );
     }
 }

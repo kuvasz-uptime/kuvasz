@@ -164,7 +164,7 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
 
 !!!question "Not using the Web UI?"
 
-    If you don't use the Web UI, you can also check for new releases on GitHub, or directly on the [API](../api-docs.md) of _Kuvasz_, under `GET /api/v2/settings`. You'll find the version related information in the response under the `versionInfo` key.
+    If you don't use the Web UI, you can also check for new releases on GitHub, or directly on the [API](https://api-docs.kuvasz-uptime.dev){target="blank"} of _Kuvasz_, under `GET /api/v2/settings`. You'll find the version related information in the response under the `versionInfo` key.
 
 ## Other installation methods
 
@@ -195,7 +195,7 @@ All in all, you can use your old database, **your data will be migrated automati
 
 - _Kuvasz_ is not distributed as a **native** (GraalVM based) Docker image anymore
 - The minimum required _PostgreSQL_ version is now **12**
-- The [**REST API**](../features/api.md) is versioned now, and a few **endpoints have been changed or removed**. You can find the new API documentation [here](../api-docs.md)
+- The [**REST API**](../features/api.md) is versioned now, and a few **endpoints have been changed or removed**. You can find the new API documentation [here](https://api-docs.kuvasz-uptime.dev){target="_blank"}
 - [**Integrations**](../management/integrations.md) are now configured via the _YAML_ file, and the old, environment-variable-based configuration is no longer supported
 - The **authentication** and its configuration **has been simplified**, read the [**Authentication**](../setup/configuration.md#authentication) section carefully!
 

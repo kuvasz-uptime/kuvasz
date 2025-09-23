@@ -8,20 +8,25 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.PersistenceException
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.Record
+import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
+import org.jooq.impl.SQLDataType
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -37,8 +42,12 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
         .where(HTTP_MONITOR.NAME.eq(name))
         .fetchOne()
 
-    fun fetchAll(): List<HttpMonitorRecord> = dslContext
+    @Suppress("IgnoredReturnValue")
+    fun fetchAll(
+        sortedBy: SortField<*>? = null,
+    ): List<HttpMonitorRecord> = dslContext
         .selectFrom(HTTP_MONITOR)
+        .apply { sortedBy?.let { orderBy(it) } }
         .fetch()
 
     fun fetchByEnabled(enabled: Boolean): List<HttpMonitorRecord> = dslContext
@@ -58,6 +67,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
         sslStatus: List<SslStatus> = emptyList(),
         sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
+        monitorNames: List<String>? = null,
     ): List<HttpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -65,6 +75,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let { and(HTTP_UPTIME_EVENT.STATUS.`in`(it)) }
                 sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
                 sslCheckEnabled?.let { and(HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it)) }
+                monitorNames?.let { and(HTTP_MONITOR.NAME.`in`(it)) }
                 sortedBy?.let { orderBy(it) }
             }
             .fetchInto(HttpMonitorDetailsDto::class.java)
@@ -152,8 +163,21 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
         .where(HTTP_MONITOR.ID.notIn(ignoredIds))
         .execute()
 
-    private fun monitorDetailsSelect() = dslContext
-        .select(
+    @Suppress("LongMethod")
+    private fun monitorDetailsSelect(): SelectConditionStep<Record?> {
+        val monitorNameField = DSL.field("t.monitor_name", SQLDataType.VARCHAR).`as`("monitor_name")
+        val statusPagesSubselect = DSL
+            .select(
+                monitorNameField,
+                DSL.arrayAgg(STATUS_PAGE.SLUG).`as`("slugs"),
+            )
+            .from(STATUS_PAGE)
+            .crossJoin(
+                DSL.unnest(STATUS_PAGE.MONITORS).`as`("t", "monitor_name")
+            )
+            .groupBy(monitorNameField)
+
+        return dslContext.select(
             HTTP_MONITOR.ID.`as`(HttpMonitorDetailsDto::id.name),
             HTTP_MONITOR.NAME.`as`(HttpMonitorDetailsDto::name.name),
             HTTP_MONITOR.URL.`as`(HttpMonitorDetailsDto::url.name),
@@ -188,13 +212,25 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
             HTTP_MONITOR.EXPECTED_HEADERS.`as`(HttpMonitorDetailsDto::expectedHeaders.name)
                 .convert(JsonNodeToMapConverter()),
             HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
+            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
+                .`as`(HttpMonitorDetailsDto::statusPages.name),
         )
-        .from(HTTP_MONITOR)
-        .leftJoin(HTTP_UPTIME_EVENT)
-        .on(HTTP_MONITOR.ID.eq(HTTP_UPTIME_EVENT.MONITOR_ID).and(HTTP_UPTIME_EVENT.ENDED_AT.isNull))
-        .leftJoin(SSL_EVENT)
-        .on(HTTP_MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
-        .where(DSL.trueCondition())
+            .from(HTTP_MONITOR)
+            .leftJoin(HTTP_UPTIME_EVENT)
+            .on(HTTP_MONITOR.ID.eq(HTTP_UPTIME_EVENT.MONITOR_ID).and(HTTP_UPTIME_EVENT.ENDED_AT.isNull))
+            .leftJoin(SSL_EVENT)
+            .on(HTTP_MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
+            .leftJoin(statusPagesSubselect)
+            .on(
+                monitorNameField
+                    .eq(
+                        DSL.`val`(MonitorType.HTTP_SSL.identifier)
+                            .concat(":")
+                            .concat(HTTP_MONITOR.NAME)
+                    )
+            )
+            .where(DSL.trueCondition())
+    }
 
     /**
      * Converts a DataAccessException to a PersistenceException by matching duplication errors.

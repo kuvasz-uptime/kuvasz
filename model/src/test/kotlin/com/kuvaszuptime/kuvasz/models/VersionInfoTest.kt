@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models
 
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue

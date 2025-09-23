@@ -1,25 +1,35 @@
 /* TomSelect clear button */
 div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-button {
-    border: none;
-    transform: translateY(-62%);
-    font-size: 24px;
+    border: none !important;
+    transform: translateY(-62%) !important;
+    font-size: 24px !important;
 }
 
 /* TomSelect item remove button */
 .ts-wrapper.plugin-remove_button:not(.rtl) .item .remove {
-    border-left: none;
+    border-left: none !important;
 }
 
 .ts-wrapper .ts-control > div.item {
-    border-radius: 6px; /* Match the border-radius of the parent input */
+    border-radius: 6px !important; /* Match the border-radius of the parent input */
 }
 
 /* TomSelect active option background - dark */
 [data-bs-theme=dark] .ts-wrapper .ts-dropdown .option.active {
-    background-color: var(--tblr-bg-forms);
+    background-color: var(--tblr-bg-forms) !important;
 }
 
 /* TomSelect active option background - light */
 [data-bs-theme=light] .ts-wrapper .ts-dropdown .option.active {
-    background-color: var(--tblr-gray-100);
+    background-color: var(--tblr-gray-100) !important;
+}
+
+/* Image preview form element */
+.img-preview {
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    height: 42px;
+    width: 42px;
+    padding: 5px; /* Leaves 32 x 32px for the image */
+    object-fit: contain;
 }

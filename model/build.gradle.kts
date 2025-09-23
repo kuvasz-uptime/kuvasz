@@ -97,6 +97,12 @@ jooq {
                                 includeExpression = "HTTP_MONITOR.INTEGRATIONS"
                             }
                             forcedType {
+                                userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
+                                converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToMonitorIdArrayConverter"
+                                isGenericConverter = false
+                                includeExpression = "STATUS_PAGE.MONITORS"
+                            }
+                            forcedType {
                                 userType = "com.fasterxml.jackson.databind.JsonNode"
                                 isJsonConverter = true
                                 includeExpression = "HTTP_MONITOR.REQUEST_HEADERS|HTTP_MONITOR.EXPECTED_HEADERS"

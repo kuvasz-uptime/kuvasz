@@ -23,6 +23,10 @@ internal fun HTMLTag.xBindKey(value: String) {
     attributes["x-bind:key"] = value
 }
 
+internal fun HTMLTag.xBindSrc(value: String) {
+    attributes["x-bind:src"] = value
+}
+
 internal fun HTMLTag.xBindValue(value: String) {
     attributes["x-bind:value"] = value
 }
@@ -41,6 +45,14 @@ internal fun HTMLTag.xOnClick(action: String) {
 
 internal fun HTMLTag.xOnInput(action: String) {
     xOn("input", action)
+}
+
+internal fun HTMLTag.xOnLoad(action: String) {
+    xOn("load", action)
+}
+
+internal fun HTMLTag.xOnError(action: String) {
+    xOn("error", action)
 }
 
 internal fun HTMLTag.xModel(value: String) {
@@ -65,4 +77,8 @@ internal fun HTMLTag.xInitNextTick(action: String) {
 
 internal fun HTMLTag.xFor(loopDef: String) {
     attributes["x-for"] = loopDef
+}
+
+internal fun HTMLTag.xShow(value: String) {
+    attributes["x-show"] = value
 }

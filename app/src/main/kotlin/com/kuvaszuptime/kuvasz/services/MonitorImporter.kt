@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
-import com.kuvaszuptime.kuvasz.models.dto.MonitorImportResultDto
-import com.kuvaszuptime.kuvasz.models.toMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.import.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.monitor.http.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import jakarta.inject.Singleton

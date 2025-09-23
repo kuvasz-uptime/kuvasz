@@ -60,6 +60,8 @@ dependencies {
     implementation(mn.micronaut.retry)
     implementation(mn.micronaut.security.jwt)
     implementation(mn.micronaut.views.htmx)
+    implementation(mn.micronaut.cache.core)
+    implementation(mn.micronaut.cache.caffeine)
 
     // OpenAPI
     kapt(mn.micronaut.openapi)

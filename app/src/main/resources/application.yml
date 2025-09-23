@@ -21,6 +21,7 @@ micronaut:
       processor.enabled: false
       uptime.enabled: false
       web.enabled: false
+      cache.enabled: false
   application:
     name: kuvasz
   openapi:
@@ -81,6 +82,13 @@ micronaut:
       uptime-check:
         num-threads: 4
         prefer-native-transport: false
+  caches:
+    default-status-page:
+      expire-after-write: ${DEFAULT_STATUS_PAGE_CACHE_EXPIRES_AFTER:`PT5M`}
+      maximum-size: 1
+    status-pages:
+      expire-after-write: ${STATUS_PAGE_CACHE_EXPIRES_AFTER:`PT5M`}
+      maximum-size: ${STATUS_PAGE_CACHE_MAX_SIZE:`20`}
 endpoints:
   all.path: /api/v2/
   health:
@@ -137,3 +145,9 @@ metrics-exports:
   http-latest-latency: ${ENABLE_HTTP_LATEST_LATENCY_EXPORT:`false`}
   ssl-status: ${ENABLE_SSL_STATUS_EXPORT:`false`}
   ssl-expiry: ${ENABLE_SSL_EXPIRY_EXPORT:`false`}
+---
+default-status-page:
+  public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}
+  title: ${DEFAULT_STATUS_PAGE_TITLE:`System status`}
+  custom-logo-url: ${DEFAULT_STATUS_PAGE_LOGO_URL:}
+  custom-favicon-url: ${DEFAULT_STATUS_PAGE_FAVICON_URL:}

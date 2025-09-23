@@ -1,7 +1,8 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
+import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -12,8 +13,12 @@ import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderHttpMonitorList(monitors: List<HttpMonitorDetailsDto>, isReadOnlyMode: Boolean): String =
+fun renderHttpMonitorList(
+    monitors: List<HttpMonitorDetailsDto>,
+    editabilityState: AppGlobals.EditabilityState,
+): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
+        val isReadOnlyMode = editabilityState.areHttpMonitorsReadOnly()
         if (monitors.isNotEmpty()) {
             div {
                 classes(CARD_TABLE, TABLE_RESPONSIVE)
@@ -39,17 +44,22 @@ fun renderHttpMonitorList(monitors: List<HttpMonitorDetailsDto>, isReadOnlyMode:
                                 +Messages.nextUptimeCheck()
                             }
                             if (!isReadOnlyMode) {
-                                th {
-                                    classes(TEXT_CENTER)
-                                    +Messages.actions()
-                                }
+                                // Actions
+                                th {}
                             }
                         }
                     }
                     tbody {
                         monitors.forEach { monitor ->
                             tr {
-                                xData("monitorListItem(${monitor.id}, ${monitor.enabled})")
+                                xData(
+                                    """httpMonitorListItem(
+                                    |${monitor.id}, 
+                                    |${monitor.enabled}, 
+                                    |${monitor.statusPages.isNotEmpty()}
+                                    |)
+                                    """.trimMargin()
+                                )
                                 td {
                                     a(href = "/http-monitors/${monitor.id}") {
                                         classes(TEXT_RESET)
@@ -112,7 +122,14 @@ fun renderHttpMonitorList(monitors: List<HttpMonitorDetailsDto>, isReadOnlyMode:
                                                 modalOpener(deleteModalId)
                                             }
                                         }
-                                        deleteMonitorModal(modalId = deleteModalId, monitorName = monitor.name)
+                                        // Delete modal
+                                        val isDeleteDisabled = monitor.statusPages.isNotEmpty() &&
+                                            editabilityState.areStatusPagesReadOnly()
+                                        deleteMonitorModal(
+                                            modalId = deleteModalId,
+                                            monitorName = monitor.name,
+                                            isDeleteDisabled = isDeleteDisabled,
+                                        )
                                     }
                                 }
                             }

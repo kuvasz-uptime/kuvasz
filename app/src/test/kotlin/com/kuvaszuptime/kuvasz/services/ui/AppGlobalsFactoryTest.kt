@@ -2,12 +2,17 @@ package com.kuvaszuptime.kuvasz.services.ui
 
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
+import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
+import com.kuvaszuptime.kuvasz.services.check.http.MonitorActions
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
@@ -29,6 +34,15 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             latestVersionDetails = "https://kuvasz-uptime.dev/changelog/#1.1.1".toUri(),
         )
     }
+    val mockDefaultPageSettings = mockk<DefaultStatusPageConfig> {
+        every { title } returns "My Status Page"
+        every { public } returns true
+    }
+    val mockkMonitorActions = mockk<MonitorActions> {
+        every { getConfiguredMonitors(HTTP_MONITOR.NAME.asc()) } returns listOf(
+            MonitorID(MonitorType.HTTP_SSL, "something")
+        )
+    }
 
     given("the AppGlobalsFactory") {
 
@@ -39,6 +53,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 AppConfig(),
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -57,7 +73,9 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockSecurity,
                 AppConfig(),
                 emptyIntegrationRepository,
-                mockVersionChecker
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -76,7 +94,9 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockSecurity,
                 AppConfig(),
                 emptyIntegrationRepository,
-                mockVersionChecker
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -95,6 +115,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 appConfig,
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -109,19 +131,26 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 appConfig,
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+            globals.editabilityState.areStatusPagesReadOnly() shouldBe false
 
             appConfig.disableHttpMonitorExternalWrite()
+            appConfig.disableStatusPageExternalWrite()
             val globalsAfterUpdate = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
                 emptyIntegrationRepository,
                 mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model") {
                 globalsAfterUpdate.editabilityState.areHttpMonitorsReadOnly() shouldBe true
+                globalsAfterUpdate.editabilityState.areStatusPagesReadOnly() shouldBe true
             }
         }
 
@@ -141,7 +170,9 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 null,
                 AppConfig(),
                 mockIntegrationRepository,
-                mockVersionChecker
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
             )
 
             then("it should return the correctly hydrated view model with integrations") {
@@ -163,12 +194,47 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     null,
                     AppConfig(),
                     emptyIntegrationRepository,
-                    mockVersionChecker
+                    mockVersionChecker,
+                    mockDefaultPageSettings,
+                    mockkMonitorActions,
                 )
                 globals.versionInfo() shouldBe VersionInfo(
                     installedVersion = BuildConfig.APP_VERSION,
                     latestVersion = "1.1.1",
                     latestVersionDetails = "https://kuvasz-uptime.dev/changelog/#1.1.1".toUri(),
+                )
+            }
+        }
+
+        `when`("the default status page settings are not the defaults") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+            )
+
+            then("it should return the correct default status page settings") {
+                globals.defaultStatusPageSettings.title shouldBe "My Status Page"
+                globals.defaultStatusPageSettings.public shouldBe true
+            }
+        }
+
+        `when`("there are enabled monitors") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+            )
+
+            then("it should return the correct list of enabled monitors") {
+                globals.configuredMonitors() shouldBe listOf(
+                    MonitorID(MonitorType.HTTP_SSL, "something")
                 )
             }
         }

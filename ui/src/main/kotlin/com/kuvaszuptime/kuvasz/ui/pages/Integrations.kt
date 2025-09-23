@@ -2,9 +2,9 @@ package com.kuvaszuptime.kuvasz.ui.pages
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.EmailNotificationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.IntegrationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -89,7 +89,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 } else if (integration.global) {
                                                     Icon.WORLD
                                                 } else {
-                                                    Icon.CIRCLE_CHECK
+                                                    Icon.CIRCLE_CHECK_FILLED
                                                 }
                                                 val colorClass: CSSClass? = if (issue != null) {
                                                     TEXT_RED
@@ -136,7 +136,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                     button {
                                                         classes(TEXT_GREEN, BTN, BTN_ICON)
                                                         disabled = true
-                                                        icon(Icon.CIRCLE_CHECK)
+                                                        icon(Icon.CIRCLE_CHECK_FILLED)
                                                     }
                                                 }
                                                 // Result state, test request failed

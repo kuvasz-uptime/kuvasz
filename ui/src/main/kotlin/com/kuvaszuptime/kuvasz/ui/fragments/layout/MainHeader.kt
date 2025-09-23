@@ -1,12 +1,15 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.layout
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
+
+internal const val DEFAULT_SITE_LOGO_URL = "/public/kuvasz-avatar.png"
+internal const val DEFAULT_SITE_LOGO_ALT = "Kuvasz Uptime"
 
 internal fun FlowContent.mainHeader(
     isAuthenticated: Boolean,
@@ -35,7 +38,8 @@ internal fun FlowContent.mainHeader(
             div {
                 classes(NAVBAR_BRAND, NAVBAR_BRAND_AUTODARK, D_NONE_NAVBAR_HORIZONTAL, PE_0, PE_MD_3)
                 a(href = "/") {
-                    img(src = "/public/kuvasz-avatar.png", alt = "Kuvasz") {
+                    classes(TEXT_RESET, TEXT_DECORATION_NONE)
+                    img(src = DEFAULT_SITE_LOGO_URL, alt = DEFAULT_SITE_LOGO_ALT) {
                         classes(ME_3)
                         width = "32"
                         height = "32"

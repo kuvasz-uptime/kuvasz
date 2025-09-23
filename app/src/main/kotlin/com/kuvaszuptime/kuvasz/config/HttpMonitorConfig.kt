@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.models.HttpMonitorCreatorLike
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDefaults
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
+import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
@@ -10,7 +10,7 @@ import io.micronaut.core.bind.annotation.Bindable
 @EachProperty(HttpMonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
 @Suppress("ComplexInterface")
-interface HttpMonitorConfig : HttpMonitorCreatorLike {
+interface HttpMonitorConfig : HttpMonitorCreator {
 
     companion object {
         const val LEGACY_CONFIG_PREFIX = "monitors"

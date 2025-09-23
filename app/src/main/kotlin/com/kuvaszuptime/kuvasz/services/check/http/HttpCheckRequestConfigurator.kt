@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.models.dto.requestHeadersAsMap
+import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MediaType

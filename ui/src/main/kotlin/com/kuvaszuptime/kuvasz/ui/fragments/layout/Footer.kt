@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.layout
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.VersionInfo
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -20,23 +20,23 @@ internal fun FlowContent.footer(versionInfo: VersionInfo) {
                     classes(COL_LG_AUTO, MS_LG_AUTO)
                     ul {
                         classes(LIST_INLINE, LIST_INLINE_DOTS, MB_0)
-                        listItem(
+                        footerListItem(
                             label = Messages.sponsor(),
                             link = "https://kuvasz-uptime.dev/sponsoring/",
                             externalLink = true,
                             icon = Icon.HEART,
                         )
-                        listItem(
+                        footerListItem(
                             label = Messages.documentation(),
                             link = "https://kuvasz-uptime.dev",
                             externalLink = true,
                         )
-                        listItem(
+                        footerListItem(
                             label = Messages.license(),
                             link = "https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE",
                             externalLink = true,
                         )
-                        listItem(
+                        footerListItem(
                             label = Messages.sourceCode(),
                             link = "https://github.com/kuvasz-uptime/kuvasz",
                             externalLink = true,
@@ -47,7 +47,7 @@ internal fun FlowContent.footer(versionInfo: VersionInfo) {
                     classes(COL_12, COL_LG_AUTO, MT_3, MT_LG_0)
                     ul {
                         classes(LIST_INLINE, LIST_INLINE_DOTS, MB_0)
-                        listItem(label = Messages.version(versionInfo.installedVersion)) {
+                        footerListItem(label = Messages.version(versionInfo.installedVersion)) {
                             // Showing the update icon if a new version is available
                             inlineVersionUpdateBadge(versionInfo)
                         }
@@ -58,7 +58,7 @@ internal fun FlowContent.footer(versionInfo: VersionInfo) {
     }
 }
 
-private fun UL.listItem(
+internal fun UL.footerListItem(
     label: String,
     link: String? = null,
     externalLink: Boolean = false,

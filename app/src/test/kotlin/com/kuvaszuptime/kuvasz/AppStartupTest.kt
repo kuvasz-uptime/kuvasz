@@ -4,12 +4,14 @@ import com.kuvaszuptime.kuvasz.metrics.http.HttpMetricsExporter
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.TestConfiguration
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.ApplicationContext
+import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.NoSuchBeanException
 
 class AppStartupTest : BehaviorSpec({
@@ -20,7 +22,7 @@ class AppStartupTest : BehaviorSpec({
 
             then("it should start without errors") {
 
-                val ctx = shouldNotThrowAny { ApplicationContext.run() }
+                val ctx = shouldNotThrowAny { testAppContext() }
                 shouldThrow<NoSuchBeanException> { ctx.getBean<MeterRegistry>() }
             }
         }
@@ -37,7 +39,7 @@ class AppStartupTest : BehaviorSpec({
                     "metrics-exports.ssl-status" to true,
                     "metrics-exports.ssl-expiry" to true
                 )
-                val ctx = shouldNotThrowAny { ApplicationContext.run(properties) }
+                val ctx = shouldNotThrowAny { testAppContext(properties) }
 
                 ctx.getBean<MeterRegistry>().shouldNotBeNull()
                 ctx.getBeansOfType(HttpMetricsExporter::class.java) shouldHaveSize 4
@@ -56,7 +58,9 @@ class AppStartupTest : BehaviorSpec({
                     "metrics-exports.ssl-status" to true,
                     "metrics-exports.ssl-expiry" to true
                 )
-                val ctx = shouldNotThrowAny { ApplicationContext.run(properties) }
+                val ctx = shouldNotThrowAny {
+                    testAppContext(properties)
+                }
 
                 shouldThrow<NoSuchBeanException> { ctx.getBean<MeterRegistry>() }
                 ctx.getBeansOfType(HttpMetricsExporter::class.java).shouldBeEmpty()
@@ -64,3 +68,12 @@ class AppStartupTest : BehaviorSpec({
         }
     }
 })
+
+fun TestConfiguration.testAppContext(vararg environments: String): ApplicationContext =
+    autoClose(ApplicationContext.run("test", *environments))
+
+fun TestConfiguration.testAppContext(properties: PropertySource, vararg environments: String): ApplicationContext =
+    autoClose(ApplicationContext.run(properties, "test", *environments))
+
+fun TestConfiguration.testAppContext(properties: Map<String, Any>, vararg environments: String): ApplicationContext =
+    autoClose(ApplicationContext.run(properties, "test", *environments))

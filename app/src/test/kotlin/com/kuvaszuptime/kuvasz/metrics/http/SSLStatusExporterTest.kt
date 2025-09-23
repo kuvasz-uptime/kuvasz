@@ -2,16 +2,16 @@ package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.metrics.ExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.models.CertificateInfo
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.micronaut.context.ApplicationContext
 import java.time.OffsetDateTime
 
 class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
@@ -20,7 +20,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
         given("an enabled SSL status exporter") {
 
             `when`("the exporter is initialized") {
-                appContext = ApplicationContext.run()
+                appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -74,7 +74,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
             }
 
             `when`("there are new events for existing monitors after initialization") {
-                appContext = ApplicationContext.run()
+                appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -152,7 +152,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
 
             `when`("monitors are updated/deleted after initialization") {
 
-                appContext = ApplicationContext.run()
+                appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createMonitor(
                     getMonitorRepository(),
@@ -218,10 +218,10 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 meterRegistry().meters shouldHaveSize 3
 
                 // Simulating the events
-                monitorCrudService().updateMonitor(enabledMonitorWithStatus.id, monitorDisableUpdate)
-                monitorCrudService().updateMonitor(anotherEnabledMonitorWithStatus.id, monitorNameUpdate)
-                monitorCrudService().updateMonitor(disabledMonitorWithStatus.id, monitorSSLEnableUpdate)
-                monitorCrudService().deleteMonitorById(yetAnotherEnabledMonitorWithStatus.id)
+                httpMonitorActions().updateMonitor(enabledMonitorWithStatus.id, monitorDisableUpdate)
+                httpMonitorActions().updateMonitor(anotherEnabledMonitorWithStatus.id, monitorNameUpdate)
+                httpMonitorActions().updateMonitor(disabledMonitorWithStatus.id, monitorSSLEnableUpdate)
+                httpMonitorActions().deleteMonitorById(yetAnotherEnabledMonitorWithStatus.id)
 
                 val registeredMeters = meterRegistry().meters
 

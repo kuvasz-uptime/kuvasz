@@ -1,10 +1,10 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
-import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
 
@@ -21,7 +21,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        testAppContext(properties)
                     }
                     exceptionToMessage(exception) shouldContain
                         "Error resolving property value [app-config.event-data-retention-days]"
@@ -38,7 +38,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        testAppContext(properties)
                     }
                     exceptionToMessage(exception) shouldContain "Event data retention must be at least 1 days"
                 }
@@ -54,7 +54,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        testAppContext(properties)
                     }
                     exceptionToMessage(exception) shouldContain
                         "Error resolving property value [app-config.latency-data-retention-days]"
@@ -71,7 +71,7 @@ class AppConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties)
+                        testAppContext(properties)
                     }
                     exceptionToMessage(exception) shouldContain "Latency data retention must be at least 1 days"
                 }

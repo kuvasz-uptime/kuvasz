@@ -29,7 +29,7 @@ http-monitors:
 
 !!! warning "End of life of v1 endpoints"
 
-    The `v1` endpoints will be supported until 2025-12-31. After this date, they will be removed in the next feature release. Please make sure to **migrate to the `v2` endpoints** before then. Please refer to the [**API documentation**](api-docs.md) for more details.
+    The `v1` endpoints will be supported until 2025-12-31. After this date, they will be removed in the next feature release. Please make sure to **migrate to the `v2` endpoints** before then. Please refer to the [**API documentation**](https://api-docs.kuvasz-uptime.dev){target="_blank"} for more details.
 
 #### Changed endpoints
 

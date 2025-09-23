@@ -1,14 +1,14 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
-import com.kuvaszuptime.kuvasz.models.dto.DiscordNotificationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.EmailNotificationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.IntegrationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.IntegrationDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.PagerdutyConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.SlackNotificationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.TelegramNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.DiscordNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig

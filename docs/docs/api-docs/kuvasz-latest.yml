@@ -1,7 +1,14 @@
 openapi: 3.0.1
 info:
   title: Kuvasz Uptime
+  description: "Kuvasz Uptime is an open-source, self-hostable uptime monitoring and\
+    \ status page service."
+  contact:
+    name: Official Documentation
+    url: https://kuvasz-uptime.dev
   version: latest
+  x-logo:
+    url: https://github.com/kuvasz-uptime/kuvasz/raw/main/docs/docs/images/kuvasz-banner-light.webp
 tags:
 - name: Management
 - name: Monitors
@@ -10,6 +17,7 @@ tags:
 - name: "Settings (V1, deprecated)"
 - name: Settings
 - name: Integrations
+- name: Status pages
 paths:
   /api/v1/monitors:
     get:
@@ -84,8 +92,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -179,6 +187,12 @@ paths:
       responses:
         "204":
           description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
         "404":
           description: Not found
           content:
@@ -186,8 +200,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -237,8 +251,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -425,8 +439,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -502,6 +516,12 @@ paths:
       responses:
         "204":
           description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
         "404":
           description: Not found
           content:
@@ -509,8 +529,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -559,8 +579,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceError"
         "405":
-          description: "Monitors are in read-only mode, because they are loaded from\
-            \ a YAML config file"
+          description: "HTTP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
           content:
             application/json:
               schema:
@@ -766,6 +786,189 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/status-pages:
+    get:
+      tags:
+      - Status pages
+      summary: Get all status pages
+      operationId: getStatusPages
+      parameters:
+      - name: public
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusPageDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - Status pages
+      summary: Create a status page
+      operationId: createStatuspage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusPageCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/status-pages/export/yaml:
+    get:
+      tags:
+      - Status pages
+      summary: Download the export of all status pages in YAML format
+      operationId: getYamlStatusPagesExport
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/x-yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/status-pages/{statusPageId}:
+    get:
+      tags:
+      - Status pages
+      summary: Get a status page
+      operationId: getStatusPage
+      parameters:
+      - name: statusPageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - Status pages
+      summary: Delete a status page by ID
+      operationId: deleteStatusPage
+      parameters:
+      - name: statusPageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - Status pages
+      summary: Update a status page by ID
+      description: Updates the status page with the given ID. Only fields that are
+        present in the request body will be updated. Fields not present in the request
+        body will remain unchanged.
+      operationId: updateStatusPage
+      parameters:
+      - name: statusPageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusPageUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/health:
     get:
       tags:
@@ -807,6 +1010,11 @@ paths:
       - bearerAuth: []
 components:
   schemas:
+    ApiErrorCode:
+      type: string
+      enum:
+      - MONITOR_NAME_CANNOT_BE_CHANGED
+      - MONITOR_CANNOT_BE_DELETED
     DiscordNotificationConfigDto:
       required:
       - enabled
@@ -1073,6 +1281,7 @@ components:
       - sslStatus
       - sslStatusStartedAt
       - sslValidUntil
+      - statusPages
       - updatedAt
       - uptimeCheckInterval
       - uptimeError
@@ -1247,6 +1456,12 @@ components:
           description: "The body of the request to be sent, which is used for POST,\
             \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
           nullable: true
+        statusPages:
+          type: array
+          description: List of slugs of the status pages the monitor is explicitly
+            assigned to
+          items:
+            type: string
     HttpMonitorDto:
       required:
       - createdAt
@@ -2335,6 +2550,10 @@ components:
         message:
           type: string
           nullable: true
+        errorCode:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/ApiErrorCode"
     SettingsDto:
       required:
       - app
@@ -2400,11 +2619,15 @@ components:
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly
+      - areStatusPagesReadOnly
       type: object
       properties:
         areHttpMonitorsReadOnly:
           type: boolean
           description: Whether the HTTP monitors are in read-only mode
+        areStatusPagesReadOnly:
+          type: boolean
+          description: Whether the status pages are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge
@@ -2549,6 +2772,137 @@ components:
       - VALID
       - INVALID
       - WILL_EXPIRE
+    StatusPageCreateDto:
+      required:
+      - slug
+      - title
+      type: object
+      properties:
+        title:
+          minLength: 1
+          type: string
+          description: Title of the status page
+          x-size-message: Status page title must not be blank
+        slug:
+          minLength: 1
+          pattern: "^[a-z0-9_-]{1,50}$"
+          type: string
+          description: "Unique slug of the status page, used in the URL"
+          x-pattern-message: "Status page slug must be 1-50 characters long and can\
+            \ only contain letters, numbers, hyphens, and underscores"
+          x-size-message: Status page slug must not be blank
+        customLogoUrl:
+          type: string
+          description: The absolute URL of the custom logo displayed on the status
+            page
+          nullable: true
+        customFaviconUrl:
+          type: string
+          description: The absolute URL of the custom favicon displayed on the status
+            page. Only PNG format is supported.
+          nullable: true
+        public:
+          type: boolean
+          description: Whether the status page is publicly accessible
+          default: false
+        monitors:
+          type: array
+          description: Set of monitor IDs that are included in the status page
+          nullable: true
+          items:
+            type: string
+    StatusPageDto:
+      required:
+      - createdAt
+      - customFaviconUrl
+      - customLogoUrl
+      - id
+      - monitors
+      - public
+      - slug
+      - title
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the status page
+          format: int64
+        title:
+          type: string
+          description: Title of the status page
+        slug:
+          type: string
+          description: "Unique slug of the status page, used in the URL"
+        customLogoUrl:
+          type: string
+          description: The absolute URL of the custom logo displayed on the status
+            page
+          nullable: true
+        customFaviconUrl:
+          type: string
+          description: The absolute URL of the custom favicon displayed on the status
+            page. Only PNG format is supported.
+          nullable: true
+        public:
+          type: boolean
+          description: Whether the status page is publicly accessible
+        monitors:
+          type: array
+          description: Set of monitor IDs that are included in the status page
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        createdAt:
+          type: string
+          description: Timestamp of when the status page was created
+          format: date-time
+        updatedAt:
+          type: string
+          description: Timestamp of when the status page was last updated
+          format: date-time
+          nullable: true
+    StatusPageUpdateDto:
+      type: object
+      properties:
+        title:
+          minLength: 1
+          type: string
+          description: Title of the status page
+          nullable: false
+          x-size-message: Status page title must not be blank
+        slug:
+          minLength: 1
+          pattern: "^[a-z0-9_-]{1,50}$"
+          type: string
+          description: "Unique slug of the status page, used in the URL"
+          nullable: false
+          x-pattern-message: "Status page slug must be 1-50 characters long and can\
+            \ only contain letters, numbers, hyphens, and underscores"
+          x-size-message: Status page slug must not be blank
+        customLogoUrl:
+          type: string
+          description: The absolute URL of the custom logo displayed on the status
+            page
+          nullable: true
+        customFaviconUrl:
+          type: string
+          description: The absolute URL of the custom favicon displayed on the status
+            page. Only PNG format is supported.
+          nullable: true
+        public:
+          type: boolean
+          description: Whether the status page is publicly accessible
+          nullable: false
+        monitors:
+          type: array
+          description: Set of monitor IDs that are included in the status page
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
     TelegramNotificationConfigDto:
       required:
       - chatId

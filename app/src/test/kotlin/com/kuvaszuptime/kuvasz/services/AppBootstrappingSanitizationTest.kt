@@ -6,10 +6,10 @@ import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.micronaut.context.ApplicationContext
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 import org.jooq.DSLContext
@@ -44,7 +44,7 @@ class AppBootstrappingSanitizationTest(
         )
 
         // Simulating the restart of the application
-        shouldNotThrowAny { ApplicationContext.run("full-integrations-setup") }
+        shouldNotThrowAny { testAppContext("full-integrations-setup") }
         val sanitizedMonitor = monitorRepository.findById(monitor.id).shouldNotBeNull()
 
         // The configured ones should be kept, even the disabled one

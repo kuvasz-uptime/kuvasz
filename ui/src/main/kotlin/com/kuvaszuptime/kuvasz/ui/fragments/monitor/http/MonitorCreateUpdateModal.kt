@@ -5,13 +5,12 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.checks.KnownHttpHeaders
 import com.kuvaszuptime.kuvasz.models.checks.SupportedExpectedHttpStatusCodes
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
-import com.kuvaszuptime.kuvasz.ui.serde.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import de.comahe.i18n4k.strings.capitalize
 import kotlinx.html.*
@@ -28,6 +27,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
             "urlRequired" to Messages.errorMissingUrl(),
             "urlInvalid" to Messages.errorInvalidUrl(),
             "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
+            "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
             "sslExpiryThresholdInvalid" to Messages.errorSSLExpiryThresholdInvalid(),
             "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
             "responseTimeThresholdInvalid" to Messages.errorResponseTimeThresholdInvalid(),
@@ -40,11 +40,14 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
     val modalClosedEvent = "monitor-upsert-modal-closed"
     val acceptedStatusCodeSelectId = "accepted-status-codes-select"
     val isReadOnlyMode = globals.editabilityState.areHttpMonitorsReadOnly()
+    val isMonitorNameReadOnly = monitor?.statusPages?.isNotEmpty() == true &&
+        globals.editabilityState.areStatusPagesReadOnly()
+
     div {
         id = modalId
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
         xData(
-            """upsertMonitorForm(
+            """upsertHttpMonitorForm(
                 |$serializedMonitor, 
                 |$serializedErrorMessages, 
                 |'$acceptedStatusCodeSelectId', 
@@ -86,13 +89,20 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                     // Name
                     div {
                         classes(MB_3)
+                        // Showing the tooltip only if the name is read-only but the rest of the form is editable
+                        val tooltip = if (isMonitorNameReadOnly && !isReadOnlyMode) {
+                            Messages.monitorNameReadOnlyTooltip()
+                        } else {
+                            null
+                        }
                         validatedInput(
                             propName = "name",
                             label = Messages.monitorNameLabel(),
                             placeholder = Messages.monitorNamePlaceholder(),
+                            description = tooltip,
                             required = true,
                             onInput = "validateName()",
-                            disabledIf = "$isReadOnlyMode",
+                            disabledIf = "$isReadOnlyMode || $isMonitorNameReadOnly",
                         )
                     }
                     // URL
@@ -329,7 +339,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                                     xIf("integrations.length + globalIntegrationCount > 0")
                                     span {
                                         classes(TEXT_GREEN)
-                                        icon(Icon.CIRCLE_CHECK)
+                                        icon(Icon.CIRCLE_CHECK_FILLED)
                                     }
                                 }
                             },
@@ -421,18 +431,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
             }
         }
     }
-    // Converting Bootstrap's own modal event to a new one, that is caught by alpine to reset the form's state if it's
-    // closed without saving.
-    script {
-        unsafe {
-            +"""
-            const modal = document.getElementById('$modalId')
-            modal.addEventListener('hide.bs.modal', () => {
-                sendWindowEvent('$modalClosedEvent');
-            })
-            """.trimIndent()
-        }
-    }
+    handleFormResetOnModalClose(modalId = modalId, eventName = modalClosedEvent)
 }
 
 internal fun FlowContent.formLabel(
@@ -598,20 +597,8 @@ private fun FlowContent.acceptedStatusCodeSelector(
                         searchField: 'text',
                         plugins: ['clear_button', 'remove_button'],
                         render: {
-                            option: function(data, escape) {
-                                const statusClass = statusCodeToBadgeClass(data.value);
-                                return '<div>' +
-                                           '<span class="status-dot ' + statusClass + ' me-2"></span>' +
-                                       escape(data.text) +
-                                    '</div>';
-                            },
-                            item: function(data, escape) {
-                                const statusClass = statusCodeToBadgeClass(data.value);
-                                return '<div>' +
-                                 '<span class="status-dot ' + statusClass + ' me-2"></span>' +
-                                    escape(data.value) + 
-                                '</div>';
-                            }
+                            option: renderStatusCodeOption,
+                            item: renderStatusCodeItem
                         },
                         onItemAdd: function(data, item) {
                             this.setTextboxValue('');

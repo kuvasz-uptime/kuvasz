@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -21,28 +22,33 @@ import kotlinx.coroutines.reactive.awaitFirst
 class DisabledWebUIAuthenticationTest(
     @Client("/") client: HttpClient,
     monitorRepository: HttpMonitorRepository,
-) : DatabaseStringSpec({
+) : DatabaseStringSpec() {
+    init {
+        "all the web UI endpoints should be publicly available" {
+            val monitor = createMonitor(monitorRepository)
+            val statusPage = createStatusPage(dslContext, public = false)
 
-    "all the web UI endpoints should be publicly available" {
-        val monitor = createMonitor(monitorRepository)
+            table(
+                headers("url"),
+                row("/"),
+                row("/http-monitors"),
+                row("/http-monitors/${monitor.id}"),
+                row("/http-monitors/fragments/list"),
+                row("/http-monitors/fragments/details-heading/${monitor.id}"),
+                row("/http-monitors/fragments/details-uptime-incidents/${monitor.id}"),
+                row("/http-monitors/fragments/details-ssl-incidents/${monitor.id}"),
+                row("/http-monitors/fragments/stats"),
+                row("/settings"),
+                row("/integrations"),
+                row("/incidents"),
+                row("/status-pages"),
+                row("/status-pages/${statusPage.id}"),
+                row("/status-pages/fragments/list"),
+            ).forAll { url ->
+                val response = client.exchange(url).awaitFirst()
 
-        table(
-            headers("url"),
-            row("/"),
-            row("/http-monitors"),
-            row("/http-monitors/${monitor.id}"),
-            row("/http-monitors/fragments/list"),
-            row("/http-monitors/fragments/details-heading/${monitor.id}"),
-            row("/http-monitors/fragments/details-uptime-incidents/${monitor.id}"),
-            row("/http-monitors/fragments/details-ssl-incidents/${monitor.id}"),
-            row("/http-monitors/fragments/stats"),
-            row("/settings"),
-            row("/integrations"),
-            row("/incidents"),
-        ).forAll { url ->
-            val response = client.exchange(url).awaitFirst()
-
-            response.status shouldBe HttpStatus.OK
+                response.status shouldBe HttpStatus.OK
+            }
         }
     }
-})
+}

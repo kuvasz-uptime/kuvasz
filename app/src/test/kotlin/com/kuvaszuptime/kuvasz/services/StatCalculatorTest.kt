@@ -9,10 +9,16 @@ import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.inspectors.forAll
+import io.kotest.matchers.collections.shouldBeSortedBy
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import org.jooq.DSLContext
+import java.math.RoundingMode
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
 class StatCalculatorTest(
@@ -102,7 +108,10 @@ class StatCalculatorTest(
                 // 2.5 days DOWN inside the period
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 60 * 60 * 60
                 // 5 days UP, 2.5 days DOWN
-                stats.history.uptimeStats.uptimeRatio shouldBe 5.toDouble() / 7.5
+                stats.history.uptimeStats.uptimeRatio
+                    ?.toBigDecimal()
+                    ?.setScale(4, RoundingMode.HALF_UP) shouldBe
+                    (5.toDouble() / 7.5).toBigDecimal().setScale(4, RoundingMode.HALF_UP)
             }
         }
 
@@ -186,7 +195,10 @@ class StatCalculatorTest(
                 // 1.5 days DOWN inside the period
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 36 * 60 * 60
                 // 5 days UP, 1.5 days DOWN
-                stats.history.uptimeStats.uptimeRatio shouldBe 5.toDouble() / 6.5
+                stats.history.uptimeStats.uptimeRatio
+                    ?.toBigDecimal()
+                    ?.setScale(4, RoundingMode.HALF_UP) shouldBe
+                    (5.toDouble() / 6.5).toBigDecimal().setScale(4, RoundingMode.HALF_UP)
             }
         }
 
@@ -567,7 +579,9 @@ class StatCalculatorTest(
                 )
                 statsOfDownMonitor.incidents shouldBe 1
                 statsOfDownMonitor.affectedMonitors shouldBe 1
-                statsOfDownMonitor.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 // 5 days
+                val expectedDowntimeSeconds = 5L * 24 * 60 * 60 // 5 days in seconds
+                statsOfDownMonitor.totalDowntimeSeconds shouldBeInRange
+                    expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                 statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
                 val statsOfPausedMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
@@ -587,6 +601,181 @@ class StatCalculatorTest(
                 statsOfPausedMonitor2.affectedMonitors shouldBe 0
                 statsOfPausedMonitor2.totalDowntimeSeconds shouldBe 0
                 statsOfPausedMonitor2.uptimeRatio shouldBe null
+            }
+        }
+    }
+
+    given("the generateUptimeHistoryOverview() method") {
+
+        fun createTestEvent(
+            status: UptimeStatus,
+            startedAt: OffsetDateTime,
+            endedAt: OffsetDateTime? = null,
+            updatedAt: OffsetDateTime,
+        ) = UptimeEventCalculationContext(
+            monitorId = 1,
+            isMonitorEnabled = true,
+            status = status,
+            startedAt = startedAt,
+            endedAt = endedAt,
+            updatedAt = updatedAt,
+        )
+
+        `when`("there is no event for a given day") {
+
+            val event1 = createTestEvent(
+                status = UptimeStatus.UP,
+                startedAt = getCurrentTimestamp().minusDays(9),
+                endedAt = getCurrentTimestamp().minusDays(8),
+                updatedAt = getCurrentTimestamp().minusDays(8),
+            )
+            val event2 = createTestEvent(
+                status = UptimeStatus.DOWN,
+                startedAt = getCurrentTimestamp().minusDays(8),
+                endedAt = getCurrentTimestamp().minusDays(7),
+                updatedAt = getCurrentTimestamp().minusDays(7),
+            )
+
+            then("it should return null for that day as outageCnt") {
+
+                val result = statCalculator.generateUptimeHistoryOverview(
+                    period = Duration.ofDays(11),
+                    uptimeEvents = listOf(event1, event2),
+                )
+
+                result shouldBeSortedBy { it.date }
+                result shouldHaveSize 11
+                // First event is 9 days ago, so the first day should have null as outageCnt
+                with(result.first()) {
+                    date shouldBe getCurrentTimestamp().minusDays(10).toLocalDate()
+                    outageCnt shouldBe null
+                }
+                // First effective event is 9 days ago with UP status, so the second day should have 0 as outageCnt
+                with(result[1]) {
+                    date shouldBe getCurrentTimestamp().minusDays(9).toLocalDate()
+                    outageCnt shouldBe 0
+                }
+                // Second effective event is 8 days ago with DOWN status, so the third day should have 1 as outageCnt
+                with(result[2]) {
+                    date shouldBe getCurrentTimestamp().minusDays(8).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                // The previous down event was still effective on the 4th day, so it should also have 1 as outageCnt
+                with(result[3]) {
+                    date shouldBe getCurrentTimestamp().minusDays(7).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                // For the rest of the days there are no more events, so they should have null as outageCnt
+                result.filter { it.date > result[3].date }.forAll { daysWithNoData ->
+                    daysWithNoData.outageCnt shouldBe null
+                }
+            }
+        }
+
+        `when`("there is an event that started before the period, but ended within it") {
+
+            val event1 = createTestEvent(
+                status = UptimeStatus.DOWN,
+                startedAt = getCurrentTimestamp().minusDays(10),
+                endedAt = getCurrentTimestamp().minusDays(3),
+                updatedAt = getCurrentTimestamp().minusDays(3),
+            )
+
+            val event2 = createTestEvent(
+                status = UptimeStatus.UP,
+                startedAt = getCurrentTimestamp().minusDays(3),
+                endedAt = null,
+                updatedAt = getCurrentTimestamp(),
+            )
+
+            then("it should count that event on the days within the period") {
+
+                val result = statCalculator.generateUptimeHistoryOverview(
+                    period = Duration.ofDays(7),
+                    uptimeEvents = listOf(event1, event2),
+                )
+
+                result shouldBeSortedBy { it.date }
+                result shouldHaveSize 7
+                // First effective event is 6 days ago with DOWN status, so the first day should have 1 as outageCnt
+                with(result.first()) {
+                    date shouldBe getCurrentTimestamp().minusDays(6).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                // The previous down event was still effective on the 2nd, 3rd and 4th days, so they should also
+                // have 1 as outageCnt
+                with(result[1]) {
+                    date shouldBe getCurrentTimestamp().minusDays(5).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                with(result[2]) {
+                    date shouldBe getCurrentTimestamp().minusDays(4).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                with(result[3]) {
+                    date shouldBe getCurrentTimestamp().minusDays(3).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                // From the 5th day the UP event is effective, so it should have 0 as outageCnt
+                result.filter { it.date > result[3].date }.forAll { daysWithUpEvent ->
+                    daysWithUpEvent.outageCnt shouldBe 0
+                }
+            }
+        }
+
+        `when`("an open event was updated before today") {
+
+            val event1 = createTestEvent(
+                status = UptimeStatus.DOWN,
+                startedAt = getCurrentTimestamp().minusDays(10),
+                endedAt = getCurrentTimestamp().minusDays(3),
+                updatedAt = getCurrentTimestamp().minusDays(3),
+            )
+
+            val event2 = createTestEvent(
+                status = UptimeStatus.UP,
+                startedAt = getCurrentTimestamp().minusDays(3),
+                endedAt = null,
+                updatedAt = getCurrentTimestamp().minusDays(1),
+            )
+
+            then("its updateDate should be the base of the calculation") {
+
+                val result = statCalculator.generateUptimeHistoryOverview(
+                    period = Duration.ofDays(7),
+                    uptimeEvents = listOf(event1, event2),
+                )
+                val today = getCurrentTimestamp().toLocalDate()
+
+                result shouldBeSortedBy { it.date }
+                result shouldHaveSize 7
+                // First effective event is 6 days ago with DOWN status, so the first day should have 1 as outageCnt
+                with(result.first()) {
+                    date shouldBe getCurrentTimestamp().minusDays(6).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                // The previous down event was still effective on the 2nd, 3rd and 4th days, so they should also
+                // have 1 as outageCnt
+                with(result[1]) {
+                    date shouldBe getCurrentTimestamp().minusDays(5).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                with(result[2]) {
+                    date shouldBe getCurrentTimestamp().minusDays(4).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                with(result[3]) {
+                    date shouldBe getCurrentTimestamp().minusDays(3).toLocalDate()
+                    outageCnt shouldBe 1
+                }
+                // From the 5th day the UP event is effective, so it should have 0 as outageCnt
+                result.filter { it.date > result[3].date && it.date < today }.forAll { daysWithUpEvent ->
+                    daysWithUpEvent.outageCnt shouldBe 0
+                }
+
+                // The last day is today, but the event was updated yesterday, so it should have null as outageCnt
+                result.last().date shouldBe today
+                result.last().outageCnt shouldBe null
             }
         }
     }

@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDto
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -29,7 +29,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 @MicronautTest
 class GlobalErrorHandlerTest(
     @Client("/") client: HttpClient,
-    monitorCrudService: HttpMonitorCrudService
+    httpMonitorActions: HttpMonitorActions
 ) : BehaviorSpec({
 
     given("an endpoint that accepts a payload") {
@@ -71,7 +71,7 @@ class GlobalErrorHandlerTest(
 
         `when`("it is called with a valid body but the underlying logic throws a PersistenceError") {
 
-            val crudServiceMock = getMock(monitorCrudService)
+            val monitorActionsMock = getMock(httpMonitorActions)
             val monitorDto = HttpMonitorCreateDto(
                 name = "test",
                 url = "https://valid-url.com",
@@ -79,7 +79,7 @@ class GlobalErrorHandlerTest(
             )
             val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
-            every { crudServiceMock.createMonitor(any()) } throws PersistenceException("This is an error message")
+            every { monitorActionsMock.createMonitor(any()) } throws PersistenceException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
@@ -97,7 +97,7 @@ class GlobalErrorHandlerTest(
 
         `when`("it is called with a valid body but the underlying logic throws a SchedulingError") {
 
-            val crudServiceMock = getMock(monitorCrudService)
+            val monitorActionsMock = getMock(httpMonitorActions)
             val monitorDto = HttpMonitorCreateDto(
                 name = "test",
                 url = "https://valid-url.com",
@@ -105,7 +105,7 @@ class GlobalErrorHandlerTest(
             )
             val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
-            every { crudServiceMock.createMonitor(any()) } throws SchedulingException("This is an error message")
+            every { monitorActionsMock.createMonitor(any()) } throws SchedulingException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
@@ -121,7 +121,7 @@ class GlobalErrorHandlerTest(
 
         `when`("it is called with a valid body but the underlying logic throws a DuplicationError") {
 
-            val crudServiceMock = getMock(monitorCrudService)
+            val monitorActionsMock = getMock(httpMonitorActions)
             val monitorDto = HttpMonitorCreateDto(
                 name = "test",
                 url = "https://valid-url.com",
@@ -129,7 +129,7 @@ class GlobalErrorHandlerTest(
             )
             val request = HttpRequest.POST("/api/v2/http-monitors", monitorDto)
 
-            every { crudServiceMock.createMonitor(any()) } throws DuplicationException("This is an error message")
+            every { monitorActionsMock.createMonitor(any()) } throws DuplicationException("This is an error message")
 
             val exception = shouldThrow<HttpClientResponseException> {
                 client
@@ -146,8 +146,6 @@ class GlobalErrorHandlerTest(
         }
     }
 }) {
-    @MockBean(HttpMonitorCrudService::class)
-    fun monitorCrudService(): HttpMonitorCrudService {
-        return mockk()
-    }
+    @MockBean(HttpMonitorActions::class)
+    fun httpMonitorActions(): HttpMonitorActions = mockk()
 }

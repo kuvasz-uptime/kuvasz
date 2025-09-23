@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -21,14 +22,13 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.micronaut.context.ApplicationContext
 import io.micronaut.context.exceptions.BeanInstantiationException
 
 @SMTPTest
 class IntegrationBootstrappingTest : StringSpec({
 
     "IntegrationRepository should load the integrations from YAML upon startup if they are all valid" {
-        val ctx = ApplicationContext.run("full-integrations-setup")
+        val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 15
@@ -290,7 +290,7 @@ class IntegrationBootstrappingTest : StringSpec({
     }
 
     "app should be able to start if there are no integrations configured" {
-        val ctx = ApplicationContext.run()
+        val ctx = testAppContext()
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 0
@@ -302,7 +302,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should be able to start with complex integration names" {
         val ctx = shouldNotThrowAny {
-            ApplicationContext.run("complex-integration-name")
+            testAppContext("complex-integration-name")
         }
 
         with(ctx.getBean<IntegrationRepository>()) {
@@ -338,7 +338,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there are integrations with the same name and type" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("duplicate-integrations")
+            testAppContext("duplicate-integrations")
         }
 
         ex.message shouldContain "Duplicate integration configuration found for pagerduty:test. " +
@@ -347,7 +347,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there is at least one integration with a badly formatted name" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("blank-integration-name")
+            testAppContext("blank-integration-name")
         }
 
         ex.message shouldContain "Invalid integration name [ \n" +
@@ -356,17 +356,17 @@ class IntegrationBootstrappingTest : StringSpec({
 
     "app should not start if there is an invalid integration config" {
         val ex = shouldThrow<BeanInstantiationException> {
-            ApplicationContext.run("invalid-integration-config")
+            testAppContext("invalid-integration-config")
         }
 
         ex.message shouldContain "SlackNotificationConfig.getWebhookUrl - " +
-            ValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
+            IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
 })
 
 class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
     "EmailConfigs should not be loaded into enabledConfigurations if SMTP is not configured" {
-        val ctx = ApplicationContext.run("full-integrations-setup")
+        val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
             configuredIntegrations shouldHaveSize 15

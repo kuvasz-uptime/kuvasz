@@ -3,7 +3,6 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
-import com.kuvaszuptime.kuvasz.models.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -15,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository

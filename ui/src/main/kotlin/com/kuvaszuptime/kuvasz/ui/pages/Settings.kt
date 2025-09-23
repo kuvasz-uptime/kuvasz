@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.pages
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.SettingsDto
+import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -60,6 +60,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     settingsToggle(
                         label = Messages.httpMonitorsReadOnlyMode(),
                         checked = settings.app.editabilityState.areHttpMonitorsReadOnly
+                    )
+                    settingsToggle(
+                        label = Messages.statusPagesReadOnlyMode(),
+                        checked = settings.app.editabilityState.areStatusPagesReadOnly
                     )
                 }
             }
@@ -328,7 +332,13 @@ private fun HtmlBlockTag.settingsPageHeader() {
                                         classes(DROPDOWN_ITEM)
                                         attributes["download"] = "true"
                                         icon(Icon.DOWNLOAD)
-                                        +Messages.downloadYamlBackup()
+                                        +Messages.downloadMonitorBackup()
+                                    }
+                                    a(href = "/api/v2/status-pages/export/yaml") {
+                                        classes(DROPDOWN_ITEM)
+                                        attributes["download"] = "true"
+                                        icon(Icon.DOWNLOAD)
+                                        +Messages.downloadStatusPageBackup()
                                     }
                                 }
                             }

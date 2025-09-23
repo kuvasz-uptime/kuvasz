@@ -1,0 +1,17 @@
+status-pages:
+  - title: Status Page Updated
+    slug: status-page-1
+    public: true
+    monitors:
+      - "http:test1"
+      - "http:test3"
+  - title: Status Page 4
+    slug: status-page-4
+    public: false
+    monitors:
+      - "http:test4"
+  - title: Status Page 3
+    slug: status-page-3
+    monitors:
+      - "http:test3"
+      - "http:test1"

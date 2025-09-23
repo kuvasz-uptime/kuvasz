@@ -3,7 +3,7 @@
 <figure markdown="span">
   ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="350" .skip-lb }
   ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="350" .skip-lb }
-  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service</figcaption>
+  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages</figcaption>
 </figure>
 
 !!! tip "TL;DR"
@@ -74,13 +74,13 @@
 
     [:octicons-arrow-right-24: Sponsoring](https://ko-fi.com/L4L31DH59D){ target="_blank" }
 
--  :muscle:{ .lg .card-header-icon } __Performance & Robustness__
+-  :loudspeaker:{ .lg .card-header-icon } __Status Pages__
 
     ---
 
-    Tested in real-world scenarios, with large numbers of monitors and checks.
+    You can create public and also private, brandable status pages for your monitors, to keep your customers or your internal team informed about the status of your services.
 
-    [:octicons-arrow-right-24: Performance](features/performance.md)
+    [:octicons-arrow-right-24: Status Pages](features/status-pages.md)
 
 -   :woman_cartwheeling:{ .lg .card-header-icon } __Flexible Configuration__
 
@@ -113,7 +113,7 @@
 | REST API                                  |       ✅       |        ✅         |        ✅         |
 | Prometheus & OpenTelemetry exporters      |       ✅       |        ❌         |        ❌         |
 | Backups & YAML configuration              |       ✅       |        ❌         |        ❌         |
-| Status pages                              |      📆       |      only 1      |      only 3      |
+| Status pages                              |       ✅       |      only 1      |      only 3      |
 | Maintenance windows                       |      📆       |        ❌         |        ✅         |
 | **HTTPs monitoring**                      |               |                  |                  |
 | Keyword matching                          |       ✅       |        ✅         |        ✅         |

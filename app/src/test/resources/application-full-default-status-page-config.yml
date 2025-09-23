@@ -1,0 +1,5 @@
+default-status-page:
+  public: true
+  title: "Custom System Status"
+  custom-logo-url: "https://custom.logo"
+  custom-favicon-url: "https://custom.favicon"

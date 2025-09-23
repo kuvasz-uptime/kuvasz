@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.security
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -28,118 +29,130 @@ import kotlinx.coroutines.reactive.awaitFirst
 @Property(name = "admin-auth.password", value = TEST_PASSWORD)
 @Property(name = "micronaut.http.client.follow-redirects", value = "false")
 class WebUIAuthenticationTest(
-    @Client("/") private val client: HttpClient,
+    @param:Client("/") private val client: HttpClient,
     private val authConfig: AdminAuthConfig,
     monitorRepository: HttpMonitorRepository,
-) : DatabaseStringSpec({
+) : DatabaseStringSpec() {
+    init {
 
-    "all the web UI endpoints should be secured - anonymous user" {
+        "all the web UI endpoints should be secured - anonymous user" {
 
-        table(
-            headers("url"),
-            row("/"),
-            row("/http-monitors"),
-            row("/http-monitors/1"),
-            row("/http-monitors/fragments/list"),
-            row("/http-monitors/fragments/details-heading/1"),
-            row("/http-monitors/fragments/details-uptime-incidents/1"),
-            row("/http-monitors/fragments/details-ssl-incidents/1"),
-            row("/http-monitors/fragments/stats"),
-            row("/settings"),
-            row("/integrations"),
-            row("/incidents"),
-        ).forAll { url ->
-            val response = client.exchange(url).awaitFirst()
+            table(
+                headers("url"),
+                row("/"),
+                row("/http-monitors"),
+                row("/http-monitors/1"),
+                row("/http-monitors/fragments/list"),
+                row("/http-monitors/fragments/details-heading/1"),
+                row("/http-monitors/fragments/details-uptime-incidents/1"),
+                row("/http-monitors/fragments/details-ssl-incidents/1"),
+                row("/http-monitors/fragments/stats"),
+                row("/settings"),
+                row("/integrations"),
+                row("/incidents"),
+                row("/status-pages"),
+                row("/status-pages/1"),
+                row("/status-pages/fragments/list"),
+            ).forAll { url ->
+                val response = client.exchange(url).awaitFirst()
 
-            response.status shouldBe HttpStatus.SEE_OTHER
-            response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
-                locationHeader shouldBe "/login"
+                response.status shouldBe HttpStatus.SEE_OTHER
+                response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
+                    locationHeader shouldBe "/login"
+                }
             }
         }
-    }
 
-    "all the web UI endpoints should be secured - valid API key is used" {
+        "all the web UI endpoints should be secured - valid API key is used" {
 
-        val cases = table(
-            headers("url"),
-            row("/"),
-            row("/http-monitors"),
-            row("/http-monitors/1"),
-            row("/http-monitors/fragments/list"),
-            row("/http-monitors/fragments/details-heading/1"),
-            row("/http-monitors/fragments/details-uptime-incidents/1"),
-            row("/http-monitors/fragments/details-ssl-incidents/1"),
-            row("/http-monitors/fragments/stats"),
-            row("/settings"),
-            row("/integrations"),
-            row("/incidents"),
-        )
-        cases.forAll { url ->
-            val request = HttpRequest.GET<Any>(url).header("X-API-KEY", TEST_API_KEY)
+            val cases = table(
+                headers("url"),
+                row("/"),
+                row("/http-monitors"),
+                row("/http-monitors/1"),
+                row("/http-monitors/fragments/list"),
+                row("/http-monitors/fragments/details-heading/1"),
+                row("/http-monitors/fragments/details-uptime-incidents/1"),
+                row("/http-monitors/fragments/details-ssl-incidents/1"),
+                row("/http-monitors/fragments/stats"),
+                row("/settings"),
+                row("/integrations"),
+                row("/incidents"),
+                row("/status-pages"),
+                row("/status-pages/1"),
+                row("/status-pages/fragments/list"),
+            )
+            cases.forAll { url ->
+                val request = HttpRequest.GET<Any>(url).header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                response.status shouldBe HttpStatus.SEE_OTHER
+                response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
+                    locationHeader shouldBe "/login"
+                }
+            }
+            cases.forAll { url ->
+                val request = HttpRequest.GET<Any>(url).bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                response.status shouldBe HttpStatus.SEE_OTHER
+                response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
+                    locationHeader shouldBe "/login"
+                }
+            }
+        }
+
+        "all the web endpoints should be accessible with a valid JWT" {
+
+            val jwt = getValidJWT(client, authConfig)
+            val monitor = createMonitor(monitorRepository)
+            val statusPage = createStatusPage(dslContext, public = false)
+
+            table(
+                headers("url"),
+                row("/"),
+                row("/http-monitors"),
+                row("/http-monitors/${monitor.id}"),
+                row("/http-monitors/fragments/list"),
+                row("/http-monitors/fragments/details-heading/${monitor.id}"),
+                row("/http-monitors/fragments/details-uptime-incidents/${monitor.id}"),
+                row("/http-monitors/fragments/details-ssl-incidents/${monitor.id}"),
+                row("/http-monitors/fragments/stats"),
+                row("/settings"),
+                row("/integrations"),
+                row("/incidents"),
+                row("/status-pages"),
+                row("/status-pages/${statusPage.id}"),
+                row("/status-pages/fragments/list"),
+            ).forAll { url ->
+                val response = client.exchange(
+                    HttpRequest.GET<Any>(url).header(HttpHeaders.COOKIE, "JWT=$jwt")
+                ).awaitFirst()
+
+                response.status shouldBe HttpStatus.OK
+            }
+        }
+
+        "already authenticated request against /login should be redirected to /" {
+            val jwt = getValidJWT(client, authConfig)
+            val request = HttpRequest.GET<Any>("/login").header(HttpHeaders.COOKIE, "JWT=$jwt")
+
             val response = client.exchange(request).awaitFirst()
 
             response.status shouldBe HttpStatus.SEE_OTHER
             response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
-                locationHeader shouldBe "/login"
+                locationHeader shouldBe "/"
             }
         }
-        cases.forAll { url ->
-            val request = HttpRequest.GET<Any>(url).bearerAuth(TEST_API_KEY)
+
+        "anonymous HTMX requests should be redirected to the login page with a 204 and a specific header" {
+            val request = HttpRequest.GET<Any>("/").header(HtmxRequestHeaders.HX_REQUEST, "true")
             val response = client.exchange(request).awaitFirst()
 
-            response.status shouldBe HttpStatus.SEE_OTHER
-            response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
-                locationHeader shouldBe "/login"
+            response.status shouldBe HttpStatus.NO_CONTENT
+            response.headers.get(HtmxResponseHeaders.HX_REDIRECT).shouldNotBeNull().let { redirectHeader ->
+                redirectHeader shouldBe "/login"
             }
         }
     }
-
-    "all the web endpoints should be accessible with a valid JWT" {
-
-        val jwt = getValidJWT(client, authConfig)
-        val monitor = createMonitor(monitorRepository)
-
-        table(
-            headers("url"),
-            row("/"),
-            row("/http-monitors"),
-            row("/http-monitors/${monitor.id}"),
-            row("/http-monitors/fragments/list"),
-            row("/http-monitors/fragments/details-heading/${monitor.id}"),
-            row("/http-monitors/fragments/details-uptime-incidents/${monitor.id}"),
-            row("/http-monitors/fragments/details-ssl-incidents/${monitor.id}"),
-            row("/http-monitors/fragments/stats"),
-            row("/settings"),
-            row("/integrations"),
-            row("/incidents"),
-        ).forAll { url ->
-            val response = client.exchange(
-                HttpRequest.GET<Any>(url).header(HttpHeaders.COOKIE, "JWT=$jwt")
-            ).awaitFirst()
-
-            response.status shouldBe HttpStatus.OK
-        }
-    }
-
-    "already authenticated request against /login should be redirected to /" {
-        val jwt = getValidJWT(client, authConfig)
-        val request = HttpRequest.GET<Any>("/login").header(HttpHeaders.COOKIE, "JWT=$jwt")
-
-        val response = client.exchange(request).awaitFirst()
-
-        response.status shouldBe HttpStatus.SEE_OTHER
-        response.headers.get(HttpHeaders.LOCATION).shouldNotBeNull().let { locationHeader ->
-            locationHeader shouldBe "/"
-        }
-    }
-
-    "anonymous HTMX requests should be redirected to the login page with a 204 and a specific header" {
-        val request = HttpRequest.GET<Any>("/").header(HtmxRequestHeaders.HX_REQUEST, "true")
-        val response = client.exchange(request).awaitFirst()
-
-        response.status shouldBe HttpStatus.NO_CONTENT
-        response.headers.get(HtmxResponseHeaders.HX_REDIRECT).shouldNotBeNull().let { redirectHeader ->
-            redirectHeader shouldBe "/login"
-        }
-    }
-})
+}

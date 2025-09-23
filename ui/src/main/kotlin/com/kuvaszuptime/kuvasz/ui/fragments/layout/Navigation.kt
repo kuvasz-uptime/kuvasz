@@ -55,6 +55,12 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     externalLink = false
                                 )
                                 navItem(
+                                    label = Messages.statusPages(),
+                                    icon = Icon.HEART_RATE_MONITOR,
+                                    link = "/status-pages",
+                                    externalLink = false
+                                )
+                                navItem(
                                     label = Messages.settings(),
                                     icon = Icon.SETTINGS,
                                     link = "/settings",

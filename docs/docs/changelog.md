@@ -1,8 +1,19 @@
-## To be released <small>2025-xx-xx</small> { id="to-be-released" data-toc-label="To be released" }
+## 3.1.0 <small>2025-09-23</small> { id="3.1.0" data-toc-label="3.1.0" }
 
 ### New features
 
+- [**Status pages**](features/status-pages.md): You can create public and also private, brandable status pages for your monitors, to keep your customers or your own team informed about the status of your services. See the [**Managing status pages**](management/status-pages.md) section for more details regarding the configuration options.
+
+![Status page in Kuvasz](images/ui/status_page.webp)
+
+### Improvements
+
 - [**Integration names**](management/integrations.md#name) can be totally **arbitrary** now, the previous restriction of containing only alphanumeric characters, hyphens and underscores has been lifted.
+- **Added recipes & examples**:
+    - How to [**use a reverse proxy**](management/examples.md#exposing-status-pages-on-subdomains-behind-a-reverse-proxy) for the status pages
+    - How to [**backup and restore your monitors and status pages**](management/examples.md#backup-restore-with-yaml)
+    - How to [**include your custom/private certificates**](management/examples.md#providing-a-custom-root-certificate-for-ssl-checks) in the Docker image, to be able to monitor endpoints with such certs
+- The API docs are having a [**dedicated site**](https://api-docs.kuvasz-uptime.dev){ target="_blank" } now to make them easier to find and browse. 
 
 ## 3.0.2 <small>2025-08-31</small> { id="3.0.2" data-toc-label="3.0.2" }
 
@@ -25,7 +36,7 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 ![Kuvasz integrations management UI](images/integrations/integrations_list.webp)
 
 - **Update notifications**: you can now [**get notified about new releases**](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
-- **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](./api-docs.md)), not just as cumulated metrics across all monitors.
+- **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](https://api-docs.kuvasz-uptime.dev)), not just as cumulated metrics across all monitors.
 
 ![Kuvasz monitor-level metrics UI](images/features/monitor-metrics.webp)
 

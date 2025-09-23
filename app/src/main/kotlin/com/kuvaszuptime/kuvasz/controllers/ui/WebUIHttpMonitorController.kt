@@ -8,10 +8,10 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
-import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorCrudService
+import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
-import com.kuvaszuptime.kuvasz.ui.pages.*
+import com.kuvaszuptime.kuvasz.ui.pages.monitor.http.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -26,7 +26,7 @@ import java.time.Duration
 @Controller("/")
 @Hidden
 class WebUIHttpMonitorController(
-    private val monitorCrudService: HttpMonitorCrudService,
+    private val monitorActions: HttpMonitorActions,
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
     private val monitorRepository: HttpMonitorRepository,
@@ -42,11 +42,11 @@ class WebUIHttpMonitorController(
 
         return renderMonitoringStats(
             monitoringStats = statCalculator.calculateOverallHttpStats(period),
-            downMonitors = monitorCrudService.getMonitorsWithDetails(
+            downMonitors = monitorActions.getMonitorsWithDetails(
                 enabled = true,
                 uptimeStatus = listOf(UptimeStatus.DOWN),
             ),
-            problematicSslMonitors = monitorCrudService.getMonitorsWithDetails(
+            problematicSslMonitors = monitorActions.getMonitorsWithDetails(
                 enabled = true,
                 sslCheckEnabled = true,
                 sslStatus = listOf(SslStatus.INVALID, SslStatus.WILL_EXPIRE),
@@ -63,7 +63,7 @@ class WebUIHttpMonitorController(
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorDetails(@PathVariable monitorId: Long): String {
-        val monitor = monitorCrudService.getMonitorDetails(monitorId)
+        val monitor = monitorActions.getMonitorDetails(monitorId)
 
         return renderHttpMonitorDetailsPage(
             appGlobals,
@@ -80,9 +80,9 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorTable(): String {
-        val monitors = monitorCrudService.getMonitorsWithDetails(sortedBy = HTTP_MONITOR.NAME.asc())
+        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = HTTP_MONITOR.NAME.asc())
 
-        return renderHttpMonitorList(monitors, appGlobals.editabilityState.areHttpMonitorsReadOnly())
+        return renderHttpMonitorList(monitors, appGlobals.editabilityState)
     }
 
     @Get("/http-monitors/fragments/details-heading/{monitorId}")
@@ -90,7 +90,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorHeading(@PathVariable monitorId: Long): String {
-        val monitor = monitorCrudService.getMonitorDetails(monitorId)
+        val monitor = monitorActions.getMonitorDetails(monitorId)
         return buildString {
             append(renderHttpMonitorDetailsHeading(monitor))
             append(

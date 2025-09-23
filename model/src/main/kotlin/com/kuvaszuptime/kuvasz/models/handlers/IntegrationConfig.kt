@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.handlers
 
-import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
 import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
@@ -24,7 +24,7 @@ sealed interface IntegrationConfig {
 @Introspected
 interface PagerdutyConfig : IntegrationConfig {
 
-    @get:NotBlank(message = ValidationMessages.PAGERDUTY_KEY_NOT_BLANK)
+    @get:NotBlank(message = IntegrationValidationMessages.PAGERDUTY_KEY_NOT_BLANK)
     val integrationKey: String
 
     companion object {
@@ -37,10 +37,10 @@ interface PagerdutyConfig : IntegrationConfig {
 @Introspected
 interface EmailNotificationConfig : IntegrationConfig {
 
-    @get:NotBlank(message = ValidationMessages.EMAIL_INTEGRATION_TO_NOT_BLANK)
+    @get:NotBlank(message = IntegrationValidationMessages.EMAIL_INTEGRATION_TO_NOT_BLANK)
     val toAddress: String
 
-    @get:NotBlank(message = ValidationMessages.EMAIL_INTEGRATION_FROM_NOT_BLANK)
+    @get:NotBlank(message = IntegrationValidationMessages.EMAIL_INTEGRATION_FROM_NOT_BLANK)
     val fromAddress: String
 
     companion object {
@@ -53,7 +53,7 @@ interface EmailNotificationConfig : IntegrationConfig {
 @Introspected
 interface SlackNotificationConfig : IntegrationConfig {
 
-    @get:NotBlank(message = ValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK)
+    @get:NotBlank(message = IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK)
     val webhookUrl: String
 
     companion object {
@@ -66,7 +66,7 @@ interface SlackNotificationConfig : IntegrationConfig {
 @Introspected
 interface DiscordNotificationConfig : IntegrationConfig {
 
-    @get:NotBlank(message = ValidationMessages.DISCORD_WEBHOOK_URL_NOT_BLANK)
+    @get:NotBlank(message = IntegrationValidationMessages.DISCORD_WEBHOOK_URL_NOT_BLANK)
     val webhookUrl: String
 
     companion object {
@@ -79,10 +79,10 @@ interface DiscordNotificationConfig : IntegrationConfig {
 @Introspected
 interface TelegramNotificationConfig : IntegrationConfig {
 
-    @get:NotBlank(message = ValidationMessages.TELEGRAM_BOT_TOKEN_NOT_BLANK)
+    @get:NotBlank(message = IntegrationValidationMessages.TELEGRAM_BOT_TOKEN_NOT_BLANK)
     val apiToken: String
 
-    @get:NotBlank(message = ValidationMessages.TELEGRAM_CHAT_ID_NOT_BLANK)
+    @get:NotBlank(message = IntegrationValidationMessages.TELEGRAM_CHAT_ID_NOT_BLANK)
     val chatId: String
 
     companion object {

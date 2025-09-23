@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 
 
 /**
@@ -35,4 +36,9 @@ public class Tables {
      * The table <code>kuvasz.ssl_event</code>.
      */
     public static final SslEvent SSL_EVENT = SslEvent.SSL_EVENT;
+
+    /**
+     * The table <code>kuvasz.status_page</code>.
+     */
+    public static final StatusPage STATUS_PAGE = StatusPage.STATUS_PAGE;
 }

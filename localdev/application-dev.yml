@@ -63,3 +63,11 @@ http-monitors:
     uptime-check-interval: 60
     request-method: HEAD
     enabled: false
+  - name: "Tralala #!: j[ő"
+    url: https://akobor.me
+    uptime-check-interval: 60
+    request-method: GET
+    enabled: false
+default-status-page:
+  public: true
+  title: "Default System Status"

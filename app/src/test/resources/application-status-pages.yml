@@ -1,0 +1,19 @@
+status-pages:
+  - title: Status Page 1
+    slug: status-page-1
+    custom-logo-url: "https://example.com/logo.png"
+    custom-favicon-url: "https://example.com/favicon.png"
+    public: true
+    monitors:
+      - "http:test1"
+      - "http:test2"
+  - title: Status Page 2
+    slug: status-page-2
+    public: false
+    monitors:
+      - "http:test1"
+  - title: Status Page 3
+    slug: status-page-3
+    monitors:
+      - "http:test3"
+      - "http:test1"

@@ -26,7 +26,8 @@ class IntegrationIdValidator(private val integrationRepository: IntegrationRepos
      * Validates a list of integration IDs against the configured integrations.
      *
      * @return a set of valid integration IDs.
-     * @throws NonExistingIntegrationIdException if any of the provided IDs are not configured.
+     * @throws InvalidIntegrationIDException if any of the provided IDs are not configured.
+     * @throws NonExistingIntegrationIdException if any of the provided IDs are not existing.
      */
     fun validateIntegrationIds(rawIds: List<String>): Set<IntegrationID> = rawIds.map { id ->
         IntegrationID.fromString(id)?.checkIfConfigured() ?: throw InvalidIntegrationIDException(id)

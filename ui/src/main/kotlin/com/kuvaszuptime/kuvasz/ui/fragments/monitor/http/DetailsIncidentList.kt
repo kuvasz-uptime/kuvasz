@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import com.kuvaszuptime.kuvasz.ui.utils.*

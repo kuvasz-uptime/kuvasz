@@ -2,14 +2,16 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.HistoricalUptimeStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import jakarta.inject.Singleton
 import java.time.Duration
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 @Singleton
@@ -106,10 +108,9 @@ class StatCalculator(
                 // If the monitor was disabled and the last update was before the period then we skip this event
                 return@forEach
             }
-            val effectiveStartDate = maxOf(uptimeEvent.startedAt, periodStart)
             val duration = getDurationOfEvent(
                 isMonitorEnabled = uptimeEvent.isMonitorEnabled,
-                startedAt = effectiveStartDate,
+                startedAt = uptimeEvent.effectiveStartDate(limitDate = periodStart),
                 endedAt = uptimeEvent.endedAt,
                 updatedAt = uptimeEvent.updatedAt,
             )
@@ -136,6 +137,51 @@ class StatCalculator(
             totalDowntimeSeconds = historicalDowntimeSeconds,
         )
     }
+
+    /**
+     * Generates a list of daily uptime status history over a specified period based on uptime events, by summarizing
+     * the number of outages (DOWN events) for each day. It returns an entry for each day in the period, even if there
+     * were no events on that day.
+     *
+     * @param period The duration over which to generate the history.
+     * @param uptimeEvents A list of uptime events to analyze.
+     *
+     * @return A list of [StatusHistoryDto] representing the daily uptime status history.
+     */
+    fun generateUptimeHistoryOverview(
+        period: Duration,
+        uptimeEvents: List<UptimeEventCalculationContext>,
+    ): List<StatusHistoryDto> {
+        val periodStartTimestamp: OffsetDateTime = getCurrentTimestamp().minus(period)
+        val periodEnd: LocalDate = getCurrentTimestamp().toLocalDate()
+        // The start date is the current date minus the period, plus one day to include today as well
+        val periodStart: LocalDate = periodStartTimestamp.toLocalDate().plusDays(1)
+        val result = mutableListOf<StatusHistoryDto>()
+
+        // Iterate over the days in the period and count the DOWN events for each day
+        var processedDate = periodStart
+        while (processedDate <= periodEnd) {
+            val eventsEffectiveOnDate = uptimeEvents.filter { it.wasEffectiveOnDate(processedDate) }
+
+            val historyEntry = if (eventsEffectiveOnDate.isEmpty()) {
+                // If there are no events for the given date then we add a null entry
+                StatusHistoryDto(
+                    date = processedDate,
+                    outageCnt = null,
+                )
+            } else {
+                // Count the number of DOWN events effective on this date
+                StatusHistoryDto(
+                    date = processedDate,
+                    outageCnt = eventsEffectiveOnDate.count { it.status == UptimeStatus.DOWN },
+                )
+            }
+            result.add(historyEntry)
+            processedDate = processedDate.plusDays(1)
+        }
+
+        return result
+    }
 }
 
 data class UptimeEventCalculationContext(
@@ -145,4 +191,12 @@ data class UptimeEventCalculationContext(
     val startedAt: OffsetDateTime,
     val endedAt: OffsetDateTime?,
     val updatedAt: OffsetDateTime,
-)
+) {
+    fun effectiveStartDate(limitDate: OffsetDateTime): OffsetDateTime = maxOf(startedAt, limitDate)
+
+    fun wasEffectiveOnDate(date: LocalDate): Boolean {
+        val startDate = startedAt.toLocalDate()
+        val endDate = endedAt?.toLocalDate() ?: updatedAt.toLocalDate()
+        return !date.isBefore(startDate) && !date.isAfter(endDate)
+    }
+}

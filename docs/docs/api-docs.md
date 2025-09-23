@@ -3,4 +3,4 @@ hide:
 - toc
 ---
 
-<redoc src="api-docs/kuvasz-latest.yml"/>
+The API documentation has been moved to [**https://api-docs.kuvasz-uptime.dev**](https://api-docs.kuvasz-uptime.dev).

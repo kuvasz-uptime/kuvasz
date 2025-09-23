@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.iodesystems.htmx.Htmx.Companion.hx
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -51,11 +51,11 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                         classes(LIST_INLINE, MT_1, MB_0)
                         a(href = "/http-monitors") {
                             classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
-                            span {
-                                classes(STATUS, BG_BLUE_LT, TEXT_BLUE_LT_FG)
-                                icon(Icon.WORLD)
-                                +"HTTP & SSL"
-                            }
+                            inlineStatusBadge(
+                                text = "HTTP & SSL",
+                                icon = Icon.WORLD,
+                                color = Color.BLUE_LT
+                            )
                         }
                         a(href = "#monitor-details-ssl-summary") {
                             classes(LIST_INLINE_ITEM, ALIGN_MIDDLE, TEXT_WRAP, TEXT_BREAK)
@@ -67,11 +67,11 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                                 a(href = monitorUrl) {
                                     targetBlank()
                                     classes(LINK_SECONDARY)
-                                    +monitorUrl.abbreviate(MONITOR_URL_MAX_LENGTH)
-                                    span {
-                                        classes(MS_1)
-                                        icon(Icon.EXTERNAL_LINK)
-                                    }
+                                    inlineStatusBadge(
+                                        text = monitorUrl.abbreviate(MONITOR_URL_MAX_LENGTH),
+                                        icon = Icon.EXTERNAL_LINK,
+                                        color = Color.DEFAULT,
+                                    )
                                 }
                             }
                         }

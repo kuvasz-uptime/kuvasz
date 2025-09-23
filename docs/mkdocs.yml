@@ -60,7 +60,6 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 plugins:
   - search
-  - redoc-tag
   - social
   - glightbox:
       skip_classes:
@@ -85,6 +84,7 @@ nav:
   - Features:
       - HTTP monitoring: features/http-monitoring.md
       - SSL monitoring: features/ssl-monitoring.md
+      - Status pages: features/status-pages.md
       - Notifications: features/notifications.md
       - Web UI: features/ui.md
       - Flexibility: features/flexibility.md
@@ -98,9 +98,10 @@ nav:
       - Managing monitors:
           - management/managing-monitors/index.md
           - Manage HTTP & SSL monitors: management/http-monitors.md
+      - Status pages: management/status-pages.md
       - Metrics exporters: management/metrics-exporters.md
       - Recipes & examples: management/examples.md
-  - API docs: api-docs.md
+  - API docs ⏏: https://api-docs.kuvasz-uptime.dev
   - Changelog: changelog.md
   - Upgrade notes: upgrade-notes.md
   - Conventions: conventions.md

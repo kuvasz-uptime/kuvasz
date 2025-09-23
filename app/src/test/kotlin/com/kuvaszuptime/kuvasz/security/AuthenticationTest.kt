@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.security
 
+import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.generateCredentials
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -29,8 +31,8 @@ const val TEST_PASSWORD = "test-pass-test-pass-test-pass"
 @Property(name = "admin-auth.password", value = TEST_PASSWORD)
 @Property(name = "micronaut.http.client.follow-redirects", value = "false")
 class AuthenticationTest(
-    @Client("/") private val client: HttpClient,
-    private val authConfig: AdminAuthConfig
+    @Client("/") client: HttpClient,
+    authConfig: AdminAuthConfig,
 ) : BehaviorSpec(
     {
 
@@ -287,6 +289,314 @@ class AuthenticationTest(
         }
     }
 )
+
+@MicronautTest(environments = ["full-default-status-page-config"])
+@Property(name = "micronaut.security.enabled", value = "true")
+@Property(name = "admin-auth.api-key", value = TEST_API_KEY)
+@Property(name = "admin-auth.username", value = TEST_USERNAME)
+@Property(name = "admin-auth.password", value = TEST_PASSWORD)
+@Property(name = "micronaut.http.client.follow-redirects", value = "false")
+class PublicStatusPageAuthenticationTest(
+    @Client("/") client: HttpClient,
+    authConfig: AdminAuthConfig,
+) : DatabaseBehaviorSpec() {
+    init {
+
+        given("a public default status page") {
+
+            `when`("an anonymous user requests it") {
+                val response = client.exchange("/status").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", "irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides a wrong API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/status").bearerAuth("irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides the right API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/status").bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val jwt = getValidJWT(client, authConfig)
+
+                val request = HttpRequest
+                    .GET<Any>("/status")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        given("a public custom status page") {
+
+            `when`("an anonymous user requests it") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val response = client.exchange("/status/${statusPage.slug}").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .header("X-API-KEY", "irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides a wrong API key in the Authorization header") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .bearerAuth("irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides the right API key in the Authorization header") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val jwt = getValidJWT(client, authConfig)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+    }
+}
+
+@MicronautTest(environments = ["private-default-status-page-config"])
+@Property(name = "micronaut.security.enabled", value = "true")
+@Property(name = "admin-auth.api-key", value = TEST_API_KEY)
+@Property(name = "admin-auth.username", value = TEST_USERNAME)
+@Property(name = "admin-auth.password", value = TEST_PASSWORD)
+@Property(name = "micronaut.http.client.follow-redirects", value = "false")
+class PrivateStatusPageAuthenticationTest(
+    @Client("/") client: HttpClient,
+    authConfig: AdminAuthConfig,
+) : DatabaseBehaviorSpec() {
+    init {
+
+        given("a private default status page") {
+
+            `when`("an anonymous user requests it") {
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange("/status").awaitFirst() }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", "irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides a wrong API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/status").bearerAuth("irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", TEST_API_KEY)
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides the right API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/status").bearerAuth(TEST_API_KEY)
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val jwt = getValidJWT(client, authConfig)
+
+                val request = HttpRequest
+                    .GET<Any>("/status")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        given("a private custom status page") {
+
+            `when`("an anonymous user requests it") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/status/${statusPage.slug}").awaitFirst()
+                }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .header("X-API-KEY", "irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides a wrong API key in the Authorization header") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .bearerAuth("irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .header("X-API-KEY", TEST_API_KEY)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides the right API key in the Authorization header") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .bearerAuth(TEST_API_KEY)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 404") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val jwt = getValidJWT(client, authConfig)
+                val request = HttpRequest
+                    .GET<Any>("/status/${statusPage.slug}")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+    }
+}
 
 suspend fun getValidJWT(client: HttpClient, authConfig: AdminAuthConfig): String {
     val credentials = generateCredentials(authConfig, valid = true)

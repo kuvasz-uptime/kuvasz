@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
-import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
 
@@ -24,7 +24,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    testAppContext(properties)
                 }
                 exceptionToMessage(exception) shouldContain "Admin password must be at least 12 characters"
             }
@@ -51,10 +51,10 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception1 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties1)
+                    testAppContext(properties1)
                 }
                 val exception2 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties2)
+                    testAppContext(properties2)
                 }
                 exceptionToMessage(exception1) shouldContain "Admin username must not be blank"
                 exceptionToMessage(exception2) shouldContain "Admin password must not be blank"
@@ -73,7 +73,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    testAppContext(properties)
                 }
                 exceptionToMessage(exception) shouldContain "Admin API key must be at least 16 characters"
             }
@@ -100,10 +100,10 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception1 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    testAppContext(properties)
                 }
                 val exception2 = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties2)
+                    testAppContext(properties2)
                 }
                 exceptionToMessage(exception1) shouldContain "Admin API key must not be blank"
                 exceptionToMessage(exception2) shouldContain "Admin API key must not be blank"
@@ -122,7 +122,7 @@ class AdminAuthConfigTest : BehaviorSpec({
             )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception = shouldThrow<BeanInstantiationException> {
-                    ApplicationContext.run(properties)
+                    testAppContext(properties)
                 }
                 exceptionToMessage(exception) shouldContain "Admin username and password should not be equal"
             }
@@ -139,9 +139,7 @@ class AdminAuthConfigTest : BehaviorSpec({
                 )
             )
             then("ApplicationContext should not throw an exception") {
-                shouldNotThrowAny {
-                    ApplicationContext.run(properties)
-                }
+                shouldNotThrowAny { testAppContext(properties) }
             }
         }
     }
@@ -155,9 +153,7 @@ class AdminAuthConfigTest : BehaviorSpec({
                 )
             )
             then("ApplicationContext should not throw an exception") {
-                shouldNotThrowAny {
-                    ApplicationContext.run(properties)
-                }
+                shouldNotThrowAny { testAppContext(properties) }
             }
         }
     }

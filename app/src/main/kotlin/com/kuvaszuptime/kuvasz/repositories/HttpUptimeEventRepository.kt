@@ -4,7 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext

@@ -5,12 +5,16 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
-import com.kuvaszuptime.kuvasz.models.CertificateInfo
-import com.kuvaszuptime.kuvasz.models.dto.toJsonNode
+import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -114,3 +118,25 @@ fun createSSLEventRecord(
 
 fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)) =
     CertificateInfo(validTo)
+
+fun createStatusPage(
+    dslContext: DSLContext,
+    title: String = "Status Page",
+    slug: String = UUID.randomUUID().toString(),
+    public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
+    monitors: List<MonitorID> = emptyList(),
+    customLogoUrl: String? = null,
+    customFaviconUrl: String? = null,
+) = dslContext
+    .insertInto(STATUS_PAGE)
+    .set(
+        StatusPageRecord()
+            .setTitle(title)
+            .setSlug(slug)
+            .setCustomLogoUrl(customLogoUrl)
+            .setCustomFaviconUrl(customFaviconUrl)
+            .setPublic(public)
+            .setMonitors(monitors.toTypedArray())
+    )
+    .returning(STATUS_PAGE.asterisk())
+    .fetchOneOrThrow<StatusPageRecord>()

@@ -11,6 +11,7 @@ micronaut:
 ---
 datasources:
   default:
+    initialPoolSize: 1
     maximumPoolSize: 3
 ---
 logger:

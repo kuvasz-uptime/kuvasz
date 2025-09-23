@@ -3,10 +3,8 @@ package com.kuvaszuptime.kuvasz.ui.components
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.VersionInfo
-import com.kuvaszuptime.kuvasz.models.dto.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.HttpUptimeEventDto
-import com.kuvaszuptime.kuvasz.models.dto.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
@@ -45,6 +43,21 @@ internal fun FlowContent.uptimeBadgeOfMonitor(monitor: HttpMonitorDetailsDto, wi
     }
 }
 
+internal fun FlowContent.uptimeBadgeOfStatus(uptimeStatus: UptimeStatus?): Unit =
+    if (uptimeStatus != null) {
+        span {
+            val classes = mutableSetOf(STATUS)
+                .addIf(uptimeStatus == UptimeStatus.UP, STATUS_GREEN, STATUS_RED)
+            classes(classes)
+            uptimeStatusLabel(withBadge = true, uptimeStatus.literal)
+        }
+    } else {
+        span {
+            classes(STATUS, STATUS_YELLOW)
+            uptimeStatusLabel(withBadge = true, Messages.inProgress())
+        }
+    }
+
 internal fun FlowContent.uptimeStatusOfMonitor(
     monitor: HttpMonitorDetailsDto,
     withTooltip: Boolean
@@ -79,23 +92,6 @@ internal fun FlowContent.uptimeStatusOfMonitor(
         else -> {}
     }
 }
-
-internal fun FlowContent.uptimeStatusOfEvent(event: HttpUptimeEventDto) =
-    span {
-        classes {
-            mutableSetOf(STATUS).apply {
-                if (event.status == UptimeStatus.UP) add(STATUS_GREEN) else add(STATUS_RED)
-            }
-        }
-        event.error?.let { tooltip(title = it) }
-        span {
-            classes(STATUS_DOT)
-        }
-        span {
-            classes(D_NONE, D_MD_INLINE)
-            +event.status.literal
-        }
-    }
 
 private fun FlowContent.uptimeStatusLabel(
     withBadge: Boolean,
@@ -174,33 +170,6 @@ internal fun FlowContent.sslStatusOfMonitor(
     }
 }
 
-internal fun FlowContent.sslStatusOfEvent(event: SSLEventDto) {
-    span {
-        classes(STATUS, event.status.toStatusClass())
-        event.error?.let { tooltip(it) }
-        span {
-            classes(STATUS_DOT)
-        }
-        span {
-            classes(D_NONE, D_MD_INLINE)
-            +event.status.renderLabel()
-        }
-    }
-}
-
-private fun SslStatus.toStatusClass(): CSSClass =
-    when (this) {
-        SslStatus.VALID -> STATUS_GREEN
-        SslStatus.WILL_EXPIRE -> STATUS_YELLOW
-        SslStatus.INVALID -> STATUS_RED
-    }
-
-private fun SslStatus.renderLabel(): String = when (this) {
-    SslStatus.VALID -> Messages.valid()
-    SslStatus.WILL_EXPIRE -> Messages.expiresSoon()
-    SslStatus.INVALID -> Messages.invalid()
-}
-
 internal fun FlowContent.readOnlyBadge(tooltipText: String) {
     span {
         classes(BADGE, TEXT_BLUE_LT_FG, BG_BLUE_LT, MS_2)
@@ -220,9 +189,24 @@ internal fun FlowContent.inlineVersionUpdateBadge(versionInfo: VersionInfo) {
     }
 }
 
-internal fun FlowContent.subtitleBadge(text: String) {
+internal fun FlowContent.inlineBadge(text: String, color: Color = Color.DEFAULT, tooltip: String? = null) {
     span {
-        classes(BADGE)
+        classes(BADGE, color.bgColor, color.textColor)
+        tooltip?.let { tooltip(it) }
+        +text
+    }
+}
+
+internal fun FlowContent.inlineStatusBadge(
+    text: String,
+    color: Color = Color.DEFAULT,
+    icon: Icon? = null,
+    tooltip: String? = null
+) {
+    span {
+        classes(STATUS, color.bgColor, color.textColor)
+        tooltip?.let { tooltip(it) }
+        icon?.let { icon(it) }
         +text
     }
 }

@@ -1,10 +1,10 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
-import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
 
@@ -21,7 +21,7 @@ class SMTPMailerConfigTest : BehaviorSpec(
                 )
                 then("ApplicationContext should throw a BeanInstantiationException") {
                     val exception = shouldThrow<BeanInstantiationException> {
-                        ApplicationContext.run(properties, "full-integrations-setup")
+                        testAppContext(properties, "full-integrations-setup")
                     }
                     exceptionToMessage(exception) shouldContain "Error when trying to open connection to the server"
                 }

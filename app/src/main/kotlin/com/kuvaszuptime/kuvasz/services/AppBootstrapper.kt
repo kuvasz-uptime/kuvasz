@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
+import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
@@ -18,8 +19,10 @@ class AppBootstrapper(
     private val appConfig: AppConfig,
     private val monitorRepository: HttpMonitorRepository,
     private val integrationRepository: IntegrationRepository,
-    private val checkScheduler: HttpCheckScheduler,
+    private val httpCheckScheduler: HttpCheckScheduler,
     private val metricsExportRegistry: MetricsExportRegistry?,
+    private val yamlStatusPageConfigs: List<StatusPageConfig>,
+    private val statusPageImporter: StatusPageImporter,
 ) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
@@ -30,10 +33,12 @@ class AppBootstrapper(
         processYamlMonitorConfigs()
         // Sanitize the configured integrations on the monitors
         sanitizeIntegrationsOfMonitors()
+        // Importing status pages from config if any are present
+        processYamlStatusPageConfigs()
         // Conditionally initialize the metrics export if enabled
         metricsExportRegistry?.initialize()
-        // Scheduling the initial checks (uptime & SSL)
-        checkScheduler.initialize()
+        // Scheduling the initial checks (HTTP uptime & SSL)
+        httpCheckScheduler.initialize()
 
         logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
     }
@@ -64,7 +69,8 @@ class AppBootstrapper(
     }
 
     /**
-     * Processes the YAML monitor configs. If any YAML config is found, it disables external modifications of monitors
+     * Processes the YAML monitor configs. If any YAML config is found, it disables external modifications of the
+     * respective monitors
      */
     private fun processYamlMonitorConfigs() {
         if (yamlHttpMonitorConfigs.isNotEmpty()) {
@@ -78,6 +84,26 @@ class AppBootstrapper(
             logger.info(
                 "No YAML monitor config was found. " +
                     "External modifications of monitors are enabled. Loading monitors from DB..."
+            )
+        }
+    }
+
+    /**
+     * Processes the YAML status page configs. If any YAML config is found, it disables external modifications of
+     * status pages
+     */
+    private fun processYamlStatusPageConfigs() {
+        if (yamlStatusPageConfigs.isNotEmpty()) {
+            appConfig.disableStatusPageExternalWrite()
+            logger.info(
+                "Disabled external modifications of status pages, because a YAML status page config was found. " +
+                    "Loading status pages from YAML config..."
+            )
+            statusPageImporter.importStatusPageConfigs(yamlStatusPageConfigs)
+        } else {
+            logger.info(
+                "No YAML status page config was found. " +
+                    "External modifications of status pages are enabled. Loading status pages from DB..."
             )
         }
     }

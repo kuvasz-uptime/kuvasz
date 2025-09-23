@@ -1,0 +1,9 @@
+http-monitors:
+  - name: test1
+    url: https://demo.kuvasz-uptime.dev
+    uptime-check-interval: 120
+status-pages:
+  - title: "Invalid Monitor ID Status Page"
+    slug: "valid-slug"
+    monitors:
+      - "htt:test1"

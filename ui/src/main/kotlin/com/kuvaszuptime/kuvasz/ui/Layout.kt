@@ -8,6 +8,7 @@ import kotlinx.html.*
 import kotlinx.html.stream.*
 
 private const val DEFAULT_TITLE = "Kuvasz Uptime"
+internal const val DOCTYPE_NOTATION = "<!DOCTYPE html>"
 
 internal fun withLayout(
     globals: AppGlobals,
@@ -17,36 +18,21 @@ internal fun withLayout(
 ): String {
     // This is a tiny hack to have a DOCTYPE notation without using kotlinx.html's own document, because it's not
     // compatible with custom attr namespaces like `x-on` or `x-bind`, etc.
-    return "<!DOCTYPE html>" +
+    return DOCTYPE_NOTATION +
         createHTML(prettyPrint = false, xhtmlCompatible = false)
             .html {
                 head {
-                    meta(charset = "utf-8")
-                    meta(name = "viewport", content = "width=device-width, initial-scale=1")
+                    commonHeadElements(
+                        appVersion = globals.appVersion,
+                        faviconsAndManifest = { defaultFaviconsAndManifest() },
+                    )
                     title {
                         title?.let { +"$it | $DEFAULT_TITLE" } ?: +DEFAULT_TITLE
                     }
-                    link(rel = "apple-touch-icon", href = "/public/apple-touch-icon.png") { sizes = "180x180" }
-                    link(rel = "icon", href = "/public/favicon-32x32.png", type = "image/png") { sizes = "32x32" }
-                    link(rel = "icon", href = "/public/favicon-16x16.png", type = "image/png") { sizes = "16x16" }
-                    link(rel = "manifest", href = "/public/site.webmanifest")
-                    script {
-                        unsafe {
-                            // Setting the theme based on user preference eagerly
-                            +"""
-                            (function() {
-                                const savedTheme = localStorage.getItem('kuvasz-theme') || 'light';
-                                document.documentElement.setAttribute('data-bs-theme', savedTheme);
-                            })();
-                            """.trimIndent()
-                        }
-                    }
-                    link(rel = "stylesheet", href = "/public/ext/css/tomselect.4.2.3.bootstrap5.min.css")
-                    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.4.0.min.css")
+                    link(rel = "stylesheet", href = "/public/ext/css/tomselect.2.4.3.bootstrap5.min.css")
                     link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.4.0.min.css")
-                    link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=${globals.appVersion}")
                     script(src = "/public/ext/js/apexcharts.3.54.1.min.js") {}
-                    script(src = "/public/ext/js/tomselect.4.2.3.complete.min.js") {}
+                    script(src = "/public/ext/js/tomselect.2.4.3.complete.min.js") {}
                 }
                 body {
                     div {
@@ -87,11 +73,44 @@ internal fun withLayout(
                             }
                         }
                     }
-                    script(src = "/public/ext/js/tabler.1.4.0.min.js") {}
-                    script(src = "/public/dist/js/kuvasz.min.js?cb=${globals.appVersion}") {}
-                    script(src = "/public/ext/js/htmx.2.0.6.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.14.9.min.js") {}
+                    commonScripts(globals.appVersion)
+                    script(src = "/public/ext/js/htmx.2.0.7.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.15.0.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
+}
+
+internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
+    appVersion: String,
+    faviconsAndManifest: FlowOrMetaDataOrPhrasingContent.() -> Unit,
+) {
+    meta(charset = "utf-8")
+    meta(name = "viewport", content = "width=device-width, initial-scale=1")
+    faviconsAndManifest()
+    script {
+        unsafe {
+            // Setting the theme based on user preference eagerly
+            +"""
+            (function() {
+                const savedTheme = localStorage.getItem('kuvasz-theme') || 'light';
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            })();
+            """.trimIndent()
+        }
+    }
+    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.4.0.min.css")
+    link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=$appVersion")
+}
+
+internal fun FlowOrMetaDataOrPhrasingContent.commonScripts(appVersion: String) {
+    script(src = "/public/ext/js/tabler.1.4.0.min.js") {}
+    script(src = "/public/dist/js/kuvasz.min.js?cb=$appVersion") {}
+}
+
+internal fun FlowOrMetaDataOrPhrasingContent.defaultFaviconsAndManifest() {
+    link(rel = "apple-touch-icon", href = "/public/apple-touch-icon.png") { sizes = "180x180" }
+    link(rel = "icon", href = "/public/favicon-32x32.png", type = "image/png") { sizes = "32x32" }
+    link(rel = "icon", href = "/public/favicon-16x16.png", type = "image/png") { sizes = "16x16" }
+    link(rel = "manifest", href = "/public/site.webmanifest")
 }
