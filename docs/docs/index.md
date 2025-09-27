@@ -78,7 +78,7 @@
 
     ---
 
-    You can create public and also private, brandable status pages for your monitors, to keep your customers or your internal team informed about the status of your services.
+    You can create public and also private, brandable [status pages](https://demo.kuvasz-uptime.dev/status){ target="_blank" } for your monitors, to keep your customers or your internal team informed about the status of your services.
 
     [:octicons-arrow-right-24: Status Pages](features/status-pages.md)
 

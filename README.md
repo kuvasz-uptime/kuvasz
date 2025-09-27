@@ -22,7 +22,7 @@ Use the following credentials to log in:
 
 ## ℹ️  What is Kuvasz?
 
-**Kuvasz** [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages, designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, and PagerDuty.
+**Kuvasz** [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, and PagerDuty.
 
 ![Kuvasz](docs/docs/images/feature_carousel.webp)
 
