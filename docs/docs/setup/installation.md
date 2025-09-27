@@ -1,124 +1,102 @@
-# Installation
+# Deployment
 
 _Kuvasz_ is distributed as a [**Docker image**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz){target="blank"}, which makes it easy to deploy and run on any system that supports _Docker_.
-This guide will walk you through the installation process.
+This guide will walk you through the deployment process.
 
-## Prerequisites
+!!! info "PostgreSQL"
 
-Whatever your setup will be, you'll need two things to make _Kuvasz_ work:
+    _Kuvasz_ relies on a _PostgreSQL_ database to store its data, but **if you don't have one** set up already,
+    you can use the provided _Docker compose_ file to easily set up a _PostgreSQL_ instance alongside _Kuvasz_.
 
-### PostgreSQL
+    The **minimum, tested version of PostgreSQL is 12**, `alpine` distributions are supported.
 
-_Kuvasz_ relies on a _PostgreSQL_ database to store its data, but **if you don't have one** set up already,
-you can use the provided _Docker compose_ file to easily set up a _PostgreSQL_ instance alongside _Kuvasz_.
+## Quick start with Docker Compose
 
-!!! info
+### 1. Configuration file
 
-    The **minimum, tested version is 12**, `alpine` distributions are supported.
-
-### YAML configuration file
-
-While you can run _Kuvasz_ without a configuration file using a very minimal setup, it probably won't make much sense,
-because you won't be able to set up any integrations, for example. Fortunately, you just need a simple _YAML_ file,
-which
-is mounted as a volume in the _Docker_ container under `/config/kuvasz.yml`.
-
-From now on we'll assume that **you have a `.yaml` file** somewhere on your machine where you would like to deploy _Kuvasz_.
-**Watch out!** You'll probably need to adjust the volume mapping in the example below.
+Create a file called `kuvasz.yml` somewhere on your machine, where you will create your Docker Compose file too in the next step.
 
 For the sake of simplicity, **you can start with an empty file** and we'll go through the available configuration
 options later in the process, or you can take a look at the **[Configuration](configuration.md)** section of the
 documentation right now to see how you can set up integrations, app-level settings, or even your monitors there.
 
-## Quick start with Docker Compose
+### 2. Docker Compose file
 
-=== "With PostgreSQL"
+Create a file called `docker-compose.yml` in the same directory where you created the `kuvasz.yml` file in the previous step, and add the following content to it. Please **make sure to change the credentials** (see the comments below) to secure ones!
 
-    ```yaml
-    services:
-      kuvasz-db:
-        image: postgres:17-alpine
-        container_name: kuvaszdb
-        environment:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres # (1)!
-          TZ: 'UTC' # (7)!
-        volumes:
-          - kuvasz-db-data:/var/lib/postgresql/data # (2)!
-      kuvasz:
-        image: kuvaszmonitoring/kuvasz:latest
-        container_name: kuvasz
-        mem_limit: 384M # optional (3)
-        ports:
-          - "8080:8080"
-        environment:
-          TZ: 'UTC' # (8)!
-          DATABASE_HOST: kuvaszdb # (4)!
-          DATABASE_USER: postgres # (5)!
-          DATABASE_PASSWORD: postgres # (9)!
-          ADMIN_USER: YourSuperSecretUsername # change it
-          ADMIN_PASSWORD: YourSuperSecretPassword # change it
-          ADMIN_API_KEY: ThisShouldBeVeryVerySecureToo # change it
-        volumes:
-          - /path/to/your/kuvasz.yml:/config/kuvasz.yml # (6)!
-        depends_on:
-          - kuvasz-db
+```yaml
+services:
+  kuvasz-db: # (8)!
+    image: postgres:18-alpine
+    container_name: kuvaszdb
+    environment:
+      POSTGRES_USER: kuvasz
+      POSTGRES_PASSWORD: YourSuperSecretDbPassword # change it!
+      TZ: 'UTC' # (5)!
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kuvasz"]
+      interval: 10s
+      start_period: 30s
     volumes:
-      kuvasz-db-data:
-    ```
+      - kuvasz-db-data:/var/lib/postgresql/data
+  kuvasz:
+    image: kuvaszmonitoring/kuvasz:latest
+    # platform: linux/arm64 # (9)
+    container_name: kuvasz
+    mem_limit: 384M # optional (1)
+    ports:
+      - "8080:8080" # (10)!
+    environment:
+      TZ: 'UTC' # (6)!
+      DATABASE_HOST: kuvaszdb # (2)!
+      DATABASE_USER: kuvasz # (3)!
+      DATABASE_PASSWORD: YourSuperSecretDbPassword # (7)!
+      ADMIN_USER: YourSuperSecretUsername # change it
+      ADMIN_PASSWORD: YourSuperSecretPassword # change it
+      ADMIN_API_KEY: ThisShouldBeVeryVerySecureToo # change it
+    volumes:
+      - ./kuvasz.yml:/config/kuvasz.yml # (4)!
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/api/v2/health || exit 1"]
+      interval: 60s
+      start_period: 30s
+    depends_on:
+      - kuvasz-db
+volumes:
+  kuvasz-db-data:
+```
 
-    1.  Better to use a secure one, it's up to you
-    2.  You can change this to a bind mount on your host, but make sure it's writable
-    3.  This is the recommended memory limit, the tested minimum is 256MB
-    4.  Use the container name from the PostgreSQL service above
-    5.  Use the same user and password as in the PostgreSQL service above
-    6.  Make sure your config file is readable!
-    7.  Optional, but recommended, use your own timezone
-    8.  Optional, but recommended, match it with the PostgreSQL service above
-    9.  Use the same password as in the PostgreSQL service above
-
-=== "Without PostgreSQL"
-
-    ```yaml
-    services:
-      kuvasz:
-        image: kuvaszmonitoring/kuvasz:latest
-        container_name: kuvasz
-        mem_limit: 384M # optional (1)
-        ports:
-          - "8080:8080"
-        environment:
-          TZ: 'UTC' # (2)!
-          DATABASE_HOST: localhost # optional, default is `localhost`
-          DATABASE_PORT: 5432 # optional, default is 5432
-          DATABASE_NAME: postgres # optional, default is `postgres`
-          DATABASE_USER: postgres # use your own
-          DATABASE_PASSWORD: postgres # use your own
-          ADMIN_USER: YourSuperSecretUsername # change it
-          ADMIN_PASSWORD: YourSuperSecretPassword # change it
-          ADMIN_API_KEY: ThisShouldBeVeryVerySecureToo # change it
-        volumes:
-          - /path/to/your/kuvasz.yml:/config/kuvasz.yml # (3)!
-    ```
-
-    1.  This is the recommended memory limit, the tested minimum is 256MB
-    2.  Optional, but recommended, use your own timezone
-    3.  Make sure your config file is readable!
+1.  This is the recommended memory limit, the tested minimum is 256MB
+2.  Use the container name from the PostgreSQL service above 
+3.  Use the same user and password as in the PostgreSQL service above
+4.  Make sure your config file is readable and the mount path is correct (`/config/kuvasz.yml`)
+5.  Optional, but recommended, use your own timezone
+6.  Optional, but recommended, match it with the PostgreSQL service above
+7.  Use the same password as in the PostgreSQL service above
+8.  You can omit this service if you already have a PostgreSQL instance running somewhere, but in this case make sure to adjust the connection details accordingly
+9. If you plan to run Kuvasz on an ARM based system, you might need to uncomment this line, depending on your setup
+10. If the port `8080` is already in use on your host machine, you can change the left side of the mapping to any other free port (e.g. `9090:8080`)
 
 !!! important "Credential requirements"
 
     - `ADMIN_PASSWORD` must be at least **12 characters** and must **not be equal** to `ADMIN_USER`.
     - `ADMIN_API_KEY` must be at least **16 characters**.
 
-    See the detailed options in [Configuration](configuration.md#credentials).
+    See the details in the [Configuration](configuration.md#credentials).
 
 !!! tip "Disabling authentication"
 
     If you would like to completely **disable authentication**, you should set the `ENABLE_AUTH` environment variable to `false` and then you can just simply omit `ADMIN_USER`, `ADMIN_PASSWORD`, and `ADMIN_API_KEY`.
 
-## After a successful start
+### 3. Starting the stack
 
-If you've done everything correctly, and you've started the specified _Compose_ stack, you should be able to access the
+Run the following command in the same directory where you created all the files mentioned above:
+
+```bash
+docker compose up -d
+```
+
+If you've done everything correctly, you should be able to access the
 web UI of _Kuvasz_ at
 [`http://0.0.0.0:8080`](http://0.0.0.0:8080){target="_blank"} (or the port you specified).
 
@@ -127,6 +105,8 @@ web UI of _Kuvasz_ at
     If you run _Kuvasz_ on a **remote server**, you should **replace** `0.0.0.0` with the server's IP address or your custom domain name.
 
 If you didn't disable authentication, you should see the login page, where you can log in with the credentials you specified. Otherwise, you should be redirected to the dashboard of _Kuvasz_.
+
+## After a successful start
 
 ### Setting up integrations (a.k.a "Notifications") <!-- md:config ../management/integrations.md -->
 
@@ -166,7 +146,7 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
 
     If you don't use the Web UI, you can also check for new releases on GitHub, or directly on the [API](https://api-docs.kuvasz-uptime.dev){target="blank"} of _Kuvasz_, under `GET /api/v2/settings`. You'll find the version related information in the response under the `versionInfo` key.
 
-## Other installation methods
+## Other deployment methods
 
 If you use another container orchestration system (e.g. _k8s_, _Swarm_, etc.), you can still use the same image and the
 same configuration options, of course. Just make sure to set the environment variables and mount the configuration file
@@ -185,22 +165,3 @@ If you run _Kuvasz_ in a container orchestration system, you can use the `GET /a
 !!! tip 
 
     Besides the response body, the HTTP status code will also indicate the health of the application: **non 2xx status codes** indicate that the application is **not healthy**.
-
-## Upgrading from v1 to v2
-
-If you're upgrading from _Kuvasz v1_ to _Kuvasz v2_, it's better if you just **start with a fresh setup**, except for the database (make sure that you do a backup of it), which should be backward compatible. 
-Even if it's not a complete rewrite, a lot of things have changed under the hood, and the new version is not fully compatible with the old one.
-
-All in all, you can use your old database, **your data will be migrated automatically**, but **there are a few notable breaking changes** you should be aware of:
-
-- _Kuvasz_ is not distributed as a **native** (GraalVM based) Docker image anymore
-- The minimum required _PostgreSQL_ version is now **12**
-- The [**REST API**](../features/api.md) is versioned now, and a few **endpoints have been changed or removed**. You can find the new API documentation [here](https://api-docs.kuvasz-uptime.dev){target="_blank"}
-- [**Integrations**](../management/integrations.md) are now configured via the _YAML_ file, and the old, environment-variable-based configuration is no longer supported
-- The **authentication** and its configuration **has been simplified**, read the [**Authentication**](../setup/configuration.md#authentication) section carefully!
-
-!!! warning
-
-    This list **is not exhaustive**, there might be other - minor - breaking changes that are not listed here.
-
-    Detailed upgrade notes (if necessary) for the future releases will be available in a dedicated section of the documentation.  

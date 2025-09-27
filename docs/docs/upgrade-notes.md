@@ -91,3 +91,22 @@ Also, the following configuration properties changed as well, make sure to updat
 #### Labels
 
 The `url` label has been renamed to `target` on all gauges, to better reflect its purpose in a generic way.
+
+## Upgrading from v1.x.x to v2.x.x
+
+If you're upgrading from _Kuvasz v1_ to _Kuvasz v2_, it's better if you just **start with a fresh setup**, except for the database (make sure that you do a backup of it), which should be backward compatible.
+Even if it's not a complete rewrite, a lot of things have changed under the hood, and the new version is not fully compatible with the old one.
+
+All in all, you can use your old database, **your data will be migrated automatically**, but **there are a few notable breaking changes** you should be aware of:
+
+- _Kuvasz_ is not distributed as a **native** (GraalVM based) Docker image anymore
+- The minimum required _PostgreSQL_ version is now **12**
+- The [**REST API**](features/api.md) is versioned now, and a few **endpoints have been changed or removed**. You can find the new API documentation [here](https://api-docs.kuvasz-uptime.dev){target="_blank"}
+- [**Integrations**](management/integrations.md) are now configured via the _YAML_ file, and the old, environment-variable-based configuration is no longer supported
+- The **authentication** and its configuration **has been simplified**, read the [**Authentication**](setup/configuration.md#authentication) section carefully!
+
+!!! warning
+
+    This list **is not exhaustive**, there might be other - minor - breaking changes that are not listed here.
+
+    Detailed upgrade notes (if necessary) for the future releases will be available in a dedicated section of the documentation.  

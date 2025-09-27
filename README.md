@@ -32,7 +32,7 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 
 ## ⚡️  Quick start guide
 
-If you want to get started quickly, please refer to the [**Installation guide**](https://kuvasz-uptime.dev/setup/installation/) in the documentation.
+If you want to get started quickly, please refer to the [**Deployment guide**](https://kuvasz-uptime.dev/setup/installation/) in the documentation.
 
 ## ✨ Features
 

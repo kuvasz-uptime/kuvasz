@@ -30,6 +30,6 @@ If you need help with this integration, please contact the maintainer of Kuvasz,
 
 ## In Kuvasz
 
-1. To set up _Kuvasz_, follow the installation guide in the [**documentation**](https://kuvasz-uptime.dev/setup/installation/).
+1. To set up _Kuvasz_, follow the deployment guide in the [**documentation**](https://kuvasz-uptime.dev/setup/installation/).
 2. Once you have Kuvasz up and running, you need to configure the _PagerDuty_ integration in your _YAML_ configuration file. Please refer to the [**Integrations setup**](https://kuvasz-uptime.dev/setup/integrations#pagerduty) section of the documentation for more information on how to configure _PagerDuty_.
 3. Assuming you have your integration set up, refer to the [Managing monitors](https://kuvasz-uptime.dev/management/http-monitors/) section of the documentation to create/update a monitor that uses your brand new _PagerDuty_ integration.

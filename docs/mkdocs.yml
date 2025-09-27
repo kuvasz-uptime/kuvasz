@@ -91,7 +91,7 @@ nav:
       - Performance: features/performance.md
       - API: features/api.md
   - Getting started:
-      - Installation: setup/installation.md
+      - Deployment: setup/installation.md
       - Configuration reference: setup/configuration.md
   - Management:
       - Integrations setup: management/integrations.md
