@@ -155,7 +155,7 @@ It might be useful to create sometimes a backup from your monitors and status pa
 1. To do so, you can use the **Web UI** (_Settings > Backup & Restore_) or the **API** ([Monitors](https://api-docs.kuvasz-uptime.dev/#tag/Monitors/operation/getYamlMonitorsExport_1){target="_blank"}, [Status pages](https://api-docs.kuvasz-uptime.dev/#tag/Status-pages/operation/getYamlStatusPagesExport){target="_blank"}).
 The response in both cases will be **a _YAML_ file, which you can save to a safe place**. 
 2. To restore those files, you can just simply **copy the content of them as-is into your own YAML configuration file**, and restart your instance of _Kuvasz_.
-3. If you would like to **continue using the UI or the API** to manage your monitors and status pages, you can just remove the corresponding sections from your YAML configuration file (you don't even need to restart your instance, just save the file, because on the next restart the monitors and status pages defined in the database will be kept).
+3. If you would like to **continue using the UI or the API** to manage your monitors and status pages, you need to remove the corresponding sections from your YAML configuration file after the successful restore and restart your instance once again. After that, you should be able to manage everything via the UI or the API as before.
 
 ## Full YAML example (app-config + monitors + integrations)
 
