@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
@@ -105,7 +105,7 @@ class WebUIAuthenticationTest(
         "all the web endpoints should be accessible with a valid JWT" {
 
             val jwt = getValidJWT(client, authConfig)
-            val monitor = createMonitor(monitorRepository)
+            val monitor = createHttpMonitor(monitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
 
             table(

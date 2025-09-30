@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -69,9 +69,9 @@ class PagerdutyEventHandlerTest(
         )
         PagerdutyEventHandler(eventDispatcher, mockClient, integrationRepository)
 
-        given("the PagerdutyEventHandler - UPTIME events") {
+        given("the PagerdutyEventHandler - HTTP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -87,7 +87,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     integrations = listOf(
                         globalPagerdutyConfig.id,
@@ -127,7 +127,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -151,7 +151,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -180,7 +180,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     integrations = listOf(
                         globalPagerdutyConfig.id,
@@ -245,7 +245,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -276,7 +276,7 @@ class PagerdutyEventHandlerTest(
 
         given("the PagerdutyEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -290,7 +290,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     integrations = listOf(
                         globalPagerdutyConfig.id,
@@ -329,7 +329,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -351,7 +351,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -377,7 +377,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -415,7 +415,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -442,7 +442,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -466,7 +466,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -494,7 +494,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous SSLValidEvent") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -524,7 +524,7 @@ class PagerdutyEventHandlerTest(
 
         given("the PagerdutyEventHandler - error handling logic") {
             `when`("an error happens when it calls the API") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,

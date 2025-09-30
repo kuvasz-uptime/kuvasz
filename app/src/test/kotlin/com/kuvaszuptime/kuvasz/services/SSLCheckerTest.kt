@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import arrow.core.Either
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -53,7 +53,7 @@ class SSLCheckerTest(
 
         given("the SSLChecker service") {
             `when`("it checks a monitor that is DOWN") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 mockIsMonitorUpResult(false)
 
                 sslChecker.check(monitor)
@@ -64,7 +64,7 @@ class SSLCheckerTest(
             }
 
             `when`("it checks a monitor with a valid certificate") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val subscriber = TestSubscriber<SSLValidEvent>()
                 eventDispatcher.subscribeToSSLValidEvents { it.forwardToSubscriber(subscriber) }
                 mockValidationResult(SslStatus.VALID)
@@ -79,7 +79,7 @@ class SSLCheckerTest(
             }
 
             `when`("it checks a monitor with an INVALID certificate") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val subscriber = TestSubscriber<SSLInvalidEvent>()
                 eventDispatcher.subscribeToSSLInvalidEvents { it.forwardToSubscriber(subscriber) }
                 mockValidationResult(SslStatus.INVALID)
@@ -96,7 +96,7 @@ class SSLCheckerTest(
             }
 
             `when`("it checks a monitor that has an INVALID cert then it's VALID again") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val certValidSubscriber = TestSubscriber<SSLValidEvent>()
                 val certInvalidSubscriber = TestSubscriber<SSLInvalidEvent>()
                 eventDispatcher.subscribeToSSLValidEvents { it.forwardToSubscriber(certValidSubscriber) }
@@ -121,7 +121,7 @@ class SSLCheckerTest(
             }
 
             `when`("it checks a monitor that has a VALID cert but then it's INVALID again") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val certValidSubscriber = TestSubscriber<SSLValidEvent>()
                 val certInvalidSubscriber = TestSubscriber<SSLInvalidEvent>()
                 eventDispatcher.subscribeToSSLValidEvents { it.forwardToSubscriber(certValidSubscriber) }
@@ -146,7 +146,7 @@ class SSLCheckerTest(
             }
 
             `when`("it checks a monitor that has a cert that expires soon") {
-                val monitor = createMonitor(monitorRepository, sslExpiryThreshold = 15)
+                val monitor = createHttpMonitor(monitorRepository, sslExpiryThreshold = 15)
                 val subscriber = TestSubscriber<SSLWillExpireEvent>()
                 eventDispatcher.subscribeToSSLWillExpireEvents { it.forwardToSubscriber(subscriber) }
                 val validTo = getCurrentTimestamp().plusDays(14)

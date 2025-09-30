@@ -82,6 +82,16 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                     "PushMonitorConfig.getClientSecret - Client secret must be at least 36 characters long"
             }
         }
+
+        `when`("a clientSecret is not unique") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                testAppContext("push-monitor-conflicting-client-secret")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "YAML push monitor configs must have unique client secrets!"
+            }
+        }
     }
 })
 

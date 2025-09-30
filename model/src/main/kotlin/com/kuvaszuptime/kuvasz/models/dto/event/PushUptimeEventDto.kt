@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
 
 @Introspected
-data class HttpUptimeEventDto(
+data class PushUptimeEventDto(
     @param:Schema(description = UptimeEventDocs.ID, required = true)
     val id: Long,
     @param:Schema(description = UptimeEventDocs.UPTIME_STATUS, required = true)

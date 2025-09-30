@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.metrics.ExporterTest
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.testAppContext
@@ -19,20 +19,20 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
             `when`("the exporter is initialized") {
                 appContext = testAppContext()
 
-                val enabledMonitorWithStatus = createMonitor(
+                val enabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                 )
                 // Enabled monitor without status
-                createMonitor(
+                createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
                 )
-                val disabledMonitorWithStatus = createMonitor(
+                val disabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
@@ -72,19 +72,19 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
             `when`("there are new events for existing monitors after initialization") {
                 appContext = testAppContext()
 
-                val enabledMonitorWithStatus = createMonitor(
+                val enabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                 )
-                val enabledMonitorWithoutStatus = createMonitor(
+                val enabledMonitorWithoutStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
                 )
-                val disabledMonitorWithStatus = createMonitor(
+                val disabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
@@ -151,25 +151,25 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
 
                 appContext = testAppContext()
 
-                val enabledMonitorWithStatus = createMonitor(
+                val enabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                 )
-                val anotherEnabledMonitorWithStatus = createMonitor(
+                val anotherEnabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
                 )
-                val yetAnotherEnabledMonitorWithStatus = createMonitor(
+                val yetAnotherEnabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "yet-another-enabled",
                     url = "https://yet.another.enabled",
                     enabled = true,
                 )
-                val disabledMonitorWithStatus = createMonitor(
+                val disabledMonitorWithStatus = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",

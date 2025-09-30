@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -68,9 +68,10 @@ class TelegramEventHandlerTest(
         val otherTelegramConfig = telegramNotificationConfigs.first { !it.global && it.enabled }
         val disabledTelegramConfig = telegramNotificationConfigs.first { !it.enabled }
 
-        given("the TelegramEventHandler") {
+        given("the TelegramEventHandler - HTTP UPTIME events") {
+
             `when`("it receives a MonitorUpEvent and There is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -86,7 +87,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     repository = monitorRepository,
                     monitorName = "testMonitor",
                     integrations = listOf(
@@ -125,7 +126,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -149,7 +150,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -177,7 +178,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -207,7 +208,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -237,7 +238,7 @@ class TelegramEventHandlerTest(
 
         given("the TelegramEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -252,7 +253,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "testMonitor",
                     integrations = listOf(
@@ -288,7 +289,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -311,7 +312,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -337,7 +338,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -364,7 +365,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -390,7 +391,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -410,7 +411,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val originalValidTo = getCurrentTimestamp()
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
@@ -437,7 +438,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with a VALID status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -465,7 +466,7 @@ class TelegramEventHandlerTest(
 
         given("the TelegramEventHandler - error handling logic") {
             `when`("it receives an event but an error happens when it calls the webhook") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,

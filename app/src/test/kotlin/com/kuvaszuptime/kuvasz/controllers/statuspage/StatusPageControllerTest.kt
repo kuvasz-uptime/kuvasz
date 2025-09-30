@@ -8,7 +8,7 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
@@ -61,11 +61,11 @@ class StatusPageControllerTest(
                 .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
 
             `when`("there are status pages in the database") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "irrelevant",
                 )
-                val monitor2 = createMonitor(
+                val monitor2 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "irrelevant2",
                 )
@@ -166,7 +166,7 @@ class StatusPageControllerTest(
 
         given("StatusPageController's getStatusPages() endpoint") {
             `when`("there are statusPages in the database") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val page = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
@@ -271,7 +271,7 @@ class StatusPageControllerTest(
 
         given("StatusPageController's getStatusPage() endpoint") {
             `when`("there is a status page with the given ID in the database") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
@@ -335,8 +335,8 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a valid DTO - explicit parameters") {
-                val monitor = createMonitor(monitorRepository)
-                val monitor2 = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
+                val monitor2 = createHttpMonitor(monitorRepository)
                 val pageToCreate = StatusPageCreateDto(
                     title = "Status Page 1",
                     slug = "status-page-1",
@@ -417,7 +417,7 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a non-existing monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val pageToCreate = StatusPageCreateDto(
                     title = "Status Page 1",
                     slug = "status-page-1",
@@ -478,8 +478,8 @@ class StatusPageControllerTest(
                     customLogoUrl = "https://example.com/logo.png",
                     customFaviconUrl = "https://example.com/favicon.png",
                 )
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
-                val monitor2 = createMonitor(monitorRepository, monitorName = "monitor2")
+                val monitor = createHttpMonitor(monitorRepository, monitorName = "monitor1")
+                val monitor2 = createHttpMonitor(monitorRepository, monitorName = "monitor2")
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(StatusPageUpdateDto::public.name, false)
                     .put(StatusPageUpdateDto::title.name, "Updated Status Page")
@@ -516,7 +516,7 @@ class StatusPageControllerTest(
 
             `when`("it is called to remove all the referenced monitors") {
 
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
+                val monitor = createHttpMonitor(monitorRepository, monitorName = "monitor1")
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
@@ -542,7 +542,7 @@ class StatusPageControllerTest(
 
             `when`("monitors are omitted in the update") {
 
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
+                val monitor = createHttpMonitor(monitorRepository, monitorName = "monitor1")
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
@@ -705,7 +705,7 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a non-existing monitor") {
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
+                val monitor = createHttpMonitor(monitorRepository, monitorName = "monitor1")
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",

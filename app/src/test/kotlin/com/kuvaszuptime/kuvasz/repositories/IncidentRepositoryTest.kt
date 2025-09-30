@@ -3,9 +3,9 @@ package com.kuvaszuptime.kuvasz.repositories
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
-import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -30,11 +30,11 @@ class IncidentRepositoryTest(
 
             then("it should return the right incidents") {
 
-                val monitor1 = createMonitor(httpMonitorRepository)
-                val monitor2 = createMonitor(httpMonitorRepository)
+                val monitor1 = createHttpMonitor(httpMonitorRepository)
+                val monitor2 = createHttpMonitor(httpMonitorRepository)
 
                 // Should be ignored, it's not an incident
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor1.id,
                     status = UptimeStatus.UP,
@@ -57,14 +57,14 @@ class IncidentRepositoryTest(
                     startedAt = getCurrentTimestamp().minusDays(20),
                     endedAt = getCurrentTimestamp().minusDays(10),
                 )
-                val openDownMonitor1 = createUptimeEventRecord(
+                val openDownMonitor1 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor1.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(3),
                     endedAt = null,
                 )
-                val resolvedDownMonitor1 = createUptimeEventRecord(
+                val resolvedDownMonitor1 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor1.id,
                     status = UptimeStatus.DOWN,
@@ -86,7 +86,7 @@ class IncidentRepositoryTest(
                     endedAt = getCurrentTimestamp().minusDays(5),
                 )
 
-                val openDownMonitor2 = createUptimeEventRecord(
+                val openDownMonitor2 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = UptimeStatus.DOWN,
@@ -94,7 +94,7 @@ class IncidentRepositoryTest(
                     endedAt = null,
                     error = "sh#t happened"
                 )
-                val resolvedDownMonitor2 = createUptimeEventRecord(
+                val resolvedDownMonitor2 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = UptimeStatus.DOWN,
@@ -273,17 +273,17 @@ class IncidentRepositoryTest(
 
             then("it should ignore the incidents out of that period") {
 
-                val monitor1 = createMonitor(httpMonitorRepository)
-                val monitor2 = createMonitor(httpMonitorRepository)
+                val monitor1 = createHttpMonitor(httpMonitorRepository)
+                val monitor2 = createHttpMonitor(httpMonitorRepository)
 
-                val openDownMonitor1 = createUptimeEventRecord(
+                val openDownMonitor1 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor1.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(3),
                     endedAt = null,
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor1.id,
                     status = UptimeStatus.DOWN,
@@ -305,7 +305,7 @@ class IncidentRepositoryTest(
                     endedAt = getCurrentTimestamp().minusDays(5),
                 )
 
-                val openDownMonitor2 = createUptimeEventRecord(
+                val openDownMonitor2 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = UptimeStatus.DOWN,
@@ -313,7 +313,7 @@ class IncidentRepositoryTest(
                     endedAt = null,
                     error = "sh#t happened"
                 )
-                val resolvedDownMonitor2 = createUptimeEventRecord(
+                val resolvedDownMonitor2 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = UptimeStatus.DOWN,
@@ -378,17 +378,17 @@ class IncidentRepositoryTest(
 
             then("it should return the incident of that monitor only") {
 
-                val monitor1 = createMonitor(httpMonitorRepository)
-                val monitor2 = createMonitor(httpMonitorRepository, enabled = false)
+                val monitor1 = createHttpMonitor(httpMonitorRepository)
+                val monitor2 = createHttpMonitor(httpMonitorRepository, enabled = false)
 
-                val openDownMonitor1 = createUptimeEventRecord(
+                val openDownMonitor1 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor1.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(3),
                     endedAt = null,
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor1.id,
                     status = UptimeStatus.DOWN,
@@ -410,7 +410,7 @@ class IncidentRepositoryTest(
                     endedAt = getCurrentTimestamp().minusDays(5),
                 )
 
-                val openDownMonitor2 = createUptimeEventRecord(
+                val openDownMonitor2 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = UptimeStatus.DOWN,
@@ -418,7 +418,7 @@ class IncidentRepositoryTest(
                     endedAt = null,
                     error = "sh#t happened"
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor2.id,
                     status = UptimeStatus.DOWN,

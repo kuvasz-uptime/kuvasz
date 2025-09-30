@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -36,7 +36,7 @@ class UptimeCheckerTest(
 
         given("the UptimeChecker service") {
             `when`("it checks a monitor that is UP - GET") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val subscriber = TestSubscriber<HttpMonitorUpEvent>()
                 eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
@@ -51,7 +51,7 @@ class UptimeCheckerTest(
             }
 
             `when`("it checks a monitor that is UP - HEAD") {
-                val monitor = createMonitor(monitorRepository, requestMethod = HttpMethod.HEAD)
+                val monitor = createHttpMonitor(monitorRepository, requestMethod = HttpMethod.HEAD)
                 val subscriber = TestSubscriber<HttpMonitorUpEvent>()
                 eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
@@ -66,7 +66,7 @@ class UptimeCheckerTest(
             }
 
             `when`("it checks a monitor that is UP - forceNoCache is false") {
-                val monitor = createMonitor(monitorRepository, forceNoCache = false)
+                val monitor = createHttpMonitor(monitorRepository, forceNoCache = false)
                 val subscriber = TestSubscriber<HttpMonitorUpEvent>()
                 eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.OK)
@@ -81,7 +81,7 @@ class UptimeCheckerTest(
             }
 
             `when`("it checks a monitor that is DOWN") {
-                val monitor = createMonitor(monitorRepository, url = "http://this-should-not.exist")
+                val monitor = createHttpMonitor(monitorRepository, url = "http://this-should-not.exist")
                 val subscriber = TestSubscriber<HttpMonitorDownEvent>()
                 eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
                 mockHttpResponse(uptimeCheckerSpy, HttpStatus.GATEWAY_TIMEOUT)
@@ -95,7 +95,7 @@ class UptimeCheckerTest(
             }
 
             `when`("it checks a monitor that is DOWN but then it's UP again") {
-                val monitor = createMonitor(monitorRepository, followRedirects = false)
+                val monitor = createHttpMonitor(monitorRepository, followRedirects = false)
                 val monitorUpSubscriber = TestSubscriber<HttpMonitorUpEvent>()
                 val monitorDownSubscriber = TestSubscriber<HttpMonitorDownEvent>()
                 eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }
@@ -118,7 +118,7 @@ class UptimeCheckerTest(
             }
 
             `when`("it checks a monitor that is UP but then it's DOWN again") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val monitorUpSubscriber = TestSubscriber<HttpMonitorUpEvent>()
                 val monitorDownSubscriber = TestSubscriber<HttpMonitorDownEvent>()
                 eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(monitorUpSubscriber) }

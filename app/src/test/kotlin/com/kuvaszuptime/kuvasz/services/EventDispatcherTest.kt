@@ -3,7 +3,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.assertions.nondeterministic.eventually
@@ -31,7 +31,7 @@ class EventDispatcherTest(monitorRepository: HttpMonitorRepository) : DatabaseBe
     given("an event dispatcher") {
 
         `when`("an error occurs in a consumer") {
-            val monitor = createMonitor(monitorRepository)
+            val monitor = createHttpMonitor(monitorRepository)
             val monitorUpEvent = HttpMonitorUpEvent(
                 monitor,
                 HttpStatus.OK,

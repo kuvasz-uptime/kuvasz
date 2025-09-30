@@ -1,0 +1,16 @@
+push-monitors:
+  - name: test1
+    heartbeat-interval: 125
+    client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretU
+    enabled: true
+    integrations:
+      - 'slack:test_implicitly_enabled'
+  - name: test2
+    heartbeat-interval: 60
+    client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret2
+    integrations:
+      - 'slack:test_implicitly_enabled'
+  - name: test4
+    heartbeat-interval: 15
+    client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret3
+    enabled: false

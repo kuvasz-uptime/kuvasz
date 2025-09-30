@@ -12,10 +12,10 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
-import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -108,12 +108,12 @@ class HttpMonitorControllerV1Test(
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     integrations = setUpIntegrations
                 )
                 val now = getCurrentTimestamp()
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
@@ -242,8 +242,8 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("enabled parameter is set to true") {
-                createMonitor(monitorRepository, enabled = false, monitorName = "name1")
-                val enabledMonitor = createMonitor(monitorRepository, monitorName = "name2")
+                createHttpMonitor(monitorRepository, enabled = false, monitorName = "name1")
+                val enabledMonitor = createHttpMonitor(monitorRepository, monitorName = "name2")
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = true,
                     uptimeStatus = null,
@@ -272,8 +272,8 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("enabled parameter is set to false") {
-                val disabledMonitor = createMonitor(monitorRepository, enabled = false, monitorName = "name1")
-                createMonitor(monitorRepository, monitorName = "name2")
+                val disabledMonitor = createHttpMonitor(monitorRepository, enabled = false, monitorName = "name1")
+                createHttpMonitor(monitorRepository, monitorName = "name2")
 
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = false,
@@ -303,16 +303,16 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("result is filtered by the uptime status") {
-                val upMonitor = createMonitor(monitorRepository, monitorName = "up_monitor")
-                createUptimeEventRecord(
+                val upMonitor = createHttpMonitor(monitorRepository, monitorName = "up_monitor")
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = upMonitor.id,
                     startedAt = getCurrentTimestamp(),
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
-                val downMonitor = createMonitor(monitorRepository, monitorName = "down_monitor")
-                createUptimeEventRecord(
+                val downMonitor = createHttpMonitor(monitorRepository, monitorName = "down_monitor")
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = downMonitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -340,8 +340,9 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("the filtering options are combined") {
-                val upMonitor = createMonitor(monitorRepository, monitorName = "up_ssl_monitor", sslCheckEnabled = true)
-                createUptimeEventRecord(
+                val upMonitor =
+                    createHttpMonitor(monitorRepository, monitorName = "up_ssl_monitor", sslCheckEnabled = true)
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = upMonitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -356,8 +357,8 @@ class HttpMonitorControllerV1Test(
                     endedAt = null
                 )
                 val downMonitor =
-                    createMonitor(monitorRepository, monitorName = "down_ssl_monitor", sslCheckEnabled = true)
-                createUptimeEventRecord(
+                    createHttpMonitor(monitorRepository, monitorName = "down_ssl_monitor", sslCheckEnabled = true)
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = downMonitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -407,7 +408,7 @@ class HttpMonitorControllerV1Test(
 
             `when`("the result is filtered by the SSL status") {
                 val validMonitor =
-                    createMonitor(monitorRepository, monitorName = "valid_ssl_monitor", sslCheckEnabled = true)
+                    createHttpMonitor(monitorRepository, monitorName = "valid_ssl_monitor", sslCheckEnabled = true)
                 createSSLEventRecord(
                     dslContext,
                     monitorId = validMonitor.id,
@@ -417,7 +418,7 @@ class HttpMonitorControllerV1Test(
                     sslExpiryDate = getCurrentTimestamp().plusDays(60)
                 )
                 val expiredMonitor =
-                    createMonitor(monitorRepository, monitorName = "expired_ssl_monitor", sslCheckEnabled = true)
+                    createHttpMonitor(monitorRepository, monitorName = "expired_ssl_monitor", sslCheckEnabled = true)
                 createSSLEventRecord(
                     dslContext,
                     monitorId = expiredMonitor.id,
@@ -427,7 +428,11 @@ class HttpMonitorControllerV1Test(
                     sslExpiryDate = getCurrentTimestamp().minusDays(10)
                 )
                 val willExpireMonitor =
-                    createMonitor(monitorRepository, monitorName = "will_expire_ssl_monitor", sslCheckEnabled = true)
+                    createHttpMonitor(
+                        monitorRepository,
+                        monitorName = "will_expire_ssl_monitor",
+                        sslCheckEnabled = true
+                    )
                 createSSLEventRecord(
                     dslContext,
                     monitorId = willExpireMonitor.id,
@@ -436,7 +441,7 @@ class HttpMonitorControllerV1Test(
                     endedAt = null,
                     sslExpiryDate = getCurrentTimestamp().plusDays(10)
                 )
-                val invalidButDisabledMonitor = createMonitor(
+                val invalidButDisabledMonitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "invalid_but_disabled_ssl_monitor",
                     sslCheckEnabled = false,
@@ -511,7 +516,7 @@ class HttpMonitorControllerV1Test(
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -532,7 +537,7 @@ class HttpMonitorControllerV1Test(
                     requestBody = "{\"key\": \"value\"}",
                 )
                 val now = getCurrentTimestamp()
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
@@ -690,7 +695,7 @@ class HttpMonitorControllerV1Test(
         given("MonitorController's getMonitorStats() endpoint") {
 
             `when`("latency history enabled, latency records are present") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -722,7 +727,7 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("latency history enabled, records are present, explicit limit is set") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -754,7 +759,7 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("latency history enabled, but no records") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -777,7 +782,7 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("latency history disabled") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = false,
@@ -1593,11 +1598,11 @@ class HttpMonitorControllerV1Test(
 
             `when`("it is called to update a monitor's name that is also present on a status page - writable") {
 
-                val monitor1 = createMonitor(
+                val monitor1 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor1",
                 )
-                val monitor2 = createMonitor(
+                val monitor2 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor2",
                 )
@@ -1642,11 +1647,11 @@ class HttpMonitorControllerV1Test(
 
             `when`("it is called to update a monitor's name that is NOT present on a non-writable status page") {
 
-                val monitor1 = createMonitor(
+                val monitor1 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor1",
                 )
-                val monitor2 = createMonitor(
+                val monitor2 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor2",
                 )
@@ -1674,7 +1679,7 @@ class HttpMonitorControllerV1Test(
 
             `when`("it is called to update a monitor's name that is present on a non-writable a status page") {
 
-                val createdMonitor = createMonitor(
+                val createdMonitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor1",
                 )
@@ -2062,25 +2067,25 @@ class HttpMonitorControllerV1Test(
 
         given("MonitorController's getUptimeEvents() endpoint") {
             `when`("there is a monitor with the given ID in the database with uptime events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, monitorName = "another_monitor")
+                    createHttpMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now.minusDays(1),
                     status = UptimeStatus.DOWN,
                     endedAt = now
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = anotherMonitor.id,
                     startedAt = now,
@@ -2098,7 +2103,7 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("there is a monitor with the given ID in the database without uptime events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
 
                 then("it should return an empty list") {
                     val response = monitorClient.getUptimeEvents(monitorId = monitor.id)
@@ -2118,9 +2123,9 @@ class HttpMonitorControllerV1Test(
 
         given("MonitorController's getSSLEvents() endpoint") {
             `when`("there is a monitor with the given ID in the database with SSL events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, monitorName = "another_monitor")
+                    createHttpMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createSSLEventRecord(
                     dslContext,
@@ -2158,7 +2163,7 @@ class HttpMonitorControllerV1Test(
             }
 
             `when`("there is a monitor with the given ID in the database without ssl events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
 
                 then("it should return an empty list") {
                     val response = monitorClient.getSSLEvents(monitorId = monitor.id)
@@ -2182,11 +2187,11 @@ class HttpMonitorControllerV1Test(
                 .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
 
             `when`("there are monitors in the database") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "irrelevant",
                 )
-                val monitor2 = createMonitor(
+                val monitor2 = createHttpMonitor(
                     monitorRepository,
                     enabled = false,
                     uptimeCheckInterval = 23234,

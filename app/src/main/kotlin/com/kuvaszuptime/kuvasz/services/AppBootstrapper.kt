@@ -3,9 +3,14 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
+import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
+import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import io.micronaut.context.annotation.Context
@@ -15,9 +20,11 @@ import org.slf4j.LoggerFactory
 @Context
 class AppBootstrapper(
     private val yamlHttpMonitorConfigs: List<HttpMonitorConfig>,
+    private val yamlPushMonitorConfigs: List<PushMonitorConfig>,
     private val monitorImporter: MonitorImporter,
     private val appConfig: AppConfig,
-    private val monitorRepository: HttpMonitorRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
     private val integrationRepository: IntegrationRepository,
     private val httpCheckScheduler: HttpCheckScheduler,
     private val metricsExportRegistry: MetricsExportRegistry?,
@@ -48,23 +55,40 @@ class AppBootstrapper(
      * If an integration is found on a monitor that is not configured, it will be removed from that monitor.
      */
     private fun sanitizeIntegrationsOfMonitors() {
-        // Only sanitize integrations if monitors were not configured via YAML
-        if (!appConfig.isHttpMonitorExternalWriteDisabled()) {
-            val configuredIntegrations = integrationRepository.configuredIntegrations.keys
+        val configuredIntegrations = integrationRepository.configuredIntegrations.keys
 
-            monitorRepository.fetchAll().forEach { monitor ->
-                val originalIntegrations = monitor.integrations.toSet()
-                val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
-                if (!matchedIntegrations.containsAll(originalIntegrations)) {
-                    // There are integrations on the monitor that are not configured, update them
-                    logger.warn(
-                        "Monitor with ID ${monitor.id} has integrations that are not configured: " +
-                            "${originalIntegrations - matchedIntegrations}. " +
-                            "Updating monitor integrations to only include configured ones."
+        fun MonitorRecord.sanitizeIntegrations() {
+            val originalIntegrations = integrations.toSet()
+            val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
+            if (!matchedIntegrations.containsAll(originalIntegrations)) {
+                // There are integrations on the monitor that are not configured, update them
+                logger.warn(
+                    "Monitor with ID $id has integrations that are not configured: " +
+                        "${originalIntegrations - matchedIntegrations}. " +
+                        "Updating monitor integrations to only include configured ones."
+                )
+                when (this) {
+                    is HttpMonitorRecord -> httpMonitorRepository.updateIntegrations(
+                        id,
+                        matchedIntegrations.toTypedArray(),
                     )
-                    monitorRepository.updateIntegrations(monitor.id, matchedIntegrations.toTypedArray())
+
+                    is PushMonitorRecord -> pushMonitorRepository.updateIntegrations(
+                        id,
+                        matchedIntegrations.toTypedArray(),
+                    )
                 }
             }
+        }
+
+        // Only sanitize integrations if HTTP monitors were not configured via YAML
+        if (!appConfig.isHttpMonitorExternalWriteDisabled()) {
+            httpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+        }
+
+        // Only sanitize integrations if push monitors were not configured via YAML
+        if (!appConfig.isPushMonitorExternalWriteDisabled()) {
+            pushMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
         }
     }
 
@@ -76,14 +100,33 @@ class AppBootstrapper(
         if (yamlHttpMonitorConfigs.isNotEmpty()) {
             appConfig.disableHttpMonitorExternalWrite()
             logger.info(
-                "Disabled external modifications of monitors, because a YAML monitor config was found. " +
-                    "Loading monitors from YAML config..."
+                "Disabled external modifications of HTTP monitors, because a YAML monitor config was found. " +
+                    "Loading HTTP monitors from YAML config..."
             )
             monitorImporter.importHttpMonitorConfigs(yamlHttpMonitorConfigs)
         } else {
             logger.info(
-                "No YAML monitor config was found. " +
-                    "External modifications of monitors are enabled. Loading monitors from DB..."
+                "No YAML HTTP monitor config was found. " +
+                    "External modifications of HTTP monitors are enabled. Loading monitors from DB..."
+            )
+        }
+
+        if (yamlPushMonitorConfigs.isNotEmpty()) {
+            // Ensuring that all client secrets are unique
+            require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
+                "YAML push monitor configs must have unique client secrets!"
+            }
+
+            appConfig.disablePushMonitorExternalWrite()
+            logger.info(
+                "Disabled external modifications of push monitors, because a YAML monitor config was found. " +
+                    "Loading push monitors from YAML config..."
+            )
+            monitorImporter.importPushMonitorConfigs(yamlPushMonitorConfigs)
+        } else {
+            logger.info(
+                "No YAML push monitor config was found. " +
+                    "External modifications of push monitors are enabled. Loading monitors from DB..."
             )
         }
     }

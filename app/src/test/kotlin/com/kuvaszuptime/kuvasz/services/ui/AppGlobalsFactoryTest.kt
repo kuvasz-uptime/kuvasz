@@ -62,6 +62,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.isAuthEnabled shouldBe false
                 globals.isAuthenticated() shouldBe true
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -83,6 +85,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.isAuthEnabled shouldBe true
                 globals.isAuthenticated() shouldBe true
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -104,12 +108,16 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.isAuthEnabled shouldBe true
                 globals.isAuthenticated() shouldBe false
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
             }
         }
 
         `when`("when the app is in read-only mode") {
             val appConfig = AppConfig()
             appConfig.disableHttpMonitorExternalWrite()
+            appConfig.disablePushMonitorExternalWrite()
+            appConfig.disableStatusPageExternalWrite()
             val globals = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -121,6 +129,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
 
             then("it should return the correctly hydrated view model") {
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe true
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe true
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
             }
         }
 
@@ -136,9 +146,11 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+            globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
 
             appConfig.disableHttpMonitorExternalWrite()
             appConfig.disableStatusPageExternalWrite()
+            appConfig.disablePushMonitorExternalWrite()
             val globalsAfterUpdate = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -151,6 +163,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             then("it should return the correctly hydrated view model") {
                 globalsAfterUpdate.editabilityState.areHttpMonitorsReadOnly() shouldBe true
                 globalsAfterUpdate.editabilityState.areStatusPagesReadOnly() shouldBe true
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
             }
         }
 

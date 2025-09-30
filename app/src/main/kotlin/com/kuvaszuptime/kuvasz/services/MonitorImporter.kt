@@ -1,9 +1,12 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
+import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.models.dto.import.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.monitor.http.toMonitorRecord
+import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -13,6 +16,7 @@ import org.slf4j.LoggerFactory
 class MonitorImporter(
     private val integrationIdValidator: IntegrationIdValidator,
     private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
     private val dslContext: DSLContext,
 ) {
 
@@ -29,11 +33,41 @@ class MonitorImporter(
                 // Upserting the monitor from the provided configs
                 httpMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
             }
-            logger.info("Loaded ${monitorConfigs.size} monitors from external config")
+            logger.info("Loaded ${monitorConfigs.size} HTTP monitors from external config")
 
             // Removing all monitors that are not in the provided configs
             val deletedCnt = httpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
-            logger.info("Deleted $deletedCnt monitors that were not in the external config")
+            logger.info("Deleted $deletedCnt HTTP monitors that were not in the external config")
+
+            MonitorImportResultDto(
+                receivedMonitorCnt = monitorConfigs.size,
+                importedMonitorCnt = upsertedMonitorIds.size,
+                deletedMonitorCount = deletedCnt,
+            )
+        }
+
+    fun importPushMonitorConfigs(monitorConfigs: List<PushMonitorConfig>): MonitorImportResultDto =
+        dslContext.transactionResult { config ->
+            val txCtx = config.dsl()
+
+            // Removing all monitors that are not in the provided configs. Doing this before the upsert to avoid
+            // potential unique constraint violations on the client secret in case a new monitor would use an old
+            // no longer existing monitor's client secret.
+            val deletedCnt = pushMonitorRepository.deleteAllExcept(
+                ignoredNames = monitorConfigs.map { it.name },
+                txCtx,
+            )
+            logger.info("Deleted $deletedCnt push monitors that were not in the external config")
+
+            val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
+                // Validating the monitor's integrations to ensure they are configured correctly
+                val validatedIntegrations =
+                    integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
+
+                // Upserting the monitor from the provided configs
+                pushMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
+            }
+            logger.info("Loaded ${monitorConfigs.size} push monitors from external config")
 
             MonitorImportResultDto(
                 receivedMonitorCnt = monitorConfigs.size,

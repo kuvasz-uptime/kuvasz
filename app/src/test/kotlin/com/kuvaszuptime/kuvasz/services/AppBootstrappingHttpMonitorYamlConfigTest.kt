@@ -198,7 +198,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
                 "X-Example-Header" to "example-value"
             )
             firstMonitor.requestBody shouldBe "{\"key\": \"value\"}"
-            firstMonitor.updatedAt shouldBeAfter firstMonitor.createdAt
+            firstMonitor.updatedAt.shouldNotBeNull() shouldBeAfter firstMonitor.createdAt
 
             scheduledUptimeChecks[firstMonitor.id].shouldNotBeNull()
             scheduledSSLChecks[firstMonitor.id].shouldNotBeNull()
@@ -216,7 +216,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             secondMonitor.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
             secondMonitor.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
-            secondMonitor.updatedAt shouldBeAfter secondMonitor.createdAt
+            secondMonitor.updatedAt.shouldNotBeNull() shouldBeAfter secondMonitor.createdAt
 
             scheduledUptimeChecks[secondMonitor.id].shouldNotBeNull()
             scheduledSSLChecks[secondMonitor.id].shouldBeNull()

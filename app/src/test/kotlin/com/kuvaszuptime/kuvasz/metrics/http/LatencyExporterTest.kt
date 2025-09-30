@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.metrics.ExporterTest
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
@@ -18,7 +18,7 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
             `when`("the exporter is initialized") {
                 appContext = testAppContext()
 
-                val enabledMonitorWithLatency = createMonitor(
+                val enabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
@@ -26,14 +26,14 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
                     latencyHistoryEnabled = false,
                 )
                 // Enabled monitor without latency records
-                createMonitor(
+                createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-no-latency",
                     url = "https://test.enabled.no-latency",
                     enabled = true,
                     latencyHistoryEnabled = true,
                 )
-                val disabledMonitorWithLatency = createMonitor(
+                val disabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
@@ -61,21 +61,21 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
             `when`("there are new events for existing monitors after initialization") {
                 appContext = testAppContext()
 
-                val enabledMonitorWithLatency = createMonitor(
+                val enabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     latencyHistoryEnabled = false,
                 )
-                val enabledMonitorWithoutLatency = createMonitor(
+                val enabledMonitorWithoutLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-no-latency",
                     url = "https://test.enabled.no-latency",
                     enabled = true,
                     latencyHistoryEnabled = true,
                 )
-                val disabledMonitorWithLatency = createMonitor(
+                val disabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
@@ -111,28 +111,28 @@ class LatencyExporterTest : ExporterTest("enabled-metrics-latency") {
 
                 appContext = testAppContext()
 
-                val enabledMonitorWithLatency = createMonitor(
+                val enabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     latencyHistoryEnabled = false,
                 )
-                val anotherEnabledMonitorWithLatency = createMonitor(
+                val anotherEnabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
                     latencyHistoryEnabled = true,
                 )
-                val yetAnotherEnabledMonitorWithLatency = createMonitor(
+                val yetAnotherEnabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "yet-another-enabled",
                     url = "https://yet.another.enabled",
                     enabled = true,
                     latencyHistoryEnabled = true,
                 )
-                val disabledMonitorWithLatency = createMonitor(
+                val disabledMonitorWithLatency = createHttpMonitor(
                     getMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",

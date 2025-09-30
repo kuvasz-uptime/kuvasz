@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.data.forAll
@@ -25,7 +25,7 @@ class DisabledWebUIAuthenticationTest(
 ) : DatabaseStringSpec() {
     init {
         "all the web UI endpoints should be publicly available" {
-            val monitor = createMonitor(monitorRepository)
+            val monitor = createHttpMonitor(monitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
 
             table(

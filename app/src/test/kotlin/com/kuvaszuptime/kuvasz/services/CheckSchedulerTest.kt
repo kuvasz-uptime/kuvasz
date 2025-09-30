@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
@@ -38,7 +38,7 @@ class CheckSchedulerTest(
     init {
         given("the CheckScheduler service") {
             `when`("there is an enabled monitor in the database and initialize has been called") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
 
                 checkScheduler.initialize()
 
@@ -55,7 +55,7 @@ class CheckSchedulerTest(
             }
 
             `when`("there is an enabled but unschedulable monitor in the database and initialize has been called") {
-                createMonitor(monitorRepository, uptimeCheckInterval = 0)
+                createHttpMonitor(monitorRepository, uptimeCheckInterval = 0)
 
                 checkScheduler.initialize()
 
@@ -66,7 +66,7 @@ class CheckSchedulerTest(
             }
 
             `when`("there is a disabled monitor in the database and initialize has been called") {
-                createMonitor(monitorRepository, enabled = false)
+                createHttpMonitor(monitorRepository, enabled = false)
 
                 checkScheduler.initialize()
 
@@ -80,7 +80,7 @@ class CheckSchedulerTest(
                 "there is an enabled monitor in the database with disabled SSL checks" +
                     " and initialize has been called"
             ) {
-                val monitor = createMonitor(monitorRepository, sslCheckEnabled = false)
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = false)
 
                 checkScheduler.initialize()
 
@@ -92,9 +92,9 @@ class CheckSchedulerTest(
 
             `when`("it initializes the uptime checks") {
                 val monitor1 =
-                    createMonitor(monitorRepository, monitorName = "m1", uptimeCheckInterval = 1000)
+                    createHttpMonitor(monitorRepository, monitorName = "m1", uptimeCheckInterval = 1000)
                 val monitor2 =
-                    createMonitor(monitorRepository, monitorName = "m2", uptimeCheckInterval = 30)
+                    createHttpMonitor(monitorRepository, monitorName = "m2", uptimeCheckInterval = 30)
                 // Make sure that the set-up check won't be rescheduled because of a too fast check invocation
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(any(), any(), any(), any()) } coAnswers { delay(10000) }
@@ -112,7 +112,7 @@ class CheckSchedulerTest(
             }
 
             `when`("an uptime check is executed") {
-                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any(), any(), any()) } just Runs
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
@@ -132,7 +132,7 @@ class CheckSchedulerTest(
             }
 
             `when`("a lock can't be acquired for an uptime check") {
-                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns false
@@ -148,7 +148,7 @@ class CheckSchedulerTest(
             }
 
             `when`("an uptime check calls the passed doAfter callback") {
-                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } coAnswers {
                     lambda<(HttpMonitorRecord) -> Unit>().captured.invoke(monitor)
@@ -173,7 +173,7 @@ class CheckSchedulerTest(
             }
 
             `when`("an uptime check throws an exception") {
-                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } throws Exception("bad")
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
@@ -193,7 +193,7 @@ class CheckSchedulerTest(
             }
 
             `when`("the getNextCheck() method is called, but no check is scheduled for the given monitor") {
-                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 10, sslCheckEnabled = true)
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 10, sslCheckEnabled = true)
                 checkScheduler.initialize()
 
                 then("it should return null") {
@@ -203,7 +203,7 @@ class CheckSchedulerTest(
             }
 
             `when`("the getNextCheck() method is called, and there are scheduled checks for the monitor") {
-                val monitor = createMonitor(monitorRepository, uptimeCheckInterval = 100, sslCheckEnabled = true)
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 100, sslCheckEnabled = true)
                 checkScheduler.initialize()
 
                 then("it should return them correctly") {

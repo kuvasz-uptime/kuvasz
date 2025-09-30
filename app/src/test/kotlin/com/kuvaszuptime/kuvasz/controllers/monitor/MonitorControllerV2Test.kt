@@ -5,7 +5,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
@@ -39,11 +39,11 @@ class MonitorControllerV2Test(
                 .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
 
             `when`("there are monitors in the database") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "irrelevant",
                 )
-                val monitor2 = createMonitor(
+                val monitor2 = createHttpMonitor(
                     monitorRepository,
                     enabled = false,
                     uptimeCheckInterval = 23234,
