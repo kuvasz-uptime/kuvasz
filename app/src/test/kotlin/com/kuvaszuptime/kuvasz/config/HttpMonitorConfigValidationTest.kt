@@ -20,12 +20,12 @@ import io.micronaut.context.exceptions.BeanInstantiationException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 /**
- * These tests are meant to check if a wrongly configured MonitorConfig in the YAML files
+ * These tests are meant to check if a wrongly configured HttpMonitorConfig in the YAML files
  * really hinders the application from starting as expected.
  */
 class HttpMonitorConfigValidationTest : BehaviorSpec({
 
-    given("a MonitorConfig bean") {
+    given("an HttpMonitorConfig bean") {
 
         `when`("name is an empty string") {
             val exception = shouldThrow<BeanInstantiationException> {
@@ -33,7 +33,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getName - ${MonitorValidationMessages.NAME_NOT_BLANK}"
+                    "HttpMonitorConfig.getName - ${MonitorValidationMessages.NAME_NOT_BLANK}"
             }
         }
 
@@ -43,7 +43,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
+                    "HttpMonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
             }
         }
 
@@ -53,7 +53,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
+                    "HttpMonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
             }
         }
 
@@ -63,7 +63,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getUptimeCheckInterval - Uptime check interval must be at least 5 seconds"
+                    "HttpMonitorConfig.getUptimeCheckInterval - Uptime check interval must be at least 5 seconds"
             }
         }
 
@@ -73,7 +73,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getSslExpiryThreshold - " +
+                    "HttpMonitorConfig.getSslExpiryThreshold - " +
                     MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
             }
         }
@@ -94,7 +94,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getResponseTimeThresholdMillis - " +
+                    "HttpMonitorConfig.getResponseTimeThresholdMillis - " +
                     "Response time threshold must be less than or equal to 30000 milliseconds"
             }
         }
@@ -105,7 +105,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getRequestHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
+                    "HttpMonitorConfig.getRequestHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
             }
         }
 
@@ -115,7 +115,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getExpectedHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
+                    "HttpMonitorConfig.getExpectedHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
             }
         }
 
@@ -125,14 +125,14 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "MonitorConfig.getRequestBody - ${ValidationMessages.WELL_FORMED_JSON_STRING}"
+                    "HttpMonitorConfig.getRequestBody - ${ValidationMessages.WELL_FORMED_JSON_STRING}"
             }
         }
     }
 })
 
 /**
- * These tests are meant to check if a MonitorConfig bean with default values
+ * These tests are meant to check if an HttpMonitorConfig bean with default values
  * is created correctly when not all the properties are explicitly set in the YAML.
  *
  * It extends a DatabaseBehaviorSpec to delete the inserted monitor properly to not affect other tests
@@ -140,7 +140,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
 @MicronautTest(startApplication = false, environments = ["monitor-without-defaults"])
 class HttpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : DatabaseBehaviorSpec({
 
-    given("a MonitorConfig bean") {
+    given("an HttpMonitorConfig bean") {
 
         `when`("not all the properties are explicitly set in the YAML") {
 

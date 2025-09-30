@@ -6,6 +6,8 @@ package com.kuvaszuptime.kuvasz.jooq;
 
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 
@@ -27,6 +29,9 @@ public class Indexes {
 
     public static final Index LATENCY_LOG_LATENCY_IDX = Internal.createIndex(DSL.name("latency_log_latency_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.LATENCY }, false);
     public static final Index LATENCY_LOG_MONITOR_IDX = Internal.createIndex(DSL.name("latency_log_monitor_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.MONITOR_ID }, false);
+    public static final Index PUSH_MONITOR_EFFECTIVE_MONITORS_IDX = Internal.createIndex(DSL.name("push_monitor_effective_monitors_idx"), PushMonitor.PUSH_MONITOR, new OrderField[] { PushMonitor.PUSH_MONITOR.LAST_HEARTBEAT, PushMonitor.PUSH_MONITOR.ENABLED }, false);
+    public static final Index PUSH_UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("push_uptime_event_ended_at_idx"), PushUptimeEvent.PUSH_UPTIME_EVENT, new OrderField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.ENDED_AT }, false);
+    public static final Index PUSH_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("push_uptime_event_monitor_idx"), PushUptimeEvent.PUSH_UPTIME_EVENT, new OrderField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index SSL_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("ssl_event_ended_at_idx"), SslEvent.SSL_EVENT, new OrderField[] { SslEvent.SSL_EVENT.ENDED_AT }, false);
     public static final Index SSL_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("ssl_event_monitor_idx"), SslEvent.SSL_EVENT, new OrderField[] { SslEvent.SSL_EVENT.MONITOR_ID }, false);
     public static final Index STATUS_PAGE_MONITORS_IDX = Internal.createIndex(DSL.name("status_page_monitors_idx"), StatusPage.STATUS_PAGE, new OrderField[] { StatusPage.STATUS_PAGE.MONITORS }, false);

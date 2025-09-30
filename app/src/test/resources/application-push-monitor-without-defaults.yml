@@ -1,0 +1,4 @@
+push-monitors:
+  - name: irrelevant
+    heartbeat-interval: 120
+    client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret1

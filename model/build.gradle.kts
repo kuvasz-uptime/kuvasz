@@ -1,5 +1,14 @@
+import org.jooq.meta.kotlin.database
 import org.jooq.meta.kotlin.forcedType
 import org.jooq.meta.kotlin.forcedTypes
+import org.jooq.meta.kotlin.generate
+import org.jooq.meta.kotlin.generator
+import org.jooq.meta.kotlin.jdbc
+import org.jooq.meta.kotlin.matchers
+import org.jooq.meta.kotlin.strategy
+import org.jooq.meta.kotlin.table
+import org.jooq.meta.kotlin.tables
+import org.jooq.meta.kotlin.target
 
 buildscript {
     val flywayPluginVersion: String by project
@@ -76,15 +85,37 @@ jooq {
         create("main") {
             generateSchemaSourceOnCompilation.set(false)
 
-            jooqConfiguration.apply {
-                jdbc.apply {
+            jooqConfiguration {
+                jdbc {
                     driver = localDbDriver
                     url = localDbUrl
                     user = localDbUser
                     password = localDbPassword
                 }
-                generator.apply {
-                    database.apply {
+                generator {
+                    strategy {
+                        matchers {
+                            tables {
+                                table {
+                                    expression = "HTTP_UPTIME_EVENT"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
+                                }
+                                table {
+                                    expression = "PUSH_UPTIME_EVENT"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
+                                }
+                                table {
+                                    expression = "HTTP_MONITOR"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
+                                }
+                                table {
+                                    expression = "PUSH_MONITOR"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
+                                }
+                            }
+                        }
+                    }
+                    database {
                         inputSchema = localDbSchema
                         isOutputSchemaToDefault = false
                         excludes = "flyway_schema_history"
@@ -94,7 +125,7 @@ jooq {
                                 userType = "com.kuvaszuptime.kuvasz.models.handlers.IntegrationID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter"
                                 isGenericConverter = false
-                                includeExpression = "HTTP_MONITOR.INTEGRATIONS"
+                                includeExpression = "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
@@ -109,13 +140,13 @@ jooq {
                             }
                         }
                     }
-                    generate.apply {
+                    generate {
                         isDeprecated = false
                         isValidationAnnotations = false
                         isFluentSetters = true
                         isPojos = true
                     }
-                    target.apply {
+                    target {
                         directory = "src/jooq/java"
                         packageName = "com.kuvaszuptime.kuvasz.jooq"
                     }
