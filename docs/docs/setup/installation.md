@@ -38,7 +38,7 @@ services:
       interval: 10s
       start_period: 30s
     volumes:
-      - kuvasz-db-data:/var/lib/postgresql/data
+      - kuvasz-db-data:/var/lib/postgresql
   kuvasz:
     image: kuvaszmonitoring/kuvasz:latest
     # platform: linux/arm64 # (9)
