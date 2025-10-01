@@ -23,7 +23,7 @@ import java.util.Optional
 
 @Singleton
 class HttpUptimeChecker(
-    @Client(configuration = HttpCheckerClientConfiguration::class)
+    @param:Client(configuration = HttpCheckerClientConfiguration::class)
     private val httpClient: HttpClient,
     private val monitorRepository: HttpMonitorRepository,
     private val checkRequestConfigurator: HttpCheckRequestConfigurator,

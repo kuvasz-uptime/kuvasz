@@ -15,7 +15,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Requires(property = TelegramNotificationConfig.CONFIG_PREFIX)
-class TelegramAPIClient(@Client private val client: HttpClient) {
+class TelegramAPIClient(@param:Client private val client: HttpClient) {
 
     @Retryable
     fun sendMessage(apiToken: String, message: TelegramAPIMessage): Single<String> {

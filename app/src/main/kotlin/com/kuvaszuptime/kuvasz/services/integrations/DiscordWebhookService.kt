@@ -16,7 +16,7 @@ import java.net.URI
 
 @Singleton
 @Requires(property = DiscordNotificationConfig.CONFIG_PREFIX)
-class DiscordWebhookClient(@Client private val client: HttpClient) {
+class DiscordWebhookClient(@param:Client private val client: HttpClient) {
 
     @Retryable
     fun sendMessage(webhookUrl: URI, message: DiscordWebhookMessage): Single<String> {

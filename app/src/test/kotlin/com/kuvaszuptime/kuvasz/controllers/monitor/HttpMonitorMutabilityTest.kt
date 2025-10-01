@@ -21,7 +21,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest(environments = ["yaml-monitors", "full-integrations-setup"])
 class HttpMonitorMutabilityTest(
-    @Client("/") private val client: HttpClient,
+    @param:Client("/") private val client: HttpClient,
 ) : DatabaseStringSpec({
 
     val monitorCreateDto = HttpMonitorCreateDto(
