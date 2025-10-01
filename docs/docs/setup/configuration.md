@@ -134,7 +134,7 @@ The database connection can be configured **only via environment variables**.
 
 !!! info
 
-    The **minimum, tested version of _PostgreSQL_ is 12**, `alpine` distributions are supported.
+    The **minimum, tested version of _PostgreSQL_ is 14**, `alpine` distributions are supported.
 
 ### Host
 

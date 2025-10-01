@@ -8,7 +8,7 @@ This guide will walk you through the deployment process.
     _Kuvasz_ relies on a _PostgreSQL_ database to store its data, but **if you don't have one** set up already,
     you can use the provided _Docker compose_ file to easily set up a _PostgreSQL_ instance alongside _Kuvasz_.
 
-    The **minimum, tested version of PostgreSQL is 12**, `alpine` distributions are supported.
+    The **minimum, tested version of _PostgreSQL_ is 14**, `alpine` distributions are supported.
 
 ## Quick start with Docker Compose
 
