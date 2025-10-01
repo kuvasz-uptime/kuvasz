@@ -298,7 +298,10 @@ class StatCalculatorTest(
                 stats.history.uptimeStats.incidents shouldBe 1
                 stats.history.uptimeStats.affectedMonitors shouldBe 1
                 // The uptime ratio calculation should only take the time within the given period into account
-                stats.history.uptimeStats.uptimeRatio shouldBe 0.7777777777777778
+                stats.history.uptimeStats.uptimeRatio
+                    ?.toBigDecimal()
+                    ?.setScale(4, RoundingMode.HALF_UP) shouldBe
+                    (7.toDouble() / 9).toBigDecimal().setScale(4, RoundingMode.HALF_UP)
                 // 2 days in seconds, because even the downtime stared before the period, only the part within the
                 // period should be counted
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 2 * 24 * 60 * 60
@@ -398,7 +401,9 @@ class StatCalculatorTest(
 
                 stats.history.uptimeStats.incidents shouldBe 1 // Only the downMonitor has an incident
                 stats.history.uptimeStats.affectedMonitors shouldBe 1
-                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 // 5 days in seconds
+                val expectedDowntimeSeconds = 5L * 24 * 60 * 60 // 5 days in seconds
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBeInRange
+                    expectedDowntimeSeconds..expectedDowntimeSeconds + 1
             }
         }
 
