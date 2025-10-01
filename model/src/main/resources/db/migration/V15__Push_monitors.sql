@@ -11,7 +11,7 @@ CREATE TABLE push_monitor (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT push_monitor_pkey PRIMARY KEY (id),
     CONSTRAINT unique_push_monitor_name UNIQUE (name),
-    CONSTRAINT unique_push_client_secret UNIQUE (client_secret)
+    CONSTRAINT unique_push_client_secret UNIQUE (client_secret) DEFERRABLE INITIALLY DEFERRED
 );
 CREATE INDEX push_monitor_effective_monitors_idx ON push_monitor USING btree (last_heartbeat, enabled);
 

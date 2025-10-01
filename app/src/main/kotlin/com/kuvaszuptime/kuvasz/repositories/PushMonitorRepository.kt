@@ -136,11 +136,11 @@ class PushMonitorRepository(private val dslContext: DSLContext) {
     }
 
     /**
-     * Deletes all monitors except the ones with the given names.
+     * Deletes all monitors except the ones with the given IDs.
      */
-    fun deleteAllExcept(ignoredNames: List<String>, txCtx: DSLContext = this.dslContext): Int = txCtx
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): Int = txCtx
         .deleteFrom(PUSH_MONITOR)
-        .where(PUSH_MONITOR.NAME.notIn(ignoredNames))
+        .where(PUSH_MONITOR.ID.notIn(ignoredIds))
         .execute()
 
     @Suppress("LongMethod")

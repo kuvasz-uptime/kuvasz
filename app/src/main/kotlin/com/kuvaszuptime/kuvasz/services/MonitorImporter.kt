@@ -50,15 +50,6 @@ class MonitorImporter(
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
 
-            // Removing all monitors that are not in the provided configs. Doing this before the upsert to avoid
-            // potential unique constraint violations on the client secret in case a new monitor would use an old
-            // no longer existing monitor's client secret.
-            val deletedCnt = pushMonitorRepository.deleteAllExcept(
-                ignoredNames = monitorConfigs.map { it.name },
-                txCtx,
-            )
-            logger.info("Deleted $deletedCnt push monitors that were not in the external config")
-
             val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
                 // Validating the monitor's integrations to ensure they are configured correctly
                 val validatedIntegrations =
@@ -68,6 +59,10 @@ class MonitorImporter(
                 pushMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
             }
             logger.info("Loaded ${monitorConfigs.size} push monitors from external config")
+
+            // Removing all monitors that are not in the provided configs
+            val deletedCnt = pushMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
+            logger.info("Deleted $deletedCnt push monitors that were not in the external config")
 
             MonitorImportResultDto(
                 receivedMonitorCnt = monitorConfigs.size,
