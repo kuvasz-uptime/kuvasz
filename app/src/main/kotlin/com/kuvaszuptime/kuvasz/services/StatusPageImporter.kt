@@ -34,7 +34,9 @@ class StatusPageImporter(
 
             // Removing all status pages that are not in the provided configs
             val deletedCnt = statusPageRepository.deleteAllExcept(ignoredIds = upsertedStatusPageIds, txCtx)
-            logger.info("Deleted $deletedCnt status pages that were not in the external config")
+            if (deletedCnt > 0) {
+                logger.info("Deleted $deletedCnt status pages that were not in the external config")
+            }
 
             StatusPageImportResultDto(
                 receivedStatusPageCnt = statusPageConfigs.size,

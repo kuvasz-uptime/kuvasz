@@ -37,7 +37,9 @@ class MonitorImporter(
 
             // Removing all monitors that are not in the provided configs
             val deletedCnt = httpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
-            logger.info("Deleted $deletedCnt HTTP monitors that were not in the external config")
+            if (deletedCnt > 0) {
+                logger.info("Deleted $deletedCnt HTTP monitors that were not in the external config")
+            }
 
             MonitorImportResultDto(
                 receivedMonitorCnt = monitorConfigs.size,
@@ -62,7 +64,9 @@ class MonitorImporter(
 
             // Removing all monitors that are not in the provided configs
             val deletedCnt = pushMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
-            logger.info("Deleted $deletedCnt push monitors that were not in the external config")
+            if (deletedCnt > 0) {
+                logger.info("Deleted $deletedCnt push monitors that were not in the external config")
+            }
 
             MonitorImportResultDto(
                 receivedMonitorCnt = monitorConfigs.size,

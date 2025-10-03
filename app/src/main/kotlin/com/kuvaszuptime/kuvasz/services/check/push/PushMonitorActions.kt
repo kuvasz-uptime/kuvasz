@@ -175,7 +175,7 @@ class PushMonitorActions(
 //                )
 //            }
 
-    fun getHttpMonitorsExport(): List<PushMonitorRecord> = monitorRepository.fetchAll()
+    fun getPushMonitorsExport(): List<PushMonitorRecord> = monitorRepository.fetchAll()
 
     // TODO update
     override fun getDataOfEnabledMonitors(
