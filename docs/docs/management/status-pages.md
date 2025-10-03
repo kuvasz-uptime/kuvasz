@@ -36,6 +36,46 @@
     7. The `custom-favicon-url` field is the URL of the custom favicon to be used for the status page.
     8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`.
 
+    !!!info "Consequences of describing your status pages as YAML"
+
+        Be aware that if you define your status pages via _YAML_, you **cannot use the UI, or the API** to modify them, you can only view them there (read-only operations are permitted)!
+    
+        In this case _Kuvasz_ reads your YAML file on startup, compares the pages in there with the existing ones in the database, and uses the YAML file as the source of truth. 
+    
+        The same applies if you **used the UI or the API before** to manage your status pages, and you decide to switch to YAML: unless your YAML definition matches the existing status by their name, existing status pages **could be deleted or modified**.
+
+    **What happens if you add one or more status page to your YAML file?**
+
+    - If there is a status page in the database that is not in the YAML file, **it will be deleted**.
+    - If there is a status page in the YAML file that is not in the database, **it will be created** and added to the database.
+    - If there is a status page in both the YAML file and the database, and they have the same name, the status page in the database **will be updated** with the values from the YAML file.
+
+    **What happens if you provide an empty array for the status pages in the YAML file?**
+
+    ```yaml
+    status-pages: []
+    ```
+
+    In this case all status pages in the database **will be deleted**.
+
+    **What happens if you remove the relevant properties from the YAML file?**
+
+    By that we mean that your YAML file **doesn't contain the relevant property key** (i.e. `status-pages`), or it is **not explicitly set to an empty array** (see the example below).
+
+    ```yaml
+    # Watch out for the missing property value here. 
+    # This is considered as a missing configuration, 
+    # entries in the database will not be touched, 
+    # external write to the status pages are allowed.
+    status-pages:
+    ```
+
+    In this case all status pages in the database **will be kept** (i.e. the ones that were created before via YAML). This is especially useful if you want to **restore your status pages from your exported YAML backup**, but you want to manage them on the UI in the future.
+
+    !!!danger "Changing a status page's name"
+
+        **If you change the name** of an existing status page in the YAML file, it will be treated as a new one, and the old one will be deleted.
+
 === "API (expert)"
 
     This section won't go into details about the API or about exact API calls, since it's **well documented and must be self-explanatory**. You can find more information about the available endpoints and their usage in the [**API documentation**](https://api-docs.kuvasz-uptime.dev){target="_blank"}.

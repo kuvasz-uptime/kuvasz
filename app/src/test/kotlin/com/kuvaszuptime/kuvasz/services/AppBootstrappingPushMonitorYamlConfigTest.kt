@@ -171,15 +171,12 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
     }
 
     /**
-     * This test simulates a change in the YAML config, where the config is either not present or it's empty. In this
-     * case the app should retain the previously persisted monitors and their scheduled checks, which is essential for 2
-     * reasons:
-     * - accidentally missing the YAML config should not cause any data loss
-     * - this can be seen also as restoring a backup from a YAML file, in which case it should be totally normal that
-     * after a successful import one would like to remove the YAML config and re-enable the external writes to them
+     * This test simulates a change in the YAML config, where the config property is empty. In this
+     * case the app should retain the previously persisted monitors, which is essential
+     * because accidentally misconfiguring the YAML config should not cause any data loss
      */
     "3. step: the app is restarted with an empty YAML config for the monitors" {
-        appContext = testAppContext("yaml-push-monitors-empty")
+        appContext = testAppContext("yaml-push-monitors-empty-value")
         val monitorRepository = getMonitorRepository()
 
         // The app config should be set to enable external writes against the monitors
@@ -198,19 +195,48 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
         monitorRepository.fetchAll() shouldHaveSize 4
     }
 
+    "4. step: the app is restarted with no YAML config for push monitors" {
+        appContext = testAppContext("full-integrations-setup")
+        val monitorRepository = getMonitorRepository()
+
+        // The app config should be set to enable external writes against the monitors
+        getAppConfig().isPushMonitorExternalWriteDisabled() shouldBe false
+        // All the previously set up monitors should be still in there, including the manually created one
+        val monitorsInDb = monitorRepository.fetchAll().map { it.name }
+        monitorsInDb
+            .shouldHaveSize(4)
+            .shouldContainExactlyInAnyOrder(monitorsAfterTheSecondStep.map { it.name } + "manual_monitor")
+    }
+
     /**
      * Here we practically say: "I don't care what happened before, if there is a YAML config, use it as a
      * single-source-of-truth!"
      */
-    "4. step: the initial YAML config is used again" {
+    "5. step: the initial YAML config is used again" {
         executeAndAssertTheFirstStep()
+    }
+
+    /**
+     * This test simulates a case where the YAML config is used, but with an empty array. In this case the app
+     * should delete all previously persisted monitors, because the user explicitly wants to have zero
+     * monitors, and disable external writes against them.
+     */
+    "6. step: the app started with an empty array as the YAML config for the monitors" {
+        appContext = testAppContext("yaml-push-monitors-empty-array")
+        val monitorRepository = getMonitorRepository()
+
+        // The app config should be set to disable external writes against the monitors
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe false
+        getAppConfig().isPushMonitorExternalWriteDisabled() shouldBe true
+        // All the monitors should be deleted
+        monitorRepository.fetchAll().shouldBeEmpty()
     }
 
     /**
      * This test simulates a case where the YAML config is used, but one of the integrations is not present in the
      * integrations' config. In this case the app should throw an exception, and should not start up.
      */
-    "5. step: the app started with some monitors in the YAML, but there is a non-existing integration on one of them" {
+    "7. step: the app started with some monitors in the YAML, but there is a non-existing integration on one of them" {
         val ex = shouldThrow<BeanInstantiationException> {
             testAppContext("yaml-push-monitors-missing-integration", "full-integrations-setup")
         }

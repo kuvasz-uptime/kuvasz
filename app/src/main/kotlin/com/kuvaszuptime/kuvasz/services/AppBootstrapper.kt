@@ -14,6 +14,8 @@ import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import io.micronaut.context.annotation.Context
+import io.micronaut.context.annotation.Property
+import jakarta.annotation.Nullable
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 
@@ -31,6 +33,21 @@ class AppBootstrapper(
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
 ) {
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = HttpMonitorConfig.CONFIG_PREFIX)
+    protected var httpMonitorYAMLConfigChecker: List<Any>? = null
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = PushMonitorConfig.CONFIG_PREFIX)
+    protected var pushMonitorYAMLConfigChecker: List<Any>? = null
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = StatusPageConfig.CONFIG_PREFIX)
+    protected var statusPagesYAMLConfigChecker: List<Any>? = null
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
@@ -97,7 +114,12 @@ class AppBootstrapper(
      * respective monitors
      */
     private fun processYamlMonitorConfigs() {
-        if (yamlHttpMonitorConfigs.isNotEmpty()) {
+        // The httpMonitorYAMLConfigChecker is a workaround to check if the http-monitors config is present in the
+        // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
+        // have zero HTTP monitors, so we should disable external writes and delete all monitors from the
+        // DB eventually.
+        val isYamlHttpConfigEffective = yamlHttpMonitorConfigs.isNotEmpty() || httpMonitorYAMLConfigChecker != null
+        if (isYamlHttpConfigEffective) {
             appConfig.disableHttpMonitorExternalWrite()
             logger.info(
                 "Disabled external modifications of HTTP monitors, because a YAML monitor config was found. " +
@@ -111,7 +133,12 @@ class AppBootstrapper(
             )
         }
 
-        if (yamlPushMonitorConfigs.isNotEmpty()) {
+        // The pushMonitorYAMLConfigChecker is a workaround to check if the push-monitors config is present in the
+        // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
+        // have zero push monitors, so we should disable external writes and delete all monitors from the
+        // DB eventually.
+        val isYamlPushConfigEffective = yamlStatusPageConfigs.isNotEmpty() || pushMonitorYAMLConfigChecker != null
+        if (isYamlPushConfigEffective) {
             // Ensuring that all client secrets are unique
             require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
                 "YAML push monitor configs must have unique client secrets!"
@@ -136,7 +163,12 @@ class AppBootstrapper(
      * status pages
      */
     private fun processYamlStatusPageConfigs() {
-        if (yamlStatusPageConfigs.isNotEmpty()) {
+        // The statusPagesYAMLConfigChecker is a workaround to check if the status-pages config is present in the
+        // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
+        // have zero status pages, so we should disable external writes and delete all status pages from the
+        // DB eventually.
+        val isYamlStatusPageConfigEffective = yamlStatusPageConfigs.isNotEmpty() || statusPagesYAMLConfigChecker != null
+        if (isYamlStatusPageConfigEffective) {
             appConfig.disableStatusPageExternalWrite()
             logger.info(
                 "Disabled external modifications of status pages, because a YAML status page config was found. " +
