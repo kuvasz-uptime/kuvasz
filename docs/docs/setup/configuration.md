@@ -435,6 +435,7 @@ You can find the full configuration example below, which includes all the option
       http-latest-latency: true
       ssl-status: true
       ssl-expiry: true
+      push-uptime-status: true
     ---
     admin-auth:
       username: YourSuperSecretUsername
@@ -487,4 +488,5 @@ You can find the full configuration example below, which includes all the option
     ENABLE_HTTP_LATEST_LATENCY_EXPORT=true
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
+    ENABLE_PUSH_UPTIME_STATUS_EXPORT=true
     ```

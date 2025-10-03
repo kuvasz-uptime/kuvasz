@@ -145,6 +145,7 @@ metrics-exports:
   http-latest-latency: ${ENABLE_HTTP_LATEST_LATENCY_EXPORT:`false`}
   ssl-status: ${ENABLE_SSL_STATUS_EXPORT:`false`}
   ssl-expiry: ${ENABLE_SSL_EXPIRY_EXPORT:`false`}
+  push-uptime-status: ${ENABLE_PUSH_UPTIME_STATUS_EXPORT:`false`}
 ---
 default-status-page:
   public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}

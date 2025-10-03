@@ -21,7 +21,7 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
 
     private fun HttpMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: HttpUptimeMonitorEvent, ctx: DSLContext = dslContext): HttpUptimeEventRecord {
+    fun insertFromMonitorEvent(event: HttpUptimeMonitorEvent, ctx: DSLContext? = dslContext): HttpUptimeEventRecord {
         val eventToInsert = HttpUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
@@ -32,7 +32,7 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
             eventToInsert.error = event.getPersistableError()
         }
 
-        return ctx.insertInto(HTTP_UPTIME_EVENT)
+        return (ctx ?: dslContext).insertInto(HTTP_UPTIME_EVENT)
             .set(eventToInsert)
             .returning(HTTP_UPTIME_EVENT.asterisk())
             .fetchOneOrThrow<HttpUptimeEventRecord>()

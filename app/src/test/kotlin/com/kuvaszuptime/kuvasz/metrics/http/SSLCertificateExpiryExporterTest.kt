@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics.http
 
-import com.kuvaszuptime.kuvasz.metrics.ExporterTest
+import com.kuvaszuptime.kuvasz.metrics.HttpExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -12,7 +12,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import java.time.OffsetDateTime
 
-class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expiry") {
+class SSLCertificateExpiryExporterTest : HttpExporterTest("enabled-metrics-ssl-expiry") {
 
     init {
         given("an enabled SSL expiry exporter") {
@@ -21,7 +21,7 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                 appContext = testAppContext()
 
                 val enabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
@@ -29,14 +29,14 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                 )
                 // Enabled monitor without expiry data
                 createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-no-expiry",
                     url = "https://test.enabled.no-expiry",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val disabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = true,
@@ -77,21 +77,21 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                 appContext = testAppContext()
 
                 val enabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val enabledMonitorWithoutExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-no-expiry",
                     url = "https://test.enabled.no-expiry",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val disabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = true,
@@ -157,28 +157,28 @@ class SSLCertificateExpiryExporterTest : ExporterTest("enabled-metrics-ssl-expir
                 appContext = testAppContext()
 
                 val enabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val anotherEnabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val yetAnotherEnabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "yet-another-enabled",
                     url = "https://yet.another.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val disabledMonitorWithExpiry = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = true,

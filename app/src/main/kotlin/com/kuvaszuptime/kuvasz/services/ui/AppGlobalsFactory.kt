@@ -49,6 +49,7 @@ class AppGlobalsFactory {
             public = defaultStatusPageConfig.public,
         ),
         configuredMonitors = {
+            // TODO remove sorting param and sort it implicitly
             monitorActions.getConfiguredMonitors(sortedBy = HTTP_MONITOR.NAME.asc())
         },
     )

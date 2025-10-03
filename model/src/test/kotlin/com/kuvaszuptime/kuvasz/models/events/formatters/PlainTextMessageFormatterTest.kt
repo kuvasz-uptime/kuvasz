@@ -4,9 +4,13 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -22,15 +26,15 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
     {
         val formatter = PlainTextMessageFormatter
 
-        val monitor = HttpMonitorRecord()
+        val httpMonitor = HttpMonitorRecord()
             .setId(1111)
             .setName("test_monitor")
             .setUrl("https://test.url")
 
-        given("toFormattedMessage(event: UptimeMonitorEvent)") {
+        given("toFormattedMessage(event: UptimeMonitorEvent) - HTTP") {
 
-            `when`("it gets a MonitorUpEvent without a previousEvent") {
-                val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null)
+            `when`("it gets an HttpMonitorUpEvent without a previousEvent") {
+                val event = HttpMonitorUpEvent(httpMonitor, HttpStatus.OK, 300, null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -39,9 +43,9 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 }
             }
 
-            `when`("it gets a MonitorUpEvent with a previousEvent with the same status") {
+            `when`("it gets an HttpMonitorUpEvent with a previousEvent with the same status") {
                 val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP)
-                val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
+                val event = HttpMonitorUpEvent(httpMonitor, HttpStatus.OK, 300, previousEvent)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -50,10 +54,10 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 }
             }
 
-            `when`("it gets a MonitorUpEvent with a previousEvent with different status") {
+            `when`("it gets an HttpMonitorUpEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
                 val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
-                val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
+                val event = HttpMonitorUpEvent(httpMonitor, HttpStatus.OK, 300, previousEvent)
 
                 then("it should return the correct message") {
                     val expectedDurationString =
@@ -65,8 +69,8 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 }
             }
 
-            `when`("it gets a MonitorDownEvent without a status") {
-                val event = HttpMonitorDownEvent(monitor, null, Exception("uptime error"), null)
+            `when`("it gets an HttpMonitorDownEvent without a status") {
+                val event = HttpMonitorDownEvent(httpMonitor, null, Exception("uptime error"), null)
 
                 then("it should use the error message as a reason") {
                     val expectedMessage =
@@ -75,8 +79,8 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 }
             }
 
-            `when`("it gets a MonitorDownEvent without a previousEvent") {
-                val event = HttpMonitorDownEvent(monitor, HttpStatus.BAD_REQUEST, Exception("uptime error"), null)
+            `when`("it gets an HttpMonitorDownEvent without a previousEvent") {
+                val event = HttpMonitorDownEvent(httpMonitor, HttpStatus.BAD_REQUEST, Exception("uptime error"), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -86,10 +90,10 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 }
             }
 
-            `when`("it gets a MonitorDownEvent with a previousEvent with the same status") {
+            `when`("it gets an HttpMonitorDownEvent with a previousEvent with the same status") {
                 val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.DOWN)
                 val event = HttpMonitorDownEvent(
-                    monitor,
+                    httpMonitor,
                     HttpStatus.BAD_REQUEST,
                     Exception("uptime error"),
                     previousEvent
@@ -103,11 +107,11 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 }
             }
 
-            `when`("it gets a MonitorDownEvent with a previousEvent with different status") {
+            `when`("it gets an HttpMonitorDownEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
                 val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
                 val event = HttpMonitorDownEvent(
-                    monitor,
+                    httpMonitor,
                     HttpStatus.BAD_REQUEST,
                     Exception("uptime error"),
                     previousEvent
@@ -124,10 +128,99 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             }
         }
 
+        given("toFormattedMessage(event: UptimeMonitorEvent) - Push") {
+
+            val pushMonitor = PushMonitorRecord().apply {
+                id = 222
+                name = "test_push_monitor"
+            }
+
+            `when`("it gets a PushMonitorUpEvent without a previousEvent") {
+                val event = PushMonitorUpEvent(pushMonitor, null)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "Your monitor \"test_push_monitor\" is UP"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a PushMonitorUpEvent with a previousEvent with the same status") {
+                val previousEvent = PushUptimeEventRecord().setStatus(UptimeStatus.UP)
+                val event = PushMonitorUpEvent(pushMonitor, previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "Your monitor \"test_push_monitor\" is UP"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a PushMonitorUpEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent = PushUptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
+                val event = PushMonitorUpEvent(pushMonitor, previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage =
+                        "Your monitor \"test_push_monitor\" is UP\n" +
+                            "Was down for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a PushMonitorDownEvent without a status") {
+                val event = PushMonitorDownEvent(pushMonitor, "missed a heartbeat", null)
+
+                then("it should use the error message as a reason") {
+                    val expectedMessage =
+                        "Your monitor \"test_push_monitor\" is DOWN\nReason: missed a heartbeat"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a PushMonitorDownEvent without a previousEvent") {
+                val event = PushMonitorDownEvent(pushMonitor, "missed a heartbeat", null)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "Your monitor \"test_push_monitor\" is DOWN\nReason: missed a heartbeat"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a PushMonitorDownEvent with a previousEvent with the same status") {
+                val previousEvent = PushUptimeEventRecord().setStatus(UptimeStatus.DOWN)
+                val event = PushMonitorDownEvent(pushMonitor, "uptime error", previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "Your monitor \"test_push_monitor\" is DOWN\nReason: uptime error"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a PushMonitorDownEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent = PushUptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
+                val event = PushMonitorDownEvent(pushMonitor, "uptime error", previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage =
+                        "Your monitor \"test_push_monitor\" is DOWN\nReason: uptime error\n" +
+                            "Was up for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
         given("toFormattedMessage(event: SSLMonitorEvent)") {
 
             `when`("it gets an SSLValidEvent without a previousEvent") {
-                val event = SSLValidEvent(monitor, generateCertificateInfo(), null)
+                val event = SSLValidEvent(httpMonitor, generateCertificateInfo(), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -138,7 +231,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
             `when`("it gets an SSLValidEvent with a previousEvent with the same status") {
                 val previousEvent = SslEventRecord().setStatus(SslStatus.VALID)
-                val event = SSLValidEvent(monitor, generateCertificateInfo(), previousEvent)
+                val event = SSLValidEvent(httpMonitor, generateCertificateInfo(), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -150,7 +243,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             `when`("it gets an SSLValidEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
                 val previousEvent = SslEventRecord().setStatus(SslStatus.INVALID).setStartedAt(previousStartedAt)
-                val event = SSLValidEvent(monitor, generateCertificateInfo(), previousEvent)
+                val event = SSLValidEvent(httpMonitor, generateCertificateInfo(), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedDurationString =
@@ -163,7 +256,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets an SSLInvalidEvent without a previousEvent") {
-                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), null)
+                val event = SSLInvalidEvent(httpMonitor, SSLValidationError("ssl error"), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -174,7 +267,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
             `when`("it gets an SSLInvalidEvent with a previousEvent with the same status") {
                 val previousEvent = SslEventRecord().setStatus(SslStatus.INVALID)
-                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), previousEvent)
+                val event = SSLInvalidEvent(httpMonitor, SSLValidationError("ssl error"), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedMessage =
@@ -186,7 +279,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             `when`("it gets an SSLInvalidEvent with a previousEvent with different status") {
                 val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
                 val previousEvent = SslEventRecord().setStatus(SslStatus.VALID).setStartedAt(previousStartedAt)
-                val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), previousEvent)
+                val event = SSLInvalidEvent(httpMonitor, SSLValidationError("ssl error"), previousEvent)
 
                 then("it should return the correct message") {
                     val expectedDurationString =
@@ -199,7 +292,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             }
 
             `when`("it gets an SSLWillExpireEvent") {
-                val event = SSLWillExpireEvent(monitor, generateCertificateInfo(), null)
+                val event = SSLWillExpireEvent(httpMonitor, generateCertificateInfo(), null)
 
                 then("it should return the correct message") {
                     val expectedMessage =

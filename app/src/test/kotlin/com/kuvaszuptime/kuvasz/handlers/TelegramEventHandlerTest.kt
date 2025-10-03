@@ -2,9 +2,12 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -14,6 +17,8 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -24,7 +29,9 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.inspectors.forAll
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -40,8 +47,10 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class TelegramEventHandlerTest(
-    private val monitorRepository: HttpMonitorRepository,
-    uptimeEventRepository: HttpUptimeEventRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
+    httpUptimeEventRepository: HttpUptimeEventRepository,
+    pushUptimeEventRepository: PushUptimeEventRepository,
     sslEventRepository: SSLEventRepository,
     latencyLogRepository: HttpLatencyLogRepository,
     dslContext: DSLContext,
@@ -57,7 +66,8 @@ class TelegramEventHandlerTest(
 
         DatabaseEventHandler(
             eventDispatcher,
-            uptimeEventRepository,
+            httpUptimeEventRepository,
+            pushUptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
             dslContext,
@@ -71,7 +81,7 @@ class TelegramEventHandlerTest(
         given("the TelegramEventHandler - HTTP UPTIME events") {
 
             `when`("it receives a MonitorUpEvent and There is no previous event for the monitor") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -88,7 +98,7 @@ class TelegramEventHandlerTest(
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
                 val monitor = createHttpMonitor(
-                    repository = monitorRepository,
+                    repository = httpMonitorRepository,
                     monitorName = "testMonitor",
                     integrations = listOf(
                         globalTelegramConfig.id,
@@ -126,7 +136,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -134,7 +144,7 @@ class TelegramEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -150,7 +160,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -159,7 +169,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -178,7 +188,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -187,7 +197,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -208,7 +218,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -217,7 +227,7 @@ class TelegramEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -236,9 +246,162 @@ class TelegramEventHandlerTest(
             }
         }
 
+        given("the TelegramEventHandler - PUSH UPTIME events") {
+
+            `when`("it receives a MonitorUpEvent and There is no previous event for the monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+
+                eventDispatcher.dispatch(event)
+
+                then("it should not send a message about the event") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(
+                    repository = pushMonitorRepository,
+                    monitorName = "testMonitor",
+                    integrations = listOf(
+                        globalTelegramConfig.id,
+                        otherTelegramConfig.id,
+                        disabledTelegramConfig.id,
+                    )
+                )
+                val event = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "irrelevant",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                mockSuccessfulHttpResponse(otherTelegramConfig.apiToken)
+
+                eventDispatcher.dispatch(event)
+
+                then("it should send a message about the event to every enabled integrations") {
+                    val slot = mutableListOf<String>()
+
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(otherTelegramConfig, capture(slot)) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(disabledTelegramConfig, any()) }
+
+                    slot.forAll { message ->
+                        message shouldBe "🚨 <b>Your monitor \"testMonitor\" is DOWN</b>"
+                    }
+
+                    verify {
+                        mockClient.sendMessage(globalTelegramConfig.apiToken, any())
+                        mockClient.sendMessage(otherTelegramConfig.apiToken, any())
+                    }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should not send any notification about them") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+                    val slot = slot<String>()
+
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
+                    slot.captured shouldBe "🚨 <b>Your monitor \"${monitor.name}\" is DOWN</b>"
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = "irrelevant"
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<String>()
+
+                    verify(exactly = 2) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationsSent)) }
+                    notificationsSent[0] shouldContain "is DOWN"
+                    notificationsSent[1] shouldContain "is UP"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    error = "irrelevant"
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<String>()
+
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationSent)) }
+                    notificationSent.captured shouldStartWith
+                        "🚨 <b>Your monitor \"${monitor.name}\" is DOWN</b>\nWas up for "
+                }
+            }
+        }
+
         given("the TelegramEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -254,7 +417,7 @@ class TelegramEventHandlerTest(
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
                 val monitor = createHttpMonitor(
-                    monitorRepository,
+                    httpMonitorRepository,
                     monitorName = "testMonitor",
                     integrations = listOf(
                         globalTelegramConfig.id,
@@ -289,7 +452,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -312,7 +475,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with the same status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -338,7 +501,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with different status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -365,7 +528,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -391,7 +554,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -411,7 +574,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val originalValidTo = getCurrentTimestamp()
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
@@ -438,7 +601,7 @@ class TelegramEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with a VALID status") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -466,7 +629,7 @@ class TelegramEventHandlerTest(
 
         given("the TelegramEventHandler - error handling logic") {
             `when`("it receives an event but an error happens when it calls the webhook") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,

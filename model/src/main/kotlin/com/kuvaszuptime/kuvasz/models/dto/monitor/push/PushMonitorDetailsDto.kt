@@ -27,6 +27,8 @@ data class PushMonitorDetailsDto(
     val uptimeStatus: UptimeStatus?,
     @param:Schema(description = PushMonitorDocs.UPTIME_STATUS_STARTED_AT, required = true, nullable = true)
     val uptimeStatusStartedAt: OffsetDateTime?,
+    @param:Schema(description = PushMonitorDocs.LAST_UPTIME_CHECK, required = true, nullable = true)
+    val lastUptimeCheck: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.LAST_HEARTBEAT, required = true, nullable = true)
     val lastHeartbeatAt: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.NEXT_EXPECTED_HEARTBEAT, required = true, nullable = true)

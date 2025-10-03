@@ -39,7 +39,7 @@ class AppBootstrappingSanitizationTest(
                 )
             )
             .awaitFirst()
-        val updatedMonitor = httpMonitorRepository.findById(monitor.id).shouldNotBeNull()
+        val updatedMonitor = httpMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
         updatedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(
             IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
@@ -49,7 +49,7 @@ class AppBootstrappingSanitizationTest(
 
         // Simulating the restart of the application
         shouldNotThrowAny { testAppContext("full-integrations-setup") }
-        val sanitizedMonitor = httpMonitorRepository.findById(monitor.id).shouldNotBeNull()
+        val sanitizedMonitor = httpMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
         // The configured ones should be kept, even the disabled one
         sanitizedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(
@@ -73,7 +73,7 @@ class AppBootstrappingSanitizationTest(
                 )
             )
             .awaitFirst()
-        val updatedMonitor = pushMonitorRepository.findById(monitor.id).shouldNotBeNull()
+        val updatedMonitor = pushMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
         updatedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(
             IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
@@ -83,7 +83,7 @@ class AppBootstrappingSanitizationTest(
 
         // Simulating the restart of the application
         shouldNotThrowAny { testAppContext("full-integrations-setup") }
-        val sanitizedMonitor = pushMonitorRepository.findById(monitor.id).shouldNotBeNull()
+        val sanitizedMonitor = pushMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
         // The configured ones should be kept, even the disabled one
         sanitizedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(

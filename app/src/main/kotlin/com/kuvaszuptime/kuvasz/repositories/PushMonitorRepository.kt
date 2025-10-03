@@ -5,17 +5,13 @@ import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_PUSH_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
-import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
-import com.kuvaszuptime.kuvasz.models.DuplicationException
-import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.Record
@@ -23,13 +19,12 @@ import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
-import org.jooq.impl.SQLDataType
 
 @Singleton
 @Suppress("TooManyFunctions")
-class PushMonitorRepository(private val dslContext: DSLContext) {
+class PushMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<PushMonitorRecord> {
 
-    fun findById(monitorId: Long, ctx: DSLContext = dslContext): PushMonitorRecord? = ctx
+    override fun findById(monitorId: Long, txCtx: DSLContext?): PushMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.ID.eq(monitorId))
         .fetchOne()
@@ -52,7 +47,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) {
         .where(PUSH_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
-    fun deleteById(monitorId: Long): Int = dslContext
+    override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.ID.eq(monitorId))
         .execute()
@@ -145,19 +140,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) {
 
     @Suppress("LongMethod")
     private fun monitorDetailsSelect(): SelectConditionStep<out Record?> {
-        val monitorNameField = DSL.field("t.monitor_name", SQLDataType.VARCHAR).`as`("monitor_name")
-        // TODO extract
-        val statusPagesSubselect = DSL
-            .select(
-                monitorNameField,
-                DSL.arrayAgg(STATUS_PAGE.SLUG).`as`("slugs"),
-            )
-            .from(STATUS_PAGE)
-            .crossJoin(
-                DSL.unnest(STATUS_PAGE.MONITORS).`as`("t", "monitor_name")
-            )
-            .groupBy(monitorNameField)
-
+        // TODO
 //        @param:Schema(description = PushMonitorDocs.NEXT_EXPECTED_HEARTBEAT, required = true, nullable = true)
 //        val nextExpectedHeartbeatAt: OffsetDateTime?,
 
@@ -172,6 +155,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) {
             PUSH_MONITOR.UPDATED_AT.`as`(PushMonitorDetailsDto::updatedAt.name),
             PUSH_UPTIME_EVENT.STATUS.`as`(PushMonitorDetailsDto::uptimeStatus.name),
             PUSH_UPTIME_EVENT.STARTED_AT.`as`(PushMonitorDetailsDto::uptimeStatusStartedAt.name),
+            PUSH_UPTIME_EVENT.UPDATED_AT.`as`(PushMonitorDetailsDto::lastUptimeCheck.name),
             PUSH_UPTIME_EVENT.ERROR.`as`(PushMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::effectiveIntegrations.name),
             PUSH_MONITOR.INTEGRATIONS.`as`(PushMonitorDetailsDto::integrations.name),
@@ -191,20 +175,5 @@ class PushMonitorRepository(private val dslContext: DSLContext) {
                     )
             )
             .where(DSL.trueCondition())
-    }
-
-    /**
-     * Converts a DataAccessException to a PersistenceException by matching duplication errors.
-     */
-    // TODO extract and reuse
-    private fun DataAccessException.handle(): Either<PersistenceException, Nothing> {
-        val persistenceError = toPersistenceError()
-        return Either.Left(
-            if (persistenceError is DuplicationException) {
-                MonitorDuplicatedException()
-            } else {
-                persistenceError
-            }
-        )
     }
 }

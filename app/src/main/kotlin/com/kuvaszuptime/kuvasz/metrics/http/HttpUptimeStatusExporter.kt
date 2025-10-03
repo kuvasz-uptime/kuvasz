@@ -2,9 +2,14 @@ package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.metrics.GaugeExporter
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
-import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.metrics.numericMonitorId
+import com.kuvaszuptime.kuvasz.metrics.toLong
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requirements
@@ -20,8 +25,14 @@ import jakarta.inject.Singleton
 class HttpUptimeStatusExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-    private val monitorRepository: HttpMonitorRepository,
-) : HttpGaugeExporter<UptimeStatus>(meterRegistry, eventDispatcher, monitorRepository) {
+    monitorRepository: SharedMonitorRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+) : GaugeExporter<UptimeStatus, HttpMonitorRecord>(
+    meterRegistry,
+    eventDispatcher,
+    monitorRepository,
+    MonitorType.HTTP_SSL,
+) {
 
     companion object {
         private const val MONITOR_UPTIME_STATUS = "http.uptime.status"
@@ -39,21 +50,17 @@ class HttpUptimeStatusExporter(
         }
     }
 
-    private fun HttpUptimeMonitorEvent.handle() {
+    private fun UptimeMonitorEvent.handle() {
         runWhenStateChanges {
             logger.debug("Updating uptime status for monitor with ID: ${monitor.id} to $uptimeStatus")
-            upsertMeter(monitor.id, uptimeStatus)
+            upsertMeter(monitor.numericMonitorId(), uptimeStatus)
         }
     }
 
-    override fun transform(valueSource: UptimeStatus): Long =
-        when (valueSource) {
-            UptimeStatus.UP -> 1L
-            UptimeStatus.DOWN -> 0L
-        }
+    override fun transform(valueSource: UptimeStatus): Long = valueSource.toLong()
 
     override fun computeInitialValue(monitor: HttpMonitorRecord): UptimeStatus? =
-        monitorRepository.getMonitorWithDetails(monitor.id)?.uptimeStatus
+        httpMonitorRepository.getMonitorWithDetails(monitor.id)?.uptimeStatus
 
     override fun filterCondition(monitor: HttpMonitorRecord): Boolean = monitor.enabled
 }

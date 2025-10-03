@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics.http
 
-import com.kuvaszuptime.kuvasz.metrics.ExporterTest
+import com.kuvaszuptime.kuvasz.metrics.HttpExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -11,7 +11,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpStatus
 
-class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
+class HttpUptimeStatusExporterTest : HttpExporterTest("enabled-metrics-uptime-status") {
 
     init {
         given("an enabled status exporter") {
@@ -20,25 +20,25 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                 appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                 )
                 // Enabled monitor without status
                 createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
                 )
                 val disabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = false,
                 )
-                uptimeEventRepository().insertFromMonitorEvent(
+                httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         enabledMonitorWithStatus,
                         status = HttpStatus.OK,
@@ -46,7 +46,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                         previousEvent = null,
                     )
                 )
-                uptimeEventRepository().insertFromMonitorEvent(
+                httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         disabledMonitorWithStatus,
                         status = HttpStatus.OK,
@@ -73,25 +73,25 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                 appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                 )
                 val enabledMonitorWithoutStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
                 )
                 val disabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = false,
                 )
 
-                val firstMonitorPreviousEvent = uptimeEventRepository().insertFromMonitorEvent(
+                val firstMonitorPreviousEvent = httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         enabledMonitorWithStatus,
                         status = HttpStatus.OK,
@@ -99,7 +99,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                         previousEvent = null,
                     )
                 )
-                uptimeEventRepository().insertFromMonitorEvent(
+                httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         disabledMonitorWithStatus,
                         status = HttpStatus.OK,
@@ -152,31 +152,31 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                 appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                 )
                 val anotherEnabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
                 )
                 val yetAnotherEnabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "yet-another-enabled",
                     url = "https://yet.another.enabled",
                     enabled = true,
                 )
                 val disabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = false,
                 )
 
-                uptimeEventRepository().insertFromMonitorEvent(
+                httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         enabledMonitorWithStatus,
                         status = HttpStatus.OK,
@@ -184,7 +184,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                         previousEvent = null,
                     )
                 )
-                uptimeEventRepository().insertFromMonitorEvent(
+                httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         anotherEnabledMonitorWithStatus,
                         status = HttpStatus.OK,
@@ -192,7 +192,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                         previousEvent = null,
                     )
                 )
-                uptimeEventRepository().insertFromMonitorEvent(
+                httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         yetAnotherEnabledMonitorWithStatus,
                         status = HttpStatus.OK,
@@ -200,7 +200,7 @@ class UptimeStatusExporterTest : ExporterTest("enabled-metrics-uptime-status") {
                         previousEvent = null,
                     )
                 )
-                uptimeEventRepository().insertFromMonitorEvent(
+                httpUptimeEventRepository().insertFromMonitorEvent(
                     HttpMonitorUpEvent(
                         disabledMonitorWithStatus,
                         status = HttpStatus.OK,

@@ -1,7 +1,10 @@
 package com.kuvaszuptime.kuvasz.metrics
 
-import com.kuvaszuptime.kuvasz.metrics.http.HttpMetricsExporter
+import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
@@ -15,7 +18,9 @@ import org.slf4j.LoggerFactory
 @Singleton
 class MetricsExportRegistry(
     private val httpMonitorRepository: HttpMonitorRepository,
-    private val httpMetricsExporters: List<HttpMetricsExporter>,
+    private val pushMonitorRepository: PushMonitorRepository,
+    private val httpMetricsExporters: List<MetricsExporter<HttpMonitorRecord>>,
+    private val pushMetricsExporters: List<MetricsExporter<PushMonitorRecord>>,
 ) {
 
     companion object {
@@ -26,10 +31,15 @@ class MetricsExportRegistry(
      * Reads the actually available HTTP monitors from the database and initializes the metrics exporters with them
      */
     fun initialize() {
-        val monitors = httpMonitorRepository.fetchByEnabled(enabled = true)
-        httpMetricsExporters.forEach { exporter ->
-            logger.debug("Initializing exporter: ${exporter::class.java.simpleName} for ${monitors.size} monitors")
-            exporter.initialize(monitors)
-        }
+        val httpMonitors = httpMonitorRepository.fetchByEnabled(enabled = true)
+        httpMetricsExporters.forEach { it.init(httpMonitors) }
+
+        val pushMonitors = pushMonitorRepository.fetchByEnabled(enabled = true)
+        pushMetricsExporters.forEach { it.init(pushMonitors) }
+    }
+
+    private fun <M : MonitorRecord> MetricsExporter<M>.init(monitors: List<M>) {
+        logger.debug("Initializing exporter: ${this::class.java.simpleName} for ${monitors.size} monitors")
+        initialize(monitors)
     }
 }

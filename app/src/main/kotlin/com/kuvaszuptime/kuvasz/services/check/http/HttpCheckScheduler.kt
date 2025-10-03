@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 
 @Singleton
 class HttpCheckScheduler(
-    @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
+    @param:Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val monitorRepository: HttpMonitorRepository,
     private val uptimeChecker: HttpUptimeChecker,
     private val sslChecker: SSLChecker,

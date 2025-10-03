@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.metrics.http
 
-import com.kuvaszuptime.kuvasz.metrics.ExporterTest
+import com.kuvaszuptime.kuvasz.metrics.HttpExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
@@ -14,7 +14,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import java.time.OffsetDateTime
 
-class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
+class SSLStatusExporterTest : HttpExporterTest("enabled-metrics-ssl-status") {
 
     init {
         given("an enabled SSL status exporter") {
@@ -23,7 +23,7 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
@@ -31,14 +31,14 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 )
                 // Enabled monitor without status
                 createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val disabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = true,
@@ -77,21 +77,21 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val enabledMonitorWithoutStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-no-status",
                     url = "https://test.enabled.no-status",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val disabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = true,
@@ -155,28 +155,28 @@ class SSLStatusExporterTest : ExporterTest("enabled-metrics-ssl-status") {
                 appContext = testAppContext()
 
                 val enabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled",
                     url = "https://test.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val anotherEnabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val yetAnotherEnabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "yet-another-enabled",
                     url = "https://yet.another.enabled",
                     enabled = true,
                     sslCheckEnabled = true,
                 )
                 val disabledMonitorWithStatus = createHttpMonitor(
-                    getMonitorRepository(),
+                    httpMonitorRepository(),
                     monitorName = "test-disabled",
                     url = "https://test.disabled",
                     enabled = true,

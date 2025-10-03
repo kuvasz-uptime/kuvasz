@@ -1,9 +1,13 @@
 package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.metrics.GaugeExporter
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
+import com.kuvaszuptime.kuvasz.metrics.numericMonitorId
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.events.WithCertInfo
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requirements
@@ -20,8 +24,14 @@ import java.time.OffsetDateTime
 class SSLCertificateExpiryExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-    private val monitorRepository: HttpMonitorRepository,
-) : HttpGaugeExporter<OffsetDateTime>(meterRegistry, eventDispatcher, monitorRepository) {
+    private val httpMonitorRepository: HttpMonitorRepository,
+    monitorRepository: SharedMonitorRepository,
+) : GaugeExporter<OffsetDateTime, HttpMonitorRecord>(
+    meterRegistry,
+    eventDispatcher,
+    monitorRepository,
+    MonitorType.HTTP_SSL,
+) {
 
     companion object {
         private const val MONITOR_SSL_EXPIRY = "http.ssl.expiry.seconds"
@@ -40,7 +50,7 @@ class SSLCertificateExpiryExporter(
 
     private fun WithCertInfo.handle() {
         logger.debug("Updating SSL certificate expiry for monitor with ID: ${monitor.id} to ${certInfo.validTo}")
-        upsertMeter(monitor.id, certInfo.validTo)
+        upsertMeter(monitor.numericMonitorId(), certInfo.validTo)
     }
 
     override fun filterCondition(monitor: HttpMonitorRecord): Boolean = monitor.enabled && monitor.sslCheckEnabled
@@ -48,5 +58,5 @@ class SSLCertificateExpiryExporter(
     override fun transform(valueSource: OffsetDateTime): Long = valueSource.toEpochSecond()
 
     override fun computeInitialValue(monitor: HttpMonitorRecord): OffsetDateTime? =
-        monitorRepository.getMonitorWithDetails(monitor.id)?.sslValidUntil
+        httpMonitorRepository.getMonitorWithDetails(monitor.id)?.sslValidUntil
 }

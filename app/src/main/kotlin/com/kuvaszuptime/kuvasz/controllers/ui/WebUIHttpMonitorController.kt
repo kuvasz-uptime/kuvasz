@@ -113,7 +113,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorUptimeIncidents(@PathVariable monitorId: Long) =
-        monitorRepository.findById(monitorId)?.let { monitor ->
+        monitorRepository.findById(monitorId, null)?.let { monitor ->
             renderIncidents(
                 incidents = incidentRepository.getHttpUptimeIncidents(
                     monitor.id,
@@ -128,7 +128,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorSSLIncidents(@PathVariable monitorId: Long) =
-        monitorRepository.findById(monitorId)?.let { monitor ->
+        monitorRepository.findById(monitorId, null)?.let { monitor ->
             renderIncidents(
                 incidents = incidentRepository.getSslIncidents(
                     monitor.id,

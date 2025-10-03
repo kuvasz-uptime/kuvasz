@@ -6,6 +6,7 @@ object PushMonitorDocs {
     const val HEARTBEAT_INTERVAL = "The interval in seconds at which the monitor expects to receive heartbeats"
     const val GRACE_PERIOD = "The grace period in seconds after the heartrate interval during which a missed " +
         "heartbeat will not mark the monitor as DOWN"
+    const val CLIENT_SECRET = "The unique client secret used to identify & authenticate heartbeats"
     const val ENABLED = "Whether the monitor is enabled. If false, the monitor will not perform checks."
     const val CREATED_AT = "The creation timestamp of the monitor"
     const val UPDATED_AT = "The last updated timestamp of the monitor"
@@ -13,6 +14,7 @@ object PushMonitorDocs {
         "The current uptime status of the monitor. If it's null, the monitor has not received a heartbeat yet."
     const val UPTIME_STATUS_STARTED_AT = "The timestamp when the uptime status was last changed"
     const val LAST_HEARTBEAT = "The timestamp of the last successful heartbeat"
+    const val LAST_UPTIME_CHECK = "The timestamp when the last uptime check was performed"
     const val NEXT_EXPECTED_HEARTBEAT = "The timestamp until which the next heartbeat is expected"
     const val UPTIME_ERROR = "The error message if the last uptime check failed"
     const val INTEGRATIONS =

@@ -68,7 +68,7 @@ class HttpUptimeChecker(
         }
         logger.debug("Uptime check for monitor (${monitor.name}) finished")
         if (doAfter != null) {
-            monitorRepository.findById(monitor.id)?.let { upToDateMonitor ->
+            monitorRepository.findById(monitor.id, null)?.let { upToDateMonitor ->
                 logger.debug("Calling doAfter() hook on monitor with name [${upToDateMonitor.name}]")
                 doAfter(upToDateMonitor)
             }

@@ -8,17 +8,13 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
-import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.models.DuplicationException
-import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import com.kuvaszuptime.kuvasz.util.toPersistenceError
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.Record
@@ -26,13 +22,12 @@ import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
-import org.jooq.impl.SQLDataType
 
 @Singleton
 @Suppress("TooManyFunctions")
-class HttpMonitorRepository(private val dslContext: DSLContext) {
+class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<HttpMonitorRecord> {
 
-    fun findById(monitorId: Long, ctx: DSLContext = dslContext): HttpMonitorRecord? = ctx
+    override fun findById(monitorId: Long, txCtx: DSLContext?): HttpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.ID.eq(monitorId))
         .fetchOne()
@@ -55,7 +50,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
         .where(HTTP_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
-    fun deleteById(monitorId: Long): Int = dslContext
+    override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.ID.eq(monitorId))
         .execute()
@@ -164,20 +159,8 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
         .execute()
 
     @Suppress("LongMethod")
-    private fun monitorDetailsSelect(): SelectConditionStep<Record?> {
-        val monitorNameField = DSL.field("t.monitor_name", SQLDataType.VARCHAR).`as`("monitor_name")
-        val statusPagesSubselect = DSL
-            .select(
-                monitorNameField,
-                DSL.arrayAgg(STATUS_PAGE.SLUG).`as`("slugs"),
-            )
-            .from(STATUS_PAGE)
-            .crossJoin(
-                DSL.unnest(STATUS_PAGE.MONITORS).`as`("t", "monitor_name")
-            )
-            .groupBy(monitorNameField)
-
-        return dslContext.select(
+    private fun monitorDetailsSelect(): SelectConditionStep<Record?> = dslContext
+        .select(
             HTTP_MONITOR.ID.`as`(HttpMonitorDetailsDto::id.name),
             HTTP_MONITOR.NAME.`as`(HttpMonitorDetailsDto::name.name),
             HTTP_MONITOR.URL.`as`(HttpMonitorDetailsDto::url.name),
@@ -215,34 +198,19 @@ class HttpMonitorRepository(private val dslContext: DSLContext) {
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(HttpMonitorDetailsDto::statusPages.name),
         )
-            .from(HTTP_MONITOR)
-            .leftJoin(HTTP_UPTIME_EVENT)
-            .on(HTTP_MONITOR.ID.eq(HTTP_UPTIME_EVENT.MONITOR_ID).and(HTTP_UPTIME_EVENT.ENDED_AT.isNull))
-            .leftJoin(SSL_EVENT)
-            .on(HTTP_MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
-            .leftJoin(statusPagesSubselect)
-            .on(
-                monitorNameField
-                    .eq(
-                        DSL.`val`(MonitorType.HTTP_SSL.identifier)
-                            .concat(":")
-                            .concat(HTTP_MONITOR.NAME)
-                    )
-            )
-            .where(DSL.trueCondition())
-    }
-
-    /**
-     * Converts a DataAccessException to a PersistenceException by matching duplication errors.
-     */
-    private fun DataAccessException.handle(): Either<PersistenceException, Nothing> {
-        val persistenceError = toPersistenceError()
-        return Either.Left(
-            if (persistenceError is DuplicationException) {
-                MonitorDuplicatedException()
-            } else {
-                persistenceError
-            }
+        .from(HTTP_MONITOR)
+        .leftJoin(HTTP_UPTIME_EVENT)
+        .on(HTTP_MONITOR.ID.eq(HTTP_UPTIME_EVENT.MONITOR_ID).and(HTTP_UPTIME_EVENT.ENDED_AT.isNull))
+        .leftJoin(SSL_EVENT)
+        .on(HTTP_MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
+        .leftJoin(statusPagesSubselect)
+        .on(
+            monitorNameField
+                .eq(
+                    DSL.`val`(MonitorType.HTTP_SSL.identifier)
+                        .concat(":")
+                        .concat(HTTP_MONITOR.NAME)
+                )
         )
-    }
+        .where(DSL.trueCondition())
 }

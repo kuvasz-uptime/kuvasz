@@ -5,7 +5,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
+import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -15,6 +18,25 @@ import java.time.OffsetDateTime
 
 @Singleton
 class PushUptimeEventRepository(private val dslContext: DSLContext) {
+
+    private fun PushMonitorDownEvent.getPersistableError() = toStructuredMessage().error
+
+    fun insertFromMonitorEvent(event: PushUptimeMonitorEvent, ctx: DSLContext? = dslContext): PushUptimeEventRecord {
+        val eventToInsert = PushUptimeEventRecord()
+            .setMonitorId(event.monitor.id)
+            .setStatus(event.uptimeStatus)
+            .setStartedAt(event.dispatchedAt)
+            .setUpdatedAt(event.dispatchedAt)
+
+        if (event is PushMonitorDownEvent) {
+            eventToInsert.error = event.getPersistableError()
+        }
+
+        return (ctx ?: dslContext).insertInto(PUSH_UPTIME_EVENT)
+            .set(eventToInsert)
+            .returning(PUSH_UPTIME_EVENT.asterisk())
+            .fetchOneOrThrow<PushUptimeEventRecord>()
+    }
 
     fun fetchByMonitorId(monitorId: Long): List<PushUptimeEventRecord> = dslContext
         .selectFrom(PUSH_UPTIME_EVENT)
@@ -38,6 +60,18 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
         .delete(PUSH_UPTIME_EVENT)
         .where(PUSH_UPTIME_EVENT.ENDED_AT.isNotNull)
         .and(PUSH_UPTIME_EVENT.ENDED_AT.lessThan(limit))
+        .execute()
+
+    @Suppress("IgnoredReturnValue")
+    fun updateEvent(eventId: Long, newEvent: PushUptimeMonitorEvent) = dslContext
+        .update(PUSH_UPTIME_EVENT)
+        .set(PUSH_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
+        .apply {
+            if (newEvent is PushMonitorDownEvent) {
+                set(PUSH_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
+            }
+        }
+        .where(PUSH_UPTIME_EVENT.ID.eq(eventId))
         .execute()
 
     fun isMonitorUp(monitorId: Long, nullAsUp: Boolean = false): Boolean =
