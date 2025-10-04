@@ -256,6 +256,7 @@ internal enum class CSSClass(val className: String) {
     TEXT_PRIMARY_FG("text-primary-fg"),
     TEXT_PURPLE("text-purple"),
     TEXT_RED("text-red"),
+    TEXT_RED_LT_FG("text-red-lt-fg"),
     TEXT_RESET("text-reset"),
     TEXT_SECONDARY("text-secondary"),
     TEXT_TRUNCATE("text-truncate"),

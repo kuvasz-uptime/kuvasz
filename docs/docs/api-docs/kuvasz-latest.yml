@@ -1944,6 +1944,7 @@ components:
       enum:
       - HTTP
       - SSL
+      - PUSH
     IntegrationConfigDto:
       required:
       - id
