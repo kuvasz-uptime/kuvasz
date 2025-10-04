@@ -29,7 +29,7 @@ class StatusPageDataActions(
 
     fun getDefaultStatusPageData(): StatusPageDataDto {
         val monitors = monitorDataProviders.flatMap { provider ->
-            provider.getDataOfEnabledMonitors(
+            provider.getStatusPageDataOfEnabledMonitors(
                 period = Duration.parse(DEFAULT_METRICS_PERIOD),
                 monitorIds = null,
             )
@@ -67,7 +67,7 @@ class StatusPageDataActions(
     fun getStatusPageData(statusPageId: Long): StatusPageDataDto {
         val statusPage = statusPageRepository.findById(statusPageId) ?: throw StatusPageNotFoundException(statusPageId)
         val monitors = monitorDataProviders.flatMap { provider ->
-            provider.getDataOfEnabledMonitors(
+            provider.getStatusPageDataOfEnabledMonitors(
                 period = Duration.parse(DEFAULT_METRICS_PERIOD),
                 monitorIds = statusPage.monitors?.toList(),
             )

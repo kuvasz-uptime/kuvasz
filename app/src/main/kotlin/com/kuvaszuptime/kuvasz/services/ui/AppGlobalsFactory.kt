@@ -4,7 +4,6 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
-import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.check.http.MonitorActions
@@ -49,8 +48,7 @@ class AppGlobalsFactory {
             public = defaultStatusPageConfig.public,
         ),
         configuredMonitors = {
-            // TODO remove sorting param and sort it implicitly
-            monitorActions.getConfiguredMonitors(sortedBy = HTTP_MONITOR.NAME.asc())
+            monitorActions.getConfiguredMonitors().sortedBy { it.name }
         },
     )
 }

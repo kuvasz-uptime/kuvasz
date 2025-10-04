@@ -1,22 +1,21 @@
-package com.kuvaszuptime.kuvasz.services.check.http
+package com.kuvaszuptime.kuvasz.services.check.push
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
-import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
-import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
-import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
-import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
+import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
@@ -29,12 +28,11 @@ import java.time.OffsetDateTime
 import kotlin.random.Random
 
 @MicronautTest
-class HttpMonitorActionsTest(
-    private val httpMonitorActions: HttpMonitorActions,
-    private val uptimeEventRepository: HttpUptimeEventRepository,
+class PushMonitorActionsTest(
+    private val pushMonitorActions: PushMonitorActions,
+    private val uptimeEventRepository: PushUptimeEventRepository,
     private val statCalculator: StatCalculator,
-    private val latencyLogRepository: HttpLatencyLogRepository,
-    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -52,22 +50,15 @@ class HttpMonitorActionsTest(
             `when`("it is called without monitorIds") {
 
                 val testPeriod = Duration.ofDays(7)
-                val enabledMonitor = createHttpMonitor(
-                    httpMonitorRepository,
+                val enabledMonitor = createPushMonitor(
+                    pushMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
-                    latencyHistoryEnabled = true,
-                )
-                val enabledMonitor2 = createHttpMonitor(
-                    httpMonitorRepository,
-                    enabled = true,
-                    monitorName = "enabled-monitor2",
-                    latencyHistoryEnabled = false,
                 )
 
                 val statCalculatorMock = getMock(statCalculator)
                 every {
-                    statCalculatorMock.calculateHistoricalHttpUptimeStats(testPeriod, enabledMonitor.id)
+                    statCalculatorMock.calculateHistoricalPushUptimeStats(testPeriod, enabledMonitor.id)
                 } returns HistoricalUptimeStatsDto(
                     period = "irrelevant",
                     incidents = 432,
@@ -75,30 +66,9 @@ class HttpMonitorActionsTest(
                     uptimeRatio = 0.2312,
                     totalDowntimeSeconds = 342342,
                 )
-                every {
-                    statCalculatorMock.calculateHistoricalHttpUptimeStats(testPeriod, enabledMonitor2.id)
-                } returns HistoricalUptimeStatsDto(
-                    period = "irrelevant",
-                    incidents = 0,
-                    affectedMonitors = 0,
-                    uptimeRatio = 0.0123,
-                    totalDowntimeSeconds = 14,
-                )
-                val latencyLogRepositoryMock = getMock(latencyLogRepository)
-                every {
-                    latencyLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
 
-                createHttpMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
-                val enabledMonitorsUptimeEvent = createHttpUptimeEventRecord(
+                createPushMonitor(pushMonitorRepository, enabled = false, monitorName = "disabled-monitor")
+                val enabledMonitorsUptimeEvent = createPushUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor.id,
                     status = UptimeStatus.UP,
@@ -106,56 +76,32 @@ class HttpMonitorActionsTest(
                     endedAt = null,
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-                val enabledMonitorsUptimeEvent2 = createHttpUptimeEventRecord(
-                    dslContext,
-                    monitorId = enabledMonitor2.id,
-                    status = UptimeStatus.DOWN,
-                    startedAt = getCurrentTimestamp().minusDays(2),
-                    endedAt = null,
-                    updatedAt = getCurrentTimestamp().minusDays(2),
-                )
 
                 val uptimeEventRepoMock = getMock(uptimeEventRepository)
                 val firstMonitorsUptimeCalcContexts = listOf(randomUptimeEventCalculationContext())
-                val secondMonitorsUptimeCalcContexts = listOf(randomUptimeEventCalculationContext())
                 every { uptimeEventRepoMock.fetchAllInPeriod(testPeriod, enabledMonitor.id) } returns
                     firstMonitorsUptimeCalcContexts
-                every { uptimeEventRepoMock.fetchAllInPeriod(testPeriod, enabledMonitor2.id) } returns
-                    secondMonitorsUptimeCalcContexts
                 every {
                     statCalculator.generateUptimeHistoryOverview(testPeriod, firstMonitorsUptimeCalcContexts)
                 } returns listOf(StatusHistoryDto(LocalDate.now(), 12))
-                every {
-                    statCalculator.generateUptimeHistoryOverview(testPeriod, secondMonitorsUptimeCalcContexts)
-                } returns listOf(StatusHistoryDto(LocalDate.now(), 34))
 
                 // Executing the method under test
-                val result = httpMonitorActions.getStatusPageDataOfEnabledMonitors(
+                val result = pushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
                     monitorIds = null,
                 )
 
                 then("it should return all the enabled monitors") {
 
-                    result shouldHaveSize 2
+                    result shouldHaveSize 1
                     result.forOne { upMonitor ->
                         upMonitor.name shouldBe enabledMonitor.name
                         upMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent.updatedAt
-                        upMonitor.averageLatencyInMs shouldBe 123
+                        upMonitor.averageLatencyInMs.shouldBeNull()
                         upMonitor.uptimeRatio shouldBe 0.2312
                         upMonitor.uptimeStatus shouldBe UptimeStatus.UP
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
-                        )
-                    }
-                    result.forOne { downMonitor ->
-                        downMonitor.name shouldBe enabledMonitor2.name
-                        downMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent2.updatedAt
-                        downMonitor.averageLatencyInMs shouldBe null
-                        downMonitor.uptimeRatio shouldBe 0.0123
-                        downMonitor.uptimeStatus shouldBe UptimeStatus.DOWN
-                        downMonitor.uptimeStatusHistory shouldBe listOf(
-                            StatusHistoryDto(LocalDate.now(), 34)
                         )
                     }
                 }
@@ -164,22 +110,20 @@ class HttpMonitorActionsTest(
             `when`("it is called with explicit monitorIds") {
 
                 val testPeriod = Duration.ofDays(7)
-                val enabledMonitor = createHttpMonitor(
-                    httpMonitorRepository,
+                val enabledMonitor = createPushMonitor(
+                    pushMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
-                    latencyHistoryEnabled = true,
                 )
-                val enabledMonitor2 = createHttpMonitor(
-                    httpMonitorRepository,
+                val enabledMonitor2 = createPushMonitor(
+                    pushMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor2",
-                    latencyHistoryEnabled = false,
                 )
 
                 val statCalculatorMock = getMock(statCalculator)
                 every {
-                    statCalculatorMock.calculateHistoricalHttpUptimeStats(testPeriod, enabledMonitor.id)
+                    statCalculatorMock.calculateHistoricalPushUptimeStats(testPeriod, enabledMonitor.id)
                 } returns HistoricalUptimeStatsDto(
                     period = "irrelevant",
                     incidents = 432,
@@ -187,21 +131,9 @@ class HttpMonitorActionsTest(
                     uptimeRatio = 0.2312,
                     totalDowntimeSeconds = 342342,
                 )
-                val latencyLogRepositoryMock = getMock(latencyLogRepository)
-                every {
-                    latencyLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
 
-                createHttpMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
-                val enabledMonitorsUptimeEvent = createHttpUptimeEventRecord(
+                createPushMonitor(pushMonitorRepository, enabled = false, monitorName = "disabled-monitor")
+                val enabledMonitorsUptimeEvent = createPushUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor.id,
                     status = UptimeStatus.UP,
@@ -209,7 +141,7 @@ class HttpMonitorActionsTest(
                     endedAt = null,
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-                createHttpUptimeEventRecord(
+                createPushUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor2.id,
                     status = UptimeStatus.DOWN,
@@ -227,7 +159,7 @@ class HttpMonitorActionsTest(
                 } returns listOf(StatusHistoryDto(LocalDate.now(), 12))
 
                 // Executing the method under test
-                val result = httpMonitorActions.getStatusPageDataOfEnabledMonitors(
+                val result = pushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
                     monitorIds = listOf(enabledMonitor.monitorId())
                 )
@@ -238,7 +170,7 @@ class HttpMonitorActionsTest(
                     result.forOne { upMonitor ->
                         upMonitor.name shouldBe enabledMonitor.name
                         upMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent.updatedAt
-                        upMonitor.averageLatencyInMs shouldBe 123
+                        upMonitor.averageLatencyInMs.shouldBeNull()
                         upMonitor.uptimeRatio shouldBe 0.2312
                         upMonitor.uptimeStatus shouldBe UptimeStatus.UP
                         upMonitor.uptimeStatusHistory shouldBe listOf(
@@ -250,12 +182,9 @@ class HttpMonitorActionsTest(
         }
     }
 
-    @MockBean(HttpUptimeEventRepository::class)
-    fun httpUptimeEventRepository(): HttpUptimeEventRepository = mockk()
+    @MockBean(PushUptimeEventRepository::class)
+    fun pushUptimeEventRepository(): PushUptimeEventRepository = mockk()
 
     @MockBean(StatCalculator::class)
     fun statCalculator(): StatCalculator = mockk()
-
-    @MockBean(HttpLatencyLogRepository::class)
-    fun httpLatencyLogRepository(): HttpLatencyLogRepository = mockk()
 }

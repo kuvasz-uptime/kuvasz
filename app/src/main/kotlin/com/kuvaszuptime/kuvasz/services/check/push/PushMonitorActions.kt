@@ -177,8 +177,7 @@ class PushMonitorActions(
 
     fun getPushMonitorsExport(): List<PushMonitorRecord> = monitorRepository.fetchAll()
 
-    // TODO update
-    override fun getDataOfEnabledMonitors(
+    override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
     ): List<StatusPageMonitorDetailsDto> {
@@ -186,7 +185,7 @@ class PushMonitorActions(
         val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = pushMonitorNames)
 
         return enabledMonitors.map { monitor ->
-            val uptimeHistory = statCalculator.calculateHistoricalHttpUptimeStats(period, monitor.id)
+            val uptimeHistory = statCalculator.calculateHistoricalPushUptimeStats(period, monitor.id)
             val statusHistory = statCalculator.generateUptimeHistoryOverview(
                 period = period,
                 uptimeEvents = uptimeEventRepository.fetchAllInPeriod(

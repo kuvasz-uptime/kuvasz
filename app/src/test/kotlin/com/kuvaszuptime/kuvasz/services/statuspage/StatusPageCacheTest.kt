@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -27,6 +28,7 @@ import java.time.Duration
 class StatusPageCacheTest(
     private val statusPageActions: StatusPageDataActions,
     private val httpMonitorActions: HttpMonitorActions,
+    private val pushMonitorActions: PushMonitorActions,
     private val statusPageRepository: StatusPageRepository,
 ) : BehaviorSpec({
 
@@ -34,7 +36,7 @@ class StatusPageCacheTest(
 
         `when`("it is called multiple times") {
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = null,
@@ -57,20 +59,48 @@ class StatusPageCacheTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "Wuf wuf",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = null,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "That woman from the tower who breastfeeds her 13 year old son",
+                    lastCheck = getCurrentTimestamp().minusSeconds(4),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9123,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(2).toLocalDate(),
+                            outageCnt = 2,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(Duration.ofDays(30), null)
-            } returns mockMonitorList
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getCachedDefaultStatusPageData()
             val result2 = statusPageActions.getCachedDefaultStatusPageData()
 
             then("it should execute the logic inside only once") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result shouldBe result2
                 verify(exactly = 1) {
-                    mockHttpMonitorActions.getDataOfEnabledMonitors(any(), any())
+                    mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
+                    mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
                 }
             }
         }
@@ -88,6 +118,7 @@ class StatusPageCacheTest(
             monitors = listOf(
                 MonitorID(MonitorType.HTTP_SSL, "test-monitor-1"),
                 MonitorID(MonitorType.HTTP_SSL, "test-monitor-2"),
+                MonitorID(MonitorType.PUSH, "test-monitor-3"),
             ).toTypedArray()
             createdAt = getCurrentTimestamp()
             updatedAt = getCurrentTimestamp()
@@ -141,13 +172,43 @@ class StatusPageCacheTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "Wuf wuf",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = null,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "That woman from the tower who breastfeeds her 13 year old son",
+                    lastCheck = getCurrentTimestamp().minusSeconds(4),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9123,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(2).toLocalDate(),
+                            outageCnt = 2,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
                 )
             } returns mockMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    statusPageRecord().monitors?.toList(),
+                )
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getCachedStatusPageData(statusPageRecord().id)
             val result2 = statusPageActions.getCachedStatusPageData(statusPageRecord().id)
@@ -155,14 +216,15 @@ class StatusPageCacheTest(
             then("it should return the data of it and cache the result") {
 
                 result shouldBe result2
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockMonitorList + mockPushMonitorList
                 result.title shouldBe "Example status page"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
                 result.systemStatus shouldBe SystemStatus.PENDING
                 verify(exactly = 1) {
                     repoMock.findById(any(), any())
-                    mockHttpMonitorActions.getDataOfEnabledMonitors(any(), any())
+                    mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
+                    mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
                 }
             }
         }
@@ -170,6 +232,9 @@ class StatusPageCacheTest(
 }) {
     @MockBean(HttpMonitorActions::class)
     fun httpMonitorActions(): HttpMonitorActions = mockk()
+
+    @MockBean(PushMonitorActions::class)
+    fun pushMonitorActions(): PushMonitorActions = mockk()
 
     @MockBean(StatusPageRepository::class)
     fun statusPageRepository(): StatusPageRepository = mockk()

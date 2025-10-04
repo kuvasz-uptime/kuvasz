@@ -34,12 +34,8 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .where(PUSH_MONITOR.NAME.eq(name))
         .fetchOne()
 
-    @Suppress("IgnoredReturnValue")
-    fun fetchAll(
-        sortedBy: SortField<*>? = null,
-    ): List<PushMonitorRecord> = dslContext
+    fun fetchAll(): List<PushMonitorRecord> = dslContext
         .selectFrom(PUSH_MONITOR)
-        .apply { sortedBy?.let { orderBy(it) } }
         .fetch()
 
     fun fetchByEnabled(enabled: Boolean): List<PushMonitorRecord> = dslContext

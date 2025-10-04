@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime

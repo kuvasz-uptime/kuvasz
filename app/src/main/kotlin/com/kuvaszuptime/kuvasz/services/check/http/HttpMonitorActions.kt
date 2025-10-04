@@ -246,7 +246,7 @@ class HttpMonitorActions(
 
     fun getHttpMonitorsExport(): List<HttpMonitorRecord> = monitorRepository.fetchAll()
 
-    override fun getDataOfEnabledMonitors(
+    override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
     ): List<StatusPageMonitorDetailsDto> {

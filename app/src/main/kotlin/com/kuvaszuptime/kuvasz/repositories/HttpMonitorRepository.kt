@@ -37,12 +37,8 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .where(HTTP_MONITOR.NAME.eq(name))
         .fetchOne()
 
-    @Suppress("IgnoredReturnValue")
-    fun fetchAll(
-        sortedBy: SortField<*>? = null,
-    ): List<HttpMonitorRecord> = dslContext
+    fun fetchAll(): List<HttpMonitorRecord> = dslContext
         .selectFrom(HTTP_MONITOR)
-        .apply { sortedBy?.let { orderBy(it) } }
         .fetch()
 
     fun fetchByEnabled(enabled: Boolean): List<HttpMonitorRecord> = dslContext

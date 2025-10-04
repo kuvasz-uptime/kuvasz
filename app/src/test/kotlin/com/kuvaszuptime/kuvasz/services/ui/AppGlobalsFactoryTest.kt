@@ -3,7 +3,6 @@ package com.kuvaszuptime.kuvasz.services.ui
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
-import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
@@ -39,8 +38,9 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         every { public } returns true
     }
     val mockkMonitorActions = mockk<MonitorActions> {
-        every { getConfiguredMonitors(HTTP_MONITOR.NAME.asc()) } returns listOf(
-            MonitorID(MonitorType.HTTP_SSL, "something")
+        every { getConfiguredMonitors() } returns listOf(
+            MonitorID(MonitorType.HTTP_SSL, "something"),
+            MonitorID(MonitorType.PUSH, "abcd"),
         )
     }
 
@@ -247,6 +247,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
 
             then("it should return the correct list of enabled monitors") {
                 globals.configuredMonitors() shouldBe listOf(
+                    MonitorID(MonitorType.PUSH, "abcd"),
                     MonitorID(MonitorType.HTTP_SSL, "something")
                 )
             }

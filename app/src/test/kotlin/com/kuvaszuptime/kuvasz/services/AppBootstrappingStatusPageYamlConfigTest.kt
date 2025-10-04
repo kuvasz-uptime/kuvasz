@@ -60,6 +60,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
     fun executeAndAssertTheFirstStep() {
         appContext = testAppContext(
             "yaml-monitors",
+            "yaml-push-monitors",
             "status-pages",
             "full-integrations-setup",
         )
@@ -79,6 +80,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             firstPage.monitors shouldContainExactlyInAnyOrder arrayOf(
                 MonitorID(MonitorType.HTTP_SSL, "test1"),
                 MonitorID(MonitorType.HTTP_SSL, "test2"),
+                MonitorID(MonitorType.PUSH, "test1"),
             )
         }
 
@@ -98,6 +100,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             thirdPage.monitors shouldContainExactlyInAnyOrder arrayOf(
                 MonitorID(MonitorType.HTTP_SSL, "test3"),
                 MonitorID(MonitorType.HTTP_SSL, "test1"),
+                MonitorID(MonitorType.PUSH, "test2"),
             )
         }
         // Saving the monitors from the DB to be able to check them later

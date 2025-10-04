@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -26,6 +27,7 @@ import java.time.Duration
 class StatusPageDataActionsTest(
     private val statusPageActions: StatusPageDataActions,
     private val httpMonitorActions: HttpMonitorActions,
+    private val pushMonitorActions: PushMonitorActions,
     private val statusPageRepository: StatusPageRepository,
 ) : BehaviorSpec({
 
@@ -33,7 +35,7 @@ class StatusPageDataActionsTest(
 
         `when`("there is a pending monitor coming from the data providers") {
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = null,
@@ -56,16 +58,44 @@ class StatusPageDataActionsTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
+
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(Duration.ofDays(30), null)
-            } returns mockMonitorList
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
 
             then("it should fetch the monitors from the providers and return PENDING as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Custom System Status"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -75,7 +105,7 @@ class StatusPageDataActionsTest(
 
         `when`("there is an unhealthy monitor coming from the data providers") {
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
@@ -89,7 +119,30 @@ class StatusPageDataActionsTest(
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
                     uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.UP,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -100,14 +153,18 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(Duration.ofDays(30), null)
-            } returns mockMonitorList
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
 
             then("it should fetch the monitors from the providers and return PARTIAL_OUTAGE as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Custom System Status"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -117,7 +174,7 @@ class StatusPageDataActionsTest(
 
         `when`("all the monitors are unhealthy") {
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
@@ -140,16 +197,43 @@ class StatusPageDataActionsTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(Duration.ofDays(30), null)
-            } returns mockMonitorList
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
 
             then("it should fetch the monitors from the providers and return MAJOR_OUTAGE as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Custom System Status"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -159,7 +243,7 @@ class StatusPageDataActionsTest(
 
         `when`("all the monitors are healthy") {
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
@@ -182,16 +266,43 @@ class StatusPageDataActionsTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(Duration.ofDays(30), null)
-            } returns mockMonitorList
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
 
             then("it should fetch the monitors from the providers and return OPERATIONAL as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Custom System Status"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -203,7 +314,11 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
             } returns emptyList()
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -228,6 +343,8 @@ class StatusPageDataActionsTest(
             monitors = listOf(
                 MonitorID(MonitorType.HTTP_SSL, "test-monitor-1"),
                 MonitorID(MonitorType.HTTP_SSL, "test-monitor-2"),
+                MonitorID(MonitorType.PUSH, "test-monitor-3"),
+                MonitorID(MonitorType.PUSH, "test-monitor-4"),
             ).toTypedArray()
             createdAt = getCurrentTimestamp()
             updatedAt = getCurrentTimestamp()
@@ -252,7 +369,7 @@ class StatusPageDataActionsTest(
             val repoMock = getMock(statusPageRepository)
             every { repoMock.findById(1L, any()) } returns statusPageRecord()
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = null,
@@ -275,19 +392,49 @@ class StatusPageDataActionsTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = null,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
                 )
-            } returns mockMonitorList
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    statusPageRecord().monitors?.toList(),
+                )
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getStatusPageData(statusPageRecord().id)
 
             then("it should fetch the monitors from the providers and return PENDING as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -300,7 +447,7 @@ class StatusPageDataActionsTest(
             val repoMock = getMock(statusPageRepository)
             every { repoMock.findById(1L, any()) } returns statusPageRecord()
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
@@ -323,19 +470,49 @@ class StatusPageDataActionsTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
                 )
-            } returns mockMonitorList
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    statusPageRecord().monitors?.toList(),
+                )
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getStatusPageData(statusPageRecord().id)
 
             then("it should fetch the monitors from the providers and return PARTIAL_OUTAGE as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -348,7 +525,7 @@ class StatusPageDataActionsTest(
             val repoMock = getMock(statusPageRepository)
             every { repoMock.findById(1L, any()) } returns statusPageRecord()
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
@@ -371,19 +548,49 @@ class StatusPageDataActionsTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
                 )
-            } returns mockMonitorList
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    statusPageRecord().monitors?.toList(),
+                )
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getStatusPageData(statusPageRecord().id)
 
             then("it should fetch the monitors from the providers and return MAJOR_OUTAGE as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -396,7 +603,7 @@ class StatusPageDataActionsTest(
             val repoMock = getMock(statusPageRepository)
             every { repoMock.findById(1L, any()) } returns statusPageRecord()
 
-            val mockMonitorList = listOf(
+            val mockHttpMonitorList = listOf(
                 StatusPageMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
@@ -419,19 +626,49 @@ class StatusPageDataActionsTest(
                     )
                 ),
             )
+            val mockPushMonitorList = listOf(
+                StatusPageMonitorDetailsDto(
+                    name = "One of the dragon lords",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList()
+                ),
+                StatusPageMonitorDetailsDto(
+                    name = "I can't recall more from the series",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9231,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 1,
+                        )
+                    )
+                ),
+            )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
                 )
-            } returns mockMonitorList
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    statusPageRecord().monitors?.toList(),
+                )
+            } returns mockPushMonitorList
 
             val result = statusPageActions.getStatusPageData(statusPageRecord().id)
 
             then("it should fetch the monitors from the providers and return OPERATIONAL as system status") {
 
-                result.monitors shouldContainExactlyInAnyOrder mockMonitorList
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
@@ -446,7 +683,11 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getDataOfEnabledMonitors(Duration.ofDays(30), emptyList())
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), emptyList())
+            } returns emptyList()
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), emptyList())
             } returns emptyList()
 
             val result = statusPageActions.getStatusPageData(statusPageRecord().id)
@@ -461,6 +702,9 @@ class StatusPageDataActionsTest(
 }) {
     @MockBean(HttpMonitorActions::class)
     fun httpMonitorActions(): HttpMonitorActions = mockk()
+
+    @MockBean(PushMonitorActions::class)
+    fun pushMonitorActions(): PushMonitorActions = mockk()
 
     @MockBean(StatusPageRepository::class)
     fun statusPageRepository(): StatusPageRepository = mockk()
