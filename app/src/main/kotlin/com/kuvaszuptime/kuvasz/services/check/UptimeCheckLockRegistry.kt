@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services
+package com.kuvaszuptime.kuvasz.services.check
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import jakarta.inject.Singleton

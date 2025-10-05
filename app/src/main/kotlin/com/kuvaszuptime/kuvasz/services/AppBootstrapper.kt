@@ -13,6 +13,8 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageImporter
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Property
 import jakarta.annotation.Nullable

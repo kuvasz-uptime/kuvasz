@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import io.kotest.core.test.TestCase
@@ -29,7 +30,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 @MicronautTest(startApplication = false)
-class CheckSchedulerTest(
+class HttpCheckSchedulerTest(
     private val checkScheduler: HttpCheckScheduler,
     private val monitorRepository: HttpMonitorRepository,
     private val uptimeChecker: HttpUptimeChecker,

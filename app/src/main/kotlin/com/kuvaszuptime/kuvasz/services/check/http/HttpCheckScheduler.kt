@@ -4,7 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
-import com.kuvaszuptime.kuvasz.services.UptimeCheckLockRegistry
+import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime

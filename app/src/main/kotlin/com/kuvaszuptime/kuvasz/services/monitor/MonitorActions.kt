@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services.check
+package com.kuvaszuptime.kuvasz.services.monitor
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord

@@ -11,8 +11,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
-import com.kuvaszuptime.kuvasz.services.check.http.MonitorActions
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -37,7 +37,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         every { title } returns "My Status Page"
         every { public } returns true
     }
-    val mockkMonitorActions = mockk<MonitorActions> {
+    val mockkMonitorActions = mockk<SharedMonitorActions> {
         every { getConfiguredMonitors() } returns listOf(
             MonitorID(MonitorType.HTTP_SSL, "something"),
             MonitorID(MonitorType.PUSH, "abcd"),

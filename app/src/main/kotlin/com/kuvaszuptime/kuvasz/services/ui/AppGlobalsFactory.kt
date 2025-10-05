@@ -6,8 +6,8 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.VersionChecker
-import com.kuvaszuptime.kuvasz.services.check.http.MonitorActions
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Factory
 import io.micronaut.security.utils.SecurityService
@@ -23,7 +23,7 @@ class AppGlobalsFactory {
         integrationRepository: IntegrationRepository,
         versionChecker: VersionChecker,
         defaultStatusPageConfig: DefaultStatusPageConfig,
-        monitorActions: MonitorActions,
+        monitorActions: SharedMonitorActions,
     ) = AppGlobals(
         editabilityState = AppGlobals.EditabilityState(
             areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() },
