@@ -32,7 +32,7 @@ pluginManagement {
         id("com.github.gmazzo.buildconfig") version "5.7.0"
         id("org.gradlewebtools.minify") version "2.1.1"
         id("org.jetbrains.kotlinx.kover") version "0.9.2"
-        id("de.comahe.i18n4k") version "0.11.0"
+        id("de.comahe.i18n4k") version "0.11.1"
     }
 }
 
