@@ -36,8 +36,8 @@ object MonitorValidationMessages {
     const val RESPONSE_TIME_THRESHOLD_POSITIVE = "Response time threshold must be greater than 0 milliseconds"
     const val RESPONSE_TIME_THRESHOLD_MAX = "Response time threshold must be less than or equal to {value} milliseconds"
     const val SUPPORTED_STATUS_CODES = "All status codes must be valid HTTP status codes between 100 and 499"
-    const val VALID_HEADER_NAMES = "All header names must be valid HTTP header names, containing only " +
-        "alphanumeric characters and hyphens, starting with a letter"
+    const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
+        "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
 }
 
 object StatusPageValidationMessages {
