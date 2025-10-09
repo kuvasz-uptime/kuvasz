@@ -2,37 +2,47 @@ package com.kuvaszuptime.kuvasz.services.check.push
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
+import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.date.shouldBeAfter
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.time.Duration
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import kotlin.random.Random
 
-@MicronautTest
+@MicronautTest(startApplication = false)
 class PushMonitorActionsTest(
     private val pushMonitorActions: PushMonitorActions,
     private val uptimeEventRepository: PushUptimeEventRepository,
     private val statCalculator: StatCalculator,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val eventDispatcher: EventDispatcher,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -177,6 +187,80 @@ class PushMonitorActionsTest(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
                     }
+                }
+            }
+        }
+
+        given("the updateLastHeartbeat() method") {
+
+            `when`("it is called for a non existing monitor") {
+                val testSecret = "secret1"
+                val testTimestamp = getCurrentTimestamp()
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                pushMonitorActions.updateLastHeartbeat(testSecret, testTimestamp)
+
+                then("it should not dispatch an uptime event") {
+
+                    testSubscriber.assertNoValues()
+                }
+            }
+
+            `when`("it is called for an existing, disabled monitor") {
+                val testSecret = "secret1"
+                val testTimestamp = getCurrentTimestamp()
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = false,
+                    clientSecret = testSecret,
+                )
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                pushMonitorActions.updateLastHeartbeat(testSecret, testTimestamp)
+
+                then("it should not dispatch an uptime event but update the last heartbeat on the monitor") {
+                    val monitorAfterUpdate = pushMonitorRepository.findById(testMonitor.id, null).shouldNotBeNull()
+
+                    testSubscriber.assertNoValues()
+                    monitorAfterUpdate.lastHeartbeat shouldBe testTimestamp
+                    monitorAfterUpdate.updatedAt shouldBeAfter testMonitor.updatedAt
+                }
+            }
+
+            `when`("it is called for an existing, enabled monitor") {
+                val testSecret = "secret1"
+                val testTimestamp = getCurrentTimestamp()
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    clientSecret = testSecret,
+                )
+                val eventRepoMock = getMock(uptimeEventRepository)
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val uptimeEventRecord = PushUptimeEventRecord().apply {
+                    id = 3
+                    monitorId = testMonitor.id
+                    status = UptimeStatus.UP
+                }
+                every {
+                    eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
+                } returns uptimeEventRecord
+                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+
+                pushMonitorActions.updateLastHeartbeat(testSecret, testTimestamp)
+
+                then("it should dispatch an UP event") {
+
+                    val dispatchedEvent = testSubscriber.awaitCount(1).values().first()
+                    dispatchedEvent.shouldBeInstanceOf<PushMonitorUpEvent>()
+                    dispatchedEvent.monitor.id shouldBe testMonitor.id
+                    dispatchedEvent.monitor.lastHeartbeat shouldBe testTimestamp
+                    dispatchedEvent.monitor.updatedAt shouldBeAfter testMonitor.updatedAt
+                    dispatchedEvent.previousEvent shouldBe uptimeEventRecord
                 }
             }
         }

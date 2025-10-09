@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers.settings
 
+import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
+import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V1_PREFIX
 import com.kuvaszuptime.kuvasz.models.dto.settings.LegacySettingsDto
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
@@ -18,11 +20,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Controller("${API_V1_PREFIX}/settings", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "Settings (V1, deprecated)")
+@Tag(name = OpenApiTags.SETTINGS_V1)
 @Deprecated("Use SettingsControllerV2")
 @SecurityRequirements(
-    SecurityRequirement(name = "apiKey"),
-    SecurityRequirement(name = "bearerAuth")
+    SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
+    SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
 class SettingsControllerV1(private val settingsRepository: SettingsRepository) : SettingsOperationsV1 {
 

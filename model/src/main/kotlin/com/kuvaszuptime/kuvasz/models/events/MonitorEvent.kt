@@ -14,25 +14,6 @@ sealed class MonitorEvent<M : MonitorRecord> {
 
     val dispatchedAt = getCurrentTimestamp()
 
-    /**
-     * Sanitizes a string by:
-     * - Replacing null characters with the string "null"
-     * - Removing all ISO control characters
-     * - Truncating the string to a maximum length defined by [ERROR_MAX_LENGTH]
-     * - Appending a redaction notice if the string was truncated
-     *
-     * Useful for external inputs that are out of our control, such as HTTP error messages.
-     */
-    protected fun String.sanitize(): String {
-        val sanitized = replace("\u0000", "null").filter { !it.isISOControl() }
-
-        return if (sanitized.length > ERROR_MAX_LENGTH) {
-            Messages.redacted(sanitized.take(ERROR_MAX_LENGTH))
-        } else {
-            sanitized
-        }
-    }
-
     companion object {
         const val ERROR_MAX_LENGTH = 255
     }
@@ -46,4 +27,23 @@ data class HttpRedirectEvent(
     override fun toStructuredMessage() = StructuredRedirectMessage(
         summary = Messages.requestHasBeenRedirected(monitor.name, monitor.url, redirectLocation),
     )
+}
+
+/**
+ * Sanitizes a string by:
+ * - Replacing null characters with the string "null"
+ * - Removing all ISO control characters
+ * - Truncating the string to a maximum length defined by [ERROR_MAX_LENGTH]
+ * - Appending a redaction notice if the string was truncated
+ *
+ * Useful for external inputs that are out of our control, such as HTTP error messages.
+ */
+fun String.sanitizeAsError(): String {
+    val sanitized = replace("\u0000", "null").filter { !it.isISOControl() }
+
+    return if (sanitized.length > ERROR_MAX_LENGTH) {
+        Messages.redacted(sanitized.take(ERROR_MAX_LENGTH))
+    } else {
+        sanitized
+    }
 }

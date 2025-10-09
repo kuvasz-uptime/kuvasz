@@ -38,7 +38,7 @@ data class HttpMonitorDownEvent(
     override val uptimeStatus = UptimeStatus.DOWN
 
     override fun toStructuredMessage(): StructuredMonitorDownMessage {
-        val sanitizedError = error.message?.sanitize()
+        val sanitizedError = error.message?.sanitizeAsError()
         val structuredError = if (status != null) {
             "${status.code} ${status.reason}".let { statusFragment ->
                 if (sanitizedError != null) {

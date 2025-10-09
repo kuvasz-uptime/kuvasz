@@ -24,8 +24,11 @@ import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.date.shouldBeAfter
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldHaveLength
@@ -36,6 +39,7 @@ import io.mockk.clearAllMocks
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlinx.coroutines.delay
 import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
@@ -438,6 +442,75 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[1].error shouldBe "Reason: missed heartbeat"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "first error",
+                    previousEvent = null,
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                delay(1000)
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "missed heartbeat",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should update the updatedAt timestamp on the previous event") {
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
+
+                    verifyOrder {
+                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                    }
+
+                    uptimeRecords.shouldHaveSize(1).forOne { event ->
+                        event.status shouldBe UptimeStatus.DOWN
+                        event.endedAt.shouldBeNull()
+                        event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
+                        event.error shouldBe firstUptimeRecord.error
+                    }
+                }
+            }
+
+            `when`("it receives a manual MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "first error",
+                    previousEvent = null,
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                delay(1000)
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "missed heartbeat",
+                    previousEvent = firstUptimeRecord,
+                    isManual = true,
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should update the updatedAt timestamp and also the error on the previous event") {
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
+
+                    verifyOrder {
+                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                    }
+
+                    uptimeRecords.shouldHaveSize(1).forOne { event ->
+                        event.status shouldBe UptimeStatus.DOWN
+                        event.endedAt.shouldBeNull()
+                        event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
+                        event.error shouldBe "Reason: ${secondEvent.error}"
+                    }
                 }
             }
         }

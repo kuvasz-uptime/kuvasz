@@ -12,6 +12,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpHeaders
+import io.micronaut.http.HttpMethod
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
@@ -45,6 +46,34 @@ class AuthenticationTest(
                 }
             }
         }
+
+        given("the heartbeat signaling endpoints") {
+
+            `when`("an anonymous user calls it") {
+                val heartbeatResponseGet = client.exchange("/api/v2/push-monitors/heartbeats/12345678").awaitFirst()
+                val failureResponseGet = client
+                    .exchange("/api/v2/push-monitors/heartbeats/12345678/failure")
+                    .awaitFirst()
+                val heartbeatResponsePost = client
+                    .exchange(
+                        HttpRequest.create<Any>(HttpMethod.POST, "/api/v2/push-monitors/heartbeats/12345678")
+                    )
+                    .awaitFirst()
+                val failureResponsePost = client
+                    .exchange(
+                        HttpRequest.create<Any>(HttpMethod.POST, "/api/v2/push-monitors/heartbeats/12345678/failure")
+                    )
+                    .awaitFirst()
+
+                then("it should return 200") {
+                    heartbeatResponseGet.status shouldBe HttpStatus.ACCEPTED
+                    failureResponseGet.status shouldBe HttpStatus.ACCEPTED
+                    heartbeatResponsePost.status shouldBe HttpStatus.ACCEPTED
+                    failureResponsePost.status shouldBe HttpStatus.ACCEPTED
+                }
+            }
+        }
+
         given("the /auth/login endpoint") {
 
             `when`("the user provides the right credentials") {

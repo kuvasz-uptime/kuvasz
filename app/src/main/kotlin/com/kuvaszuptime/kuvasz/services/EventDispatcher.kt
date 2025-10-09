@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -22,9 +23,8 @@ import org.slf4j.LoggerFactory
 class EventDispatcher {
 
     private val httpUpEvents = PublishSubject.create<HttpMonitorUpEvent>().toSerialized()
-    private val pushUpEvents = PublishSubject.create<PushMonitorUpEvent>().toSerialized()
     private val httpDownEvents = PublishSubject.create<HttpMonitorDownEvent>().toSerialized()
-    private val pushDownEvents = PublishSubject.create<PushMonitorDownEvent>().toSerialized()
+    private val pushUptimeEvents = PublishSubject.create<PushUptimeMonitorEvent>().toSerialized()
     private val httpRedirectEvents = PublishSubject.create<HttpRedirectEvent>().toSerialized()
     private val sslValidEvents = PublishSubject.create<SSLValidEvent>().toSerialized()
     private val sslWillExpireEvents = PublishSubject.create<SSLWillExpireEvent>().toSerialized()
@@ -39,8 +39,7 @@ class EventDispatcher {
             is SSLValidEvent -> sslValidEvents.onNext(event)
             is SSLInvalidEvent -> sslInvalidEvents.onNext(event)
             is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
-            is PushMonitorDownEvent -> pushDownEvents.onNext(event)
-            is PushMonitorUpEvent -> pushUpEvents.onNext(event)
+            is PushMonitorDownEvent, is PushMonitorUpEvent -> pushUptimeEvents.onNext(event)
         }
 
     fun dispatch(event: MonitorLifecycleEvent) {
@@ -63,11 +62,8 @@ class EventDispatcher {
     fun subscribeToHttpMonitorDownEvents(consumer: (HttpMonitorDownEvent) -> Unit): Disposable =
         httpDownEvents.safeSubscribeOnIo(consumer)
 
-    fun subscribeToPushMonitorUpEvents(consumer: (PushMonitorUpEvent) -> Unit): Disposable =
-        pushUpEvents.safeSubscribeOnIo(consumer)
-
-    fun subscribeToPushMonitorDownEvents(consumer: (PushMonitorDownEvent) -> Unit): Disposable =
-        pushDownEvents.safeSubscribeOnIo(consumer)
+    fun subscribeToPushMonitorEvents(consumer: (PushUptimeMonitorEvent) -> Unit): Disposable =
+        pushUptimeEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToHttpRedirectEvents(consumer: (HttpRedirectEvent) -> Unit): Disposable =
         httpRedirectEvents.safeSubscribeOnIo(consumer)

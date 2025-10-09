@@ -27,7 +27,8 @@ data class PushMonitorUpEvent(
 data class PushMonitorDownEvent(
     override val monitor: PushMonitorRecord,
     val error: String,
-    override val previousEvent: PushUptimeEventRecord?
+    override val previousEvent: PushUptimeEventRecord?,
+    val isManual: Boolean = false,
 ) : PushUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN

@@ -37,12 +37,8 @@ abstract class RTCMessageEventHandler(
             logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
-        eventDispatcher.subscribeToPushMonitorUpEvents { event ->
+        eventDispatcher.subscribeToPushMonitorEvents { event ->
             logger.debug("A PushMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToPushMonitorDownEvents { event ->
-            logger.debug("A PushMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->

@@ -14,11 +14,14 @@ import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Record
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
+import org.jooq.impl.SQLDataType
+import java.time.OffsetDateTime
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -32,6 +35,12 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
     fun findByName(name: String): PushMonitorRecord? = dslContext
         .selectFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.NAME.eq(name))
+        .fetchOne()
+
+    fun findEnabledByClientSecret(clientSecret: String, txtCtx: DSLContext = dslContext): PushMonitorRecord? = txtCtx
+        .selectFrom(PUSH_MONITOR)
+        .where(PUSH_MONITOR.CLIENT_SECRET.eq(clientSecret))
+        .and(PUSH_MONITOR.ENABLED.isTrue)
         .fetchOne()
 
     fun fetchAll(): List<PushMonitorRecord> = dslContext
@@ -156,7 +165,8 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::effectiveIntegrations.name),
             PUSH_MONITOR.INTEGRATIONS.`as`(PushMonitorDetailsDto::integrations.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
-                .`as`(PushMonitorDetailsDto::statusPages.name)
+                .`as`(PushMonitorDetailsDto::statusPages.name),
+            nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeatAt.name),
         )
             .from(PUSH_MONITOR)
             .leftJoin(PUSH_UPTIME_EVENT)
@@ -172,4 +182,50 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             )
             .where(DSL.trueCondition())
     }
+
+    /**
+     * Calculates the next expected heartbeat's timestamp as an OffsetDateTime by adding the heartbeat interval and
+     * the grace period to the last heartbeat's timestamp.
+     * Uses a quite ugly concatenation of query parts, because jOOQ doesn't support adding intervals to TIMESTAMPTZ
+     * fields yet.
+     *
+     * The result can be NULL in case the last heartbeat is also NULL
+     */
+    val nextExpectedHeartbeatField: Field<OffsetDateTime?> = DSL.field(
+        PUSH_MONITOR.LAST_HEARTBEAT.name + "+(" +
+            PUSH_MONITOR.HEARTBEAT_INTERVAL.name + "+" +
+            PUSH_MONITOR.GRACE_PERIOD.name +
+            ") * interval '1 second'",
+        SQLDataType.TIMESTAMPWITHTIMEZONE
+    )
+
+    /**
+     * Fetches the push monitors that:
+     * - are enabled
+     * - have an already recorded heartbeat, and the next expected heartbeat is behind us
+     */
+    fun fetchWithMissedHeartbeats(txCtx: DSLContext?): List<PushMonitorRecord> = (txCtx ?: dslContext)
+        .selectFrom(PUSH_MONITOR)
+        .where(PUSH_MONITOR.ENABLED.isTrue)
+        .and(PUSH_MONITOR.LAST_HEARTBEAT.isNotNull)
+        .and(nextExpectedHeartbeatField.le(DSL.currentOffsetDateTime()))
+        .fetch()
+
+    /**
+     * Updates a push monitor's last heartbeat to the provided timestamp by matching its client secret.
+     * Doesn't check if the monitor is enabled, which is intentional to make the clients able to maintein a monitor's
+     * heartbeat even if the monitor is temporarily paused, for example. So after the monitor gets resumed, we won't get
+     * false positive alerts.
+     */
+    fun updateLastHeartbeat(
+        clientSecret: String,
+        timestamp: OffsetDateTime,
+        txCtx: DSLContext = dslContext,
+    ): PushMonitorRecord? = txCtx
+        .update(PUSH_MONITOR)
+        .set(PUSH_MONITOR.LAST_HEARTBEAT, timestamp)
+        .set(PUSH_MONITOR.UPDATED_AT, getCurrentTimestamp())
+        .where(PUSH_MONITOR.CLIENT_SECRET.eq(clientSecret))
+        .returning(PUSH_MONITOR.asterisk())
+        .fetchOne()
 }

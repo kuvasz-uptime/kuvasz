@@ -10,13 +10,15 @@ info:
   x-logo:
     url: https://github.com/kuvasz-uptime/kuvasz/raw/main/docs/docs/images/kuvasz-banner-light.webp
 tags:
+- name: HTTP monitors
+- name: "HTTP monitors (V1, deprecated)"
+- name: Incidents
+- name: Integrations
 - name: Management
 - name: Monitors
-- name: "HTTP monitors (V1, deprecated)"
-- name: HTTP monitors
-- name: "Settings (V1, deprecated)"
+- name: Push monitors
 - name: Settings
-- name: Integrations
+- name: "Settings (V1, deprecated)"
 - name: Status pages
 paths:
   /api/v1/monitors:
@@ -729,6 +731,9 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/IntegrationConfigDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/integrations/{integrationId}/test:
     post:
       tags:
@@ -756,6 +761,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/monitors/export/yaml:
     get:
       tags:
@@ -770,6 +778,70 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/push-monitors/heartbeats/{clientSecret}:
+    get:
+      tags:
+      - Push monitors
+      summary: Send a push monitor heartbeat
+      operationId: sendHeartbeatViaGet
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "202":
+          description: Heartbeat received
+    post:
+      tags:
+      - Push monitors
+      summary: Send a push monitor heartbeat
+      operationId: sendHeartbeatViaPost
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "202":
+          description: Heartbeat received
+  /api/v2/push-monitors/heartbeats/{clientSecret}/failure:
+    get:
+      tags:
+      - Push monitors
+      summary: Signal a push monitor failure
+      operationId: signalFailureViaGet
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "202":
+          description: Failure received
+    post:
+      tags:
+      - Push monitors
+      summary: Signal a push monitor failure
+      operationId: signalFailureViaPost
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushMonitorFailureDetailsDto"
+        required: true
+      responses:
+        "202":
+          description: Failure received
   /api/v2/settings:
     get:
       tags:
@@ -2504,6 +2576,14 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
+    PushMonitorFailureDetailsDto:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "The optional, explicit error that is signaled manually for\
+            \ a push monitor"
+          nullable: true
     SSLEventDto:
       required:
       - endedAt

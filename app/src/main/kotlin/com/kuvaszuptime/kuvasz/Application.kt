@@ -34,25 +34,27 @@ import io.swagger.v3.oas.annotations.tags.Tag
         ]
     ),
     tags = [
-        Tag(name = "Management"),
-        Tag(name = "Monitors"),
-        Tag(name = "HTTP monitors (V1, deprecated)"),
-        Tag(name = "HTTP monitors"),
-        Tag(name = "Settings (V1, deprecated)"),
-        Tag(name = "Settings"),
-        Tag(name = "Integrations"),
-        Tag(name = "Status pages"),
+        Tag(name = OpenApiTags.HTTP_MONITORS),
+        Tag(name = OpenApiTags.HTTP_MONITORS_V1),
+        Tag(name = OpenApiTags.INCIDENTS),
+        Tag(name = OpenApiTags.INTEGRATIONS),
+        Tag(name = OpenApiTags.MANAGEMENT),
+        Tag(name = OpenApiTags.MONITORS),
+        Tag(name = OpenApiTags.PUSH_MONITORS),
+        Tag(name = OpenApiTags.SETTINGS),
+        Tag(name = OpenApiTags.SETTINGS_V1),
+        Tag(name = OpenApiTags.STATUS_PAGES),
     ]
 )
 @SecuritySchemes(
     SecurityScheme(
-        name = "apiKey",
+        name = OpenApiSecuritySchemes.API_KEY,
         type = SecuritySchemeType.APIKEY,
         paramName = HeaderApiKeyReader.API_KEY_HEADER_NAME,
         `in` = SecuritySchemeIn.HEADER
     ),
     SecurityScheme(
-        name = "bearerAuth",
+        name = OpenApiSecuritySchemes.BEARER_AUTH,
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
     )

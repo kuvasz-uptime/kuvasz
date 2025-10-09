@@ -42,10 +42,7 @@ class PushUptimeStatusExporter(
 
     override fun subscribeToEvents() {
         logger.debug("Subscribing to uptime monitor events")
-        eventDispatcher.subscribeToPushMonitorUpEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToPushMonitorDownEvents { event ->
+        eventDispatcher.subscribeToPushMonitorEvents { event ->
             event.handle()
         }
     }

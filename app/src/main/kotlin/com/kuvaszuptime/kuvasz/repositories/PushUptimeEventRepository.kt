@@ -43,7 +43,7 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
         .where(PUSH_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun getPreviousEventByMonitorId(monitorId: Long): PushUptimeEventRecord? = dslContext
+    fun getPreviousEventByMonitorId(monitorId: Long, txCtx: DSLContext = dslContext): PushUptimeEventRecord? = txCtx
         .selectFrom(PUSH_UPTIME_EVENT)
         .where(PUSH_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .and(PUSH_UPTIME_EVENT.ENDED_AT.isNull)
@@ -67,15 +67,13 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
         .update(PUSH_UPTIME_EVENT)
         .set(PUSH_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {
-            if (newEvent is PushMonitorDownEvent) {
+            // Update the error message only for manually signaled failures
+            if (newEvent is PushMonitorDownEvent && newEvent.isManual) {
                 set(PUSH_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
             }
         }
         .where(PUSH_UPTIME_EVENT.ID.eq(eventId))
         .execute()
-
-    fun isMonitorUp(monitorId: Long, nullAsUp: Boolean = false): Boolean =
-        getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: nullAsUp
 
     @Suppress("IgnoredReturnValue")
     fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<PushUptimeEventDto> = dslContext

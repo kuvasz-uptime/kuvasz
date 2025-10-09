@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers.settings
 
+import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
+import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
@@ -18,10 +20,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Controller("${API_V2_PREFIX}/settings", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "Settings")
+@Tag(name = OpenApiTags.SETTINGS)
 @SecurityRequirements(
-    SecurityRequirement(name = "apiKey"),
-    SecurityRequirement(name = "bearerAuth")
+    SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
+    SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
 class SettingsControllerV2(private val settingsRepository: SettingsRepository) : SettingsOperationsV2 {
 

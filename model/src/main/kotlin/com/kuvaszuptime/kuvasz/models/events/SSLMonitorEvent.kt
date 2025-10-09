@@ -70,7 +70,7 @@ data class SSLInvalidEvent(
     override fun toStructuredMessage() =
         StructuredSSLInvalidMessage(
             summary = Messages.yourSiteHasAnInvalidCert(monitor.name, monitor.url),
-            error = Messages.reasonExplanation(error.message?.sanitize().orEmpty()),
+            error = Messages.reasonExplanation(error.message?.sanitizeAsError().orEmpty()),
             previousValidEvent = getEndedEventDuration().toDurationString()
                 ?.let { Messages.wasXForY(getPreviousStatusString(), it) }
         )

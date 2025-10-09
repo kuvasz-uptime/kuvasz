@@ -82,6 +82,7 @@ fun createPushMonitor(
     clientSecret: String = UUID.randomUUID().toString(),
     monitorName: String = UUID.randomUUID().toString(),
     integrations: List<IntegrationID> = emptyList(),
+    lastHeartbeat: OffsetDateTime? = null
 ): PushMonitorRecord {
     val monitor = PushMonitorRecord()
         .setName(monitorName)
@@ -91,6 +92,7 @@ fun createPushMonitor(
         .setEnabled(enabled)
         .setCreatedAt(getCurrentTimestamp())
         .setIntegrations(integrations.toTypedArray())
+        .setLastHeartbeat(lastHeartbeat)
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 

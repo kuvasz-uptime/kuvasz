@@ -24,4 +24,5 @@ object PushMonitorDocs {
     const val MONITORS_405_REASON =
         "Push monitors are in read-only mode, because they are loaded from a YAML config file"
     const val STATUS_PAGES = "List of slugs of the status pages the monitor is explicitly assigned to"
+    const val EXPLICIT_FAILURE_MESSAGE = "The optional, explicit error that is signaled manually for a push monitor"
 }

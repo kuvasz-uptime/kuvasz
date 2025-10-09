@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers.integration
 
+import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
+import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.ServiceError
@@ -27,12 +29,18 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 
 @Controller("${API_V2_PREFIX}/integrations", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "Integrations")
+@Tag(name = OpenApiTags.INTEGRATIONS)
+@SecurityRequirements(
+    SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
+    SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
+)
 class IntegrationController(
     private val testServices: List<TestableNotificationService<IntegrationConfig>>,
     private val integrationRepository: IntegrationRepository,

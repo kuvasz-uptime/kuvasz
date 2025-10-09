@@ -15,16 +15,16 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
-import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.push.numericMonitorId
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
-import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
@@ -38,12 +38,12 @@ import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @Singleton
 class PushMonitorActions(
     private val monitorRepository: PushMonitorRepository,
     private val uptimeEventRepository: PushUptimeEventRepository,
-    private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
     private val validator: Validator,
     private val integrationIdValidator: IntegrationIdValidator,
@@ -66,6 +66,25 @@ class PushMonitorActions(
 //            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo).toSet() // TODO
         )
     }
+
+    /**
+     * Updates the last heartbeat on the push monitor that matches the given client secret and dispatches an UP event
+     * conditionally in case the monitor is enabled
+     */
+    fun updateLastHeartbeat(clientSecret: String, timestamp: OffsetDateTime): PushMonitorRecord? = dslContext
+        .transactionResultWithError { config ->
+            val txCtx = config.dsl()
+            monitorRepository.updateLastHeartbeat(clientSecret, timestamp, txCtx)
+                ?.takeIf { it.enabled }
+                ?.also { updatedMonitor ->
+                    eventDispatcher.dispatch(
+                        PushMonitorUpEvent(
+                            monitor = updatedMonitor,
+                            previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(updatedMonitor.id, txCtx),
+                        )
+                    )
+                }
+        }
 
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
@@ -136,13 +155,6 @@ class PushMonitorActions(
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
-    fun getSSLEventsByMonitorId(monitorId: Long, limit: Int? = null): List<SSLEventDto> =
-        monitorRepository.findById(monitorId, null)
-            .orThrowNotFound(monitorId)
-            .let { monitor ->
-                sslEventRepository.getEventsByMonitorId(monitor.id, limit)
-            }
-
 //    fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =
 //        monitorRepository.findById(monitorId)
 //            .orThrowNotFound(monitorId)
@@ -203,4 +215,24 @@ class PushMonitorActions(
             )
         }
     }
+
+    /**
+     * Matches an enabled push monitor by the given client secret and dispatches a DOWN event with the given error.
+     * The event will be flagged as a manual one to be able to differentiate later and update the error message of a
+     * potentially existing event conditionally.
+     */
+    fun signalFailure(clientSecret: String, error: String): PushMonitorRecord? = dslContext
+        .transactionResultWithError { config ->
+            val txCtx = config.dsl()
+            monitorRepository.findEnabledByClientSecret(clientSecret, txCtx)?.also { monitor ->
+                eventDispatcher.dispatch(
+                    PushMonitorDownEvent(
+                        monitor,
+                        error,
+                        previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
+                        isManual = true,
+                    )
+                )
+            }
+        }
 }

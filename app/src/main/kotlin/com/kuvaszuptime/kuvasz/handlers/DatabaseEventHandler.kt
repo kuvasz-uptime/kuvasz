@@ -43,12 +43,8 @@ class DatabaseEventHandler(
             logger.debug("An HttpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             handleUptimeMonitorEvent(event)
         }
-        eventDispatcher.subscribeToPushMonitorUpEvents { event ->
-            logger.debug("A PushMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
-            handleUptimeMonitorEvent(event)
-        }
-        eventDispatcher.subscribeToPushMonitorDownEvents { event ->
-            logger.debug("A PushMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
+        eventDispatcher.subscribeToPushMonitorEvents { event ->
+            logger.debug("A ${event::class.simpleName} has been received for monitor with ID: ${event.monitor.id}")
             handleUptimeMonitorEvent(event)
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->

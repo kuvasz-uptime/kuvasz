@@ -64,6 +64,9 @@ micronaut:
     intercept-url-map:
       - pattern: /api/v2/health
         access: isAnonymous()
+      # Push heartbeats are authenticated via the client secrets, implicitly
+      - pattern: /api/v2/push-monitors/heartbeats/**
+        access: isAnonymous()
       - pattern: /api/**
         access:
           - ROLE_API

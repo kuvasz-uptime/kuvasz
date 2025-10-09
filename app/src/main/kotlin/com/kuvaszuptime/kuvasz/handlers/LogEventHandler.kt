@@ -25,10 +25,7 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
         eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
             event.handle()
         }
-        eventDispatcher.subscribeToPushMonitorUpEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToPushMonitorDownEvents { event ->
+        eventDispatcher.subscribeToPushMonitorEvents { event ->
             event.handle()
         }
         eventDispatcher.subscribeToHttpRedirectEvents { event ->
@@ -46,13 +43,17 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
     }
 
     private fun UptimeMonitorEvent.handle() {
-        val message = formatter.toFormattedMessage(this)
-        logger.info(message)
+        this.runWhenStateChanges { event ->
+            val message = formatter.toFormattedMessage(event)
+            logger.info(message)
+        }
     }
 
     private fun SSLMonitorEvent.handle() {
-        val message = formatter.toFormattedMessage(this)
-        logger.info(message)
+        this.runWhenStateChanges { event ->
+            val message = formatter.toFormattedMessage(event)
+            logger.info(message)
+        }
     }
 
     private fun HttpRedirectEvent.handle() {
