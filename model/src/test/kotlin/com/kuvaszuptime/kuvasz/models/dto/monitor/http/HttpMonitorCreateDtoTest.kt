@@ -177,7 +177,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
-                requestHeaders = mapOf("1-" to "value", "Valid-Header" to "value")
+                requestHeaders = mapOf("1 -" to "value", "Valid-Header" to "value")
             )
 
             then("bean validation should signal an error") {
@@ -193,7 +193,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
-                requestHeaders = mapOf("Valid-Header" to "value")
+                requestHeaders = mapOf("Valid!#$'*+-.^`|~_&%Header" to "value")
             )
 
             then("bean validation should NOT signal an error") {
@@ -222,7 +222,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
-                expectedHeaders = mapOf("1-" to "value")
+                expectedHeaders = mapOf("1 -" to "value")
             )
 
             then("bean validation should signal an error") {
@@ -238,7 +238,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 name = "Test Monitor",
                 url = "https://example.com",
                 uptimeCheckInterval = 60,
-                expectedHeaders = mapOf("Valid-Header" to "value")
+                expectedHeaders = mapOf("Valid!#$'*+-.^`|~_&%Header" to "value")
             )
 
             then("bean validation should NOT signal an error") {
