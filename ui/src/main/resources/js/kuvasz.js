@@ -468,7 +468,7 @@ const upsertHttpMonitorForm = (
 
         isValidHttpHeaderName(headerName) {
             if (headerName === null || headerName === undefined || headerName === '') return true;
-            const headerPattern = /^[a-zA-Z][a-zA-Z0-9-]*$/;
+            const headerPattern = /^[a-zA-Z0-9!#$'*+-.^`|~_&%]+$/;
             return headerPattern.test(headerName);
         },
 

@@ -15,7 +15,7 @@ annotation class ValidHeaderNames(
 @Factory
 class HttpHeaderMapValidatorFactory {
 
-    private val headerPattern = Regex("^[a-zA-Z][a-zA-Z0-9-]*$")
+    private val headerPattern = Regex("^[a-zA-Z0-9!#$'*+-.^`|~_&%]+$")
 
     @Singleton
     fun headerMapValidator(): ConstraintValidator<ValidHeaderNames, Map<String, String>> =

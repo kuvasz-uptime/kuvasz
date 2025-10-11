@@ -3,5 +3,5 @@ http-monitors:
     url: http://example.com
     uptime-check-interval: 60
     expected-headers:
-      validheader: validvalue
-      1-invalid-header: invalidvalue
+      Valid!#$'*+-.^`|~_&%Header: validvalue
+      "1 invalid-header": invalidvalue

@@ -1190,7 +1190,7 @@ class HttpMonitorControllerV2Test(
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = true,
-                    requestHeaders = mapOf("1-Invalid-Header" to "Value")
+                    requestHeaders = mapOf("1 Invalid-Header" to "Value")
                 )
                 val request = HttpRequest.POST("/api/v2/http-monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
@@ -1209,7 +1209,7 @@ class HttpMonitorControllerV2Test(
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = true,
-                    expectedHeaders = mapOf("2-Header" to "Value")
+                    expectedHeaders = mapOf("2 Header" to "Value")
                 )
                 val request = HttpRequest.POST("/api/v2/http-monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
@@ -2058,7 +2058,7 @@ class HttpMonitorControllerV2Test(
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(
                         HttpMonitorUpdateDto::requestHeaders.name,
-                        mapper.createObjectNode().put("-Header", "NewValue")
+                        mapper.createObjectNode().put("- Header", "NewValue")
                     )
                 val updateRequest =
                     HttpRequest.PATCH("/api/v2/http-monitors/${createdMonitor.id}", updateDto)
@@ -2086,7 +2086,7 @@ class HttpMonitorControllerV2Test(
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(
                         HttpMonitorUpdateDto::expectedHeaders.name,
-                        mapper.createObjectNode().put("1241", "NewValue")
+                        mapper.createObjectNode().put("12 41", "NewValue")
                     )
                 val updateRequest =
                     HttpRequest.PATCH("/api/v2/http-monitors/${createdMonitor.id}", updateDto)

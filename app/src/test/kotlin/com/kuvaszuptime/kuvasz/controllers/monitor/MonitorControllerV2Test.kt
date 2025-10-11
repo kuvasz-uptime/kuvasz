@@ -54,8 +54,28 @@ class MonitorControllerV2Test(
                     expectedKeyword = "somethingExpected",
                     expectedKeywordCaseSensitive = true,
                     expectedKeywordNegated = false,
-                    requestHeaders = mapOf("X-Test-Header" to "TestValue"),
-                    expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue"),
+                    requestHeaders = mapOf(
+                        "X-Test-Header" to "TestValue",
+                        "1-Starts-With-Number" to "Value1",
+                        "Header-With-Ending-Dash-" to "Value2",
+                        "X_Underscore_Header" to "ValueWithUnderscores",
+                        "-Starts-With-dash" to "DashValue",
+                        "!Special#$%&'*+." to "SymbolsValue",
+                        "!#$%&'*+." to "SymbolsOnlyValue",
+                        "\$NotAVariable" to "ValueWithEscapedMoney",
+                        "MY-FANCY-`HEADER`" to "ValueWithBackticks"
+                    ),
+                    expectedHeaders = mapOf(
+                        "X-Expected-Header" to "ExpectedValue",
+                        "1-Starts-With-Number" to "Value1",
+                        "Header-With-Ending-Dash-" to "Value2",
+                        "X_Underscore_Header" to "ValueWithUnderscores",
+                        "-Starts-With-dash" to "DashValue",
+                        "!Special#$%&'*+." to "SymbolsValue",
+                        "!#$%&'*+." to "SymbolsOnlyValue",
+                        "\$NotAVariable" to "ValueWithEscapedMoney",
+                        "MY-FANCY-`HEADER`" to "ValueWithBackticks"
+                    ),
                     requestBody = "{\"key\": \"value\"}",
                 )
                 val request = HttpRequest.GET<Any>("/api/v2/monitors/export/yaml").accept(MediaType.APPLICATION_YAML)
