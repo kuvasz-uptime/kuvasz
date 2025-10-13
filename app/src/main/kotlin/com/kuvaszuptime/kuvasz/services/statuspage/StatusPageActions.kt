@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
-import arrow.core.getOrHandle
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -56,9 +55,7 @@ class StatusPageActions(
         val validatedMonitors =
             monitorIdValidator.validateMonitorIds(statusPageCreateDto.monitors.orEmpty())
 
-        return statusPageRepository
-            .returningInsert(statusPageCreateDto.toStatusPageRecord(validatedMonitors))
-            .getOrHandle { persistenceError -> throw persistenceError }
+        return statusPageRepository.returningInsert(statusPageCreateDto.toStatusPageRecord(validatedMonitors))
     }
 
     @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = false, parameters = ["statusPageId"])
@@ -90,10 +87,7 @@ class StatusPageActions(
                     monitorIdValidator.validateMonitorIds(updatedStatusPage.monitors).toTypedArray()
             }
 
-            statusPageRepository.returningUpdate(StatusPageRecord(updatedStatusPage), txCtx).fold(
-                { persistenceError -> throw persistenceError },
-                { updatedStatusPageFromDb -> updatedStatusPageFromDb }
-            )
+            statusPageRepository.returningUpdate(StatusPageRecord(updatedStatusPage), txCtx)
         }
 
     private fun StatusPageRecord?.orThrowNotFound(statusPageId: Long): StatusPageRecord =

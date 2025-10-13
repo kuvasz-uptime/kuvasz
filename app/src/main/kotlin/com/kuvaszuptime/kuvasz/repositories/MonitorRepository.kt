@@ -1,12 +1,11 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import arrow.core.Either
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
-import com.kuvaszuptime.kuvasz.util.toPersistenceError
+import com.kuvaszuptime.kuvasz.util.toPersistenceException
 import org.jooq.DSLContext
 import org.jooq.Field
 import org.jooq.Record
@@ -45,14 +44,9 @@ interface MonitorRepository<R : MonitorRecord> {
     /**
      * Converts a DataAccessException to a PersistenceException by matching duplication errors.
      */
-    fun DataAccessException.handle(): Either<PersistenceException, Nothing> {
-        val persistenceError = toPersistenceError()
-        return Either.Left(
-            if (persistenceError is DuplicationException) {
-                MonitorDuplicatedException()
-            } else {
-                persistenceError
-            }
-        )
-    }
+    fun DataAccessException.checkForDuplication(): PersistenceException =
+        when (val persistenceException = toPersistenceException()) {
+            is DuplicationException -> MonitorDuplicatedException()
+            else -> persistenceException
+        }
 }

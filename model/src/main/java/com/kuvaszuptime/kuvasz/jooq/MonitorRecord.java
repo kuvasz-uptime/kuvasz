@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.jooq;
 
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
-import jakarta.annotation.Nullable;
 
 import java.time.OffsetDateTime;
 
@@ -16,6 +15,5 @@ public interface MonitorRecord {
 
     OffsetDateTime getCreatedAt();
 
-    @Nullable
     OffsetDateTime getUpdatedAt();
 }

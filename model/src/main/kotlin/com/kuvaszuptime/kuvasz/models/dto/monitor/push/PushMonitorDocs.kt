@@ -4,7 +4,7 @@ object PushMonitorDocs {
     const val ID = "Unique identifier of the monitor"
     const val NAME = "Unique name for the monitor, e.g., 'My Website Monitor'"
     const val HEARTBEAT_INTERVAL = "The interval in seconds at which the monitor expects to receive heartbeats"
-    const val GRACE_PERIOD = "The grace period in seconds after the heartrate interval during which a missed " +
+    const val GRACE_PERIOD = "The grace period in seconds after the heartbeat interval during which a missed " +
         "heartbeat will not mark the monitor as DOWN"
     const val CLIENT_SECRET = "The unique client secret used to identify & authenticate heartbeats"
     const val ENABLED = "Whether the monitor is enabled. If false, the monitor will not perform checks."

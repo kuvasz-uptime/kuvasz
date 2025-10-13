@@ -93,7 +93,7 @@ fun createPushMonitor(
         .setCreatedAt(getCurrentTimestamp())
         .setIntegrations(integrations.toTypedArray())
         .setLastHeartbeat(lastHeartbeat)
-    return repository.returningInsert(monitor).orNull().shouldNotBeNull()
+    return repository.returningInsert(monitor)
 }
 
 fun createHttpUptimeEventRecord(

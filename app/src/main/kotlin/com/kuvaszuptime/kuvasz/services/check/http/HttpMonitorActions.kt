@@ -75,7 +75,7 @@ class HttpMonitorActions(
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
             nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
-            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo).toSet()
+            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo.integrations).toSet()
         )
     }
 
@@ -91,7 +91,8 @@ class HttpMonitorActions(
                 detailsDto.copy(
                     nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
                     nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
-                    effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto).toSet()
+                    effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
+                        .toSet()
                 )
             }
 

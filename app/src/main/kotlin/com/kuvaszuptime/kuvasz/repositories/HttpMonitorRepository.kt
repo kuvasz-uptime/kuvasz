@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
+import arrow.core.left
 import com.kuvaszuptime.kuvasz.jooq.JsonNodeToMapConverter
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
@@ -86,7 +87,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                     .fetchOneOrThrow<HttpMonitorRecord>()
             )
         } catch (e: DataAccessException) {
-            e.handle()
+            e.checkForDuplication().left()
         }
 
     fun returningUpdate(
@@ -122,7 +123,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                     .fetchOneOrThrow<HttpMonitorRecord>()
             )
         } catch (e: DataAccessException) {
-            e.handle()
+            e.checkForDuplication().left()
         }
 
     /**

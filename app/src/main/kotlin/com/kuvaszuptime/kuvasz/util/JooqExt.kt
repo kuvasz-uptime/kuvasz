@@ -12,7 +12,7 @@ import org.jooq.exception.DataAccessException
 import org.jooq.exception.NoDataFoundException
 import org.postgresql.util.PSQLException
 
-fun DataAccessException.toPersistenceError(): PersistenceException =
+fun DataAccessException.toPersistenceException(): PersistenceException =
     getCause(PSQLException::class.java)?.message?.let { message ->
         if (message.contains("duplicate key")) DuplicationException() else PersistenceException(message)
     } ?: PersistenceException(message)

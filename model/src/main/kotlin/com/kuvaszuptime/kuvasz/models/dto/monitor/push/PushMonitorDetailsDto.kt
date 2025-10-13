@@ -30,9 +30,9 @@ data class PushMonitorDetailsDto(
     @param:Schema(description = PushMonitorDocs.LAST_UPTIME_CHECK, required = true, nullable = true)
     val lastUptimeCheck: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.LAST_HEARTBEAT, required = true, nullable = true)
-    val lastHeartbeatAt: OffsetDateTime?,
+    val lastHeartbeat: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.NEXT_EXPECTED_HEARTBEAT, required = true, nullable = true)
-    val nextExpectedHeartbeatAt: OffsetDateTime?,
+    val nextExpectedHeartbeat: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.UPTIME_ERROR, required = true, nullable = true)
     val uptimeError: String?,
     @param:Schema(description = PushMonitorDocs.INTEGRATIONS, required = true)

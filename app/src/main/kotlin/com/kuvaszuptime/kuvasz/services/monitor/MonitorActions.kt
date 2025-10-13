@@ -29,13 +29,13 @@ abstract class MonitorActions<R : MonitorRecord>(
      * If the monitor is referenced by a status page that is not writable, then we cannot change its name or delete it,
      * to preserve referential integrity.
      */
-    fun isMonitorChangeable(existingMonitor: R): Boolean {
+    fun isMonitorChangeable(existingMonitor: R): Boolean =
         if (!appConfig.isStatusPageExternalWriteDisabled()) {
-            return true
+            true
+        } else {
+            val referencingStatusPages = statusPageRepository.getStatusPagesOfMonitor(existingMonitor.getMonitorId())
+            referencingStatusPages.isEmpty()
         }
-        val referencingStatusPages = statusPageRepository.getStatusPagesOfMonitor(existingMonitor.getMonitorId())
-        return referencingStatusPages.isEmpty()
-    }
 
     fun deleteMonitorById(monitorId: Long, afterDelete: (R) -> Unit = {}): Unit =
         dslContext.transactionResultWithError { config ->

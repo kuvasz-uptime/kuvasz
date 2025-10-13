@@ -142,7 +142,7 @@ class HttpMonitorControllerV2Test(
                     responseItem.name shouldBe monitor.name
                     responseItem.url.toString() shouldBe monitor.url
                     responseItem.enabled shouldBe monitor.enabled
-                    responseItem.enabled shouldBe monitor.sslCheckEnabled
+                    responseItem.sslCheckEnabled shouldBe monitor.sslCheckEnabled
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
                     responseItem.uptimeStatusStartedAt shouldBe now
                     responseItem.uptimeError shouldBe null

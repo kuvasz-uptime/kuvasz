@@ -11,15 +11,16 @@ import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
+import com.kuvaszuptime.kuvasz.testutils.shouldEqualRounded
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldBeSortedBy
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeInRange
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import org.jooq.DSLContext
-import java.math.RoundingMode
 import java.time.Duration
 import java.time.OffsetDateTime
 
@@ -31,7 +32,7 @@ class StatCalculatorTest(
     statCalculator: StatCalculator,
 ) : DatabaseBehaviorSpec({
 
-    given("the calculateOverallStats method") {
+    given("the calculateOverallHttpStats method") {
 
         `when`("there is a paused monitor") {
 
@@ -112,10 +113,7 @@ class StatCalculatorTest(
                 // 2.5 days DOWN inside the period
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 60 * 60 * 60
                 // 5 days UP, 2.5 days DOWN
-                stats.history.uptimeStats.uptimeRatio
-                    ?.toBigDecimal()
-                    ?.setScale(4, RoundingMode.HALF_UP) shouldBe
-                    (5.toDouble() / 7.5).toBigDecimal().setScale(4, RoundingMode.HALF_UP)
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 5.toDouble() / 7.5
             }
         }
 
@@ -199,10 +197,7 @@ class StatCalculatorTest(
                 // 1.5 days DOWN inside the period
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 36 * 60 * 60
                 // 5 days UP, 1.5 days DOWN
-                stats.history.uptimeStats.uptimeRatio
-                    ?.toBigDecimal()
-                    ?.setScale(4, RoundingMode.HALF_UP) shouldBe
-                    (5.toDouble() / 6.5).toBigDecimal().setScale(4, RoundingMode.HALF_UP)
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 5.toDouble() / 6.5
             }
         }
 
@@ -258,7 +253,7 @@ class StatCalculatorTest(
             val secondUptimeEvent = createHttpUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = monitor.id,
-                startedAt = firstUptimeEvent.endedAt,
+                startedAt = firstUptimeEvent.endedAt.shouldNotBeNull(),
                 status = UptimeStatus.DOWN,
                 endedAt = getCurrentTimestamp().minusDays(7),
             )
@@ -266,7 +261,7 @@ class StatCalculatorTest(
             createHttpUptimeEventRecord(
                 dslContext = dslContext,
                 monitorId = monitor.id,
-                startedAt = secondUptimeEvent.endedAt,
+                startedAt = secondUptimeEvent.endedAt.shouldNotBeNull(),
                 status = UptimeStatus.UP,
                 endedAt = null,
             )
@@ -302,10 +297,7 @@ class StatCalculatorTest(
                 stats.history.uptimeStats.incidents shouldBe 1
                 stats.history.uptimeStats.affectedMonitors shouldBe 1
                 // The uptime ratio calculation should only take the time within the given period into account
-                stats.history.uptimeStats.uptimeRatio
-                    ?.toBigDecimal()
-                    ?.setScale(4, RoundingMode.HALF_UP) shouldBe
-                    (7.toDouble() / 9).toBigDecimal().setScale(4, RoundingMode.HALF_UP)
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 7.toDouble() / 9
                 // 2 days in seconds, because even the downtime stared before the period, only the part within the
                 // period should be counted
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 2 * 24 * 60 * 60
@@ -498,7 +490,337 @@ class StatCalculatorTest(
             then("it should calculate the uptimeRatio correctly & return the last incident timestamp") {
 
                 // 5 days UP + 5 days DOWN for monitor1, 1 day UP + 2 days DOWN for monitor2
-                stats.history.uptimeStats.uptimeRatio shouldBe 6.toDouble() / 13
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 6.toDouble() / 13
+                // 5 days + 2 days in seconds
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 + 2 * 24 * 60 * 60
+                stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
+            }
+        }
+    }
+
+    given("the calculateOverallPushStats method") {
+
+        `when`("there is a paused monitor") {
+
+            val enabledUpMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            val enabledDownMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            val pausedMonitor = createPushMonitor(pushMonitorRepository, enabled = false)
+            val now = getCurrentTimestamp()
+
+            // enabledUpMonitor's incidents
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledUpMonitor.id,
+                startedAt = now.minusDays(10),
+                status = UptimeStatus.DOWN,
+                endedAt = now.minusDays(5), // 5 days DOWN, 1 day in the period
+            )
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledUpMonitor.id,
+                startedAt = now.minusDays(5),
+                status = UptimeStatus.UP,
+                endedAt = null, // 5 days UP
+            )
+            // enabledDownMonitor's incidents
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledDownMonitor.id,
+                startedAt = now.minusHours(12),
+                status = UptimeStatus.DOWN,
+                endedAt = null, // 0.5 day DOWN
+            )
+            // pausedMonitor's incidents
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                startedAt = now.minusDays(2),
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+                updatedAt = now.minusDays(1), // 1 day DOWN
+            )
+
+            then("it should count their uptime based on the events' update date in the statistics") {
+                val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(6))
+                stats.actual.uptimeStats.total shouldBe 3 // 2 enabled monitors + 1 paused monitor
+                stats.actual.uptimeStats.down shouldBe 1
+                stats.actual.uptimeStats.up shouldBe 1
+                stats.actual.uptimeStats.paused shouldBe 1
+                stats.actual.uptimeStats.inProgress shouldBe 0
+
+                stats.history.uptimeStats.incidents shouldBe 3
+                stats.history.uptimeStats.affectedMonitors shouldBe 3
+                // 2.5 days DOWN inside the period
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 60 * 60 * 60
+                // 5 days UP, 2.5 days DOWN
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 5.toDouble() / 7.5
+            }
+        }
+
+        `when`("there is a paused monitor - last update before the period") {
+
+            val enabledUpMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            val enabledDownMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            val pausedMonitor = createPushMonitor(pushMonitorRepository, enabled = false)
+            val now = getCurrentTimestamp()
+
+            // enabledUpMonitor's incidents
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledUpMonitor.id,
+                startedAt = now.minusDays(10),
+                status = UptimeStatus.DOWN,
+                endedAt = now.minusDays(5), // 5 days DOWN, 1 day in the period
+            )
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledUpMonitor.id,
+                startedAt = now.minusDays(5),
+                status = UptimeStatus.UP,
+                endedAt = null, // 5 days UP
+            )
+            // enabledDownMonitor's incidents
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = enabledDownMonitor.id,
+                startedAt = now.minusHours(12),
+                status = UptimeStatus.DOWN,
+                endedAt = null, // 0.5 day DOWN
+            )
+
+            // pausedMonitor's incidents
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                startedAt = now.minusDays(12),
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+                updatedAt = now.minusDays(8),
+            )
+
+            then("it should not count the obsolete events from the paused monitor") {
+                val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(6))
+                stats.actual.uptimeStats.total shouldBe 3 // 2 enabled monitors + 1 paused monitor
+                stats.actual.uptimeStats.down shouldBe 1
+                stats.actual.uptimeStats.up shouldBe 1
+                stats.actual.uptimeStats.paused shouldBe 1
+                stats.actual.uptimeStats.inProgress shouldBe 0
+
+                stats.history.uptimeStats.incidents shouldBe 2
+                stats.history.uptimeStats.affectedMonitors shouldBe 2
+                // 1.5 days DOWN inside the period
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 36 * 60 * 60
+                // 5 days UP, 1.5 days DOWN
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 5.toDouble() / 6.5
+            }
+        }
+
+        `when`("there is a monitor that was just created") {
+
+            createPushMonitor(pushMonitorRepository, enabled = true)
+            val oldMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+
+            // Old monitor's events
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = oldMonitor.id,
+                startedAt = getCurrentTimestamp().minusDays(10),
+                status = UptimeStatus.UP,
+                endedAt = null,
+            )
+
+            then("it should count it as an in progress one") {
+
+                val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(6))
+                stats.actual.uptimeStats.total shouldBe 2 // 1 old monitor + 1 new monitor
+                stats.actual.uptimeStats.up shouldBe 1
+                stats.actual.uptimeStats.inProgress shouldBe 1
+
+                stats.history.uptimeStats.incidents shouldBe 0
+                stats.history.uptimeStats.affectedMonitors shouldBe 0
+            }
+        }
+
+        `when`("there are events outside of the given time period") {
+
+            val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+
+            // Events outside the 9 days period
+            val firstUptimeEvent = createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor.id,
+                startedAt = getCurrentTimestamp().minusDays(12),
+                status = UptimeStatus.UP,
+                endedAt = getCurrentTimestamp().minusDays(10),
+            )
+            // Event that overlaps with the start of the 9 days period, downtime should be counted from the beginning
+            // of the given period
+            val secondUptimeEvent = createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor.id,
+                startedAt = firstUptimeEvent.endedAt.shouldNotBeNull(),
+                status = UptimeStatus.DOWN,
+                endedAt = getCurrentTimestamp().minusDays(7),
+            )
+            // Events within the 9 days period
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor.id,
+                startedAt = secondUptimeEvent.endedAt.shouldNotBeNull(),
+                status = UptimeStatus.UP,
+                endedAt = null,
+            )
+
+            val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(9))
+
+            then("historical data should only contain events within the period") {
+                stats.actual.uptimeStats.total shouldBe 1
+                stats.actual.uptimeStats.down shouldBe 0
+                stats.actual.uptimeStats.up shouldBe 1
+                stats.actual.uptimeStats.paused shouldBe 0
+                stats.actual.uptimeStats.inProgress shouldBe 0
+
+                stats.history.uptimeStats.incidents shouldBe 1
+                stats.history.uptimeStats.affectedMonitors shouldBe 1
+                // The uptime ratio calculation should only take the time within the given period into account
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 7.toDouble() / 9
+                // 2 days in seconds, because even the downtime stared before the period, only the part within the
+                // period should be counted
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 2 * 24 * 60 * 60
+            }
+        }
+
+        `when`("monitors with all the exposed statuses are present") {
+
+            createPushMonitor(pushMonitorRepository, enabled = true)
+            val upMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            val downMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            val pausedMonitor = createPushMonitor(pushMonitorRepository, enabled = false)
+
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = upMonitor.id,
+                startedAt = getCurrentTimestamp().minusDays(10),
+                status = UptimeStatus.UP,
+                endedAt = null,
+            )
+
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = downMonitor.id,
+                startedAt = getCurrentTimestamp().minusDays(5),
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+            )
+
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = pausedMonitor.id,
+                startedAt = getCurrentTimestamp().minusDays(2),
+                status = UptimeStatus.UP,
+                endedAt = null,
+            )
+
+            then("it should correctly calculate the stats for all statuses") {
+                val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(6))
+
+                stats.actual.uptimeStats.total shouldBe 4
+                stats.actual.uptimeStats.down shouldBe 1
+                stats.actual.uptimeStats.up shouldBe 1
+                stats.actual.uptimeStats.paused shouldBe 1
+                stats.actual.uptimeStats.inProgress shouldBe 1
+
+                stats.history.uptimeStats.incidents shouldBe 1 // Only the downMonitor has an incident
+                stats.history.uptimeStats.affectedMonitors shouldBe 1
+                val expectedDowntimeSeconds = 5L * 24 * 60 * 60 // 5 days in seconds
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBeInRange
+                    expectedDowntimeSeconds..expectedDowntimeSeconds + 1
+            }
+        }
+
+        `when`("there are no events in the given period") {
+
+            val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor.id,
+                startedAt = getCurrentTimestamp().minusDays(10),
+                status = UptimeStatus.UP,
+                endedAt = getCurrentTimestamp().minusDays(6).minusSeconds(1),
+            )
+
+            val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(6))
+
+            then("it should handle it gracefully and return null as the ratio") {
+
+                stats.history.uptimeStats.uptimeRatio shouldBe null
+            }
+        }
+
+        `when`("there are no monitors at all") {
+
+            then("it should return empty stats") {
+                val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(6))
+
+                stats.actual.uptimeStats.total shouldBe 0
+                stats.actual.uptimeStats.down shouldBe 0
+                stats.actual.uptimeStats.up shouldBe 0
+                stats.actual.uptimeStats.paused shouldBe 0
+                stats.actual.uptimeStats.inProgress shouldBe 0
+
+                stats.history.uptimeStats.incidents shouldBe 0
+                stats.history.uptimeStats.affectedMonitors shouldBe 0
+                stats.history.uptimeStats.uptimeRatio shouldBe null
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 0L
+            }
+        }
+
+        `when`("there are multiple events for a given period") {
+
+            val monitor1 = createPushMonitor(pushMonitorRepository)
+            val monitor2 = createPushMonitor(pushMonitorRepository)
+
+            val firstUpStartedAt = getCurrentTimestamp().minusDays(10)
+            val firstUpEndedAt = getCurrentTimestamp().minusDays(5)
+
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor1.id,
+                status = UptimeStatus.UP,
+                startedAt = firstUpStartedAt,
+                endedAt = firstUpEndedAt,
+            )
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor1.id,
+                startedAt = firstUpEndedAt,
+                status = UptimeStatus.DOWN,
+                endedAt = null,
+            )
+
+            val secondDownStartedAt = getCurrentTimestamp().minusDays(3)
+            val secondDownEndedAt = getCurrentTimestamp().minusDays(1)
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor2.id,
+                status = UptimeStatus.DOWN,
+                startedAt = secondDownStartedAt,
+                endedAt = secondDownEndedAt,
+            )
+            createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitor2.id,
+                status = UptimeStatus.UP,
+                startedAt = secondDownEndedAt,
+                endedAt = null,
+            )
+
+            val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(12))
+
+            then("it should calculate the uptimeRatio correctly & return the last incident timestamp") {
+
+                // 5 days UP + 5 days DOWN for monitor1, 1 day UP + 2 days DOWN for monitor2
+                stats.history.uptimeStats.uptimeRatio shouldEqualRounded 6.toDouble() / 13
                 // 5 days + 2 days in seconds
                 stats.history.uptimeStats.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 + 2 * 24 * 60 * 60
                 stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt

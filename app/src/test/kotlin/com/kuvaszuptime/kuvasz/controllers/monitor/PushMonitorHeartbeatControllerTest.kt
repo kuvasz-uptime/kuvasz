@@ -15,7 +15,7 @@ import io.mockk.verify
 
 @MicronautTest
 class PushMonitorHeartbeatControllerTest(
-    client: PushMonitorHeartbeatControllerClient,
+    client: PushMonitorHeartbeatClient,
     monitorActions: PushMonitorActions,
 ) : BehaviorSpec({
 

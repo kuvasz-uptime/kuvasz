@@ -24,7 +24,7 @@ open class DuplicationException(
 ) : PersistenceException()
 
 class MonitorDuplicatedException(
-    override val message: String? = "There is already a monitor with the given name"
+    override val message: String? = "There is already a monitor with the given name/client secret"
 ) : DuplicationException()
 
 class SchedulingException(

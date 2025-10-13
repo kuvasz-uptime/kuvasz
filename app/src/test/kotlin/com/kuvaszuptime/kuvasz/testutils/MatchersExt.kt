@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.testutils
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import java.math.RoundingMode
 import java.net.URI
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoField
@@ -20,3 +21,8 @@ private fun OffsetDateTime.roundToMicros(): OffsetDateTime {
 }
 
 infix fun URI.shouldBeUriOf(other: String) = this.shouldBe(other.toUri())
+
+infix fun Double?.shouldEqualRounded(other: Double) =
+    this?.toBigDecimal()
+        ?.setScale(4, RoundingMode.HALF_UP) shouldBe
+        other.toBigDecimal().setScale(4, RoundingMode.HALF_UP)

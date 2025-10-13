@@ -1,13 +1,11 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import arrow.core.Either
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_PUSH_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -41,6 +39,11 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .selectFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.CLIENT_SECRET.eq(clientSecret))
         .and(PUSH_MONITOR.ENABLED.isTrue)
+        .fetchOne()
+
+    fun findByClientSecret(clientSecret: String, txtCtx: DSLContext = dslContext): PushMonitorRecord? = txtCtx
+        .selectFrom(PUSH_MONITOR)
+        .where(PUSH_MONITOR.CLIENT_SECRET.eq(clientSecret))
         .fetchOne()
 
     fun fetchAll(): List<PushMonitorRecord> = dslContext
@@ -78,40 +81,36 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             .and(PUSH_MONITOR.ID.eq(monitorId))
             .fetchOneInto(PushMonitorDetailsDto::class.java)
 
-    fun returningInsert(monitor: PushMonitorRecord): Either<PersistenceException, PushMonitorRecord> =
+    fun returningInsert(monitor: PushMonitorRecord): PushMonitorRecord =
         try {
-            Either.Right(
-                dslContext
-                    .insertInto(PUSH_MONITOR)
-                    .set(monitor)
-                    .returning(PUSH_MONITOR.asterisk())
-                    .fetchOneOrThrow<PushMonitorRecord>()
-            )
+            dslContext
+                .insertInto(PUSH_MONITOR)
+                .set(monitor)
+                .returning(PUSH_MONITOR.asterisk())
+                .fetchOneOrThrow<PushMonitorRecord>()
         } catch (e: DataAccessException) {
-            e.handle()
+            throw e.checkForDuplication()
         }
 
     fun returningUpdate(
         updatedMonitor: PushMonitorRecord,
         txCtx: DSLContext = dslContext,
-    ): Either<PersistenceException, PushMonitorRecord> =
+    ): PushMonitorRecord =
         try {
-            Either.Right(
-                txCtx
-                    .update(PUSH_MONITOR)
-                    .set(PUSH_MONITOR.NAME, updatedMonitor.name)
-                    .set(PUSH_MONITOR.HEARTBEAT_INTERVAL, updatedMonitor.heartbeatInterval)
-                    .set(PUSH_MONITOR.GRACE_PERIOD, updatedMonitor.gracePeriod)
-                    .set(PUSH_MONITOR.ENABLED, updatedMonitor.enabled)
-                    .set(PUSH_MONITOR.CLIENT_SECRET, updatedMonitor.clientSecret)
-                    .set(PUSH_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
-                    .set(PUSH_MONITOR.UPDATED_AT, getCurrentTimestamp())
-                    .where(PUSH_MONITOR.ID.eq(updatedMonitor.id))
-                    .returning(PUSH_MONITOR.asterisk())
-                    .fetchOneOrThrow<PushMonitorRecord>()
-            )
+            txCtx
+                .update(PUSH_MONITOR)
+                .set(PUSH_MONITOR.NAME, updatedMonitor.name)
+                .set(PUSH_MONITOR.HEARTBEAT_INTERVAL, updatedMonitor.heartbeatInterval)
+                .set(PUSH_MONITOR.GRACE_PERIOD, updatedMonitor.gracePeriod)
+                .set(PUSH_MONITOR.ENABLED, updatedMonitor.enabled)
+                .set(PUSH_MONITOR.CLIENT_SECRET, updatedMonitor.clientSecret)
+                .set(PUSH_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
+                .set(PUSH_MONITOR.UPDATED_AT, getCurrentTimestamp())
+                .where(PUSH_MONITOR.ID.eq(updatedMonitor.id))
+                .returning(PUSH_MONITOR.asterisk())
+                .fetchOneOrThrow<PushMonitorRecord>()
         } catch (e: DataAccessException) {
-            e.handle()
+            throw e.checkForDuplication()
         }
 
     /**
@@ -144,18 +143,14 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .execute()
 
     @Suppress("LongMethod")
-    private fun monitorDetailsSelect(): SelectConditionStep<out Record?> {
-        // TODO
-//        @param:Schema(description = PushMonitorDocs.NEXT_EXPECTED_HEARTBEAT, required = true, nullable = true)
-//        val nextExpectedHeartbeatAt: OffsetDateTime?,
-
-        return dslContext.select(
+    private fun monitorDetailsSelect(): SelectConditionStep<out Record?> = dslContext
+        .select(
             PUSH_MONITOR.ID.`as`(PushMonitorDetailsDto::id.name),
             PUSH_MONITOR.NAME.`as`(PushMonitorDetailsDto::name.name),
             PUSH_MONITOR.HEARTBEAT_INTERVAL.`as`(PushMonitorDetailsDto::heartbeatInterval.name),
             PUSH_MONITOR.GRACE_PERIOD.`as`(PushMonitorDetailsDto::gracePeriod.name),
             PUSH_MONITOR.ENABLED.`as`(PushMonitorDetailsDto::enabled.name),
-            PUSH_MONITOR.LAST_HEARTBEAT.`as`(PushMonitorDetailsDto::lastHeartbeatAt.name),
+            PUSH_MONITOR.LAST_HEARTBEAT.`as`(PushMonitorDetailsDto::lastHeartbeat.name),
             PUSH_MONITOR.CREATED_AT.`as`(PushMonitorDetailsDto::createdAt.name),
             PUSH_MONITOR.UPDATED_AT.`as`(PushMonitorDetailsDto::updatedAt.name),
             PUSH_UPTIME_EVENT.STATUS.`as`(PushMonitorDetailsDto::uptimeStatus.name),
@@ -166,22 +161,21 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             PUSH_MONITOR.INTEGRATIONS.`as`(PushMonitorDetailsDto::integrations.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(PushMonitorDetailsDto::statusPages.name),
-            nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeatAt.name),
+            nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeat.name),
         )
-            .from(PUSH_MONITOR)
-            .leftJoin(PUSH_UPTIME_EVENT)
-            .on(PUSH_MONITOR.ID.eq(PUSH_UPTIME_EVENT.MONITOR_ID).and(PUSH_UPTIME_EVENT.ENDED_AT.isNull))
-            .leftJoin(statusPagesSubselect)
-            .on(
-                monitorNameField
-                    .eq(
-                        DSL.`val`(MonitorType.PUSH.identifier)
-                            .concat(":")
-                            .concat(PUSH_MONITOR.NAME)
-                    )
-            )
-            .where(DSL.trueCondition())
-    }
+        .from(PUSH_MONITOR)
+        .leftJoin(PUSH_UPTIME_EVENT)
+        .on(PUSH_MONITOR.ID.eq(PUSH_UPTIME_EVENT.MONITOR_ID).and(PUSH_UPTIME_EVENT.ENDED_AT.isNull))
+        .leftJoin(statusPagesSubselect)
+        .on(
+            monitorNameField
+                .eq(
+                    DSL.`val`(MonitorType.PUSH.identifier)
+                        .concat(":")
+                        .concat(PUSH_MONITOR.NAME)
+                )
+        )
+        .where(DSL.trueCondition())
 
     /**
      * Calculates the next expected heartbeat's timestamp as an OffsetDateTime by adding the heartbeat interval and

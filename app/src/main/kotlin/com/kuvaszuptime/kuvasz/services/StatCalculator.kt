@@ -3,10 +3,12 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
@@ -18,6 +20,7 @@ import java.time.OffsetDateTime
 @Singleton
 class StatCalculator(
     private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
 ) {
@@ -75,6 +78,44 @@ class StatCalculator(
                 )
             ),
             history = HttpMonitoringStatsDto.HistoricalMonitoringStats(
+                uptimeStats = calculateHistoricalUptimeStats(period, uptimeEvents)
+            )
+        )
+    }
+
+    fun calculateOverallPushStats(period: Duration): PushMonitoringStatsDto {
+        val monitors = pushMonitorRepository.getMonitorsWithDetails()
+        val uptimeEvents = pushUptimeEventRepository.fetchAllInPeriod(period)
+        var downMonitors = 0
+        var upMonitors = 0
+        var pausedMonitors = 0
+        var uptimeInProgressMonitors = 0
+
+        monitors.forEach { monitor ->
+            if (monitor.enabled) {
+                // Uptime calculations
+                when (monitor.uptimeStatus) {
+                    UptimeStatus.DOWN -> downMonitors++
+                    UptimeStatus.UP -> upMonitors++
+                    null -> uptimeInProgressMonitors++
+                }
+            } else {
+                pausedMonitors++
+            }
+        }
+
+        return PushMonitoringStatsDto(
+            actual = PushMonitoringStatsDto.ActualMonitoringStats(
+                uptimeStats = PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                    total = monitors.size,
+                    down = downMonitors,
+                    up = upMonitors,
+                    paused = pausedMonitors,
+                    inProgress = uptimeInProgressMonitors,
+                    lastIncident = pushUptimeEventRepository.fetchLatestIncidentTimestamp(),
+                ),
+            ),
+            history = PushMonitoringStatsDto.HistoricalMonitoringStats(
                 uptimeStats = calculateHistoricalUptimeStats(period, uptimeEvents)
             )
         )
