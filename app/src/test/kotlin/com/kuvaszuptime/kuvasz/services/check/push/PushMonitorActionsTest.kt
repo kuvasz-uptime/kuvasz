@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
@@ -260,6 +261,71 @@ class PushMonitorActionsTest(
                     dispatchedEvent.monitor.id shouldBe testMonitor.id
                     dispatchedEvent.monitor.lastHeartbeat shouldBe testTimestamp
                     dispatchedEvent.monitor.updatedAt shouldBeAfter testMonitor.updatedAt
+                    dispatchedEvent.previousEvent shouldBe uptimeEventRecord
+                }
+            }
+        }
+
+        given("the signalFailure() method") {
+
+            `when`("it is called for a non existing monitor") {
+                val testSecret = "secret1"
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                pushMonitorActions.signalFailure(testSecret, "some nice error")
+
+                then("it should not dispatch an uptime event") {
+
+                    testSubscriber.assertNoValues()
+                }
+            }
+
+            `when`("it is called for an existing, disabled monitor") {
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = false,
+                    clientSecret = "secret1",
+                )
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                pushMonitorActions.signalFailure(testMonitor.clientSecret, "other nice error")
+
+                then("it should not dispatch an uptime event") {
+                    testSubscriber.assertNoValues()
+                }
+            }
+
+            `when`("it is called for an existing, enabled monitor") {
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    clientSecret = "secret1",
+                )
+                val eventRepoMock = getMock(uptimeEventRepository)
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val uptimeEventRecord = PushUptimeEventRecord().apply {
+                    id = 3
+                    monitorId = testMonitor.id
+                    status = UptimeStatus.DOWN
+                }
+                every {
+                    eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
+                } returns uptimeEventRecord
+                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+
+                pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
+
+                then("it should dispatch a DOWN event") {
+
+                    val dispatchedEvent = testSubscriber.awaitCount(1).values().first()
+                    dispatchedEvent.shouldBeInstanceOf<PushMonitorDownEvent>()
+                    dispatchedEvent.monitor.id shouldBe testMonitor.id
+                    dispatchedEvent.error shouldBe "oh my gosh"
+                    dispatchedEvent.isManual shouldBe true
                     dispatchedEvent.previousEvent shouldBe uptimeEventRecord
                 }
             }
