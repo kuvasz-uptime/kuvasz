@@ -3342,6 +3342,7 @@ components:
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly
+      - arePushMonitorsReadOnly
       - areStatusPagesReadOnly
       type: object
       properties:
@@ -3351,6 +3352,9 @@ components:
         areStatusPagesReadOnly:
           type: boolean
           description: Whether the status pages are in read-only mode
+        arePushMonitorsReadOnly:
+          type: boolean
+          description: Whether the push monitors are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge

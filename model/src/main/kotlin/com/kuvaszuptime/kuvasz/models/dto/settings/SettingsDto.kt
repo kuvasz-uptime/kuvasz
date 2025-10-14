@@ -295,6 +295,9 @@ data class SettingsDto(
 
             @param:Schema(description = "Whether the status pages are in read-only mode", required = true)
             val areStatusPagesReadOnly: Boolean,
+
+            @param:Schema(description = "Whether the push monitors are in read-only mode", required = true)
+            val arePushMonitorsReadOnly: Boolean,
         )
     }
 
