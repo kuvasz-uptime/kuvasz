@@ -146,12 +146,6 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
 
     If you don't use the Web UI, you can also check for new releases on GitHub, or directly on the [API](https://api-docs.kuvasz-uptime.dev){target="blank"} of _Kuvasz_, under `GET /api/v2/settings`. You'll find the version related information in the response under the `versionInfo` key.
 
-## Other deployment methods
-
-If you use another container orchestration system (e.g. _k8s_, _Swarm_, etc.), you can still use the same image and the
-same configuration options, of course. Just make sure to set the environment variables and mount the configuration file
-as shown above.
-
 ## Readiness/health probes
 
 If you run _Kuvasz_ in a container orchestration system, you can use the `GET /api/v2/health` endpoint as a readiness probe to check if the application is UP and running. The endpoint **doesn't need authentication**, and returns a simple JSON response with the status of the application.
@@ -162,6 +156,23 @@ If you run _Kuvasz_ in a container orchestration system, you can use the `GET /a
 }
 ```
 
-!!! tip 
+!!! tip
 
     Besides the response body, the HTTP status code will also indicate the health of the application: **non 2xx status codes** indicate that the application is **not healthy**.
+
+## Other deployment methods
+
+If you use another container orchestration system (e.g. _k8s_, _Swarm_, etc.), you can still use the same image and the
+same configuration options, of course. Just make sure to set the environment variables and mount the configuration file
+as shown above.
+
+## Unofficial guides
+
+!!!warning
+
+    The guides linked below are **created and maintained by community members** and are **not official documentation**. They may contain opinions, inaccuracies, or outdated information. Use them at your own discretion.
+    
+    For official information, please **always refer to the project’s documentation** or source code.
+
+- [How to install Kuvasz on your Synology NAS](https://mariushosting.com/how-to-install-kuvasz-on-your-synology-nas/){target="_blank" }
+- [Install Kuvasz via Docker (French)](https://belginux.com/installer-kuvasz-avec-docker/){target="_blank" }
