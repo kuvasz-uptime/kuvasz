@@ -11,6 +11,8 @@
 
 ## [📖 Documentation](https://kuvasz-uptime.dev)
 
+## [🔮 Roadmap](https://github.com/orgs/kuvasz-uptime/projects/2/views/1)
+
 ## 🛝 Live demo
 
 You can try out _Kuvasz_ on the dedicated demo instance under [https://demo.kuvasz-uptime.dev](https://demo.kuvasz-uptime.dev)
@@ -43,7 +45,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 - **Sleek UI**: Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.
 - **Full-fledged REST API**: Manage your monitors, check their status, and more through a powerful API.
 - **Metrics exporters**: Export your metrics to _OpenTelemetry_ and _Prometheus_ for better observability and integration with your existing monitoring stack.
-- More to come: _Kuvasz_ is under active development, and more features are planned for the future, such as **ICMP monitoring**, **heartbeat monitors** and more.
+- More to come: Take a look at our [**Roadmap**](https://github.com/orgs/kuvasz-uptime/projects/2/views/1)
 
 ## 🚀  Kuvasz vs. UptimeRobot
 
