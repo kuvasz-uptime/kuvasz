@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto

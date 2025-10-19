@@ -1,8 +1,8 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
+package com.kuvaszuptime.kuvasz.ui.fragments.monitor.push
 
 import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -15,12 +15,12 @@ import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderHttpUptimeSummary(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto): String =
-    buildString { appendHTML().div { detailsHttpUptimeSummary(monitor, stats) } }
+fun renderPushUptimeSummary(monitor: PushMonitorDetailsDto, stats: HistoricalUptimeStatsDto): String =
+    buildString { appendHTML().div { detailsPushUptimeSummary(monitor, stats) } }
 
-fun FlowContent.detailsHttpUptimeSummary(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) {
+fun FlowContent.detailsPushUptimeSummary(monitor: PushMonitorDetailsDto, stats: HistoricalUptimeStatsDto) {
     div {
-        id = "http-monitor-details-uptime-summary"
+        id = "push-monitor-details-uptime-summary"
         hx { swapOob() }
 
         div {
@@ -62,7 +62,7 @@ fun FlowContent.detailsHttpUptimeSummary(monitor: HttpMonitorDetailsDto, stats: 
                                 }
                                 h4 {
                                     classes(M_0)
-                                    +Messages.waitingForCheck()
+                                    +Messages.waitingForFirstHeartbeat()
                                 }
                             }
                         } else {
@@ -87,17 +87,18 @@ fun FlowContent.detailsHttpUptimeSummary(monitor: HttpMonitorDetailsDto, stats: 
                         classes(CARD_BODY)
                         div {
                             classes(SUBHEADER)
-                            +Messages.lastCheck()
+                            +Messages.lastHeartbeat()
                         }
-                        monitor.lastUptimeCheck?.let { lastUptimeCheck ->
+                        monitor.lastHeartbeat?.let { lastHeartbeat ->
                             h4 {
                                 classes(M_0)
-                                +lastUptimeCheck.timeAgo()
+                                tooltip(lastHeartbeat.toDateTimeString())
+                                +lastHeartbeat.timeAgo()
                             }
                         } ?: run {
                             h4 {
                                 classes(M_0)
-                                +Messages.waitingForCheck()
+                                +Messages.waitingForFirstHeartbeat()
                             }
                         }
                     }
@@ -112,17 +113,15 @@ fun FlowContent.detailsHttpUptimeSummary(monitor: HttpMonitorDetailsDto, stats: 
                         classes(CARD_BODY)
                         div {
                             classes(SUBHEADER)
-                            +Messages.nextCheck()
+                            +Messages.heartbeatExpected()
                         }
-
-                        if (monitor.enabled) {
-                            h4 {
-                                classes(M_0)
-                                +monitor.nextUptimeCheck?.timeAgo().orEmpty()
-                            }
-                        } else {
-                            h4 {
-                                classes(M_0)
+                        h4 {
+                            classes(M_0)
+                            if (monitor.enabled && monitor.nextExpectedHeartbeat != null) {
+                                +monitor.nextExpectedHeartbeat?.timeAgo().orEmpty()
+                            } else if (monitor.enabled) {
+                                +Messages.waitingForFirstHeartbeat()
+                            } else {
                                 +Messages.monitorIsPaused()
                             }
                         }
@@ -137,7 +136,7 @@ fun FlowContent.detailsHttpUptimeSummary(monitor: HttpMonitorDetailsDto, stats: 
                 classes(MT_3, MB_0)
                 +Messages.metrics()
                 inlineBadge(
-                    Messages.lastXDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS)
+                    Messages.lastXDays(UIDefaults.PUSH_MONITOR_UPTIME_STATS_PERIOD_DAYS)
                 )
             }
             incidentsStatsCards(cssClasses = setOf(COL_12, COL_MD_4), stats)

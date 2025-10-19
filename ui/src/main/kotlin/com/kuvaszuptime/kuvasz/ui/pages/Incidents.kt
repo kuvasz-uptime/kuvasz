@@ -171,7 +171,7 @@ fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
 
 private fun IncidentDto.getMonitorUrl(): String = when (this.incidentType) {
     IncidentType.HTTP -> "/http-monitors/${this.monitorId}"
-    IncidentType.SSL -> "/http-monitors/${this.monitorId}#monitor-details-ssl-events"
+    IncidentType.SSL -> "/http-monitors/${this.monitorId}#http-monitor-details-ssl-events"
     IncidentType.PUSH -> "/push-monitors/${this.monitorId}"
 }
 

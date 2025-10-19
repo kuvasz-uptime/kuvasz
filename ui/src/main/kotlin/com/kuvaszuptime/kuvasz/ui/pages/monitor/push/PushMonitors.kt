@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.ui.pages.monitor.http
+package com.kuvaszuptime.kuvasz.ui.pages.monitor.push
 
 import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.AppGlobals
@@ -6,16 +6,16 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-fun renderHttpMonitorsPage(globals: AppGlobals) =
+fun renderPushMonitorsPage(globals: AppGlobals) =
     withLayout(
         globals,
-        title = Messages.httpSslMonitors(),
-        pageTitle = { httpMonitorsHeader(globals) }
+        title = Messages.pushMonitors(),
+        pageTitle = { pushMonitorsHeader(globals) }
     ) {
         div {
             classes(ROW, ROW_CARDS)
@@ -25,14 +25,14 @@ fun renderHttpMonitorsPage(globals: AppGlobals) =
                     classes(CARD)
                     div {
                         hx {
-                            get("/http-monitors/fragments/list")
+                            get("/push-monitors/fragments/list")
                             trigger {
                                 load()
                                 event("refresh-monitor-list")
                             }
                             onSwapReinitTooltips()
                         }
-                        id = "http-monitors-list"
+                        id = "push-monitors-list"
                         div {
                             classes(SPINNER_GROW, HTMX_INDICATOR)
                             role = "status"
@@ -43,8 +43,8 @@ fun renderHttpMonitorsPage(globals: AppGlobals) =
         }
     }
 
-internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
-    val createHttpModalId = "create-http-monitor-modal"
+internal fun HtmlBlockTag.pushMonitorsHeader(globals: AppGlobals) {
+    val createPushModalId = "create-push-monitor-modal"
     div {
         classes(CONTAINER_XL)
         div {
@@ -61,10 +61,10 @@ internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
                         }
                         h2 {
                             classes(PAGE_TITLE)
-                            +"HTTP & SSL"
+                            +"Push"
                             // Read only notice
-                            if (globals.editabilityState.areHttpMonitorsReadOnly()) {
-                                readOnlyBadge(Messages.readOnlyHttpMonitors())
+                            if (globals.editabilityState.arePushMonitorsReadOnly()) {
+                                readOnlyBadge(Messages.readOnlyPushMonitors())
                             }
                         }
                     }
@@ -72,26 +72,26 @@ internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
                         classes(COL_AUTO, MS_AUTO)
                         div {
                             classes(BTN_LIST)
-                            if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
+                            if (!globals.editabilityState.arePushMonitorsReadOnly()) {
                                 buttonWithIcon(
                                     icon = Icon.PLUS,
                                     label = Messages.addNewMonitor(),
                                     classes = setOf(BTN_PRIMARY, D_NONE, D_MD_BLOCK)
                                 ) {
-                                    modalOpener(createHttpModalId)
+                                    modalOpener(createPushModalId)
                                 }
                                 compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY, D_MD_NONE)) {
-                                    modalOpener(createHttpModalId)
+                                    modalOpener(createPushModalId)
                                 }
                             }
-                            compactIconButton(Icon.REFRESH, onClick = "refreshHttpMonitorList()") {}
+                            compactIconButton(Icon.REFRESH, onClick = "refreshPushMonitorList()") {}
                         }
                     }
                 }
             }
         }
-        if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
-            httpMonitorCreateUpdateModal(modalId = createHttpModalId, monitor = null, globals)
+        if (!globals.editabilityState.arePushMonitorsReadOnly()) {
+            pushMonitorCreateUpdateModal(modalId = createPushModalId, monitor = null, globals)
         }
     }
 }

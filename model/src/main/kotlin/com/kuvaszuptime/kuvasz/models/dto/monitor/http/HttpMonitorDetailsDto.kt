@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -16,15 +17,15 @@ import java.time.OffsetDateTime
 @Introspected
 data class HttpMonitorDetailsDto(
     @param:Schema(description = HttpMonitorDocs.ID, required = true)
-    val id: Long,
+    override val id: Long,
     @param:Schema(description = HttpMonitorDocs.NAME, required = true)
-    val name: String,
+    override val name: String,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     val url: URI,
     @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
     @param:Schema(description = HttpMonitorDocs.ENABLED, required = true)
-    val enabled: Boolean,
+    override val enabled: Boolean,
     @param:Schema(description = HttpMonitorDocs.SSL_CHECK_ENABLED, required = true)
     val sslCheckEnabled: Boolean,
     @param:Schema(description = HttpMonitorDocs.CREATED_AT, required = true)
@@ -32,7 +33,7 @@ data class HttpMonitorDetailsDto(
     @param:Schema(description = HttpMonitorDocs.UPDATED_AT, required = true, nullable = true)
     val updatedAt: OffsetDateTime?,
     @param:Schema(description = HttpMonitorDocs.UPTIME_STATUS, required = true, nullable = true)
-    val uptimeStatus: UptimeStatus?,
+    override val uptimeStatus: UptimeStatus?,
     @param:Schema(description = HttpMonitorDocs.UPTIME_STATUS_STARTED_AT, required = true, nullable = true)
     val uptimeStatusStartedAt: OffsetDateTime?,
     @param:Schema(description = HttpMonitorDocs.LAST_UPTIME_CHECK, required = true, nullable = true)
@@ -48,7 +49,7 @@ data class HttpMonitorDetailsDto(
     @param:Schema(description = HttpMonitorDocs.NEXT_SSL_CHECK, required = true, nullable = true)
     val nextSSLCheck: OffsetDateTime? = null,
     @param:Schema(description = HttpMonitorDocs.UPTIME_ERROR, required = true, nullable = true)
-    val uptimeError: String?,
+    override val uptimeError: String?,
     @param:Schema(description = HttpMonitorDocs.SSL_ERROR, required = true, nullable = true)
     val sslError: String?,
     @param:Schema(description = HttpMonitorDocs.REQUEST_METHOD, required = true)
@@ -85,7 +86,7 @@ data class HttpMonitorDetailsDto(
     val requestBody: String? = null,
     @param:Schema(description = HttpMonitorDocs.STATUS_PAGES, required = true)
     val statusPages: Set<String>,
-)
+) : MonitorDetailsDto
 
 data class IntegrationDetailsDto(
     @param:Schema(

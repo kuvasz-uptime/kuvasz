@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.components
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.*
@@ -11,7 +12,7 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.uptimeBadgeOfMonitor(monitor: HttpMonitorDetailsDto, withTooltip: Boolean) {
+internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTooltip: Boolean) {
     return when {
         monitor.enabled && monitor.uptimeStatus != null -> {
             span {
@@ -59,7 +60,7 @@ internal fun FlowContent.uptimeBadgeOfStatus(uptimeStatus: UptimeStatus?): Unit 
     }
 
 internal fun FlowContent.uptimeStatusOfMonitor(
-    monitor: HttpMonitorDetailsDto,
+    monitor: MonitorDetailsDto,
     withTooltip: Boolean
 ) {
     return when {

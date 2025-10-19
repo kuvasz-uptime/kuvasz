@@ -2893,6 +2893,7 @@ components:
           x-not-null-message: Client secret must not be null
     PushMonitorDetailsDto:
       required:
+      - clientSecret
       - createdAt
       - effectiveIntegrations
       - enabled
@@ -2928,6 +2929,9 @@ components:
           description: The grace period in seconds after the heartbeat interval during
             which a missed heartbeat will not mark the monitor as DOWN
           format: int64
+        clientSecret:
+          type: string
+          description: The unique client secret used to identify & authenticate heartbeats
         enabled:
           type: boolean
           description: "Whether the monitor is enabled. If false, the monitor will\

@@ -15,10 +15,10 @@ import kotlin.time.Duration.Companion.seconds
 
 internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) {
     div {
-        id = "monitor-details-content"
+        id = "http-monitor-details-content"
         // Uptime summary
         h2 { +Messages.uptimeBlockTitle() }
-        detailsUptimeSummary(monitor, stats)
+        detailsHttpUptimeSummary(monitor, stats)
         // Uptime incidents
         h3 {
             +Messages.incidents()
@@ -31,7 +31,7 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
         }
         div {
             classes(ROW, ROW_CARDS, MB_3)
-            id = "monitor-details-uptime-events"
+            id = "http-monitor-details-incidents"
             hx {
                 get("/http-monitors/fragments/details-uptime-incidents/${monitor.id}")
                 trigger {
@@ -69,7 +69,7 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
             }
             div {
                 classes(ROW, ROW_CARDS, MB_3)
-                id = "monitor-details-ssl-events"
+                id = "http-monitor-details-ssl-events"
                 hx {
                     get("/http-monitors/fragments/details-ssl-incidents/${monitor.id}")
                     trigger {

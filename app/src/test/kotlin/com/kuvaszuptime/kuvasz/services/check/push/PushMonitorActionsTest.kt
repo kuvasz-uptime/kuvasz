@@ -108,7 +108,7 @@ class PushMonitorActionsTest(
                     result.forOne { upMonitor ->
                         upMonitor.name shouldBe enabledMonitor.name
                         upMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent.updatedAt
-                        upMonitor.averageLatencyInMs.shouldBeNull()
+                        upMonitor.lastHeartbeat.shouldBeNull()
                         upMonitor.uptimeRatio shouldBe 0.2312
                         upMonitor.uptimeStatus shouldBe UptimeStatus.UP
                         upMonitor.uptimeStatusHistory shouldBe listOf(
@@ -121,10 +121,12 @@ class PushMonitorActionsTest(
             `when`("it is called with explicit monitorIds") {
 
                 val testPeriod = Duration.ofDays(7)
+                val lastHeartbeat = getCurrentTimestamp().minusDays(3)
                 val enabledMonitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
+                    lastHeartbeat = lastHeartbeat,
                 )
                 val enabledMonitor2 = createPushMonitor(
                     pushMonitorRepository,
@@ -181,7 +183,7 @@ class PushMonitorActionsTest(
                     result.forOne { upMonitor ->
                         upMonitor.name shouldBe enabledMonitor.name
                         upMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent.updatedAt
-                        upMonitor.averageLatencyInMs.shouldBeNull()
+                        upMonitor.lastHeartbeat shouldBe enabledMonitor.lastHeartbeat
                         upMonitor.uptimeRatio shouldBe 0.2312
                         upMonitor.uptimeStatus shouldBe UptimeStatus.UP
                         upMonitor.uptimeStatusHistory shouldBe listOf(

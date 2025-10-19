@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -28,7 +29,23 @@ fun renderDashboard(globals: AppGlobals) =
                 }
                 onSwapReinitTooltips()
             }
-            id = "monitoring-dashboard"
+            id = "http-monitoring-dashboard"
+            div {
+                classes(SPINNER_GROW, HTMX_INDICATOR)
+                role = "status"
+            }
+        }
+        div {
+            hx {
+                get("/push-monitors/fragments/stats")
+                trigger {
+                    load()
+                    every(30.seconds)
+                    event("refresh-dashboard")
+                }
+                onSwapReinitTooltips()
+            }
+            id = "push-monitoring-dashboard"
             div {
                 classes(SPINNER_GROW, HTMX_INDICATOR)
                 role = "status"
@@ -38,6 +55,7 @@ fun renderDashboard(globals: AppGlobals) =
 
 private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
     val createHttpModalId = "create-http-monitor-modal"
+    val createPushModalId = "create-push-monitor-modal"
     div {
         classes(CONTAINER_XL)
         div {
@@ -54,7 +72,7 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                         }
                         h2 {
                             classes(PAGE_TITLE)
-                            +"HTTP"
+                            +Messages.monitoring()
                         }
                     }
                     div {
@@ -84,6 +102,16 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                                             readOnlyBadge(Messages.readOnlyHttpMonitors())
                                         }
                                     }
+                                    button {
+                                        val isReadOnly = globals.editabilityState.arePushMonitorsReadOnly()
+                                        classes(DROPDOWN_ITEM)
+                                        modalOpener(createPushModalId)
+                                        disabled = isReadOnly
+                                        +Messages.pushMonitor()
+                                        if (isReadOnly) {
+                                            readOnlyBadge(Messages.readOnlyPushMonitors())
+                                        }
+                                    }
                                 }
                             }
                             compactIconButton(Icon.REFRESH, onClick = "refreshDashboard()") {}
@@ -96,5 +124,8 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
     // Render the upsert modals conditionally
     if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
         httpMonitorCreateUpdateModal(modalId = createHttpModalId, monitor = null, globals)
+    }
+    if (!globals.editabilityState.arePushMonitorsReadOnly()) {
+        pushMonitorCreateUpdateModal(modalId = createPushModalId, monitor = null, globals)
     }
 }

@@ -1,34 +1,34 @@
-package com.kuvaszuptime.kuvasz.ui.pages.monitor.http
+package com.kuvaszuptime.kuvasz.ui.pages.monitor.push
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-fun renderHttpMonitorDetailsPage(
+fun renderPushMonitorDetailsPage(
     globals: AppGlobals,
-    monitor: HttpMonitorDetailsDto,
+    monitor: PushMonitorDetailsDto,
     stats: HistoricalUptimeStatsDto,
 ): String {
     return withLayout(
         globals,
         title = monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH),
-        pageTitle = { httpMonitorDetailsHeader(monitor, globals) }
+        pageTitle = { pushMonitorDetailsHeader(monitor, globals) }
     ) {
-        httpMonitorDetailsContent(monitor, stats)
+        pushMonitorDetailsContent(monitor, stats)
     }
 }
 
-internal fun HtmlBlockTag.httpMonitorDetailsHeader(
-    monitor: HttpMonitorDetailsDto,
+internal fun HtmlBlockTag.pushMonitorDetailsHeader(
+    monitor: PushMonitorDetailsDto,
     globals: AppGlobals,
 ) {
     val deleteModalId = "delete-monitor-modal-${monitor.id}"
@@ -36,16 +36,16 @@ internal fun HtmlBlockTag.httpMonitorDetailsHeader(
 
     div {
         classes(CONTAINER)
-        xData("httpMonitorDetails(${monitor.id}, ${monitor.enabled})")
+        xData("pushMonitorDetails(${monitor.id}, ${monitor.enabled})")
         div {
             classes(ROW, G_3, ALIGN_ITEMS_CENTER)
-            httpMonitorDetailsHeading(monitor)
+            pushMonitorDetailsHeading(monitor)
 
             div {
                 classes(COL_MD_AUTO, MS_AUTO)
                 div {
                     classes(BTN_LIST)
-                    if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
+                    if (!globals.editabilityState.arePushMonitorsReadOnly()) {
                         button {
                             classes(BTN, BTN_ICON)
                             xBindDisabled("isRequestLoading")
@@ -60,7 +60,7 @@ internal fun HtmlBlockTag.httpMonitorDetailsHeader(
                             }
                         }
                     }
-                    if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
+                    if (!globals.editabilityState.arePushMonitorsReadOnly()) {
                         buttonWithIcon(Icon.SETTINGS, Messages.configure()) {
                             modalOpener(updateModalId)
                         }
@@ -76,7 +76,7 @@ internal fun HtmlBlockTag.httpMonitorDetailsHeader(
                             modalOpener(updateModalId)
                         }
                     }
-                    httpMonitorCreateUpdateModal(updateModalId, monitor, globals)
+                    pushMonitorCreateUpdateModal(updateModalId, monitor, globals)
                 }
             }
         }

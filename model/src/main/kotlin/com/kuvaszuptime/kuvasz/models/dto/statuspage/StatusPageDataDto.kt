@@ -14,14 +14,31 @@ data class StatusPageDataDto(
     val monitors: List<StatusPageMonitorDetailsDto>,
 )
 
-data class StatusPageMonitorDetailsDto(
-    val name: String,
-    val lastCheck: OffsetDateTime?,
+sealed interface StatusPageMonitorDetailsDto {
+    val name: String
+    val lastCheck: OffsetDateTime?
+    val uptimeRatio: Double?
+    val uptimeStatus: UptimeStatus?
+    val uptimeStatusHistory: List<StatusHistoryDto>
+}
+
+data class StatusPagePushMonitorDetailsDto(
+    override val name: String,
+    override val lastCheck: OffsetDateTime?,
+    override val uptimeRatio: Double?,
+    override val uptimeStatus: UptimeStatus?,
+    override val uptimeStatusHistory: List<StatusHistoryDto>,
+    val lastHeartbeat: OffsetDateTime?,
+) : StatusPageMonitorDetailsDto
+
+data class StatusPageHttpMonitorDetailsDto(
+    override val name: String,
+    override val lastCheck: OffsetDateTime?,
+    override val uptimeRatio: Double?,
+    override val uptimeStatus: UptimeStatus?,
+    override val uptimeStatusHistory: List<StatusHistoryDto>,
     val averageLatencyInMs: Int?,
-    val uptimeRatio: Double?,
-    val uptimeStatus: UptimeStatus?,
-    val uptimeStatusHistory: List<StatusHistoryDto>,
-)
+) : StatusPageMonitorDetailsDto
 
 /**
  * A data point in the uptime status history of the monitor.

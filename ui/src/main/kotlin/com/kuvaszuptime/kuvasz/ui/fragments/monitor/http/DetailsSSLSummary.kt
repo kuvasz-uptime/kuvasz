@@ -19,7 +19,7 @@ private const val SSL_ERROR_MAX_LENGTH = 40
 
 internal fun FlowContent.detailsSSLSummary(monitor: HttpMonitorDetailsDto) {
     div {
-        id = "monitor-details-ssl-summary"
+        id = "http-monitor-details-ssl-summary"
         classes(ROW, ROW_CARDS, MB_3)
         hx { swapOob() }
 

@@ -180,6 +180,19 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .fetchInto(IncidentDto::class.java)
     }
 
+    fun getPushUptimeIncidents(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean,
+    ): List<IncidentDto> {
+        val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
+
+        return dslContext
+            .pushUptimeIncidentSelect(monitorId, period, includeResolved)
+            .orderBy(DSL.field(orderFieldName).desc())
+            .fetchInto(IncidentDto::class.java)
+    }
+
     fun getSslIncidents(
         monitorId: Long? = null,
         period: Duration? = null,

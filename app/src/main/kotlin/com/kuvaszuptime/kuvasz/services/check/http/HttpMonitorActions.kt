@@ -23,7 +23,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LegacyHttpMonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.numericMonitorId
@@ -250,7 +250,7 @@ class HttpMonitorActions(
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
-    ): List<StatusPageMonitorDetailsDto> {
+    ): List<StatusPageHttpMonitorDetailsDto> {
         val httpMonitorNames = monitorIds?.filter { it.type == MonitorType.HTTP_SSL }?.map { it.name }
         val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = httpMonitorNames)
 
@@ -268,7 +268,7 @@ class HttpMonitorActions(
                     monitorId = monitor.id,
                 )
             )
-            StatusPageMonitorDetailsDto(
+            StatusPageHttpMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = latencyMetrics?.avg,

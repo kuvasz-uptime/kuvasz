@@ -5,7 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
@@ -37,7 +38,7 @@ class StatusPageCacheTest(
         `when`("it is called multiple times") {
 
             val mockHttpMonitorList = listOf(
-                StatusPageMonitorDetailsDto(
+                StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = null,
                     averageLatencyInMs = null,
@@ -45,7 +46,7 @@ class StatusPageCacheTest(
                     uptimeStatus = null,
                     uptimeStatusHistory = emptyList()
                 ),
-                StatusPageMonitorDetailsDto(
+                StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
@@ -60,18 +61,18 @@ class StatusPageCacheTest(
                 ),
             )
             val mockPushMonitorList = listOf(
-                StatusPageMonitorDetailsDto(
+                StatusPagePushMonitorDetailsDto(
                     name = "Wuf wuf",
                     lastCheck = null,
-                    averageLatencyInMs = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
-                    uptimeStatusHistory = emptyList()
+                    uptimeStatusHistory = emptyList(),
+                    lastHeartbeat = null,
                 ),
-                StatusPageMonitorDetailsDto(
+                StatusPagePushMonitorDetailsDto(
                     name = "That woman from the tower who breastfeeds her 13 year old son",
                     lastCheck = getCurrentTimestamp().minusSeconds(4),
-                    averageLatencyInMs = null,
+                    lastHeartbeat = null,
                     uptimeRatio = 0.9123,
                     uptimeStatus = UptimeStatus.UP,
                     uptimeStatusHistory = listOf(
@@ -150,7 +151,7 @@ class StatusPageCacheTest(
             every { repoMock.findById(1L, any()) } returns statusPageRecord()
 
             val mockMonitorList = listOf(
-                StatusPageMonitorDetailsDto(
+                StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
                     lastCheck = null,
                     averageLatencyInMs = null,
@@ -158,7 +159,7 @@ class StatusPageCacheTest(
                     uptimeStatus = null,
                     uptimeStatusHistory = emptyList()
                 ),
-                StatusPageMonitorDetailsDto(
+                StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
@@ -173,18 +174,18 @@ class StatusPageCacheTest(
                 ),
             )
             val mockPushMonitorList = listOf(
-                StatusPageMonitorDetailsDto(
+                StatusPagePushMonitorDetailsDto(
                     name = "Wuf wuf",
                     lastCheck = null,
-                    averageLatencyInMs = null,
+                    lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
                     uptimeStatusHistory = emptyList()
                 ),
-                StatusPageMonitorDetailsDto(
+                StatusPagePushMonitorDetailsDto(
                     name = "That woman from the tower who breastfeeds her 13 year old son",
                     lastCheck = getCurrentTimestamp().minusSeconds(4),
-                    averageLatencyInMs = null,
+                    lastHeartbeat = null,
                     uptimeRatio = 0.9123,
                     uptimeStatus = UptimeStatus.UP,
                     uptimeStatusHistory = listOf(

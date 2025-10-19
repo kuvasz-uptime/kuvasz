@@ -6,11 +6,12 @@ import kotlinx.html.*
  * Converting Bootstrap's own modal event to a new one, which can be listened to in alpine for example
  */
 fun FlowContent.handleFormResetOnModalClose(modalId: String, eventName: String) {
+    val sanitizedModalId = modalId.replace("-", "")
     script {
         unsafe {
             +"""
-            const modal = document.getElementById('$modalId')
-            modal.addEventListener('hide.bs.modal', () => {
+            const $sanitizedModalId = document.getElementById('$modalId')
+            $sanitizedModalId.addEventListener('hide.bs.modal', () => {
                 sendWindowEvent('$eventName');
             })
             """.trimIndent()

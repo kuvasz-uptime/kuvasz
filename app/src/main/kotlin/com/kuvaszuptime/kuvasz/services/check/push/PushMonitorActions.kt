@@ -19,7 +19,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -170,7 +170,7 @@ class PushMonitorActions(
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
-    ): List<StatusPageMonitorDetailsDto> {
+    ): List<StatusPagePushMonitorDetailsDto> {
         val pushMonitorNames = monitorIds?.filter { it.type == MonitorType.PUSH }?.map { it.name }
         val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = pushMonitorNames)
 
@@ -183,13 +183,13 @@ class PushMonitorActions(
                     monitorId = monitor.id,
                 )
             )
-            StatusPageMonitorDetailsDto(
+            StatusPagePushMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                averageLatencyInMs = null,
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
+                lastHeartbeat = monitor.lastHeartbeat,
             )
         }
     }
