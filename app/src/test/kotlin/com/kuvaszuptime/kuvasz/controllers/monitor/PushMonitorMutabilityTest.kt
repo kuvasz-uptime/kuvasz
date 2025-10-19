@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
+import com.kuvaszuptime.kuvasz.mocks.randomClientSecret
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import io.kotest.assertions.throwables.shouldThrow
@@ -18,7 +19,6 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
-import java.util.UUID
 
 @MicronautTest(environments = ["yaml-push-monitors", "full-integrations-setup"])
 class PushMonitorMutabilityTest(
@@ -29,7 +29,7 @@ class PushMonitorMutabilityTest(
         name = "something",
         heartbeatInterval = 5149,
         gracePeriod = 1,
-        clientSecret = UUID.randomUUID().toString(),
+        clientSecret = randomClientSecret(),
     )
     val monitorUpdateDto = JsonNodeFactory.instance.objectNode().put(PushMonitorUpdateDto::enabled.name, false)
 

@@ -65,11 +65,21 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
 
         `when`("clientSecret is an empty string") {
             val exception = shouldThrow<BeanInstantiationException> {
-                testAppContext("push-monitor-blank-client-secret")
+                testAppContext("push-monitor-empty-client-secret")
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
                     "PushMonitorConfig.getClientSecret - Client secret must be at least 36 characters long"
+            }
+        }
+
+        `when`("clientSecret is a blank string") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                testAppContext("push-monitor-blank-client-secret")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "PushMonitorConfig.getClientSecret - Client secret must not be blank"
             }
         }
 

@@ -45,6 +45,7 @@ object MonitorValidationMessages {
     const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
         "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
     const val CLIENT_SECRET_NOT_NULL = "Client secret must not be null"
+    const val CLIENT_SECRET_NOT_BLANK = "Client secret must not be blank"
     const val CLIENT_SECRET_MIN_LENGTH = "Client secret must be at least {min} characters long"
 }
 

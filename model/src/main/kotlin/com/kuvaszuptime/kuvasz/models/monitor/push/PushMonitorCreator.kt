@@ -24,6 +24,7 @@ interface PushMonitorCreator {
     val gracePeriod: Long
 
     @get:NotNull(message = MonitorValidationMessages.CLIENT_SECRET_NOT_NULL)
+    @get:NotBlank(message = MonitorValidationMessages.CLIENT_SECRET_NOT_BLANK)
     @get:Size(min = Validation.MIN_CLIENT_SECRET_LENGTH, message = MonitorValidationMessages.CLIENT_SECRET_MIN_LENGTH)
     val clientSecret: String
 

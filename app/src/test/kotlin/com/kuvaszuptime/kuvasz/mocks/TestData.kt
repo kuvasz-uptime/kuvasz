@@ -32,7 +32,7 @@ fun createHttpMonitor(
     enabled: Boolean = true,
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
-    monitorName: String = UUID.randomUUID().toString(),
+    monitorName: String = randomClientSecret(),
     url: String = "http://irrelevant.com",
     requestMethod: HttpMethod = HttpMethod.GET,
     latencyHistoryEnabled: Boolean = true,
@@ -79,8 +79,8 @@ fun createPushMonitor(
     enabled: Boolean = true,
     heartbeatInterval: Long = 300,
     gracePeriod: Long = 0,
-    clientSecret: String = UUID.randomUUID().toString(),
-    monitorName: String = UUID.randomUUID().toString(),
+    clientSecret: String = randomClientSecret(),
+    monitorName: String = randomClientSecret(),
     integrations: List<IntegrationID> = emptyList(),
     lastHeartbeat: OffsetDateTime? = null
 ): PushMonitorRecord {
@@ -170,7 +170,7 @@ fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plus
 fun createStatusPage(
     dslContext: DSLContext,
     title: String = "Status Page",
-    slug: String = UUID.randomUUID().toString(),
+    slug: String = randomClientSecret(),
     public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
     monitors: List<MonitorID> = emptyList(),
     customLogoUrl: String? = null,
@@ -188,3 +188,5 @@ fun createStatusPage(
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()
+
+fun randomClientSecret() = UUID.randomUUID().toString()

@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.mocks.randomClientSecret
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
@@ -59,7 +60,6 @@ import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
-import java.util.UUID
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class PushMonitorControllerTest(
@@ -89,7 +89,7 @@ class PushMonitorControllerTest(
                     monitorRepository,
                     integrations = setUpIntegrations,
                     lastHeartbeat = now.minusSeconds(5),
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     heartbeatInterval = 10,
                     gracePeriod = 8
                 )
@@ -118,6 +118,9 @@ class PushMonitorControllerTest(
                     val responseItem = response.first()
                     responseItem.id shouldBe monitor.id
                     responseItem.name shouldBe monitor.name
+                    responseItem.heartbeatInterval shouldBe monitor.heartbeatInterval
+                    responseItem.gracePeriod shouldBe monitor.gracePeriod
+                    responseItem.clientSecret shouldBe monitor.clientSecret
                     responseItem.enabled shouldBe monitor.enabled
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
                     responseItem.uptimeStatusStartedAt shouldBe now
@@ -290,7 +293,7 @@ class PushMonitorControllerTest(
                     monitorRepository,
                     integrations = setUpIntegrations,
                     lastHeartbeat = now.minusSeconds(5),
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     heartbeatInterval = 10,
                     gracePeriod = 8
                 )
@@ -452,7 +455,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 12,
                     gracePeriod = 10,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -482,7 +485,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 12,
                     gracePeriod = 10,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     enabled = false,
                     integrations = setUpIntegrations.map { it.toString() },
                 )
@@ -510,13 +513,13 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 12,
                     gracePeriod = 10,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val secondMonitor = PushMonitorCreateDto(
                     name = firstMonitor.name,
                     heartbeatInterval = 13,
                     gracePeriod = 11,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val firstCreatedMonitor = monitorClient.createMonitor(firstMonitor)
                 val secondRequest = HttpRequest.POST("/api/v2/push-monitors", secondMonitor)
@@ -539,7 +542,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 12,
                     gracePeriod = 10,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val secondMonitor = PushMonitorCreateDto(
                     name = "test_monitor2",
@@ -568,7 +571,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 9,
                     gracePeriod = 10,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val request = HttpRequest.POST("/api/v2/push-monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
@@ -586,7 +589,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = -1,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val request = HttpRequest.POST("/api/v2/push-monitors", monitorToCreate)
                 val response = shouldThrow<HttpClientResponseException> {
@@ -622,7 +625,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     integrations = listOf("invalid-integration")
                 )
                 val request = HttpRequest.POST("/api/v2/push-monitors", monitorToCreate)
@@ -642,7 +645,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     integrations = listOf("email:non-existing-integration")
                 )
                 val request = HttpRequest.POST("/api/v2/push-monitors", monitorToCreate)
@@ -665,7 +668,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/push-monitors/${createdMonitor.id}")
@@ -690,11 +693,11 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val anotherMonitor = monitorClient.createMonitor(
-                    monitorToCreate.copy(name = "another_test_monitor", clientSecret = UUID.randomUUID().toString())
+                    monitorToCreate.copy(name = "another_test_monitor", clientSecret = randomClientSecret())
                 )
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/push-monitors/${createdMonitor.id}")
                 val subscriber = TestSubscriber<MonitorLifecycleEvent>()
@@ -754,7 +757,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/push-monitors/${createdMonitor.id}")
@@ -819,12 +822,12 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     integrations = setUpIntegrations.map { it.toString() },
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
-                val newClientSecret = UUID.randomUUID().toString()
+                val newClientSecret = randomClientSecret()
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(PushMonitorUpdateDto::enabled.name, false)
                     .put(PushMonitorUpdateDto::name.name, "updated_test_monitor")
@@ -870,7 +873,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     enabled = false,
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
@@ -900,7 +903,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     integrations = setUpIntegrations.map { it.toString() },
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
@@ -920,7 +923,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                     integrations = listOf(
                         IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled").toString(),
                     ),
@@ -944,14 +947,14 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val firstCreatedMonitor = monitorClient.createMonitor(firstCreateDto)
                 val secondCreateDto = PushMonitorCreateDto(
                     name = "test_monitor2",
                     heartbeatInterval = 11,
                     gracePeriod = 2,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val secondCreatedMonitor = monitorClient.createMonitor(secondCreateDto)
 
@@ -975,14 +978,14 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val firstCreatedMonitor = monitorClient.createMonitor(firstCreateDto)
                 val secondCreateDto = PushMonitorCreateDto(
                     name = "test_monitor2",
                     heartbeatInterval = 11,
                     gracePeriod = 2,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val secondCreatedMonitor = monitorClient.createMonitor(secondCreateDto)
 
@@ -1122,7 +1125,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
@@ -1143,12 +1146,90 @@ class PushMonitorControllerTest(
                 }
             }
 
+            `when`("it is called with an empty client secret") {
+                val createDto = PushMonitorCreateDto(
+                    name = "test_monitor",
+                    heartbeatInterval = 10,
+                    gracePeriod = 0,
+                    clientSecret = randomClientSecret(),
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(PushMonitorUpdateDto::clientSecret.name, "".repeat(36))
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v2/push-monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: clientSecret: Client secret must not be blank"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with a blank client secret") {
+                val createDto = PushMonitorCreateDto(
+                    name = "test_monitor",
+                    heartbeatInterval = 10,
+                    gracePeriod = 0,
+                    clientSecret = randomClientSecret(),
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(PushMonitorUpdateDto::clientSecret.name, " ".repeat(36))
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v2/push-monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: clientSecret: Client secret must not be blank"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with a short client secret") {
+                val createDto = PushMonitorCreateDto(
+                    name = "test_monitor",
+                    heartbeatInterval = 10,
+                    gracePeriod = 0,
+                    clientSecret = randomClientSecret(),
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(PushMonitorUpdateDto::clientSecret.name, "a".repeat(35))
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v2/push-monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: clientSecret: Client secret must be at least 36 characters long"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
             `when`("it is called with a null on a property that is non-nullable") {
                 val createDto = PushMonitorCreateDto(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
@@ -1179,7 +1260,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
@@ -1218,7 +1299,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
@@ -1246,7 +1327,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
@@ -1274,7 +1355,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
@@ -1296,7 +1377,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
-                    clientSecret = UUID.randomUUID().toString(),
+                    clientSecret = randomClientSecret(),
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
 

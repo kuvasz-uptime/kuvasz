@@ -29,6 +29,7 @@ data class PushMonitorUpdateDto(
     val gracePeriod: Long?,
 
     @get:NotNull(message = MonitorValidationMessages.CLIENT_SECRET_NOT_NULL)
+    @get:NotBlank(message = MonitorValidationMessages.CLIENT_SECRET_NOT_BLANK)
     @get:Size(min = Validation.MIN_CLIENT_SECRET_LENGTH, message = MonitorValidationMessages.CLIENT_SECRET_MIN_LENGTH)
     @param:Schema(description = PushMonitorDocs.CLIENT_SECRET, required = false, nullable = false)
     val clientSecret: String?,

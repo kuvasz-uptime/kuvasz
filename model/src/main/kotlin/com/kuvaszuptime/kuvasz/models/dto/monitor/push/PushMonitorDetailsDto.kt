@@ -17,6 +17,8 @@ data class PushMonitorDetailsDto(
     val heartbeatInterval: Long,
     @param:Schema(description = PushMonitorDocs.GRACE_PERIOD, required = true)
     val gracePeriod: Long,
+    @param:Schema(description = PushMonitorDocs.CLIENT_SECRET, required = true)
+    val clientSecret: String,
     @param:Schema(description = PushMonitorDocs.ENABLED, required = true)
     val enabled: Boolean,
     @param:Schema(description = PushMonitorDocs.CREATED_AT, required = true)

@@ -149,6 +149,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             PUSH_MONITOR.NAME.`as`(PushMonitorDetailsDto::name.name),
             PUSH_MONITOR.HEARTBEAT_INTERVAL.`as`(PushMonitorDetailsDto::heartbeatInterval.name),
             PUSH_MONITOR.GRACE_PERIOD.`as`(PushMonitorDetailsDto::gracePeriod.name),
+            PUSH_MONITOR.CLIENT_SECRET.`as`(PushMonitorDetailsDto::clientSecret.name),
             PUSH_MONITOR.ENABLED.`as`(PushMonitorDetailsDto::enabled.name),
             PUSH_MONITOR.LAST_HEARTBEAT.`as`(PushMonitorDetailsDto::lastHeartbeat.name),
             PUSH_MONITOR.CREATED_AT.`as`(PushMonitorDetailsDto::createdAt.name),

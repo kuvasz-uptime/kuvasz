@@ -1386,7 +1386,7 @@ class UptimeCheckerE2ETest(
         // configured
         `when`("it checks a monitor with headers larger than 8192 bytes") {
 
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
