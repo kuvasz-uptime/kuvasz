@@ -13,6 +13,7 @@ datasources:
   default:
     initialPoolSize: 1
     maximumPoolSize: 3
+    minimumIdle: 2
 ---
 logger:
   levels:
