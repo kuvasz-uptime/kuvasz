@@ -778,7 +778,9 @@ const upsertPushMonitorForm = (
         },
 
         copyClientSecretToClipboard() {
-            navigator.clipboard.writeText(this.clientSecret);
+            const baseUrl = window.location.protocol + '//' + window.location.host
+            const absoluteUrl = baseUrl + '/api/v2/push-monitors/heartbeats/' + this.clientSecret;
+            navigator.clipboard.writeText(absoluteUrl);
         },
 
         validate() {
