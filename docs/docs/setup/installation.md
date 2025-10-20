@@ -176,3 +176,4 @@ as shown above.
 
 - [How to install Kuvasz on your Synology NAS](https://mariushosting.com/how-to-install-kuvasz-on-your-synology-nas/){target="_blank" }
 - [Install Kuvasz via Docker (French)](https://belginux.com/installer-kuvasz-avec-docker/){target="_blank" }
+- [Install Kuvasz on Debian 12 (Spanish)](https://voidnull.es/instalacion-de-kuvasz-uptime-en-debian-12/){target="_blank" }
