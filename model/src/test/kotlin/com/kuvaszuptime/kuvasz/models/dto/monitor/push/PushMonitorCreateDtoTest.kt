@@ -124,12 +124,12 @@ class PushMonitorCreateDtoDefaultsTest : BehaviorSpec({
         val dto = PushMonitorCreateDto(
             name = "dfa",
             heartbeatInterval = 20,
-            gracePeriod = 10,
             clientSecret = randomClientSecret(),
         )
 
         then("the default values should be set correctly") {
             dto.enabled shouldBe PushMonitorDefaults.MONITOR_ENABLED
+            dto.gracePeriod shouldBe PushMonitorDefaults.GRACE_PERIOD_SECONDS
             dto.integrations shouldBe emptyList()
         }
     }
