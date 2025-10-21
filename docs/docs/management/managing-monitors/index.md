@@ -77,6 +77,14 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 
     [:octicons-arrow-right-24: HTTP & SSL monitors](../http-monitors.md)
 
+-   :heartbeat:{ .lg .card-header-icon } __Push (a.k.a. "cron") monitors__
+
+    ---
+
+    Monitor your services that are not accessible via HTTP, for example backups, cron jobs, etc.
+
+    [:octicons-arrow-right-24: Push monitors](../push-monitors.md)
+
 -   :construction:{ .lg .card-header-icon } __More to come...__
 
     ---
@@ -84,4 +92,3 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     Planned new monitor types:
 
     - **ICMP** (a.k.a "_ping_")
-    - **Heartbeat** (a.k.a "_push_")
