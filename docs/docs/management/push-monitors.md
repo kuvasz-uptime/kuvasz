@@ -131,7 +131,7 @@ Just like for the heartbeats, you can also use either a `POST` or a `GET` reques
 - the POST request's **body can contain an optional `error` field** in case you would like to provide more details about the failure (e.g. the cause of the failure that is only known by the client).
 
 ```bash
-curl '[YOUR_HOST]/api/v2/push-monitors/heartbeats/[CLIENT_SECRET]' \
+curl '[YOUR_HOST]/api/v2/push-monitors/heartbeats/[CLIENT_SECRET]/failure' \
 --header 'Content-Type: application/json' \
 --data '{
     "error": "failed to execute pgdump"
