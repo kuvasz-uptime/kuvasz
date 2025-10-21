@@ -7,6 +7,8 @@ package com.kuvaszuptime.kuvasz.jooq;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 
@@ -31,6 +33,16 @@ public class Tables {
      * The table <code>kuvasz.http_uptime_event</code>.
      */
     public static final HttpUptimeEvent HTTP_UPTIME_EVENT = HttpUptimeEvent.HTTP_UPTIME_EVENT;
+
+    /**
+     * The table <code>kuvasz.push_monitor</code>.
+     */
+    public static final PushMonitor PUSH_MONITOR = PushMonitor.PUSH_MONITOR;
+
+    /**
+     * The table <code>kuvasz.push_uptime_event</code>.
+     */
+    public static final PushUptimeEvent PUSH_UPTIME_EVENT = PushUptimeEvent.PUSH_UPTIME_EVENT;
 
     /**
      * The table <code>kuvasz.ssl_event</code>.

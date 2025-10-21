@@ -3,7 +3,6 @@ package com.kuvaszuptime.kuvasz.services.ui
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
-import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
@@ -12,8 +11,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
-import com.kuvaszuptime.kuvasz.services.check.http.MonitorActions
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -38,9 +37,10 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         every { title } returns "My Status Page"
         every { public } returns true
     }
-    val mockkMonitorActions = mockk<MonitorActions> {
-        every { getConfiguredMonitors(HTTP_MONITOR.NAME.asc()) } returns listOf(
-            MonitorID(MonitorType.HTTP_SSL, "something")
+    val mockkMonitorActions = mockk<SharedMonitorActions> {
+        every { getConfiguredMonitors() } returns listOf(
+            MonitorID(MonitorType.HTTP_SSL, "something"),
+            MonitorID(MonitorType.PUSH, "abcd"),
         )
     }
 
@@ -62,6 +62,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.isAuthEnabled shouldBe false
                 globals.isAuthenticated() shouldBe true
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -83,6 +85,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.isAuthEnabled shouldBe true
                 globals.isAuthenticated() shouldBe true
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -104,12 +108,16 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.isAuthEnabled shouldBe true
                 globals.isAuthenticated() shouldBe false
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
             }
         }
 
         `when`("when the app is in read-only mode") {
             val appConfig = AppConfig()
             appConfig.disableHttpMonitorExternalWrite()
+            appConfig.disablePushMonitorExternalWrite()
+            appConfig.disableStatusPageExternalWrite()
             val globals = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -121,6 +129,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
 
             then("it should return the correctly hydrated view model") {
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe true
+                globals.editabilityState.areStatusPagesReadOnly() shouldBe true
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
             }
         }
 
@@ -136,9 +146,11 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
+            globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
 
             appConfig.disableHttpMonitorExternalWrite()
             appConfig.disableStatusPageExternalWrite()
+            appConfig.disablePushMonitorExternalWrite()
             val globalsAfterUpdate = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -151,6 +163,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             then("it should return the correctly hydrated view model") {
                 globalsAfterUpdate.editabilityState.areHttpMonitorsReadOnly() shouldBe true
                 globalsAfterUpdate.editabilityState.areStatusPagesReadOnly() shouldBe true
+                globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
             }
         }
 
@@ -234,6 +247,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
 
             then("it should return the correct list of enabled monitors") {
                 globals.configuredMonitors() shouldBe listOf(
+                    MonitorID(MonitorType.PUSH, "abcd"),
                     MonitorID(MonitorType.HTTP_SSL, "something")
                 )
             }

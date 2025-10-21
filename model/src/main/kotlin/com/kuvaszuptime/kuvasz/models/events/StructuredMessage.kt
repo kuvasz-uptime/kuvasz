@@ -6,36 +6,41 @@ sealed class StructuredMessage {
 
 sealed class StructuredMonitorMessage : StructuredMessage()
 
-data class StructuredMonitorUpMessage(
+data class StructuredPushMonitorUpMessage(
+    override val summary: String,
+    val previousDownTime: String?,
+) : StructuredMonitorMessage()
+
+data class StructuredHttpMonitorUpMessage(
     override val summary: String,
     val latency: String,
-    val previousDownTime: String?
+    val previousDownTime: String?,
 ) : StructuredMonitorMessage()
 
 data class StructuredMonitorDownMessage(
     override val summary: String,
     val error: String,
-    val previousUpTime: String?
+    val previousUpTime: String?,
 ) : StructuredMonitorMessage()
 
 data class StructuredRedirectMessage(
-    override val summary: String
+    override val summary: String,
 ) : StructuredMessage()
 
 sealed class StructuredSSLMessage : StructuredMessage()
 
 data class StructuredSSLValidMessage(
     override val summary: String,
-    val previousInvalidEvent: String?
+    val previousInvalidEvent: String?,
 ) : StructuredSSLMessage()
 
 data class StructuredSSLInvalidMessage(
     override val summary: String,
     val error: String,
-    val previousValidEvent: String?
+    val previousValidEvent: String?,
 ) : StructuredSSLMessage()
 
 data class StructuredSSLWillExpireMessage(
     override val summary: String,
-    val validUntil: String
+    val validUntil: String,
 ) : StructuredSSLMessage()

@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz
 
-import com.kuvaszuptime.kuvasz.metrics.http.HttpMetricsExporter
+import com.kuvaszuptime.kuvasz.metrics.MetricsExporter
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
@@ -37,12 +37,13 @@ class AppStartupTest : BehaviorSpec({
                     "metrics-exports.http-uptime-status" to true,
                     "metrics-exports.http-latest-latency" to true,
                     "metrics-exports.ssl-status" to true,
-                    "metrics-exports.ssl-expiry" to true
+                    "metrics-exports.ssl-expiry" to true,
+                    "metrics-exports.push-uptime-status" to true,
                 )
                 val ctx = shouldNotThrowAny { testAppContext(properties) }
 
                 ctx.getBean<MeterRegistry>().shouldNotBeNull()
-                ctx.getBeansOfType(HttpMetricsExporter::class.java) shouldHaveSize 4
+                ctx.getBeansOfType(MetricsExporter::class.java) shouldHaveSize 5
             }
         }
 
@@ -63,7 +64,7 @@ class AppStartupTest : BehaviorSpec({
                 }
 
                 shouldThrow<NoSuchBeanException> { ctx.getBean<MeterRegistry>() }
-                ctx.getBeansOfType(HttpMetricsExporter::class.java).shouldBeEmpty()
+                ctx.getBeansOfType(MetricsExporter::class.java).shouldBeEmpty()
             }
         }
     }

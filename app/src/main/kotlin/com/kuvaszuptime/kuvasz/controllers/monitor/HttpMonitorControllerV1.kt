@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
+import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
+import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V1_PREFIX
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
@@ -45,11 +47,11 @@ import java.time.Instant
 
 @Controller("${API_V1_PREFIX}/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "HTTP monitors (V1, deprecated)")
+@Tag(name = OpenApiTags.HTTP_MONITORS_V1)
 @Deprecated("Use HttpMonitorControllerV2")
 @SecurityRequirements(
-    SecurityRequirement(name = "apiKey"),
-    SecurityRequirement(name = "bearerAuth")
+    SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
+    SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
 class HttpMonitorControllerV1(
     private val monitorActions: HttpMonitorActions,

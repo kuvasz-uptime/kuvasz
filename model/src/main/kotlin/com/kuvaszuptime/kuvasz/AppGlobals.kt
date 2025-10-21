@@ -31,6 +31,7 @@ data class AppGlobals(
 
     data class EditabilityState(
         val areHttpMonitorsReadOnly: () -> Boolean,
+        val arePushMonitorsReadOnly: () -> Boolean,
         val areStatusPagesReadOnly: () -> Boolean,
     )
 

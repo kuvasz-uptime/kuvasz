@@ -62,6 +62,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         checked = settings.app.editabilityState.areHttpMonitorsReadOnly
                     )
                     settingsToggle(
+                        label = Messages.pushMonitorsReadOnlyMode(),
+                        checked = settings.app.editabilityState.arePushMonitorsReadOnly
+                    )
+                    settingsToggle(
                         label = Messages.statusPagesReadOnlyMode(),
                         checked = settings.app.editabilityState.areStatusPagesReadOnly
                     )

@@ -1,10 +1,13 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -18,6 +21,8 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -43,8 +48,10 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class PagerdutyEventHandlerTest(
-    private val monitorRepository: HttpMonitorRepository,
-    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
+    private val httpUptimeEventRepository: HttpUptimeEventRepository,
+    private val pushUptimeEventRepository: PushUptimeEventRepository,
     sslEventRepository: SSLEventRepository,
     latencyLogRepository: HttpLatencyLogRepository,
     dslContext: DSLContext,
@@ -62,16 +69,17 @@ class PagerdutyEventHandlerTest(
 
         DatabaseEventHandler(
             eventDispatcher,
-            uptimeEventRepository,
+            httpUptimeEventRepository,
+            pushUptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
             dslContext,
         )
         PagerdutyEventHandler(eventDispatcher, mockClient, integrationRepository)
 
-        given("the PagerdutyEventHandler - UPTIME events") {
+        given("the PagerdutyEventHandler - HTTP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -87,8 +95,8 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
-                    monitorRepository,
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
                     integrations = listOf(
                         globalPagerdutyConfig.id,
                         otherPagerdutyConfig.id,
@@ -113,7 +121,7 @@ class PagerdutyEventHandlerTest(
                         request.eventAction shouldBe PagerdutyEventAction.TRIGGER
                         request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
                         request.payload.severity shouldBe PagerdutySeverity.CRITICAL
-                        request.payload.source shouldBe monitor.url
+                        request.payload.source shouldBe monitor.name
                         request.payload.summary shouldBe event.toStructuredMessage().summary
                     }
                     slot.forOne { fromGlobalConfig ->
@@ -127,7 +135,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -135,7 +143,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -151,7 +159,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -160,7 +168,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -180,8 +188,8 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
-                val monitor = createMonitor(
-                    monitorRepository,
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
                     integrations = listOf(
                         globalPagerdutyConfig.id,
                         otherPagerdutyConfig.id,
@@ -196,7 +204,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -218,7 +226,7 @@ class PagerdutyEventHandlerTest(
                         request.eventAction shouldBe PagerdutyEventAction.TRIGGER
                         request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
                         request.payload.severity shouldBe PagerdutySeverity.CRITICAL
-                        request.payload.source shouldBe monitor.url
+                        request.payload.source shouldBe monitor.name
                         request.payload.summary shouldBe firstEvent.toStructuredMessage().summary
                     }
 
@@ -245,7 +253,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -253,7 +261,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -274,9 +282,199 @@ class PagerdutyEventHandlerTest(
             }
         }
 
+        given("the PagerdutyEventHandler - PUSH UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+
+                eventDispatcher.dispatch(event)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val event = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "irrelevant",
+                    previousEvent = null
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.dispatch(event)
+
+                then("it should trigger an alert on PD for each enabled integration") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe event.toStructuredMessage().summary
+                    }
+                    slot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    slot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    slot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should call triggerAlert() only once") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = "irrelevant"
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                mockSuccessfulResolveResponse()
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should trigger an alert and then resolve it for each enabled integration") {
+                    val triggerSlot = mutableListOf<PagerdutyTriggerRequest>()
+                    val resolveSlot = mutableListOf<PagerdutyResolveRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(triggerSlot)) }
+                    verify(exactly = 2) { mockClient.resolveAlert(capture(resolveSlot)) }
+
+                    triggerSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe firstEvent.toStructuredMessage().summary
+                    }
+
+                    triggerSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+
+                    resolveSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.RESOLVE
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                    }
+                    resolveSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    error = "irrelevant",
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should call only triggerAlert()") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+        }
+
         given("the PagerdutyEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -290,8 +488,8 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
-                    monitorRepository,
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
                     integrations = listOf(
                         globalPagerdutyConfig.id,
                         otherPagerdutyConfig.id,
@@ -315,7 +513,7 @@ class PagerdutyEventHandlerTest(
                         request.eventAction shouldBe PagerdutyEventAction.TRIGGER
                         request.dedupKey shouldBe "kuvasz_ssl_${monitor.id}"
                         request.payload.severity shouldBe PagerdutySeverity.CRITICAL
-                        request.payload.source shouldBe monitor.url
+                        request.payload.source shouldBe monitor.name
                         request.payload.summary shouldBe event.toStructuredMessage().summary
                     }
                     slot.forOne { fromGlobalConfig ->
@@ -329,7 +527,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -351,7 +549,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -377,7 +575,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -404,7 +602,7 @@ class PagerdutyEventHandlerTest(
 
                     triggerSlot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
                     triggerSlot.captured.payload.severity shouldBe PagerdutySeverity.CRITICAL
-                    triggerSlot.captured.payload.source shouldBe monitor.url
+                    triggerSlot.captured.payload.source shouldBe monitor.name
                     triggerSlot.captured.payload.summary shouldBe firstEvent.toStructuredMessage().summary
                     triggerSlot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
 
@@ -415,7 +613,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -442,7 +640,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -459,14 +657,14 @@ class PagerdutyEventHandlerTest(
                     slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
                     slot.captured.dedupKey shouldBe "kuvasz_ssl_${monitor.id}"
                     slot.captured.payload.summary shouldBe event.toStructuredMessage().summary
-                    slot.captured.payload.source shouldBe event.monitor.url
+                    slot.captured.payload.source shouldBe event.monitor.name
                     slot.captured.payload.severity shouldBe PagerdutySeverity.WARNING
                     slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
                 }
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -494,7 +692,7 @@ class PagerdutyEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous SSLValidEvent") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -524,7 +722,7 @@ class PagerdutyEventHandlerTest(
 
         given("the PagerdutyEventHandler - error handling logic") {
             `when`("an error happens when it calls the API") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,

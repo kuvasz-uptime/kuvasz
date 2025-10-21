@@ -2,10 +2,13 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -15,6 +18,8 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -40,8 +45,10 @@ import org.simplejavamail.api.email.Email
 @SMTPTest
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class SMTPEventHandlerTest(
-    private val monitorRepository: HttpMonitorRepository,
-    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
+    private val httpUptimeEventRepository: HttpUptimeEventRepository,
+    private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     latencyLogRepository: HttpLatencyLogRepository,
     smtpMailer: SMTPMailer,
@@ -58,16 +65,17 @@ class SMTPEventHandlerTest(
 
         DatabaseEventHandler(
             eventDispatcher,
-            uptimeEventRepository,
+            httpUptimeEventRepository,
+            pushUptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
             dslContext,
         )
         SMTPEventHandler(mailerSpy, eventDispatcher, integrationRepository)
 
-        given("the SMTPEventHandler - UPTIME events") {
+        given("the SMTPEventHandler - HTTP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -83,8 +91,8 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
-                    repository = monitorRepository,
+                val monitor = createHttpMonitor(
+                    repository = httpMonitorRepository,
                     integrations = listOf(
                         globalEmailConfig.id,
                         otherEmailConfig.id,
@@ -98,7 +106,7 @@ class SMTPEventHandlerTest(
                     previousEvent = null
                 )
                 // Email text and subject are not config specific
-                val expectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
 
                 eventDispatcher.dispatch(event)
 
@@ -129,7 +137,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -137,7 +145,7 @@ class SMTPEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -153,7 +161,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -161,8 +169,8 @@ class SMTPEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(firstEvent)
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -184,7 +192,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -192,7 +200,7 @@ class SMTPEventHandlerTest(
                     error = Exception()
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -202,8 +210,8 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
 
                 then("it should send two different emails about them") {
                     val emailsSent = mutableListOf<Email>()
@@ -220,7 +228,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -228,7 +236,7 @@ class SMTPEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -238,7 +246,177 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+
+                then("it should send an email only about the down event") {
+                    val emailSent = slot<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
+                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
+                    emailSent.captured.subject shouldContain "is DOWN"
+                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                }
+            }
+        }
+
+        given("the SMTPEventHandler - PUSH UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+
+                eventDispatcher.dispatch(event)
+
+                then("it should not send an email about the event") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(
+                    repository = pushMonitorRepository,
+                    integrations = listOf(
+                        globalEmailConfig.id,
+                        otherEmailConfig.id,
+                        disabledEmailConfig.id,
+                    ),
+                )
+                val event = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Some error",
+                    previousEvent = null
+                )
+                // Email text and subject are not config specific
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+
+                eventDispatcher.dispatch(event)
+
+                then("it should send an email about the event to every enabled integration") {
+                    val sentEmails = mutableListOf<Email>()
+
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.forAll { email ->
+                        // Email text and subject are not config specific
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldBe expectedEmail.subject
+                        email.subject shouldContain "is DOWN"
+                    }
+                    sentEmails.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
+                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
+                    }
+                    sentEmails.forOne { fromOtherConfig ->
+                        fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                    }
+                    sentEmails.forNone { fromDisabledConfig ->
+                        fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
+                            disabledEmailConfig.fromAddress
+                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                    }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should not send out any email about them") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should send only one email about them") {
+                    val slot = slot<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
+                    slot.captured.plainText shouldContain "First error"
+                    slot.captured.plainText shouldBe expectedEmail.plainText
+                    slot.captured.subject shouldContain "is DOWN"
+                    slot.captured.subject shouldBe expectedEmail.subject
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = "Some error",
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+
+                then("it should send two different emails about them") {
+                    val emailsSent = mutableListOf<Email>()
+
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
+                    emailsSent[0].subject shouldContain "is DOWN"
+                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
+                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
+                    emailsSent[1].subject shouldContain "is UP"
+                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    error = "Some error",
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
 
                 then("it should send an email only about the down event") {
                     val emailSent = slot<Email>()
@@ -253,7 +431,7 @@ class SMTPEventHandlerTest(
 
         given("the SMTPEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -268,8 +446,8 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
-                    repository = monitorRepository,
+                val monitor = createHttpMonitor(
+                    repository = httpMonitorRepository,
                     integrations = listOf(
                         globalEmailConfig.id,
                         otherEmailConfig.id,
@@ -282,7 +460,7 @@ class SMTPEventHandlerTest(
                     error = SSLValidationError("ssl error")
                 )
                 // Email text and subject are not config specific
-                val expectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(event)
 
                 eventDispatcher.dispatch(event)
 
@@ -313,7 +491,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -335,7 +513,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -343,7 +521,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(firstEvent)
 
-                val expectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
@@ -365,7 +543,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -381,8 +559,8 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent)
 
                 then("it should send two different emails about them") {
                     val emailsSent = mutableListOf<Email>()
@@ -398,7 +576,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -414,7 +592,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent)
 
                 then("it should send an email, only about the invalidity") {
                     val emailSent = slot<Email>()
@@ -427,13 +605,13 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                val expectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(event)
 
                 eventDispatcher.dispatch(event)
 
@@ -448,7 +626,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -456,7 +634,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(firstEvent)
 
-                val expectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
@@ -477,7 +655,7 @@ class SMTPEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -493,7 +671,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.dispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromHttpMonitorEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent)
 
                 then("it should send an email, only about the expiration") {
                     val emailSent = slot<Email>()

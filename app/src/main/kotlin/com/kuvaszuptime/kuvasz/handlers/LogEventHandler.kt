@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
-import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.LogMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micronaut.context.annotation.Context
@@ -25,6 +25,9 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
         eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
             event.handle()
         }
+        eventDispatcher.subscribeToPushMonitorEvents { event ->
+            event.handle()
+        }
         eventDispatcher.subscribeToHttpRedirectEvents { event ->
             event.handle()
         }
@@ -39,14 +42,18 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
         }
     }
 
-    private fun HttpUptimeMonitorEvent.handle() {
-        val message = formatter.toFormattedMessage(this)
-        logger.info(message)
+    private fun UptimeMonitorEvent.handle() {
+        this.runWhenStateChanges { event ->
+            val message = formatter.toFormattedMessage(event)
+            logger.info(message)
+        }
     }
 
     private fun SSLMonitorEvent.handle() {
-        val message = formatter.toFormattedMessage(this)
-        logger.info(message)
+        this.runWhenStateChanges { event ->
+            val message = formatter.toFormattedMessage(event)
+            logger.info(message)
+        }
     }
 
     private fun HttpRedirectEvent.handle() {

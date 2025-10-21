@@ -1,3 +1,22 @@
+## 3.2.0 <small>2025-10-xx</small> { id="3.2.0" data-toc-label="3.2.0" }
+
+### New features
+
+- [**Push monitors**](features/push-monitoring.md): Also known as _cron_ or _heartbeat_ monitors. You can create monitors to watch your services or scheduled jobs that are not accessible via HTTP, but you still want to keep an eye on them.
+
+![Creating a push monitor](images/ui/create_push_monitor.webp)
+
+### Improvements
+
+- The HTTP checks' request and expected **headers' names are less restrictive**, and also RFC 9110 compliant. Thanks to [**@LosDrakakos**](https://github.com/LosDrakakos){ target="_blank" } for the contribution!
+- **Large headers** (> 8192 bytes) are handled more gracefully, and they don't end up in false positive uptime errors anymore.
+- Documentation: added [**unofficial deployment guides**](setup/installation.md#unofficial-guides)
+- Monitors are completely [**deletable via `YAML`**](management/managing-monitors/index.md#__tabbed_1_2) (previously it wasn't possible to distinguish between omitted and empty monitors in the YAML config).
+
+### Fixes
+
+
+
 ## 3.1.0 <small>2025-09-23</small> { id="3.1.0" data-toc-label="3.1.0" }
 
 ### New features

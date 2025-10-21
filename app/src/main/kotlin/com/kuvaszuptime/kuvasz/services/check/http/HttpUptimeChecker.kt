@@ -23,7 +23,7 @@ import java.util.Optional
 
 @Singleton
 class HttpUptimeChecker(
-    @Client(configuration = HttpCheckerClientConfiguration::class)
+    @param:Client(configuration = HttpCheckerClientConfiguration::class)
     private val httpClient: HttpClient,
     private val monitorRepository: HttpMonitorRepository,
     private val checkRequestConfigurator: HttpCheckRequestConfigurator,
@@ -68,7 +68,7 @@ class HttpUptimeChecker(
         }
         logger.debug("Uptime check for monitor (${monitor.name}) finished")
         if (doAfter != null) {
-            monitorRepository.findById(monitor.id)?.let { upToDateMonitor ->
+            monitorRepository.findById(monitor.id, null)?.let { upToDateMonitor ->
                 logger.debug("Calling doAfter() hook on monitor with name [${upToDateMonitor.name}]")
                 doAfter(upToDateMonitor)
             }

@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldBeAfter
@@ -59,6 +60,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
     fun executeAndAssertTheFirstStep() {
         appContext = testAppContext(
             "yaml-monitors",
+            "yaml-push-monitors",
             "status-pages",
             "full-integrations-setup",
         )
@@ -78,6 +80,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             firstPage.monitors shouldContainExactlyInAnyOrder arrayOf(
                 MonitorID(MonitorType.HTTP_SSL, "test1"),
                 MonitorID(MonitorType.HTTP_SSL, "test2"),
+                MonitorID(MonitorType.PUSH, "test1"),
             )
         }
 
@@ -97,6 +100,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             thirdPage.monitors shouldContainExactlyInAnyOrder arrayOf(
                 MonitorID(MonitorType.HTTP_SSL, "test3"),
                 MonitorID(MonitorType.HTTP_SSL, "test1"),
+                MonitorID(MonitorType.PUSH, "test2"),
             )
         }
         // Saving the monitors from the DB to be able to check them later
@@ -105,7 +109,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
 
     /**
      * A new YAML config is used again a totally fresh & clean instance, and the pages from the config should be
-     * imported & scheduled
+     * imported
      */
     "1. step: the app is started with a valid YAML config for the status pages" {
         executeAndAssertTheFirstStep()
@@ -176,17 +180,14 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
     }
 
     /**
-     * This test simulates a change in the YAML config, where the config is either not present or it's empty. In this
-     * case the app should retain the previously persisted status pages, which is essential for 2
-     * reasons:
-     * - accidentally missing the YAML config should not cause any data loss
-     * - this can be seen also as restoring a backup from a YAML file, in which case it should be totally normal that
-     * after a successful import one would like to remove the YAML config and re-enable the external writes to them
+     * This test simulates a change in the YAML config, where the config property is empty. In this
+     * case the app should retain the previously persisted status pages, which is essential
+     * because accidentally misconfiguring the YAML config should not cause any data loss
      */
-    "3. step: the app is restarted with an empty YAML config for the status pages" {
+    "3. step: the app is restarted with an empty value in the YAML config for the status pages" {
         appContext = testAppContext(
             "yaml-monitors",
-            "status-pages-empty",
+            "status-pages-empty-value",
             "full-integrations-setup",
         )
         val statusPagesRepo = getStatusPageRepo()
@@ -197,7 +198,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
         val pages = statusPagesRepo.fetchAll()
         pages.shouldHaveSize(3).shouldContainExactlyInAnyOrder(statusPagesAfterTheSecondStep)
 
-        // Creating a page by hand during runtime that should be persisted & scheduled
+        // Creating a page by hand during runtime that should be persisted
         statusPagesRepo.returningInsert(
             StatusPageRecord().apply {
                 slug = "manual_page"
@@ -212,19 +213,59 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
         statusPagesRepo.fetchAll() shouldHaveSize 4
     }
 
+    "4. step: the app is restarted with no YAML config for status pages" {
+        appContext = testAppContext(
+            "yaml-monitors",
+            // No status-pages config
+            "full-integrations-setup",
+        )
+        val statusPagesRepo = getStatusPageRepo()
+
+        // The app config should be set to enable external writes against the pages
+        getAppConfig().isStatusPageExternalWriteDisabled() shouldBe false
+        // All the previously set up pages should be still in there, including the manually created one
+        val pages = statusPagesRepo.fetchAll()
+        pages.shouldHaveSize(4)
+        pages.map { it.slug } shouldContainExactlyInAnyOrder listOf(
+            "status-page-1",
+            "status-page-3",
+            "status-page-4",
+            "manual_page",
+        )
+    }
+
     /**
      * Here we practically say: "I don't care what happened before, if there is a YAML config, use it as a
      * single-source-of-truth!"
      */
-    "4. step: the initial YAML config is used again" {
+    "5. step: the initial YAML config is used again" {
         executeAndAssertTheFirstStep()
+    }
+
+    /**
+     * This test simulates a case where the YAML config is used, but with an empty array. In this case the app
+     * should delete all previously persisted status pages, because the user explicitly wants to have zero
+     * status pages, and disable external writes against them.
+     */
+    "6. step: the app started with an empty array for the status pages in the YAML" {
+        appContext = testAppContext(
+            "yaml-monitors",
+            "status-pages-empty-array",
+            "full-integrations-setup",
+        )
+        val statusPageRepo = getStatusPageRepo()
+
+        // The app config should be set to disable external writes against the pages
+        getAppConfig().isStatusPageExternalWriteDisabled() shouldBe true
+        // All the previously set up pages should be deleted, because an empty array was provided
+        statusPageRepo.fetchAll().shouldBeEmpty()
     }
 
     /**
      * This test simulates a case where the YAML config is used, but one of the monitors is not present in the
      * monitors' config. In this case the app should ignore the missing monitor.
      */
-    "5. step: the app started with some status pages in the YAML, but there is a non-existing monitor on one of them" {
+    "7. step: the app started with some status pages in the YAML, but there is a non-existing monitor on one of them" {
         shouldNotThrowAny {
             testAppContext(
                 "yaml-monitors",

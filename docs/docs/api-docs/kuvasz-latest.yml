@@ -10,13 +10,15 @@ info:
   x-logo:
     url: https://github.com/kuvasz-uptime/kuvasz/raw/main/docs/docs/images/kuvasz-banner-light.webp
 tags:
+- name: HTTP monitors
+- name: "HTTP monitors (V1, deprecated)"
+- name: Incidents
+- name: Integrations
 - name: Management
 - name: Monitors
-- name: "HTTP monitors (V1, deprecated)"
-- name: HTTP monitors
-- name: "Settings (V1, deprecated)"
+- name: Push monitors
 - name: Settings
-- name: Integrations
+- name: "Settings (V1, deprecated)"
 - name: Status pages
 paths:
   /api/v1/monitors:
@@ -729,6 +731,9 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/IntegrationConfigDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/integrations/{integrationId}/test:
     post:
       tags:
@@ -756,6 +761,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/monitors/export/yaml:
     get:
       tags:
@@ -767,6 +775,338 @@ paths:
           description: Successful query
           content:
             application/x-yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/push-monitors:
+    get:
+      tags:
+      - Push monitors
+      summary: Get all monitors with their details
+      operationId: getMonitorsWithDetails_2
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PushMonitorDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - Push monitors
+      summary: Create a monitor
+      operationId: createMonitor_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushMonitorCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Push monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/push-monitors/heartbeats/{clientSecret}:
+    get:
+      tags:
+      - Push monitors
+      summary: Send a push monitor heartbeat
+      operationId: sendHeartbeatViaGet
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "202":
+          description: Heartbeat received
+    post:
+      tags:
+      - Push monitors
+      summary: Send a push monitor heartbeat
+      operationId: sendHeartbeatViaPost
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "202":
+          description: Heartbeat received
+  /api/v2/push-monitors/heartbeats/{clientSecret}/failure:
+    get:
+      tags:
+      - Push monitors
+      summary: Signal a push monitor failure
+      operationId: signalFailureViaGet
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "202":
+          description: Failure received
+    post:
+      tags:
+      - Push monitors
+      summary: Signal a push monitor failure
+      operationId: signalFailureViaPost
+      parameters:
+      - name: clientSecret
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushMonitorFailureDetailsDto"
+        required: true
+      responses:
+        "202":
+          description: Failure received
+  /api/v2/push-monitors/stats:
+    get:
+      tags:
+      - Push monitors
+      summary: "Get the overall, cumulative stats of all monitors"
+      operationId: getMonitoringStats_2
+      parameters:
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushMonitoringStatsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/push-monitors/{monitorId}:
+    get:
+      tags:
+      - Push monitors
+      summary: Get a monitor's details
+      operationId: getMonitorDetails_2
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushMonitorDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - Push monitors
+      summary: Delete a monitor by ID
+      operationId: deleteMonitor_2
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Push monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - Push monitors
+      summary: Update a monitor by ID
+      description: Updates the monitor with the given ID. Only fields that are present
+        in the request body will be updated. Fields not present in the request body
+        will remain unchanged.
+      operationId: updateMonitor_2
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushMonitorUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Push monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/push-monitors/{monitorId}/stats:
+    get:
+      tags:
+      - Push monitors
+      summary: Get the stats of the given monitor
+      operationId: getMonitorStats_2
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P1D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushMonitorStatsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/push-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - Push monitors
+      summary: Get the uptime events of the given monitor
+      operationId: getUptimeEvents_2
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PushUptimeEventDto"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -1944,6 +2284,7 @@ components:
       enum:
       - HTTP
       - SSL
+      - PUSH
     IntegrationConfigDto:
       required:
       - id
@@ -2503,6 +2844,392 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
+    PushMonitorCreateDto:
+      required:
+      - clientSecret
+      - gracePeriod
+      - heartbeatInterval
+      - name
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          x-size-message: Monitor name must not be blank
+        heartbeatInterval:
+          minimum: 10
+          type: integer
+          description: The interval in seconds at which the monitor expects to receive
+            heartbeats
+          format: int64
+          x-minimum-message: "Heartbeat interval must be at least {value} seconds"
+          x-not-null-message: Heartbeat interval must not be null
+        gracePeriod:
+          minimum: 0
+          type: integer
+          description: The grace period in seconds after the heartbeat interval during
+            which a missed heartbeat will not mark the monitor as DOWN
+          format: int64
+          x-minimum-message: Grace period must be greater than or equal to 0 seconds
+          x-not-null-message: Grace period must not be null
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          default: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+        clientSecret:
+          minLength: 36
+          type: string
+          description: The unique client secret used to identify & authenticate heartbeats
+          x-size-message: "Client secret must be at least {min} characters long"
+          x-not-null-message: Client secret must not be null
+    PushMonitorDetailsDto:
+      required:
+      - clientSecret
+      - createdAt
+      - effectiveIntegrations
+      - enabled
+      - gracePeriod
+      - heartbeatInterval
+      - id
+      - integrations
+      - lastHeartbeat
+      - lastUptimeCheck
+      - name
+      - nextExpectedHeartbeat
+      - statusPages
+      - updatedAt
+      - uptimeError
+      - uptimeStatus
+      - uptimeStatusStartedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+        heartbeatInterval:
+          type: integer
+          description: The interval in seconds at which the monitor expects to receive
+            heartbeats
+          format: int64
+        gracePeriod:
+          type: integer
+          description: The grace period in seconds after the heartbeat interval during
+            which a missed heartbeat will not mark the monitor as DOWN
+          format: int64
+        clientSecret:
+          type: string
+          description: The unique client secret used to identify & authenticate heartbeats
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+          nullable: true
+        uptimeStatus:
+          description: "The current uptime status of the monitor. If it's null, the\
+            \ monitor has not received a heartbeat yet."
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusStartedAt:
+          type: string
+          description: The timestamp when the uptime status was last changed
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          description: The timestamp when the last uptime check was performed
+          format: date-time
+          nullable: true
+        lastHeartbeat:
+          type: string
+          description: The timestamp of the last successful heartbeat
+          format: date-time
+          nullable: true
+        nextExpectedHeartbeat:
+          type: string
+          description: The timestamp until which the next heartbeat is expected
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          description: The error message if the last uptime check failed
+          nullable: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        effectiveIntegrations:
+          type: array
+          description: "List of integrations that are effective for the monitor, including\
+            \ global integrations"
+          items:
+            $ref: "#/components/schemas/IntegrationDetailsDto"
+        statusPages:
+          type: array
+          description: List of slugs of the status pages the monitor is explicitly
+            assigned to
+          items:
+            type: string
+    PushMonitorDto:
+      required:
+      - clientSecret
+      - createdAt
+      - enabled
+      - gracePeriod
+      - heartbeatInterval
+      - id
+      - integrations
+      - lastHeartbeat
+      - name
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+        heartbeatInterval:
+          type: integer
+          description: The interval in seconds at which the monitor expects to receive
+            heartbeats
+          format: int64
+        gracePeriod:
+          type: integer
+          description: The grace period in seconds after the heartbeat interval during
+            which a missed heartbeat will not mark the monitor as DOWN
+          format: int64
+        lastHeartbeat:
+          type: string
+          description: The timestamp of the last successful heartbeat
+          format: date-time
+          nullable: true
+        clientSecret:
+          type: string
+          description: The unique client secret used to identify & authenticate heartbeats
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+          nullable: true
+    PushMonitorFailureDetailsDto:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "The optional, explicit error that is signaled manually for\
+            \ a push monitor"
+          nullable: true
+    PushMonitorStatsDto:
+      required:
+      - id
+      - uptimeHistory
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        uptimeHistory:
+          description: Uptime related statistics of the monitor in the given period
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+    PushMonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          nullable: false
+          x-size-message: Monitor name must not be blank
+        heartbeatInterval:
+          minimum: 10
+          type: integer
+          description: The interval in seconds at which the monitor expects to receive
+            heartbeats
+          format: int64
+          nullable: false
+          x-minimum-message: "Heartbeat interval must be at least {value} seconds"
+          x-not-null-message: Heartbeat interval must not be null
+        gracePeriod:
+          minimum: 0
+          type: integer
+          description: The grace period in seconds after the heartbeat interval during
+            which a missed heartbeat will not mark the monitor as DOWN
+          format: int64
+          nullable: false
+          x-minimum-message: Grace period must be greater than or equal to 0 seconds
+          x-not-null-message: Grace period must not be null
+        clientSecret:
+          minLength: 36
+          type: string
+          description: The unique client secret used to identify & authenticate heartbeats
+          nullable: false
+          x-size-message: "Client secret must be at least {min} characters long"
+          x-not-null-message: Client secret must not be null
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          nullable: false
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+    PushMonitoringStatsDto:
+      required:
+      - actual
+      - history
+      type: object
+      properties:
+        actual:
+          description: The actual monitoring statistics for the current state of the
+            monitors.
+          allOf:
+          - $ref: "#/components/schemas/PushMonitoringStatsDto.ActualMonitoringStats"
+        history:
+          description: "The historical monitoring statistics, summarizing incidents\
+            \ and uptime ratios over time."
+          allOf:
+          - $ref: "#/components/schemas/PushMonitoringStatsDto.HistoricalMonitoringStats"
+    PushMonitoringStatsDto.ActualMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the current state of uptime for all monitors.
+          allOf:
+          - $ref: "#/components/schemas/PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
+    PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
+      required:
+      - down
+      - inProgress
+      - lastIncident
+      - paused
+      - total
+      - up
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of monitors currently being monitored.
+          format: int32
+        down:
+          type: integer
+          description: Number of monitors currently down.
+          format: int32
+        up:
+          type: integer
+          description: Number of monitors currently up.
+          format: int32
+        paused:
+          type: integer
+          description: Number of monitors currently paused.
+          format: int32
+        inProgress:
+          type: integer
+          description: "Number of monitors currently in progress (e.g., waiting for\
+            \ first heartbeat)."
+          format: int32
+        lastIncident:
+          type: string
+          description: The timestamp of the last incident detected across all monitors.
+          format: date-time
+          nullable: true
+    PushMonitoringStatsDto.HistoricalMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the historical uptime of all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+    PushUptimeEventDto:
+      required:
+      - endedAt
+      - error
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the uptime event
+          format: int64
+        status:
+          description: The status of the uptime event
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        startedAt:
+          type: string
+          description: The timestamp when the uptime event started
+          format: date-time
+        endedAt:
+          type: string
+          description: "The timestamp when the uptime event ended, if applicable"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: The timestamp when the uptime event was updated
+          format: date-time
     SSLEventDto:
       required:
       - endedAt
@@ -2619,6 +3346,7 @@ components:
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly
+      - arePushMonitorsReadOnly
       - areStatusPagesReadOnly
       type: object
       properties:
@@ -2628,6 +3356,9 @@ components:
         areStatusPagesReadOnly:
           type: boolean
           description: Whether the status pages are in read-only mode
+        arePushMonitorsReadOnly:
+          type: boolean
+          description: Whether the push monitors are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge

@@ -238,6 +238,20 @@ http-monitors:
   - name: "minimal configuration example"
     url: "https://kuvasz-uptime.dev"
     uptime-check-interval: 5
+push-monitors:
+  - name: "My Push Monitor"
+    heartbeat-interval: 10
+    grace-period: 2
+    client-secret: "d6d5a85c-82c0-4bea-9926-c3eed32de32b"
+    enabled: true
+    integrations: [ ]
+  - name: "Another Push Monitor"
+    heartbeat-interval: 86400
+    grace-period: 3600
+    client-secret: "7b2d5cb1-41bd-4067-9732-c79dbbf45286"
+    enabled: false
+    integrations:
+      - "slack:slack_default"
 ---
 default-status-page:
   public: true
@@ -253,4 +267,5 @@ status-pages:
     monitors:
       - "http:full configuration example"
       - "http:minimal configuration example"
+      - "push:My Push Monitor"
 ```

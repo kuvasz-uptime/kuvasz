@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.http.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
@@ -40,7 +41,7 @@ class WebUIHttpMonitorController(
     fun httpMonitoringStats(): String {
         val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
 
-        return renderMonitoringStats(
+        return renderHttpMonitoringStats(
             monitoringStats = statCalculator.calculateOverallHttpStats(period),
             downMonitors = monitorActions.getMonitorsWithDetails(
                 enabled = true,
@@ -94,7 +95,7 @@ class WebUIHttpMonitorController(
         return buildString {
             append(renderHttpMonitorDetailsHeading(monitor))
             append(
-                renderUptimeSummary(
+                renderHttpUptimeSummary(
                     monitor = monitor,
                     stats = statCalculator.calculateHistoricalHttpUptimeStats(
                         period = Duration.ofDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
@@ -113,7 +114,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorUptimeIncidents(@PathVariable monitorId: Long) =
-        monitorRepository.findById(monitorId)?.let { monitor ->
+        monitorRepository.findById(monitorId, null)?.let { monitor ->
             renderIncidents(
                 incidents = incidentRepository.getHttpUptimeIncidents(
                     monitor.id,
@@ -128,7 +129,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.IO)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorSSLIncidents(@PathVariable monitorId: Long) =
-        monitorRepository.findById(monitorId)?.let { monitor ->
+        monitorRepository.findById(monitorId, null)?.let { monitor ->
             renderIncidents(
                 incidents = incidentRepository.getSslIncidents(
                     monitor.id,

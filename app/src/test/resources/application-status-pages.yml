@@ -7,6 +7,7 @@ status-pages:
     monitors:
       - "http:test1"
       - "http:test2"
+      - "push:test1"
   - title: Status Page 2
     slug: status-page-2
     public: false
@@ -17,3 +18,4 @@ status-pages:
     monitors:
       - "http:test3"
       - "http:test1"
+      - "push:test2"

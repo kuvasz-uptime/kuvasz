@@ -3,10 +3,12 @@ package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
@@ -51,12 +53,14 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                                     +(monitor.uptimeRatio?.formatAsPercentage() ?: Messages.noData())
                                 }
                                 // Average response time on the right if available
-                                monitor.averageLatencyInMs?.let { avgResponseTime ->
-                                    div {
-                                        classes(MS_AUTO)
-                                        span {
-                                            classes(TEXT_SECONDARY, D_INLINE_FLEX, ALIGN_ITEMS_CENTER, LH_1)
-                                            +Messages.avgResponseTime(avgResponseTime)
+                                if (monitor is StatusPageHttpMonitorDetailsDto) {
+                                    monitor.averageLatencyInMs?.let { avgResponseTime ->
+                                        div {
+                                            classes(MS_AUTO)
+                                            span {
+                                                classes(TEXT_SECONDARY, D_INLINE_FLEX, ALIGN_ITEMS_CENTER, LH_1)
+                                                +Messages.avgResponseTime(avgResponseTime)
+                                            }
                                         }
                                     }
                                 }
@@ -69,11 +73,20 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                                     monitor.uptimeStatusHistory.forEach { trackingBlock(it) }
                                 }
                             }
-                            // Last check time (if available)
+                            // Last check time / last heartbeat
                             div {
                                 classes(MT_4, TEXT_MUTED)
-                                val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
-                                +"${Messages.lastCheck()}: $lastCheckText"
+                                when (monitor) {
+                                    is StatusPageHttpMonitorDetailsDto -> {
+                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
+                                        +"${Messages.lastCheck()}: $lastCheckText"
+                                    }
+
+                                    is StatusPagePushMonitorDetailsDto -> {
+                                        val lastHeartbeatText = monitor.lastHeartbeat?.timeAgo() ?: Messages.noData()
+                                        +"${Messages.lastHeartbeat()}: $lastHeartbeatText"
+                                    }
+                                }
                             }
                         }
                     }

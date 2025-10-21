@@ -6,7 +6,7 @@
 
 === "Web UI (recommended)"
 
-    If you navigate to the Web UI of _Kuvasz_, you can create a new monitor on the **Dashboard**, or on the **Monitors** page, by clicking the "+ New Monitor" button in the page header.
+    If you navigate to the Web UI of _Kuvasz_, you can create a new monitor on the **Dashboard**, or on the **HTTP & SSL monitors** page, by clicking the "+ New Monitor" button in the page header.
 
     ![Creating a monitor](../images/ui/create_monitor.webp)
 
@@ -82,7 +82,7 @@
 <!-- md:type string -->
 <!-- md:yaml_prop `name` -->
 
-The name of the monitor, which **must be unique** across all monitors.
+The name of the monitor, which **must be unique** across all HTTP monitors.
 
 ### URL
 

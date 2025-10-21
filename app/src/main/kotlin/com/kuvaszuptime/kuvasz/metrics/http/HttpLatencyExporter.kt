@@ -1,10 +1,13 @@
 package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.metrics.GaugeExporter
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.monitor.http.numericMonitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requirements
@@ -21,8 +24,13 @@ class HttpLatencyExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
     private val latencyLogRepository: HttpLatencyLogRepository,
-    monitorRepository: HttpMonitorRepository,
-) : HttpGaugeExporter<Int>(meterRegistry, eventDispatcher, monitorRepository) {
+    monitorRepository: SharedMonitorRepository,
+) : GaugeExporter<Int, HttpMonitorRecord>(
+    meterRegistry,
+    eventDispatcher,
+    monitorRepository,
+    MonitorType.HTTP_SSL,
+) {
 
     companion object {
         private const val MONITOR_LATENCY = "http.latency.latest.milliseconds"
@@ -38,7 +46,7 @@ class HttpLatencyExporter(
 
     private fun HttpMonitorUpEvent.handle() {
         logger.debug("Updating latency for monitor with ID: ${monitor.id} to $latency")
-        upsertMeter(monitor.id, latency)
+        upsertMeter(monitor.numericMonitorId(), latency)
     }
 
     override fun transform(valueSource: Int): Long = valueSource.toLong()

@@ -1,9 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.RichTextMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -38,6 +37,10 @@ abstract class RTCMessageEventHandler(
             logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
+        eventDispatcher.subscribeToPushMonitorEvents { event ->
+            logger.debug("A PushMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
         eventDispatcher.subscribeToSSLValidEvents { event ->
             logger.debug("An SSLValidEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
@@ -52,9 +55,9 @@ abstract class RTCMessageEventHandler(
         }
     }
 
-    private fun HttpUptimeMonitorEvent.handle() =
+    private fun UptimeMonitorEvent.handle() =
         this.runWhenStateChanges { event ->
-            if (this is HttpMonitorUpEvent && previousEvent == null) {
+            if (this.isUp() && previousEvent == null) {
                 return@runWhenStateChanges
             }
             val message = formatter.toFormattedMessage(event)

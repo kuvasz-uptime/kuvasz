@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -53,7 +53,7 @@ class UptimeCheckerE2ETest(
     given("the UptimeChecker service") {
 
         `when`("it checks a monitor that is UP - GET") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -81,7 +81,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that returns a client error, but it's expected") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -109,7 +109,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - HEAD") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -135,7 +135,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor - forceNoCache is true") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -162,7 +162,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor - forceNoCache is false") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -188,7 +188,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is redirected - following redirects is enabled") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -242,7 +242,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is redirected - following redirects is enabled, explicit status codes") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -300,7 +300,7 @@ class UptimeCheckerE2ETest(
             "it checks a monitor that is redirected - following redirects is enabled, " +
                 "but the returned redirect status code is not expected"
         ) {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -343,7 +343,7 @@ class UptimeCheckerE2ETest(
             "it checks a monitor that is redirected - following redirects is enabled - " +
                 "final status code is not acceptable"
         ) {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -391,7 +391,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is redirected - following redirects is enabled - relative redirect") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -445,7 +445,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is redirected - following redirects is disabled") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -493,7 +493,7 @@ class UptimeCheckerE2ETest(
             "it checks a monitor that is redirected - following redirects is disabled, " +
                 "but the returned status code is explicitly accepted"
         ) {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -531,7 +531,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is redirected - following redirect enabled - but no Location header") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -568,7 +568,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is redirected - following redirects is enabled - target is down") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -615,7 +615,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is DOWN - valid client-related HTTP status code") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -642,7 +642,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is DOWN - valid server-related HTTP status code") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -669,7 +669,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that drops the connection") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -694,7 +694,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is unreachable") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "https://34hkl2jklvd.com/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -714,7 +714,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is DOWN - invalid HTTP status code") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.HEAD,
@@ -742,7 +742,7 @@ class UptimeCheckerE2ETest(
 
         `when`("it checks a monitor and it's done with it") {
 
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -768,7 +768,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is redirected - but there is a redirect loop") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -825,7 +825,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the response time exceeds the threshold") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -856,7 +856,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the response time is below the threshold") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -885,7 +885,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the expected keyword is not found in the response") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -916,7 +916,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the expected keyword is found in the response") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -945,7 +945,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the response body is empty") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -975,7 +975,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the response body is null") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1007,7 +1007,7 @@ class UptimeCheckerE2ETest(
             "it checks a monitor that is UP - " +
                 "the expected keyword is not found in the response - case sensitive"
         ) {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1042,7 +1042,7 @@ class UptimeCheckerE2ETest(
             "it checks a monitor that is UP - " +
                 "the expected keyword is found in the response - case insensitive"
         ) {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1072,7 +1072,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the expected keyword is not found in the response - negated") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1102,7 +1102,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the expected keyword is found in the response - negated") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1137,7 +1137,7 @@ class UptimeCheckerE2ETest(
             "it checks a monitor that is UP - " +
                 "the expected keyword is not found in the response - negated and case sensitive"
         ) {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1171,7 +1171,7 @@ class UptimeCheckerE2ETest(
             "it checks a monitor that is UP - " +
                 "the expected keyword is found in the response - negated and case sensitive"
         ) {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1204,7 +1204,7 @@ class UptimeCheckerE2ETest(
         }
 
         `when`("it checks a monitor that is UP - the expected keyword is an empty string") {
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1236,7 +1236,7 @@ class UptimeCheckerE2ETest(
             val subscriber = TestSubscriber<HttpMonitorUpEvent>()
             eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1280,7 +1280,7 @@ class UptimeCheckerE2ETest(
 
             val subscriber = TestSubscriber<HttpMonitorUpEvent>()
             eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.POST,
@@ -1308,7 +1308,7 @@ class UptimeCheckerE2ETest(
 
         `when`("it checks a monitor with explicitly set expected headers - they are matching") {
 
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1344,7 +1344,7 @@ class UptimeCheckerE2ETest(
 
         `when`("it checks a monitor with explicitly set expected headers - they are not matching") {
 
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,
@@ -1386,7 +1386,7 @@ class UptimeCheckerE2ETest(
         // configured
         `when`("it checks a monitor with headers larger than 8192 bytes") {
 
-            val monitor = createMonitor(
+            val monitor = createHttpMonitor(
                 repository = monitorRepository,
                 url = "$mockServerUrl/some-path",
                 requestMethod = HttpMethod.GET,

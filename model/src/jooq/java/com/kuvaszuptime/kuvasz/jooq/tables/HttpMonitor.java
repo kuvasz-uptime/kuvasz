@@ -100,7 +100,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     /**
      * The column <code>kuvasz.http_monitor.updated_at</code>.
      */
-    public final TableField<HttpMonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "");
+    public final TableField<HttpMonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
     /**
      * The column <code>kuvasz.http_monitor.ssl_check_enabled</code>.

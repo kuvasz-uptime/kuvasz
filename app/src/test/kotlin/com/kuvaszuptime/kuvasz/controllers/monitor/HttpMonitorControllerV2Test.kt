@@ -8,25 +8,26 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
-import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorLifecycleEvent
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
@@ -101,12 +102,12 @@ class HttpMonitorControllerV2Test(
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     integrations = setUpIntegrations
                 )
                 val now = getCurrentTimestamp()
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
@@ -141,7 +142,7 @@ class HttpMonitorControllerV2Test(
                     responseItem.name shouldBe monitor.name
                     responseItem.url.toString() shouldBe monitor.url
                     responseItem.enabled shouldBe monitor.enabled
-                    responseItem.enabled shouldBe monitor.sslCheckEnabled
+                    responseItem.sslCheckEnabled shouldBe monitor.sslCheckEnabled
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
                     responseItem.uptimeStatusStartedAt shouldBe now
                     responseItem.uptimeError shouldBe null
@@ -235,8 +236,8 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("enabled parameter is set to true") {
-                createMonitor(monitorRepository, enabled = false, monitorName = "name1")
-                val enabledMonitor = createMonitor(monitorRepository, monitorName = "name2")
+                createHttpMonitor(monitorRepository, enabled = false, monitorName = "name1")
+                val enabledMonitor = createHttpMonitor(monitorRepository, monitorName = "name2")
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = true,
                     uptimeStatus = null,
@@ -265,8 +266,8 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("enabled parameter is set to false") {
-                val disabledMonitor = createMonitor(monitorRepository, enabled = false, monitorName = "name1")
-                createMonitor(monitorRepository, monitorName = "name2")
+                val disabledMonitor = createHttpMonitor(monitorRepository, enabled = false, monitorName = "name1")
+                createHttpMonitor(monitorRepository, monitorName = "name2")
 
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = false,
@@ -296,16 +297,16 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("result is filtered by the uptime status") {
-                val upMonitor = createMonitor(monitorRepository, monitorName = "up_monitor")
-                createUptimeEventRecord(
+                val upMonitor = createHttpMonitor(monitorRepository, monitorName = "up_monitor")
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = upMonitor.id,
                     startedAt = getCurrentTimestamp(),
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
-                val downMonitor = createMonitor(monitorRepository, monitorName = "down_monitor")
-                createUptimeEventRecord(
+                val downMonitor = createHttpMonitor(monitorRepository, monitorName = "down_monitor")
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = downMonitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -333,8 +334,9 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("the filtering options are combined") {
-                val upMonitor = createMonitor(monitorRepository, monitorName = "up_ssl_monitor", sslCheckEnabled = true)
-                createUptimeEventRecord(
+                val upMonitor =
+                    createHttpMonitor(monitorRepository, monitorName = "up_ssl_monitor", sslCheckEnabled = true)
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = upMonitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -349,8 +351,8 @@ class HttpMonitorControllerV2Test(
                     endedAt = null
                 )
                 val downMonitor =
-                    createMonitor(monitorRepository, monitorName = "down_ssl_monitor", sslCheckEnabled = true)
-                createUptimeEventRecord(
+                    createHttpMonitor(monitorRepository, monitorName = "down_ssl_monitor", sslCheckEnabled = true)
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = downMonitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -400,7 +402,7 @@ class HttpMonitorControllerV2Test(
 
             `when`("the result is filtered by the SSL status") {
                 val validMonitor =
-                    createMonitor(monitorRepository, monitorName = "valid_ssl_monitor", sslCheckEnabled = true)
+                    createHttpMonitor(monitorRepository, monitorName = "valid_ssl_monitor", sslCheckEnabled = true)
                 createSSLEventRecord(
                     dslContext,
                     monitorId = validMonitor.id,
@@ -410,7 +412,7 @@ class HttpMonitorControllerV2Test(
                     sslExpiryDate = getCurrentTimestamp().plusDays(60)
                 )
                 val expiredMonitor =
-                    createMonitor(monitorRepository, monitorName = "expired_ssl_monitor", sslCheckEnabled = true)
+                    createHttpMonitor(monitorRepository, monitorName = "expired_ssl_monitor", sslCheckEnabled = true)
                 createSSLEventRecord(
                     dslContext,
                     monitorId = expiredMonitor.id,
@@ -420,7 +422,11 @@ class HttpMonitorControllerV2Test(
                     sslExpiryDate = getCurrentTimestamp().minusDays(10)
                 )
                 val willExpireMonitor =
-                    createMonitor(monitorRepository, monitorName = "will_expire_ssl_monitor", sslCheckEnabled = true)
+                    createHttpMonitor(
+                        monitorRepository,
+                        monitorName = "will_expire_ssl_monitor",
+                        sslCheckEnabled = true
+                    )
                 createSSLEventRecord(
                     dslContext,
                     monitorId = willExpireMonitor.id,
@@ -429,7 +435,7 @@ class HttpMonitorControllerV2Test(
                     endedAt = null,
                     sslExpiryDate = getCurrentTimestamp().plusDays(10)
                 )
-                val invalidButDisabledMonitor = createMonitor(
+                val invalidButDisabledMonitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "invalid_but_disabled_ssl_monitor",
                     sslCheckEnabled = false,
@@ -504,7 +510,7 @@ class HttpMonitorControllerV2Test(
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
                 )
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -525,7 +531,7 @@ class HttpMonitorControllerV2Test(
                     requestBody = "{\"key\": \"value\"}",
                 )
                 val now = getCurrentTimestamp()
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
@@ -683,7 +689,7 @@ class HttpMonitorControllerV2Test(
         given("MonitorController's getMonitorStats() endpoint") {
 
             `when`("latency history enabled, latency records are present") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -736,7 +742,7 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("latency history enabled, records are present, explicit limit is set") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -786,7 +792,7 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("latency history enabled, but no records") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = true,
@@ -823,7 +829,7 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("latency history disabled") {
-                val monitor = createMonitor(
+                val monitor = createHttpMonitor(
                     monitorRepository,
                     requestMethod = HttpMethod.HEAD,
                     latencyHistoryEnabled = false,
@@ -894,7 +900,7 @@ class HttpMonitorControllerV2Test(
 
                 then("it should create a monitor and also schedule checks for it") {
 
-                    val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                    val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
                     monitorInDb.name shouldBe createdMonitor.name
                     monitorInDb.url shouldBe createdMonitor.url
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
@@ -959,7 +965,7 @@ class HttpMonitorControllerV2Test(
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
                 then("it should create a monitor and also schedule checks for it") {
-                    val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                    val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
                     monitorInDb.name shouldBe "test_monitor2"
                     monitorInDb.name shouldBe createdMonitor.name
                     monitorInDb.url shouldBe "https://valid-url2.com"
@@ -1253,11 +1259,11 @@ class HttpMonitorControllerV2Test(
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/http-monitors/${createdMonitor.id}")
-                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
-                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 val response = client.exchange(deleteRequest).awaitFirst()
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null)
 
                 then("it should delete the monitor and also remove the checks of it") {
                     response.status shouldBe HttpStatus.NO_CONTENT
@@ -1268,7 +1274,7 @@ class HttpMonitorControllerV2Test(
 
                     // A delete event should be dispatched
                     val expectedEvent = subscriber.awaitCount(1).values().first()
-                    expectedEvent.monitorId shouldBe createdMonitor.id
+                    expectedEvent.monitor shouldBe NumericMonitorID(MonitorType.HTTP_SSL, createdMonitor.id)
                 }
             }
 
@@ -1284,8 +1290,8 @@ class HttpMonitorControllerV2Test(
                     monitorToCreate.copy(name = "another_test_monitor")
                 )
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/http-monitors/${createdMonitor.id}")
-                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
-                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
                 val statusPage1 = createStatusPage(
                     dslContext,
                     monitors = listOf(
@@ -1308,7 +1314,7 @@ class HttpMonitorControllerV2Test(
                 delay(1000) // Make sure that the status page update time is after the creation time
 
                 val response = client.exchange(deleteRequest).awaitFirst()
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null)
 
                 then("it should delete the monitor from the status pages and also remove the checks of it") {
                     response.status shouldBe HttpStatus.NO_CONTENT
@@ -1319,7 +1325,7 @@ class HttpMonitorControllerV2Test(
 
                     // A delete event should be dispatched
                     val expectedEvent = subscriber.awaitCount(1).values().first()
-                    expectedEvent.monitorId shouldBe createdMonitor.id
+                    expectedEvent.monitor shouldBe NumericMonitorID(MonitorType.HTTP_SSL, createdMonitor.id)
 
                     // The monitor should be removed from both of the status pages
                     val statusPage1InDb = statusPageRepository.findById(statusPage1.id).shouldNotBeNull()
@@ -1348,8 +1354,8 @@ class HttpMonitorControllerV2Test(
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/http-monitors/${createdMonitor.id}")
-                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
-                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
                 val statusPage1 = createStatusPage(
                     dslContext,
                     monitors = listOf(
@@ -1360,7 +1366,7 @@ class HttpMonitorControllerV2Test(
                 appConfig.disableStatusPageExternalWrite()
 
                 val ex = shouldThrow<HttpClientResponseException> { client.exchange(deleteRequest).awaitFirst() }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null)
 
                 then("it should reject the deletion and return a 400") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -1380,8 +1386,8 @@ class HttpMonitorControllerV2Test(
 
             `when`("it is called with a non existing monitor ID") {
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/http-monitors/123232")
-                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
-                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(deleteRequest).awaitFirst()
@@ -1466,11 +1472,11 @@ class HttpMonitorControllerV2Test(
                     )
                     .put(HttpMonitorUpdateDto::requestBody.name, "{\"newKey\": \"newValue\"}")
 
-                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
-                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should update the monitor and remove the checks of it") {
                     monitorInDb.name shouldBe "updated_test_monitor"
@@ -1504,7 +1510,7 @@ class HttpMonitorControllerV2Test(
 
                     // An update event should be dispatched
                     val expectedEvent = subscriber.awaitCount(1).values().first()
-                    expectedEvent.monitorId shouldBe createdMonitor.id
+                    expectedEvent.monitor shouldBe NumericMonitorID(MonitorType.HTTP_SSL, createdMonitor.id)
                 }
             }
 
@@ -1525,7 +1531,7 @@ class HttpMonitorControllerV2Test(
                     .put(HttpMonitorUpdateDto::requestMethod.name, "HEAD")
                     .put(HttpMonitorUpdateDto::latencyHistoryEnabled.name, false)
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should update the monitor and create the checks of it and update only the present props") {
                     monitorInDb.name shouldBe createdMonitor.name
@@ -1593,7 +1599,7 @@ class HttpMonitorControllerV2Test(
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .set<ObjectNode>(HttpMonitorUpdateDto::integrations.name, mapper.createArrayNode())
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
-                val monitorInDb = monitorRepository.findById(createdMonitor.id)!!
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should remove all the integrations") {
                     monitorInDb.integrations.shouldNotBeNull().shouldBeEmpty()
@@ -1621,7 +1627,7 @@ class HttpMonitorControllerV2Test(
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(HttpMonitorUpdateDto::name.name, "updated_test_monitor")
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should not change the integrations") {
                     monitorInDb.name shouldBe "updated_test_monitor"
@@ -1651,7 +1657,7 @@ class HttpMonitorControllerV2Test(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(firstCreatedMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(firstCreatedMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 409") {
                     response.status shouldBe HttpStatus.CONFLICT
@@ -1661,11 +1667,11 @@ class HttpMonitorControllerV2Test(
 
             `when`("it is called to update a monitor's name that is also present on a status page - writable") {
 
-                val monitor1 = createMonitor(
+                val monitor1 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor1",
                 )
-                val monitor2 = createMonitor(
+                val monitor2 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor2",
                 )
@@ -1688,7 +1694,7 @@ class HttpMonitorControllerV2Test(
                     .put(HttpMonitorUpdateDto::name.name, "updated_monitor1")
 
                 monitorClient.updateMonitor(monitor1.id, updateDto)
-                val monitorInDb = monitorRepository.findById(monitor1.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(monitor1.id, null).shouldNotBeNull()
                 val statusPage1InDb = statusPageRepository.findById(statusPage1.id).shouldNotBeNull()
                 val statusPage2InDb = statusPageRepository.findById(statusPage2.id).shouldNotBeNull()
 
@@ -1710,11 +1716,11 @@ class HttpMonitorControllerV2Test(
 
             `when`("it is called to update a monitor's name that is NOT present on a non-writable status page") {
 
-                val monitor1 = createMonitor(
+                val monitor1 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor1",
                 )
-                val monitor2 = createMonitor(
+                val monitor2 = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor2",
                 )
@@ -1732,7 +1738,7 @@ class HttpMonitorControllerV2Test(
                     .put(HttpMonitorUpdateDto::name.name, "updated_monitor1")
 
                 monitorClient.updateMonitor(monitor1.id, updateDto)
-                val monitorInDb = monitorRepository.findById(monitor1.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(monitor1.id, null).shouldNotBeNull()
 
                 then("it should update the monitor") {
                     monitorInDb.name shouldBe "updated_monitor1"
@@ -1742,7 +1748,7 @@ class HttpMonitorControllerV2Test(
 
             `when`("it is called to update a monitor's name that is present on a non-writable a status page") {
 
-                val createdMonitor = createMonitor(
+                val createdMonitor = createHttpMonitor(
                     monitorRepository,
                     monitorName = "monitor1",
                 )
@@ -1760,7 +1766,7 @@ class HttpMonitorControllerV2Test(
                 val ex = shouldThrow<HttpClientResponseException> {
                     monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should not let the update happen and return a 400") {
 
@@ -1790,7 +1796,7 @@ class HttpMonitorControllerV2Test(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -1812,13 +1818,13 @@ class HttpMonitorControllerV2Test(
                     .putNull(HttpMonitorUpdateDto::enabled.name)
                 val updateRequest =
                     HttpRequest.PATCH("/api/v2/http-monitors/${createdMonitor.id}", updateDto)
-                val subscriber = TestSubscriber<HttpMonitorLifecycleEvent>()
-                eventDispatcher.subscribeToHttpMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
 
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -1845,7 +1851,7 @@ class HttpMonitorControllerV2Test(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -1870,7 +1876,7 @@ class HttpMonitorControllerV2Test(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -1911,7 +1917,7 @@ class HttpMonitorControllerV2Test(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
@@ -1938,7 +1944,7 @@ class HttpMonitorControllerV2Test(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
@@ -1960,7 +1966,7 @@ class HttpMonitorControllerV2Test(
                 val updateRequest =
                     HttpRequest.PATCH("/api/v2/http-monitors/${createdMonitor.id}", updateDto)
                 val response = client.exchange(updateRequest).awaitFirst()
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should not update the field and return a 200") {
                     response.status shouldBe HttpStatus.OK
@@ -1983,7 +1989,7 @@ class HttpMonitorControllerV2Test(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -2008,7 +2014,7 @@ class HttpMonitorControllerV2Test(
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     ex.status shouldBe HttpStatus.BAD_REQUEST
@@ -2036,7 +2042,7 @@ class HttpMonitorControllerV2Test(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
@@ -2065,7 +2071,7 @@ class HttpMonitorControllerV2Test(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
@@ -2093,7 +2099,7 @@ class HttpMonitorControllerV2Test(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
@@ -2118,7 +2124,7 @@ class HttpMonitorControllerV2Test(
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange(updateRequest).awaitFirst()
                 }
-                val monitorInDb = monitorRepository.findById(createdMonitor.id).shouldNotBeNull()
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
@@ -2130,25 +2136,25 @@ class HttpMonitorControllerV2Test(
 
         given("MonitorController's getUptimeEvents() endpoint") {
             `when`("there is a monitor with the given ID in the database with uptime events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, monitorName = "another_monitor")
+                    createHttpMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now,
                     status = UptimeStatus.UP,
                     endedAt = null
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = now.minusDays(1),
                     status = UptimeStatus.DOWN,
                     endedAt = now
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = anotherMonitor.id,
                     startedAt = now,
@@ -2166,7 +2172,7 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("there is a monitor with the given ID in the database without uptime events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
 
                 then("it should return an empty list") {
                     val response = monitorClient.getUptimeEvents(monitorId = monitor.id)
@@ -2186,9 +2192,9 @@ class HttpMonitorControllerV2Test(
 
         given("MonitorController's getSSLEvents() endpoint") {
             `when`("there is a monitor with the given ID in the database with SSL events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
                 val anotherMonitor =
-                    createMonitor(monitorRepository, monitorName = "another_monitor")
+                    createHttpMonitor(monitorRepository, monitorName = "another_monitor")
                 val now = getCurrentTimestamp()
                 createSSLEventRecord(
                     dslContext,
@@ -2226,7 +2232,7 @@ class HttpMonitorControllerV2Test(
             }
 
             `when`("there is a monitor with the given ID in the database without ssl events") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
 
                 then("it should return an empty list") {
                     val response = monitorClient.getSSLEvents(monitorId = monitor.id)

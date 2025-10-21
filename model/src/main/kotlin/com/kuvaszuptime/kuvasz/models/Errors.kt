@@ -10,13 +10,10 @@ data class ServiceError(
 
 sealed class ResourceNotFoundException : Exception()
 
-sealed class MonitorNotFoundException(
-    val monitorType: MonitorType,
+class MonitorNotFoundException(
     val monitorId: Long,
-    override val message: String? = "There is no ${monitorType.identifier.uppercase()} monitor with ID: $monitorId",
+    override val message: String? = "There is no monitor with ID: $monitorId",
 ) : ResourceNotFoundException()
-
-class HttpMonitorNotFoundException(monitorId: Long) : MonitorNotFoundException(MonitorType.HTTP_SSL, monitorId)
 
 open class PersistenceException(
     override val message: String? = "Something bad happened in the database :("
@@ -27,7 +24,7 @@ open class DuplicationException(
 ) : PersistenceException()
 
 class MonitorDuplicatedException(
-    override val message: String? = "There is already a monitor with the given name"
+    override val message: String? = "There is already a monitor with the given name/client secret"
 ) : DuplicationException()
 
 class SchedulingException(

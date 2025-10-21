@@ -3,10 +3,13 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -14,13 +17,18 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.date.shouldBeAfter
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldHaveLength
@@ -31,32 +39,37 @@ import io.mockk.clearAllMocks
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlinx.coroutines.delay
 import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
 class DatabaseEventHandlerTest(
-    uptimeEventRepository: HttpUptimeEventRepository,
+    httpUptimeEventRepository: HttpUptimeEventRepository,
+    pushUptimeEventRepository: PushUptimeEventRepository,
     latencyLogRepository: HttpLatencyLogRepository,
-    monitorRepository: HttpMonitorRepository,
+    httpMonitorRepository: HttpMonitorRepository,
+    pushMonitorRepository: PushMonitorRepository,
     sslEventRepository: SSLEventRepository,
     dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     init {
         val eventDispatcher = EventDispatcher()
-        val uptimeEventRepositorySpy = spyk(uptimeEventRepository)
+        val httpUptimeEventRepositorySpy = spyk(httpUptimeEventRepository)
+        val pushUptimeEventRepositorySpy = spyk(pushUptimeEventRepository)
         val latencyLogRepositorySpy = spyk(latencyLogRepository)
         val sslEventRepositorySpy = spyk(sslEventRepository)
         DatabaseEventHandler(
             eventDispatcher,
-            uptimeEventRepositorySpy,
+            httpUptimeEventRepositorySpy,
+            pushUptimeEventRepositorySpy,
             latencyLogRepositorySpy,
             sslEventRepositorySpy,
             dslContext,
         )
 
-        given("the DatabaseEventHandler - UPTIME events") {
+        given("the DatabaseEventHandler - HTTP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -66,11 +79,11 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(event)
 
                 then("it should insert a new UptimeEvent record with status UP and a LatencyLog record") {
-                    val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+                    val expectedUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
                     val expectedLatencyRecord = latencyLogRepository.fetchLatestByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
-                    verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { httpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
                     verify(exactly = 1) {
                         latencyLogRepositorySpy.insertLatencyForMonitor(
                             event.monitor.id,
@@ -89,7 +102,7 @@ class DatabaseEventHandlerTest(
 
             `when`("it receives a MonitorUpEvent and latency history is disabled") {
 
-                val monitor = createMonitor(monitorRepository, latencyHistoryEnabled = false)
+                val monitor = createHttpMonitor(httpMonitorRepository, latencyHistoryEnabled = false)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -100,16 +113,16 @@ class DatabaseEventHandlerTest(
 
                 then("it should NOT save the latency log record") {
 
-                    uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+                    httpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
                     latencyLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
 
-                    verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
+                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
                     verify(exactly = 0) { latencyLogRepositorySpy.insertLatencyForMonitor(any(), any(), any()) }
                 }
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -119,10 +132,10 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(event)
 
                 then("it should insert a new UptimeEvent record with status DOWN") {
-                    val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+                    val expectedUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(event) }
-                    verify(exactly = 0) { uptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { httpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
@@ -132,7 +145,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -140,7 +153,7 @@ class DatabaseEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -151,13 +164,13 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should not insert a new UptimeEvent record but should create a LatencyLog record") {
-                    val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                    val expectedUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
                     val latencyRecords =
                         latencyLogRepository.fetchLatestByMonitorId(monitor.id).sortedBy { it.createdAt }
 
-                    verify(exactly = 1) { uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
+                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
                     verify(exactly = 0) {
-                        uptimeEventRepositorySpy.endEventById(any(), any(), any())
+                        httpUptimeEventRepositorySpy.endEventById(any(), any(), any())
                     }
                     verifyOrder {
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, firstEvent.latency, any())
@@ -174,7 +187,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -182,7 +195,7 @@ class DatabaseEventHandlerTest(
                     error = Exception()
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -193,18 +206,18 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should create a new UptimeEvent and a LatencyLog record, and end the previous one") {
-                    val uptimeRecords = uptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = httpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
                     val latencyRecord = latencyLogRepository.fetchLatestByMonitorId(monitor.id).single()
 
                     verifyOrder {
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        httpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, secondEvent.latency, any())
-                        uptimeEventRepositorySpy.endEventById(
+                        httpUptimeEventRepositorySpy.endEventById(
                             eventId = firstUptimeRecord.id,
                             endedAt = secondEvent.dispatchedAt,
                             ctx = any()
                         )
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                        httpUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
                     }
 
                     uptimeRecords[0].status shouldBe UptimeStatus.DOWN
@@ -218,7 +231,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -226,7 +239,7 @@ class DatabaseEventHandlerTest(
                     latency = 1000
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -237,18 +250,18 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(secondEvent)
 
                 then("it should create a new UptimeEvent record and end the previous one") {
-                    val uptimeRecords = uptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = httpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
                     val latencyRecord = latencyLogRepository.fetchLatestByMonitorId(monitor.id).single()
 
                     verifyOrder {
                         latencyLogRepositorySpy.insertLatencyForMonitor(monitor.id, firstEvent.latency, any())
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
-                        uptimeEventRepositorySpy.endEventById(
+                        httpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        httpUptimeEventRepositorySpy.endEventById(
                             eventId = firstUptimeRecord.id,
                             endedAt = secondEvent.dispatchedAt,
                             ctx = any()
                         )
-                        uptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                        httpUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
                     }
 
                     uptimeRecords[0].status shouldBe UptimeStatus.UP
@@ -263,7 +276,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent - error message needs to be redacted") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = null,
@@ -273,7 +286,7 @@ class DatabaseEventHandlerTest(
                 eventDispatcher.dispatch(event)
 
                 then("it should limit the error message to 255 characters and indicate that it was redacted") {
-                    val expectedUptimeRecord = uptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+                    val expectedUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
                     expectedUptimeRecord.error shouldHaveLength 255 + 8 + 14 // Prefix + 255 + suffix
                     expectedUptimeRecord.error shouldStartWith "Reason: "
@@ -282,9 +295,229 @@ class DatabaseEventHandlerTest(
             }
         }
 
+        given("the DatabaseEventHandler - PUSH UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(event)
+
+                then("it should insert a new UptimeEvent record with status UP") {
+                    val expectedUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { pushUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { pushUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = "missed heartbeat"
+                )
+                eventDispatcher.dispatch(event)
+
+                then("it should insert a new UptimeEvent record with status DOWN") {
+                    val expectedUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { pushUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { pushUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should not insert a new UptimeEvent record") {
+                    val expectedUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                    verify(exactly = 1) { pushUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
+                    verify(exactly = 0) {
+                        pushUptimeEventRepositorySpy.endEventById(any(), any(), any())
+                    }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = "missed something"
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should create a new UptimeEvent and end the previous one") {
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+
+                    verifyOrder {
+                        pushUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        pushUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        pushUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.UP
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "missed heartbeat",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should create a new UptimeEvent record and end the previous one") {
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+
+                    verifyOrder {
+                        pushUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        pushUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        pushUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.UP
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].error shouldBe "Reason: missed heartbeat"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "first error",
+                    previousEvent = null,
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                delay(1000)
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "missed heartbeat",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should update the updatedAt timestamp on the previous event") {
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
+
+                    verifyOrder {
+                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                    }
+
+                    uptimeRecords.shouldHaveSize(1).forOne { event ->
+                        event.status shouldBe UptimeStatus.DOWN
+                        event.endedAt.shouldBeNull()
+                        event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
+                        event.error shouldBe firstUptimeRecord.error
+                    }
+                }
+            }
+
+            `when`("it receives a manual MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "first error",
+                    previousEvent = null,
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                delay(1000)
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "missed heartbeat",
+                    previousEvent = firstUptimeRecord,
+                    isManual = true,
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should update the updatedAt timestamp and also the error on the previous event") {
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
+
+                    verifyOrder {
+                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                    }
+
+                    uptimeRecords.shouldHaveSize(1).forOne { event ->
+                        event.status shouldBe UptimeStatus.DOWN
+                        event.endedAt.shouldBeNull()
+                        event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
+                        event.error shouldBe "Reason: ${secondEvent.error}"
+                    }
+                }
+            }
+        }
+
         given("the DatabaseEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -307,7 +540,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -331,7 +564,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -361,7 +594,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -398,7 +631,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -435,7 +668,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -458,7 +691,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -488,7 +721,7 @@ class DatabaseEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),

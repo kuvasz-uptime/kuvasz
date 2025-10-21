@@ -2,9 +2,9 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
@@ -38,7 +38,7 @@ class HttpMonitorActionsTest(
 ) : DatabaseBehaviorSpec() {
     init {
 
-        given("the getDataOfEnabledMonitors() method") {
+        given("the getStatusPageDataOfEnabledMonitors() method") {
 
             fun randomUptimeEventCalculationContext() = UptimeEventCalculationContext(
                 monitorId = Random.nextLong(),
@@ -52,13 +52,13 @@ class HttpMonitorActionsTest(
             `when`("it is called without monitorIds") {
 
                 val testPeriod = Duration.ofDays(7)
-                val enabledMonitor = createMonitor(
+                val enabledMonitor = createHttpMonitor(
                     httpMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
                     latencyHistoryEnabled = true,
                 )
-                val enabledMonitor2 = createMonitor(
+                val enabledMonitor2 = createHttpMonitor(
                     httpMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor2",
@@ -97,8 +97,8 @@ class HttpMonitorActionsTest(
                     p99 = 3129,
                 )
 
-                createMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
-                val enabledMonitorsUptimeEvent = createUptimeEventRecord(
+                createHttpMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
+                val enabledMonitorsUptimeEvent = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor.id,
                     status = UptimeStatus.UP,
@@ -106,7 +106,7 @@ class HttpMonitorActionsTest(
                     endedAt = null,
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-                val enabledMonitorsUptimeEvent2 = createUptimeEventRecord(
+                val enabledMonitorsUptimeEvent2 = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor2.id,
                     status = UptimeStatus.DOWN,
@@ -130,7 +130,7 @@ class HttpMonitorActionsTest(
                 } returns listOf(StatusHistoryDto(LocalDate.now(), 34))
 
                 // Executing the method under test
-                val result = httpMonitorActions.getDataOfEnabledMonitors(
+                val result = httpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
                     monitorIds = null,
                 )
@@ -164,13 +164,13 @@ class HttpMonitorActionsTest(
             `when`("it is called with explicit monitorIds") {
 
                 val testPeriod = Duration.ofDays(7)
-                val enabledMonitor = createMonitor(
+                val enabledMonitor = createHttpMonitor(
                     httpMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
                     latencyHistoryEnabled = true,
                 )
-                val enabledMonitor2 = createMonitor(
+                val enabledMonitor2 = createHttpMonitor(
                     httpMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor2",
@@ -200,8 +200,8 @@ class HttpMonitorActionsTest(
                     p99 = 3129,
                 )
 
-                createMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
-                val enabledMonitorsUptimeEvent = createUptimeEventRecord(
+                createHttpMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
+                val enabledMonitorsUptimeEvent = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor.id,
                     status = UptimeStatus.UP,
@@ -209,7 +209,7 @@ class HttpMonitorActionsTest(
                     endedAt = null,
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-                createUptimeEventRecord(
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor2.id,
                     status = UptimeStatus.DOWN,
@@ -227,7 +227,7 @@ class HttpMonitorActionsTest(
                 } returns listOf(StatusHistoryDto(LocalDate.now(), 12))
 
                 // Executing the method under test
-                val result = httpMonitorActions.getDataOfEnabledMonitors(
+                val result = httpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
                     monitorIds = listOf(enabledMonitor.monitorId())
                 )

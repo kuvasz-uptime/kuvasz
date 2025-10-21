@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
@@ -39,6 +41,8 @@ class IncidentRepository(private val dslContext: DSLContext) {
         return dslContext
             // HTTP incidents
             .httpUptimeIncidentSelect(monitorId, period, includeResolved)
+            // Push incidents
+            .unionAll(dslContext.pushUptimeIncidentSelect(monitorId, period, includeResolved))
             // SSL incidents
             .unionAll(dslContext.sslIncidentsSelect(monitorId, period, includeResolved))
             .orderBy(DSL.field(orderFieldName).desc())
@@ -81,6 +85,45 @@ class IncidentRepository(private val dslContext: DSLContext) {
             // Filter out resolved incidents if not requested
             if (!includeResolved) {
                 and(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
+            }
+        }
+
+    @Suppress("IgnoredReturnValue")
+    private fun DSLContext.pushUptimeIncidentSelect(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean
+    ) = this
+        .select(
+            PUSH_MONITOR.ID.`as`(IncidentDto::monitorId.name),
+            PUSH_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            PUSH_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
+            DSL.inline(IncidentType.PUSH.name).`as`(IncidentDto::incidentType.name),
+            DSL.`when`(PUSH_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
+                .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
+            PUSH_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
+            PUSH_UPTIME_EVENT.STARTED_AT.`as`(IncidentDto::startedAt.name),
+            PUSH_UPTIME_EVENT.ENDED_AT.`as`(IncidentDto::endedAt.name),
+            PUSH_UPTIME_EVENT.UPDATED_AT.`as`(IncidentDto::updatedAt.name),
+        )
+        .from(PUSH_UPTIME_EVENT)
+        .join(PUSH_MONITOR).on(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))
+        .where(PUSH_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+        .apply {
+            // Filter for monitors
+            if (monitorId != null) {
+                and(PUSH_MONITOR.ID.eq(monitorId))
+            } else {
+                and(PUSH_MONITOR.ENABLED.isTrue)
+            }
+            // Filter for events that were open at any point during the specified period
+            period?.let {
+                val periodStart = getCurrentTimestamp().minus(period)
+                and(DSL.coalesce(PUSH_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            }
+            // Filter out resolved incidents if not requested
+            if (!includeResolved) {
+                and(PUSH_UPTIME_EVENT.ENDED_AT.isNull)
             }
         }
 
@@ -133,6 +176,19 @@ class IncidentRepository(private val dslContext: DSLContext) {
 
         return dslContext
             .httpUptimeIncidentSelect(monitorId, period, includeResolved)
+            .orderBy(DSL.field(orderFieldName).desc())
+            .fetchInto(IncidentDto::class.java)
+    }
+
+    fun getPushUptimeIncidents(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean,
+    ): List<IncidentDto> {
+        val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
+
+        return dslContext
+            .pushUptimeIncidentSelect(monitorId, period, includeResolved)
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }

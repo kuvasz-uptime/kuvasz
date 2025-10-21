@@ -5,14 +5,20 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -29,7 +35,8 @@ import kotlinx.coroutines.reactive.awaitFirst
 @MicronautTest(environments = ["full-integrations-setup"])
 class MonitorControllerV2Test(
     @param:Client("/") private val client: HttpClient,
-    private val monitorRepository: HttpMonitorRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -39,12 +46,12 @@ class MonitorControllerV2Test(
                 .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
 
             `when`("there are monitors in the database") {
-                val monitor = createMonitor(
-                    monitorRepository,
+                val httpMonitor = createHttpMonitor(
+                    httpMonitorRepository,
                     monitorName = "irrelevant",
                 )
-                val monitor2 = createMonitor(
-                    monitorRepository,
+                val httpMonitor2 = createHttpMonitor(
+                    httpMonitorRepository,
                     enabled = false,
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
@@ -77,7 +84,28 @@ class MonitorControllerV2Test(
                         "MY-FANCY-`HEADER`" to "ValueWithBackticks"
                     ),
                     requestBody = "{\"key\": \"value\"}",
+                    integrations = listOf(
+                        IntegrationID(IntegrationType.SLACK, "disabled"),
+                        IntegrationID(IntegrationType.DISCORD, "global"),
+                    )
                 )
+                val pushMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    monitorName = "irrelevant3",
+                    integrations = listOf(
+                        IntegrationID(IntegrationType.EMAIL, "Global-343"),
+                        IntegrationID(IntegrationType.PAGERDUTY, "global"),
+                    )
+                )
+                val pushMonitor2 = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = false,
+                    heartbeatInterval = 12345,
+                    monitorName = "irrelevant4",
+                    gracePeriod = 54321,
+                    clientSecret = "ab".repeat(18),
+                )
+
                 val request = HttpRequest.GET<Any>("/api/v2/monitors/export/yaml").accept(MediaType.APPLICATION_YAML)
 
                 then("it should export them in YAML format") {
@@ -91,42 +119,70 @@ class MonitorControllerV2Test(
                     }
                     response.headers[HttpHeaders.CONTENT_TYPE] shouldBe MediaType.APPLICATION_YAML
 
-                    val exportedMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
-                    val parsedMonitors =
-                        mapper.convertValue<List<HttpMonitorExportDto>>(exportedMonitorsRaw).shouldNotBeEmpty()
+                    val exportedHttpMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
+                    val parsedHttpMonitors =
+                        mapper.convertValue<List<HttpMonitorExportDto>>(exportedHttpMonitorsRaw).shouldNotBeEmpty()
 
-                    parsedMonitors.size shouldBe 2
-                    parsedMonitors.forOne { firstMonitor ->
-                        firstMonitor.name shouldBe monitor.name
-                        firstMonitor.url shouldBe monitor.url
-                        firstMonitor.uptimeCheckInterval shouldBe monitor.uptimeCheckInterval
-                        firstMonitor.enabled shouldBe monitor.enabled
-                        firstMonitor.sslCheckEnabled shouldBe monitor.sslCheckEnabled
-                        firstMonitor.requestMethod shouldBe monitor.requestMethod
-                        firstMonitor.latencyHistoryEnabled shouldBe monitor.latencyHistoryEnabled
-                        firstMonitor.forceNoCache shouldBe monitor.forceNoCache
-                        firstMonitor.followRedirects shouldBe monitor.followRedirects
-                        firstMonitor.sslExpiryThreshold shouldBe monitor.sslExpiryThreshold
+                    parsedHttpMonitors.size shouldBe 2
+                    parsedHttpMonitors.forOne { firstMonitor ->
+                        firstMonitor.name shouldBe httpMonitor.name
+                        firstMonitor.url shouldBe httpMonitor.url
+                        firstMonitor.uptimeCheckInterval shouldBe httpMonitor.uptimeCheckInterval
+                        firstMonitor.enabled shouldBe httpMonitor.enabled
+                        firstMonitor.sslCheckEnabled shouldBe httpMonitor.sslCheckEnabled
+                        firstMonitor.requestMethod shouldBe httpMonitor.requestMethod
+                        firstMonitor.latencyHistoryEnabled shouldBe httpMonitor.latencyHistoryEnabled
+                        firstMonitor.forceNoCache shouldBe httpMonitor.forceNoCache
+                        firstMonitor.followRedirects shouldBe httpMonitor.followRedirects
+                        firstMonitor.sslExpiryThreshold shouldBe httpMonitor.sslExpiryThreshold
                     }
-                    parsedMonitors.forOne { secondMonitor ->
-                        secondMonitor.name shouldBe monitor2.name
-                        secondMonitor.url shouldBe monitor2.url
-                        secondMonitor.uptimeCheckInterval shouldBe monitor2.uptimeCheckInterval
-                        secondMonitor.enabled shouldBe monitor2.enabled
-                        secondMonitor.sslCheckEnabled shouldBe monitor2.sslCheckEnabled
-                        secondMonitor.requestMethod shouldBe monitor2.requestMethod
-                        secondMonitor.latencyHistoryEnabled shouldBe monitor2.latencyHistoryEnabled
-                        secondMonitor.forceNoCache shouldBe monitor2.forceNoCache
-                        secondMonitor.followRedirects shouldBe monitor2.followRedirects
-                        secondMonitor.sslExpiryThreshold shouldBe monitor2.sslExpiryThreshold
-                        secondMonitor.expectedStatusCodes shouldBe monitor2.expectedStatusCodes.toSet()
-                        secondMonitor.responseTimeThresholdMillis shouldBe monitor2.responseTimeThresholdMillis
-                        secondMonitor.expectedKeyword shouldBe monitor2.expectedKeyword
-                        secondMonitor.expectedKeywordCaseSensitive shouldBe monitor2.expectedKeywordCaseSensitive
-                        secondMonitor.expectedKeywordNegated shouldBe monitor2.expectedKeywordNegated
-                        secondMonitor.requestHeaders shouldBe monitor2.requestHeadersAsMap()
-                        secondMonitor.expectedHeaders shouldBe monitor2.expectedHeadersAsMap()
-                        secondMonitor.requestBody shouldBe monitor2.requestBody
+                    parsedHttpMonitors.forOne { secondMonitor ->
+                        secondMonitor.name shouldBe httpMonitor2.name
+                        secondMonitor.url shouldBe httpMonitor2.url
+                        secondMonitor.uptimeCheckInterval shouldBe httpMonitor2.uptimeCheckInterval
+                        secondMonitor.enabled shouldBe httpMonitor2.enabled
+                        secondMonitor.sslCheckEnabled shouldBe httpMonitor2.sslCheckEnabled
+                        secondMonitor.requestMethod shouldBe httpMonitor2.requestMethod
+                        secondMonitor.latencyHistoryEnabled shouldBe httpMonitor2.latencyHistoryEnabled
+                        secondMonitor.forceNoCache shouldBe httpMonitor2.forceNoCache
+                        secondMonitor.followRedirects shouldBe httpMonitor2.followRedirects
+                        secondMonitor.sslExpiryThreshold shouldBe httpMonitor2.sslExpiryThreshold
+                        secondMonitor.expectedStatusCodes shouldBe httpMonitor2.expectedStatusCodes.toSet()
+                        secondMonitor.responseTimeThresholdMillis shouldBe httpMonitor2.responseTimeThresholdMillis
+                        secondMonitor.expectedKeyword shouldBe httpMonitor2.expectedKeyword
+                        secondMonitor.expectedKeywordCaseSensitive shouldBe httpMonitor2.expectedKeywordCaseSensitive
+                        secondMonitor.expectedKeywordNegated shouldBe httpMonitor2.expectedKeywordNegated
+                        secondMonitor.requestHeaders shouldBe httpMonitor2.requestHeadersAsMap()
+                        secondMonitor.expectedHeaders shouldBe httpMonitor2.expectedHeadersAsMap()
+                        secondMonitor.requestBody shouldBe httpMonitor2.requestBody
+                        secondMonitor.integrations shouldContainExactlyInAnyOrder setOf(
+                            IntegrationID(IntegrationType.SLACK, "disabled"),
+                            IntegrationID(IntegrationType.DISCORD, "global"),
+                        )
+                    }
+
+                    val exportedPushMonitorsRaw = mapper.readTree(responseBody)["push-monitors"].shouldNotBeNull()
+                    val parsedPushMonitors =
+                        mapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldNotBeEmpty()
+                    parsedPushMonitors.size shouldBe 2
+                    parsedPushMonitors.forOne { firstMonitor ->
+                        firstMonitor.name shouldBe pushMonitor.name
+                        firstMonitor.heartbeatInterval shouldBe pushMonitor.heartbeatInterval
+                        firstMonitor.gracePeriod shouldBe pushMonitor.gracePeriod
+                        firstMonitor.clientSecret shouldBe pushMonitor.clientSecret
+                        firstMonitor.enabled shouldBe pushMonitor.enabled
+                        firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
+                            IntegrationID(IntegrationType.EMAIL, "Global-343"),
+                            IntegrationID(IntegrationType.PAGERDUTY, "global"),
+                        )
+                    }
+                    parsedPushMonitors.forOne { secondMonitor ->
+                        secondMonitor.name shouldBe pushMonitor2.name
+                        secondMonitor.heartbeatInterval shouldBe pushMonitor2.heartbeatInterval
+                        secondMonitor.gracePeriod shouldBe pushMonitor2.gracePeriod
+                        secondMonitor.clientSecret shouldBe pushMonitor2.clientSecret
+                        secondMonitor.enabled shouldBe pushMonitor2.enabled
+                        secondMonitor.integrations.shouldBeEmpty()
                     }
                 }
             }
@@ -140,8 +196,10 @@ class MonitorControllerV2Test(
                     val responseBody = response.getBodyAs<ByteArray>()
 
                     response.status shouldBe HttpStatus.OK
-                    val exportedMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
-                    mapper.convertValue<List<HttpMonitorExportDto>>(exportedMonitorsRaw).shouldBeEmpty()
+                    val exportedHttpMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
+                    mapper.convertValue<List<HttpMonitorExportDto>>(exportedHttpMonitorsRaw).shouldBeEmpty()
+                    val exportedPushMonitorsRaw = mapper.readTree(responseBody)["push-monitors"].shouldNotBeNull()
+                    mapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldBeEmpty()
                 }
             }
         }

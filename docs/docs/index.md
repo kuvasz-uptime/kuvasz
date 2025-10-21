@@ -22,7 +22,7 @@
 
     ---
 
-    With flexible configuration, adjustable intervals, headers, keyword matching, expected response status codes, response time checks and more.
+    With flexible configuration, adjustable intervals, headers, keyword matching, expected response status codes, response time checks, and more.
 
     [:octicons-arrow-right-24: HTTP monitoring](features/http-monitoring.md)
 
@@ -33,6 +33,14 @@
     Kuvasz checks your SSL certificates every day, and notifies you before they expire.
 
     [:octicons-arrow-right-24: SSL monitoring](features/ssl-monitoring.md)
+
+-   :heartbeat:{ .lg .card-header-icon } __Push (a.k.a. "cron") monitors__
+
+    ---
+
+    Kuvasz supports to monitor your cron jobs, backups, and other scheduled tasks in a push-based manner.
+
+    [:octicons-arrow-right-24: Push monitors](features/push-monitoring.md)
 
 -   :bell:{ .lg .card-header-icon } __Notifications__
 
@@ -124,8 +132,8 @@
 | Custom headers                            |       ✅       |        ❌         |        ✅         |
 | Custom request body                       |       ✅       |        ❌         |        ✅         |
 | **SSL monitoring**                        |       ✅       |        ❌         |        ✅         |
+| **Heartbeat (push) monitoring**           |       ✅       |        ❌         |        ✅         |
 | **Ping (ICMP) monitoring**                |      📆       |        ✅         |        ✅         |
-| **Heartbeat monitoring**                  |      📆       |        ❌         |        ✅         |
 | **Port monitoring**                       |       ❌       |        ✅         |        ✅         |
 | **DNS monitoring**                        |       ❌       |        ❌         |        ✅         |
 | **Domain expiration monitoring**          |       ❌       |        ❌         |        ✅         |

@@ -4,10 +4,13 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
@@ -16,6 +19,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -23,12 +27,12 @@ import org.jooq.DSLContext
 import java.time.OffsetDateTime
 import java.util.UUID
 
-fun createMonitor(
+fun createHttpMonitor(
     repository: HttpMonitorRepository,
     enabled: Boolean = true,
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
-    monitorName: String = UUID.randomUUID().toString(),
+    monitorName: String = randomClientSecret(),
     url: String = "http://irrelevant.com",
     requestMethod: HttpMethod = HttpMethod.GET,
     latencyHistoryEnabled: Boolean = true,
@@ -70,7 +74,29 @@ fun createMonitor(
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 
-fun createUptimeEventRecord(
+fun createPushMonitor(
+    repository: PushMonitorRepository,
+    enabled: Boolean = true,
+    heartbeatInterval: Long = 300,
+    gracePeriod: Long = 0,
+    clientSecret: String = randomClientSecret(),
+    monitorName: String = randomClientSecret(),
+    integrations: List<IntegrationID> = emptyList(),
+    lastHeartbeat: OffsetDateTime? = null
+): PushMonitorRecord {
+    val monitor = PushMonitorRecord()
+        .setName(monitorName)
+        .setHeartbeatInterval(heartbeatInterval)
+        .setGracePeriod(gracePeriod)
+        .setClientSecret(clientSecret)
+        .setEnabled(enabled)
+        .setCreatedAt(getCurrentTimestamp())
+        .setIntegrations(integrations.toTypedArray())
+        .setLastHeartbeat(lastHeartbeat)
+    return repository.returningInsert(monitor)
+}
+
+fun createHttpUptimeEventRecord(
     dslContext: DSLContext,
     monitorId: Long,
     status: UptimeStatus = UptimeStatus.UP,
@@ -91,6 +117,28 @@ fun createUptimeEventRecord(
     )
     .returning(HTTP_UPTIME_EVENT.asterisk())
     .fetchOneOrThrow<HttpUptimeEventRecord>()
+
+fun createPushUptimeEventRecord(
+    dslContext: DSLContext,
+    monitorId: Long,
+    status: UptimeStatus = UptimeStatus.UP,
+    startedAt: OffsetDateTime,
+    endedAt: OffsetDateTime?,
+    error: String? = null,
+    updatedAt: OffsetDateTime? = null,
+) = dslContext
+    .insertInto(PUSH_UPTIME_EVENT)
+    .set(
+        PushUptimeEventRecord()
+            .setMonitorId(monitorId)
+            .setStatus(status)
+            .setStartedAt(startedAt)
+            .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
+            .setEndedAt(endedAt)
+            .setError(error)
+    )
+    .returning(PUSH_UPTIME_EVENT.asterisk())
+    .fetchOneOrThrow<PushUptimeEventRecord>()
 
 fun createSSLEventRecord(
     dslContext: DSLContext,
@@ -122,7 +170,7 @@ fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plus
 fun createStatusPage(
     dslContext: DSLContext,
     title: String = "Status Page",
-    slug: String = UUID.randomUUID().toString(),
+    slug: String = randomClientSecret(),
     public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
     monitors: List<MonitorID> = emptyList(),
     customLogoUrl: String? = null,
@@ -140,3 +188,5 @@ fun createStatusPage(
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()
+
+fun randomClientSecret() = UUID.randomUUID().toString()

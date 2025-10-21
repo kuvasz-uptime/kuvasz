@@ -1,9 +1,13 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micronaut.context.annotation.Context
@@ -13,7 +17,8 @@ import org.slf4j.LoggerFactory
 @Context
 class DatabaseEventHandler(
     private val eventDispatcher: EventDispatcher,
-    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val httpUptimeEventRepository: HttpUptimeEventRepository,
+    private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
     private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
@@ -28,15 +33,19 @@ class DatabaseEventHandler(
 
     private fun subscribeToEvents() {
         eventDispatcher.subscribeToHttpMonitorUpEvents { event ->
-            logger.debug("A MonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            logger.debug("An HttpMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
             if (event.monitor.latencyHistoryEnabled) {
                 latencyLogRepository.insertLatencyForMonitor(event.monitor.id, event.latency)
             }
-            handleHttpUptimeMonitorEvent(event)
+            handleUptimeMonitorEvent(event)
         }
         eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
-            logger.debug("A MonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
-            handleHttpUptimeMonitorEvent(event)
+            logger.debug("An HttpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
+            handleUptimeMonitorEvent(event)
+        }
+        eventDispatcher.subscribeToPushMonitorEvents { event ->
+            logger.debug("A ${event::class.simpleName} has been received for monitor with ID: ${event.monitor.id}")
+            handleUptimeMonitorEvent(event)
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->
             logger.debug("An SSLValidEvent has been received for monitor with ID: ${event.monitor.id}")
@@ -52,7 +61,7 @@ class DatabaseEventHandler(
         }
     }
 
-    private fun handleHttpUptimeMonitorEvent(currentEvent: HttpUptimeMonitorEvent) {
+    private fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {
         currentEvent.previousEvent?.let { previousEvent ->
             logger.debug(
                 "A previous event was found for [${currentEvent.monitor.name}] with ID: ${previousEvent.id} " +
@@ -64,12 +73,10 @@ class DatabaseEventHandler(
                         "current event. Ending the previous event and inserting a new one."
                 )
                 dslContext.transaction { config ->
-                    uptimeEventRepository.endEventById(
-                        eventId = previousEvent.id,
-                        endedAt = currentEvent.dispatchedAt,
-                        ctx = config.dsl(),
-                    )
-                    uptimeEventRepository.insertFromMonitorEvent(currentEvent, config.dsl())
+                    val txCtx = config.dsl()
+                    endUptimeEvent(previousEvent, currentEvent, txCtx)
+                    insertUptimeEvent(currentEvent, txCtx)
+
                     logger.debug(
                         "[${currentEvent.monitor.name}] The previous event has been ended and a new one " +
                             "has been inserted."
@@ -80,11 +87,41 @@ class DatabaseEventHandler(
                     "[${currentEvent.monitor.name}] The status of the previous event is the same as the current " +
                         "event. Updating the updatedAt timestamp of the previous event."
                 )
-                uptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
+                updateEvent(currentEvent, previousEvent)
             }
         } ?: run {
             logger.debug("A previous event was not found for [${currentEvent.monitor.name}], creating a new one")
-            uptimeEventRepository.insertFromMonitorEvent(currentEvent)
+            insertUptimeEvent(currentEvent)
+        }
+    }
+
+    private fun endUptimeEvent(previousEvent: UptimeEventRecord, currentEvent: UptimeMonitorEvent, txCtx: DSLContext) {
+        when (currentEvent) {
+            is HttpUptimeMonitorEvent -> httpUptimeEventRepository.endEventById(
+                eventId = previousEvent.id,
+                endedAt = currentEvent.dispatchedAt,
+                ctx = txCtx,
+            )
+
+            is PushUptimeMonitorEvent -> pushUptimeEventRepository.endEventById(
+                eventId = previousEvent.id,
+                endedAt = currentEvent.dispatchedAt,
+                ctx = txCtx,
+            )
+        }
+    }
+
+    private fun insertUptimeEvent(currentEvent: UptimeMonitorEvent, txCtx: DSLContext? = null) {
+        when (currentEvent) {
+            is HttpUptimeMonitorEvent -> httpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
+            is PushUptimeMonitorEvent -> pushUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
+        }
+    }
+
+    private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord) {
+        when (currentEvent) {
+            is HttpUptimeMonitorEvent -> httpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
+            is PushUptimeMonitorEvent -> pushUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
         }
     }
 

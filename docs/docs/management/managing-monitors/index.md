@@ -29,11 +29,31 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     - If there is a monitor in the YAML file that is not in the database, **it will be created** and added to the database.
     - If there is a monitor in both the YAML file and the database, and they have the same name, the monitor in the database **will be updated** with the values from the YAML file.
 
-    **What happens if you remove all of your monitors from the YAML file?**
+    **What happens if you provide an empty array for a monitor type in the YAML file?**
 
-    All monitors in the database **will be kept** (i.e. the ones that were created before via YAML). This is especially useful if you want to **restore your monitors from your exported YAML backup**, but you want to manage them on the UI in the future.
+    ```yaml
+    http-monitors: []
+    # or
+    push-monitors: []
+    ```
 
-    Vice versa: Another typical use case is when you want to manage your monitors via YAML, but you want to **set them up initially via the UI or the API**. In this case, you can export all your monitors to a YAML file, and then **copy the content** of that file into your own configuration file.
+    In this case all monitors of that type in the database **will be deleted**.
+
+    **What happens if you remove the relevant properties from the YAML file?**
+
+    By that we mean that your YAML file **doesn't contain the relevant property keys** (i.e. `push-monitors`, `http-monitors`, etc.), or they are **not explicitly set to an empty array** (see the example below).
+
+    ```yaml
+    # Watch out for the missing property values here. 
+    # This is considered as a missing configuration, 
+    # entries in the database will not be touched, 
+    # external write to the monitors are allowed.
+    http-monitors:
+    # or
+    push-monitors:
+    ```
+
+    In this case all monitors in the database **will be kept** (i.e. the ones that were created before via YAML). This is especially useful if you want to **restore your monitors from your exported YAML backup**, but you want to manage them on the UI in the future.
 
     !!!danger "Changing a monitor's name"
 
@@ -57,6 +77,14 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 
     [:octicons-arrow-right-24: HTTP & SSL monitors](../http-monitors.md)
 
+-   :heartbeat:{ .lg .card-header-icon } __Push (a.k.a. "cron") monitors__
+
+    ---
+
+    Monitor your services that are not accessible via HTTP, for example backups, cron jobs, etc.
+
+    [:octicons-arrow-right-24: Push monitors](../push-monitors.md)
+
 -   :construction:{ .lg .card-header-icon } __More to come...__
 
     ---
@@ -64,4 +92,3 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     Planned new monitor types:
 
     - **ICMP** (a.k.a "_ping_")
-    - **Heartbeat** (a.k.a "_push_")

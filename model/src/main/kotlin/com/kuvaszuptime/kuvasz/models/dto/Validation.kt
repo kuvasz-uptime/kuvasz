@@ -5,6 +5,8 @@ object Validation {
     const val URI_REGEX = "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
     const val MAX_RESPONSE_TIME_THRESHOLD_MILLIS = 30000L
     const val SLUG_REGEX = "^[a-z0-9_-]{1,50}$"
+    const val MIN_HEARTBEAT_INTERVAL = 10L
+    const val MIN_CLIENT_SECRET_LENGTH = 36
 }
 
 object ValidationMessages {
@@ -31,6 +33,10 @@ object MonitorValidationMessages {
     const val URL_PATTERN = "URL must be a valid HTTP(S) URI"
     const val UPTIME_CHECK_INTERVAL_NOT_NULL = "Uptime check interval must not be null"
     const val UPTIME_CHECK_INTERVAL_MIN = "Uptime check interval must be at least {value} seconds"
+    const val HEARTBEAT_INTERVAL_NOT_NULL = "Heartbeat interval must not be null"
+    const val HEARTBEAT_INTERVAL_MIN = "Heartbeat interval must be at least {value} seconds"
+    const val GRACE_PERIOD_NOT_NULL = "Grace period must not be null"
+    const val GRACE_PERIOD_POSITIVE_OR_ZERO = "Grace period must be greater than or equal to 0 seconds"
     const val SSL_EXPIRY_THRESHOLD_NOT_NULL = "SSL expiry threshold must not be null"
     const val SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO = "SSL expiry threshold must be greater than or equal to 0 days"
     const val RESPONSE_TIME_THRESHOLD_POSITIVE = "Response time threshold must be greater than 0 milliseconds"
@@ -38,6 +44,9 @@ object MonitorValidationMessages {
     const val SUPPORTED_STATUS_CODES = "All status codes must be valid HTTP status codes between 100 and 499"
     const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
         "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
+    const val CLIENT_SECRET_NOT_NULL = "Client secret must not be null"
+    const val CLIENT_SECRET_NOT_BLANK = "Client secret must not be blank"
+    const val CLIENT_SECRET_MIN_LENGTH = "Client secret must be at least {min} characters long"
 }
 
 object StatusPageValidationMessages {

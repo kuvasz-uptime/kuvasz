@@ -27,10 +27,19 @@ _Don't forget to restart the container in both cases!_
 
 Currently the following metrics are exported, but all of them is **disabled by default**, you can enable them one by one, tailored to your needs.
 
-Every metric has the following **labels/tags**, that you can use to filter/group them in your monitoring backend:
+Metrics have the following **labels/tags**, that you can use to filter/group them in your monitoring backend, but not
+every metric has all of them:
 
 - `name`: the name of the monitor
 - `target`: the target that is monitored (i.e. a URL or an IP address)
+
+|                     | `name` | `target` |
+|---------------------|--------|----------|
+| HTTP uptime status  | ✅      | ✅        |
+| HTTP latest latency | ✅      | ✅        |
+| SSL status          | ✅      | ✅        |
+| SSL expiry          | ✅      | ✅        |
+| Push uptime status  | ✅      | ❌        |
 
 ### HTTP uptime status
 
@@ -122,6 +131,31 @@ This metric is exported as a **gauge** and indicates the current status of the S
 
 This metric is exported as a **gauge** and reports the expiry date (as a Unix timestamp) of the SSL certificate of the monitored endpoint (only if SSL checks are enabled).
 
+### Push uptime status
+
+<!-- md:version 3.2.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.push-uptime-status: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_PUSH_UPTIME_STATUS_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and indicates the current uptime status of the given push (heartbeat) monitor.
+
+| Status                                | Gauge value |
+|---------------------------------------|-------------|
+| UP                                    | 1           |
+| DOWN                                  | 0           |
+
 ## Prometheus
 
 The _Prometheus_ exporter is a built-in exporter that allows you to **expose your metrics** in a format that **can be scraped** by _Prometheus_. It supports the standard _Prometheus_ text format, which is widely used for monitoring and alerting.
@@ -197,6 +231,7 @@ kuvasz_http_ssl_expiry_seconds{name="nytimes.com",target="https://www.nytimes.co
         http-latest-latency: true
         ssl-status: true
         ssl-expiry: true
+        push-uptime-status: true
     ```
 
 === "ENV"
@@ -327,6 +362,7 @@ kuvasz.http.ssl.expiry.seconds{name=bbc.com,target=https://www.bbc.com} 1.785147
       http-latest-latency: true
       ssl-status: true
       ssl-expiry: true
+      push-uptime-status: true
     ```
 
 === "ENV"

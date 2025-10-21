@@ -32,6 +32,7 @@ class AppConfig {
     var checkUpdates: Boolean = true
 
     private var isHttpMonitorExternalWriteDisabled = false
+    private var isPushMonitorExternalWriteDisabled = false
 
     private var isStatusPageExternalWriteDisabled = false
 
@@ -39,6 +40,10 @@ class AppConfig {
 
     fun disableHttpMonitorExternalWrite() {
         isHttpMonitorExternalWriteDisabled = true
+    }
+
+    fun disablePushMonitorExternalWrite() {
+        isPushMonitorExternalWriteDisabled = true
     }
 
     fun disableStatusPageExternalWrite() {
@@ -53,6 +58,8 @@ class AppConfig {
     }
 
     fun isHttpMonitorExternalWriteDisabled() = isHttpMonitorExternalWriteDisabled
+
+    fun isPushMonitorExternalWriteDisabled() = isPushMonitorExternalWriteDisabled
 
     fun isStatusPageExternalWriteDisabled() = isStatusPageExternalWriteDisabled
 }

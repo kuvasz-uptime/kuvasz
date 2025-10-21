@@ -1,10 +1,13 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorEvent
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -16,17 +19,19 @@ import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
 
 @Singleton
+@Suppress("TooManyFunctions")
 class EventDispatcher {
 
     private val httpUpEvents = PublishSubject.create<HttpMonitorUpEvent>().toSerialized()
     private val httpDownEvents = PublishSubject.create<HttpMonitorDownEvent>().toSerialized()
+    private val pushUptimeEvents = PublishSubject.create<PushUptimeMonitorEvent>().toSerialized()
     private val httpRedirectEvents = PublishSubject.create<HttpRedirectEvent>().toSerialized()
     private val sslValidEvents = PublishSubject.create<SSLValidEvent>().toSerialized()
     private val sslWillExpireEvents = PublishSubject.create<SSLWillExpireEvent>().toSerialized()
     private val sslInvalidEvents = PublishSubject.create<SSLInvalidEvent>().toSerialized()
-    private val httpMonitorLifecycleEvents = PublishSubject.create<HttpMonitorLifecycleEvent>().toSerialized()
+    private val monitorLifecycleEvents = PublishSubject.create<MonitorLifecycleEvent>().toSerialized()
 
-    fun dispatch(event: HttpMonitorEvent) =
+    fun dispatch(event: MonitorEvent<*>) =
         when (event) {
             is HttpMonitorUpEvent -> httpUpEvents.onNext(event)
             is HttpMonitorDownEvent -> httpDownEvents.onNext(event)
@@ -34,10 +39,11 @@ class EventDispatcher {
             is SSLValidEvent -> sslValidEvents.onNext(event)
             is SSLInvalidEvent -> sslInvalidEvents.onNext(event)
             is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
+            is PushMonitorDownEvent, is PushMonitorUpEvent -> pushUptimeEvents.onNext(event)
         }
 
-    fun dispatch(event: HttpMonitorLifecycleEvent) {
-        httpMonitorLifecycleEvents.onNext(event)
+    fun dispatch(event: MonitorLifecycleEvent) {
+        monitorLifecycleEvents.onNext(event)
     }
 
     private inline fun <reified T : Any> Subject<T>.safeSubscribeOnIo(
@@ -56,6 +62,9 @@ class EventDispatcher {
     fun subscribeToHttpMonitorDownEvents(consumer: (HttpMonitorDownEvent) -> Unit): Disposable =
         httpDownEvents.safeSubscribeOnIo(consumer)
 
+    fun subscribeToPushMonitorEvents(consumer: (PushUptimeMonitorEvent) -> Unit): Disposable =
+        pushUptimeEvents.safeSubscribeOnIo(consumer)
+
     fun subscribeToHttpRedirectEvents(consumer: (HttpRedirectEvent) -> Unit): Disposable =
         httpRedirectEvents.safeSubscribeOnIo(consumer)
 
@@ -68,8 +77,8 @@ class EventDispatcher {
     fun subscribeToSSLWillExpireEvents(consumer: (SSLWillExpireEvent) -> Unit): Disposable =
         sslWillExpireEvents.safeSubscribeOnIo(consumer)
 
-    fun subscribeToHttpMonitorLifecycleEvents(consumer: (HttpMonitorLifecycleEvent) -> Unit): Disposable =
-        httpMonitorLifecycleEvents.safeSubscribeOnIo(consumer)
+    fun subscribeToMonitorLifecycleEvents(consumer: (MonitorLifecycleEvent) -> Unit): Disposable =
+        monitorLifecycleEvents.safeSubscribeOnIo(consumer)
 
     companion object {
         private val logger = LoggerFactory.getLogger(EventDispatcher::class.java)

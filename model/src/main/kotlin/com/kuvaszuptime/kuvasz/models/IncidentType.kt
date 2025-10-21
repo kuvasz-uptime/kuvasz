@@ -6,4 +6,5 @@ import io.micronaut.core.annotation.Introspected
 enum class IncidentType {
     HTTP,
     SSL,
+    PUSH,
 }

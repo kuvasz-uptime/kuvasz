@@ -14,7 +14,7 @@ import kotlinx.html.*
 fun renderHttpMonitorsPage(globals: AppGlobals) =
     withLayout(
         globals,
-        title = Messages.monitors(),
+        title = Messages.httpSslMonitors(),
         pageTitle = { httpMonitorsHeader(globals) }
     ) {
         div {
@@ -32,7 +32,7 @@ fun renderHttpMonitorsPage(globals: AppGlobals) =
                             }
                             onSwapReinitTooltips()
                         }
-                        id = "monitors-list"
+                        id = "http-monitors-list"
                         div {
                             classes(SPINNER_GROW, HTMX_INDICATOR)
                             role = "status"

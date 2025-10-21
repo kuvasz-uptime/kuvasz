@@ -18,7 +18,7 @@ private const val MONITOR_URL_MAX_LENGTH = 60
 
 internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto) {
     div {
-        id = "monitor-detail-heading"
+        id = "http-monitor-detail-heading"
         classes(COL_AUTO)
         hx {
             get("/http-monitors/fragments/details-heading/${monitor.id}")
@@ -57,7 +57,7 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                                 color = Color.BLUE_LT
                             )
                         }
-                        a(href = "#monitor-details-ssl-summary") {
+                        a(href = "#http-monitor-details-ssl-summary") {
                             classes(LIST_INLINE_ITEM, ALIGN_MIDDLE, TEXT_WRAP, TEXT_BREAK)
                             sslStatusOfMonitor(monitor, withTooltip = false)
                         }

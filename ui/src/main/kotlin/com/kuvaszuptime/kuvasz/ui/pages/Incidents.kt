@@ -131,14 +131,17 @@ private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
     val icon = when (incidentType) {
         IncidentType.HTTP -> Icon.WORLD
         IncidentType.SSL -> Icon.LOCK_OPEN
+        IncidentType.PUSH -> Icon.HEARTBEAT
     }
     val label = when (incidentType) {
         IncidentType.HTTP -> "HTTP"
         IncidentType.SSL -> "SSL"
+        IncidentType.PUSH -> "Push"
     }
     val colorClasses = when (incidentType) {
         IncidentType.HTTP -> mutableSetOf(BG_BLUE_LT, TEXT_BLUE_LT_FG)
         IncidentType.SSL -> mutableSetOf(BG_YELLOW_LT, TEXT_YELLOW_LT_FG)
+        IncidentType.PUSH -> mutableSetOf(BG_RED_LT, TEXT_RED_LT_FG)
     }
     span {
         classes(colorClasses.plus(STATUS))
@@ -168,7 +171,8 @@ fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
 
 private fun IncidentDto.getMonitorUrl(): String = when (this.incidentType) {
     IncidentType.HTTP -> "/http-monitors/${this.monitorId}"
-    IncidentType.SSL -> "/http-monitors/${this.monitorId}#monitor-details-ssl-events"
+    IncidentType.SSL -> "/http-monitors/${this.monitorId}#http-monitor-details-ssl-events"
+    IncidentType.PUSH -> "/push-monitors/${this.monitorId}"
 }
 
 private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPeriod: Duration) {

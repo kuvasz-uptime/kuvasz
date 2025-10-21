@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
-import com.kuvaszuptime.kuvasz.mocks.createUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -17,8 +17,8 @@ class UptimeEventRepositoryTest(
     init {
         given("isMonitorUp() method") {
             `when`("the monitor is UP") {
-                val monitor = createMonitor(monitorRepository)
-                createUptimeEventRecord(
+                val monitor = createHttpMonitor(monitorRepository)
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -32,8 +32,8 @@ class UptimeEventRepositoryTest(
             }
 
             `when`("the monitor is DOWN") {
-                val monitor = createMonitor(monitorRepository)
-                createUptimeEventRecord(
+                val monitor = createHttpMonitor(monitorRepository)
+                createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
                     startedAt = getCurrentTimestamp(),
@@ -47,7 +47,7 @@ class UptimeEventRepositoryTest(
             }
 
             `when`("there is no HTTP_UPTIME_EVENT record") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository)
 
                 then("it should return false") {
                     uptimeEventRepository.isMonitorUp(monitor.id) shouldBe false

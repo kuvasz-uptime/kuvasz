@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
@@ -122,9 +121,9 @@ class IntegrationRepository(
     /**
      * Returns all the integrations that are effective for the given monitor, including the globally enabled ones
      */
-    fun getEffectiveIntegrations(monitor: HttpMonitorDetailsDto): List<IntegrationDetailsDto> =
+    fun getEffectiveIntegrations(rawIntegrations: Set<IntegrationID>): List<IntegrationDetailsDto> =
         configuredIntegrations.filter { (id, config) ->
-            (config.global && config.enabled) || monitor.integrations.contains(id)
+            (config.global && config.enabled) || rawIntegrations.contains(id)
         }.values.map { IntegrationDetailsDto.fromConfig(it) }
 
     fun getConfiguredIntegrationDtos(): List<IntegrationConfigDto> = configuredIntegrations.values

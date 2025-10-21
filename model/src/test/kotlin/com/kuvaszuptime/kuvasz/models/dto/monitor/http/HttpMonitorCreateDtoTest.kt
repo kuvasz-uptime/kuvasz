@@ -14,7 +14,7 @@ import io.micronaut.validation.validator.DefaultValidator
 @MicronautTest(startApplication = false)
 class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 
-    given("the validation setup of a MonitorCreateDto") {
+    given("the validation setup of a HttpMonitorCreateDto") {
 
         `when`("name is an empty string") {
             val dto = HttpMonitorCreateDto(
@@ -318,7 +318,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 
 class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
 
-    given("a MonitorCreateDto with default values") {
+    given("an HttpMonitorCreateDto with default values") {
         val dto = HttpMonitorCreateDto(
             name = "Test Monitor",
             url = "https://example.com",

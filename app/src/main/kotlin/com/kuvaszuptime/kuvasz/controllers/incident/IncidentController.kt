@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers.incident
 
+import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
+import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
@@ -21,10 +23,10 @@ import java.time.Duration
 
 @Controller("${API_V2_PREFIX}/incidents", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "Incidents")
+@Tag(name = OpenApiTags.INCIDENTS)
 @SecurityRequirements(
-    SecurityRequirement(name = "apiKey"),
-    SecurityRequirement(name = "bearerAuth")
+    SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
+    SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
 class IncidentController(
     private val incidentRepository: IncidentRepository,

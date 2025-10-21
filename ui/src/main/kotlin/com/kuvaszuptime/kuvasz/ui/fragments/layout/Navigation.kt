@@ -40,6 +40,11 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                             link = "/http-monitors",
                                             icon = Icon.WORLD,
                                         ),
+                                        NavItem(
+                                            label = "Push",
+                                            link = "/push-monitors",
+                                            icon = Icon.HEARTBEAT,
+                                        ),
                                     )
                                 )
                                 navItem(

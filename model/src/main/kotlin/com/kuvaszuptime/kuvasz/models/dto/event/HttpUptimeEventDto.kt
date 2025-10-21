@@ -7,24 +7,24 @@ import java.time.OffsetDateTime
 
 @Introspected
 data class HttpUptimeEventDto(
-    @param:Schema(description = "Unique identifier for the uptime event", required = true)
+    @param:Schema(description = UptimeEventDocs.ID, required = true)
     val id: Long,
-    @param:Schema(description = "The status of the uptime event", required = true)
+    @param:Schema(description = UptimeEventDocs.UPTIME_STATUS, required = true)
     val status: UptimeStatus,
     @param:Schema(
-        description = "The error that occurred during the uptime check, if any",
+        description = UptimeEventDocs.ERROR,
         required = true,
         nullable = true
     )
     val error: String?,
-    @param:Schema(description = "The timestamp when the uptime event started", required = true)
+    @param:Schema(description = UptimeEventDocs.STARTED_AT, required = true)
     val startedAt: OffsetDateTime,
     @param:Schema(
-        description = "The timestamp when the uptime event ended, if applicable",
+        description = UptimeEventDocs.ENDED_AT,
         required = true,
         nullable = true
     )
     val endedAt: OffsetDateTime?,
-    @param:Schema(description = "The timestamp when the uptime event was updated", required = true)
+    @param:Schema(description = UptimeEventDocs.UPDATED_AT, required = true)
     val updatedAt: OffsetDateTime
 )

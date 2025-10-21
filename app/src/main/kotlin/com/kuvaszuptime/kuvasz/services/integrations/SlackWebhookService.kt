@@ -16,7 +16,7 @@ import java.net.URI
 
 @Singleton
 @Requires(property = SlackNotificationConfig.CONFIG_PREFIX)
-class SlackWebhookClient(@Client private val client: HttpClient) {
+class SlackWebhookClient(@param:Client private val client: HttpClient) {
 
     @Retryable
     fun sendMessage(webhookUrl: URI, message: SlackWebhookMessage): Single<String> {

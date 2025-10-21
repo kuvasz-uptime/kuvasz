@@ -1,10 +1,13 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -14,6 +17,8 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookClient
@@ -24,7 +29,9 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.inspectors.forAll
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -40,8 +47,10 @@ import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class DiscordEventHandlerTest(
-    private val monitorRepository: HttpMonitorRepository,
-    private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
+    private val httpUptimeEventRepository: HttpUptimeEventRepository,
+    private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     latencyLogRepository: HttpLatencyLogRepository,
     dslContext: DSLContext,
@@ -62,16 +71,17 @@ class DiscordEventHandlerTest(
 
         DatabaseEventHandler(
             eventDispatcher,
-            uptimeEventRepository,
+            httpUptimeEventRepository,
+            pushUptimeEventRepository,
             latencyLogRepository,
             sslEventRepository,
             dslContext,
         )
         DiscordEventHandler(webhookServiceSpy, eventDispatcher, integrationRepository)
 
-        given("the SlackEventHandler - UPTIME events") {
+        given("the DiscordEventHandler - HTTP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -87,8 +97,8 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
-                    monitorRepository,
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
                     integrations = listOf(
                         globalDiscordConfig.id,
                         otherDiscordConfig.id,
@@ -119,7 +129,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -127,7 +137,7 @@ class DiscordEventHandlerTest(
                     previousEvent = null
                 )
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -143,7 +153,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -152,7 +162,7 @@ class DiscordEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -171,7 +181,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorDownEvent(
                     monitor = monitor,
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -180,7 +190,7 @@ class DiscordEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
                     monitor = monitor,
@@ -206,7 +216,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,
@@ -215,7 +225,7 @@ class DiscordEventHandlerTest(
                 )
                 mockSuccessfulHttpResponse()
                 eventDispatcher.dispatch(firstEvent)
-                val firstUptimeRecord = uptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -239,9 +249,166 @@ class DiscordEventHandlerTest(
             }
         }
 
-        given("the SlackEventHandler - SSL events") {
+        given("the DiscordEventHandler - PUSH UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+
+                eventDispatcher.dispatch(event)
+
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    integrations = listOf(
+                        globalDiscordConfig.id,
+                        otherDiscordConfig.id,
+                        disabledDiscordConfig.id,
+                    )
+                )
+                val event = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "down error",
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponse()
+
+                eventDispatcher.dispatch(event)
+
+                then("it should send a webhook message about the event to all enabled integrations") {
+                    val slot = mutableListOf<String>()
+
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(globalDiscordConfig, capture(slot)) }
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(otherDiscordConfig, capture(slot)) }
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(disabledDiscordConfig, any()) }
+
+                    slot.forAll { message ->
+                        message shouldBe "🚨 **Your monitor \"${monitor.name}\" is DOWN**"
+                    }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should not send notifications about them") {
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponse()
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+                    val slot = slot<String>()
+
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(globalDiscordConfig, capture(slot)) }
+                    slot.captured shouldBe "🚨 **Your monitor \"${monitor.name}\" is DOWN**"
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = "error"
+                )
+                mockSuccessfulHttpResponse()
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<String>()
+
+                    verify(exactly = 2) {
+                        webhookServiceSpy.sendMessage(
+                            globalDiscordConfig,
+                            capture(notificationsSent)
+                        )
+                    }
+                    notificationsSent[0] shouldBe
+                        "🚨 **Your monitor \"${monitor.name}\" is DOWN**"
+                    notificationsSent[1] shouldStartWith
+                        "✅ **Your monitor \"${monitor.name}\" is UP**\nWas down for "
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponse()
+                eventDispatcher.dispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    error = "missed heartbeat"
+                )
+                eventDispatcher.dispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<String>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendMessage(
+                            globalDiscordConfig,
+                            capture(notificationSent)
+                        )
+                    }
+                    notificationSent.captured shouldStartWith
+                        "🚨 **Your monitor \"${monitor.name}\" is DOWN**\nWas up for "
+                }
+            }
+        }
+
+        given("the DiscordEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -256,8 +423,8 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(
-                    monitorRepository,
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
                     integrations = listOf(
                         globalDiscordConfig.id,
                         otherDiscordConfig.id,
@@ -287,7 +454,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -309,7 +476,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -335,7 +502,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLValidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLInvalidEvent(
                     monitor = monitor,
                     previousEvent = null,
@@ -367,7 +534,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -398,7 +565,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -418,7 +585,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val originalValidTo = getCurrentTimestamp()
                 val firstEvent = SSLWillExpireEvent(
                     monitor = monitor,
@@ -445,7 +612,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with different status") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -476,9 +643,9 @@ class DiscordEventHandlerTest(
             }
         }
 
-        given("the SlackEventHandler - error handling logic") {
+        given("the DiscordEventHandler - error handling logic") {
             `when`("it receives an event but an error happens when it calls the webhook") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
                     monitor = monitor,
                     status = HttpStatus.OK,

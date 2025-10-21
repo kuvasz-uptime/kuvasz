@@ -2,9 +2,13 @@ package com.kuvaszuptime.kuvasz.metrics.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.metrics.GaugeExporter
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
+import com.kuvaszuptime.kuvasz.metrics.numericMonitorId
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requirements
@@ -20,8 +24,14 @@ import jakarta.inject.Singleton
 class SSLStatusExporter(
     meterRegistry: MeterRegistry,
     private val eventDispatcher: EventDispatcher,
-    private val monitorRepository: HttpMonitorRepository,
-) : HttpGaugeExporter<SslStatus>(meterRegistry, eventDispatcher, monitorRepository) {
+    private val httpMonitorRepository: HttpMonitorRepository,
+    monitorRepository: SharedMonitorRepository,
+) : GaugeExporter<SslStatus, HttpMonitorRecord>(
+    meterRegistry,
+    eventDispatcher,
+    monitorRepository,
+    MonitorType.HTTP_SSL,
+) {
 
     companion object {
         private const val MONITOR_SSL_STATUS = "http.ssl.status"
@@ -38,7 +48,7 @@ class SSLStatusExporter(
     private fun SSLMonitorEvent.handle() {
         runWhenStateChanges {
             logger.debug("Updating SSL status for monitor with ID: ${monitor.id} to $sslStatus")
-            upsertMeter(monitor.id, sslStatus)
+            upsertMeter(monitor.numericMonitorId(), sslStatus)
         }
     }
 
@@ -51,5 +61,5 @@ class SSLStatusExporter(
         }
 
     override fun computeInitialValue(monitor: HttpMonitorRecord): SslStatus? =
-        monitorRepository.getMonitorWithDetails(monitor.id)?.sslStatus
+        httpMonitorRepository.getMonitorWithDetails(monitor.id)?.sslStatus
 }

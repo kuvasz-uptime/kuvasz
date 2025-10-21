@@ -2,18 +2,20 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 
 abstract class RichTextMessageFormatter : TextMessageFormatter {
     abstract fun bold(input: String): String
 
     abstract fun italic(input: String): String
 
-    override fun toFormattedMessage(event: HttpUptimeMonitorEvent): String {
+    override fun toFormattedMessage(event: UptimeMonitorEvent): String {
         val messageParts: List<String> = when (event) {
             is HttpMonitorUpEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
@@ -29,6 +31,20 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
                     details.previousUpTime
                 )
             }
+
+            is PushMonitorDownEvent -> event.toStructuredMessage().let { details ->
+                listOfNotNull(
+                    event.getEmoji() + " " + bold(details.summary),
+                    details.previousUpTime
+                )
+            }
+
+            is PushMonitorUpEvent -> event.toStructuredMessage().let { details ->
+                listOfNotNull(
+                    event.getEmoji() + " " + bold(details.summary),
+                    details.previousDownTime
+                )
+            }
         }
 
         return messageParts.assemble()
@@ -42,12 +58,14 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
                     details.previousInvalidEvent
                 )
             }
+
             is SSLWillExpireEvent -> event.toStructuredMessage().let { details ->
                 listOf(
                     event.getEmoji() + " " + bold(details.summary),
                     italic(details.validUntil)
                 )
             }
+
             is SSLInvalidEvent -> event.toStructuredMessage().let { details ->
                 listOfNotNull(
                     event.getEmoji() + " " + bold(details.summary),

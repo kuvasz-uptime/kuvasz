@@ -10,5 +10,8 @@ interface StatusPageMonitorDataProvider {
      * Fetches the data of enabled monitors for the status page. Every implementation is responsible for handling
      * only the monitor types it supports.
      */
-    fun getDataOfEnabledMonitors(period: Duration, monitorIds: List<MonitorID>?): List<StatusPageMonitorDetailsDto>
+    fun getStatusPageDataOfEnabledMonitors(
+        period: Duration,
+        monitorIds: List<MonitorID>?,
+    ): List<StatusPageMonitorDetailsDto>
 }

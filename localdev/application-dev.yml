@@ -36,38 +36,93 @@ logger:
 ---
 metrics-exports:
   http-uptime-status: true
+  push-uptime-status: true
   http-latest-latency: true
   ssl-status: true
   ssl-expiry: true
 ---
 http-monitors:
-  - name: test1
-    url: https://demo.kuvasz-uptime.dev
+  - name: "test1"
+    url: "https://demo.kuvasz-uptime.dev"
     uptime-check-interval: 120
     enabled: true
     ssl-check-enabled: true
-    request-method: GET
     latency-history-enabled: false
-    force-no-cache: false
+    request-method: "GET"
     follow-redirects: true
+    force-no-cache: false
+    ssl-expiry-threshold: 30
+    integrations: [ ]
     expected-status-codes:
       - 200
       - 201
       - 303
+    response-time-threshold-millis: 500
     expected-keyword: "Kuvasz"
     expected-keyword-case-sensitive: true
     expected-keyword-negated: false
-    response-time-threshold-millis: 500
-  - name: test2
-    url: https://kuvasz-uptime.dev
+    request-headers: { }
+    expected-headers: { }
+    request-body: null
+  - name: "test2"
+    url: "https://kuvasz-uptime.dev"
     uptime-check-interval: 60
-    request-method: HEAD
     enabled: false
+    ssl-check-enabled: false
+    latency-history-enabled: true
+    request-method: "HEAD"
+    follow-redirects: true
+    force-no-cache: true
+    ssl-expiry-threshold: 30
+    integrations: [ ]
+    expected-status-codes: [ ]
+    response-time-threshold-millis: null
+    expected-keyword: null
+    expected-keyword-case-sensitive: false
+    expected-keyword-negated: false
+    request-headers: { }
+    expected-headers: { }
+    request-body: null
   - name: "Tralala #!: j[ő"
-    url: https://akobor.me
+    url: "https://akobor.me"
     uptime-check-interval: 60
-    request-method: GET
     enabled: false
+    ssl-check-enabled: false
+    latency-history-enabled: true
+    request-method: "GET"
+    follow-redirects: true
+    force-no-cache: true
+    ssl-expiry-threshold: 30
+    integrations: [ ]
+    expected-status-codes: [ ]
+    response-time-threshold-millis: null
+    expected-keyword: null
+    expected-keyword-case-sensitive: false
+    expected-keyword-negated: false
+    request-headers: { }
+    expected-headers: { }
+    request-body: null
+---
+push-monitors:
+  - name: "My Push Monitor"
+    heartbeat-interval: 10
+    grace-period: 0
+    client-secret: "d6d5a85c-82c0-4bea-9926-c3eed32de32a"
+    enabled: true
+    integrations: [ ]
+  - name: "Another Push Monitor"
+    heartbeat-interval: 20
+    grace-period: 3
+    client-secret: "7b2d5cb1-41bd-4067-9732-c79dbbf45287"
+    enabled: false
+    integrations:
+      - "slack:test"
+---
+integrations:
+  slack:
+    - name: test
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX
+---
 default-status-page:
   public: true
   title: "Default System Status"

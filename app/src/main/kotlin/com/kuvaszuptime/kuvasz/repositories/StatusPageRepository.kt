@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import arrow.core.Either
 import com.kuvaszuptime.kuvasz.jooq.Keys.STATUS_PAGE_SLUG_KEY
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
@@ -10,7 +9,7 @@ import com.kuvaszuptime.kuvasz.models.StatusPageDuplicatedException
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import com.kuvaszuptime.kuvasz.util.toPersistenceError
+import com.kuvaszuptime.kuvasz.util.toPersistenceException
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
@@ -48,40 +47,36 @@ class StatusPageRepository(private val dslContext: DSLContext) {
         .where(STATUS_PAGE.ID.eq(id))
         .execute()
 
-    fun returningInsert(statusPage: StatusPageRecord): Either<PersistenceException, StatusPageRecord> =
+    fun returningInsert(statusPage: StatusPageRecord): StatusPageRecord =
         try {
-            Either.Right(
-                dslContext
-                    .insertInto(STATUS_PAGE)
-                    .set(statusPage)
-                    .returning(STATUS_PAGE.asterisk())
-                    .fetchOneOrThrow<StatusPageRecord>()
-            )
+            dslContext
+                .insertInto(STATUS_PAGE)
+                .set(statusPage)
+                .returning(STATUS_PAGE.asterisk())
+                .fetchOneOrThrow<StatusPageRecord>()
         } catch (e: DataAccessException) {
-            e.handle()
+            throw e.checkForDuplication()
         }
 
     fun returningUpdate(
         updatedStatusPage: StatusPageRecord,
         txCtx: DSLContext = dslContext,
-    ): Either<PersistenceException, StatusPageRecord> =
+    ): StatusPageRecord =
         try {
-            Either.Right(
-                txCtx
-                    .update(STATUS_PAGE)
-                    .set(STATUS_PAGE.SLUG, updatedStatusPage.slug)
-                    .set(STATUS_PAGE.TITLE, updatedStatusPage.title)
-                    .set(STATUS_PAGE.CUSTOM_LOGO_URL, updatedStatusPage.customLogoUrl)
-                    .set(STATUS_PAGE.CUSTOM_FAVICON_URL, updatedStatusPage.customFaviconUrl)
-                    .set(STATUS_PAGE.PUBLIC, updatedStatusPage.public)
-                    .set(STATUS_PAGE.MONITORS, updatedStatusPage.monitors)
-                    .set(STATUS_PAGE.UPDATED_AT, getCurrentTimestamp())
-                    .where(STATUS_PAGE.ID.eq(updatedStatusPage.id))
-                    .returning(STATUS_PAGE.asterisk())
-                    .fetchOneOrThrow<StatusPageRecord>()
-            )
+            txCtx
+                .update(STATUS_PAGE)
+                .set(STATUS_PAGE.SLUG, updatedStatusPage.slug)
+                .set(STATUS_PAGE.TITLE, updatedStatusPage.title)
+                .set(STATUS_PAGE.CUSTOM_LOGO_URL, updatedStatusPage.customLogoUrl)
+                .set(STATUS_PAGE.CUSTOM_FAVICON_URL, updatedStatusPage.customFaviconUrl)
+                .set(STATUS_PAGE.PUBLIC, updatedStatusPage.public)
+                .set(STATUS_PAGE.MONITORS, updatedStatusPage.monitors)
+                .set(STATUS_PAGE.UPDATED_AT, getCurrentTimestamp())
+                .where(STATUS_PAGE.ID.eq(updatedStatusPage.id))
+                .returning(STATUS_PAGE.asterisk())
+                .fetchOneOrThrow<StatusPageRecord>()
         } catch (e: DataAccessException) {
-            e.handle()
+            throw e.checkForDuplication()
         }
 
     /**
@@ -108,16 +103,11 @@ class StatusPageRepository(private val dslContext: DSLContext) {
     /**
      * Converts a DataAccessException to a PersistenceException by matching duplication errors.
      */
-    private fun DataAccessException.handle(): Either<PersistenceException, Nothing> {
-        val persistenceError = toPersistenceError()
-        return Either.Left(
-            if (persistenceError is DuplicationException) {
-                StatusPageDuplicatedException()
-            } else {
-                persistenceError
-            }
-        )
-    }
+    private fun DataAccessException.checkForDuplication(): PersistenceException =
+        when (val persistenceException = toPersistenceException()) {
+            is DuplicationException -> StatusPageDuplicatedException()
+            else -> persistenceException
+        }
 
     fun getStatusPagesOfMonitor(monitorId: MonitorID): List<StatusPageRecord> = dslContext
         .selectFrom(STATUS_PAGE)

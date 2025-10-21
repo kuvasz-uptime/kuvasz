@@ -7,11 +7,15 @@ package com.kuvaszuptime.kuvasz.jooq;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord;
 
@@ -39,6 +43,11 @@ public class Keys {
     public static final UniqueKey<HttpMonitorRecord> UNIQUE_MONITOR_NAME = Internal.createUniqueKey(HttpMonitor.HTTP_MONITOR, DSL.name("unique_monitor_name"), new TableField[] { HttpMonitor.HTTP_MONITOR.NAME }, true);
     public static final UniqueKey<HttpUptimeEventRecord> UPTIME_EVENT_KEY = Internal.createUniqueKey(HttpUptimeEvent.HTTP_UPTIME_EVENT, DSL.name("uptime_event_key"), new TableField[] { HttpUptimeEvent.HTTP_UPTIME_EVENT.MONITOR_ID, HttpUptimeEvent.HTTP_UPTIME_EVENT.STATUS, HttpUptimeEvent.HTTP_UPTIME_EVENT.ENDED_AT }, true);
     public static final UniqueKey<HttpUptimeEventRecord> UPTIME_EVENT_PKEY = Internal.createUniqueKey(HttpUptimeEvent.HTTP_UPTIME_EVENT, DSL.name("uptime_event_pkey"), new TableField[] { HttpUptimeEvent.HTTP_UPTIME_EVENT.ID }, true);
+    public static final UniqueKey<PushMonitorRecord> PUSH_MONITOR_PKEY = Internal.createUniqueKey(PushMonitor.PUSH_MONITOR, DSL.name("push_monitor_pkey"), new TableField[] { PushMonitor.PUSH_MONITOR.ID }, true);
+    public static final UniqueKey<PushMonitorRecord> UNIQUE_PUSH_CLIENT_SECRET = Internal.createUniqueKey(PushMonitor.PUSH_MONITOR, DSL.name("unique_push_client_secret"), new TableField[] { PushMonitor.PUSH_MONITOR.CLIENT_SECRET }, true);
+    public static final UniqueKey<PushMonitorRecord> UNIQUE_PUSH_MONITOR_NAME = Internal.createUniqueKey(PushMonitor.PUSH_MONITOR, DSL.name("unique_push_monitor_name"), new TableField[] { PushMonitor.PUSH_MONITOR.NAME }, true);
+    public static final UniqueKey<PushUptimeEventRecord> PUSH_UPTIME_EVENT_KEY = Internal.createUniqueKey(PushUptimeEvent.PUSH_UPTIME_EVENT, DSL.name("push_uptime_event_key"), new TableField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.MONITOR_ID, PushUptimeEvent.PUSH_UPTIME_EVENT.STATUS, PushUptimeEvent.PUSH_UPTIME_EVENT.ENDED_AT }, true);
+    public static final UniqueKey<PushUptimeEventRecord> PUSH_UPTIME_EVENT_PKEY = Internal.createUniqueKey(PushUptimeEvent.PUSH_UPTIME_EVENT, DSL.name("push_uptime_event_pkey"), new TableField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.ID }, true);
     public static final UniqueKey<SslEventRecord> SSL_EVENT_KEY = Internal.createUniqueKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_key"), new TableField[] { SslEvent.SSL_EVENT.MONITOR_ID, SslEvent.SSL_EVENT.STATUS, SslEvent.SSL_EVENT.ENDED_AT }, true);
     public static final UniqueKey<SslEventRecord> SSL_EVENT_PKEY = Internal.createUniqueKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_pkey"), new TableField[] { SslEvent.SSL_EVENT.ID }, true);
     public static final UniqueKey<StatusPageRecord> STATUS_PAGE_PKEY = Internal.createUniqueKey(StatusPage.STATUS_PAGE, DSL.name("status_page_pkey"), new TableField[] { StatusPage.STATUS_PAGE.ID }, true);
@@ -50,5 +59,6 @@ public class Keys {
 
     public static final ForeignKey<HttpLatencyLogRecord, HttpMonitorRecord> HTTP_LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY = Internal.createForeignKey(HttpLatencyLog.HTTP_LATENCY_LOG, DSL.name("latency_log_monitor_id_fkey"), new TableField[] { HttpLatencyLog.HTTP_LATENCY_LOG.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { HttpMonitor.HTTP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
     public static final ForeignKey<HttpUptimeEventRecord, HttpMonitorRecord> HTTP_UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(HttpUptimeEvent.HTTP_UPTIME_EVENT, DSL.name("uptime_event_monitor_id_fkey"), new TableField[] { HttpUptimeEvent.HTTP_UPTIME_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { HttpMonitor.HTTP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
+    public static final ForeignKey<PushUptimeEventRecord, PushMonitorRecord> PUSH_UPTIME_EVENT__PUSH_UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(PushUptimeEvent.PUSH_UPTIME_EVENT, DSL.name("push_uptime_event_monitor_id_fkey"), new TableField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.MONITOR_ID }, Keys.PUSH_MONITOR_PKEY, new TableField[] { PushMonitor.PUSH_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
     public static final ForeignKey<SslEventRecord, HttpMonitorRecord> SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_monitor_id_fkey"), new TableField[] { SslEvent.SSL_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { HttpMonitor.HTTP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
 }

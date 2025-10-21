@@ -100,6 +100,17 @@ const showToast = (header, content, backgroundClass, autoHide) => {
     new tabler.Toast(toastContainer.lastElementChild).show();
 };
 
+// Generates a UUID-like 36 characters long secret
+const createRandomSecret = () => {
+    let dt = new Date().getTime()
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = (dt + Math.random()*16)%16 | 0
+        dt = Math.floor(dt/16)
+        return (c=='x' ? r :(r&0x3|0x8)).toString(16)
+    });
+    return uuid;
+};
+
 // --------- Alpine.js x-data ---------
 const httpMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) => {
     return {
@@ -121,6 +132,31 @@ const httpMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) 
                 this.monitorId,
                 () => this.isRequestLoading = true,
                 () => refreshHttpMonitorList(),
+            );
+        }
+    }
+};
+
+const pushMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) => {
+    return {
+        monitorId: monitorId,
+        isMonitorEnabled: isMonitorEnabled,
+        assignedToStatusPage: assignedToStatusPage,
+        isRequestLoading: false,
+        toggleMonitor() {
+            patchPushMonitorRequest(
+                this.monitorId,
+                {enabled: !this.isMonitorEnabled},
+                () => this.isRequestLoading = true,
+                () => refreshPushMonitorList(),
+                () => this.isRequestLoading = false
+            );
+        },
+        deleteMonitor() {
+            deletePushMonitorRequest(
+                this.monitorId,
+                () => this.isRequestLoading = true,
+                () => refreshPushMonitorList(),
             );
         }
     }
@@ -184,6 +220,40 @@ const httpMonitorDetails = (monitorId, isMonitorEnabled) => {
     }
 };
 
+const pushMonitorDetails = (monitorId, isMonitorEnabled) => {
+    return {
+        monitorId,
+        isMonitorEnabled,
+        isRequestLoading: false,
+
+        toggleMonitor() {
+            patchPushMonitorRequest(
+                this.monitorId,
+                {enabled: !this.isMonitorEnabled},
+                () => this.isRequestLoading = true,
+                () => {
+                    this.isRequestLoading = false;
+                    this.isMonitorEnabled = !this.isMonitorEnabled;
+                    this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
+                    console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
+                    refreshPushMonitorDetailStatus();
+                },
+                () => this.isRequestLoading = false
+            );
+        },
+
+        deleteMonitor() {
+            deletePushMonitorRequest(
+                this.monitorId,
+                () => this.isRequestLoading = true,
+                () => window.location.href = '/push-monitors',
+                () => this.isRequestLoading = false
+            );
+            this.isRequestLoading = true;
+        }
+    }
+};
+
 const statusPageDetails = (statusPageId, isStatusPagePublic) => {
     return {
         statusPageId,
@@ -211,14 +281,24 @@ const statusPageDetails = (statusPageId, isStatusPagePublic) => {
     }
 };
 
-// Refreshes the monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
+// Refreshes the HTTP monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
 const refreshHttpMonitorDetailStatus = () => {
-    sendHtmxEvent('#monitor-detail-heading', 'refresh-monitor-detail-status');
+    sendHtmxEvent('#http-monitor-detail-heading', 'refresh-monitor-detail-status');
 };
 
-// Refreshes the monitor list by triggering an HTMX event
+// Refreshes the HTTP monitor list by triggering an HTMX event
 const refreshHttpMonitorList = () => {
-    sendHtmxEvent('#monitors-list', 'refresh-monitor-list');
+    sendHtmxEvent('#http-monitors-list', 'refresh-monitor-list');
+};
+
+// Refreshes the push monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
+const refreshPushMonitorDetailStatus = () => {
+    sendHtmxEvent('#push-monitor-detail-heading', 'refresh-monitor-detail-status');
+};
+
+// Refreshes the push monitor list by triggering an HTMX event
+const refreshPushMonitorList = () => {
+    sendHtmxEvent('#push-monitors-list', 'refresh-monitor-list');
 };
 
 // Refreshes the status page list by triggering an HTMX event
@@ -228,7 +308,8 @@ const refreshStatusPageList = () => {
 
 // Refreshes the dashboard by triggering an HTMX event
 const refreshDashboard = () => {
-    sendHtmxEvent('#monitoring-dashboard', 'refresh-dashboard');
+    sendHtmxEvent('#http-monitoring-dashboard', 'refresh-dashboard');
+    sendHtmxEvent('#push-monitoring-dashboard', 'refresh-dashboard');
 };
 
 const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
@@ -665,6 +746,156 @@ const upsertHttpMonitorForm = (
     }
 };
 
+const upsertPushMonitorForm = (
+    monitor,
+    errorMessages,
+    globalIntegrationCount
+) => {
+    const originalMonitor = monitor || null;
+    return {
+        errorMessages: errorMessages || {},
+        isRequestLoading: false,
+        isUpdate: !!monitor,
+        globalIntegrationCount: globalIntegrationCount || 0,
+
+        init() {
+            this.resetState();
+            console.debug('Monitor form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
+        },
+
+        resetState() {
+            this.name = originalMonitor?.name || '';
+            this.heartbeatInterval = originalMonitor?.heartbeatInterval || 10;
+            this.gracePeriod = originalMonitor?.gracePeriod || 0;
+            this.clientSecret = originalMonitor?.clientSecret || createRandomSecret();
+            this.integrations = originalMonitor?.integrations || [];
+            this.errors = {};
+        },
+
+        generateNewClientSecret() {
+            this.clientSecret = createRandomSecret();
+            this.validateClientSecret()
+        },
+
+        copyClientSecretToClipboard() {
+            const baseUrl = window.location.protocol + '//' + window.location.host
+            const absoluteUrl = baseUrl + '/api/v2/push-monitors/heartbeats/' + this.clientSecret;
+            navigator.clipboard.writeText(absoluteUrl);
+        },
+
+        validate() {
+            this.errors = {};
+            this.validateName();
+            this.validateHeartbeatInterval();
+            this.validateGracePeriod();
+            this.validateClientSecret();
+        },
+
+        validateName() {
+            if (!this.name) {
+                this.errors.name = errorMessages.nameRequired;
+            } else {
+                this.errors.name = null;
+            }
+        },
+
+        validateHeartbeatInterval() {
+            if (!this.heartbeatInterval || isNaN(this.heartbeatInterval) || this.heartbeatInterval < 10) {
+                this.errors.heartbeatInterval = this.errorMessages.heartbeatIntervalInvalid;
+            } else {
+                this.errors.heartbeatInterval = null;
+            }
+        },
+
+        validateGracePeriod() {
+            if (this.gracePeriod === undefined || this.gracePeriod === '' || isNaN(this.gracePeriod) || this.gracePeriod < 0) {
+                this.errors.gracePeriod = this.errorMessages.gracePeriodInvalid;
+            } else {
+                this.errors.gracePeriod = null;
+            }
+        },
+
+        validateClientSecret() {
+            this.clientSecret = sanitizeTextInput(this.clientSecret);
+            if (!this.clientSecret || this.clientSecret.length < 36) {
+                this.errors.clientSecret = this.errorMessages.clientSecretInvalid;
+            } else {
+                this.errors.clientSecret = null;
+            }
+        },
+
+        submitForm() {
+            this.validate();
+            if (hasNonNullValue(this.errors)) {
+                console.debug('Form validation failed:', this.errors);
+                return;
+            }
+
+            this.upsertMonitor();
+        },
+
+        async upsertMonitor() {
+            try {
+                this.isRequestLoading = true;
+                const body = {
+                    name: this.name,
+                    heartbeatInterval: this.heartbeatInterval,
+                    gracePeriod: this.gracePeriod,
+                    clientSecret: this.clientSecret,
+                    integrations: this.integrations,
+                };
+                if (!this.isUpdate) {
+                    body.enabled = true; // Default enabled, can be paused later
+                }
+
+                console.debug('Submitting monitor form with data:', body);
+
+                const url = this.isUpdate ? '/api/v2/push-monitors/' + monitor.id : '/api/v2/push-monitors';
+                const method = this.isUpdate ? 'PATCH' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: jsonContentHeaders,
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    this.isRequestLoading = false;
+                    const responseData = await response.json();
+                    console.debug('Monitor was created/updated successfully, redirecting to monitor', responseData);
+
+                    if (this.isUpdate) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/push-monitors/' + responseData.id;
+                    }
+                } else {
+                    if (response.status === 409) {
+                        this.isRequestLoading = false;
+                        console.debug('Monitor with this name/client secret already exists');
+                        this.errors.name = this.errorMessages.nameOrClientSecretAlreadyExists;
+                        this.errors.clientSecret = this.errorMessages.nameOrClientSecretAlreadyExists;
+                    } else if (response.status === 400) {
+                        const errorData = await response.json();
+                        this.isRequestLoading = false;
+                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
+                            this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        }
+                    } else {
+                        console.error('Error creating/updating monitor:', response.statusText);
+                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
+                        this.isRequestLoading = false;
+                    }
+                }
+            } catch (error) {
+                this.isRequestLoading = false;
+                console.error('Error creating monitor:', error);
+                alert('An error occurred while creating/updating the monitor. Please try again.');
+            }
+        }
+    }
+};
+
 const upsertStatusPageForm = (
     statusPage,
     errorMessages,
@@ -845,7 +1076,7 @@ const renderMonitorOption = (data, escape) => {
     const parts = splitWithLimit(data.value, ':', 2);
     const type = parts[0];
     const name = parts[1];
-    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : '';
+    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : '';
     return `<div><span class="badge me-2 ${badgeColor}">${type.toUpperCase()}</span>${name}</div>`;
 };
 
@@ -886,6 +1117,30 @@ const deleteHttpMonitorRequest = (
     });
 };
 
+const deletePushMonitorRequest = (
+    monitorId,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
+) => {
+    beforeRequest();
+    fetch('/api/v2/push-monitors/' + monitorId, {
+        method: 'DELETE',
+        headers: jsonContentHeaders
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error deleting monitor:', response.statusText);
+            alert('An error occurred while deleting the monitor.');
+        }
+    });
+};
+
 const patchHttpMonitorRequest = (
     monitorId,
     body,
@@ -898,6 +1153,36 @@ const patchHttpMonitorRequest = (
 ) => {
     this.isRequestLoading = true;
     fetch('/api/v2/http-monitors/' + monitorId, {
+        method: 'PATCH',
+        headers: jsonContentHeaders,
+        body: JSON.stringify(body)
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error toggling monitor:', response.statusText);
+            alert('An error occurred while toggling the monitor.');
+        }
+    }).catch(error => {
+        onError();
+        console.error('Error toggling monitor:', error);
+        alert('An error occurred while toggling the monitor.');
+    });
+};
+
+const patchPushMonitorRequest = (
+    monitorId,
+    body,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
+) => {
+    this.isRequestLoading = true;
+    fetch('/api/v2/push-monitors/' + monitorId, {
         method: 'PATCH',
         headers: jsonContentHeaders,
         body: JSON.stringify(body)

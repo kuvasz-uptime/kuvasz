@@ -3,15 +3,18 @@
 [![CI](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml/badge.svg)](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml)
 [![GitHub known bugs](https://img.shields.io/github/issues-search/kuvasz-uptime/kuvasz?query=is%3Aopen%20label%3Abug&label=known%20bugs&color=red)](https://github.com/kuvasz-uptime/kuvasz/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug)
 [![codecov](https://codecov.io/gh/kuvasz-uptime/kuvasz/branch/main/graph/badge.svg?token=67X0CD3CGY)](https://codecov.io/gh/kuvasz-uptime/kuvasz)
+![no vibe coded](https://img.shields.io/badge/vibe_coding-0%25-green)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz?ref=badge_shield)
 [![Docker Pulls](https://img.shields.io/docker/pulls/kuvaszmonitoring/kuvasz)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
 [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=flat&logo=discord&logoColor=white)](https://discord.com/invite/hMkyGPyU32)
 
 ---
 
-## [📖 Documentation](https://kuvasz-uptime.dev)
+**Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, and PagerDuty.
 
-## [🔮 Roadmap](https://github.com/orgs/kuvasz-uptime/projects/2/views/1)
+![Kuvasz](docs/docs/images/feature_carousel.webp)
+
+## [📖 Documentation](https://kuvasz-uptime.dev)
 
 ## 🛝 Live demo
 
@@ -22,15 +25,7 @@ Use the following credentials to log in:
 - **Username**: `demo`
 - **Password**: `secureDemoPassword`
 
-## ℹ️  What is Kuvasz?
-
-**Kuvasz** [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, and PagerDuty.
-
-![Kuvasz](docs/docs/images/feature_carousel.webp)
-
-### Where does the name come from?
-
-Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & guard dog. You can read more about them on [Wikipedia](https://en.wikipedia.org/wiki/Kuvasz).
+## [🔮 Roadmap](https://github.com/orgs/kuvasz-uptime/projects/2/views/1)
 
 ## ⚡️  Quick start guide
 
@@ -71,8 +66,8 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 | Custom headers                            |       ✅       |        ❌         |        ✅         |
 | Custom request body                       |       ✅       |        ❌         |        ✅         |
 | **SSL monitoring**                        |       ✅       |        ❌         |        ✅         |
+| **Heartbeat (push) monitoring**           |       ✅       |        ❌         |        ✅         |
 | **Ping (ICMP) monitoring**                |      📆       |        ✅         |        ✅         |
-| **Heartbeat monitoring**                  |      📆       |        ❌         |        ✅         |
 | **Port monitoring**                       |       ❌       |        ✅         |        ✅         |
 | **DNS monitoring**                        |       ❌       |        ❌         |        ✅         |
 | **Domain expiration monitoring**          |       ❌       |        ❌         |        ✅         |
@@ -92,6 +87,10 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 
 - \* You can deploy _Kuvasz_ to multiple locations and monitor your services from those locations, but it does not support location-specific monitoring out of the box.
 - \** _Kuvasz_ will only provide the integration, but you will need to pay for the SMS or voice call service yourself
+
+### Where does the name come from?
+
+Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & guard dog. You can read more about them on [Wikipedia](https://en.wikipedia.org/wiki/Kuvasz).
 
 ## 📣  Don't miss out on the latest updates!
 

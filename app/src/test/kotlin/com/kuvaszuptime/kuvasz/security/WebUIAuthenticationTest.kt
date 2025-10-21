@@ -2,9 +2,11 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -31,7 +33,8 @@ import kotlinx.coroutines.reactive.awaitFirst
 class WebUIAuthenticationTest(
     @param:Client("/") private val client: HttpClient,
     private val authConfig: AdminAuthConfig,
-    monitorRepository: HttpMonitorRepository,
+    httpMonitorRepository: HttpMonitorRepository,
+    pushMonitorRepository: PushMonitorRepository,
 ) : DatabaseStringSpec() {
     init {
 
@@ -47,6 +50,12 @@ class WebUIAuthenticationTest(
                 row("/http-monitors/fragments/details-uptime-incidents/1"),
                 row("/http-monitors/fragments/details-ssl-incidents/1"),
                 row("/http-monitors/fragments/stats"),
+                row("/push-monitors"),
+                row("/push-monitors/1"),
+                row("/push-monitors/fragments/list"),
+                row("/push-monitors/fragments/details-heading/1"),
+                row("/push-monitors/fragments/details-uptime-incidents/1"),
+                row("/push-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),
@@ -75,6 +84,12 @@ class WebUIAuthenticationTest(
                 row("/http-monitors/fragments/details-uptime-incidents/1"),
                 row("/http-monitors/fragments/details-ssl-incidents/1"),
                 row("/http-monitors/fragments/stats"),
+                row("/push-monitors"),
+                row("/push-monitors/1"),
+                row("/push-monitors/fragments/list"),
+                row("/push-monitors/fragments/details-heading/1"),
+                row("/push-monitors/fragments/details-uptime-incidents/1"),
+                row("/push-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),
@@ -105,19 +120,26 @@ class WebUIAuthenticationTest(
         "all the web endpoints should be accessible with a valid JWT" {
 
             val jwt = getValidJWT(client, authConfig)
-            val monitor = createMonitor(monitorRepository)
+            val httpMonitor = createHttpMonitor(httpMonitorRepository)
+            val pushMonitor = createPushMonitor(pushMonitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
 
             table(
                 headers("url"),
                 row("/"),
                 row("/http-monitors"),
-                row("/http-monitors/${monitor.id}"),
+                row("/http-monitors/${httpMonitor.id}"),
                 row("/http-monitors/fragments/list"),
-                row("/http-monitors/fragments/details-heading/${monitor.id}"),
-                row("/http-monitors/fragments/details-uptime-incidents/${monitor.id}"),
-                row("/http-monitors/fragments/details-ssl-incidents/${monitor.id}"),
+                row("/http-monitors/fragments/details-heading/${httpMonitor.id}"),
+                row("/http-monitors/fragments/details-uptime-incidents/${httpMonitor.id}"),
+                row("/http-monitors/fragments/details-ssl-incidents/${httpMonitor.id}"),
                 row("/http-monitors/fragments/stats"),
+                row("/push-monitors"),
+                row("/push-monitors/${pushMonitor.id}"),
+                row("/push-monitors/fragments/list"),
+                row("/push-monitors/fragments/details-heading/${pushMonitor.id}"),
+                row("/push-monitors/fragments/details-uptime-incidents/${pushMonitor.id}"),
+                row("/push-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),

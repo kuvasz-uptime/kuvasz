@@ -8,7 +8,8 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
@@ -17,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
@@ -47,7 +49,8 @@ import kotlinx.coroutines.reactive.awaitFirst
 @MicronautTest
 class StatusPageControllerTest(
     @param:Client("/") private val client: HttpClient,
-    private val monitorRepository: HttpMonitorRepository,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
     private val statusPageClient: StatusPageClient,
     private val statusPageRepository: StatusPageRepository,
 ) : DatabaseBehaviorSpec() {
@@ -61,13 +64,17 @@ class StatusPageControllerTest(
                 .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
 
             `when`("there are status pages in the database") {
-                val monitor = createMonitor(
-                    monitorRepository,
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
                     monitorName = "irrelevant",
                 )
-                val monitor2 = createMonitor(
-                    monitorRepository,
+                val monitor2 = createHttpMonitor(
+                    httpMonitorRepository,
                     monitorName = "irrelevant2",
+                )
+                val monitor3 = createPushMonitor(
+                    pushMonitorRepository,
+                    monitorName = "irrelevant3"
                 )
                 val statusPage1 = createStatusPage(
                     dslContext,
@@ -92,6 +99,7 @@ class StatusPageControllerTest(
                     slug = "status-page-3",
                     monitors = listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                        MonitorID(MonitorType.PUSH, monitor3.name),
                     ),
                 )
 
@@ -141,8 +149,10 @@ class StatusPageControllerTest(
                         page3.customLogoUrl shouldBe statusPage3.customLogoUrl
                         page3.customFaviconUrl shouldBe statusPage3.customFaviconUrl
                         page3.public shouldBe statusPage3.public
-                        page3.monitors shouldHaveSingleElement
-                            MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                        page3.monitors shouldContainExactlyInAnyOrder listOf(
+                            MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                            MonitorID(MonitorType.PUSH, monitor3.name),
+                        )
                     }
                 }
             }
@@ -166,7 +176,8 @@ class StatusPageControllerTest(
 
         given("StatusPageController's getStatusPages() endpoint") {
             `when`("there are statusPages in the database") {
-                val monitor = createMonitor(monitorRepository)
+                val httpMonitor = createHttpMonitor(httpMonitorRepository)
+                val pushMonitor = createPushMonitor(pushMonitorRepository)
                 val page = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
@@ -174,7 +185,8 @@ class StatusPageControllerTest(
                     customLogoUrl = "https://example.com/logo.png",
                     customFaviconUrl = "https://example.com/favicon.png",
                     monitors = listOf(
-                        MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                        MonitorID(MonitorType.HTTP_SSL, httpMonitor.name),
+                        MonitorID(MonitorType.PUSH, pushMonitor.name),
                     ),
                 )
                 val page2 = createStatusPage(
@@ -195,8 +207,9 @@ class StatusPageControllerTest(
                         firstPage.customLogoUrl shouldBe page.customLogoUrl
                         firstPage.customFaviconUrl shouldBe page.customFaviconUrl
                         firstPage.public shouldBe page.public
-                        firstPage.monitors shouldContainExactly listOf(
-                            MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                        firstPage.monitors shouldContainExactlyInAnyOrder listOf(
+                            MonitorID(MonitorType.HTTP_SSL, httpMonitor.name),
+                            MonitorID(MonitorType.PUSH, pushMonitor.name),
                         )
                     }
                     response.forOne { secondPage ->
@@ -271,13 +284,15 @@ class StatusPageControllerTest(
 
         given("StatusPageController's getStatusPage() endpoint") {
             `when`("there is a status page with the given ID in the database") {
-                val monitor = createMonitor(monitorRepository)
+                val httpMonitor = createHttpMonitor(httpMonitorRepository)
+                val pushMonitor = createPushMonitor(pushMonitorRepository)
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
                     slug = "status-page-1",
                     monitors = listOf(
-                        MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                        MonitorID(MonitorType.HTTP_SSL, httpMonitor.name),
+                        MonitorID(MonitorType.PUSH, pushMonitor.name),
                     ),
                 )
 
@@ -288,8 +303,9 @@ class StatusPageControllerTest(
                     response.title shouldBe statusPage.title
                     response.slug shouldBe statusPage.slug
                     response.public shouldBe statusPage.public
-                    response.monitors shouldContainExactly listOf(
-                        MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                    response.monitors shouldContainExactlyInAnyOrder listOf(
+                        MonitorID(MonitorType.HTTP_SSL, httpMonitor.name),
+                        MonitorID(MonitorType.PUSH, pushMonitor.name),
                     )
                 }
             }
@@ -335,8 +351,9 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a valid DTO - explicit parameters") {
-                val monitor = createMonitor(monitorRepository)
-                val monitor2 = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val monitor2 = createHttpMonitor(httpMonitorRepository)
+                val monitor3 = createPushMonitor(pushMonitorRepository)
                 val pageToCreate = StatusPageCreateDto(
                     title = "Status Page 1",
                     slug = "status-page-1",
@@ -344,6 +361,7 @@ class StatusPageControllerTest(
                     monitors = listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name).toString(),
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name).toString(),
+                        MonitorID(MonitorType.PUSH, monitor3.name).toString(),
                     )
                 )
                 val createdPage = statusPageClient.createStatuspage(pageToCreate)
@@ -361,6 +379,7 @@ class StatusPageControllerTest(
                     pageInDb.monitors shouldContainExactly arrayOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name),
+                        MonitorID(MonitorType.PUSH, monitor3.name),
                     )
                 }
             }
@@ -417,7 +436,7 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a non-existing monitor") {
-                val monitor = createMonitor(monitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository)
                 val pageToCreate = StatusPageCreateDto(
                     title = "Status Page 1",
                     slug = "status-page-1",
@@ -478,8 +497,9 @@ class StatusPageControllerTest(
                     customLogoUrl = "https://example.com/logo.png",
                     customFaviconUrl = "https://example.com/favicon.png",
                 )
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
-                val monitor2 = createMonitor(monitorRepository, monitorName = "monitor2")
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "monitor1")
+                val monitor2 = createHttpMonitor(httpMonitorRepository, monitorName = "monitor2")
+                val monitor3 = createPushMonitor(pushMonitorRepository, monitorName = "monitor3")
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(StatusPageUpdateDto::public.name, false)
                     .put(StatusPageUpdateDto::title.name, "Updated Status Page")
@@ -492,6 +512,7 @@ class StatusPageControllerTest(
                             .createArrayNode()
                             .add("http:${monitor.name}")
                             .add("http:${monitor2.name}")
+                            .add("push:${monitor3.name}")
                     )
 
                 delay(1000) // Ensure that updatedAt will be different than createdAt
@@ -507,22 +528,25 @@ class StatusPageControllerTest(
                     statusPageInDb.public shouldBe false
                     statusPageInDb.createdAt shouldBe statusPage.createdAt
                     statusPageInDb.updatedAt shouldBeAfter statusPage.createdAt
-                    statusPageInDb.monitors shouldContainExactly arrayOf(
+                    statusPageInDb.monitors shouldContainExactlyInAnyOrder arrayOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name),
+                        MonitorID(MonitorType.PUSH, monitor3.name),
                     )
                 }
             }
 
             `when`("it is called to remove all the referenced monitors") {
 
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "monitor1")
+                val monitor2 = createPushMonitor(pushMonitorRepository, monitorName = "monitor2")
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
                     slug = "status-page-1",
                     monitors = listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                        MonitorID(MonitorType.PUSH, monitor2.name),
                     )
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
@@ -542,13 +566,15 @@ class StatusPageControllerTest(
 
             `when`("monitors are omitted in the update") {
 
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "monitor1")
+                val monitor2 = createPushMonitor(pushMonitorRepository, monitorName = "monitor2")
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
                     slug = "status-page-1",
                     monitors = listOf(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                        MonitorID(MonitorType.PUSH, monitor2.name),
                     )
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
@@ -559,12 +585,14 @@ class StatusPageControllerTest(
 
                 then("the monitors should remain unchanged") {
                     updatedPage.public shouldBe false
-                    updatedPage.monitors shouldContainExactly listOf(
-                        MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                    updatedPage.monitors shouldContainExactlyInAnyOrder setOf(
+                        MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                        MonitorID(MonitorType.PUSH, monitor2.name),
                     )
                     statusPageInDb.public shouldBe updatedPage.public
-                    statusPageInDb.monitors shouldContainExactly arrayOf(
-                        MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                    statusPageInDb.monitors shouldContainExactlyInAnyOrder arrayOf(
+                        MonitorID(MonitorType.HTTP_SSL, monitor.name),
+                        MonitorID(MonitorType.PUSH, monitor2.name),
                     )
                 }
             }
@@ -705,7 +733,7 @@ class StatusPageControllerTest(
             }
 
             `when`("it is called with a non-existing monitor") {
-                val monitor = createMonitor(monitorRepository, monitorName = "monitor1")
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "monitor1")
                 val statusPage = createStatusPage(
                     dslContext,
                     title = "Status Page 1",
@@ -726,6 +754,29 @@ class StatusPageControllerTest(
                     val expectedMonitorId = MonitorID(MonitorType.HTTP_SSL, monitor.name)
                     response.monitors shouldHaveSingleElement expectedMonitorId
                     statusPageInDb.monitors shouldHaveSingleElement expectedMonitorId
+                }
+            }
+
+            `when`("it is called with a monitor that exists but with a different type") {
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "monitor1")
+                val statusPage = createStatusPage(
+                    dslContext,
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set<ObjectNode>(
+                        StatusPageUpdateDto::monitors.name,
+                        mapper
+                            .createArrayNode()
+                            .add("push:${monitor.name}")
+                    )
+                val response = statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+
+                then("it should ignore the wrongly-referenced monitor") {
+                    response.monitors.shouldBeEmpty()
+                    statusPageInDb.monitors.shouldBeEmpty()
                 }
             }
 

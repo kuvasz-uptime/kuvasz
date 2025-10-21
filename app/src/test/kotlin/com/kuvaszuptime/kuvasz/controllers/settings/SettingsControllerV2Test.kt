@@ -21,6 +21,7 @@ import io.mockk.mockk
     environments = [
         "full-integrations-setup",
         "yaml-monitors",
+        "yaml-push-monitors",
         "enabled-metrics-otlp",
         "enabled-metrics-prometheus",
         "status-pages",
@@ -60,6 +61,7 @@ class SettingsControllerV2Test(
                 result.app.eventLoggingEnabled shouldBe true
                 result.app.version.shouldNotBeEmpty() shouldBe appGlobals.appVersion
                 result.app.editabilityState.areHttpMonitorsReadOnly shouldBe true
+                result.app.editabilityState.arePushMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areStatusPagesReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false
 

@@ -12,8 +12,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
-import com.kuvaszuptime.kuvasz.models.HttpMonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.MonitorCannotBeDeletedException
+import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
@@ -24,10 +23,10 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LegacyHttpMonitorStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDeleteEvent
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpdateEvent
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.http.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -37,15 +36,15 @@ import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
-import com.kuvaszuptime.kuvasz.util.extractCauseInTransaction
+import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
-import org.jooq.exception.DataAccessException
 import java.time.Duration
 
 @Singleton
@@ -61,9 +60,10 @@ class HttpMonitorActions(
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
     private val statCalculator: StatCalculator,
-    private val statusPageRepository: StatusPageRepository,
-    private val appConfig: AppConfig,
-) : StatusPageMonitorDataProvider {
+    statusPageRepository: StatusPageRepository,
+    appConfig: AppConfig,
+) : StatusPageMonitorDataProvider,
+    MonitorActions<HttpMonitorRecord>(dslContext, appConfig, statusPageRepository, monitorRepository, eventDispatcher) {
 
     private val objectMapper: ObjectMapper = jacksonObjectMapper()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -71,11 +71,11 @@ class HttpMonitorActions(
 
     fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
-            monitorRepository.getMonitorWithDetails(monitorId) ?: throw HttpMonitorNotFoundException(monitorId)
+            monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
             nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
-            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo).toSet()
+            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo.integrations).toSet()
         )
     }
 
@@ -91,7 +91,8 @@ class HttpMonitorActions(
                 detailsDto.copy(
                     nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
                     nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
-                    effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto).toSet()
+                    effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
+                        .toSet()
                 )
             }
 
@@ -105,7 +106,7 @@ class HttpMonitorActions(
             { insertedMonitor ->
                 if (insertedMonitor.enabled) {
                     checkScheduler.createChecksForMonitor(insertedMonitor)?.let { schedulingError ->
-                        monitorRepository.deleteById(insertedMonitor.id)
+                        monitorRepository.deleteById(insertedMonitor.id, null)
                         throw schedulingError
                     }
                 }
@@ -114,64 +115,37 @@ class HttpMonitorActions(
         )
     }
 
-    fun deleteMonitorById(monitorId: Long): Unit =
-        monitorRepository.findById(monitorId)
-            .orThrowNotFound(monitorId)
-            .let { monitor ->
-                if (!isMonitorChangeable(monitor)) {
-                    throw MonitorCannotBeDeletedException(
-                        "Monitor cannot be deleted because it is referenced by a read-only status page"
-                    )
+    fun deleteMonitorById(monitorId: Long) =
+        deleteMonitorById(monitorId) { deletedMonitor ->
+            // Remove any scheduled checks
+            checkScheduler.removeChecksOfMonitor(deletedMonitor)
+        }
+
+    fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorRecord =
+        dslContext.transactionResultWithError { config ->
+            val txCtx = config.dsl()
+            val existingMonitor = monitorRepository.findById(monitorId, txCtx).orThrowNotFound(monitorId)
+            val toUpdate = existingMonitor.into(HttpMonitor::class.java)
+            val filteredUpdates = updates.fieldNames().asSequence()
+                .fold(objectMapper.createObjectNode()) { acc, fieldName ->
+                    acc.set(fieldName, updates.get(fieldName))
                 }
-                monitorRepository.deleteById(monitor.id)
-                checkScheduler.removeChecksOfMonitor(monitor)
-                eventDispatcher.dispatch(HttpMonitorDeleteEvent(monitor.id))
+            val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
+            // Check if name is present in a non-writable status page as reference
+            if (updatedMonitor.name != existingMonitor.name && !isMonitorChangeable(existingMonitor)) {
+                throw ReadOnlyMonitorNameException()
             }
 
-    fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorRecord {
-        val result = try {
-            dslContext.transactionResult { config ->
-                monitorRepository.findById(monitorId, config.dsl())?.let { existingMonitor ->
-                    val toUpdate = existingMonitor.into(HttpMonitor::class.java)
-                    val filteredUpdates = updates.fieldNames().asSequence()
-                        .fold(objectMapper.createObjectNode()) { acc, fieldName ->
-                            acc.set(fieldName, updates.get(fieldName))
-                        }
-                    val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
-                    // Check if name is present in a non-writable status page as reference
-                    if (updatedMonitor.name != existingMonitor.name && !isMonitorChangeable(existingMonitor)) {
-                        throw ReadOnlyMonitorNameException()
-                    }
+            objectMapper.convertValue<HttpMonitorUpdateDto>(updatedMonitor).let { toValidate ->
+                validator.validate(toValidate).throwIfNotEmpty()
+            }
+            // Validate the raw integrations from the DTO
+            updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
 
-                    objectMapper.convertValue<HttpMonitorUpdateDto>(updatedMonitor).let { toValidate ->
-                        validator.validate(toValidate).throwIfNotEmpty()
-                    }
-                    // Validate the raw integrations from the DTO
-                    updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
-
-                    HttpMonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, config.dsl())
-                }
-            }.orThrowNotFound(monitorId)
-        } catch (ex: DataAccessException) {
-            throw extractCauseInTransaction(ex)
+            HttpMonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, txCtx)
+        }.also { updatedMonitorRecord ->
+            eventDispatcher.dispatch(MonitorUpdateEvent(updatedMonitorRecord.numericMonitorId()))
         }
-
-        return result.also { eventDispatcher.dispatch(HttpMonitorUpdateEvent(it.id)) }
-    }
-
-    /**
-     * Checks if it's safe to update the monitor's name or delete it at all from the status pages' perspective.
-     * If the monitor is referenced by a status page that is not writable, then we cannot change its name or delete it,
-     * to preserve referential integrity.
-     */
-    private fun isMonitorChangeable(existingMonitor: HttpMonitorRecord): Boolean {
-        if (!appConfig.isStatusPageExternalWriteDisabled()) {
-            return true
-        }
-        val referencingStatusPages =
-            statusPageRepository.getStatusPagesOfMonitor(MonitorID.fromHttpMonitor(existingMonitor))
-        return referencingStatusPages.isEmpty()
-    }
 
     private fun HttpMonitorRecord.saveAndReschedule(
         existingMonitor: HttpMonitorRecord,
@@ -194,14 +168,14 @@ class HttpMonitorActions(
         )
 
     fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> =
-        monitorRepository.findById(monitorId)
+        monitorRepository.findById(monitorId, null)
             .orThrowNotFound(monitorId)
             .let { monitor ->
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
     fun getSSLEventsByMonitorId(monitorId: Long, limit: Int? = null): List<SSLEventDto> =
-        monitorRepository.findById(monitorId)
+        monitorRepository.findById(monitorId, null)
             .orThrowNotFound(monitorId)
             .let { monitor ->
                 sslEventRepository.getEventsByMonitorId(monitor.id, limit)
@@ -209,7 +183,7 @@ class HttpMonitorActions(
 
     @Deprecated("Use getMonitorStats instead")
     fun getLegacyMonitorStats(monitorId: Long, period: Duration): LegacyHttpMonitorStatsDto =
-        monitorRepository.findById(monitorId)
+        monitorRepository.findById(monitorId, null)
             .orThrowNotFound(monitorId)
             .let { monitor ->
                 val statsDto = LegacyHttpMonitorStatsDto(
@@ -240,7 +214,7 @@ class HttpMonitorActions(
             }
 
     fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =
-        monitorRepository.findById(monitorId)
+        monitorRepository.findById(monitorId, null)
             .orThrowNotFound(monitorId)
             .let { monitor ->
                 val uptimeHistory = statCalculator.calculateHistoricalHttpUptimeStats(period, monitorId)
@@ -271,15 +245,12 @@ class HttpMonitorActions(
                 )
             }
 
-    private fun HttpMonitorRecord?.orThrowNotFound(monitorId: Long): HttpMonitorRecord =
-        this ?: throw HttpMonitorNotFoundException(monitorId)
-
     fun getHttpMonitorsExport(): List<HttpMonitorRecord> = monitorRepository.fetchAll()
 
-    override fun getDataOfEnabledMonitors(
+    override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
-    ): List<StatusPageMonitorDetailsDto> {
+    ): List<StatusPageHttpMonitorDetailsDto> {
         val httpMonitorNames = monitorIds?.filter { it.type == MonitorType.HTTP_SSL }?.map { it.name }
         val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = httpMonitorNames)
 
@@ -297,7 +268,7 @@ class HttpMonitorActions(
                     monitorId = monitor.id,
                 )
             )
-            StatusPageMonitorDetailsDto(
+            StatusPageHttpMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = latencyMetrics?.avg,

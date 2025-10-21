@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
-import arrow.core.getOrHandle
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -16,7 +15,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
 import com.kuvaszuptime.kuvasz.models.statuspage.toStatusPageRecord
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.STATUS_PAGES_CACHE_NAME
-import com.kuvaszuptime.kuvasz.util.extractCauseInTransaction
+import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.cache.annotation.CacheInvalidate
@@ -24,7 +23,6 @@ import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
-import org.jooq.exception.DataAccessException
 
 @Singleton
 class StatusPageActions(
@@ -57,9 +55,7 @@ class StatusPageActions(
         val validatedMonitors =
             monitorIdValidator.validateMonitorIds(statusPageCreateDto.monitors.orEmpty())
 
-        return statusPageRepository
-            .returningInsert(statusPageCreateDto.toStatusPageRecord(validatedMonitors))
-            .getOrHandle { persistenceError -> throw persistenceError }
+        return statusPageRepository.returningInsert(statusPageCreateDto.toStatusPageRecord(validatedMonitors))
     }
 
     @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = false, parameters = ["statusPageId"])
@@ -72,34 +68,26 @@ class StatusPageActions(
 
     @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = false, parameters = ["statusPageId"])
     fun updateStatusPage(statusPageId: Long, updates: ObjectNode): StatusPageRecord =
-        try {
-            dslContext.transactionResult { config ->
-                val txCtx = config.dsl()
-                statusPageRepository.findById(statusPageId, txCtx)?.let { existingStatusPage ->
-                    val toUpdate = existingStatusPage.into(StatusPage::class.java)
-                    val filteredUpdates = updates.fieldNames().asSequence()
-                        .fold(objectMapper.createObjectNode()) { acc, fieldName ->
-                            acc.set(fieldName, updates.get(fieldName))
-                        }
-                    val updatedStatusPage = objectMapper.updateValue(toUpdate, filteredUpdates)
-
-                    objectMapper.convertValue<StatusPageUpdateDto>(updatedStatusPage).let { toValidate ->
-                        validator.validate(toValidate).throwIfNotEmpty()
-                    }
-                    // Filter out non-existing monitor IDs before updating
-                    if (updatedStatusPage.monitors != null) {
-                        updatedStatusPage.monitors =
-                            monitorIdValidator.validateMonitorIds(updatedStatusPage.monitors).toTypedArray()
-                    }
-
-                    statusPageRepository.returningUpdate(StatusPageRecord(updatedStatusPage), txCtx).fold(
-                        { persistenceError -> throw persistenceError },
-                        { updatedStatusPageFromDb -> updatedStatusPageFromDb }
-                    )
+        dslContext.transactionResultWithError { config ->
+            val txCtx = config.dsl()
+            val existingStatusPage = statusPageRepository.findById(statusPageId, txCtx).orThrowNotFound(statusPageId)
+            val toUpdate = existingStatusPage.into(StatusPage::class.java)
+            val filteredUpdates = updates.fieldNames().asSequence()
+                .fold(objectMapper.createObjectNode()) { acc, fieldName ->
+                    acc.set(fieldName, updates.get(fieldName))
                 }
-            }.orThrowNotFound(statusPageId)
-        } catch (ex: DataAccessException) {
-            throw extractCauseInTransaction(ex)
+            val updatedStatusPage = objectMapper.updateValue(toUpdate, filteredUpdates)
+
+            objectMapper.convertValue<StatusPageUpdateDto>(updatedStatusPage).let { toValidate ->
+                validator.validate(toValidate).throwIfNotEmpty()
+            }
+            // Filter out non-existing monitor IDs before updating
+            if (updatedStatusPage.monitors != null) {
+                updatedStatusPage.monitors =
+                    monitorIdValidator.validateMonitorIds(updatedStatusPage.monitors).toTypedArray()
+            }
+
+            statusPageRepository.returningUpdate(StatusPageRecord(updatedStatusPage), txCtx)
         }
 
     private fun StatusPageRecord?.orThrowNotFound(statusPageId: Long): StatusPageRecord =

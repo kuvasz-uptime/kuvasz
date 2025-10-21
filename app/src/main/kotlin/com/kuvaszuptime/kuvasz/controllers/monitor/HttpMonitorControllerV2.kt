@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
+import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -36,10 +38,10 @@ import java.time.Duration
 
 @Controller("${API_V2_PREFIX}/http-monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
-@Tag(name = "HTTP monitors")
+@Tag(name = OpenApiTags.HTTP_MONITORS)
 @SecurityRequirements(
-    SecurityRequirement(name = "apiKey"),
-    SecurityRequirement(name = "bearerAuth")
+    SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
+    SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
 class HttpMonitorControllerV2(
     private val monitorActions: HttpMonitorActions,
