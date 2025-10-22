@@ -1,4 +1,4 @@
-## 3.2.0 <small>2025-10-xx</small> { id="3.2.0" data-toc-label="3.2.0" }
+## 3.2.0 <small>2025-10-23</small> { id="3.2.0" data-toc-label="3.2.0" }
 
 ### New features
 
