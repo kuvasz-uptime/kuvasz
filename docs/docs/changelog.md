@@ -15,7 +15,7 @@
 
 ### Fixes
 
-
+- SSL checks are using now a logic that is not bound to HTTP requests, so it's possible to check the certificate of endpoints, that are not accessible via HTTP.
 
 ## 3.1.0 <small>2025-09-23</small> { id="3.1.0" data-toc-label="3.1.0" }
 
