@@ -137,6 +137,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                                     xModel(propName)
                                     xBindErrorClass(propName)
                                     xOnInput("validateClientSecret()")
+                                    xBindDisabled("$isReadOnlyMode")
                                 }
                                 templateTag {
                                     xIf("errors.$propName")
@@ -149,6 +150,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                             div {
                                 classes(COL_AUTO)
                                 compactIconButton(Icon.REFRESH) {
+                                    xBindDisabled("$isReadOnlyMode")
                                     xOnClick("generateNewClientSecret()")
                                 }
                             }
