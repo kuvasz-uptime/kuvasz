@@ -10,7 +10,6 @@ import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLValidator
@@ -27,7 +26,6 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.time.OffsetDateTime
 
@@ -38,7 +36,6 @@ class SSLCheckerTest(
 ) : DatabaseBehaviorSpec() {
 
     private val sslValidator = mockk<SSLValidator>()
-    private val uptimeEventRepository = mockk<HttpUptimeEventRepository>()
 
     init {
         val eventDispatcher = EventDispatcher()
@@ -47,28 +44,16 @@ class SSLCheckerTest(
                 sslValidator = sslValidator,
                 eventDispatcher = eventDispatcher,
                 sslEventRepository = sslEventRepository,
-                uptimeEventRepository = uptimeEventRepository
             )
         )
 
         given("the SSLChecker service") {
-            `when`("it checks a monitor that is DOWN") {
-                val monitor = createHttpMonitor(monitorRepository)
-                mockIsMonitorUpResult(false)
-
-                sslChecker.check(monitor)
-
-                then("it should not run the SSL check") {
-                    verify(exactly = 0) { sslValidator.validate(any()) }
-                }
-            }
 
             `when`("it checks a monitor with a valid certificate") {
                 val monitor = createHttpMonitor(monitorRepository)
                 val subscriber = TestSubscriber<SSLValidEvent>()
                 eventDispatcher.subscribeToSSLValidEvents { it.forwardToSubscriber(subscriber) }
                 mockValidationResult(SslStatus.VALID)
-                mockIsMonitorUpResult(true)
 
                 sslChecker.check(monitor)
 
@@ -83,7 +68,6 @@ class SSLCheckerTest(
                 val subscriber = TestSubscriber<SSLInvalidEvent>()
                 eventDispatcher.subscribeToSSLInvalidEvents { it.forwardToSubscriber(subscriber) }
                 mockValidationResult(SslStatus.INVALID)
-                mockIsMonitorUpResult(true)
 
                 sslChecker.check(monitor)
 
@@ -102,13 +86,11 @@ class SSLCheckerTest(
                 eventDispatcher.subscribeToSSLValidEvents { it.forwardToSubscriber(certValidSubscriber) }
                 eventDispatcher.subscribeToSSLInvalidEvents { it.forwardToSubscriber(certInvalidSubscriber) }
                 mockValidationResult(SslStatus.INVALID)
-                mockIsMonitorUpResult(true)
 
                 then("it should dispatch an SSLInvalid and an SSLValidEvent") {
                     sslChecker.check(monitor)
                     clearMocks(sslValidator)
                     mockValidationResult(SslStatus.VALID)
-                    mockIsMonitorUpResult(true)
                     sslChecker.check(monitor)
 
                     val expectedInvalidEvent = certInvalidSubscriber.awaitCount(1).values().first()
@@ -127,13 +109,11 @@ class SSLCheckerTest(
                 eventDispatcher.subscribeToSSLValidEvents { it.forwardToSubscriber(certValidSubscriber) }
                 eventDispatcher.subscribeToSSLInvalidEvents { it.forwardToSubscriber(certInvalidSubscriber) }
                 mockValidationResult(SslStatus.VALID)
-                mockIsMonitorUpResult(true)
 
                 then("it should dispatch an SSLValid and then an SSLInvalidEvent") {
                     sslChecker.check(monitor)
                     clearMocks(sslValidator)
                     mockValidationResult(SslStatus.INVALID)
-                    mockIsMonitorUpResult(true)
                     sslChecker.check(monitor)
 
                     val expectedInvalidEvent = certInvalidSubscriber.awaitCount(1).values().first()
@@ -154,7 +134,6 @@ class SSLCheckerTest(
                     status = SslStatus.WILL_EXPIRE,
                     validTo = validTo
                 )
-                mockIsMonitorUpResult(true)
 
                 sslChecker.check(monitor)
 
@@ -183,10 +162,6 @@ class SSLCheckerTest(
             SslStatus.WILL_EXPIRE -> Either.Right(certInfo)
             SslStatus.INVALID -> Either.Left(SSLValidationError("validation error"))
         }
-        every { sslValidator.validate(any()) } returns mockResult
-    }
-
-    private fun mockIsMonitorUpResult(result: Boolean) {
-        every { uptimeEventRepository.isMonitorUp(any(), nullAsUp = true) } returns result
+        every { sslValidator.validateHttps(any()) } returns mockResult
     }
 }

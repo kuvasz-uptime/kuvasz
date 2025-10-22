@@ -43,7 +43,7 @@ class SSLValidatorTest : StringSpec(
                 row("https://no-subject.badssl.com/", false),
                 row("https://incomplete-chain.badssl.com/", false)
             ).forAll { url, isValid ->
-                val result = validator.validate(url.toUri().toURL())
+                val result = validator.validateHttps(url.toUri())
 
                 (if (isValid) result.isRight() else result.isLeft()).shouldBeTrue()
             }

@@ -74,9 +74,6 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
         .where(HTTP_UPTIME_EVENT.ID.eq(eventId))
         .execute()
 
-    fun isMonitorUp(monitorId: Long, nullAsUp: Boolean = false): Boolean =
-        getPreviousEventByMonitorId(monitorId)?.let { it.status == UptimeStatus.UP } ?: nullAsUp
-
     @Suppress("IgnoredReturnValue")
     fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> = dslContext
         .select(
