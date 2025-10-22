@@ -26,7 +26,6 @@ java {
 micronaut {
     runtime("netty")
     testRuntime("kotest5")
-    coreVersion.set("4.10.6") // TODO remove it after the platform provides 4.10.x
     processing {
         incremental(true)
         annotations("com.kuvaszuptime.kuvasz.*")
@@ -56,10 +55,7 @@ dependencies {
     runtimeOnly(mn.snakeyaml)
     implementation(mn.micronaut.validation)
     implementation(mn.logback.classic)
-//    implementation(mn.micronaut.http.client)
-    implementation("io.micronaut:micronaut-http-server:4.10.6") // TODO remove it after the platform provides 4.10.x
-    implementation("io.micronaut:micronaut-http-server-netty:4.10.6") // TODO remove it after the platform provides 4.10.x
-    implementation("io.micronaut:micronaut-http-client:4.10.6") // TODO remove it after the platform provides 4.10.x
+    implementation(mn.micronaut.http.client)
     implementation(mn.micronaut.rxjava3)
     implementation(mn.micronaut.retry)
     implementation(mn.micronaut.security.jwt)
