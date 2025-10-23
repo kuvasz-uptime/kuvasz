@@ -1523,10 +1523,10 @@ components:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
           format: int32
-          default: 30
           x-minimum-message: SSL expiry threshold must be greater than or equal to
             0 days
           x-not-null-message: SSL expiry threshold must not be null
+          default: 30
         integrations:
           type: array
           description: "List of integrations explicitly assigned to the monitor, e.g.\
