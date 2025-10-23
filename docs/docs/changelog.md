@@ -1,3 +1,9 @@
+## 3.2.1 <small>2025-10-23</small> { id="3.2.1" data-toc-label="3.2.1" }
+
+### Fixes
+
+- Reverted the large-header handling change from 3.2.0 that causes stability issues due to the higher usage of memory.
+
 ## 3.2.0 <small>2025-10-23</small> { id="3.2.0" data-toc-label="3.2.0" }
 
 ### New features
