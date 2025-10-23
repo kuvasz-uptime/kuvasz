@@ -41,29 +41,23 @@ class SSLValidator {
             return Either.Left(SSLValidationError("URL protocol must be HTTPS, but was: ${url.scheme}"))
         }
         val start = System.currentTimeMillis()
-        val sslSocket = try {
-            createSocket(url)
-        } catch (ex: Exception) {
-            return Either.Left(
-                SSLValidationError("Error connecting to ${url.host}, reason: ${ex.message}")
-            )
-        }
 
         val result = try {
-            sslSocket.startHandshake()
-            val session = sslSocket.session
-            val certificates = session.peerCertificates.filterIsInstance<X509Certificate>()
-            certificates.firstOrNull()?.let { peerCert ->
-                Either.Right(CertificateInfo(validTo = peerCert.notAfter.toOffsetDateTime()))
-            } ?: Either.Left(SSLValidationError("No peer certificate was found"))
+            createSocket(url).use { sslSocket ->
+                sslSocket.startHandshake()
+                val session = sslSocket.session
+                sslSocket.close()
+                val certificates = session.peerCertificates.filterIsInstance<X509Certificate>()
+                certificates.firstOrNull()?.let { peerCert ->
+                    Either.Right(CertificateInfo(validTo = peerCert.notAfter.toOffsetDateTime()))
+                } ?: Either.Left(SSLValidationError("No peer certificate was found"))
+            }
         } catch (ex: Exception) {
             Either.Left(
                 SSLValidationError("Error connecting or retrieving certificates for ${url.host}, reason: ${ex.message}")
             )
-        } finally {
-            sslSocket.close()
         }
-        logger.info("Finished SSL check for ${url.host} in ${System.currentTimeMillis() - start} ms")
+        logger.debug("Finished SSL check for ${url.host} in ${System.currentTimeMillis() - start} ms")
         return result
     }
 
