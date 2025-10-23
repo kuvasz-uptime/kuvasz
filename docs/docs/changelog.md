@@ -1,3 +1,9 @@
+## 3.2.2 <small>2025-10-23</small> { id="3.2.2" data-toc-label="3.2.2" }
+
+### Fixes
+
+- Fixed a memory leak that caused instable memory usage, and changed the base image to `eclipse-temurin:21-jre-ubi9-minimal`. Due to the base image change, if you're **using your own certificates**, attached to the container, you'll need to **update your volume mapping accordingly**. (See _"Providing a custom root certificate for SSL checks"_ in the documentation for more details)
+
 ## 3.2.1 <small>2025-10-23</small> { id="3.2.1" data-toc-label="3.2.1" }
 
 ### Fixes
