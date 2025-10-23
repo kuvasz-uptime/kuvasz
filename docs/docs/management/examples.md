@@ -127,11 +127,11 @@ Otherwise you can just use your own "patched" `cacerts` for every new version of
 
 ```shell
 # 1. Pull the current base image
-docker pull bellsoft/liberica-runtime-container:jre-21-cds-slim-musl
+docker pull eclipse-temurin:21-jre-ubi9-minimal
 # 2. Copy the "original" cacerts to a local file
-docker run --rm --entrypoint cat bellsoft/liberica-runtime-container:jre-21-cds-slim-musl /usr/lib/jvm/liberica21-container-jre/lib/security/cacerts > cacerts
+docker run --rm --entrypoint cat eclipse-temurin:21-jre-ubi9-minimal /opt/java/openjdk/lib/security/cacerts > cacerts
 # 3. This is the tricky step: we attach back the current folder where the cacerts, and also the custom certificate should exist and we add the custom certificate to the keystore
-docker run --rm -v `pwd`:/tmp/certs bellsoft/liberica-runtime-container:jre-21-cds-slim-musl sh -c 'cd /tmp/certs && keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts -importcert -alias your-custom-alias -file your-custom-cert.crt'
+docker run --rm -v `pwd`:/tmp/certs eclipse-temurin:21-jre-ubi9-minimal sh -c 'cd /tmp/certs && keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts -importcert -alias your-custom-alias -file your-custom-cert.crt'
 ```
 
 Watch out for `your-custom-alias` and `your-custom-cert.crt` in the example, these are the moving parts, depending on your own preferences.
@@ -143,7 +143,7 @@ This is easier, and quite straightforward, you just need to mount another volume
 ```yaml
 # ...
 volumes:
-  - /path/to/your/cacerts:/usr/lib/jvm/liberica21-container-jre/lib/security/cacerts:ro
+  - /path/to/your/cacerts:/opt/java/openjdk/lib/security/cacerts:ro
 # ...
 ```
 Make sure that you completely re-create your container after these changes!

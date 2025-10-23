@@ -133,7 +133,7 @@ tasks.withType<Detekt>().configureEach {
 
 jib {
     from {
-        image = "bellsoft/liberica-runtime-container:jre-21-cds-slim-musl"
+        image = "eclipse-temurin:21-jre-ubi9-minimal"
         platforms {
             platform {
                 os = "linux"
