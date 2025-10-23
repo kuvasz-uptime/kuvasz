@@ -115,11 +115,8 @@ class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpCli
 
     override fun isExceptionOnErrorStatus(): Boolean = false
 
-    override fun getMaxHeaderSize(): Int = MAX_HEADER_SIZE
-
     companion object {
         private const val EVENT_LOOP_GROUP = "uptime-check"
         private const val READ_TIMEOUT_SECONDS = 30L
-        private const val MAX_HEADER_SIZE = 16384
     }
 }

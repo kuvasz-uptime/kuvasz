@@ -1380,40 +1380,6 @@ class UptimeCheckerE2ETest(
                 mockServer.verifyRequest(request)
             }
         }
-
-        // The default max header size in Netty is 8192 bytes, which can cause issues in rare cases where the server
-        // responds with really large headers. This test is meant to verify that the max header size is properly
-        // configured
-        `when`("it checks a monitor with headers larger than 8192 bytes") {
-
-            val monitor = createHttpMonitor(
-                repository = monitorRepository,
-                url = "$mockServerUrl/some-path",
-                requestMethod = HttpMethod.GET,
-            )
-
-            val testSubscriber = TestSubscriber<HttpMonitorUpEvent>()
-            eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(testSubscriber) }
-
-            val request = getRequest("/some-path")
-
-            mockServer.`when`(request).respond(
-                response()
-                    .withStatusCode(HttpStatus.OK.code)
-                    .withHeader("A-Really-Large-One", "a".repeat(12000))
-            )
-
-            uptimeChecker.check(monitor)
-
-            then("it should dispatch an UP event instead of failing and dispatching a DOWN event") {
-                val expectedEvent = testSubscriber.awaitCount(1).values().first()
-
-                expectedEvent.status shouldBe HttpStatus.OK
-                expectedEvent.monitor.id shouldBe monitor.id
-
-                mockServer.verifyRequest(request)
-            }
-        }
     }
 })
 
