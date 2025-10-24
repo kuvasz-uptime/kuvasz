@@ -89,7 +89,6 @@ nav:
       - Notifications: features/notifications.md
       - Web UI: features/ui.md
       - Flexibility: features/flexibility.md
-      - Performance: features/performance.md
       - API: features/api.md
   - Getting started:
       - Deployment: setup/installation.md
