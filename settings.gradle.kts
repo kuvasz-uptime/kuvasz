@@ -11,7 +11,7 @@ pluginManagement {
         val jooqPluginVersion: String by settings
         val flywayPluginVersion: String by settings
         val detektVersion: String by settings
-        val micronautGradlePluginVersion = "4.6.0"
+        val micronautGradlePluginVersion = "4.6.1"
 
         kotlin("jvm") version kotlinVersion
         kotlin("kapt") version kotlinVersion
