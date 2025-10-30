@@ -117,7 +117,7 @@ allOpen {
 tasks.withType<JavaExec> {
     jvmArgs(
         "-Xms64M",
-        "-Xmx128M",
+        "-Xmx192M",
     )
     systemProperty("micronaut.config.files", file("../localdev/application-dev.yml"))
 }
@@ -151,7 +151,7 @@ jib {
     }
     container {
         environment = mapOf(
-            "JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx128M",
+            "JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx192M",
             "MICRONAUT_CONFIG_FILES" to "/config/kuvasz.yml"
         )
     }
