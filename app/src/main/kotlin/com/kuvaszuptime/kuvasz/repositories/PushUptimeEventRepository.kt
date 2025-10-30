@@ -43,11 +43,23 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
         .where(PUSH_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun getPreviousEventByMonitorId(monitorId: Long, txCtx: DSLContext = dslContext): PushUptimeEventRecord? = txCtx
-        .selectFrom(PUSH_UPTIME_EVENT)
-        .where(PUSH_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .and(PUSH_UPTIME_EVENT.ENDED_AT.isNull)
-        .fetchOne()
+    fun getPreviousEventByMonitorId(monitorId: Long, txCtx: DSLContext = dslContext): PushUptimeEventRecord? {
+        val uptimeRecords = txCtx
+            .selectFrom(PUSH_UPTIME_EVENT)
+            .where(PUSH_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+            .and(PUSH_UPTIME_EVENT.ENDED_AT.isNull)
+            .fetch()
+
+        if (uptimeRecords.size <= 1) return uptimeRecords.firstOrNull()
+
+        uptimeRecords.dropLast(1).map { it.id }.let { conflictingEventIds ->
+            txCtx.deleteFrom(PUSH_UPTIME_EVENT)
+                .where(PUSH_UPTIME_EVENT.ID.`in`(conflictingEventIds))
+                .execute()
+        }
+
+        return uptimeRecords.last()
+    }
 
     fun endEventById(eventId: Long, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
         .update(PUSH_UPTIME_EVENT)

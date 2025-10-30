@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
@@ -21,6 +22,7 @@ import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
+import org.jooq.Table
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
 
@@ -52,7 +54,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .where(HTTP_MONITOR.ID.eq(monitorId))
         .execute()
 
-    @Suppress("IgnoredReturnValue")
+    @Suppress("IgnoredReturnValue", "UnsafeCallOnNullableType")
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
@@ -64,7 +66,9 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         monitorDetailsSelect()
             .apply {
                 enabled?.let { and(HTTP_MONITOR.ENABLED.eq(it)) }
-                uptimeStatus.takeIf { it.isNotEmpty() }?.let { and(HTTP_UPTIME_EVENT.STATUS.`in`(it)) }
+                uptimeStatus.takeIf { it.isNotEmpty() }?.let {
+                    and(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS)!!.`in`(it))
+                }
                 sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
                 sslCheckEnabled?.let { and(HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it)) }
                 monitorNames?.let { and(HTTP_MONITOR.NAME.`in`(it)) }
@@ -155,7 +159,15 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .where(HTTP_MONITOR.ID.notIn(ignoredIds))
         .execute()
 
-    @Suppress("LongMethod")
+    val latestUptimeEventSelect: Table<HttpUptimeEventRecord?> = DSL.table(
+        DSL.selectFrom(HTTP_UPTIME_EVENT)
+            .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
+            .and(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
+            .orderBy(HTTP_UPTIME_EVENT.UPDATED_AT.desc())
+            .limit(1)
+    )
+
+    @Suppress("LongMethod", "UnsafeCallOnNullableType")
     private fun monitorDetailsSelect(): SelectConditionStep<Record?> = dslContext
         .select(
             HTTP_MONITOR.ID.`as`(HttpMonitorDetailsDto::id.name),
@@ -166,14 +178,16 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             HTTP_MONITOR.SSL_CHECK_ENABLED.`as`(HttpMonitorDetailsDto::sslCheckEnabled.name),
             HTTP_MONITOR.CREATED_AT.`as`(HttpMonitorDetailsDto::createdAt.name),
             HTTP_MONITOR.UPDATED_AT.`as`(HttpMonitorDetailsDto::updatedAt.name),
-            HTTP_UPTIME_EVENT.STATUS.`as`(HttpMonitorDetailsDto::uptimeStatus.name),
-            HTTP_UPTIME_EVENT.STARTED_AT.`as`(HttpMonitorDetailsDto::uptimeStatusStartedAt.name),
-            HTTP_UPTIME_EVENT.UPDATED_AT.`as`(HttpMonitorDetailsDto::lastUptimeCheck.name),
+            latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS)!!.`as`(HttpMonitorDetailsDto::uptimeStatus.name),
+            latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STARTED_AT)!!
+                .`as`(HttpMonitorDetailsDto::uptimeStatusStartedAt.name),
+            latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.UPDATED_AT)!!
+                .`as`(HttpMonitorDetailsDto::lastUptimeCheck.name),
             SSL_EVENT.STATUS.`as`(HttpMonitorDetailsDto::sslStatus.name),
             SSL_EVENT.STARTED_AT.`as`(HttpMonitorDetailsDto::sslStatusStartedAt.name),
             SSL_EVENT.UPDATED_AT.`as`(HttpMonitorDetailsDto::lastSSLCheck.name),
             SSL_EVENT.SSL_EXPIRY_DATE.`as`(HttpMonitorDetailsDto::sslValidUntil.name),
-            HTTP_UPTIME_EVENT.ERROR.`as`(HttpMonitorDetailsDto::uptimeError.name),
+            latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.ERROR)!!.`as`(HttpMonitorDetailsDto::uptimeError.name),
             SSL_EVENT.ERROR.`as`(HttpMonitorDetailsDto::sslError.name),
             HTTP_MONITOR.LATENCY_HISTORY_ENABLED.`as`(HttpMonitorDetailsDto::latencyHistoryEnabled.name),
             HTTP_MONITOR.FORCE_NO_CACHE.`as`(HttpMonitorDetailsDto::forceNoCache.name),
@@ -196,8 +210,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                 .`as`(HttpMonitorDetailsDto::statusPages.name),
         )
         .from(HTTP_MONITOR)
-        .leftJoin(HTTP_UPTIME_EVENT)
-        .on(HTTP_MONITOR.ID.eq(HTTP_UPTIME_EVENT.MONITOR_ID).and(HTTP_UPTIME_EVENT.ENDED_AT.isNull))
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
         .leftJoin(SSL_EVENT)
         .on(HTTP_MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
         .leftJoin(statusPagesSubselect)
