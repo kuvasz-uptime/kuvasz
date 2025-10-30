@@ -85,12 +85,13 @@ class PushMonitorActions(
             monitorRepository.updateLastHeartbeat(clientSecret, timestamp, txCtx)
                 ?.takeIf { it.enabled }
                 ?.also { updatedMonitor ->
-                    eventDispatcher.dispatch(
-                        PushMonitorUpEvent(
-                            monitor = updatedMonitor,
-                            previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(updatedMonitor.id, txCtx),
-                        )
-                    )
+                    PushMonitorUpEvent(
+                        monitor = updatedMonitor,
+                        previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(updatedMonitor.id, txCtx),
+                    ).also { event ->
+                        databaseEventHandler.handleUptimeMonitorEvent(event)
+                        eventDispatcher.dispatch(event)
+                    }
                 }
         }
 

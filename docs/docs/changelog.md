@@ -1,3 +1,9 @@
+## 3.2.4 <small>2025-10-30</small> { id="3.2.4" data-toc-label="3.2.4" }
+
+### Fixes
+
+- Fixed a bug that was introduced in 3.2.3 and caused push monitors to stuck in DOWN mode.
+
 ## 3.2.3 <small>2025-10-30</small> { id="3.2.3" data-toc-label="3.2.3" }
 
 ### Fixes
