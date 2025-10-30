@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.PushMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
@@ -56,6 +57,7 @@ class PushMonitorActions(
     private val statCalculator: StatCalculator,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
+    private val databaseEventHandler: DatabaseEventHandler,
 ) : StatusPageMonitorDataProvider,
     MonitorActions<PushMonitorRecord>(dslContext, appConfig, statusPageRepository, monitorRepository, eventDispatcher) {
 
@@ -203,14 +205,15 @@ class PushMonitorActions(
         .transactionResultWithError { config ->
             val txCtx = config.dsl()
             monitorRepository.findEnabledByClientSecret(clientSecret, txCtx)?.also { monitor ->
-                eventDispatcher.dispatch(
-                    PushMonitorDownEvent(
-                        monitor,
-                        error,
-                        previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
-                        isManual = true,
-                    )
-                )
+                PushMonitorDownEvent(
+                    monitor,
+                    error,
+                    previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
+                    isManual = true,
+                ).also { event ->
+                    databaseEventHandler.handleUptimeMonitorEvent(event)
+                    eventDispatcher.dispatch(event)
+                }
             }
         }
 }

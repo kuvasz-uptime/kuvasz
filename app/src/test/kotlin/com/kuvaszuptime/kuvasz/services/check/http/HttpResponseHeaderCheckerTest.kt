@@ -1,8 +1,10 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.ExpectedHeaderNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.kotest.core.spec.style.ShouldSpec
@@ -11,14 +13,17 @@ import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.simple.SimpleHttpResponseFactory
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 
 class HttpResponseHeaderCheckerTest : ShouldSpec({
 
     val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
+    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
     val dispatcher = EventDispatcher()
-    val checker = HttpResponseHeaderChecker(dispatcher, mockUptimeRepo)
+    val checker = HttpResponseHeaderChecker(dispatcher, mockUptimeRepo, mockDbEventHandler)
 
     fun mockResponse(mockHeaders: Map<String, String>): HttpCheckResponse {
         val mockHttpResponse = SimpleHttpResponseFactory()
@@ -34,6 +39,8 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
             every { httpResponse } returns mockHttpResponse
         }
     }
+
+    afterTest { clearMocks(mockDbEventHandler) }
 
     context("expected headers are not set") {
 
@@ -52,6 +59,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
             redirectSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 
@@ -83,6 +91,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
             redirectSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
 
         should("return Continue if all expected headers are present - case matches - with whitespaces") {
@@ -110,6 +119,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
             redirectSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
 
         should("return Continue if all expected headers are present - case is different") {
@@ -137,6 +147,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
             redirectSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
 
         should("return Finished and dispatch a DOWN event for missing expected header") {
@@ -169,6 +180,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ExpectedHeaderNotFoundException>(
                 "Response headers did not match the expected headers: [X-Custom-Header, anotherexpected]"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 })

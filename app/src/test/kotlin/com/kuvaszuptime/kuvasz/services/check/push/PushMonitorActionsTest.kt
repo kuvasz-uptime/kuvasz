@@ -299,7 +299,40 @@ class PushMonitorActionsTest(
                 }
             }
 
-            `when`("it is called for an existing, enabled monitor") {
+            `when`("it is called for an existing, enabled monitor without a previous event") {
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    clientSecret = "secret1",
+                )
+                val eventRepoMock = getMock(uptimeEventRepository)
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val uptimeEventRecord = PushUptimeEventRecord().apply {
+                    id = 3
+                    monitorId = testMonitor.id
+                    status = UptimeStatus.DOWN
+                }
+                every {
+                    eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
+                } returns null
+                every { eventRepoMock.insertFromMonitorEvent(any(), any()) } returns uptimeEventRecord
+
+                pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
+
+                then("it should dispatch a DOWN event") {
+
+                    val dispatchedEvent = testSubscriber.awaitCount(1).values().first()
+                    dispatchedEvent.shouldBeInstanceOf<PushMonitorDownEvent>()
+                    dispatchedEvent.monitor.id shouldBe testMonitor.id
+                    dispatchedEvent.error shouldBe "oh my gosh"
+                    dispatchedEvent.isManual shouldBe true
+                    dispatchedEvent.previousEvent shouldBe null
+                }
+            }
+
+            `when`("it is called for an existing, enabled monitor with a previous event") {
                 val testMonitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,

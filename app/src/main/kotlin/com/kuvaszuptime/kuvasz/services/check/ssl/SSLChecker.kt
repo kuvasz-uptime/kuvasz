@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.ssl
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
@@ -14,41 +15,39 @@ import jakarta.inject.Singleton
 class SSLChecker(
     private val sslValidator: SSLValidator,
     private val eventDispatcher: EventDispatcher,
-    private val sslEventRepository: SSLEventRepository
+    private val sslEventRepository: SSLEventRepository,
+    private val databaseEventHandler: DatabaseEventHandler,
 ) {
 
     fun check(monitor: HttpMonitorRecord) {
         val previousEvent = sslEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         sslValidator.validateHttps(monitor.url.toUri()).fold(
             { error ->
-                eventDispatcher.dispatch(
-                    SSLInvalidEvent(
-                        monitor = monitor,
-                        error = error,
-                        previousEvent = previousEvent
-                    )
+                SSLInvalidEvent(
+                    monitor = monitor,
+                    error = error,
+                    previousEvent = previousEvent
                 )
             },
             { certInfo ->
                 val expiryThresholdDays = monitor.sslExpiryThreshold.toLong()
                 if (certInfo.validTo.isBefore(getCurrentTimestamp().plusDays(expiryThresholdDays))) {
-                    eventDispatcher.dispatch(
-                        SSLWillExpireEvent(
-                            monitor = monitor,
-                            certInfo = certInfo,
-                            previousEvent = previousEvent
-                        )
+                    SSLWillExpireEvent(
+                        monitor = monitor,
+                        certInfo = certInfo,
+                        previousEvent = previousEvent
                     )
                 } else {
-                    eventDispatcher.dispatch(
-                        SSLValidEvent(
-                            monitor = monitor,
-                            certInfo = certInfo,
-                            previousEvent = previousEvent
-                        )
+                    SSLValidEvent(
+                        monitor = monitor,
+                        certInfo = certInfo,
+                        previousEvent = previousEvent
                     )
                 }
             }
-        )
+        ).also { event ->
+            databaseEventHandler.handleSSLMonitorEvent(event)
+            eventDispatcher.dispatch(event)
+        }
     }
 }

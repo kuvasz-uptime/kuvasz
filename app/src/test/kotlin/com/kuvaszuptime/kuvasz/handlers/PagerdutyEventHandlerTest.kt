@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
@@ -18,7 +17,6 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
-import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -44,7 +42,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.reactivex.rxjava3.core.Single
-import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class PagerdutyEventHandlerTest(
@@ -53,11 +50,10 @@ class PagerdutyEventHandlerTest(
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     sslEventRepository: SSLEventRepository,
-    latencyLogRepository: HttpLatencyLogRepository,
-    dslContext: DSLContext,
     integrationRepository: IntegrationRepository,
     pagerdutyConfigs: List<PagerdutyConfig>,
-) : DatabaseBehaviorSpec() {
+    databaseEventHandler: DatabaseEventHandler,
+) : EventHandlerTest(databaseEventHandler) {
     private val mockClient = mockk<PagerdutyAPIClient>()
 
     private val globalPagerdutyConfig = pagerdutyConfigs.first { it.global }
@@ -67,14 +63,6 @@ class PagerdutyEventHandlerTest(
     init {
         val eventDispatcher = EventDispatcher()
 
-        DatabaseEventHandler(
-            eventDispatcher,
-            httpUptimeEventRepository,
-            pushUptimeEventRepository,
-            latencyLogRepository,
-            sslEventRepository,
-            dslContext,
-        )
         PagerdutyEventHandler(eventDispatcher, mockClient, integrationRepository)
 
         given("the PagerdutyEventHandler - HTTP UPTIME events") {
@@ -87,7 +75,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
 
-                eventDispatcher.dispatch(event)
+                eventDispatcher.testDispatch(event)
 
                 then("it should not call the PD API") {
                     verify(exactly = 0) { mockClient.resolveAlert(any()) }
@@ -111,7 +99,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
 
-                eventDispatcher.dispatch(event)
+                eventDispatcher.testDispatch(event)
 
                 then("it should trigger an alert on PD for each enabled integration") {
                     val slot = mutableListOf<PagerdutyTriggerRequest>()
@@ -142,7 +130,7 @@ class PagerdutyEventHandlerTest(
                     latency = 1000,
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
@@ -151,7 +139,7 @@ class PagerdutyEventHandlerTest(
                     latency = 1200,
                     previousEvent = firstUptimeRecord
                 )
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not call the PD API") {
                     verify(exactly = 0) { mockClient.resolveAlert(any()) }
@@ -167,7 +155,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
@@ -176,7 +164,7 @@ class PagerdutyEventHandlerTest(
                     error = Exception("Second error"),
                     previousEvent = firstUptimeRecord
                 )
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call triggerAlert() only once") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -203,7 +191,7 @@ class PagerdutyEventHandlerTest(
                     error = Exception()
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorUpEvent(
@@ -213,7 +201,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = firstUptimeRecord
                 )
                 mockSuccessfulResolveResponse()
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should trigger an alert and then resolve it for each enabled integration") {
                     val triggerSlot = mutableListOf<PagerdutyTriggerRequest>()
@@ -260,7 +248,7 @@ class PagerdutyEventHandlerTest(
                     latency = 1000,
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = HttpMonitorDownEvent(
@@ -270,7 +258,7 @@ class PagerdutyEventHandlerTest(
                     error = Exception()
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call only triggerAlert()") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -290,7 +278,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
 
-                eventDispatcher.dispatch(event)
+                eventDispatcher.testDispatch(event)
 
                 then("it should not call the PD API") {
                     verify(exactly = 0) { mockClient.resolveAlert(any()) }
@@ -313,7 +301,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
 
-                eventDispatcher.dispatch(event)
+                eventDispatcher.testDispatch(event)
 
                 then("it should trigger an alert on PD for each enabled integration") {
                     val slot = mutableListOf<PagerdutyTriggerRequest>()
@@ -342,14 +330,14 @@ class PagerdutyEventHandlerTest(
                     monitor = monitor,
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = PushMonitorUpEvent(
                     monitor = monitor,
                     previousEvent = firstUptimeRecord
                 )
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not call the PD API") {
                     verify(exactly = 0) { mockClient.resolveAlert(any()) }
@@ -364,7 +352,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = PushMonitorDownEvent(
@@ -372,7 +360,7 @@ class PagerdutyEventHandlerTest(
                     error = "Second error",
                     previousEvent = firstUptimeRecord
                 )
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call triggerAlert() only once") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -398,7 +386,7 @@ class PagerdutyEventHandlerTest(
                     error = "irrelevant"
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = PushMonitorUpEvent(
@@ -406,7 +394,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = firstUptimeRecord
                 )
                 mockSuccessfulResolveResponse()
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should trigger an alert and then resolve it for each enabled integration") {
                     val triggerSlot = mutableListOf<PagerdutyTriggerRequest>()
@@ -451,7 +439,7 @@ class PagerdutyEventHandlerTest(
                     monitor = monitor,
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = PushMonitorDownEvent(
@@ -460,7 +448,7 @@ class PagerdutyEventHandlerTest(
                     error = "irrelevant",
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call only triggerAlert()") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -480,7 +468,7 @@ class PagerdutyEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(event)
+                eventDispatcher.testDispatch(event)
 
                 then("it should not call the PD API") {
                     verify(exactly = 0) { mockClient.resolveAlert(any()) }
@@ -503,7 +491,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
 
-                eventDispatcher.dispatch(event)
+                eventDispatcher.testDispatch(event)
 
                 then("it should trigger an alert on PD for each enabled integration") {
                     val slot = mutableListOf<PagerdutyTriggerRequest>()
@@ -533,7 +521,7 @@ class PagerdutyEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
@@ -541,7 +529,7 @@ class PagerdutyEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = firstSSLRecord
                 )
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not call the PD API") {
                     verify(exactly = 0) { mockClient.resolveAlert(any()) }
@@ -556,7 +544,7 @@ class PagerdutyEventHandlerTest(
                     error = SSLValidationError("ssl error1")
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
@@ -564,7 +552,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = firstSSLRecord,
                     error = SSLValidationError("ssl error2")
                 )
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call triggerAlert() only once") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -582,7 +570,7 @@ class PagerdutyEventHandlerTest(
                     error = SSLValidationError("ssl error1")
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLValidEvent(
@@ -591,7 +579,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = firstSSLRecord
                 )
                 mockSuccessfulResolveResponse()
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should trigger an alert and then resolve it") {
                     val triggerSlot = slot<PagerdutyTriggerRequest>()
@@ -619,7 +607,7 @@ class PagerdutyEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
@@ -628,7 +616,7 @@ class PagerdutyEventHandlerTest(
                     error = SSLValidationError("ssl error")
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call only triggerAlert()") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -648,7 +636,7 @@ class PagerdutyEventHandlerTest(
                 )
                 mockSuccessfulTriggerResponse()
 
-                eventDispatcher.dispatch(event)
+                eventDispatcher.testDispatch(event)
 
                 then("it should trigger an alert with WARNING severity") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -671,7 +659,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = null
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
@@ -679,7 +667,7 @@ class PagerdutyEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = firstSSLRecord
                 )
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call triggerAlert() only once") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -698,7 +686,7 @@ class PagerdutyEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                eventDispatcher.dispatch(firstEvent)
+                eventDispatcher.testDispatch(firstEvent)
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
@@ -707,7 +695,7 @@ class PagerdutyEventHandlerTest(
                     previousEvent = firstSSLRecord
                 )
                 mockSuccessfulTriggerResponse()
-                eventDispatcher.dispatch(secondEvent)
+                eventDispatcher.testDispatch(secondEvent)
 
                 then("it should call only triggerAlert()") {
                     val slot = slot<PagerdutyTriggerRequest>()
@@ -732,7 +720,7 @@ class PagerdutyEventHandlerTest(
                 mockErrorTriggerResponse()
 
                 then("it should not throw an exception") {
-                    shouldNotThrowAny { eventDispatcher.dispatch(event) }
+                    shouldNotThrowAny { eventDispatcher.testDispatch(event) }
                     verify(exactly = 1) { mockClient.triggerAlert(any()) }
                 }
             }

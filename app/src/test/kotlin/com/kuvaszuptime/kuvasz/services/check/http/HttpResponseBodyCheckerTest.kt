@@ -1,21 +1,26 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.ExpectedKeywordNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 
 class HttpResponseBodyCheckerTest : ShouldSpec({
 
     val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
+    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
     val dispatcher = EventDispatcher()
-    val checker = HttpResponseBodyChecker(dispatcher, mockUptimeRepo)
+    val checker = HttpResponseBodyChecker(dispatcher, mockUptimeRepo, mockDbEventHandler)
 
     fun mockResponseBody(body: String?): HttpCheckResponse =
         mockk<HttpCheckResponse>(relaxed = true) {
@@ -23,6 +28,8 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 every { httpResponse.getBodyAs<String>() } returns body
             }
         }
+
+    afterTest { clearMocks(mockDbEventHandler) }
 
     context("keyword is found in the response - case-insensitive, non-negated") {
 
@@ -43,6 +50,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 
@@ -65,6 +73,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 
@@ -89,6 +98,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
                 "Response body should not contain the expected keyword: keyword (case-insensitive)"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -113,6 +123,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
                 "Response body should not contain the expected keyword: Keyword (case-sensitive)"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -137,6 +148,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
                 "Response body does not contain the expected keyword: keyword (case-insensitive)"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -161,6 +173,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
                 "Response body does not contain the expected keyword: Keyword (case-sensitive)"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -183,6 +196,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 
@@ -205,6 +219,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 
@@ -229,6 +244,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
                 "Error while checking response body for monitor with ID: 1, expected keyword: keyword, error:"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -253,6 +269,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ExpectedKeywordNotFoundException>(
                 "Response body does not contain the expected keyword: keyword (case-insensitive)"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -280,6 +297,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 "Error while checking response body for monitor with ID: ${monitor.id}, " +
                     "expected keyword: keyword, error: Error getting body"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -302,6 +320,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 })

@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.push
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -18,6 +19,7 @@ class HeartbeatChecker(
     private val eventDispatcher: EventDispatcher,
     private val pushMonitorRepository: PushMonitorRepository,
     private val uptimeEventRepository: PushUptimeEventRepository,
+    private val databaseEventHandler: DatabaseEventHandler,
 ) {
     /**
      * Checks every enabled push monitors to see if their expected heartbeats are on time,
@@ -27,13 +29,14 @@ class HeartbeatChecker(
         dslCtx.transactionResult { config ->
             val txCtx = config.dsl()
             pushMonitorRepository.fetchWithMissedHeartbeats(txCtx).forEach { monitor ->
-                eventDispatcher.dispatch(
-                    PushMonitorDownEvent(
-                        monitor,
-                        error = Messages.missedHeartbeat(),
-                        previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
-                    )
-                )
+                PushMonitorDownEvent(
+                    monitor,
+                    error = Messages.missedHeartbeat(),
+                    previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
+                ).also { event ->
+                    databaseEventHandler.handleUptimeMonitorEvent(event)
+                    eventDispatcher.dispatch(event)
+                }
             }
         }
     }
