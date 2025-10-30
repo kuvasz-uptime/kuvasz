@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.IneligibleStatusCodeException
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
@@ -22,7 +23,8 @@ import java.net.URI
 class HttpResponseStatusChecker(
     private val eventDispatcher: EventDispatcher,
     uptimeEventRepository: HttpUptimeEventRepository,
-) : HttpResponseChecker(eventDispatcher, uptimeEventRepository) {
+    databaseEventHandler: DatabaseEventHandler,
+) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

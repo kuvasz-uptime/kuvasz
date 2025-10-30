@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
@@ -12,6 +13,7 @@ import java.net.URI
 abstract class HttpResponseChecker(
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: HttpUptimeEventRepository,
+    private val databaseEventHandler: DatabaseEventHandler,
 ) {
 
     abstract fun evaluate(ctx: HttpResponseCheckContext): HttpCheckResult
@@ -20,14 +22,15 @@ abstract class HttpResponseChecker(
         uptimeEventRepository.getPreviousEventByMonitorId(monitorId)
 
     protected fun dispatchDownEvent(ctx: HttpResponseCheckContext, error: Exception): HttpCheckResult.Finished {
-        eventDispatcher.dispatch(
-            HttpMonitorDownEvent(
-                monitor = ctx.monitor,
-                status = ctx.response.httpResponse.status,
-                error = error,
-                previousEvent = getPreviousEvent(ctx.monitor.id)
-            )
-        )
+        HttpMonitorDownEvent(
+            monitor = ctx.monitor,
+            status = ctx.response.httpResponse.status,
+            error = error,
+            previousEvent = getPreviousEvent(ctx.monitor.id)
+        ).also { event ->
+            databaseEventHandler.handleUptimeMonitorEvent(event)
+            eventDispatcher.dispatch(event)
+        }
         return HttpCheckResult.Finished
     }
 }

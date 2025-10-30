@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.check.push
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
@@ -17,6 +18,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import org.jooq.DSLContext
 
@@ -28,11 +30,13 @@ class HeartbeatCheckerTest(
     val dispatcher = EventDispatcher()
     val monitorRepoMock = mockk<PushMonitorRepository>()
     val uptimeEventRepoMock = mockk<PushUptimeEventRepository>()
+    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
     val heartbeatChecker = HeartbeatChecker(
         dslCtx = dslContext,
         eventDispatcher = dispatcher,
         pushMonitorRepository = monitorRepoMock,
         uptimeEventRepository = uptimeEventRepoMock,
+        databaseEventHandler = mockDbEventHandler,
     )
 
     given("the HeartbeatChecker logic") {
@@ -70,6 +74,8 @@ class HeartbeatCheckerTest(
                     firstEvent.monitor shouldBe mockMonitorList[1]
                     firstEvent.previousEvent shouldBe null
                 }
+
+                verify(exactly = 2) { mockDbEventHandler.handleUptimeMonitorEvent(any<PushMonitorDownEvent>()) }
             }
         }
     }

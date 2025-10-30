@@ -1,3 +1,9 @@
+## 3.2.3 <small>2025-10-30</small> { id="3.2.3" data-toc-label="3.2.3" }
+
+### Fixes
+
+- Fixed a bug that caused to create conflicting uptime event records in the database in case of a rare race condition between consecutive uptime checks of the same monitor. The fix also takes care of repairing the corrupted state of these monitors upon the next check.
+
 ## 3.2.2 <small>2025-10-23</small> { id="3.2.2" data-toc-label="3.2.2" }
 
 ### Fixes

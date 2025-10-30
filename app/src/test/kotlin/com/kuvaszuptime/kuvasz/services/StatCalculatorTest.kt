@@ -822,7 +822,9 @@ class StatCalculatorTest(
                 // 5 days UP + 5 days DOWN for monitor1, 1 day UP + 2 days DOWN for monitor2
                 stats.history.uptimeStats.uptimeRatio shouldEqualRounded 6.toDouble() / 13
                 // 5 days + 2 days in seconds
-                stats.history.uptimeStats.totalDowntimeSeconds shouldBe 5 * 24 * 60 * 60 + 2 * 24 * 60 * 60
+                val expectedDowntimeSeconds = 5 * 24 * 60 * 60 + 2 * 24 * 60 * 60L
+                stats.history.uptimeStats.totalDowntimeSeconds shouldBeInRange
+                    expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                 stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
             }
         }

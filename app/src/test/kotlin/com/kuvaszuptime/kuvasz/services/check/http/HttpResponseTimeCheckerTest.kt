@@ -1,25 +1,32 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.ResponseTimeThresholdExceededException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 
 class HttpResponseTimeCheckerTest : ShouldSpec({
 
     val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
+    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
     val dispatcher = EventDispatcher()
-    val checker = HttpResponseTimeChecker(dispatcher, mockUptimeRepo)
+    val checker = HttpResponseTimeChecker(dispatcher, mockUptimeRepo, mockDbEventHandler)
 
     fun mockResponse(mockLatency: Int): HttpCheckResponse =
         mockk<HttpCheckResponse>(relaxed = true) {
             every { latency } returns mockLatency
         }
+
+    afterTest { clearMocks(mockDbEventHandler) }
 
     context("threshold is not set") {
 
@@ -35,6 +42,7 @@ class HttpResponseTimeCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 
@@ -51,6 +59,7 @@ class HttpResponseTimeCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
             downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
         }
     }
 
@@ -69,6 +78,7 @@ class HttpResponseTimeCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<ResponseTimeThresholdExceededException>(
                 "Response time exceeded the threshold of 2000 ms (actual: 3000 ms)"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 })

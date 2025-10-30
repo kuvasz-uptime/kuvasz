@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import arrow.core.Either
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -26,6 +27,8 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import io.mockk.verify
+import io.mockk.verifyOrder
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.time.OffsetDateTime
 
@@ -39,11 +42,13 @@ class SSLCheckerTest(
 
     init {
         val eventDispatcher = EventDispatcher()
+        val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
         val sslChecker = spyk(
             SSLChecker(
                 sslValidator = sslValidator,
                 eventDispatcher = eventDispatcher,
                 sslEventRepository = sslEventRepository,
+                databaseEventHandler = mockDbEventHandler,
             )
         )
 
@@ -60,6 +65,8 @@ class SSLCheckerTest(
                 then("it should dispatch an SSLValidEvent") {
                     val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.monitor.id shouldBe monitor.id
+
+                    verify { mockDbEventHandler.handleSSLMonitorEvent(expectedEvent) }
                 }
             }
 
@@ -76,6 +83,8 @@ class SSLCheckerTest(
 
                     expectedEvent.monitor.id shouldBe monitor.id
                     expectedEvent.error.message shouldBe "validation error"
+
+                    verify { mockDbEventHandler.handleSSLMonitorEvent(expectedEvent) }
                 }
             }
 
@@ -99,6 +108,11 @@ class SSLCheckerTest(
                     expectedInvalidEvent.monitor.id shouldBe monitor.id
                     expectedValidEvent.monitor.id shouldBe monitor.id
                     expectedInvalidEvent.dispatchedAt shouldBeLessThan expectedValidEvent.dispatchedAt
+
+                    verifyOrder {
+                        mockDbEventHandler.handleSSLMonitorEvent(expectedInvalidEvent)
+                        mockDbEventHandler.handleSSLMonitorEvent(expectedValidEvent)
+                    }
                 }
             }
 
@@ -122,6 +136,11 @@ class SSLCheckerTest(
                     expectedInvalidEvent.monitor.id shouldBe monitor.id
                     expectedValidEvent.monitor.id shouldBe monitor.id
                     expectedInvalidEvent.dispatchedAt shouldBeGreaterThan expectedValidEvent.dispatchedAt
+
+                    verifyOrder {
+                        mockDbEventHandler.handleSSLMonitorEvent(expectedValidEvent)
+                        mockDbEventHandler.handleSSLMonitorEvent(expectedInvalidEvent)
+                    }
                 }
             }
 
@@ -142,6 +161,8 @@ class SSLCheckerTest(
 
                     expectedEvent.monitor.id shouldBe monitor.id
                     expectedEvent.certInfo.validTo shouldBe validTo
+
+                    verify { mockDbEventHandler.handleSSLMonitorEvent(expectedEvent) }
                 }
             }
         }

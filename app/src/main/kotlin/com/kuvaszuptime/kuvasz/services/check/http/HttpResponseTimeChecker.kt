@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.ResponseTimeThresholdExceededException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
@@ -11,7 +12,8 @@ import org.slf4j.LoggerFactory
 class HttpResponseTimeChecker(
     eventDispatcher: EventDispatcher,
     uptimeEventRepository: HttpUptimeEventRepository,
-) : HttpResponseChecker(eventDispatcher, uptimeEventRepository) {
+    databaseEventHandler: DatabaseEventHandler,
+) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

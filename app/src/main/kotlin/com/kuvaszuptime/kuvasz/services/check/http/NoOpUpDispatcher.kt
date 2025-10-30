@@ -1,7 +1,9 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import jakarta.inject.Singleton
@@ -10,21 +12,28 @@ import jakarta.inject.Singleton
 class NoOpUpDispatcher(
     private val eventDispatcher: EventDispatcher,
     uptimeEventRepository: HttpUptimeEventRepository,
-) : HttpResponseChecker(eventDispatcher, uptimeEventRepository) {
+    private val latencyLogRepository: HttpLatencyLogRepository,
+    private val databaseEventHandler: DatabaseEventHandler,
+) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler) {
 
     /**
      * Dispatches simply a [HttpMonitorUpEvent] without any checks, it's intended to be used at the end of the check
      * pipeline when all checks have passed.
      */
     override fun evaluate(ctx: HttpResponseCheckContext): HttpCheckResult.Finished {
-        eventDispatcher.dispatch(
-            HttpMonitorUpEvent(
-                monitor = ctx.monitor,
-                status = ctx.response.httpResponse.status,
-                latency = ctx.response.latency,
-                previousEvent = getPreviousEvent(ctx.monitor.id),
-            )
-        )
+        if (ctx.monitor.latencyHistoryEnabled) {
+            latencyLogRepository.insertLatencyForMonitor(ctx.monitor.id, ctx.response.latency)
+        }
+
+        HttpMonitorUpEvent(
+            monitor = ctx.monitor,
+            status = ctx.response.httpResponse.status,
+            latency = ctx.response.latency,
+            previousEvent = getPreviousEvent(ctx.monitor.id),
+        ).also { event ->
+            databaseEventHandler.handleUptimeMonitorEvent(event)
+            eventDispatcher.dispatch(event)
+        }
         return HttpCheckResult.Finished
     }
 }

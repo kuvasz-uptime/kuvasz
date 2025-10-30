@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -21,10 +21,8 @@ class HttpCheckResponseEvaluator(
     private val responseBodyChecker: HttpResponseBodyChecker,
     private val responseHeaderChecker: HttpResponseHeaderChecker,
     private val noOpUpDispatcher: NoOpUpDispatcher,
+    private val databaseEventHandler: DatabaseEventHandler,
 ) {
-    private fun getPreviousEvent(monitor: HttpMonitorRecord): HttpUptimeEventRecord? =
-        uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
-
     /**
      * Evaluates the HTTP response for a given monitor. The checks are intended to be chained together, allowing for an
      * early exit at any point in the evaluation process. The last check in the chain is always expected to return a
@@ -87,14 +85,15 @@ class HttpCheckResponseEvaluator(
             clarifiedError = HttpClientException(ex.message, ex)
             null
         }
-        eventDispatcher.dispatch(
-            HttpMonitorDownEvent(
-                monitor = monitor,
-                status = status,
-                error = clarifiedError,
-                previousEvent = getPreviousEvent(monitor)
-            )
-        )
+        HttpMonitorDownEvent(
+            monitor = monitor,
+            status = status,
+            error = clarifiedError,
+            previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
+        ).also { event ->
+            databaseEventHandler.handleUptimeMonitorEvent(event)
+            eventDispatcher.dispatch(event)
+        }
         return HttpCheckResult.Finished
     }
 }

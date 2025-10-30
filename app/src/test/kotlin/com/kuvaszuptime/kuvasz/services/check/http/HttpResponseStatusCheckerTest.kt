@@ -1,10 +1,12 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.IneligibleStatusCodeException
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -18,14 +20,17 @@ import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.simple.SimpleHttpResponseFactory
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 
 class HttpResponseStatusCheckerTest : ShouldSpec({
 
     val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
+    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
     val dispatcher = EventDispatcher()
-    val checker = HttpResponseStatusChecker(dispatcher, mockUptimeRepo)
+    val checker = HttpResponseStatusChecker(dispatcher, mockUptimeRepo, mockDbEventHandler)
 
     fun mockResponse(mockStatus: HttpStatus, redirectLocation: String? = null): HttpCheckResponse {
         val mockHttpResponse = SimpleHttpResponseFactory()
@@ -39,6 +44,8 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             every { httpResponse } returns mockHttpResponse
         }
     }
+
+    afterTest { clearMocks(mockDbEventHandler) }
 
     context("expected status is not explicitly set") {
 
@@ -69,6 +76,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 upSubscriber.assertNoValues()
                 downSubscriber.assertNoValues()
                 redirectSubscriber.assertNoValues()
+                verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
             }
         }
 
@@ -88,6 +96,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<IneligibleStatusCodeException>(
                 "Response status code [404] was unexpected"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
 
         should("return Finished and dispatch a DOWN event for 3xx status when followRedirects is false") {
@@ -106,6 +115,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<InvalidRedirectionException>(
                 "The request was redirected, but following redirects is disabled"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
 
         should("return Redirected for 3xx status when followRedirects is true") {
@@ -140,6 +150,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 )
                 upSubscriber.assertNoValues()
                 downSubscriber.assertNoValues()
+                verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
             }
         }
 
@@ -159,6 +170,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<InvalidRedirectionException>(
                 "Invalid redirection without a Location header"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
 
         should("return Finished and dispatch a DOWN event for 3xx status with visited redirection URI") {
@@ -181,6 +193,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<RedirectLoopException>("Redirect loop detected")
             upSubscriber.assertNoValues()
             result shouldBe HttpCheckResult.Finished
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
     }
 
@@ -206,6 +219,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 upSubscriber.assertNoValues()
                 downSubscriber.assertNoValues()
                 redirectSubscriber.assertNoValues()
+                verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
             }
         }
 
@@ -225,6 +239,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<IneligibleStatusCodeException>(
                 "Response status code [204] was unexpected"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
 
         should("return Finished and dispatch a DOWN event for 3xx status if the status is not expected") {
@@ -243,6 +258,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             downSubscriber.assertSingleError<IneligibleStatusCodeException>(
                 "Response status code [301] was unexpected"
             )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
 
         should("return Redirected for 3xx status if the status is expected") {
@@ -280,6 +296,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                     redirectionUri = "http://example.com/redirect".toUri(),
                     visitedUrls = mutableListOf("/something".toUri())
                 )
+                verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
             }
         }
     }

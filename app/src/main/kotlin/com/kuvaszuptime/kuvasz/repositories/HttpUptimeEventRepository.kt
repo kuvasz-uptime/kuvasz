@@ -43,11 +43,25 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
         .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
         .fetch()
 
-    fun getPreviousEventByMonitorId(monitorId: Long): HttpUptimeEventRecord? = dslContext
-        .selectFrom(HTTP_UPTIME_EVENT)
-        .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .and(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
-        .fetchOne()
+    fun getPreviousEventByMonitorId(monitorId: Long): HttpUptimeEventRecord? =
+        dslContext.transactionResult { config ->
+            val txCtx = config.dsl()
+            val uptimeRecords = txCtx.selectFrom(HTTP_UPTIME_EVENT)
+                .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+                .and(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
+                .orderBy(HTTP_UPTIME_EVENT.ID)
+                .fetch()
+
+            if (uptimeRecords.size <= 1) return@transactionResult uptimeRecords.firstOrNull()
+
+            uptimeRecords.dropLast(1).map { it.id }.let { conflictingEventIds ->
+                txCtx.deleteFrom(HTTP_UPTIME_EVENT)
+                    .where(HTTP_UPTIME_EVENT.ID.`in`(conflictingEventIds))
+                    .execute()
+            }
+
+            uptimeRecords.last()
+        }
 
     fun endEventById(eventId: Long, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
         .update(HTTP_UPTIME_EVENT)

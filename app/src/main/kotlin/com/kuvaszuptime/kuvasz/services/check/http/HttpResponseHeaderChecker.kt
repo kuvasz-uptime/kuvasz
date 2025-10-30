@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.ExpectedHeaderNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
@@ -12,7 +13,8 @@ import org.slf4j.LoggerFactory
 class HttpResponseHeaderChecker(
     eventDispatcher: EventDispatcher,
     uptimeEventRepository: HttpUptimeEventRepository,
-) : HttpResponseChecker(eventDispatcher, uptimeEventRepository) {
+    databaseEventHandler: DatabaseEventHandler,
+) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
@@ -16,6 +17,7 @@ import org.jooq.Field
 import org.jooq.Record
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
+import org.jooq.Table
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
@@ -60,7 +62,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .where(PUSH_MONITOR.ID.eq(monitorId))
         .execute()
 
-    @Suppress("IgnoredReturnValue")
+    @Suppress("IgnoredReturnValue", "UnsafeCallOnNullableType")
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
@@ -70,7 +72,9 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         monitorDetailsSelect()
             .apply {
                 enabled?.let { and(PUSH_MONITOR.ENABLED.eq(it)) }
-                uptimeStatus.takeIf { it.isNotEmpty() }?.let { and(PUSH_UPTIME_EVENT.STATUS.`in`(it)) }
+                uptimeStatus.takeIf { it.isNotEmpty() }?.let {
+                    and(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS)!!.`in`(it))
+                }
                 monitorNames?.let { and(PUSH_MONITOR.NAME.`in`(it)) }
                 sortedBy?.let { orderBy(it) }
             }
@@ -142,7 +146,15 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .where(PUSH_MONITOR.ID.notIn(ignoredIds))
         .execute()
 
-    @Suppress("LongMethod")
+    val latestUptimeEventSelect: Table<PushUptimeEventRecord?> = DSL.table(
+        DSL.selectFrom(PUSH_UPTIME_EVENT)
+            .where(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))
+            .and(PUSH_UPTIME_EVENT.ENDED_AT.isNull)
+            .orderBy(PUSH_UPTIME_EVENT.UPDATED_AT.desc())
+            .limit(1)
+    )
+
+    @Suppress("LongMethod", "UnsafeCallOnNullableType")
     private fun monitorDetailsSelect(): SelectConditionStep<out Record?> = dslContext
         .select(
             PUSH_MONITOR.ID.`as`(PushMonitorDetailsDto::id.name),
@@ -154,10 +166,12 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             PUSH_MONITOR.LAST_HEARTBEAT.`as`(PushMonitorDetailsDto::lastHeartbeat.name),
             PUSH_MONITOR.CREATED_AT.`as`(PushMonitorDetailsDto::createdAt.name),
             PUSH_MONITOR.UPDATED_AT.`as`(PushMonitorDetailsDto::updatedAt.name),
-            PUSH_UPTIME_EVENT.STATUS.`as`(PushMonitorDetailsDto::uptimeStatus.name),
-            PUSH_UPTIME_EVENT.STARTED_AT.`as`(PushMonitorDetailsDto::uptimeStatusStartedAt.name),
-            PUSH_UPTIME_EVENT.UPDATED_AT.`as`(PushMonitorDetailsDto::lastUptimeCheck.name),
-            PUSH_UPTIME_EVENT.ERROR.`as`(PushMonitorDetailsDto::uptimeError.name),
+            latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS)!!.`as`(PushMonitorDetailsDto::uptimeStatus.name),
+            latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STARTED_AT)!!
+                .`as`(PushMonitorDetailsDto::uptimeStatusStartedAt.name),
+            latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.UPDATED_AT)!!
+                .`as`(PushMonitorDetailsDto::lastUptimeCheck.name),
+            latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.ERROR)!!.`as`(PushMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::effectiveIntegrations.name),
             PUSH_MONITOR.INTEGRATIONS.`as`(PushMonitorDetailsDto::integrations.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
@@ -165,8 +179,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeat.name),
         )
         .from(PUSH_MONITOR)
-        .leftJoin(PUSH_UPTIME_EVENT)
-        .on(PUSH_MONITOR.ID.eq(PUSH_UPTIME_EVENT.MONITOR_ID).and(PUSH_UPTIME_EVENT.ENDED_AT.isNull))
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
         .leftJoin(statusPagesSubselect)
         .on(
             monitorNameField
