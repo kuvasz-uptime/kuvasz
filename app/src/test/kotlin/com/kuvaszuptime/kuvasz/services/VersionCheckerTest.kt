@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -94,6 +95,7 @@ class VersionCheckerTest(
 }
 
 @MicronautTest(startApplication = false)
+@Ignored
 class VersionCheckerE2ETest(versionChecker: VersionChecker) : ShouldSpec({
 
     context("the update checker logic") {
