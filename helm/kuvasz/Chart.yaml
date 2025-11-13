@@ -1,0 +1,17 @@
+apiVersion: v2
+name: kuvasz
+description: A Helm chart for Kubernetes to install Kuvasz - Open-source uptime monitoring solution
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - monitoring
+  - uptime
+  - status-page
+  - alerting
+home: https://kuvasz-uptime.dev
+sources:
+  - https://github.com/kuvaszmonitoring/kuvasz
+maintainers:
+  - name: Kuvasz Team
+
