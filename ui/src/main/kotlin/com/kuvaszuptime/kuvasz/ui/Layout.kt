@@ -74,8 +74,8 @@ internal fun withLayout(
                         }
                     }
                     commonScripts(globals.appVersion)
-                    script(src = "/public/ext/js/htmx.2.0.7.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.15.0.min.js") {}
+                    script(src = "/public/ext/js/htmx.2.0.8.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.15.2.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
@@ -93,7 +93,7 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
             // Setting the theme based on user preference eagerly
             +"""
             (function() {
-                const savedTheme = localStorage.getItem('kuvasz-theme') || 'light';
+                const savedTheme = localStorage.getItem('kuvasz-theme') || 'dark';
                 document.documentElement.setAttribute('data-bs-theme', savedTheme);
             })();
             """.trimIndent()
