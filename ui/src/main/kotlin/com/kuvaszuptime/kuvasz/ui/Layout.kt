@@ -93,7 +93,7 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
             // Setting the theme based on user preference eagerly
             +"""
             (function() {
-                const savedTheme = localStorage.getItem('kuvasz-theme') || 'light';
+                const savedTheme = localStorage.getItem('kuvasz-theme') || 'dark';
                 document.documentElement.setAttribute('data-bs-theme', savedTheme);
             })();
             """.trimIndent()
