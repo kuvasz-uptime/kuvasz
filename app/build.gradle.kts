@@ -99,7 +99,8 @@ dependencies {
 
     // Testing
     testImplementation(libs.mockk)
-    testImplementation(mn.testcontainers.postgres)
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.pg)
     testImplementation(libs.mockserver.netty)
     detektPlugins(libs.detekt.formatting)
 }
