@@ -89,6 +89,11 @@ dependencyResolutionManagement {
             // Tests
             library("mockk", "io.mockk", "mockk").version("1.14.5")
             library("mockserver-netty", "org.mock-server", "mockserver-netty").version("5.15.0")
+            val testcontainersVersion = "2.0.2"
+            library("testcontainers", "org.testcontainers", "testcontainers").version(testcontainersVersion)
+            library("testcontainers-pg", "org.testcontainers", "testcontainers-postgresql").version(
+                testcontainersVersion
+            )
 
             // Misc
             library("arrow-core-data", "io.arrow-kt", "arrow-core-data").version("0.12.1")
