@@ -11,6 +11,6 @@ data:
 {{- else }}
 # Kuvasz configuration file
 # Add your integrations, monitors, and other settings here
-# See https://docs.kuvasz-uptime.dev for more information
+# See https://kuvasz-uptime.dev for more information
 {{- end }}
 

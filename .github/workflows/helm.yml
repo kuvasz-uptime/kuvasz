@@ -37,16 +37,16 @@ jobs:
       
       - name: Update Chart version
         run: |
-          sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}/" helm/kuvasz/Chart.yaml
-          sed -i "s/^appVersion:.*/appVersion: \"${{ steps.version.outputs.version }}\"/" helm/kuvasz/Chart.yaml
+          sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}/" helm/kuvasz-uptime/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${{ steps.version.outputs.version }}\"/" helm/kuvasz-uptime/Chart.yaml
       
       - name: Package Helm chart
         run: |
-          helm package helm/kuvasz
+          helm package helm/kuvasz-uptime
       
       - name: Push Helm chart to OCI registry
         run: |
-          CHART_PACKAGE=$(ls kuvasz-*.tgz)
+          CHART_PACKAGE=$(ls kuvasz-uptime-*.tgz)
           helm push $CHART_PACKAGE oci://ghcr.io/${{ github.repository_owner }}
       
       - name: Log out from registry

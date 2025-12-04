@@ -11,7 +11,7 @@ keywords:
   - alerting
 home: https://kuvasz-uptime.dev
 sources:
-  - https://github.com/kuvaszmonitoring/kuvasz
+  - https://github.com/kuvasz-uptime/kuvasz
 maintainers:
   - name: Kuvasz Team
 

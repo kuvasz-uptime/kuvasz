@@ -13,15 +13,11 @@ This Helm chart deploys [Kuvasz](https://kuvasz-uptime.dev) - an open-source upt
 ### Quick Start
 
 ```bash
-# Add the chart repository (if published)
-helm repo add kuvasz https://charts.kuvasz-uptime.dev
-helm repo update
-
 # Install with default values
-helm install my-kuvasz kuvasz/kuvasz
+helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 0.1.0
 
 # Or install with custom values
-helm install my-kuvasz kuvasz/kuvasz -f my-values.yaml
+helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 0.1.0 -f my-values.yaml
 ```
 
 ### Using External Database
@@ -54,9 +50,9 @@ postgresql:
     repository: postgres
     tag: "18-alpine"
   auth:
-    username: kuvasz
+    username: kuvasz-uptime
     password: ""  # Will be auto-generated if empty
-    database: kuvasz
+    database: kuvasz-uptime
   persistence:
     enabled: true
     size: 8Gi
@@ -111,8 +107,8 @@ postgresql:
 externalDatabase:
   host: "your-postgres-host"
   port: 5432
-  database: "kuvasz"
-  user: "kuvasz"
+  database: "kuvasz-uptime"
+  user: "kuvasz-uptime"
   password: "your-password"
   # Or reference existing secret:
   existingSecret: "my-secret"
@@ -153,7 +149,7 @@ kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-api-key
 ## Upgrading
 
 ```bash
-helm upgrade my-kuvasz kuvasz/kuvasz -f my-values.yaml
+helm upgrade my-kuvasz kuvasz-uptime/kuvasz -f my-values.yaml
 ```
 
 ## Uninstalling
@@ -164,5 +160,4 @@ helm uninstall my-kuvasz
 
 ## License
 
-[Apache License 2.0](https://github.com/kuvaszmonitoring/kuvasz/blob/main/LICENSE)
-
+[Apache License 2.0](https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE)
