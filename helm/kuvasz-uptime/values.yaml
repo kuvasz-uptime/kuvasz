@@ -36,8 +36,6 @@ securityContext:
   readOnlyRootFilesystem: false
   allowPrivilegeEscalation: false
 
-# Replica count
-replicaCount: 1
 
 # Pod annotations
 podAnnotations: {}
