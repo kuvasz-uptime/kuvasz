@@ -16,7 +16,7 @@ Kuvasz can be deployed in several ways depending on your infrastructure:
 
     _Kuvasz_ relies on a _PostgreSQL_ database to store its data, but **if you don't have one** set up already,
     you can use the provided _Docker compose_ file to easily set up a _PostgreSQL_ instance alongside _Kuvasz_.
-    Helm chart also provide a non-production ready database if needed.
+    The Helm chart also provides a basic database setup, if you don't want to bring your own PostgreSQL instance (be aware that it might not be a good fit for a production setup).
 
     The **minimum, tested version of _PostgreSQL_ is 14**, `alpine` distributions are supported.
 
