@@ -68,7 +68,6 @@ The following table lists the configurable parameters and their default values:
 | `image.repository` | Image repository | `kuvaszmonitoring/kuvasz` |
 | `image.tag` | Image tag | `latest` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
-| `replicaCount` | Number of replicas | `1` |
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `8080` |
 | `ingress.enabled` | Enable ingress | `false` |
