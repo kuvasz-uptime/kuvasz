@@ -1,0 +1,64 @@
+# Test values file for Kuvasz Helm chart
+# This demonstrates both internal and external database configurations
+
+# Example 1: Using internal database (default)
+# postgresql:
+#   enabled: true
+#   auth:
+#     username: kuvasz
+#     password: "test-password-123"
+#     database: kuvasz
+
+# Example 2: Using external database
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: "postgres.example.com"
+  port: 5432
+  database: "kuvasz"
+  user: "kuvasz"
+  password: "external-db-password"
+
+# Authentication
+auth:
+  enabled: true
+  adminUser: "admin"
+  adminPassword: "admin-password-12345"  # Must be at least 12 chars
+  adminApiKey: "api-key-must-be-16-chars-min"
+
+# Ingress
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: kuvasz.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: kuvasz-tls
+      hosts:
+        - kuvasz.example.com
+
+# Configuration
+config:
+  raw: |
+    integrations:
+      slack:
+        - name: production-alerts
+          webhook-url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX'
+          global: true
+
+# Resources
+resources:
+  limits:
+    cpu: 2000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Timezone
+timezone: "America/New_York"
+

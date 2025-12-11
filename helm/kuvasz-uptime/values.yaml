@@ -1,0 +1,197 @@
+# Default values for kuvasz
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+nameOverride: ""
+fullnameOverride: ""
+
+# Image configuration
+image:
+  repository: kuvaszmonitoring/kuvasz
+  tag: "3.2.4"
+  pullPolicy: IfNotPresent
+  # platform: linux/arm64  # Uncomment if running on ARM-based systems
+
+# Image pull secrets
+imagePullSecrets: []
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 1000
+
+# Container security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: kuvasz.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: kuvasz-tls
+  #    hosts:
+  #      - kuvasz.local
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 768Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /api/v2/health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 60
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/v2/health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Timezone
+timezone: "UTC"
+
+# Authentication configuration
+auth:
+  enabled: true
+  # Admin user credentials
+  # If not provided, will be auto-generated and stored in secret
+  adminUser: ""
+  adminPassword: ""
+  adminApiKey: ""
+
+# Database configuration
+# Two options:
+# 1. Use external database (set postgresql.enabled: false and provide external database details)
+# 2. Use internal database (set postgresql.enabled: true, database will be deployed as StatefulSet)
+
+# External database configuration (used when postgresql.enabled: false)
+externalDatabase:
+#   host: ""
+#   port: 5432
+#   database: "kuvasz"
+#   user: ""
+#   password: ""
+#   existingSecret: ""
+  existingSecretPasswordKey: "postgresql-password"
+
+# Internal PostgreSQL database (simple StatefulSet)
+# Set to true to create PostgreSQL secret in kuvasz chart
+createPostgresqlSecret: true
+postgresql:
+  enabled: true
+  # PostgreSQL image
+  image:
+    repository: postgres
+    tag: "18-alpine"
+    pullPolicy: IfNotPresent
+  # Database credentials
+  auth:
+    username: kuvasz
+    password: ""  # Auto-generated if empty
+    database: kuvasz
+    # existingSecret: "test-release-postgresql"
+    # existingSecretPasswordKey: "postgresql-password"
+  # Persistence
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: ""  # Use default storage class if empty
+    accessMode: ReadWriteOnce
+  # Resources
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  # Security context
+  securityContext:
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+  # Node selector, tolerations, affinity
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Configuration file (kuvasz.yml)
+# This will be mounted as /config/kuvasz.yml
+config:
+  # Raw YAML content for kuvasz.yml
+  # Example:
+  # integrations:
+  #   slack:
+  #     - name: my-slack
+  #       webhook-url: 'https://hooks.slack.com/services/...'
+  raw: ""
+
+
+# Extra environment variables
+extraEnv: []
+
+# Extra volumes
+extraVolumes: []
+
+# Extra volume mounts
+extraVolumeMounts: []
+
+# Revision history limit
+revisionHistoryLimit: 10
+

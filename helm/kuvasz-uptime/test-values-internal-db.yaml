@@ -1,0 +1,25 @@
+# Test values file for Kuvasz Helm chart with internal database
+
+# Using internal database
+postgresql:
+  enabled: true
+  auth:
+    username: kuvasz
+    password: "internal-db-password-123"
+    database: kuvasz
+
+# Authentication
+auth:
+  enabled: true
+  adminUser: "admin"
+  adminPassword: "admin-password-12345"
+  adminApiKey: "api-key-must-be-16-chars-min"
+
+# Service
+service:
+  type: ClusterIP
+  port: 8080
+
+# Timezone
+timezone: "UTC"
+
