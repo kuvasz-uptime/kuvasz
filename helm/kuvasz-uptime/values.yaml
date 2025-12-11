@@ -137,7 +137,7 @@ postgresql:
   enabled: true
   # PostgreSQL image
   image:
-    repository: postgres
+    repository: pgautoupgrade/pgautoupgrade
     tag: "18-alpine"
     pullPolicy: IfNotPresent
   # Database credentials
@@ -194,4 +194,3 @@ extraVolumeMounts: []
 
 # Revision history limit
 revisionHistoryLimit: 10
-

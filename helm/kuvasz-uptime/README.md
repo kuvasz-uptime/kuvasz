@@ -47,7 +47,7 @@ The chart can deploy PostgreSQL as a simple StatefulSet using the official Postg
 postgresql:
   enabled: true
   image:
-    repository: postgres
+    repository: pgautoupgrade/pgautoupgrade
     tag: "18-alpine"
   auth:
     username: kuvasz-uptime

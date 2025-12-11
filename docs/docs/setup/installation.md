@@ -37,7 +37,7 @@ Create a file called `docker-compose.yml` in the same directory where you create
 ```yaml
 services:
   kuvasz-db: # (7)!
-    image: postgres:18-alpine
+    image: pgautoupgrade/pgautoupgrade:18-alpine
     container_name: kuvaszdb
     environment:
       POSTGRES_USER: kuvasz
