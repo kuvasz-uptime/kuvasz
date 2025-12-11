@@ -1,3 +1,14 @@
+## 3.3.0 <small>2025-12-11</small> { id="3.3.0" data-toc-label="3.3.0" }
+
+### Features
+
+- An official **Helm chart** is available now to deploy _Kuvasz_ on Kubernetes clusters easily. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo){ target="_blank" }!
+- **Dark mode is the default** theme now on the UI, if you didn't change it manually before.
+
+### Chore
+
+- Bumped dependencies to their latest versions
+
 ## 3.2.4 <small>2025-10-30</small> { id="3.2.4" data-toc-label="3.2.4" }
 
 ### Fixes
