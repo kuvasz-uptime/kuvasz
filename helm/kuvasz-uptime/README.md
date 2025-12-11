@@ -14,10 +14,10 @@ This Helm chart deploys [Kuvasz](https://kuvasz-uptime.dev) - an open-source upt
 
 ```bash
 # Install with default values
-helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 0.1.0
+helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 3.3.0
 
 # Or install with custom values
-helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 0.1.0 -f my-values.yaml
+helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 3.3.0 -f my-values.yaml
 ```
 
 ### Using External Database
@@ -47,7 +47,7 @@ The chart can deploy PostgreSQL as a simple StatefulSet using the official Postg
 postgresql:
   enabled: true
   image:
-    repository: postgres
+    repository: pgautoupgrade/pgautoupgrade
     tag: "18-alpine"
   auth:
     username: kuvasz-uptime
@@ -61,24 +61,24 @@ postgresql:
 
 ## Configuration
 
-The following table lists the configurable parameters and their default values:
+The following table lists the most important parameters and their default values:
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `image.repository` | Image repository | `kuvaszmonitoring/kuvasz` |
-| `image.tag` | Image tag | `latest` |
-| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
-| `service.type` | Service type | `ClusterIP` |
-| `service.port` | Service port | `8080` |
-| `ingress.enabled` | Enable ingress | `false` |
-| `auth.enabled` | Enable authentication | `true` |
-| `auth.adminUser` | Admin username (auto-generated if empty) | `""` |
-| `auth.adminPassword` | Admin password (auto-generated if empty) | `""` |
-| `auth.adminApiKey` | Admin API key (auto-generated if empty) | `""` |
-| `postgresql.enabled` | Deploy PostgreSQL | `true` |
-| `externalDatabase.host` | External database host | `""` |
-| `timezone` | Timezone | `UTC` |
-| `resources` | Resource limits/requests | See values.yaml |
+| Parameter            | Description                                                                                                              | Default                   |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------|---------------------------|
+| `image.repository`   | Image repository                                                                                                         | `kuvaszmonitoring/kuvasz` |
+| `image.tag`          | Image tag                                                                                                                | `latest`                  |
+| `image.pullPolicy`   | Image pull policy                                                                                                        | `IfNotPresent`            |
+| `service.type`       | Service type                                                                                                             | `ClusterIP`               |
+| `service.port`       | Service port                                                                                                             | `8080`                    |
+| `ingress.enabled`    | Enable ingress                                                                                                           | `false`                   |
+| `auth.enabled`       | Enable authentication                                                                                                    | `true`                    |
+| `auth.adminUser`     | Admin username (auto-generated if empty)                                                                                 | `""`                      |
+| `auth.adminPassword` | Admin password (auto-generated if empty)                                                                                 | `""`                      |
+| `auth.adminApiKey`   | Admin API key (auto-generated if empty)                                                                                  | `""`                      |
+| `postgresql.enabled` | Deploy PostgreSQL                                                                                                        | `true`                    |
+| `externalDatabase`   | External database configuration, check out `values.yaml` in case you would like to use your existing PostgreSQL instance |                           |
+| `timezone`           | Timezone                                                                                                                 | `UTC`                     |
+| `resources`          | Resource limits/requests                                                                                                 | See `values.yaml`         |
 
 ## Database Options
 
@@ -126,6 +126,7 @@ config:
         - name: my-slack
           webhook-url: 'https://hooks.slack.com/services/...'
           global: true
+    # ...
 ```
 
 ## Authentication
@@ -148,7 +149,10 @@ kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-api-key
 ## Upgrading
 
 ```bash
-helm upgrade my-kuvasz kuvasz-uptime/kuvasz -f my-values.yaml
+helm upgrade my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime \
+  --version <NEW_VERSION> \
+  --values values.yaml \
+  --namespace kuvasz-uptime
 ```
 
 ## Uninstalling

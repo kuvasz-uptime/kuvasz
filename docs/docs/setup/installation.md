@@ -4,14 +4,6 @@ _Kuvasz_ is distributed as a [**Docker image**](https://hub.docker.com/r/kuvaszm
 
 This guide will walk you through the deployment process.
 
-## Choose Your Deployment Method
-
-Kuvasz can be deployed in several ways depending on your infrastructure:
-
-[**Docker Compose**](#quick-start-with-docker-compose) - Recommended for quick start and simple deployments
-[**Helm Chart**](./helm-deployment) - Recommended for Kubernetes clusters
-[**Other Methods**](#other-deployment-methods) - For other container orchestration systems
-
 !!! info "PostgreSQL"
 
     _Kuvasz_ relies on a _PostgreSQL_ database to store its data, but **if you don't have one** set up already,
@@ -19,6 +11,14 @@ Kuvasz can be deployed in several ways depending on your infrastructure:
     The Helm chart also provides a basic database setup, if you don't want to bring your own PostgreSQL instance (be aware that it might not be a good fit for a production setup).
 
     The **minimum, tested version of _PostgreSQL_ is 14**, `alpine` distributions are supported.
+
+## Choose Your Deployment Method
+
+Kuvasz can be deployed in several ways depending on your infrastructure:
+
+- [**Docker Compose**](#quick-start-with-docker-compose) - Recommended for quick start and simple deployments
+- [**Helm Chart**](helm-deployment.md) - Recommended for Kubernetes clusters
+- [**Other Methods**](#other-deployment-methods) - For other container orchestration systems
 
 ## Quick start with Docker Compose
 
@@ -37,7 +37,7 @@ Create a file called `docker-compose.yml` in the same directory where you create
 ```yaml
 services:
   kuvasz-db: # (7)!
-    image: postgres:18-alpine
+    image: pgautoupgrade/pgautoupgrade:18-alpine
     container_name: kuvaszdb
     environment:
       POSTGRES_USER: kuvasz
@@ -173,7 +173,7 @@ If you run _Kuvasz_ in a container orchestration system, you can use the `GET /a
 ### Kubernetes with Helm
 
 For Kubernetes deployments, we provide an official Helm chart. This is the recommended method for deploying Kuvasz to Kubernetes clusters as it handles all the configuration complexity for you.
-See the [Helm Chart Deployment Guide](./helm-deployment) for detailed instructions.
+See the [Helm Chart Deployment Guide](helm-deployment.md) for detailed instructions.
 
 ### Other Container Orchestration Systems
 

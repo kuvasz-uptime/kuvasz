@@ -12,7 +12,7 @@ This document provides commands to test the Helm chart rendering with custom val
 ### 1. Render with default values
 
 ```bash
-cd helm/kuvasz
+cd helm/kuvasz-uptime
 helm template test-release . > rendered-default.yaml
 ```
 
@@ -177,4 +177,3 @@ helm template test-release . -f test-values.yaml | yamllint -
 ```bash
 helm template test-release . -f test-values.yaml 2>&1 | grep -i "error\|missing\|undefined"
 ```
-

@@ -1,6 +1,6 @@
-# Helm Chart Deployment
+# Deploy Kuvasz via Helm Chart
 
-Kuvasz Uptime provides an official Helm chart for deploying to Kubernetes clusters. This guide will walk you through the deployment process using Helm.
+Kuvasz provides an official Helm chart for deploying to Kubernetes clusters. This guide will walk you through the deployment process.
 
 ## Prerequisites
 
@@ -8,11 +8,11 @@ Kuvasz Uptime provides an official Helm chart for deploying to Kubernetes cluste
 - [Helm 4.x](https://helm.sh/docs/intro/install/) installed
 - `kubectl` configured to access your cluster
 
-## Quick Start
+## Quick start
 
-### 1. Add the Kuvasz Uptime Helm Repository
+### 1. Add the official Helm repository
 
-The Kuvasz Uptime Helm chart is published to GitHub's OCI registry. To install it, you can pull it directly:
+The official Helm chart is published to GitHub's OCI registry. To install it, you can pull it directly:
 
 ```bash
 # Install with default values
@@ -22,9 +22,9 @@ helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version <VERS
 helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version <VERSION> -f my-values.yaml
 ```
 
-Replace `<VERSION>` with the desired version (e.g., `0.1.0`). You can find available versions on the [GitHub releases page](https://github.com/kuvasz-uptime/kuvasz/releases).
+Replace `<VERSION>` with the desired version (e.g., `3.3.0`). You can find the available versions on the [GitHub releases page](https://github.com/kuvasz-uptime/kuvasz/releases){ target="_blank" }.
 
-### 2. Create a Values File
+### 2. Create a values File
 
 Create a file called `values.yaml` to customize your deployment. Here's a minimal example:
 
@@ -46,7 +46,7 @@ auth:
 # Ingress configuration (optional)
 ingress:
   enabled: false
-  # Uncomment and configure if you want to expose Kuvasz Uptime externally
+  # Uncomment and configure if you want to expose Kuvasz externally
   # className: "nginx"
   # hosts:
   #   - host: kuvasz-uptime.example.com
@@ -61,7 +61,7 @@ ingress:
 
 ### 3. Install the Chart
 
-Install Kuvasz Uptime using your custom values:
+Install Kuvasz using your custom values:
 
 ```bash
 helm install kuvasz-uptime oci://ghcr.io/kuvasz-uptime/kuvasz-uptime \
@@ -71,7 +71,7 @@ helm install kuvasz-uptime oci://ghcr.io/kuvasz-uptime/kuvasz-uptime \
   --create-namespace
 ```
 
-### 4. Verify the Installation
+### 4. Verify the installation
 
 Check that all pods are running:
 
@@ -79,11 +79,11 @@ Check that all pods are running:
 kubectl get pods -n kuvasz-uptime
 ```
 
-You should see the Kuvasz Uptime application pod and PostgreSQL pod (if enabled) in a `Running` state.
+You should see the Kuvasz application pod and PostgreSQL pod (if enabled) in a `Running` state.
 
-### 5. Access Kuvasz Uptime
+### 5. Access Kuvasz
 
-By default, Kuvasz Uptime is exposed via a ClusterIP service. To access it locally, you can use port-forwarding:
+By default, Kuvasz is exposed via a ClusterIP service. To access it locally, you can use port-forwarding:
 
 ```bash
 kubectl port-forward -n kuvasz-uptime svc/kuvasz-uptime 8080:8080
@@ -91,9 +91,9 @@ kubectl port-forward -n kuvasz-uptime svc/kuvasz-uptime 8080:8080
 
 Then open your browser to [http://localhost:8080](http://localhost:8080).
 
-## Configuration Options
+## Configuration options
 
-### Using an External PostgreSQL Database
+### Using an external PostgreSQL database
 
 If you already have a PostgreSQL database, you can disable the bundled PostgreSQL and configure an external connection:
 
@@ -112,7 +112,7 @@ externalDatabase:
   # existingSecretPasswordKey: "password"
 ```
 
-### Persistent Storage
+### Persistent storage
 
 By default, the chart creates PersistentVolumeClaims for the PostgreSQL database. You can customize the storage:
 
@@ -125,9 +125,9 @@ postgresql:
     size: 10Gi
 ```
 
-### Resource Limits
+### Resource limits
 
-Configure resource requests and limits for Kuvasz Uptime:
+Configure resource requests and limits for Kuvasz (these are the recommended minimums):
 
 ```yaml
 resources:
@@ -139,11 +139,9 @@ resources:
     memory: 256Mi
 ```
 
-We recommend setting the resource limits to at least 1000m CPU and 768Mi memory.
+### Ingress configuration
 
-### Ingress Configuration
-
-To expose Kuvasz Uptime externally with an Ingress controller:
+To expose Kuvasz externally with an Ingress controller:
 
 ```yaml
 ingress:
@@ -162,9 +160,9 @@ ingress:
         - kuvasz-uptime.example.com
 ```
 
-### Kuvasz Uptime Configuration File
+### Configuring Kuvasz
 
-You can provide a custom Kuvasz Uptime YAML configuration by including it in your values file:
+You can provide a custom [YAML configuration](configuration.md) by including it in your values file:
 
 ```yaml
 config:
@@ -175,15 +173,15 @@ config:
           webhook-url: 'https://hooks.slack.com/services/XXX/YYY/ZZZ'
           global: true
     
-    monitors:
+    http-monitors:
       - name: example-monitor
         url: https://example.com
-        interval: 60
+        uptime-check-interval: 60
 ```
 
 ## Upgrading
 
-To upgrade to a new version of Kuvasz Uptime:
+To upgrade to a new version of Kuvasz:
 
 ```bash
 helm upgrade kuvasz-uptime oci://ghcr.io/kuvasz-uptime/kuvasz-uptime \
@@ -194,7 +192,7 @@ helm upgrade kuvasz-uptime oci://ghcr.io/kuvasz-uptime/kuvasz-uptime \
 
 ## Uninstalling
 
-To remove Kuvasz Uptime from your cluster:
+To remove Kuvasz from your cluster:
 
 ```bash
 helm uninstall kuvasz-uptime --namespace kuvasz-uptime
@@ -207,7 +205,7 @@ This will not delete the PersistentVolumeClaims by default. To also delete the s
 kubectl delete pvc -n kuvasz-uptime --all
 ```
 
-## Configuration Reference
+## Configuration reference
 
 For a complete list of all available configuration options, you can inspect the chart's values:
 
@@ -217,33 +215,29 @@ helm show values oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version <VERSION>
 
 ## Troubleshooting
 
-### Checking Logs
-
-To view Kuvasz Uptime logs:
+### Checking logs
 
 ```bash
 kubectl logs -n kuvasz-uptime deployment/kuvasz-uptime -f
 ```
 
-### Database Connection Issues
+### Database connection issues
 
-If Kuvasz Uptime can't connect to the database, verify:
+If your Kuvasz instance can't connect to the database, verify:
 
 1. PostgreSQL pod is running: `kubectl get pods -n kuvasz-uptime`
 2. Database credentials are correct in your values file
 3. Network policies allow communication between pods
 
-### Health Check
+### Health check
 
-Check if Kuvasz Uptime is healthy using the health endpoint:
+Check if Kuvasz is healthy using the health endpoint:
 
 ```bash
 kubectl exec -n kuvasz-uptime deployment/kuvasz-uptime -- wget -q -O- http://localhost:8080/api/v2/health
 ```
 
-## Additional Resources
+## Additional resources
 
 - [Helm Documentation](https://helm.sh/docs/)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
-- [Kuvasz Uptime Configuration Guide](../configuration/)
-- [GitHub Repository](https://github.com/kuvasz-uptime/kuvasz)
