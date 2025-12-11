@@ -14,10 +14,10 @@ This Helm chart deploys [Kuvasz](https://kuvasz-uptime.dev) - an open-source upt
 
 ```bash
 # Install with default values
-helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 0.1.0
+helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 3.3.0
 
 # Or install with custom values
-helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 0.1.0 -f my-values.yaml
+helm install my-kuvasz oci://ghcr.io/kuvasz-uptime/kuvasz-uptime --version 3.3.0 -f my-values.yaml
 ```
 
 ### Using External Database
