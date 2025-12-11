@@ -1,0 +1,112 @@
+{{- if .Values.postgresql.enabled -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" }}
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: {{ include "kuvasz.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "kuvasz.chart" . }}
+spec:
+  serviceName: {{ printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: database
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.postgresql.securityContext.fsGroup }}
+      containers:
+        - name: postgresql
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kuvasz.databaseSecretName" . }}
+                  key: {{ include "kuvasz.databasePasswordKey" . }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: TZ
+              value: {{ .Values.timezone | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U {{ .Values.postgresql.auth.username }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U {{ .Values.postgresql.auth.username }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          securityContext:
+            runAsUser: {{ .Values.postgresql.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.postgresql.securityContext.runAsGroup }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      {{- if .Values.postgresql.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.postgresql.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.postgresql.tolerations }}
+      tolerations:
+        {{- toYaml .Values.postgresql.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.postgresql.affinity }}
+      affinity:
+        {{- toYaml .Values.postgresql.affinity | nindent 8 }}
+      {{- end }}
+  {{- if .Values.postgresql.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - {{ .Values.postgresql.persistence.accessMode }}
+        {{- if .Values.postgresql.persistence.storageClass }}
+        storageClassName: {{ .Values.postgresql.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.persistence.size }}
+  {{- end }}
+{{- end }}
+

@@ -1,12 +1,22 @@
 # Deployment
 
 _Kuvasz_ is distributed as a [**Docker image**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz){target="blank"}, which makes it easy to deploy and run on any system that supports _Docker_.
+
 This guide will walk you through the deployment process.
+
+## Choose Your Deployment Method
+
+Kuvasz can be deployed in several ways depending on your infrastructure:
+
+[**Docker Compose**](#quick-start-with-docker-compose) - Recommended for quick start and simple deployments
+[**Helm Chart**](./helm-deployment) - Recommended for Kubernetes clusters
+[**Other Methods**](#other-deployment-methods) - For other container orchestration systems
 
 !!! info "PostgreSQL"
 
     _Kuvasz_ relies on a _PostgreSQL_ database to store its data, but **if you don't have one** set up already,
     you can use the provided _Docker compose_ file to easily set up a _PostgreSQL_ instance alongside _Kuvasz_.
+    The Helm chart also provides a basic database setup, if you don't want to bring your own PostgreSQL instance (be aware that it might not be a good fit for a production setup).
 
     The **minimum, tested version of _PostgreSQL_ is 14**, `alpine` distributions are supported.
 
@@ -160,9 +170,14 @@ If you run _Kuvasz_ in a container orchestration system, you can use the `GET /a
 
 ## Other deployment methods
 
-If you use another container orchestration system (e.g. _k8s_, _Swarm_, etc.), you can still use the same image and the
-same configuration options, of course. Just make sure to set the environment variables and mount the configuration file
-as shown above.
+### Kubernetes with Helm
+
+For Kubernetes deployments, we provide an official Helm chart. This is the recommended method for deploying Kuvasz to Kubernetes clusters as it handles all the configuration complexity for you.
+See the [Helm Chart Deployment Guide](./helm-deployment) for detailed instructions.
+
+### Other Container Orchestration Systems
+
+If you use another container orchestration system (e.g. _Kubernetes without Helm_, _Docker Swarm_, etc.), you can still use the same image and the same configuration options. Just make sure to set the environment variables and mount the configuration file as shown in the Docker Compose example above.
 
 ## Unofficial guides
 

@@ -1,0 +1,24 @@
+{{- if .Values.postgresql.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" }}
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: {{ include "kuvasz.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "kuvasz.chart" . }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: postgresql
+      protocol: TCP
+      name: postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
