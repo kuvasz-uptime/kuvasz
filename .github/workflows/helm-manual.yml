@@ -1,8 +1,11 @@
-name: Release Helm Chart
+name: Release Helm Chart manually
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
 env:
   HELM_VERSION: v4.0.0
 jobs:
@@ -21,17 +24,10 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Extract version from tag
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          VERSION=${VERSION#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Publishing version: $VERSION"
       - name: Update Chart version
         run: |
-          sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}/" helm/kuvasz-uptime/Chart.yaml
-          sed -i "s/^appVersion:.*/appVersion: \"${{ steps.version.outputs.version }}\"/" helm/kuvasz-uptime/Chart.yaml
+          sed -i "s/^version:.*/version: ${{ inputs.version }}/" helm/kuvasz-uptime/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.version }}\"/" helm/kuvasz-uptime/Chart.yaml
       - name: Package Helm chart
         run: |
           helm package helm/kuvasz-uptime
