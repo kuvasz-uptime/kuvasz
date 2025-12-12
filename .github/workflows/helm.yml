@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - '*'
+  workflow_dispatch:
 env:
   HELM_VERSION: v4.0.0
 jobs:

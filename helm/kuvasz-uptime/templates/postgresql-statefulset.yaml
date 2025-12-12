@@ -44,13 +44,13 @@ spec:
                 secretKeyRef:
                   name: {{ include "kuvasz.databaseSecretName" . }}
                   key: {{ include "kuvasz.databasePasswordKey" . }}
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
             - name: TZ
               value: {{ .Values.timezone | quote }}
+            - name: POSTGRES_INITDB_ARGS
+              value: "--auth-host=scram-sha-256"
           volumeMounts:
             - name: data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
           resources:
             {{- toYaml .Values.postgresql.resources | nindent 12 }}
           livenessProbe:
@@ -109,4 +109,3 @@ spec:
             storage: {{ .Values.postgresql.persistence.size }}
   {{- end }}
 {{- end }}
-

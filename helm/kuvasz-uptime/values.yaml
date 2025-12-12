@@ -9,7 +9,7 @@ fullnameOverride: ""
 # Image configuration
 image:
   repository: kuvaszmonitoring/kuvasz
-  tag: "3.2.4"
+  tag: "latest"
   pullPolicy: IfNotPresent
   # platform: linux/arm64  # Uncomment if running on ARM-based systems
 

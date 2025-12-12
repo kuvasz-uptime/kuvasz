@@ -50,9 +50,9 @@ postgresql:
     repository: pgautoupgrade/pgautoupgrade
     tag: "18-alpine"
   auth:
-    username: kuvasz-uptime
+    username: kuvasz
     password: ""  # Will be auto-generated if empty
-    database: kuvasz-uptime
+    database: kuvasz
   persistence:
     enabled: true
     size: 8Gi
