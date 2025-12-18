@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.isServerRelatedError
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.core.type.Argument
+import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
@@ -114,6 +115,9 @@ class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpCli
     override fun getConnectionPoolConfiguration(): ConnectionPoolConfiguration = ConnectionPoolConfiguration()
 
     override fun isExceptionOnErrorStatus(): Boolean = false
+
+    override fun getHttp2Configuration(): Http2ClientConfiguration? =
+        DefaultHttpClientConfiguration.DefaultHttp2ClientConfiguration()
 
     companion object {
         private const val EVENT_LOOP_GROUP = "uptime-check"

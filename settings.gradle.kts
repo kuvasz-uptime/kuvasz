@@ -73,7 +73,7 @@ dependencyResolutionManagement {
             // UI
             library("kotlinx-html-jvm", "org.jetbrains.kotlinx", "kotlinx-html-jvm").version("0.12.0")
             library("kotlin-htmx", "com.iodesystems.kotlin-htmx", "htmx").version("0.0.1")
-            library("i18n4k", "de.comahe.i18n4k", "i18n4k-core-jvm").version("0.11.0")
+            library("i18n4k", "de.comahe.i18n4k", "i18n4k-core-jvm").version("0.11.1")
 
             // jOOQ
             library("jooq-kotlin", "org.jooq", "jooq-kotlin").version(jooqVersion)
@@ -87,9 +87,9 @@ dependencyResolutionManagement {
             library("simplejavamail-batchmodule", "org.simplejavamail", "batch-module").versionRef("simpleJavaMail")
 
             // Tests
-            library("mockk", "io.mockk", "mockk").version("1.14.5")
+            library("mockk", "io.mockk", "mockk").version("1.14.7")
             library("mockserver-netty", "org.mock-server", "mockserver-netty").version("5.15.0")
-            val testcontainersVersion = "2.0.2"
+            val testcontainersVersion = "2.0.3"
             library("testcontainers", "org.testcontainers", "testcontainers").version(testcontainersVersion)
             library("testcontainers-pg", "org.testcontainers", "testcontainers-postgresql").version(
                 testcontainersVersion
