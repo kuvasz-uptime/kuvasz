@@ -1,0 +1,23 @@
+name: docs-build
+on:
+  pull_request:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: docs/.cache
+          restore-keys: |
+            mkdocs-material-
+      - run: pip install -r requirements.txt
+        working-directory: docs
+      - run: mkdocs build
+        working-directory: docs
