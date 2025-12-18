@@ -1,22 +1,15 @@
-name: docs-deploy
+name: docs-build
 on:
-  push:
-    tags:
-      - '*'
-permissions:
-  contents: write
+  pull_request:
+    branches: [ main ]
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Configure Git Credentials
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: 3.13
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
       - uses: actions/cache@v4
         with:
@@ -26,5 +19,5 @@ jobs:
             mkdocs-material-
       - run: pip install -r requirements.txt
         working-directory: docs
-      - run: mkdocs gh-deploy --force
+      - run: mkdocs build
         working-directory: docs
