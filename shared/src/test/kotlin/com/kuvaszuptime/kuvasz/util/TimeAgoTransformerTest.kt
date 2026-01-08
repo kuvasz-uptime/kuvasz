@@ -120,25 +120,25 @@ class TimeAgoTransformerTest : StringSpec({
 
     "should return 'a month ago' for 1 month in the past" {
         val now = OffsetDateTime.now()
-        val past = now.minusMonths(1)
+        val past = now.minusDays(30)
         past.timeAgo(now) shouldBe "a month ago"
     }
 
     "should return 'in a month' for 1 month in the future" {
         val now = OffsetDateTime.now()
-        val future = now.plusMonths(1)
+        val future = now.plusDays(30)
         future.timeAgo(now) shouldBe "in a month"
     }
 
     "should return '2 months ago' for 2 months in the past" {
         val now = OffsetDateTime.now()
-        val past = now.minusMonths(2)
+        val past = now.minusDays(60)
         past.timeAgo(now) shouldBe "2 months ago"
     }
 
     "should return 'in 2 months' for 2 months in the future" {
         val now = OffsetDateTime.now()
-        val future = now.plusMonths(2)
+        val future = now.plusDays(60)
         future.timeAgo(now) shouldBe "in 2 months"
     }
 
