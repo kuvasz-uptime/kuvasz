@@ -49,17 +49,6 @@ class DisabledAuthenticationTest(
             }
         }
 
-        given("a secured API endpoint - v1") {
-
-            `when`("an anonymous user calls it") {
-                val response = client.exchange("/api/v1/monitors").awaitFirst()
-
-                then("it should return 200") {
-                    response.status shouldBe HttpStatus.OK
-                }
-            }
-        }
-
         given("a secured API endpoint") {
 
             `when`("an anonymous user calls it") {

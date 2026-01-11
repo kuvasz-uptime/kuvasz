@@ -22,7 +22,6 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LegacyHttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -179,38 +178,6 @@ class HttpMonitorActions(
             .orThrowNotFound(monitorId)
             .let { monitor ->
                 sslEventRepository.getEventsByMonitorId(monitor.id, limit)
-            }
-
-    @Deprecated("Use getMonitorStats instead")
-    fun getLegacyMonitorStats(monitorId: Long, period: Duration): LegacyHttpMonitorStatsDto =
-        monitorRepository.findById(monitorId, null)
-            .orThrowNotFound(monitorId)
-            .let { monitor ->
-                val statsDto = LegacyHttpMonitorStatsDto(
-                    id = monitor.id,
-                    latencyHistoryEnabled = monitor.latencyHistoryEnabled,
-                    averageLatencyInMs = null,
-                    minLatencyInMs = null,
-                    maxLatencyInMs = null,
-                    p90LatencyInMs = null,
-                    p95LatencyInMs = null,
-                    p99LatencyInMs = null,
-                    latencyLogs = emptyList()
-                )
-                if (!monitor.latencyHistoryEnabled) {
-                    return statsDto
-                }
-
-                val metrics = latencyLogRepository.getLatencyMetrics(monitor.id, period)
-                statsDto.copy(
-                    averageLatencyInMs = metrics?.avg,
-                    minLatencyInMs = metrics?.min,
-                    maxLatencyInMs = metrics?.max,
-                    p90LatencyInMs = metrics?.p90,
-                    p95LatencyInMs = metrics?.p95,
-                    p99LatencyInMs = metrics?.p99,
-                    latencyLogs = latencyLogRepository.fetchLatestByMonitorId(monitor.id, period)
-                )
             }
 
     fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =

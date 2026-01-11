@@ -231,7 +231,7 @@ private fun FlowContent.periodSelector(options: List<Duration>, selected: Durati
             val formattedPeriod = duration.formatAsSimpleInterval()
             option {
                 value = duration.toString()
-                this.selected = selected.equals(duration)
+                this.selected = selected == duration
                 +formattedPeriod
             }
         }
