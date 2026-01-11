@@ -102,6 +102,7 @@ class HttpMonitorControllerTest(
                     IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val monitor = createHttpMonitor(
                     monitorRepository,
@@ -212,6 +213,13 @@ class HttpMonitorControllerTest(
                             type = IntegrationType.PAGERDUTY,
                             global = false,
                         ),
+                        IntegrationDetailsDto(
+                            id = "webhook:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.WEBHOOK,
+                            global = false,
+                        ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
                             id = "email:Global-343",
@@ -232,6 +240,13 @@ class HttpMonitorControllerTest(
                             enabled = true,
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:Global2_with_headers",
+                            enabled = true,
+                            name = "Global2_with_headers",
+                            type = IntegrationType.WEBHOOK,
                             global = true,
                         ),
                     )
@@ -517,6 +532,7 @@ class HttpMonitorControllerTest(
                     IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val monitor = createHttpMonitor(
                     monitorRepository,
@@ -643,6 +659,13 @@ class HttpMonitorControllerTest(
                             type = IntegrationType.PAGERDUTY,
                             global = false,
                         ),
+                        IntegrationDetailsDto(
+                            id = "webhook:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.WEBHOOK,
+                            global = false,
+                        ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
                             id = "email:Global-343",
@@ -663,6 +686,13 @@ class HttpMonitorControllerTest(
                             enabled = true,
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
+                            global = true,
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:Global2_with_headers",
+                            enabled = true,
+                            name = "Global2_with_headers",
+                            type = IntegrationType.WEBHOOK,
                             global = true,
                         ),
                     )
@@ -1226,7 +1256,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -1245,7 +1275,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -2147,7 +2177,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.requestHeadersAsMap() shouldContainExactly createdMonitor.requestHeaders
                 }
             }
@@ -2175,7 +2205,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.expectedHeadersAsMap() shouldContainExactly createdMonitor.expectedHeaders
                 }
             }

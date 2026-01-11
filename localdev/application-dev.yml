@@ -120,6 +120,11 @@ push-monitors:
       - "slack:test"
 ---
 integrations:
+  webhook:
+    name: webhook-test
+    url: https://jklfdsjfskld.com
+    request-headers:
+      Something: Value
   slack:
     - name: test
       webhook-url: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX

@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -19,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema
         PagerdutyConfigDto::class,
         EmailNotificationConfigDto::class,
         TelegramNotificationConfigDto::class,
+        WebhookNotificationConfigDto::class,
     ]
 )
 // JSON subtypes are needed only for the tests
@@ -34,6 +36,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     JsonSubTypes.Type(value = PagerdutyConfigDto::class, name = "PAGERDUTY"),
     JsonSubTypes.Type(value = EmailNotificationConfigDto::class, name = "EMAIL"),
     JsonSubTypes.Type(value = TelegramNotificationConfigDto::class, name = "TELEGRAM"),
+    JsonSubTypes.Type(value = WebhookNotificationConfigDto::class, name = "WEBHOOK"),
 )
 sealed interface IntegrationConfigDto {
     val id: IntegrationID
@@ -154,5 +157,29 @@ data class TelegramNotificationConfigDto(
         enabled = config.enabled,
         global = config.global,
         chatId = config.chatId,
+    )
+}
+
+@Introspected
+data class WebhookNotificationConfigDto(
+    override val id: IntegrationID,
+    @param:Schema(description = IntegrationDocs.TYPE, required = true)
+    override val type: IntegrationType,
+    @param:Schema(description = IntegrationDocs.NAME, required = true)
+    override val name: String,
+    @param:Schema(description = IntegrationDocs.ENABLED, required = true)
+    override val enabled: Boolean,
+    @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
+    override val global: Boolean,
+    @param:Schema(description = "The target URL of the webhook", required = true)
+    val url: String,
+) : IntegrationConfigDto {
+    constructor(integrationID: IntegrationID, config: WebhookNotificationConfig) : this(
+        id = integrationID,
+        type = integrationID.type,
+        name = config.name,
+        enabled = config.enabled,
+        global = config.global,
+        url = config.url,
     )
 }

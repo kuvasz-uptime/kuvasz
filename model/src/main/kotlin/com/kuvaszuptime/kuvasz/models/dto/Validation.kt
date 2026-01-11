@@ -14,6 +14,8 @@ object ValidationMessages {
     const val APP_CONFIG_EVENT_RETENTION_DAYS_MIN = "Event data retention must be at least {value} days"
     const val APP_CONFIG_LATENCY_RETENTION_DAYS_MIN = "Latency data retention must be at least {value} days"
     const val APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX = "Read timeout for HTTP checks cannot be higher than {value} seconds"
+    const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
+        "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
 }
 
 object IntegrationValidationMessages {
@@ -26,6 +28,7 @@ object IntegrationValidationMessages {
     const val DISCORD_WEBHOOK_URL_NOT_BLANK = "Discord integration webhook URL must not be blank"
     const val TELEGRAM_CHAT_ID_NOT_BLANK = "Telegram integration chat ID must not be blank"
     const val TELEGRAM_BOT_TOKEN_NOT_BLANK = "Telegram integration bot token must not be blank"
+    const val WEBHOOK_URL_NOT_BLANK = "Webhook integration URL must not be blank"
 }
 
 object MonitorValidationMessages {
@@ -43,8 +46,6 @@ object MonitorValidationMessages {
     const val RESPONSE_TIME_THRESHOLD_POSITIVE = "Response time threshold must be greater than 0 milliseconds"
     const val RESPONSE_TIME_THRESHOLD_MAX = "Response time threshold must be less than or equal to {value} milliseconds"
     const val SUPPORTED_STATUS_CODES = "All status codes must be valid HTTP status codes between 100 and 499"
-    const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
-        "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
     const val CLIENT_SECRET_NOT_NULL = "Client secret must not be null"
     const val CLIENT_SECRET_NOT_BLANK = "Client secret must not be blank"
     const val CLIENT_SECRET_MIN_LENGTH = "Client secret must be at least {min} characters long"

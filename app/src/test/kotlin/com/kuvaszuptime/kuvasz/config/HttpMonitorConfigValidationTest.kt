@@ -116,7 +116,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "HttpMonitorConfig.getRequestHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
+                    "HttpMonitorConfig.getRequestHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
             }
         }
 
@@ -126,7 +126,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
             then("AppContext should throw a BeanInstantiationException") {
                 exceptionToMessage(exception) shouldContain
-                    "HttpMonitorConfig.getExpectedHeaders - ${MonitorValidationMessages.VALID_HEADER_NAMES}"
+                    "HttpMonitorConfig.getExpectedHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
             }
         }
 

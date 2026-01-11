@@ -1,12 +1,14 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.testAppContext
@@ -31,10 +33,10 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 15
-            enabledIntegrations shouldHaveSize 10
-            enabledIntegrationsByType shouldHaveSize 5
-            globallyEnabledIntegrationsByType shouldHaveSize 5
+            configuredIntegrations shouldHaveSize 18
+            enabledIntegrations shouldHaveSize 12
+            enabledIntegrationsByType shouldHaveSize 6
+            globallyEnabledIntegrationsByType shouldHaveSize 6
 
             // Check that all integrations are loaded correctly
             with(configuredIntegrations) {
@@ -162,6 +164,37 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.enabled shouldBe false
                     config.global shouldBe false
                 }
+                // Webhook
+                forOne { implicitlyEnabledWebhook ->
+                    implicitlyEnabledWebhook.key shouldBe IntegrationID(
+                        IntegrationType.WEBHOOK,
+                        "test_implicitly_enabled"
+                    )
+                    val config = implicitlyEnabledWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://custom-webhook.com/webhook"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledWebhook ->
+                    globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
+                    val config = globallyEnabledWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "Global2_with_headers"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://custom-global-webhook.com"
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
+                forOne { disabledWebhook ->
+                    disabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "disabled")
+                    val config = disabledWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "disabled"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://disabled-webhook.com"
+                    config.enabled shouldBe false
+                    config.global shouldBe false
+                }
             }
 
             // Enabled integrations
@@ -252,6 +285,28 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
+                // Webhook
+                forOne { implicitlyEnabledWebhook ->
+                    implicitlyEnabledWebhook.key shouldBe IntegrationID(
+                        IntegrationType.WEBHOOK,
+                        "test_implicitly_enabled"
+                    )
+                    val config = implicitlyEnabledWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://custom-webhook.com/webhook"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledWebhook ->
+                    globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
+                    val config = globallyEnabledWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "Global2_with_headers"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://custom-global-webhook.com"
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
             }
 
             // Enabled integrations by type
@@ -259,6 +314,7 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType[IntegrationType.EMAIL].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.TELEGRAM].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.PAGERDUTY].shouldNotBeNull().shouldHaveSize(2)
+            enabledIntegrationsByType[IntegrationType.WEBHOOK].shouldNotBeNull().shouldHaveSize(2)
 
             // Global integrations
             with(globallyEnabledIntegrationsByType[IntegrationType.SLACK]?.single() as SlackNotificationConfig) {
@@ -285,6 +341,12 @@ class IntegrationBootstrappingTest : StringSpec({
                 name shouldBe "global"
                 enabled shouldBe true
                 integrationKey shouldBe "abcdef1234567890abcdef1234567890"
+            }
+
+            with(globallyEnabledIntegrationsByType[IntegrationType.WEBHOOK]?.single() as WebhookNotificationConfig) {
+                name shouldBe "Global2_with_headers"
+                enabled shouldBe true
+                url shouldBe "https://custom-global-webhook.com"
             }
         }
     }
@@ -362,6 +424,15 @@ class IntegrationBootstrappingTest : StringSpec({
         ex.message shouldContain "SlackNotificationConfig.getWebhookUrl - " +
             IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
+
+    "app should not start if a webhook contains an invalid header" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-webhook-header")
+        }
+
+        ex.message shouldContain "WebhookNotificationConfig.getRequestHeaders - " +
+            ValidationMessages.VALID_HEADER_NAMES
+    }
 })
 
 class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
@@ -369,10 +440,10 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 15
-            enabledIntegrations shouldHaveSize 8 // Email configs should not be enabled without SMTP config
-            enabledIntegrationsByType shouldHaveSize 4 // Email type should not be present
-            globallyEnabledIntegrationsByType shouldHaveSize 4 // Email type should not be present
+            configuredIntegrations shouldHaveSize 18
+            enabledIntegrations shouldHaveSize 10 // Email configs should not be enabled without SMTP config
+            enabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
+            globallyEnabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
 
             // Check that Email configs are not loaded as enabled
             val implicitlyEnabledId = IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")

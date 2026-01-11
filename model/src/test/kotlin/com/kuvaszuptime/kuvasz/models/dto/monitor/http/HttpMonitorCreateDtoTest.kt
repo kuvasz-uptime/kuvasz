@@ -167,7 +167,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "requestHeaders",
-                    message = MonitorValidationMessages.VALID_HEADER_NAMES
+                    message = ValidationMessages.VALID_HEADER_NAMES
                 )
             }
         }
@@ -183,7 +183,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "requestHeaders",
-                    message = MonitorValidationMessages.VALID_HEADER_NAMES
+                    message = ValidationMessages.VALID_HEADER_NAMES
                 )
             }
         }
@@ -212,7 +212,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "expectedHeaders",
-                    message = MonitorValidationMessages.VALID_HEADER_NAMES
+                    message = ValidationMessages.VALID_HEADER_NAMES
                 )
             }
         }
@@ -228,7 +228,7 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
             then("bean validation should signal an error") {
                 validator.validate(dto).shouldHaveSingleError(
                     propertyPath = "expectedHeaders",
-                    message = MonitorValidationMessages.VALID_HEADER_NAMES
+                    message = ValidationMessages.VALID_HEADER_NAMES
                 )
             }
         }

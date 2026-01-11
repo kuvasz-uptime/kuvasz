@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.WebhookNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
@@ -17,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import io.micronaut.context.annotation.Context
@@ -134,6 +136,7 @@ class IntegrationRepository(
                 is PagerdutyConfig -> PagerdutyConfigDto(config.id, config)
                 is EmailNotificationConfig -> EmailNotificationConfigDto(config.id, config)
                 is TelegramNotificationConfig -> TelegramNotificationConfigDto(config.id, config)
+                is WebhookNotificationConfig -> WebhookNotificationConfigDto(config.id, config)
             }
         }
 }

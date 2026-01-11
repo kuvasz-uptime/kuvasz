@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.handlers
 
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
+import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
@@ -91,6 +92,32 @@ interface TelegramNotificationConfig : IntegrationConfig {
     }
 }
 
+@EachProperty(WebhookNotificationConfig.CONFIG_PREFIX, list = true)
+@Introspected
+interface WebhookNotificationConfig : IntegrationConfig {
+
+    @get:NotBlank(message = IntegrationValidationMessages.WEBHOOK_URL_NOT_BLANK)
+    val url: String
+
+    @get:ValidHeaderNames
+    val requestHeaders: Map<String, String>?
+
+    // TODO provide per event config option like
+    // events:
+    //   monitor-up-event:
+    //     enabled: true (default)
+    //     payload-template: custom-pebble-template-string (with startup-time validation)
+    //   monitor-down-event:
+    //     ...
+    //   ssl-valid-event:
+    //     ...
+
+    companion object {
+        const val IDENTIFIER = "webhook"
+        const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
+    }
+}
+
 val IntegrationConfig.type: IntegrationType
     get() = when (this) {
         is EmailNotificationConfig -> IntegrationType.EMAIL
@@ -98,6 +125,7 @@ val IntegrationConfig.type: IntegrationType
         is SlackNotificationConfig -> IntegrationType.SLACK
         is TelegramNotificationConfig -> IntegrationType.TELEGRAM
         is DiscordNotificationConfig -> IntegrationType.DISCORD
+        is WebhookNotificationConfig -> IntegrationType.WEBHOOK
     }
 
 val IntegrationConfig.id: IntegrationID

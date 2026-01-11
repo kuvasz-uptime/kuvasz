@@ -2015,6 +2015,7 @@ components:
       - $ref: "#/components/schemas/PagerdutyConfigDto"
       - $ref: "#/components/schemas/EmailNotificationConfigDto"
       - $ref: "#/components/schemas/TelegramNotificationConfigDto"
+      - $ref: "#/components/schemas/WebhookNotificationConfigDto"
     IntegrationDetailsDto:
       required:
       - enabled
@@ -2050,6 +2051,7 @@ components:
       - SLACK
       - TELEGRAM
       - DISCORD
+      - WEBHOOK
     LatencyLogDto:
       required:
       - createdAt
@@ -3035,6 +3037,37 @@ components:
           type: boolean
           description: "Whether the installed version is up to date. If update checks\
             \ are disabled, it's always true"
+    WebhookNotificationConfigDto:
+      required:
+      - enabled
+      - global
+      - id
+      - name
+      - type
+      - url
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        url:
+          type: string
+          description: The target URL of the webhook
   securitySchemes:
     apiKey:
       type: apiKey
