@@ -11,20 +11,18 @@ info:
     url: https://github.com/kuvasz-uptime/kuvasz/raw/main/docs/docs/images/kuvasz-banner-light.webp
 tags:
 - name: HTTP monitors
-- name: "HTTP monitors (V1, deprecated)"
 - name: Incidents
 - name: Integrations
 - name: Management
 - name: Monitors
 - name: Push monitors
 - name: Settings
-- name: "Settings (V1, deprecated)"
 - name: Status pages
 paths:
-  /api/v1/monitors:
+  /api/v2/http-monitors:
     get:
       tags:
-      - "HTTP monitors (V1, deprecated)"
+      - HTTP monitors
       summary: Get all monitors with their details
       operationId: getMonitorsWithDetails
       parameters:
@@ -65,362 +63,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/HttpMonitorDetailsDto"
-      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
     post:
       tags:
-      - "HTTP monitors (V1, deprecated)"
+      - HTTP monitors
       summary: Create a monitor
       operationId: createMonitor
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/HttpMonitorCreateDto"
-        required: true
-      responses:
-        "201":
-          description: Successful creation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HttpMonitorDto"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: "HTTP monitors are in read-only mode, because they are loaded\
-            \ from a YAML config file"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v1/monitors/export/yaml:
-    get:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: Download the export of all monitors in YAML format
-      operationId: getYamlMonitorsExport
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/x-yaml: {}
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v1/monitors/stats:
-    get:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats
-      parameters:
-      - name: period
-        in: query
-        explode: false
-        schema:
-          type: string
-          description: "An ISO-8601 Duration string, default P7D"
-          nullable: true
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HttpMonitoringStatsDto"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v1/monitors/{monitorId}:
-    get:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: Get a monitor's details
-      operationId: getMonitorDetails
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HttpMonitorDetailsDto"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-    delete:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: Delete a monitor by ID
-      operationId: deleteMonitor
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "204":
-          description: Successful deletion
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: "HTTP monitors are in read-only mode, because they are loaded\
-            \ from a YAML config file"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-    patch:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: Update a monitor by ID
-      description: Updates the monitor with the given ID. Only fields that are present
-        in the request body will be updated. Fields not present in the request body
-        will remain unchanged.
-      operationId: updateMonitor
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/HttpMonitorUpdateDto"
-        required: true
-      responses:
-        "200":
-          description: Successful update
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HttpMonitorDto"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: "HTTP monitors are in read-only mode, because they are loaded\
-            \ from a YAML config file"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v1/monitors/{monitorId}/ssl-events:
-    get:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: Get the SSL events of the given monitor
-      operationId: getSSLEvents
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SSLEventDto"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v1/monitors/{monitorId}/stats:
-    get:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: Get the stats of the given monitor
-      operationId: getMonitorStats
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: period
-        in: query
-        explode: false
-        schema:
-          type: string
-          description: "An ISO-8601 Duration string, default P1D"
-          nullable: true
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LegacyHttpMonitorStatsDto"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v1/monitors/{monitorId}/uptime-events:
-    get:
-      tags:
-      - "HTTP monitors (V1, deprecated)"
-      summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents
-      parameters:
-      - name: monitorId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/HttpUptimeEventDto"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v1/settings:
-    get:
-      tags:
-      - "Settings (V1, deprecated)"
-      summary: Get the current settings of the application
-      operationId: getSettings
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LegacySettingsDto"
-      deprecated: true
-      security:
-      - apiKey: []
-      - bearerAuth: []
-  /api/v2/http-monitors:
-    get:
-      tags:
-      - HTTP monitors
-      summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_1
-      parameters:
-      - name: enabled
-        in: query
-        explode: false
-        schema:
-          type: boolean
-          nullable: true
-      - name: uptimeStatus
-        in: query
-        explode: false
-        schema:
-          type: array
-          nullable: true
-          items:
-            $ref: "#/components/schemas/UptimeStatus"
-      - name: sslStatus
-        in: query
-        explode: false
-        schema:
-          type: array
-          nullable: true
-          items:
-            $ref: "#/components/schemas/SslStatus"
-      - name: sslCheckEnabled
-        in: query
-        explode: false
-        schema:
-          type: boolean
-          nullable: true
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/HttpMonitorDetailsDto"
-      security:
-      - apiKey: []
-      - bearerAuth: []
-    post:
-      tags:
-      - HTTP monitors
-      summary: Create a monitor
-      operationId: createMonitor_1
       requestBody:
         content:
           application/json:
@@ -455,7 +105,7 @@ paths:
       tags:
       - HTTP monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_1
+      operationId: getMonitoringStats
       parameters:
       - name: period
         in: query
@@ -479,7 +129,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_1
+      operationId: getMonitorDetails
       parameters:
       - name: monitorId
         in: path
@@ -507,7 +157,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_1
+      operationId: deleteMonitor
       parameters:
       - name: monitorId
         in: path
@@ -547,7 +197,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_1
+      operationId: updateMonitor
       parameters:
       - name: monitorId
         in: path
@@ -595,7 +245,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the SSL events of the given monitor
-      operationId: getSSLEvents_1
+      operationId: getSSLEvents
       parameters:
       - name: monitorId
         in: path
@@ -620,7 +270,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_1
+      operationId: getMonitorStats
       parameters:
       - name: monitorId
         in: path
@@ -656,7 +306,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_1
+      operationId: getUptimeEvents
       parameters:
       - name: monitorId
         in: path
@@ -769,7 +419,7 @@ paths:
       tags:
       - Monitors
       summary: Download the export of all monitors in YAML format
-      operationId: getYamlMonitorsExport_1
+      operationId: getYamlMonitorsExport
       responses:
         "200":
           description: Successful query
@@ -783,7 +433,7 @@ paths:
       tags:
       - Push monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_2
+      operationId: getMonitorsWithDetails_1
       parameters:
       - name: enabled
         in: query
@@ -815,7 +465,7 @@ paths:
       tags:
       - Push monitors
       summary: Create a monitor
-      operationId: createMonitor_2
+      operationId: createMonitor_1
       requestBody:
         content:
           application/json:
@@ -914,7 +564,7 @@ paths:
       tags:
       - Push monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_2
+      operationId: getMonitoringStats_1
       parameters:
       - name: period
         in: query
@@ -938,7 +588,7 @@ paths:
       tags:
       - Push monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_2
+      operationId: getMonitorDetails_1
       parameters:
       - name: monitorId
         in: path
@@ -966,7 +616,7 @@ paths:
       tags:
       - Push monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_2
+      operationId: deleteMonitor_1
       parameters:
       - name: monitorId
         in: path
@@ -1006,7 +656,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_2
+      operationId: updateMonitor_1
       parameters:
       - name: monitorId
         in: path
@@ -1054,7 +704,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_2
+      operationId: getMonitorStats_1
       parameters:
       - name: monitorId
         in: path
@@ -1090,7 +740,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_2
+      operationId: getUptimeEvents_1
       parameters:
       - name: monitorId
         in: path
@@ -1115,7 +765,7 @@ paths:
       tags:
       - Settings
       summary: Get the current settings of the application
-      operationId: getSettings_1
+      operationId: getSettings
       responses:
         "200":
           description: Successful query
@@ -2404,409 +2054,6 @@ components:
           description: The 99th percentile latency in milliseconds for the monitor
           format: int32
           nullable: true
-    LegacyHttpMonitorStatsDto:
-      required:
-      - id
-      - latencyHistoryEnabled
-      - latencyLogs
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier of the monitor
-          format: int64
-        latencyHistoryEnabled:
-          type: boolean
-          description: Whether recording of latency is enabled for this monitor
-        averageLatencyInMs:
-          type: integer
-          description: The average latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        minLatencyInMs:
-          type: integer
-          description: The minimum latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        maxLatencyInMs:
-          type: integer
-          description: The maximum latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p90LatencyInMs:
-          type: integer
-          description: The 90th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p95LatencyInMs:
-          type: integer
-          description: The 95th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        p99LatencyInMs:
-          type: integer
-          description: The 99th percentile latency in milliseconds for the monitor
-          format: int32
-          nullable: true
-        latencyLogs:
-          type: array
-          description: All the latency logs recorded for the monitor in the given
-            period
-          items:
-            $ref: "#/components/schemas/LatencyLogDto"
-    LegacySettingsDto:
-      required:
-      - app
-      - authentication
-      - integrations
-      - metricsExport
-      type: object
-      properties:
-        authentication:
-          description: Authentication settings
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.AuthenticationSettingsDto"
-        app:
-          description: Application settings
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.AppSettingsDto"
-        integrations:
-          description: Integration settings
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.IntegrationSettingsDto"
-        metricsExport:
-          description: Metrics exporter settings
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto"
-    LegacySettingsDto.AppSettingsDto:
-      required:
-      - eventDataRetentionDays
-      - eventLoggingEnabled
-      - language
-      - latencyDataRetentionDays
-      - readOnlyMode
-      - version
-      type: object
-      properties:
-        version:
-          type: string
-          description: The version of the application
-        eventDataRetentionDays:
-          type: integer
-          description: Number of days to retain event data
-          format: int32
-        latencyDataRetentionDays:
-          type: integer
-          description: Number of days to retain latency data
-          format: int32
-        language:
-          type: string
-          description: The language of the application
-        eventLoggingEnabled:
-          type: boolean
-          description: Whether event logging is enabled
-        readOnlyMode:
-          type: boolean
-          description: Whether the application is in read-only mode (i.e. monitors
-            are configured via YAML
-    LegacySettingsDto.AuthenticationSettingsDto:
-      required:
-      - accessTokenMaxAge
-      - enabled
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          description: Whether authentication is enabled
-        accessTokenMaxAge:
-          type: integer
-          description: The maximum age of the access token in seconds
-          format: int64
-    LegacySettingsDto.DiscordNotificationConfigDto:
-      required:
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-    LegacySettingsDto.EmailNotificationConfigDto:
-      required:
-      - enabled
-      - fromAddress
-      - global
-      - id
-      - name
-      - toAddress
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-        fromAddress:
-          type: string
-          description: The email address from which notifications are sent
-        toAddress:
-          type: string
-          description: The email address to which notifications are sent
-    LegacySettingsDto.IntegrationSettingsDto:
-      required:
-      - discord
-      - email
-      - pagerduty
-      - slack
-      - smtp
-      - telegram
-      type: object
-      properties:
-        smtp:
-          description: SMTP configuration for email notifications
-          nullable: true
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.SmtpConfigDto"
-        slack:
-          type: array
-          description: List of Slack notification configurations
-          items:
-            $ref: "#/components/schemas/LegacySettingsDto.SlackNotificationConfigDto"
-        discord:
-          type: array
-          description: List of Discord notification configurations
-          items:
-            $ref: "#/components/schemas/LegacySettingsDto.DiscordNotificationConfigDto"
-        pagerduty:
-          type: array
-          description: List of PagerDuty configurations
-          items:
-            $ref: "#/components/schemas/LegacySettingsDto.PagerdutyConfigDto"
-        email:
-          type: array
-          description: List of email notification configurations
-          items:
-            $ref: "#/components/schemas/LegacySettingsDto.EmailNotificationConfigDto"
-        telegram:
-          type: array
-          description: List of Telegram notification configurations
-          items:
-            $ref: "#/components/schemas/LegacySettingsDto.TelegramNotificationConfigDto"
-    LegacySettingsDto.MetricsExportSettingsDto:
-      required:
-      - exportEnabled
-      - exporters
-      - meters
-      type: object
-      properties:
-        exportEnabled:
-          type: boolean
-          description: Whether the metrics exporting is generally enabled
-        meters:
-          description: Settings for individual meters
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.MeterSettingsDto"
-        exporters:
-          description: Settings for individual exporters
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto"
-    LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto:
-      required:
-      - openTelemetry
-      - prometheus
-      type: object
-      properties:
-        prometheus:
-          description: Prometheus exporter settings
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto"
-        openTelemetry:
-          description: OpenTelemetry exporter settings
-          allOf:
-          - $ref: "#/components/schemas/LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto"
-    LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.OTLPSettingsDto:
-      required:
-      - enabled
-      - step
-      - url
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          description: Whether the exporter is enabled
-        url:
-          type: string
-          description: The endpoint where the metrics will be published
-        step:
-          type: string
-          description: The step for the metrics reporting as an ISO 8601 duration
-            string
-    LegacySettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto:
-      required:
-      - descriptions
-      - enabled
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          description: Whether the exporter is enabled
-        descriptions:
-          type: boolean
-          description: Whether descriptions are included in the export
-    LegacySettingsDto.MetricsExportSettingsDto.MeterSettingsDto:
-      required:
-      - latestLatency
-      - sslExpiry
-      - sslStatus
-      - uptimeStatus
-      type: object
-      properties:
-        sslExpiry:
-          type: boolean
-          description: Whether SSL certificate expiry exporter is enabled
-        latestLatency:
-          type: boolean
-          description: Whether latest latency exporter is enabled
-        uptimeStatus:
-          type: boolean
-          description: Whether monitor status exporter is enabled
-        sslStatus:
-          type: boolean
-          description: Whether SSL status exporter is enabled
-    LegacySettingsDto.PagerdutyConfigDto:
-      required:
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-    LegacySettingsDto.SlackNotificationConfigDto:
-      required:
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-    LegacySettingsDto.SmtpConfigDto:
-      required:
-      - host
-      - port
-      - transportStrategy
-      type: object
-      properties:
-        host:
-          type: string
-          description: The SMTP host
-        port:
-          type: integer
-          description: The SMTP port
-          format: int32
-        transportStrategy:
-          type: string
-          description: The SMTP transport strategy
-    LegacySettingsDto.TelegramNotificationConfigDto:
-      required:
-      - chatId
-      - enabled
-      - global
-      - id
-      - name
-      - type
-      type: object
-      properties:
-        id:
-          type: string
-          description: "A unique identifier for an integration, formatted as 'type:name'."
-          example: email:my-email-integration
-        type:
-          description: Type of the integration
-          allOf:
-          - $ref: "#/components/schemas/IntegrationType"
-        name:
-          type: string
-          description: Name of the integration. Must be unique in the context of type.
-        enabled:
-          type: boolean
-          description: Whether the integration is enabled
-        global:
-          type: boolean
-          description: Whether the integration is global (applies to all monitors
-            by default)
-        chatId:
-          type: string
-          description: The chat ID for Telegram notifications
     NotificationTestResult:
       required:
       - message
@@ -3313,8 +2560,10 @@ components:
       - editabilityState
       - eventDataRetentionDays
       - eventLoggingEnabled
+      - httpCheckTimeoutSeconds
       - language
       - latencyDataRetentionDays
+      - updateChecksEnabled
       - version
       type: object
       properties:
@@ -3343,6 +2592,10 @@ components:
         updateChecksEnabled:
           type: boolean
           description: Whether automatic update checks are enabled
+        httpCheckTimeoutSeconds:
+          type: integer
+          description: The HTTP uptime checks' read timeout
+          format: int64
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly

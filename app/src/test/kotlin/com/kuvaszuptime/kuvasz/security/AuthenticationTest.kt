@@ -109,69 +109,6 @@ class AuthenticationTest(
 
         given("a secured API endpoint") {
 
-            `when`("an anonymous user calls it - v1") {
-                val exception = shouldThrow<HttpClientResponseException> {
-                    client.exchange("/api/v1/monitors").awaitFirst()
-                }
-                then("it should return 401") {
-                    exception.status shouldBe HttpStatus.UNAUTHORIZED
-                }
-            }
-
-            `when`("a user provides a wrong API key in the X-API-KEY header - v1") {
-                val request = HttpRequest.GET<Any>("/api/v1/monitors").header("X-API-KEY", "irrelevant")
-                val exception = shouldThrow<HttpClientResponseException> {
-                    client.exchange(request).awaitFirst()
-                }
-
-                then("it should return 401") {
-                    exception.status shouldBe HttpStatus.UNAUTHORIZED
-                }
-            }
-
-            `when`("a user provides a wrong API key in the Authorization header - v1") {
-                val request = HttpRequest.GET<Any>("/api/v1/monitors").bearerAuth("irrelevant")
-                val exception = shouldThrow<HttpClientResponseException> {
-                    client.exchange(request).awaitFirst()
-                }
-
-                then("it should return 401") {
-                    exception.status shouldBe HttpStatus.UNAUTHORIZED
-                }
-            }
-
-            `when`("a user provides the right API key in the X-API-KEY header - v1") {
-                val request = HttpRequest.GET<Any>("/api/v1/monitors").header("X-API-KEY", TEST_API_KEY)
-                val response = client.exchange(request).awaitFirst()
-
-                then("it should return 200") {
-                    response.status shouldBe HttpStatus.OK
-                }
-            }
-
-            `when`("a user provides the right API key in the Authorization header - v1") {
-                val request = HttpRequest.GET<Any>("/api/v1/monitors").bearerAuth(TEST_API_KEY)
-                val response = client.exchange(request).awaitFirst()
-
-                then("it should return 200") {
-                    response.status shouldBe HttpStatus.OK
-                }
-            }
-
-            `when`("a user is authenticated via a JWT cookie - v1") {
-                val jwt = getValidJWT(client, authConfig)
-
-                val request = HttpRequest
-                    .GET<Any>("/api/v1/monitors")
-                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
-
-                val response = client.exchange(request).awaitFirst()
-
-                then("it should return 200") {
-                    response.status shouldBe HttpStatus.OK
-                }
-            }
-
             `when`("an anonymous user calls it") {
                 val exception = shouldThrow<HttpClientResponseException> {
                     client.exchange("/api/v2/http-monitors").awaitFirst()

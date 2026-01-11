@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
@@ -104,13 +105,17 @@ class HttpUptimeChecker(
 }
 
 @Singleton
-class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpClientConfiguration(config) {
+class HttpCheckerClientConfiguration(
+    config: ApplicationConfiguration,
+    private val appConfig: AppConfig,
+) : HttpClientConfiguration(config) {
 
     override fun getEventLoopGroup(): String = EVENT_LOOP_GROUP
 
     override fun isFollowRedirects(): Boolean = false
 
-    override fun getReadTimeout(): Optional<Duration> = Optional.of(Duration.ofSeconds(READ_TIMEOUT_SECONDS))
+    override fun getReadTimeout(): Optional<Duration> =
+        Optional.of(Duration.ofSeconds(appConfig.httpCheckTimeoutSeconds))
 
     override fun getConnectionPoolConfiguration(): ConnectionPoolConfiguration = ConnectionPoolConfiguration()
 
@@ -121,6 +126,6 @@ class HttpCheckerClientConfiguration(config: ApplicationConfiguration) : HttpCli
 
     companion object {
         private const val EVENT_LOOP_GROUP = "uptime-check"
-        private const val READ_TIMEOUT_SECONDS = 30L
+        const val DEFAULT_READ_TIMEOUT_SECONDS = 30L
     }
 }

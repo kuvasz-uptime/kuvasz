@@ -407,6 +407,26 @@ The language to use. If you would like to translate _Kuvasz_ to your desired lan
 
 Toggles the automatic check for new versions of _Kuvasz_. If it's enabled, the application will **check for new releases in the background**, and if a new version is available, it will show a notification on the UI and populate the relevant information through the API too.
 
+### HTTP check timeout
+
+<!-- md:version 3.4.0 -->
+<!-- md:default 30 -->
+<!-- md:type `number` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.http-check-timeout-seconds: 30
+    ```
+
+=== "ENV"
+
+    ```bash
+    HTTP_CHECK_TIMEOUT_SECONDS=30
+    ```
+
+The **global read timeout limit** for HTTP monitors (the default and the maximum value are both 30 seconds). Useful if you would like to use a relatively low [response time threshold](../management/http-monitors.md#response-time-threshold) or [uptime check interval](../management/http-monitors.md#uptime-check-interval) on your monitors, and you want to **make sure that consecutive checks don't wait for slow responses**. For example, if you use a low uptime check interval on all of your monitors (like 10 seconds), then it makes sense to also set a global timeout lower than the default, otherwise the checks won't really happen every 10 seconds because the HTTP client will wait more than that until it eventually fails.
+
 ## Full configuration example
 
 You can find the full configuration example below, which includes all the options currently available. You can use it as a starting point for your own configuration.
@@ -448,6 +468,7 @@ You can find the full configuration example below, which includes all the option
       log-event-handler: true
       language: en
       check-updates: true
+      http-check-timeout-seconds: 30
     ---
     smtp-config:
       host: 'your.smtp.server'
@@ -475,6 +496,7 @@ You can find the full configuration example below, which includes all the option
     ENABLE_LOG_EVENT_HANDLER=true
     APP_LANGUAGE=en
     ENABLE_CHECK_UPDATES=true
+    HTTP_CHECK_TIMEOUT_SECONDS=30
     TZ=UTC
     ENABLE_METRICS_EXPORT=true
     ENABLE_OTLP_EXPORT=true

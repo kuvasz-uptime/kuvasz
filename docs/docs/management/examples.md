@@ -178,6 +178,7 @@ app-config:
   log-event-handler: true
   language: en
   check-updates: true
+  http-check-timeout-seconds: 30
 ---
 smtp-config:
   host: 'your.smtp.server'

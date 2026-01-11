@@ -11,7 +11,7 @@ class UptimeCheckLockRegistryTest : BehaviorSpec({
 
     val lockRegistry = UptimeCheckLockRegistry(
         AppConfig().apply {
-            uptimeCheckLockTimeoutMs = 3000 // Set a short timeout for testing
+            httpCheckLockTimeoutMillis = 3000 // Set a short timeout for testing
         }
     )
 

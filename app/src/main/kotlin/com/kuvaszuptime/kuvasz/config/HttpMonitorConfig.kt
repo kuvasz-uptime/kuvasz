@@ -13,7 +13,6 @@ import io.micronaut.core.bind.annotation.Bindable
 interface HttpMonitorConfig : HttpMonitorCreator {
 
     companion object {
-        const val LEGACY_CONFIG_PREFIX = "monitors"
         const val CONFIG_PREFIX = "http-monitors"
     }
 

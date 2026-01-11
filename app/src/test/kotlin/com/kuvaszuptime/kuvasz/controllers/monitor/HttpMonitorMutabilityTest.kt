@@ -35,9 +35,6 @@ class HttpMonitorMutabilityTest(
 
         table(
             headers("url", "method", "testBody"),
-            row("/api/v1/monitors", HttpMethod.POST, monitorCreateDto),
-            row("/api/v1/monitors/1", HttpMethod.DELETE, null),
-            row("/api/v1/monitors/1", HttpMethod.PATCH, monitorUpdateDto),
             row("/api/v2/http-monitors", HttpMethod.POST, monitorCreateDto),
             row("/api/v2/http-monitors/1", HttpMethod.DELETE, null),
             row("/api/v2/http-monitors/1", HttpMethod.PATCH, monitorUpdateDto),

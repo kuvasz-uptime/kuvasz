@@ -1,3 +1,13 @@
+## 3.4.0 <small>2026-01-11</small> { id="3.4.0" data-toc-label="3.4.0" }
+
+!!! warning
+
+    The previously deprecated `v1` endpoints are not available anymore on the API. Please refer to the [upgrade notes](upgrade-notes.md#upgrade-from-v2xx-to-v3xx) for further details.
+
+### Features
+
+- Added a [**configurable read timeout for HTTP monitors**](setup/configuration.md#http-check-timeout)
+
 ## 3.3.0 <small>2025-12-11</small> { id="3.3.0" data-toc-label="3.3.0" }
 
 ### Features
