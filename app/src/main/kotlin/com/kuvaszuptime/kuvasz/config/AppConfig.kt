@@ -1,9 +1,11 @@
 package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckerClientConfiguration.Companion.DEFAULT_READ_TIMEOUT_SECONDS
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Context
 import io.micronaut.core.annotation.Introspected
+import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 
 @ConfigurationProperties("app-config")
@@ -36,7 +38,10 @@ class AppConfig {
 
     private var isStatusPageExternalWriteDisabled = false
 
-    var uptimeCheckLockTimeoutMs: Long = UPTIME_CHECK_LOCK_TIMEOUT_MS
+    var httpCheckLockTimeoutMillis: Long = UPTIME_CHECK_LOCK_TIMEOUT_MS
+
+    @Max(DEFAULT_READ_TIMEOUT_SECONDS, message = ValidationMessages.APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX)
+    var httpCheckTimeoutSeconds: Long = DEFAULT_READ_TIMEOUT_SECONDS
 
     fun disableHttpMonitorExternalWrite() {
         isHttpMonitorExternalWriteDisabled = true

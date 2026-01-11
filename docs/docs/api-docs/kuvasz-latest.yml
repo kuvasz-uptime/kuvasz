@@ -2560,8 +2560,10 @@ components:
       - editabilityState
       - eventDataRetentionDays
       - eventLoggingEnabled
+      - httpCheckTimeoutSeconds
       - language
       - latencyDataRetentionDays
+      - updateChecksEnabled
       - version
       type: object
       properties:
@@ -2590,6 +2592,10 @@ components:
         updateChecksEnabled:
           type: boolean
           description: Whether automatic update checks are enabled
+        httpCheckTimeoutSeconds:
+          type: integer
+          description: The HTTP uptime checks' read timeout
+          format: int64
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly

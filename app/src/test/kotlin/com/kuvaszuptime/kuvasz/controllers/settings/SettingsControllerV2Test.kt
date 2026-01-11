@@ -33,6 +33,7 @@ import io.mockk.mockk
 @Property(name = "app-config.latency-data-retention-days", value = "6")
 @Property(name = "app-config.language", value = "en")
 @Property(name = "app-config.log-event-handler", value = "true")
+@Property(name = "app-config.http-check-timeout-seconds", value = "10")
 class SettingsControllerV2Test(
     settingsClient: SettingsClientV2,
     appGlobals: AppGlobals,
@@ -64,6 +65,7 @@ class SettingsControllerV2Test(
                 result.app.editabilityState.arePushMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areStatusPagesReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false
+                result.app.httpCheckTimeoutSeconds shouldBe 10
 
                 with(result.smtp.shouldNotBeNull()) {
                     host shouldBe "localhost"

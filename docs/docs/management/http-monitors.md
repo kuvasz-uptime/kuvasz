@@ -100,6 +100,10 @@ The URL of the monitor, which is **the endpoint that will be monitored**. It can
 
 The interval **in seconds** at which the uptime checks will be performed. The **minimum value is 5 seconds**.
 
+!!! tip
+
+    If you would like to use a low uptime check interval with possibly slow targets, you might take a look at the global [read timeout setting](../setup/configuration.md#http-check-timeout) to make sure that the slow response times won't defer your consecutive checks.
+
 ### Enabled
 
 <!-- md:default `true` -->
@@ -323,6 +327,10 @@ A.k.a. _"reverse matching"_. If this is set to `true`, the monitor will alert yo
 <!-- md:yaml_prop `response-time-threshold-millis` -->
 
 The maximum response time in **milliseconds** that the monitor should accept. If the response time is higher than this value, the monitor will alert you about it. This is useful to ensure that your services are performing well and responding within an acceptable time frame. The maximum value is 30 seconds (30000 ms), and the default is `null`, which means that there is no response time threshold.
+
+!!! warning
+    
+    Keep in mind that there is **another configuration option** that could **interfere with the monitor's response time threshold**, the global [read timeout setting](../setup/configuration.md#http-check-timeout). If the global value is lower than the monitor's response time threshold, than the global one will be effective.
 
 ### Expected headers
 

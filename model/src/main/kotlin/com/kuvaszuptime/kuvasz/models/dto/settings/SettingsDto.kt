@@ -40,8 +40,10 @@ data class SettingsDto(
             required = true,
         )
         val editabilityState: EditabilityStateDto,
-        @param:Schema(description = "Whether automatic update checks are enabled")
+        @param:Schema(description = "Whether automatic update checks are enabled", required = true)
         val updateChecksEnabled: Boolean,
+        @param:Schema(description = "The HTTP uptime checks' read timeout", required = true)
+        val httpCheckTimeoutSeconds: Long,
     ) {
         data class EditabilityStateDto(
             @param:Schema(description = "Whether the HTTP monitors are in read-only mode", required = true)

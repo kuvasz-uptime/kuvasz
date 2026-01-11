@@ -51,6 +51,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         label = Messages.latencyDataRetention(),
                         value = Messages.xDays(settings.app.latencyDataRetentionDays.toString())
                     )
+                    settingsLabel(
+                        label = Messages.httpCheckTimeout(),
+                        value = Messages.xSeconds(settings.app.httpCheckTimeoutSeconds.toString())
+                    )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
                     settingsToggle(label = Messages.authentication(), checked = settings.authentication.enabled)
                     settingsLabel(

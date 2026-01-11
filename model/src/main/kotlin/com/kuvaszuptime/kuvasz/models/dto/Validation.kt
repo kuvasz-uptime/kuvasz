@@ -13,6 +13,7 @@ object ValidationMessages {
     const val WELL_FORMED_JSON_STRING = "The provided string must be a well-formed JSON"
     const val APP_CONFIG_EVENT_RETENTION_DAYS_MIN = "Event data retention must be at least {value} days"
     const val APP_CONFIG_LATENCY_RETENTION_DAYS_MIN = "Latency data retention must be at least {value} days"
+    const val APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX = "Read timeout for HTTP checks cannot be higher than {value} seconds"
 }
 
 object IntegrationValidationMessages {

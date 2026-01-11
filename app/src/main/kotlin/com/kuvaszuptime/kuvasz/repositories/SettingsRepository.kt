@@ -46,6 +46,7 @@ class SettingsRepository(
                     areStatusPagesReadOnly = appConfig.isStatusPageExternalWriteDisabled(),
                 ),
                 updateChecksEnabled = appConfig.checkUpdates,
+                httpCheckTimeoutSeconds = appConfig.httpCheckTimeoutSeconds,
             ),
             smtp = smtpMailerConfig?.let { smtpConfig ->
                 SettingsDto.SmtpConfigDto(

@@ -17,7 +17,7 @@ class UptimeCheckLockRegistry(private val appConfig: AppConfig) {
             logger.debug("Uptime check for monitor with ID: $monitorId is already running, failed to acquire lock")
             false
         } else {
-            activeChecks[monitorId] = Instant.now().plusMillis(appConfig.uptimeCheckLockTimeoutMs)
+            activeChecks[monitorId] = Instant.now().plusMillis(appConfig.httpCheckLockTimeoutMillis)
             logger.debug("Uptime check for monitor with ID: $monitorId is not running, acquired lock")
             true
         }
