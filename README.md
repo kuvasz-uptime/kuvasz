@@ -6,8 +6,6 @@
 ![no vibe coded](https://img.shields.io/badge/vibe_coding-0%25-green)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz?ref=badge_shield)
 [![Docker Pulls](https://img.shields.io/docker/pulls/kuvaszmonitoring/kuvasz)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
-[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=flat&logo=discord&logoColor=white)](https://discord.com/invite/hMkyGPyU32)
-
 ---
 
 **Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, and PagerDuty.
@@ -97,7 +95,6 @@ Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & gu
 First and foremost, if you want to **stay up-to-date with the latest news**, features, and updates about _Kuvasz_, please consider:
 
 - starring the project on [**GitHub**](https://github.com/kuvasz-uptime/kuvasz) and on [**Docker Hub**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
-- joining our [**Discord server**](https://discord.com/invite/hMkyGPyU32)
 - following us on [**X**](https://x.com/KuvaszUptime)
 - following us on [**Mastodon**](https://techhub.social/@KuvaszUptime)
 

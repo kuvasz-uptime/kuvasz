@@ -159,7 +159,6 @@
 First and foremost, if you want to **stay up-to-date with the latest news**, features, and updates about _Kuvasz_, please consider:
 
 - starring the project on [**GitHub**](https://github.com/kuvasz-uptime/kuvasz){ target="_blank" } and on [**Docker Hub**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz){ target="_blank" }
-- joining our [**Discord server**](https://discord.com/invite/hMkyGPyU32){ target="_blank" }
 - following us on [**X**](https://x.com/KuvaszUptime){ target="_blank" }
 - following us on [**Mastodon**](https://techhub.social/@KuvaszUptime){ target="_blank", rel="me" }
 
