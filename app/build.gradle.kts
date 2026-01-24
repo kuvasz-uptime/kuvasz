@@ -18,6 +18,8 @@ plugins {
 
 val gitVersion: groovy.lang.Closure<String> by extra
 version = rootProject.version
+val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+val details = versionDetails()
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -151,6 +153,12 @@ jib {
         tags = setOf("latest")
     }
     container {
+        labels = mapOf(
+            "org.opencontainers.image.source" to "https://github.com/kuvasz-uptime/kuvasz",
+            "org.opencontainers.image.version" to version.toString(),
+            "org.opencontainers.image.revision" to details.gitHash,
+            "org.opencontainers.image.description" to "Kuvasz (pronounce as [ˈkuvɒs]) is an open-source uptime and SSL monitoring service, with multiple notification channels, status pages, IAC support via YAML, Prometheus integration, a complete REST API and many more",
+        )
         environment = mapOf(
             "JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx192M",
             "MICRONAUT_CONFIG_FILES" to "/config/kuvasz.yml"
