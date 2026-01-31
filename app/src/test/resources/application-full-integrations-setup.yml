@@ -53,6 +53,7 @@ integrations:
   webhook:
     - name: test_implicitly_enabled
       url: https://custom-webhook.com/webhook
+      payload-template: "{\"request_id\": \"342342\",\"status\": {% if event.uptimeStatus == 'UP' %}OK{% else %}{{event.uptimeStatus}}{% endif %}}"
     - name: Global2_with_headers
       url: https://custom-global-webhook.com
       global: true

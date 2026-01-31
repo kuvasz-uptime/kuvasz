@@ -21,7 +21,7 @@ import java.time.Instant
 @Requires(property = WebhookNotificationConfig.CONFIG_PREFIX)
 class GenericWebhookClient(@param:Client private val client: HttpClient) {
 
-    // TODO
+    // TODO ignore HTTP errors completely, only log a warning
     @Retryable
     fun sendMessage(webhookUrl: URI, message: GenericWebhookMessage, headers: Map<String, String>): Single<String> {
         val req = HttpRequest.POST(webhookUrl, message)
@@ -36,7 +36,7 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
 class GenericWebhookService(private val client: GenericWebhookClient) :
     TestableNotificationService<WebhookNotificationConfig> {
 
-    // TODO
+    // TODO differentiate based on the presence of a custom template
     fun sendWebhookEvent(integrationConfig: IntegrationConfig, message: GenericWebhookMessage): Single<String> {
         val config = integrationConfig as WebhookNotificationConfig
         val webhookUrl = config.url.toUri()
@@ -44,7 +44,7 @@ class GenericWebhookService(private val client: GenericWebhookClient) :
         return client.sendMessage(webhookUrl, message, config.requestHeaders.orEmpty())
     }
 
-    // TODO send every possible message types if custom templates are present
+    // TODO decide on which type of message to send as a test
     override fun sendTestMessage(integrationConfig: WebhookNotificationConfig): Single<NotificationTestResult> =
         sendWebhookEvent(integrationConfig, createTestMessage()).toNotificationTestResult()
 

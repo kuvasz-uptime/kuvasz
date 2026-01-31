@@ -102,15 +102,8 @@ interface WebhookNotificationConfig : IntegrationConfig {
     @get:ValidHeaderNames
     val requestHeaders: Map<String, String>?
 
-    // TODO provide per event config option like
-    // events:
-    //   monitor-up-event:
-    //     enabled: true (default)
-    //     payload-template: custom-pebble-template-string (with startup-time validation)
-    //   monitor-down-event:
-    //     ...
-    //   ssl-valid-event:
-    //     ...
+    // TODO startup-time validation for template syntax
+    val payloadTemplate: String?
 
     companion object {
         const val IDENTIFIER = "webhook"
