@@ -22,7 +22,7 @@ pluginManagement {
         id("io.micronaut.platform.catalog") version micronautGradlePluginVersion
         id("io.micronaut.minimal.library") version micronautGradlePluginVersion
 
-        id("io.gitlab.arturbosch.detekt") version detektVersion
+        id("dev.detekt") version detektVersion
         id("com.google.cloud.tools.jib") version "3.5.2"
         id("nu.studer.jooq") version jooqPluginVersion
         id("com.palantir.git-version") version "4.3.0"
@@ -97,9 +97,11 @@ dependencyResolutionManagement {
 
             // Misc
             library("arrow-core-data", "io.arrow-kt", "arrow-core-data").version("0.12.1")
-            library("detekt-formatting", "io.gitlab.arturbosch.detekt", "detekt-formatting").version(
-                detektVersion
-            )
+            library(
+                "detekt-formatting",
+                "io.gitlab.arturbosch.detekt",
+                "detekt-formatting"
+            ).version("1.23.8")
         }
     }
 }

@@ -1,4 +1,4 @@
-import io.gitlab.arturbosch.detekt.Detekt
+import dev.detekt.gradle.Detekt
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
@@ -13,7 +13,7 @@ buildscript {
 
 plugins {
     kotlin("jvm") apply false
-    id("io.gitlab.arturbosch.detekt") apply false
+    id("dev.detekt") apply false
     id("org.jetbrains.kotlinx.kover")
     id("com.palantir.git-version")
 }

@@ -21,7 +21,7 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.kotlin.kapt")
     id("io.micronaut.minimal.library")
-    id("io.gitlab.arturbosch.detekt")
+    id("dev.detekt")
     id("org.jetbrains.kotlinx.kover")
     id("nu.studer.jooq")
     id("org.flywaydb.flyway")

@@ -79,7 +79,7 @@ internal fun UL.footerListItem(
                 icon?.let {
                     span {
                         classes(ME_2)
-                        icon(it)
+                        icon(icon)
                     }
                 }
                 +label
