@@ -1,11 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import io.gitlab.arturbosch.detekt.Detekt
+import dev.detekt.gradle.Detekt
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.allopen")
-    id("io.gitlab.arturbosch.detekt")
+    id("dev.detekt")
     id("org.jetbrains.kotlinx.kover")
     id("io.micronaut.minimal.application")
     id("io.micronaut.docker")
@@ -22,7 +22,7 @@ val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDe
 val details = versionDetails()
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
 }
 
 micronaut {
@@ -136,7 +136,7 @@ tasks.withType<Detekt>().configureEach {
 
 jib {
     from {
-        image = "eclipse-temurin:21-jre-ubi9-minimal"
+        image = "eclipse-temurin:25-jre-alpine-3.23"
         platforms {
             platform {
                 os = "linux"

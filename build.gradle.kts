@@ -1,4 +1,4 @@
-import io.gitlab.arturbosch.detekt.Detekt
+import dev.detekt.gradle.Detekt
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
@@ -13,14 +13,14 @@ buildscript {
 
 plugins {
     kotlin("jvm") apply false
-    id("io.gitlab.arturbosch.detekt") apply false
+    id("dev.detekt") apply false
     id("org.jetbrains.kotlinx.kover")
     id("com.palantir.git-version")
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
 version = gitVersion()
-val javaTargetVersion = "21"
+val javaTargetVersion = "25"
 
 /**
  * This setup (together with the "kover()" dependency configurations below) will create a merged test coverage report
@@ -100,7 +100,7 @@ tasks.register("detektAll", type = Detekt::class) {
 subprojects {
     version = rootProject.version
 
-    // ensure that java 21 is used in all kotlin projects
+    // Ensure that the same Java target version is used in all kotlin projects
     extensions.findByType<KotlinJvmProjectExtension>()?.apply {
         jvmToolchain {
             this.languageVersion.set(JavaLanguageVersion.of(javaTargetVersion))

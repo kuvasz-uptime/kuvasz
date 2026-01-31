@@ -1,9 +1,9 @@
-import io.gitlab.arturbosch.detekt.Detekt
+import dev.detekt.gradle.Detekt
 
 plugins {
     kotlin("jvm")
     id("org.jetbrains.kotlinx.kover")
-    id("io.gitlab.arturbosch.detekt")
+    id("dev.detekt")
     id("de.comahe.i18n4k")
     id("com.github.ben-manes.versions")
 }

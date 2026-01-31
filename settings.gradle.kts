@@ -22,7 +22,7 @@ pluginManagement {
         id("io.micronaut.platform.catalog") version micronautGradlePluginVersion
         id("io.micronaut.minimal.library") version micronautGradlePluginVersion
 
-        id("io.gitlab.arturbosch.detekt") version detektVersion
+        id("dev.detekt") version detektVersion
         id("com.google.cloud.tools.jib") version "3.5.2"
         id("nu.studer.jooq") version jooqPluginVersion
         id("com.palantir.git-version") version "4.3.0"
@@ -31,7 +31,7 @@ pluginManagement {
         id("com.gradleup.shadow") version "9.3.1"
         id("com.github.gmazzo.buildconfig") version "6.0.7"
         id("org.gradlewebtools.minify") version "2.1.1"
-        id("org.jetbrains.kotlinx.kover") version "0.9.4"
+        id("org.jetbrains.kotlinx.kover") version "0.9.5"
         id("de.comahe.i18n4k") version "0.11.1"
     }
 }
@@ -87,7 +87,7 @@ dependencyResolutionManagement {
             library("simplejavamail-batchmodule", "org.simplejavamail", "batch-module").versionRef("simpleJavaMail")
 
             // Tests
-            library("mockk", "io.mockk", "mockk").version("1.14.7")
+            library("mockk", "io.mockk", "mockk").version("1.14.9")
             library("mockserver-netty", "org.mock-server", "mockserver-netty").version("5.15.0")
             val testcontainersVersion = "2.0.3"
             library("testcontainers", "org.testcontainers", "testcontainers").version(testcontainersVersion)
@@ -97,9 +97,11 @@ dependencyResolutionManagement {
 
             // Misc
             library("arrow-core-data", "io.arrow-kt", "arrow-core-data").version("0.12.1")
-            library("detekt-formatting", "io.gitlab.arturbosch.detekt", "detekt-formatting").version(
-                detektVersion
-            )
+            library(
+                "detekt-formatting",
+                "io.gitlab.arturbosch.detekt",
+                "detekt-formatting"
+            ).version("1.23.8")
         }
     }
 }
