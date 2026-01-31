@@ -20,7 +20,7 @@ plugins {
 
 val gitVersion: groovy.lang.Closure<String> by extra
 version = gitVersion()
-val javaTargetVersion = "21"
+val javaTargetVersion = "25"
 
 /**
  * This setup (together with the "kover()" dependency configurations below) will create a merged test coverage report
@@ -100,7 +100,7 @@ tasks.register("detektAll", type = Detekt::class) {
 subprojects {
     version = rootProject.version
 
-    // ensure that java 21 is used in all kotlin projects
+    // Ensure that the same Java target version is used in all kotlin projects
     extensions.findByType<KotlinJvmProjectExtension>()?.apply {
         jvmToolchain {
             this.languageVersion.set(JavaLanguageVersion.of(javaTargetVersion))
