@@ -157,6 +157,192 @@ The response in both cases will be **a _YAML_ file, which you can save to a safe
 2. To restore those files, you can just simply **copy the content of them as-is into your own YAML configuration file**, and restart your instance of _Kuvasz_.
 3. If you would like to **continue using the UI or the API** to manage your monitors and status pages, you need to remove the corresponding sections from your YAML configuration file after the successful restore and restart your instance once again. After that, you should be able to manage everything via the UI or the API as before.
 
+## Homepage integration
+
+[Homepage](https://gethomepage.dev/){target="_blank"} is a really nice open-source tool to create a personal dashboard with links, widgets, and more. You can integrate Kuvasz into your homepage dashboard by using their [custom API widget](https://gethomepage.dev/widgets/services/customapi/){target="_blank"}.
+
+The examples below doesn't necessarily map all the possible fields, but it gives you a good starting point to create your own widgets.
+
+### Global HTTP stats
+
+![global HTTP stats on homepage](../images/examples/homepage-global-stats.webp)
+
+```yaml
+- Global HTTP stats:
+    id: kuvasz-http-stats
+    icon: sh-kuvasz
+    widget:
+      type: customapi
+      display: list
+      url: https://demo.kuvasz-uptime.dev/api/v2/http-monitors/stats
+      refreshInterval: 300
+      headers:
+         X-Api-Key: KuvaszDemoAPIKey
+      mappings:
+        - label: Total
+          field: actual.uptimeStats.total
+        - label: Up
+          field: actual.uptimeStats.up
+        - label: Down
+          field: actual.uptimeStats.down
+        - label: Paused
+          field: actual.uptimeStats.paused
+        - label: Pending
+          field: actual.uptimeStats.inProgress
+        - label: Last incident
+          field: actual.uptimeStats.lastIncident
+          format: date
+          locale: en
+          dateStyle: long
+          timeStyle: long
+        - label: Incidents (last 7 days)
+          field: history.uptimeStats.incidents
+        - label: Affected monitors (last 7 days)
+          field: history.uptimeStats.affectedMonitors
+        - label: Uptime ratio (last 7 days)
+          field: history.uptimeStats.uptimeRatio
+          format: float
+          scale: 100
+          suffix: '%'
+        - label: Total downtime (last 7 days)
+          field: history.uptimeStats.totalDowntimeSeconds
+          format: duration
+        - label: SSL Valid
+          field: actual.sslStats.valid
+        - label: SSL Invalid
+          field: actual.sslStats.invalid
+        - label: SSL Expiring
+          field: actual.sslStats.willExpire
+```
+
+### Individual monitor stats
+
+![individual monitor stats on homepage](../images/examples/homepage-monitor-stats.webp)
+
+```yaml
+- kuvasz-uptime.dev stats:
+    id: kuvasz-uptime-http-stats
+    icon: sh-kuvasz
+    widget:
+      type: customapi
+      display: list
+      url: https://demo.kuvasz-uptime.dev/api/v2/http-monitors/38/stats
+      refreshInterval: 300
+      headers:
+        X-Api-Key: KuvaszDemoAPIKey
+      mappings:
+        - label: Average latency
+          field: latencyStats.averageLatencyInMs
+          format: number
+          suffix: ms
+        - label: P95 latency
+          field: latencyStats.p95LatencyInMs
+          format: number
+          suffix: ms
+
+        - label: Incidents (last 7 days)
+          field: uptimeHistory.incidents
+        - label: Uptime ratio (last 7 days)
+          field: uptimeHistory.uptimeRatio
+          format: float
+          scale: 100
+          suffix: '%'
+        - label: Total downtime (last 7 days)
+          field: uptimeHistory.totalDowntimeSeconds
+          format: duration
+```
+
+### Individual monitor details
+
+![individual monitor details on homepage](../images/examples/homepage-monitor-details.webp)
+
+```yaml
+- kuvasz-uptime.dev details:
+    id: kuvasz-uptime-http-details
+    icon: sh-kuvasz
+    widget:
+      type: customapi
+      display: list
+      url: https://demo.kuvasz-uptime.dev/api/v2/http-monitors/38
+      refreshInterval: 300
+      headers:
+        X-Api-Key: KuvaszDemoAPIKey
+      mappings:
+        - label: Name
+          field: name
+        - label: Status
+          field: uptimeStatus
+          remap:
+            - value: UP
+              to: 🟢
+            - value: DOWN
+              to: 🔴
+            - any: true
+              to: 🟡
+        - label: Status started
+          field: uptimeStatusStartedAt
+          format: relativeDate
+          locale: en
+          style: long
+        - label: Last check
+          field: lastUptimeCheck
+          format: relativeDate
+          locale: en
+          style: long
+        - label: Next check
+          field: nextUptimeCheck
+          format: relativeDate
+          locale: en
+          style: long
+        - label: SSL status
+          field: sslStatus
+          remap:
+            - value: VALID
+              to: 🔒
+            - value: INVALID
+              to: 🔓
+            - value: WILL_EXPIRE
+              to: 🕣
+            - any: true
+              to: 🟡
+        - label: Last SSL check
+          field: lastSSLCheck
+          format: relativeDate
+          locale: en
+          style: long
+```
+
+### Overview with a clickable list of monitors
+
+![dynamic list of monitors on homepage](../images/examples/homepage-monitor-list.webp)
+
+```yaml
+- Monitors:
+    id: kuvasz-uptime-http-dynamic-list
+    icon: sh-kuvasz
+    widget:
+      type: customapi
+      display: dynamic-list
+      url: https://demo.kuvasz-uptime.dev/api/v2/http-monitors?enabled=true
+      refreshInterval: 300
+      headers:
+        X-Api-Key: KuvaszDemoAPIKey
+      mappings:
+        name: name
+        label: uptimeStatus
+        limit: 5
+        format: text
+        remap:
+          - value: UP
+            to: 🟢
+          - value: DOWN
+            to: 🔴
+          - any: true
+            to: 🟡
+        target: https://demo.kuvasz-uptime.dev/http-monitors/{id}
+
+```
+
 ## Full YAML example (app-config + monitors + integrations)
 
 This is just a full example of a _YAML_ configuration file, which you can use as a **starting point** for your own configuration. You can copy and paste it into your own configuration file, and then modify it to suit your needs, but always make sure that **you read the corresponding documentation** sections for each feature or integration you want to use.
