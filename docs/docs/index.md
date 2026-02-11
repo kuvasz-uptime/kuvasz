@@ -162,8 +162,6 @@ First and foremost, if you want to **stay up-to-date with the latest news**, fea
 - following us on [**X**](https://x.com/KuvaszUptime){ target="_blank" }
 - following us on [**Mastodon**](https://techhub.social/@KuvaszUptime){ target="_blank", rel="me" }
 
-You can also find some occasional updates on my personal blog at [**akobor.me**](https://akobor.me){ target="_blank" }.
-
 ## Where does the name come from?
 
 Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & guard dog. You can read more about them

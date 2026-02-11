@@ -98,8 +98,6 @@ First and foremost, if you want to **stay up-to-date with the latest news**, fea
 - following us on [**X**](https://x.com/KuvaszUptime)
 - following us on [**Mastodon**](https://techhub.social/@KuvaszUptime)
 
-You can also find some occasional updates on my personal blog at [**akobor.me**](https://akobor.me).
-
 ## ☕️ Do you like it?
 
 While _Kuvasz_ is free and open-source, it still **requires a lot of time and effort** to maintain and develop. If you like it, please consider supporting the project by **donating** via Ko-fi:
