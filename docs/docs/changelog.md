@@ -1,3 +1,9 @@
+## 3.5.0 <small>2026-02-15</small> { id="3.5.0" data-toc-label="3.5.0" }
+
+### Features
+
+- Added a new attribute to the monitors (both HTTP and push) called `failure-count-threshold`, which allows you to configure the number of consecutive failures that should occur before the monitor is considered down. This can help to reduce false positives in case of temporary network issues or other transient problems.
+
 ## 3.4.0 <small>2026-01-11</small> { id="3.4.0" data-toc-label="3.4.0" }
 
 !!! warning

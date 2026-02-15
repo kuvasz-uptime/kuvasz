@@ -31,11 +31,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
     SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
     SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
-class MonitorControllerV2(
+class MonitorController(
     private val httpMonitorActions: HttpMonitorActions,
     private val pushMonitorActions: PushMonitorActions,
     private val exportHandler: ExportHandler,
-) : MonitorOperationsV2 {
+) : MonitorOperations {
 
     @ApiResponses(
         ApiResponse(

@@ -131,6 +131,7 @@ class PushMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.enabled shouldBe PushMonitorDefaults.MONITOR_ENABLED
             dto.gracePeriod shouldBe PushMonitorDefaults.GRACE_PERIOD_SECONDS
             dto.integrations shouldBe emptyList()
+            dto.failureCountThreshold shouldBe 1
         }
     }
 })

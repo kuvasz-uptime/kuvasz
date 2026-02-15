@@ -517,6 +517,7 @@ const upsertHttpMonitorForm = (
             this.name = originalMonitor?.name || '';
             this.url = originalMonitor?.url || '';
             this.sslExpiryThreshold = originalMonitor?.sslExpiryThreshold || 30;
+            this.failureCountThreshold = originalMonitor?.failureCountThreshold || 1;
             this.uptimeCheckInterval = originalMonitor?.uptimeCheckInterval || 60;
             this.sslCheckEnabled = (originalMonitor?.sslCheckEnabled != null ? originalMonitor?.sslCheckEnabled : false);
             this.latencyHistoryEnabled = (originalMonitor?.latencyHistoryEnabled != null ? originalMonitor?.latencyHistoryEnabled : true);
@@ -602,6 +603,7 @@ const upsertHttpMonitorForm = (
             this.validateName();
             this.validateUrl();
             this.validateSslExpiryThreshold();
+            this.validateFailureCountThreshold();
             this.validateUptimeCheckInterval();
             this.validateResponseTimeThreshold();
         },
@@ -629,6 +631,14 @@ const upsertHttpMonitorForm = (
                 this.errors.sslExpiryThreshold = this.errorMessages.sslExpiryThresholdInvalid;
             } else {
                 this.errors.sslExpiryThreshold = null;
+            }
+        },
+
+        validateFailureCountThreshold() {
+            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
+                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
+            } else {
+                this.errors.failureCountThreshold = null;
             }
         },
 
@@ -681,6 +691,7 @@ const upsertHttpMonitorForm = (
                     sslCheckEnabled: this.sslCheckEnabled,
                     latencyHistoryEnabled: this.latencyHistoryEnabled,
                     sslExpiryThreshold: this.sslExpiryThreshold,
+                    failureCountThreshold: this.failureCountThreshold,
                     forceNoCache: this.forceNoCache,
                     followRedirects: this.followRedirects,
                     uptimeCheckInterval: this.uptimeCheckInterval,
@@ -767,6 +778,7 @@ const upsertPushMonitorForm = (
             this.name = originalMonitor?.name || '';
             this.heartbeatInterval = originalMonitor?.heartbeatInterval || 10;
             this.gracePeriod = originalMonitor?.gracePeriod || 0;
+            this.failureCountThreshold = originalMonitor?.failureCountThreshold || 1;
             this.clientSecret = originalMonitor?.clientSecret || createRandomSecret();
             this.integrations = originalMonitor?.integrations || [];
             this.errors = {};
@@ -789,6 +801,7 @@ const upsertPushMonitorForm = (
             this.validateHeartbeatInterval();
             this.validateGracePeriod();
             this.validateClientSecret();
+            this.validateFailureCountThreshold();
         },
 
         validateName() {
@@ -824,6 +837,14 @@ const upsertPushMonitorForm = (
             }
         },
 
+        validateFailureCountThreshold() {
+            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
+                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
+            } else {
+                this.errors.failureCountThreshold = null;
+            }
+        },
+
         submitForm() {
             this.validate();
             if (hasNonNullValue(this.errors)) {
@@ -843,6 +864,7 @@ const upsertPushMonitorForm = (
                     gracePeriod: this.gracePeriod,
                     clientSecret: this.clientSecret,
                     integrations: this.integrations,
+                    failureCountThreshold: this.failureCountThreshold
                 };
                 if (!this.isUpdate) {
                     body.enabled = true; // Default enabled, can be paused later

@@ -55,4 +55,7 @@ interface HttpMonitorConfig : HttpMonitorCreator {
     override val requestHeaders: Map<String, String>?
     override val expectedHeaders: Map<String, String>?
     override val requestBody: String?
+
+    @get:Bindable(defaultValue = HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD.toString())
+    override val failureCountThreshold: Long
 }

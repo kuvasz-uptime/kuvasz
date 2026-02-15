@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
 
@@ -40,4 +41,9 @@ data class PushMonitorUpdateDto(
 
     @param:Schema(description = PushMonitorDocs.INTEGRATIONS, required = false, nullable = true)
     val integrations: Set<IntegrationID>?,
+
+    @get:NotNull
+    @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
+    @param:Schema(description = PushMonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
+    val failureCountThreshold: Long?,
 )

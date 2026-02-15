@@ -127,6 +127,21 @@ public class PushUptimeEventRecord extends UpdatableRecordImpl<PushUptimeEventRe
         return (OffsetDateTime) get(6);
     }
 
+    /**
+     * Setter for <code>kuvasz.push_uptime_event.failure_count</code>.
+     */
+    public PushUptimeEventRecord setFailureCount(Long value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.push_uptime_event.failure_count</code>.
+     */
+    public Long getFailureCount() {
+        return (Long) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -150,7 +165,7 @@ public class PushUptimeEventRecord extends UpdatableRecordImpl<PushUptimeEventRe
     /**
      * Create a detached, initialised PushUptimeEventRecord
      */
-    public PushUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
+    public PushUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt, Long failureCount) {
         super(PushUptimeEvent.PUSH_UPTIME_EVENT);
 
         setId(id);
@@ -160,6 +175,7 @@ public class PushUptimeEventRecord extends UpdatableRecordImpl<PushUptimeEventRe
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+        setFailureCount(failureCount);
         resetTouchedOnNotNull();
     }
 
@@ -177,6 +193,7 @@ public class PushUptimeEventRecord extends UpdatableRecordImpl<PushUptimeEventRe
             setStartedAt(value.getStartedAt());
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setFailureCount(value.getFailureCount());
             resetTouchedOnNotNull();
         }
     }

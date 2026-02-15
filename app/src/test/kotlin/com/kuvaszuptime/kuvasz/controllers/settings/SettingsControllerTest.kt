@@ -34,8 +34,8 @@ import io.mockk.mockk
 @Property(name = "app-config.language", value = "en")
 @Property(name = "app-config.log-event-handler", value = "true")
 @Property(name = "app-config.http-check-timeout-seconds", value = "10")
-class SettingsControllerV2Test(
-    settingsClient: SettingsClientV2,
+class SettingsControllerTest(
+    settingsClient: SettingsClient,
     appGlobals: AppGlobals,
     versionChecker: VersionChecker,
 ) : DatabaseBehaviorSpec({

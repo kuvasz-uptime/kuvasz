@@ -43,10 +43,10 @@ import java.time.Duration
     SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
     SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
-class HttpMonitorControllerV2(
+class HttpMonitorController(
     private val monitorActions: HttpMonitorActions,
     private val statCalculator: StatCalculator,
-) : HttpMonitorOperationsV2 {
+) : HttpMonitorOperations {
 
     @ApiResponses(
         ApiResponse(

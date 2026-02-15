@@ -252,7 +252,7 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any()) } returns mockk()
 
                 pushMonitorActions.updateLastHeartbeat(testSecret, testTimestamp)
 
@@ -313,6 +313,7 @@ class PushMonitorActionsTest(
                     id = 3
                     monitorId = testMonitor.id
                     status = UptimeStatus.DOWN
+                    failureCount = 1
                 }
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
@@ -332,6 +333,36 @@ class PushMonitorActionsTest(
                 }
             }
 
+            `when`("it's called for an existing, enabled monitor w/o a previous event - failure threshold is 2") {
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    clientSecret = "secret1",
+                    failureCountThreshold = 2,
+                )
+                val eventRepoMock = getMock(uptimeEventRepository)
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val uptimeEventRecord = PushUptimeEventRecord().apply {
+                    id = 3
+                    monitorId = testMonitor.id
+                    status = UptimeStatus.DOWN
+                    failureCount = 1
+                }
+                every {
+                    eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
+                } returns null
+                every { eventRepoMock.insertFromMonitorEvent(any(), any()) } returns uptimeEventRecord
+
+                pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
+
+                then("it should NOT dispatch a DOWN event") {
+
+                    testSubscriber.assertNoValues()
+                }
+            }
+
             `when`("it is called for an existing, enabled monitor with a previous event") {
                 val testMonitor = createPushMonitor(
                     pushMonitorRepository,
@@ -346,11 +377,86 @@ class PushMonitorActionsTest(
                     id = 3
                     monitorId = testMonitor.id
                     status = UptimeStatus.DOWN
+                    failureCount = 1
                 }
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any()) } returns
+                    uptimeEventRecord.copy().apply {
+                        failureCount = uptimeEventRecord.failureCount + 1
+                    }
+
+                pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
+
+                then("it should dispatch a DOWN event") {
+
+                    val dispatchedEvent = testSubscriber.awaitCount(1).values().first()
+                    dispatchedEvent.shouldBeInstanceOf<PushMonitorDownEvent>()
+                    dispatchedEvent.monitor.id shouldBe testMonitor.id
+                    dispatchedEvent.error shouldBe "oh my gosh"
+                    dispatchedEvent.isManual shouldBe true
+                    dispatchedEvent.previousEvent shouldBe uptimeEventRecord
+                }
+            }
+
+            `when`("it's called for an existing, enabled monitor w/ a previous event - failure threshold is 3") {
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    clientSecret = "secret1",
+                    failureCountThreshold = 3,
+                )
+                val eventRepoMock = getMock(uptimeEventRepository)
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val uptimeEventRecord = PushUptimeEventRecord().apply {
+                    id = 3
+                    monitorId = testMonitor.id
+                    status = UptimeStatus.DOWN
+                    failureCount = 1
+                }
+                every {
+                    eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
+                } returns uptimeEventRecord
+                every { eventRepoMock.updateEvent(any(), any()) } returns
+                    uptimeEventRecord.copy().apply {
+                        failureCount = uptimeEventRecord.failureCount + 1
+                    }
+
+                pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
+
+                then("it should NOT dispatch a DOWN event") {
+
+                    testSubscriber.assertNoValues()
+                }
+            }
+
+            `when`("it's called for an existing, enabled monitor w/ a previous event - higher threshold reached") {
+                val testMonitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    clientSecret = "secret1",
+                    failureCountThreshold = 2
+                )
+                val eventRepoMock = getMock(uptimeEventRepository)
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val uptimeEventRecord = PushUptimeEventRecord().apply {
+                    id = 3
+                    monitorId = testMonitor.id
+                    status = UptimeStatus.DOWN
+                    failureCount = 1
+                }
+                every {
+                    eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
+                } returns uptimeEventRecord
+                every { eventRepoMock.updateEvent(any(), any()) } returns
+                    uptimeEventRecord.copy().apply {
+                        failureCount = uptimeEventRecord.failureCount + 1
+                    }
 
                 pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
 

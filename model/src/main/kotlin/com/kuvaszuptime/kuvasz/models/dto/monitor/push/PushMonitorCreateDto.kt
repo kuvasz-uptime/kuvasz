@@ -18,4 +18,10 @@ data class PushMonitorCreateDto(
     override val integrations: List<String>? = emptyList(),
     @param:Schema(description = PushMonitorDocs.CLIENT_SECRET, required = true)
     override val clientSecret: String,
+    @param:Schema(
+        description = PushMonitorDocs.FAILURE_COUNT_THRESHOLD,
+        required = false,
+        defaultValue = PushMonitorDefaults.FAILURE_COUNT_THRESHOLD.toString()
+    )
+    override val failureCountThreshold: Long = PushMonitorDefaults.FAILURE_COUNT_THRESHOLD,
 ) : PushMonitorCreator

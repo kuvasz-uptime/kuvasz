@@ -48,6 +48,8 @@ object MonitorValidationMessages {
     const val CLIENT_SECRET_NOT_NULL = "Client secret must not be null"
     const val CLIENT_SECRET_NOT_BLANK = "Client secret must not be blank"
     const val CLIENT_SECRET_MIN_LENGTH = "Client secret must be at least {min} characters long"
+    const val FAILURE_COUNT_THRESHOLD_NOT_NULL = "Failure count threshold must not be null"
+    const val FAILURE_COUNT_THRESHOLD_POSITIVE = "Failure count threshold must be greater than 0"
 }
 
 object StatusPageValidationMessages {

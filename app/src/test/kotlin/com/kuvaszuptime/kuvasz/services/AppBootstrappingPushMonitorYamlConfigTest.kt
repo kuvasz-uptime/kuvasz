@@ -79,6 +79,7 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
             firstMonitor.enabled shouldBe false
             firstMonitor.clientSecret shouldEndWith "somesecret1"
             firstMonitor.integrations.shouldBeEmpty()
+            firstMonitor.failureCountThreshold shouldBe 3
         }
 
         monitorsInDb.forOne { secondMonitor ->
@@ -138,6 +139,7 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
             firstMonitor.gracePeriod shouldBe 0
             firstMonitor.enabled shouldBe true
             firstMonitor.clientSecret shouldEndWith "somesecretU"
+            firstMonitor.failureCountThreshold shouldBe 2
             firstMonitor.integrations shouldBe arrayOf(
                 IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")
             )

@@ -212,8 +212,10 @@ class PushMonitorActions(
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
                     isManual = true,
                 ).also { event ->
-                    databaseEventHandler.handleUptimeMonitorEvent(event)
-                    eventDispatcher.dispatch(event)
+                    val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
+                    if (monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+                        eventDispatcher.dispatch(event)
+                    }
                 }
             }
         }

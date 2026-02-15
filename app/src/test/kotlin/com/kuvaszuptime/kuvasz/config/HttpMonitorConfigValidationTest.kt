@@ -78,6 +78,17 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
             }
         }
 
+        `when`("failureCountThreshold is less than 1") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                testAppContext("http-monitor-zero-failure-count-threshold")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "HttpMonitorConfig.getFailureCountThreshold - " +
+                    MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
+            }
+        }
+
         `when`("expectedStatusCodes contains an unsupported status code") {
             val exception = shouldThrow<BeanInstantiationException> {
                 testAppContext("monitor-invalid-status-code")
@@ -162,6 +173,7 @@ class HttpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext)
                 monitorConfig.requestHeaders.shouldNotBeNull().shouldBeEmpty()
                 monitorConfig.expectedHeaders.shouldNotBeNull().shouldBeEmpty()
                 monitorConfig.requestBody.shouldBeNull()
+                monitorConfig.failureCountThreshold shouldBe HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD
             }
         }
     }

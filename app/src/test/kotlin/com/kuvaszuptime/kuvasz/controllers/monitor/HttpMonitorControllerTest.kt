@@ -78,9 +78,9 @@ import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
 
 @MicronautTest(environments = ["full-integrations-setup"])
-class HttpMonitorControllerV2Test(
+class HttpMonitorControllerTest(
     @param:Client("/") private val client: HttpClient,
-    private val monitorClient: HttpMonitorClientV2,
+    private val monitorClient: HttpMonitorClient,
     private val monitorRepository: HttpMonitorRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
     private val checkScheduler: HttpCheckScheduler,
@@ -157,6 +157,7 @@ class HttpMonitorControllerV2Test(
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
                     responseItem.sslExpiryThreshold shouldBe monitor.sslExpiryThreshold
+                    responseItem.failureCountThreshold shouldBe monitor.failureCountThreshold
                     responseItem.sslValidUntil shouldBe null
                     responseItem.expectedStatusCodes.shouldBeEmpty()
                     responseItem.expectedKeyword shouldBe null
@@ -261,6 +262,7 @@ class HttpMonitorControllerV2Test(
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
                     responseItem.sslExpiryThreshold shouldBe enabledMonitor.sslExpiryThreshold
+                    responseItem.failureCountThreshold shouldBe enabledMonitor.failureCountThreshold
                     responseItem.sslValidUntil shouldBe null
                 }
             }
@@ -292,6 +294,7 @@ class HttpMonitorControllerV2Test(
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
                     responseItem.sslExpiryThreshold shouldBe disabledMonitor.sslExpiryThreshold
+                    responseItem.failureCountThreshold shouldBe disabledMonitor.failureCountThreshold
                     responseItem.sslValidUntil shouldBe null
                 }
             }
@@ -517,6 +520,7 @@ class HttpMonitorControllerV2Test(
                     forceNoCache = false,
                     followRedirects = false,
                     sslExpiryThreshold = 15,
+                    failureCountThreshold = 2,
                     integrations = setUpIntegrations,
                     expectedStatusCodes = setOf(200, 201),
                     expectedKeyword = "keyword",
@@ -574,6 +578,7 @@ class HttpMonitorControllerV2Test(
                     response.forceNoCache shouldBe false
                     response.followRedirects shouldBe false
                     response.sslExpiryThreshold shouldBe 15
+                    response.failureCountThreshold shouldBe 2
                     response.sslValidUntil shouldBe sslExpiryDate
                     response.expectedStatusCodes shouldContainExactlyInAnyOrder setOf(200, 201)
                     response.expectedKeyword shouldBe "keyword"
@@ -919,6 +924,8 @@ class HttpMonitorControllerV2Test(
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
                     monitorInDb.sslExpiryThreshold shouldBe 30
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
+                    monitorInDb.failureCountThreshold shouldBe 1
+                    monitorInDb.failureCountThreshold shouldBe createdMonitor.failureCountThreshold
                     monitorInDb.integrations.shouldNotBeNull().shouldBeEmpty()
                     monitorInDb.expectedStatusCodes.shouldNotBeNull().shouldBeEmpty()
                     monitorInDb.responseTimeThresholdMillis.shouldBeNull()
@@ -961,6 +968,7 @@ class HttpMonitorControllerV2Test(
                     requestHeaders = mapOf("X-Test-Header" to "TestValue", "Another-Header" to "AnotherValue"),
                     expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue"),
                     requestBody = "{\"key\": \"value\"}",
+                    failureCountThreshold = 4,
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -987,6 +995,8 @@ class HttpMonitorControllerV2Test(
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
                     monitorInDb.sslExpiryThreshold shouldBe 20
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
+                    monitorInDb.failureCountThreshold shouldBe 4
+                    monitorInDb.failureCountThreshold shouldBe createdMonitor.failureCountThreshold
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
                         setUpIntegrations.toTypedArray()
                     monitorInDb.expectedStatusCodes.shouldNotBeNull() shouldContainExactlyInAnyOrder arrayOf(200, 201)
@@ -1246,6 +1256,26 @@ class HttpMonitorControllerV2Test(
                     exceptionToMessage(response) shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
                 }
             }
+
+            `when`("it is called with a too low failure count threshold") {
+                val monitorToCreate = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = true,
+                    failureCountThreshold = 0
+                )
+                val request = HttpRequest.POST("/api/v2/http-monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    exceptionToMessage(response) shouldContain
+                        MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
+                }
+            }
         }
 
         given("MonitorController's deleteMonitor() endpoint") {
@@ -1447,6 +1477,7 @@ class HttpMonitorControllerV2Test(
                     .put(HttpMonitorUpdateDto::url.name, "https://updated-url.com")
                     .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, "5000")
                     .put(HttpMonitorUpdateDto::sslExpiryThreshold.name, "20")
+                    .put(HttpMonitorUpdateDto::failureCountThreshold.name, "2")
                     .set<ObjectNode>(
                         HttpMonitorUpdateDto::integrations.name,
                         mapper
@@ -1491,6 +1522,7 @@ class HttpMonitorControllerV2Test(
                     monitorInDb.forceNoCache shouldBe false
                     monitorInDb.followRedirects shouldBe false
                     monitorInDb.sslExpiryThreshold shouldBe 20
+                    monitorInDb.failureCountThreshold shouldBe 2
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
                         arrayOf(
                             IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
@@ -1858,6 +1890,32 @@ class HttpMonitorControllerV2Test(
                     ex.response.getBodyAs<String>() shouldContain
                         "Validation failed: uptimeCheckInterval: Uptime check interval must be at least 5 seconds"
                     monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with a too low failure count threshold") {
+                val createDto = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    failureCountThreshold = 3,
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(HttpMonitorUpdateDto::failureCountThreshold.name, -2)
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v2/http-monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: failureCountThreshold"
+                    monitorInDb.failureCountThreshold shouldBe createdMonitor.failureCountThreshold
                 }
             }
 

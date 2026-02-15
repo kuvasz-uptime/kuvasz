@@ -21,6 +21,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import org.jooq.DSLContext
+import kotlin.random.Random
 
 @MicronautTest(startApplication = false)
 class HeartbeatCheckerTest(
@@ -30,7 +31,7 @@ class HeartbeatCheckerTest(
     val dispatcher = EventDispatcher()
     val monitorRepoMock = mockk<PushMonitorRepository>()
     val uptimeEventRepoMock = mockk<PushUptimeEventRepository>()
-    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
+    val mockDbEventHandler = mockk<DatabaseEventHandler>()
     val heartbeatChecker = HeartbeatChecker(
         dslCtx = dslContext,
         eventDispatcher = dispatcher,
@@ -43,23 +44,80 @@ class HeartbeatCheckerTest(
 
         `when`("the checker is called") {
 
+            fun mockDbHandlerCall(
+                monitor: PushMonitorRecord,
+                previousEventRecord: PushUptimeEventRecord?,
+            ) {
+                every {
+                    mockDbEventHandler.handleUptimeMonitorEvent(
+                        PushMonitorDownEvent(
+                            monitor,
+                            error = Messages.missedHeartbeat(),
+                            previousEvent = previousEventRecord,
+                        )
+                    )
+                } returns (previousEventRecord?.let { prev ->
+                    prev.copy().apply {
+                        failureCount = prev.failureCount + 1
+                    }
+                } ?: PushUptimeEventRecord().apply {
+                    id = Random.nextLong()
+                    failureCount = 1
+                })
+            }
+
             val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
             dispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
             val mockMonitorList = listOf(
-                PushMonitorRecord().apply { id = 1 },
-                PushMonitorRecord().apply { id = 2 },
+                PushMonitorRecord().apply {
+                    id = 1
+                    failureCountThreshold = 1
+                },
+                PushMonitorRecord().apply {
+                    id = 2
+                    failureCountThreshold = 1
+                },
+                PushMonitorRecord().apply {
+                    id = 3
+                    failureCountThreshold = 2
+                },
+                PushMonitorRecord().apply {
+                    id = 4
+                    failureCountThreshold = 2
+                },
             )
-            val mockUptimeEventRecord = PushUptimeEventRecord().apply { id = 12 }
+            val mockUptimeEventRecord = PushUptimeEventRecord().apply {
+                id = 12
+                failureCount = 0
+            }
+            val mockUptimeEventRecordWithAnOldFailure = PushUptimeEventRecord().apply {
+                id = 13
+                failureCount = 1
+            }
 
             every { monitorRepoMock.fetchWithMissedHeartbeats(any()) } returns mockMonitorList
+
             every { uptimeEventRepoMock.getPreviousEventByMonitorId(1, any()) } returns mockUptimeEventRecord
+            mockDbHandlerCall(mockMonitorList[0], mockUptimeEventRecord)
+
             every { uptimeEventRepoMock.getPreviousEventByMonitorId(2, any()) } returns null
+            mockDbHandlerCall(mockMonitorList[1], null)
+            every {
+                uptimeEventRepoMock.getPreviousEventByMonitorId(
+                    3,
+                    any()
+                )
+            } returns mockUptimeEventRecordWithAnOldFailure
+            mockDbHandlerCall(mockMonitorList[2], mockUptimeEventRecordWithAnOldFailure)
+            every { uptimeEventRepoMock.getPreviousEventByMonitorId(4, any()) } returns null
+            mockDbHandlerCall(mockMonitorList[3], null)
 
             heartbeatChecker.checkHeartbeats()
 
             then("it should dispatch a down event for every monitor that has a missed heartbeat") {
 
-                val events = testSubscriber.awaitCount(2).values()
+                val events = testSubscriber.awaitCount(3).values()
+                println(events)
                 events.forAll { event ->
                     event.shouldBeInstanceOf<PushMonitorDownEvent>()
                     event.error shouldBe Messages.missedHeartbeat()
@@ -70,12 +128,17 @@ class HeartbeatCheckerTest(
                     firstEvent.previousEvent shouldBe mockUptimeEventRecord
                 }
 
-                events.forOne { firstEvent ->
-                    firstEvent.monitor shouldBe mockMonitorList[1]
-                    firstEvent.previousEvent shouldBe null
+                events.forOne { secondEvent ->
+                    secondEvent.monitor shouldBe mockMonitorList[1]
+                    secondEvent.previousEvent shouldBe null
                 }
 
-                verify(exactly = 2) { mockDbEventHandler.handleUptimeMonitorEvent(any<PushMonitorDownEvent>()) }
+                events.forOne { thirdEvent ->
+                    thirdEvent.monitor shouldBe mockMonitorList[2]
+                    thirdEvent.previousEvent shouldBe mockUptimeEventRecordWithAnOldFailure
+                }
+
+                verify(exactly = 4) { mockDbEventHandler.handleUptimeMonitorEvent(any<PushMonitorDownEvent>()) }
             }
         }
     }

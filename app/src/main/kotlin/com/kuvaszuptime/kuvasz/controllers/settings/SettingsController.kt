@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
     SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
     SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
-class SettingsControllerV2(private val settingsRepository: SettingsRepository) : SettingsOperationsV2 {
+class SettingsController(private val settingsRepository: SettingsRepository) : SettingsOperations {
 
     @ApiResponses(
         ApiResponse(

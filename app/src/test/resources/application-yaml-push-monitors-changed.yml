@@ -5,6 +5,7 @@ push-monitors:
     enabled: true
     integrations:
       - 'slack:test_implicitly_enabled'
+    failure-count-threshold: 2
   - name: test2
     heartbeat-interval: 60
     client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret2

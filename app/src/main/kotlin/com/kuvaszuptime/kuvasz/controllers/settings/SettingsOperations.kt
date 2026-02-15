@@ -4,7 +4,7 @@ import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import io.micronaut.http.annotation.Get
 import io.swagger.v3.oas.annotations.Operation
 
-interface SettingsOperationsV2 {
+interface SettingsOperations {
 
     @Operation(summary = "Get the current settings of the application")
     @Get("/")

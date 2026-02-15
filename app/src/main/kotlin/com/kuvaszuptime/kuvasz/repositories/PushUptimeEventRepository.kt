@@ -30,6 +30,7 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
 
         if (event is PushMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()
+            eventToInsert.failureCount = 1
         }
 
         return (ctx ?: dslContext).insertInto(PUSH_UPTIME_EVENT)
@@ -66,7 +67,8 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
         .set(PUSH_UPTIME_EVENT.ENDED_AT, endedAt)
         .set(PUSH_UPTIME_EVENT.UPDATED_AT, endedAt)
         .where(PUSH_UPTIME_EVENT.ID.eq(eventId))
-        .execute()
+        .returning(PUSH_UPTIME_EVENT.asterisk())
+        .fetchOneOrThrow<PushUptimeEventRecord>()
 
     fun deleteEventsBeforeDate(limit: OffsetDateTime) = dslContext
         .delete(PUSH_UPTIME_EVENT)
@@ -79,13 +81,18 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
         .update(PUSH_UPTIME_EVENT)
         .set(PUSH_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {
-            // Update the error message only for manually signaled failures
-            if (newEvent is PushMonitorDownEvent && newEvent.isManual) {
-                set(PUSH_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
+            if (newEvent is PushMonitorDownEvent) {
+                set(PUSH_UPTIME_EVENT.FAILURE_COUNT, PUSH_UPTIME_EVENT.FAILURE_COUNT + 1)
+
+                // Update the error message only for manually signaled failures
+                if (newEvent.isManual) {
+                    set(PUSH_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
+                }
             }
         }
         .where(PUSH_UPTIME_EVENT.ID.eq(eventId))
-        .execute()
+        .returning(PUSH_UPTIME_EVENT.asterisk())
+        .fetchOneOrThrow<PushUptimeEventRecord>()
 
     @Suppress("IgnoredReturnValue")
     fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<PushUptimeEventDto> = dslContext

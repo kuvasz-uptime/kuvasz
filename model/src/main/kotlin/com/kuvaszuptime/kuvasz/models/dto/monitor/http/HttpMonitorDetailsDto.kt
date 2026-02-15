@@ -62,6 +62,8 @@ data class HttpMonitorDetailsDto(
     val followRedirects: Boolean,
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = true)
     val sslExpiryThreshold: Int,
+    @param:Schema(description = HttpMonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
+    val failureCountThreshold: Long,
     @param:Schema(description = HttpMonitorDocs.SSL_VALID_UNTIL, required = true, nullable = true)
     val sslValidUntil: OffsetDateTime?,
     @param:Schema(description = HttpMonitorDocs.INTEGRATIONS, required = true)

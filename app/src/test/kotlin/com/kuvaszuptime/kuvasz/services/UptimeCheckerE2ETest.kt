@@ -641,6 +641,37 @@ class UptimeCheckerE2ETest(
             }
         }
 
+        `when`("it checks a monitor that is DOWN - failure threshold is greater than 1") {
+            val monitor = createHttpMonitor(
+                repository = monitorRepository,
+                url = "$mockServerUrl/some-path",
+                requestMethod = HttpMethod.HEAD,
+                failureCountThreshold = 2,
+            )
+            val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+            eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+            val request = headRequest("/some-path")
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.NOT_ACCEPTABLE.code)
+            )
+
+            uptimeChecker.check(monitor)
+
+            then("it should dispatch a MonitorDownEvent only on the second fail") {
+                subscriber.assertNoValues()
+
+                uptimeChecker.check(monitor)
+                val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                expectedEvent.status shouldBe HttpStatus.NOT_ACCEPTABLE
+                expectedEvent.monitor.id shouldBe monitor.id
+                expectedEvent.error.message shouldBe "Response status code [406] was unexpected"
+
+                mockServer.verifyRequest(request, exactly = 2)
+            }
+        }
+
         `when`("it checks a monitor that is DOWN - valid server-related HTTP status code") {
             val monitor = createHttpMonitor(
                 repository = monitorRepository,

@@ -23,6 +23,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
             "heartbeatIntervalInvalid" to Messages.errorHeartbeatIntervalInvalid(),
             "gracePeriodInvalid" to Messages.errorGracePeriodInvalid(),
             "clientSecretInvalid" to Messages.errorClientSecretInvalid(),
+            "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
         )
     )
     val modalClosedEvent = "push-monitor-upsert-modal-closed"
@@ -113,6 +114,19 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                             placeholder = null,
                             required = true,
                             onInput = "validateGracePeriod()",
+                            disabledIf = "$isReadOnlyMode",
+                        )
+                    }
+                    //Failure count threshold
+                    div {
+                        classes(MB_3)
+                        validatedInput(
+                            propName = "failureCountThreshold",
+                            label = Messages.failureCountThresholdLabel(),
+                            description = Messages.failureCountThresholdDescription(),
+                            placeholder = null,
+                            required = true,
+                            onInput = "validateFailureCountThreshold()",
                             disabledIf = "$isReadOnlyMode",
                         )
                     }

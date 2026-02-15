@@ -9,6 +9,7 @@ http-monitors:
     force-no-cache: false
     follow-redirects: false
     ssl-expiry-threshold: 15
+    failure-count-threshold: 2
     expected-status-codes:
       - 200
       - 201

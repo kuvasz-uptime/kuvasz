@@ -28,8 +28,10 @@ abstract class HttpResponseChecker(
             error = error,
             previousEvent = getPreviousEvent(ctx.monitor.id)
         ).also { event ->
-            databaseEventHandler.handleUptimeMonitorEvent(event)
-            eventDispatcher.dispatch(event)
+            val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
+            if (ctx.monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+                eventDispatcher.dispatch(event)
+            }
         }
         return HttpCheckResult.Finished
     }

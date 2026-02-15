@@ -103,4 +103,9 @@ data class HttpMonitorUpdateDto(
     @get:WellFormedJsonString
     @param:Schema(description = HttpMonitorDocs.REQUEST_BODY, required = false, nullable = true)
     val requestBody: String?,
+
+    @get:NotNull
+    @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
+    @param:Schema(description = HttpMonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
+    val failureCountThreshold: Long?,
 )

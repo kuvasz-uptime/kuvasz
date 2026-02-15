@@ -34,8 +34,10 @@ class HeartbeatChecker(
                     error = Messages.missedHeartbeat(),
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
                 ).also { event ->
-                    databaseEventHandler.handleUptimeMonitorEvent(event)
-                    eventDispatcher.dispatch(event)
+                    val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
+                    if (monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+                        eventDispatcher.dispatch(event)
+                    }
                 }
             }
         }

@@ -80,4 +80,11 @@ data class HttpMonitorCreateDto(
 
     @param:Schema(description = HttpMonitorDocs.REQUEST_BODY, required = false, nullable = true)
     override val requestBody: String? = null,
+
+    @param:Schema(
+        description = HttpMonitorDocs.FAILURE_COUNT_THRESHOLD,
+        required = false,
+        defaultValue = HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD.toString()
+    )
+    override val failureCountThreshold: Long = HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
 ) : HttpMonitorCreator

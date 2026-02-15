@@ -24,6 +24,7 @@
       follow-redirects: true # (8)!
       force-no-cache: true # (9)!
       ssl-expiry-threshold: 30 # (10)!
+      failure-count-threshold: 1 # (20)!
       expected-status-codes: # (12)!
         - 200
         - 201
@@ -61,6 +62,7 @@
     17. **Request headers**: A map of request headers to send with the request. This is useful if you need to set specific headers for the request, like `Host`, `Authorization`, etc.
     18. **Expected headers**: A map of expected response headers that the monitor should check for in the response.
     19. **Request body**: The JSON request body to send with the request.
+    20. **Failure count threshold**: The number of consecutive failures that should occur before the monitor is considered down. Defaults to 1.
 
 === "API (expert)"
 
@@ -342,6 +344,15 @@ A set of expected response headers that the monitor should check for in the resp
 ```
 ! # $ % & '' * + - . ^ _ ` | ~
 ```
+
+### Failure count threshold
+
+<!-- md:version 3.5.0 -->
+<!-- md:default `1` -->
+<!-- md:type number -->
+<!-- md:yaml_prop `failure-count-threshold` -->
+
+The number of **consecutive failures** that should occur before the monitor is considered down. Defaults to 1, which means that the monitor will be considered down after the first failure. If you set it to a higher value, for example 3, the monitor will be considered down only after 3 consecutive failures, which can help to reduce false positives in case of temporary network issues or other transient problems.
 
 ## SSL check settings
 

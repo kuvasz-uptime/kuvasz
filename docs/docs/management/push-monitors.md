@@ -17,6 +17,7 @@
     - name: "My Push Monitor" # (1)!
       heartbeat-interval: 10 # (2)!
       grace-period: 2 # (3)!
+      failure-count-threshold: 3 # (7)!
       client-secret: "d6d5a85c-82c0-4bea-9926-c3eed32de32a" # (4)!
       enabled: true # (5)!
       integrations: # (6)!
@@ -30,6 +31,7 @@
       4. **Client secret**: The unique client secret, used to identify & authenticate heartbeats.
       5. **Enabled**: Whether the monitor is enabled or not. If it's disabled, it won't be checked, and **no events will be recorded** for it.
       6. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
+      7. **Failure count threshold**: The number of consecutive failures that should occur before the monitor is considered down. Defaults to 1.
 
 === "API (expert)"
 
@@ -80,6 +82,15 @@ The interval in seconds at which the monitor expects to receive heartbeats. The 
 <!-- md:yaml_prop `grace-period` -->
 
 The grace **period in seconds after the heartbeat interval** during which a missed heartbeat will not mark the monitor as DOWN.
+
+### Failure count threshold
+
+<!-- md:version 3.5.0 -->
+<!-- md:default `1` -->
+<!-- md:type number -->
+<!-- md:yaml_prop `failure-count-threshold` -->
+
+The number of **consecutive failures** that should occur before the monitor is considered down. Defaults to 1, which means that the monitor will be considered down after the first failure. If you set it to a higher value, for example 3, the monitor will be considered down only after 3 consecutive failures, which can help to reduce false positives in case of temporary network issues or other transient problems.
 
 ### Client secret
 
