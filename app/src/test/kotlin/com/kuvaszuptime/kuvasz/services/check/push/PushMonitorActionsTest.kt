@@ -252,7 +252,7 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any()) } returns mockk()
 
                 pushMonitorActions.updateLastHeartbeat(testSecret, testTimestamp)
 
@@ -350,7 +350,7 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any()) } returns mockk()
 
                 pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
 

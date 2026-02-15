@@ -96,6 +96,11 @@ public class PushUptimeEvent extends TableImpl<PushUptimeEventRecord> {
      */
     public final TableField<PushUptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
 
+    /**
+     * The column <code>kuvasz.push_uptime_event.failure_count</code>.
+     */
+    public final TableField<PushUptimeEventRecord, Long> FAILURE_COUNT = createField(DSL.name("failure_count"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.field(DSL.raw("0"), SQLDataType.BIGINT)), this, "");
+
     private PushUptimeEvent(Name alias, Table<PushUptimeEventRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

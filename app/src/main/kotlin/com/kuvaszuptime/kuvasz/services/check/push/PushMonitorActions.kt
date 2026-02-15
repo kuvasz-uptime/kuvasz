@@ -212,7 +212,7 @@ class PushMonitorActions(
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
                     isManual = true,
                 ).also { event ->
-                    databaseEventHandler.handleUptimeMonitorEvent(event)
+                    val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
                     eventDispatcher.dispatch(event)
                 }
             }

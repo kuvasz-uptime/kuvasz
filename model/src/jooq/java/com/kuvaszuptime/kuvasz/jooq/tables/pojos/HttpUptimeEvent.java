@@ -25,6 +25,7 @@ public class HttpUptimeEvent implements Serializable {
     private OffsetDateTime startedAt;
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
+    private Long failureCount;
 
     public HttpUptimeEvent() {}
 
@@ -36,6 +37,7 @@ public class HttpUptimeEvent implements Serializable {
         this.startedAt = value.startedAt;
         this.endedAt = value.endedAt;
         this.updatedAt = value.updatedAt;
+        this.failureCount = value.failureCount;
     }
 
     public HttpUptimeEvent(
@@ -45,7 +47,8 @@ public class HttpUptimeEvent implements Serializable {
         String error,
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        Long failureCount
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -54,6 +57,7 @@ public class HttpUptimeEvent implements Serializable {
         this.startedAt = startedAt;
         this.endedAt = endedAt;
         this.updatedAt = updatedAt;
+        this.failureCount = failureCount;
     }
 
     /**
@@ -167,6 +171,21 @@ public class HttpUptimeEvent implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.http_uptime_event.failure_count</code>.
+     */
+    public Long getFailureCount() {
+        return this.failureCount;
+    }
+
+    /**
+     * Setter for <code>kuvasz.http_uptime_event.failure_count</code>.
+     */
+    public HttpUptimeEvent setFailureCount(Long failureCount) {
+        this.failureCount = failureCount;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -218,6 +237,12 @@ public class HttpUptimeEvent implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.failureCount == null) {
+            if (other.failureCount != null)
+                return false;
+        }
+        else if (!this.failureCount.equals(other.failureCount))
+            return false;
         return true;
     }
 
@@ -232,6 +257,7 @@ public class HttpUptimeEvent implements Serializable {
         result = prime * result + ((this.startedAt == null) ? 0 : this.startedAt.hashCode());
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.failureCount == null) ? 0 : this.failureCount.hashCode());
         return result;
     }
 
@@ -246,6 +272,7 @@ public class HttpUptimeEvent implements Serializable {
         sb.append(", ").append(startedAt);
         sb.append(", ").append(endedAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(failureCount);
 
         sb.append(")");
         return sb.toString();

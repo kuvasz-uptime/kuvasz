@@ -133,6 +133,21 @@ public class HttpUptimeEventRecord extends UpdatableRecordImpl<HttpUptimeEventRe
         return (OffsetDateTime) get(6);
     }
 
+    /**
+     * Setter for <code>kuvasz.http_uptime_event.failure_count</code>.
+     */
+    public HttpUptimeEventRecord setFailureCount(Long value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.http_uptime_event.failure_count</code>.
+     */
+    public Long getFailureCount() {
+        return (Long) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -156,7 +171,7 @@ public class HttpUptimeEventRecord extends UpdatableRecordImpl<HttpUptimeEventRe
     /**
      * Create a detached, initialised HttpUptimeEventRecord
      */
-    public HttpUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
+    public HttpUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt, Long failureCount) {
         super(HttpUptimeEvent.HTTP_UPTIME_EVENT);
 
         setId(id);
@@ -166,6 +181,7 @@ public class HttpUptimeEventRecord extends UpdatableRecordImpl<HttpUptimeEventRe
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+        setFailureCount(failureCount);
         resetTouchedOnNotNull();
     }
 
@@ -183,6 +199,7 @@ public class HttpUptimeEventRecord extends UpdatableRecordImpl<HttpUptimeEventRe
             setStartedAt(value.getStartedAt());
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setFailureCount(value.getFailureCount());
             resetTouchedOnNotNull();
         }
     }
