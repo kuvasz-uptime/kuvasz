@@ -1,12 +1,14 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.IneligibleStatusCodeException
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -28,7 +30,7 @@ import io.mockk.verify
 class HttpResponseStatusCheckerTest : ShouldSpec({
 
     val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
-    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
+    val mockDbEventHandler = mockk<DatabaseEventHandler>()
     val dispatcher = EventDispatcher()
     val checker = HttpResponseStatusChecker(dispatcher, mockUptimeRepo, mockDbEventHandler)
 
@@ -42,6 +44,20 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             }
         return mockk<HttpCheckResponse>(relaxed = true) {
             every { httpResponse } returns mockHttpResponse
+        }
+    }
+
+
+    beforeTest {
+        every {
+            mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>())
+        } returns HttpUptimeEventRecord().apply {
+            failureCount = 1
+        }
+        every {
+            mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorUpEvent>())
+        } returns HttpUptimeEventRecord().apply {
+            failureCount = 0
         }
     }
 

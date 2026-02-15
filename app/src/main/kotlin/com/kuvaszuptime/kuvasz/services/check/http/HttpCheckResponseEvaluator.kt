@@ -92,7 +92,9 @@ class HttpCheckResponseEvaluator(
             previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         ).also { event ->
             val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
-            eventDispatcher.dispatch(event)
+            if (monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+                eventDispatcher.dispatch(event)
+            }
         }
         return HttpCheckResult.Finished
     }

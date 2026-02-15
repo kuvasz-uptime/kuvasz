@@ -52,6 +52,7 @@ fun mockMonitor(
     this.expectedStatusCodes = expectedStatusCodes.toTypedArray()
     this.followRedirects = followRedirects
     this.expectedHeaders = expectedHeaders.toJsonNode()
+    this.failureCountThreshold = 1
 }
 
 suspend inline fun <reified E : UptimeCheckException> TestSubscriber<HttpMonitorDownEvent>.assertSingleError(

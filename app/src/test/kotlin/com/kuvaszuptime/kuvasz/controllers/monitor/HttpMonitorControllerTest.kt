@@ -1272,7 +1272,8 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
+                    exceptionToMessage(response) shouldContain
+                        MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
                 }
             }
         }
