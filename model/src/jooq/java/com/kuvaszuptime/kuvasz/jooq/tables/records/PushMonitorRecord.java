@@ -172,6 +172,21 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
         return (OffsetDateTime) get(9);
     }
 
+    /**
+     * Setter for <code>kuvasz.push_monitor.failure_count_threshold</code>.
+     */
+    public PushMonitorRecord setFailureCountThreshold(Long value) {
+        set(10, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.push_monitor.failure_count_threshold</code>.
+     */
+    public Long getFailureCountThreshold() {
+        return (Long) get(10);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -195,7 +210,7 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
     /**
      * Create a detached, initialised PushMonitorRecord
      */
-    public PushMonitorRecord(Long id, String name, Long heartbeatInterval, Long gracePeriod, OffsetDateTime lastHeartbeat, Boolean enabled, String clientSecret, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public PushMonitorRecord(Long id, String name, Long heartbeatInterval, Long gracePeriod, OffsetDateTime lastHeartbeat, Boolean enabled, String clientSecret, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, Long failureCountThreshold) {
         super(PushMonitor.PUSH_MONITOR);
 
         setId(id);
@@ -208,6 +223,7 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
         setIntegrations(integrations);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
+        setFailureCountThreshold(failureCountThreshold);
         resetTouchedOnNotNull();
     }
 
@@ -228,6 +244,7 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
             setIntegrations(value.getIntegrations());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setFailureCountThreshold(value.getFailureCountThreshold());
             resetTouchedOnNotNull();
         }
     }

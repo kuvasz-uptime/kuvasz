@@ -91,6 +91,7 @@ class PushMonitorControllerTest(
                     lastHeartbeat = now.minusSeconds(5),
                     clientSecret = randomClientSecret(),
                     heartbeatInterval = 10,
+                    failureCountThreshold = 2,
                     gracePeriod = 8
                 )
                 createPushUptimeEventRecord(
@@ -121,6 +122,7 @@ class PushMonitorControllerTest(
                     responseItem.heartbeatInterval shouldBe monitor.heartbeatInterval
                     responseItem.gracePeriod shouldBe monitor.gracePeriod
                     responseItem.clientSecret shouldBe monitor.clientSecret
+                    responseItem.failureCountThreshold shouldBe monitor.failureCountThreshold
                     responseItem.enabled shouldBe monitor.enabled
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
                     responseItem.uptimeStatusStartedAt shouldBe now
@@ -295,7 +297,7 @@ class PushMonitorControllerTest(
                     lastHeartbeat = now.minusSeconds(5),
                     clientSecret = randomClientSecret(),
                     heartbeatInterval = 10,
-                    gracePeriod = 8
+                    gracePeriod = 8,
                 )
                 createPushUptimeEventRecord(
                     dslContext,
@@ -320,6 +322,7 @@ class PushMonitorControllerTest(
                     response.enabled shouldBe monitor.enabled
                     response.uptimeStatus shouldBe UptimeStatus.UP
                     response.uptimeStatusStartedAt shouldBe now
+                    response.failureCountThreshold shouldBe monitor.failureCountThreshold
                     response.createdAt shouldBe monitor.createdAt
                     response.lastUptimeCheck shouldBe now
                     response.statusPages.shouldContainExactlyInAnyOrder(
@@ -467,6 +470,8 @@ class PushMonitorControllerTest(
                     monitorInDb.gracePeriod shouldBe createdMonitor.gracePeriod
                     monitorInDb.enabled shouldBe true
                     monitorInDb.enabled shouldBe createdMonitor.enabled
+                    monitorInDb.failureCountThreshold shouldBe 1
+                    monitorInDb.failureCountThreshold shouldBe createdMonitor.failureCountThreshold
                     monitorInDb.clientSecret shouldBe createdMonitor.clientSecret
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldBe createdMonitor.createdAt
@@ -485,6 +490,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 12,
                     gracePeriod = 10,
+                    failureCountThreshold = 3,
                     clientSecret = randomClientSecret(),
                     enabled = false,
                     integrations = setUpIntegrations.map { it.toString() },
@@ -499,6 +505,8 @@ class PushMonitorControllerTest(
                     monitorInDb.heartbeatInterval shouldBe createdMonitor.heartbeatInterval
                     monitorInDb.gracePeriod shouldBe 10
                     monitorInDb.gracePeriod shouldBe createdMonitor.gracePeriod
+                    monitorInDb.failureCountThreshold shouldBe 3
+                    monitorInDb.failureCountThreshold shouldBe createdMonitor.failureCountThreshold
                     monitorInDb.enabled shouldBe false
                     monitorInDb.enabled shouldBe createdMonitor.enabled
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
@@ -822,6 +830,7 @@ class PushMonitorControllerTest(
                     name = "test_monitor",
                     heartbeatInterval = 10,
                     gracePeriod = 0,
+                    failureCountThreshold = 2,
                     clientSecret = randomClientSecret(),
                     integrations = setUpIntegrations.map { it.toString() },
                 )
@@ -834,6 +843,7 @@ class PushMonitorControllerTest(
                     .put(PushMonitorUpdateDto::heartbeatInterval.name, "5000")
                     .put(PushMonitorUpdateDto::gracePeriod.name, "20")
                     .put(PushMonitorUpdateDto::clientSecret.name, newClientSecret)
+                    .put(PushMonitorUpdateDto::failureCountThreshold.name, 3)
                     .set<ObjectNode>(
                         PushMonitorUpdateDto::integrations.name,
                         mapper
@@ -853,6 +863,7 @@ class PushMonitorControllerTest(
                     monitorInDb.heartbeatInterval shouldBe 5000
                     monitorInDb.gracePeriod shouldBe 20
                     monitorInDb.enabled shouldBe false
+                    monitorInDb.failureCountThreshold shouldBe 3
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldBeAfter monitorInDb.createdAt
                     monitorInDb.clientSecret shouldBe newClientSecret
@@ -1277,6 +1288,33 @@ class PushMonitorControllerTest(
                     ex.status shouldBe HttpStatus.BAD_REQUEST
                     ex.response.getBodyAs<String>() shouldContain
                         "Validation failed: heartbeatInterval: Heartbeat interval must be at least 10 seconds"
+                    monitorInDb.name shouldBe createdMonitor.name
+                }
+            }
+
+            `when`("it is called with a too low failure threshold") {
+                val createDto = PushMonitorCreateDto(
+                    name = "test_monitor",
+                    heartbeatInterval = 10,
+                    gracePeriod = 0,
+                    clientSecret = randomClientSecret(),
+                    failureCountThreshold = 2,
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(PushMonitorUpdateDto::failureCountThreshold.name, 0)
+                val updateRequest =
+                    HttpRequest.PATCH("/api/v2/push-monitors/${createdMonitor.id}", updateDto)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(updateRequest).awaitFirst()
+                }
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
+
+                then("it should return a 400 with a validation error") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.response.getBodyAs<String>() shouldContain
+                        "Validation failed: failureCountThreshold"
                     monitorInDb.name shouldBe createdMonitor.name
                 }
             }

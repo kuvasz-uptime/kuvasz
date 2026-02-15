@@ -25,4 +25,7 @@ interface PushMonitorConfig : PushMonitorCreator {
     override val enabled: Boolean
 
     override val integrations: List<String>?
+
+    @get:Bindable(defaultValue = PushMonitorDefaults.FAILURE_COUNT_THRESHOLD.toString())
+    override val failureCountThreshold: Long
 }

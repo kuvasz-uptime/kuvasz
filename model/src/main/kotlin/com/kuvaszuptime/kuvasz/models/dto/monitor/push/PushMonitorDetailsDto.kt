@@ -44,4 +44,6 @@ data class PushMonitorDetailsDto(
     val effectiveIntegrations: Set<IntegrationDetailsDto>,
     @param:Schema(description = PushMonitorDocs.STATUS_PAGES, required = true)
     val statusPages: Set<String>,
+    @param:Schema(description = PushMonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
+    val failureCountThreshold: Long,
 ) : MonitorDetailsDto

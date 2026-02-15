@@ -342,6 +342,7 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.requestHeaders.shouldBeEmpty()
             dto.expectedHeaders.shouldBeEmpty()
             dto.requestBody shouldBe null
+            dto.failureCountThreshold shouldBe 1
         }
     }
 })

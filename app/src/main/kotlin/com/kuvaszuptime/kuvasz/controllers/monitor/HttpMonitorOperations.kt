@@ -24,7 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import java.time.Duration
 
-interface HttpMonitorOperationsV2 {
+interface HttpMonitorOperations {
 
     @Operation(summary = "Get all monitors with their details")
     @Get("/")

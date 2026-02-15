@@ -29,6 +29,7 @@ public class PushMonitor implements Serializable {
     private IntegrationID[] integrations;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private Long failureCountThreshold;
 
     public PushMonitor() {}
 
@@ -43,6 +44,7 @@ public class PushMonitor implements Serializable {
         this.integrations = value.integrations;
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
+        this.failureCountThreshold = value.failureCountThreshold;
     }
 
     public PushMonitor(
@@ -55,7 +57,8 @@ public class PushMonitor implements Serializable {
         String clientSecret,
         IntegrationID[] integrations,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        Long failureCountThreshold
     ) {
         this.id = id;
         this.name = name;
@@ -67,6 +70,7 @@ public class PushMonitor implements Serializable {
         this.integrations = integrations;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.failureCountThreshold = failureCountThreshold;
     }
 
     /**
@@ -219,6 +223,21 @@ public class PushMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.push_monitor.failure_count_threshold</code>.
+     */
+    public Long getFailureCountThreshold() {
+        return this.failureCountThreshold;
+    }
+
+    /**
+     * Setter for <code>kuvasz.push_monitor.failure_count_threshold</code>.
+     */
+    public PushMonitor setFailureCountThreshold(Long failureCountThreshold) {
+        this.failureCountThreshold = failureCountThreshold;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -288,6 +307,12 @@ public class PushMonitor implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.failureCountThreshold == null) {
+            if (other.failureCountThreshold != null)
+                return false;
+        }
+        else if (!this.failureCountThreshold.equals(other.failureCountThreshold))
+            return false;
         return true;
     }
 
@@ -305,6 +330,7 @@ public class PushMonitor implements Serializable {
         result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.failureCountThreshold == null) ? 0 : this.failureCountThreshold.hashCode());
         return result;
     }
 
@@ -322,6 +348,7 @@ public class PushMonitor implements Serializable {
         sb.append(", ").append(Arrays.deepToString(integrations));
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(failureCountThreshold);
 
         sb.append(")");
         return sb.toString();

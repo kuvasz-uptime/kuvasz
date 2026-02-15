@@ -61,6 +61,7 @@ sensor:
       - forceNoCache
       - followRedirects
       - sslExpiryThreshold
+      - failureCountThreshold
       - sslValidUntil
       - integrations
       - effectiveIntegrations
@@ -406,6 +407,7 @@ http-monitors:
     follow-redirects: true
     force-no-cache: true
     ssl-expiry-threshold: 30
+    failure-count-threshold: 2
     integrations:
       - "telegram:telegram_disabled"
       - "slack:slack_default"
@@ -429,6 +431,7 @@ push-monitors:
   - name: "My Push Monitor"
     heartbeat-interval: 10
     grace-period: 2
+    failure-count-threshold: 3
     client-secret: "d6d5a85c-82c0-4bea-9926-c3eed32de32b"
     enabled: true
     integrations: [ ]

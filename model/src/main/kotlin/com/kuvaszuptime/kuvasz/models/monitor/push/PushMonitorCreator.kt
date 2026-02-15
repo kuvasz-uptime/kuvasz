@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
 
@@ -30,6 +31,10 @@ interface PushMonitorCreator {
 
     val enabled: Boolean
     val integrations: List<String>?
+
+    @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
+    @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
+    val failureCountThreshold: Long
 }
 
 fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): PushMonitorRecord =
@@ -40,3 +45,4 @@ fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setEnabled(enabled)
         .setClientSecret(clientSecret)
         .setIntegrations(validatedIntegrations.toTypedArray())
+        .setFailureCountThreshold(failureCountThreshold)

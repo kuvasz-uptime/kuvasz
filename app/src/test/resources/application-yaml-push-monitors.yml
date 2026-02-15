@@ -4,6 +4,7 @@ push-monitors:
     grace-period: 10
     client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret1
     enabled: false
+    failure-count-threshold: 3
   - name: test2
     heartbeat-interval: 60
     client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret2

@@ -25,4 +25,5 @@ object PushMonitorDocs {
         "Push monitors are in read-only mode, because they are loaded from a YAML config file"
     const val STATUS_PAGES = "List of slugs of the status pages the monitor is explicitly assigned to"
     const val EXPLICIT_FAILURE_MESSAGE = "The optional, explicit error that is signaled manually for a push monitor"
+    const val FAILURE_COUNT_THRESHOLD = "The threshold for consecutive failures before the monitor is marked as DOWN"
 }

@@ -14,7 +14,7 @@ import io.micronaut.http.client.annotation.Client
 import java.time.Duration
 
 @Client("/api/v2/http-monitors")
-interface HttpMonitorClientV2 : HttpMonitorOperationsV2 {
+interface HttpMonitorClient : HttpMonitorOperations {
     override fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto
 
     override fun getMonitorsWithDetails(

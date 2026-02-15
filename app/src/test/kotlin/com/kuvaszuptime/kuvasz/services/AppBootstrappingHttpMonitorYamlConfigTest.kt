@@ -98,6 +98,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
             firstMonitor.sslExpiryThreshold shouldBe 0
+            firstMonitor.failureCountThreshold shouldBe 3
 
             scheduledUptimeChecks[firstMonitor.id].shouldBeNull()
             scheduledSSLChecks[firstMonitor.id].shouldBeNull()
@@ -185,6 +186,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
             firstMonitor.sslExpiryThreshold shouldBe 15
+            firstMonitor.failureCountThreshold shouldBe 2
             firstMonitor.expectedStatusCodes shouldContainExactlyInAnyOrder arrayOf(200, 201)
             firstMonitor.expectedKeyword shouldBe "something"
             firstMonitor.expectedKeywordCaseSensitive shouldBe true

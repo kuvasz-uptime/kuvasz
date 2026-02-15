@@ -48,6 +48,7 @@ fun createHttpMonitor(
     requestHeaders: Map<String, String> = emptyMap(),
     expectedHeaders: Map<String, String> = emptyMap(),
     requestBody: String? = null,
+    failureCountThreshold: Long = 1L,
 ): HttpMonitorRecord {
     val monitor = HttpMonitorRecord()
         .setName(monitorName)
@@ -71,6 +72,7 @@ fun createHttpMonitor(
         .setRequestHeaders(requestHeaders.toJsonNode())
         .setExpectedHeaders(expectedHeaders.toJsonNode())
         .setRequestBody(requestBody)
+        .setFailureCountThreshold(failureCountThreshold)
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 
@@ -82,7 +84,8 @@ fun createPushMonitor(
     clientSecret: String = randomClientSecret(),
     monitorName: String = randomClientSecret(),
     integrations: List<IntegrationID> = emptyList(),
-    lastHeartbeat: OffsetDateTime? = null
+    lastHeartbeat: OffsetDateTime? = null,
+    failureCountThreshold: Long = 1L,
 ): PushMonitorRecord {
     val monitor = PushMonitorRecord()
         .setName(monitorName)
@@ -93,6 +96,7 @@ fun createPushMonitor(
         .setCreatedAt(getCurrentTimestamp())
         .setIntegrations(integrations.toTypedArray())
         .setLastHeartbeat(lastHeartbeat)
+        .setFailureCountThreshold(failureCountThreshold)
     return repository.returningInsert(monitor)
 }
 

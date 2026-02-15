@@ -4,7 +4,7 @@ import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import io.micronaut.http.client.annotation.Client
 
 @Client("/api/v2/settings")
-interface SettingsClientV2 : SettingsOperationsV2 {
+interface SettingsClient : SettingsOperations {
 
     override fun getSettings(): SettingsDto
 }

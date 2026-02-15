@@ -1,0 +1,5 @@
+http-monitors:
+  - name: irrelevant
+    url: http://example.com
+    uptime-check-interval: 60
+    failure-count-threshold: 0

@@ -179,6 +179,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     public final TableField<HttpMonitorRecord, String> REQUEST_BODY = createField(DSL.name("request_body"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>kuvasz.http_monitor.failure_count_threshold</code>.
+     */
+    public final TableField<HttpMonitorRecord, Long> FAILURE_COUNT_THRESHOLD = createField(DSL.name("failure_count_threshold"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.field(DSL.raw("1"), SQLDataType.BIGINT)), this, "");
+
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

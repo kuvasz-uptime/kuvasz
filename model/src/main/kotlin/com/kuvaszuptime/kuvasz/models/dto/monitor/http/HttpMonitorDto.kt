@@ -33,6 +33,8 @@ data class HttpMonitorDto(
     val followRedirects: Boolean,
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = true)
     val sslExpiryThreshold: Int,
+    @param:Schema(description = HttpMonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
+    val failureCountThreshold: Long,
     @param:Schema(description = HttpMonitorDocs.INTEGRATIONS, required = true)
     val integrations: Set<IntegrationID>,
     @param:Schema(description = HttpMonitorDocs.EXPECTED_STATUS_CODES, required = true)
@@ -70,6 +72,7 @@ data class HttpMonitorDto(
                 forceNoCache = record.forceNoCache,
                 followRedirects = record.followRedirects,
                 sslExpiryThreshold = record.sslExpiryThreshold,
+                failureCountThreshold = record.failureCountThreshold,
                 integrations = record.integrations.toSet(),
                 expectedStatusCodes = record.expectedStatusCodes.toSet(),
                 responseTimeThresholdMillis = record.responseTimeThresholdMillis,

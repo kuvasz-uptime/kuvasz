@@ -1241,6 +1241,16 @@ components:
           description: "The body of the request to be sent, which is used for POST,\
             \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
           nullable: true
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          default: 1
+          x-minimum-message: Failure count threshold must be greater than 0
+          x-not-null-message: Failure count threshold must not be null
     HttpMonitorDetailsDto:
       required:
       - createdAt
@@ -1251,6 +1261,7 @@ components:
       - expectedKeywordCaseSensitive
       - expectedKeywordNegated
       - expectedStatusCodes
+      - failureCountThreshold
       - followRedirects
       - forceNoCache
       - id
@@ -1379,6 +1390,11 @@ components:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
           format: int32
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
         sslValidUntil:
           type: string
           description: The timestamp until which the SSL certificate is valid
@@ -1461,6 +1477,7 @@ components:
       - expectedKeywordCaseSensitive
       - expectedKeywordNegated
       - expectedStatusCodes
+      - failureCountThreshold
       - followRedirects
       - forceNoCache
       - id
@@ -1517,6 +1534,11 @@ components:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
           format: int32
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
         integrations:
           type: array
           description: "List of integrations explicitly assigned to the monitor, e.g.\
@@ -1738,6 +1760,15 @@ components:
           description: "The body of the request to be sent, which is used for POST,\
             \ PATCH and PUT requests. Currently only valid JSON bodies are supported."
           nullable: true
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          nullable: false
+          x-minimum-message: Failure count threshold must be greater than 0
     HttpMonitoringStatsDto:
       required:
       - actual
@@ -2138,12 +2169,23 @@ components:
           description: The unique client secret used to identify & authenticate heartbeats
           x-size-message: "Client secret must be at least {min} characters long"
           x-not-null-message: Client secret must not be null
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          default: 1
+          x-minimum-message: Failure count threshold must be greater than 0
+          x-not-null-message: Failure count threshold must not be null
     PushMonitorDetailsDto:
       required:
       - clientSecret
       - createdAt
       - effectiveIntegrations
       - enabled
+      - failureCountThreshold
       - gracePeriod
       - heartbeatInterval
       - id
@@ -2242,11 +2284,17 @@ components:
             assigned to
           items:
             type: string
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
     PushMonitorDto:
       required:
       - clientSecret
       - createdAt
       - enabled
+      - failureCountThreshold
       - gracePeriod
       - heartbeatInterval
       - id
@@ -2302,6 +2350,11 @@ components:
           description: The last updated timestamp of the monitor
           format: date-time
           nullable: true
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
     PushMonitorFailureDetailsDto:
       type: object
       properties:
@@ -2372,6 +2425,15 @@ components:
             type: string
             description: "A unique identifier for an integration, formatted as 'type:name'."
             example: email:my-email-integration
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          nullable: false
+          x-minimum-message: Failure count threshold must be greater than 0
     PushMonitoringStatsDto:
       required:
       - actual

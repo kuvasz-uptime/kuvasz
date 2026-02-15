@@ -113,6 +113,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                     .set(HTTP_MONITOR.LATENCY_HISTORY_ENABLED, updatedMonitor.latencyHistoryEnabled)
                     .set(HTTP_MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
                     .set(HTTP_MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
+                    .set(HTTP_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
                     .set(HTTP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                     .set(HTTP_MONITOR.EXPECTED_STATUS_CODES, updatedMonitor.expectedStatusCodes)
                     .set(HTTP_MONITOR.RESPONSE_TIME_THRESHOLD_MILLIS, updatedMonitor.responseTimeThresholdMillis)
@@ -194,6 +195,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             HTTP_MONITOR.FOLLOW_REDIRECTS.`as`(HttpMonitorDetailsDto::followRedirects.name),
             HTTP_MONITOR.REQUEST_METHOD.`as`(HttpMonitorDetailsDto::requestMethod.name),
             HTTP_MONITOR.SSL_EXPIRY_THRESHOLD.`as`(HttpMonitorDetailsDto::sslExpiryThreshold.name),
+            HTTP_MONITOR.FAILURE_COUNT_THRESHOLD.`as`(HttpMonitorDetailsDto::failureCountThreshold.name),
             DSL.array(arrayOf<String>()).`as`(HttpMonitorDetailsDto::effectiveIntegrations.name),
             HTTP_MONITOR.INTEGRATIONS.`as`(HttpMonitorDetailsDto::integrations.name),
             HTTP_MONITOR.EXPECTED_STATUS_CODES.`as`(HttpMonitorDetailsDto::expectedStatusCodes.name),

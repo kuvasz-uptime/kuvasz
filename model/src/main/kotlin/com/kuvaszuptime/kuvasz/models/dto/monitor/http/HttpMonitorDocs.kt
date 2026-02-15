@@ -21,6 +21,7 @@ object HttpMonitorDocs {
     const val UPTIME_ERROR = "The error message if the last uptime check failed"
     const val SSL_ERROR = "The error message if the last SSL check failed"
     const val SSL_EXPIRY_THRESHOLD = "The threshold in days for SSL certificate expiry checks"
+    const val FAILURE_COUNT_THRESHOLD = "The threshold for consecutive failures before the monitor is marked as DOWN"
     const val SSL_VALID_UNTIL = "The timestamp until which the SSL certificate is valid"
     const val REQUEST_METHOD = "The HTTP method used for the uptime check"
     const val LATENCY_HISTORY_ENABLED = "Whether latency history is enabled for the monitor"

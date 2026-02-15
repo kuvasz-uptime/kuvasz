@@ -102,6 +102,17 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                     "YAML push monitor configs must have unique client secrets!"
             }
         }
+
+        `when`("failureCountThreshold is less than 1") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                testAppContext("push-monitor-zero-failure-count-threshold")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exceptionToMessage(exception) shouldContain
+                    "PushMonitorConfig.getFailureCountThreshold - " +
+                    MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
+            }
+        }
     }
 })
 
@@ -123,6 +134,7 @@ class PushMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext)
                 monitorConfig.enabled shouldBe PushMonitorDefaults.MONITOR_ENABLED
                 monitorConfig.gracePeriod shouldBe PushMonitorDefaults.GRACE_PERIOD_SECONDS
                 monitorConfig.integrations shouldBe null
+                monitorConfig.failureCountThreshold shouldBe PushMonitorDefaults.FAILURE_COUNT_THRESHOLD
             }
         }
     }

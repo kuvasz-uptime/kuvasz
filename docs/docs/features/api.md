@@ -46,6 +46,7 @@ curl -X GET "http://your.kuvasz.host/api/v2/http-monitors/107" \
   "forceNoCache": true,
   "followRedirects": true,
   "sslExpiryThreshold": 7,
+  "failureCountThreshold": 2,
   "sslValidUntil": "2025-08-10T10:54:01+02:00",
   "integrations": [
     "telegram:telegram_test"

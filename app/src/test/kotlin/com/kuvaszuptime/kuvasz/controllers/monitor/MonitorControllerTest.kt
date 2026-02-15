@@ -33,7 +33,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest(environments = ["full-integrations-setup"])
-class MonitorControllerV2Test(
+class MonitorControllerTest(
     @param:Client("/") private val client: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
@@ -56,6 +56,7 @@ class MonitorControllerV2Test(
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
                     sslExpiryThreshold = 15,
+                    failureCountThreshold = 5,
                     expectedStatusCodes = setOf(200, 404),
                     responseTimeThresholdMillis = 1400,
                     expectedKeyword = "somethingExpected",
@@ -104,6 +105,7 @@ class MonitorControllerV2Test(
                     monitorName = "irrelevant4",
                     gracePeriod = 54321,
                     clientSecret = "ab".repeat(18),
+                    failureCountThreshold = 3,
                 )
 
                 val request = HttpRequest.GET<Any>("/api/v2/monitors/export/yaml").accept(MediaType.APPLICATION_YAML)
@@ -135,6 +137,7 @@ class MonitorControllerV2Test(
                         firstMonitor.forceNoCache shouldBe httpMonitor.forceNoCache
                         firstMonitor.followRedirects shouldBe httpMonitor.followRedirects
                         firstMonitor.sslExpiryThreshold shouldBe httpMonitor.sslExpiryThreshold
+                        firstMonitor.failureCountThreshold shouldBe httpMonitor.failureCountThreshold
                     }
                     parsedHttpMonitors.forOne { secondMonitor ->
                         secondMonitor.name shouldBe httpMonitor2.name
@@ -147,6 +150,7 @@ class MonitorControllerV2Test(
                         secondMonitor.forceNoCache shouldBe httpMonitor2.forceNoCache
                         secondMonitor.followRedirects shouldBe httpMonitor2.followRedirects
                         secondMonitor.sslExpiryThreshold shouldBe httpMonitor2.sslExpiryThreshold
+                        secondMonitor.failureCountThreshold shouldBe httpMonitor2.failureCountThreshold
                         secondMonitor.expectedStatusCodes shouldBe httpMonitor2.expectedStatusCodes.toSet()
                         secondMonitor.responseTimeThresholdMillis shouldBe httpMonitor2.responseTimeThresholdMillis
                         secondMonitor.expectedKeyword shouldBe httpMonitor2.expectedKeyword
@@ -171,6 +175,7 @@ class MonitorControllerV2Test(
                         firstMonitor.gracePeriod shouldBe pushMonitor.gracePeriod
                         firstMonitor.clientSecret shouldBe pushMonitor.clientSecret
                         firstMonitor.enabled shouldBe pushMonitor.enabled
+                        firstMonitor.failureCountThreshold shouldBe pushMonitor.failureCountThreshold
                         firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
                             IntegrationID(IntegrationType.EMAIL, "Global-343"),
                             IntegrationID(IntegrationType.PAGERDUTY, "global"),
@@ -182,6 +187,7 @@ class MonitorControllerV2Test(
                         secondMonitor.gracePeriod shouldBe pushMonitor2.gracePeriod
                         secondMonitor.clientSecret shouldBe pushMonitor2.clientSecret
                         secondMonitor.enabled shouldBe pushMonitor2.enabled
+                        secondMonitor.failureCountThreshold shouldBe pushMonitor2.failureCountThreshold
                         secondMonitor.integrations.shouldBeEmpty()
                     }
                 }

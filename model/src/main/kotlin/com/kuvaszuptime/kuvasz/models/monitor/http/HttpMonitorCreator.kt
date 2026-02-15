@@ -62,6 +62,10 @@ interface HttpMonitorCreator {
 
     @get:WellFormedJsonString
     val requestBody: String?
+
+    @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
+    @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
+    val failureCountThreshold: Long
 }
 
 fun HttpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
@@ -85,3 +89,4 @@ fun HttpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setRequestHeaders(requestHeaders.orEmpty().toJsonNode())
         .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
         .setRequestBody(requestBody)
+        .setFailureCountThreshold(failureCountThreshold)

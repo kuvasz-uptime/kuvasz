@@ -109,6 +109,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                 .set(PUSH_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(PUSH_MONITOR.CLIENT_SECRET, updatedMonitor.clientSecret)
                 .set(PUSH_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
+                .set(PUSH_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
                 .set(PUSH_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(PUSH_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(PUSH_MONITOR.asterisk())
@@ -166,6 +167,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             PUSH_MONITOR.LAST_HEARTBEAT.`as`(PushMonitorDetailsDto::lastHeartbeat.name),
             PUSH_MONITOR.CREATED_AT.`as`(PushMonitorDetailsDto::createdAt.name),
             PUSH_MONITOR.UPDATED_AT.`as`(PushMonitorDetailsDto::updatedAt.name),
+            PUSH_MONITOR.FAILURE_COUNT_THRESHOLD.`as`(PushMonitorDetailsDto::failureCountThreshold.name),
             latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS)!!.`as`(PushMonitorDetailsDto::uptimeStatus.name),
             latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STARTED_AT)!!
                 .`as`(PushMonitorDetailsDto::uptimeStatusStartedAt.name),

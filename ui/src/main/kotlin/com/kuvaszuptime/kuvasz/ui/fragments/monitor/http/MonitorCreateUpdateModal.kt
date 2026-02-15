@@ -27,6 +27,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
             "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
             "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
             "sslExpiryThresholdInvalid" to Messages.errorSSLExpiryThresholdInvalid(),
+            "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
             "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
             "responseTimeThresholdInvalid" to Messages.errorResponseTimeThresholdInvalid(),
             "requestHeaderInvalid" to Messages.errorNewHeaderInvalid(),
@@ -229,6 +230,19 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                                     xModelName = "selectedHttpStatusCodes",
                                     acceptedStatusCodeSelectId = acceptedStatusCodeSelectId,
                                     isReadOnly = isReadOnlyMode,
+                                )
+                            }
+                            //Failure count threshold
+                            div {
+                                classes(MB_3)
+                                validatedInput(
+                                    propName = "failureCountThreshold",
+                                    label = Messages.failureCountThresholdLabel(),
+                                    description = Messages.failureCountThresholdDescription(),
+                                    placeholder = null,
+                                    required = true,
+                                    onInput = "validateFailureCountThreshold()",
+                                    disabledIf = "$isReadOnlyMode",
                                 )
                             }
                             // Expected Keyword

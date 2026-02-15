@@ -43,6 +43,7 @@ public class HttpMonitor implements Serializable {
     private JsonNode requestHeaders;
     private JsonNode expectedHeaders;
     private String requestBody;
+    private Long failureCountThreshold;
 
     public HttpMonitor() {}
 
@@ -69,6 +70,7 @@ public class HttpMonitor implements Serializable {
         this.requestHeaders = value.requestHeaders;
         this.expectedHeaders = value.expectedHeaders;
         this.requestBody = value.requestBody;
+        this.failureCountThreshold = value.failureCountThreshold;
     }
 
     public HttpMonitor(
@@ -93,7 +95,8 @@ public class HttpMonitor implements Serializable {
         Boolean expectedKeywordNegated,
         JsonNode requestHeaders,
         JsonNode expectedHeaders,
-        String requestBody
+        String requestBody,
+        Long failureCountThreshold
     ) {
         this.id = id;
         this.name = name;
@@ -117,6 +120,7 @@ public class HttpMonitor implements Serializable {
         this.requestHeaders = requestHeaders;
         this.expectedHeaders = expectedHeaders;
         this.requestBody = requestBody;
+        this.failureCountThreshold = failureCountThreshold;
     }
 
     /**
@@ -457,6 +461,21 @@ public class HttpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.http_monitor.failure_count_threshold</code>.
+     */
+    public Long getFailureCountThreshold() {
+        return this.failureCountThreshold;
+    }
+
+    /**
+     * Setter for <code>kuvasz.http_monitor.failure_count_threshold</code>.
+     */
+    public HttpMonitor setFailureCountThreshold(Long failureCountThreshold) {
+        this.failureCountThreshold = failureCountThreshold;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -598,6 +617,12 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.requestBody.equals(other.requestBody))
             return false;
+        if (this.failureCountThreshold == null) {
+            if (other.failureCountThreshold != null)
+                return false;
+        }
+        else if (!this.failureCountThreshold.equals(other.failureCountThreshold))
+            return false;
         return true;
     }
 
@@ -627,6 +652,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.requestHeaders == null) ? 0 : this.requestHeaders.hashCode());
         result = prime * result + ((this.expectedHeaders == null) ? 0 : this.expectedHeaders.hashCode());
         result = prime * result + ((this.requestBody == null) ? 0 : this.requestBody.hashCode());
+        result = prime * result + ((this.failureCountThreshold == null) ? 0 : this.failureCountThreshold.hashCode());
         return result;
     }
 
@@ -656,6 +682,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(requestHeaders);
         sb.append(", ").append(expectedHeaders);
         sb.append(", ").append(requestBody);
+        sb.append(", ").append(failureCountThreshold);
 
         sb.append(")");
         return sb.toString();
