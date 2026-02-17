@@ -3,9 +3,11 @@ package com.kuvaszuptime.kuvasz.services.check.push
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.check.isDownNow
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.micronaut.scheduling.annotation.Scheduled
@@ -20,6 +22,7 @@ class HeartbeatChecker(
     private val pushMonitorRepository: PushMonitorRepository,
     private val uptimeEventRepository: PushUptimeEventRepository,
     private val databaseEventHandler: DatabaseEventHandler,
+    private val pendingFailureRepository: PendingFailureRepository,
 ) {
     /**
      * Checks every enabled push monitors to see if their expected heartbeats are on time,
@@ -34,8 +37,8 @@ class HeartbeatChecker(
                     error = Messages.missedHeartbeat(),
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
                 ).also { event ->
-                    val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
-                    if (monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+                    if (event.isDownNow(pendingFailureRepository)) {
+                        databaseEventHandler.handleUptimeMonitorEvent(event)
                         eventDispatcher.dispatch(event)
                     }
                 }

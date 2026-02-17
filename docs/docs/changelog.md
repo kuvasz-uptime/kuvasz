@@ -1,3 +1,9 @@
+## 3.5.1 <small>2026-02-17</small> { id="3.5.1" data-toc-label="3.5.1" }
+
+### Fixes
+
+- Fixed a bug that caused silent alerts on monitors with a higher (>1) `failure-count-threshold` value, and marked them as `DOWN` immediately after the first failure, instead of waiting for the configured number of consecutive failures to occur
+
 ## 3.5.0 <small>2026-02-15</small> { id="3.5.0" data-toc-label="3.5.0" }
 
 ### Features

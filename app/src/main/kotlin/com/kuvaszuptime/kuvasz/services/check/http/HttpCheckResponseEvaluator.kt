@@ -6,7 +6,9 @@ import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.check.isDownNow
 import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import jakarta.inject.Singleton
@@ -22,6 +24,7 @@ class HttpCheckResponseEvaluator(
     private val responseHeaderChecker: HttpResponseHeaderChecker,
     private val noOpUpDispatcher: NoOpUpDispatcher,
     private val databaseEventHandler: DatabaseEventHandler,
+    private val pendingFailureRepository: PendingFailureRepository,
 ) {
     /**
      * Evaluates the HTTP response for a given monitor. The checks are intended to be chained together, allowing for an
@@ -91,8 +94,8 @@ class HttpCheckResponseEvaluator(
             error = clarifiedError,
             previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
         ).also { event ->
-            val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
-            if (monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+            if (event.isDownNow(pendingFailureRepository)) {
+                databaseEventHandler.handleUptimeMonitorEvent(event)
                 eventDispatcher.dispatch(event)
             }
         }

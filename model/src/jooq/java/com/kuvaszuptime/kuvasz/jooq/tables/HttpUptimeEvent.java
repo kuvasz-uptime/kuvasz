@@ -99,11 +99,6 @@ public class HttpUptimeEvent extends TableImpl<HttpUptimeEventRecord> {
      */
     public final TableField<HttpUptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
 
-    /**
-     * The column <code>kuvasz.http_uptime_event.failure_count</code>.
-     */
-    public final TableField<HttpUptimeEventRecord, Long> FAILURE_COUNT = createField(DSL.name("failure_count"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.field(DSL.raw("0"), SQLDataType.BIGINT)), this, "");
-
     private HttpUptimeEvent(Name alias, Table<HttpUptimeEventRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

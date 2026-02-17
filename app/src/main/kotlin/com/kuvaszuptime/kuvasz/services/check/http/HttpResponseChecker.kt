@@ -7,13 +7,16 @@ import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.check.isDownNow
 import java.net.URI
 
 abstract class HttpResponseChecker(
     private val eventDispatcher: EventDispatcher,
     private val uptimeEventRepository: HttpUptimeEventRepository,
     private val databaseEventHandler: DatabaseEventHandler,
+    private val pendingFailureRepository: PendingFailureRepository,
 ) {
 
     abstract fun evaluate(ctx: HttpResponseCheckContext): HttpCheckResult
@@ -28,8 +31,8 @@ abstract class HttpResponseChecker(
             error = error,
             previousEvent = getPreviousEvent(ctx.monitor.id)
         ).also { event ->
-            val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
-            if (ctx.monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+            if (event.isDownNow(pendingFailureRepository)) {
+                databaseEventHandler.handleUptimeMonitorEvent(event)
                 eventDispatcher.dispatch(event)
             }
         }

@@ -21,6 +21,4 @@ public interface UptimeEventRecord {
 
     @Nullable
     OffsetDateTime getEndedAt();
-
-    Long getFailureCount();
 }

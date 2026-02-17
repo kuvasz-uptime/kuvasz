@@ -30,7 +30,6 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
 
         if (event is HttpMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()
-            eventToInsert.failureCount = 1
         }
 
         return (ctx ?: dslContext).insertInto(HTTP_UPTIME_EVENT)
@@ -69,8 +68,7 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
         .set(HTTP_UPTIME_EVENT.ENDED_AT, endedAt)
         .set(HTTP_UPTIME_EVENT.UPDATED_AT, endedAt)
         .where(HTTP_UPTIME_EVENT.ID.eq(eventId))
-        .returning(HTTP_UPTIME_EVENT.asterisk())
-        .fetchOneOrThrow<HttpUptimeEventRecord>()
+        .execute()
 
     fun deleteEventsBeforeDate(limit: OffsetDateTime) = dslContext
         .delete(HTTP_UPTIME_EVENT)
@@ -84,13 +82,11 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) {
         .set(HTTP_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {
             if (newEvent is HttpMonitorDownEvent) {
-                set(HTTP_UPTIME_EVENT.FAILURE_COUNT, HTTP_UPTIME_EVENT.FAILURE_COUNT + 1)
                 set(HTTP_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
             }
         }
         .where(HTTP_UPTIME_EVENT.ID.eq(eventId))
-        .returning(HTTP_UPTIME_EVENT.asterisk())
-        .fetchOneOrThrow<HttpUptimeEventRecord>()
+        .execute()
 
     @Suppress("IgnoredReturnValue")
     fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> = dslContext

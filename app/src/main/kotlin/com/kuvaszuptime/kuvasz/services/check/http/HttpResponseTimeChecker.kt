@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.ResponseTimeThresholdExceededException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
@@ -13,7 +14,8 @@ class HttpResponseTimeChecker(
     eventDispatcher: EventDispatcher,
     uptimeEventRepository: HttpUptimeEventRepository,
     databaseEventHandler: DatabaseEventHandler,
-) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler) {
+    pendingFailureRepository: PendingFailureRepository,
+) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler, pendingFailureRepository) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

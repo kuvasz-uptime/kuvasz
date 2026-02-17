@@ -13,6 +13,8 @@ sealed class UptimeMonitorEvent : MonitorEvent<MonitorRecord>() {
 
     fun isUp() = uptimeStatus == UptimeStatus.UP
 
+    fun wasUpWithThreshold(): Boolean = previousEvent?.status != UptimeStatus.DOWN && monitor.failureCountThreshold > 1
+
     fun statusNotEquals(previousEvent: UptimeEventRecord) = !statusEquals(previousEvent)
 
     fun getEndedEventDuration(): Duration? =

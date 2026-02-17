@@ -81,7 +81,6 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
-                    expectedUptimeRecord.failureCount shouldBe 0
                 }
             }
 
@@ -105,7 +104,6 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
-                    expectedUptimeRecord.failureCount shouldBe 1
                 }
             }
 
@@ -139,7 +137,6 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
-                    expectedUptimeRecord.failureCount shouldBe 0
                 }
             }
 
@@ -178,11 +175,9 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[0].status shouldBe UptimeStatus.DOWN
                     uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
-                    uptimeRecords[0].failureCount shouldBe 1
                     uptimeRecords[1].status shouldBe UptimeStatus.UP
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
-                    uptimeRecords[1].failureCount shouldBe 0
                 }
             }
 
@@ -221,12 +216,10 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[0].status shouldBe UptimeStatus.UP
                     uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
-                    uptimeRecords[0].failureCount shouldBe 0
                     uptimeRecords[1].status shouldBe UptimeStatus.DOWN
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[1].error shouldBe "Reason: 500 Internal Server Error"
-                    uptimeRecords[1].failureCount shouldBe 1
                 }
             }
 
@@ -280,7 +273,6 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
                     expectedUptimeRecord.error shouldBe "Reason: 500 Internal Server Error: also irrelevant"
-                    expectedUptimeRecord.failureCount shouldBe 2
                 }
             }
         }
@@ -304,7 +296,6 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
-                    expectedUptimeRecord.failureCount shouldBe 0
                 }
             }
 
@@ -327,7 +318,6 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
-                    expectedUptimeRecord.failureCount shouldBe 1
                 }
             }
 
@@ -357,7 +347,6 @@ class DatabaseEventHandlerTest(
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
                     expectedUptimeRecord.endedAt shouldBe null
                     expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
-                    expectedUptimeRecord.failureCount shouldBe 0
                 }
             }
 
@@ -393,11 +382,9 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[0].status shouldBe UptimeStatus.DOWN
                     uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
-                    uptimeRecords[0].failureCount shouldBe 1
                     uptimeRecords[1].status shouldBe UptimeStatus.UP
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
-                    uptimeRecords[1].failureCount shouldBe 0
                 }
             }
 
@@ -433,12 +420,10 @@ class DatabaseEventHandlerTest(
                     uptimeRecords[0].status shouldBe UptimeStatus.UP
                     uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
-                    uptimeRecords[0].failureCount shouldBe 0
                     uptimeRecords[1].status shouldBe UptimeStatus.DOWN
                     uptimeRecords[1].endedAt shouldBe null
                     uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
                     uptimeRecords[1].error shouldBe "Reason: missed heartbeat"
-                    uptimeRecords[1].failureCount shouldBe 1
                 }
             }
 
@@ -472,7 +457,6 @@ class DatabaseEventHandlerTest(
                         event.endedAt.shouldBeNull()
                         event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
                         event.error shouldBe firstUptimeRecord.error
-                        event.failureCount shouldBe 2
                     }
                 }
             }
@@ -508,7 +492,6 @@ class DatabaseEventHandlerTest(
                         event.endedAt.shouldBeNull()
                         event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
                         event.error shouldBe "Reason: ${secondEvent.error}"
-                        event.failureCount shouldBe 2
                     }
                 }
             }

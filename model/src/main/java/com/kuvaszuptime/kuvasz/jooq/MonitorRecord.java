@@ -16,4 +16,6 @@ public interface MonitorRecord {
     OffsetDateTime getCreatedAt();
 
     OffsetDateTime getUpdatedAt();
+
+    Long getFailureCountThreshold();
 }

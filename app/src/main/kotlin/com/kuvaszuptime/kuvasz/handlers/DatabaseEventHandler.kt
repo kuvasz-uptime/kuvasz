@@ -23,10 +23,10 @@ class DatabaseEventHandler(
         private val logger = LoggerFactory.getLogger(DatabaseEventHandler::class.java)
     }
 
-    fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent): UptimeEventRecord {
+    fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {
         val monitor = currentEvent.monitor
 
-        return currentEvent.previousEvent?.let { previousEvent ->
+        currentEvent.previousEvent?.let { previousEvent ->
             logger.debug(
                 "A previous event was found for [${monitor.name}] with ID: ${previousEvent.id} " +
                     "and status: ${previousEvent.status}. The current event's status is ${currentEvent.uptimeStatus}."
@@ -36,7 +36,7 @@ class DatabaseEventHandler(
                     "[${monitor.name}] The status of the previous event is different from the " +
                         "current event. Ending the previous event and inserting a new one."
                 )
-                val newRecord = dslContext.transactionResult { config ->
+                dslContext.transactionResult { config ->
                     val txCtx = config.dsl()
                     endUptimeEvent(previousEvent, currentEvent, txCtx)
                     insertUptimeEvent(currentEvent, txCtx)
@@ -45,7 +45,6 @@ class DatabaseEventHandler(
                     "[${monitor.name}] The previous event has been ended and a new one " +
                         "has been inserted."
                 )
-                newRecord
             } else {
                 logger.debug(
                     "[${monitor.name}] The status of the previous event is the same as the current " +
@@ -63,7 +62,7 @@ class DatabaseEventHandler(
         previousEvent: UptimeEventRecord,
         currentEvent: UptimeMonitorEvent,
         txCtx: DSLContext
-    ): UptimeEventRecord =
+    ) =
         when (currentEvent) {
             is HttpUptimeMonitorEvent -> httpUptimeEventRepository.endEventById(
                 eventId = previousEvent.id,
@@ -78,13 +77,13 @@ class DatabaseEventHandler(
             )
         }
 
-    private fun insertUptimeEvent(currentEvent: UptimeMonitorEvent, txCtx: DSLContext? = null): UptimeEventRecord =
+    private fun insertUptimeEvent(currentEvent: UptimeMonitorEvent, txCtx: DSLContext? = null) =
         when (currentEvent) {
             is HttpUptimeMonitorEvent -> httpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
             is PushUptimeMonitorEvent -> pushUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
         }
 
-    private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord): UptimeEventRecord =
+    private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord) =
         when (currentEvent) {
             is HttpUptimeMonitorEvent -> httpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
             is PushUptimeMonitorEvent -> pushUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
