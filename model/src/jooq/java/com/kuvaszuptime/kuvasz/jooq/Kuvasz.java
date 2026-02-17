@@ -7,6 +7,7 @@ package com.kuvaszuptime.kuvasz.jooq;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
@@ -49,6 +50,11 @@ public class Kuvasz extends SchemaImpl {
      * The table <code>kuvasz.http_uptime_event</code>.
      */
     public final HttpUptimeEvent HTTP_UPTIME_EVENT = HttpUptimeEvent.HTTP_UPTIME_EVENT;
+
+    /**
+     * The table <code>kuvasz.pending_failure</code>.
+     */
+    public final PendingFailure PENDING_FAILURE = PendingFailure.PENDING_FAILURE;
 
     /**
      * The table <code>kuvasz.push_monitor</code>.
@@ -98,6 +104,7 @@ public class Kuvasz extends SchemaImpl {
             HttpLatencyLog.HTTP_LATENCY_LOG,
             HttpMonitor.HTTP_MONITOR,
             HttpUptimeEvent.HTTP_UPTIME_EVENT,
+            PendingFailure.PENDING_FAILURE,
             PushMonitor.PUSH_MONITOR,
             PushUptimeEvent.PUSH_UPTIME_EVENT,
             SslEvent.SSL_EVENT,

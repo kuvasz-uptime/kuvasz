@@ -25,7 +25,6 @@ public class PushUptimeEvent implements Serializable {
     private OffsetDateTime startedAt;
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
-    private Long failureCount;
 
     public PushUptimeEvent() {}
 
@@ -37,7 +36,6 @@ public class PushUptimeEvent implements Serializable {
         this.startedAt = value.startedAt;
         this.endedAt = value.endedAt;
         this.updatedAt = value.updatedAt;
-        this.failureCount = value.failureCount;
     }
 
     public PushUptimeEvent(
@@ -47,8 +45,7 @@ public class PushUptimeEvent implements Serializable {
         String error,
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
-        OffsetDateTime updatedAt,
-        Long failureCount
+        OffsetDateTime updatedAt
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -57,7 +54,6 @@ public class PushUptimeEvent implements Serializable {
         this.startedAt = startedAt;
         this.endedAt = endedAt;
         this.updatedAt = updatedAt;
-        this.failureCount = failureCount;
     }
 
     /**
@@ -165,21 +161,6 @@ public class PushUptimeEvent implements Serializable {
         return this;
     }
 
-    /**
-     * Getter for <code>kuvasz.push_uptime_event.failure_count</code>.
-     */
-    public Long getFailureCount() {
-        return this.failureCount;
-    }
-
-    /**
-     * Setter for <code>kuvasz.push_uptime_event.failure_count</code>.
-     */
-    public PushUptimeEvent setFailureCount(Long failureCount) {
-        this.failureCount = failureCount;
-        return this;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -231,12 +212,6 @@ public class PushUptimeEvent implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
-        if (this.failureCount == null) {
-            if (other.failureCount != null)
-                return false;
-        }
-        else if (!this.failureCount.equals(other.failureCount))
-            return false;
         return true;
     }
 
@@ -251,7 +226,6 @@ public class PushUptimeEvent implements Serializable {
         result = prime * result + ((this.startedAt == null) ? 0 : this.startedAt.hashCode());
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
-        result = prime * result + ((this.failureCount == null) ? 0 : this.failureCount.hashCode());
         return result;
     }
 
@@ -266,7 +240,6 @@ public class PushUptimeEvent implements Serializable {
         sb.append(", ").append(startedAt);
         sb.append(", ").append(endedAt);
         sb.append(", ").append(updatedAt);
-        sb.append(", ").append(failureCount);
 
         sb.append(")");
         return sb.toString();
