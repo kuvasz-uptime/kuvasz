@@ -27,11 +27,13 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.push.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
+import com.kuvaszuptime.kuvasz.services.check.isDownNow
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
@@ -58,6 +60,7 @@ class PushMonitorActions(
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
     private val databaseEventHandler: DatabaseEventHandler,
+    private val pendingFailureRepository: PendingFailureRepository,
 ) : StatusPageMonitorDataProvider,
     MonitorActions<PushMonitorRecord>(dslContext, appConfig, statusPageRepository, monitorRepository, eventDispatcher) {
 
@@ -89,6 +92,7 @@ class PushMonitorActions(
                         monitor = updatedMonitor,
                         previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(updatedMonitor.id, txCtx),
                     ).also { event ->
+                        pendingFailureRepository.deleteByMonitorId(event.monitor.id)
                         databaseEventHandler.handleUptimeMonitorEvent(event)
                         eventDispatcher.dispatch(event)
                     }
@@ -212,8 +216,8 @@ class PushMonitorActions(
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
                     isManual = true,
                 ).also { event ->
-                    val activeUptimeRecord = databaseEventHandler.handleUptimeMonitorEvent(event)
-                    if (monitor.failureCountThreshold <= activeUptimeRecord.failureCount) {
+                    if (event.isDownNow(pendingFailureRepository)) {
+                        databaseEventHandler.handleUptimeMonitorEvent(event)
                         eventDispatcher.dispatch(event)
                     }
                 }

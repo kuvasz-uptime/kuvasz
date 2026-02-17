@@ -1,13 +1,12 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
-import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.ExpectedKeywordNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.core.spec.style.ShouldSpec
@@ -20,9 +19,10 @@ import io.mockk.verify
 class HttpResponseBodyCheckerTest : ShouldSpec({
 
     val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
-    val mockDbEventHandler = mockk<DatabaseEventHandler>()
+    val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
+    val mockPendingFailureRepo = mockk<PendingFailureRepository>(relaxed = true)
     val dispatcher = EventDispatcher()
-    val checker = HttpResponseBodyChecker(dispatcher, mockUptimeRepo, mockDbEventHandler)
+    val checker = HttpResponseBodyChecker(dispatcher, mockUptimeRepo, mockDbEventHandler, mockPendingFailureRepo)
 
     fun mockResponseBody(body: String?): HttpCheckResponse =
         mockk<HttpCheckResponse>(relaxed = true) {
@@ -30,19 +30,6 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 every { httpResponse.getBodyAs<String>() } returns body
             }
         }
-
-    beforeTest {
-        every {
-            mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>())
-        } returns HttpUptimeEventRecord().apply {
-            failureCount = 1
-        }
-        every {
-            mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorUpEvent>())
-        } returns HttpUptimeEventRecord().apply {
-            failureCount = 0
-        }
-    }
 
     afterTest { clearMocks(mockDbEventHandler) }
 

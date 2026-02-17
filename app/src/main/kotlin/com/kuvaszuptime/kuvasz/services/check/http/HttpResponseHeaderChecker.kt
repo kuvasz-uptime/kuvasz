@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.ExpectedHeaderNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
@@ -14,7 +15,8 @@ class HttpResponseHeaderChecker(
     eventDispatcher: EventDispatcher,
     uptimeEventRepository: HttpUptimeEventRepository,
     databaseEventHandler: DatabaseEventHandler,
-) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler) {
+    pendingFailureRepository: PendingFailureRepository,
+) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler, pendingFailureRepository) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

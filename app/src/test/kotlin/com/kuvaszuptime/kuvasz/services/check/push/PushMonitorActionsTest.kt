@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.check.push
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PendingFailureRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -44,6 +46,7 @@ class PushMonitorActionsTest(
     private val statCalculator: StatCalculator,
     private val pushMonitorRepository: PushMonitorRepository,
     private val eventDispatcher: EventDispatcher,
+    private val pendingFailureRepository: PendingFailureRepository,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -241,6 +244,7 @@ class PushMonitorActionsTest(
                     clientSecret = testSecret,
                 )
                 val eventRepoMock = getMock(uptimeEventRepository)
+                val pendingFailureRepoMock = getMock(pendingFailureRepository)
                 val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
                 eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
 
@@ -252,7 +256,8 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns mockk()
+                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { pendingFailureRepoMock.deleteByMonitorId(testMonitor.id, any()) } returns 1
 
                 pushMonitorActions.updateLastHeartbeat(testSecret, testTimestamp)
 
@@ -313,7 +318,6 @@ class PushMonitorActionsTest(
                     id = 3
                     monitorId = testMonitor.id
                     status = UptimeStatus.DOWN
-                    failureCount = 1
                 }
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
@@ -333,7 +337,7 @@ class PushMonitorActionsTest(
                 }
             }
 
-            `when`("it's called for an existing, enabled monitor w/o a previous event - failure threshold is 2") {
+            `when`("it's called for an existing, enabled monitor w/o a previous failure - failure threshold is 2") {
                 val testMonitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
@@ -341,6 +345,7 @@ class PushMonitorActionsTest(
                     failureCountThreshold = 2,
                 )
                 val eventRepoMock = getMock(uptimeEventRepository)
+                val pendingFailureRepoMock = getMock(pendingFailureRepository)
                 val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
                 eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
 
@@ -348,12 +353,16 @@ class PushMonitorActionsTest(
                     id = 3
                     monitorId = testMonitor.id
                     status = UptimeStatus.DOWN
-                    failureCount = 1
                 }
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns null
                 every { eventRepoMock.insertFromMonitorEvent(any(), any()) } returns uptimeEventRecord
+                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id) } returns
+                    PendingFailureRecord().apply {
+                        monitorId = testMonitor.id
+                        failureCount = 1
+                    }
 
                 pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
 
@@ -377,15 +386,11 @@ class PushMonitorActionsTest(
                     id = 3
                     monitorId = testMonitor.id
                     status = UptimeStatus.DOWN
-                    failureCount = 1
                 }
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns
-                    uptimeEventRecord.copy().apply {
-                        failureCount = uptimeEventRecord.failureCount + 1
-                    }
+                every { eventRepoMock.updateEvent(any(), any()) } returns 1
 
                 pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
 
@@ -400,7 +405,7 @@ class PushMonitorActionsTest(
                 }
             }
 
-            `when`("it's called for an existing, enabled monitor w/ a previous event - failure threshold is 3") {
+            `when`("it's called for an existing, enabled monitor w/ a previous failure - failure threshold is 3") {
                 val testMonitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
@@ -408,21 +413,23 @@ class PushMonitorActionsTest(
                     failureCountThreshold = 3,
                 )
                 val eventRepoMock = getMock(uptimeEventRepository)
+                val pendingFailureRepoMock = getMock(pendingFailureRepository)
                 val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
                 eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
 
                 val uptimeEventRecord = PushUptimeEventRecord().apply {
                     id = 3
                     monitorId = testMonitor.id
-                    status = UptimeStatus.DOWN
-                    failureCount = 1
+                    status = UptimeStatus.UP
                 }
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns
-                    uptimeEventRecord.copy().apply {
-                        failureCount = uptimeEventRecord.failureCount + 1
+                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id) } returns
+                    PendingFailureRecord().apply {
+                        monitorId = testMonitor.id
+                        failureCount = 2
                     }
 
                 pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
@@ -441,22 +448,27 @@ class PushMonitorActionsTest(
                     failureCountThreshold = 2
                 )
                 val eventRepoMock = getMock(uptimeEventRepository)
+                val pendingFailureRepoMock = getMock(pendingFailureRepository)
                 val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
                 eventDispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
 
                 val uptimeEventRecord = PushUptimeEventRecord().apply {
                     id = 3
                     monitorId = testMonitor.id
-                    status = UptimeStatus.DOWN
-                    failureCount = 1
+                    status = UptimeStatus.UP
                 }
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns
-                    uptimeEventRecord.copy().apply {
-                        failureCount = uptimeEventRecord.failureCount + 1
+                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.endEventById(any(), any(), any()) } returns 1
+                every { eventRepoMock.insertFromMonitorEvent(any(), any()) } returns mockk()
+                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id) } returns
+                    PendingFailureRecord().apply {
+                        monitorId = testMonitor.id
+                        failureCount = 2
                     }
+                every { pendingFailureRepoMock.deleteByMonitorId(testMonitor.id, any()) } returns 1
 
                 pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
 
@@ -475,6 +487,9 @@ class PushMonitorActionsTest(
 
     @MockBean(PushUptimeEventRepository::class)
     fun pushUptimeEventRepository(): PushUptimeEventRepository = mockk()
+
+    @MockBean(PendingFailureRepository::class)
+    fun pendingFailureRepository(): PendingFailureRepository = mockk()
 
     @MockBean(StatCalculator::class)
     fun statCalculator(): StatCalculator = mockk()

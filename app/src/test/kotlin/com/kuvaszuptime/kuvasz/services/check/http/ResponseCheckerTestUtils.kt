@@ -42,6 +42,7 @@ fun mockMonitor(
     expectedStatusCodes: Set<Int> = emptySet(),
     followRedirects: Boolean = true,
     expectedHeaders: Map<String, String> = emptyMap(),
+    failureCountThreshold: Long = 1,
 ): HttpMonitorRecord = HttpMonitorRecord().apply {
     this.id = 1L
     this.url = "http://example.com"
@@ -52,7 +53,7 @@ fun mockMonitor(
     this.expectedStatusCodes = expectedStatusCodes.toTypedArray()
     this.followRedirects = followRedirects
     this.expectedHeaders = expectedHeaders.toJsonNode()
-    this.failureCountThreshold = 1
+    this.failureCountThreshold = failureCountThreshold
 }
 
 suspend inline fun <reified E : UptimeCheckException> TestSubscriber<HttpMonitorDownEvent>.assertSingleError(
