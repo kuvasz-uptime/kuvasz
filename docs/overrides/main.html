@@ -2,9 +2,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script
-        src="https://beamanalytics.b-cdn.net/beam.min.js"
-        data-token="4ba7aa9a-3e04-48bf-9fad-c8ea9e14e5ca"
-        async>
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "d7e0ee97fade40d5ab19fabc05b4502e"}'>
 </script>
 {% endblock %}
