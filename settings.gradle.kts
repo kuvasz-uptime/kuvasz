@@ -25,7 +25,7 @@ pluginManagement {
         id("dev.detekt") version detektVersion
         id("com.google.cloud.tools.jib") version "3.5.3"
         id("nu.studer.jooq") version jooqPluginVersion
-        id("com.palantir.git-version") version "4.3.0"
+        id("com.palantir.git-version") version "5.0.0"
         id("com.github.ben-manes.versions") version "0.53.0"
         id("org.flywaydb.flyway") version flywayPluginVersion
         id("com.gradleup.shadow") version "9.3.2"
