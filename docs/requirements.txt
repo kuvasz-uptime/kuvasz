@@ -59,7 +59,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 PyYAML==6.0.2
 pyyaml_env_tag==1.0
-requests==2.32.4
+requests==2.33.0
 rfc3339-validator==0.1.4
 rich==14.0.0
 s3transfer==0.12.0
