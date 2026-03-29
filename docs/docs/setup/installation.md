@@ -190,3 +190,13 @@ If you use another container orchestration system (e.g. _Kubernetes without Helm
 - [How to install Kuvasz on your Synology NAS](https://mariushosting.com/how-to-install-kuvasz-on-your-synology-nas/){target="_blank" }
 - [Install Kuvasz via Docker (French)](https://belginux.com/installer-kuvasz-avec-docker/){target="_blank" }
 - [Install Kuvasz on Debian 12 (Spanish)](https://voidnull.es/instalacion-de-kuvasz-uptime-en-debian-12/){target="_blank" }
+
+## One-click deployment options
+
+!!! warning
+
+    The one-click deployment options linked below are **provided by third-party services** and are **not official deployment methods**. They may have limitations, costs, or specific requirements. Use them at your own discretion.
+
+### Cloudzy
+
+_Kuvasz_ is available as a one-click deployment on [Cloudzy](https://cloudzy.com/marketplace/kuvasz-uptime/){target="_blank"}, which allows you to get started with Kuvasz in just a few minutes without worrying about the underlying infrastructure. You can choose from various server configurations and locations to best suit your needs.
