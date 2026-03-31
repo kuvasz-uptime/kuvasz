@@ -327,6 +327,7 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
 
         then("the default values should be set correctly") {
             dto.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+            dto.sensitiveUrl shouldBe HttpMonitorDefaults.SENSITIVE_URL
             dto.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
             dto.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
             dto.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED

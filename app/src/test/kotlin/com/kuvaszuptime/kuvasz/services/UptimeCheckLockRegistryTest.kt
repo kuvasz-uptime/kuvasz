@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 class UptimeCheckLockRegistryTest : BehaviorSpec({
 
@@ -50,7 +51,7 @@ class UptimeCheckLockRegistryTest : BehaviorSpec({
 
             lockRegistry.tryAcquire(4).shouldBeTrue()
 
-            delay(1000) // Sleep for 1 second to simulate some processing time
+            delay(1000.milliseconds) // Sleep for 1 second to simulate some processing time
 
             then("it should not allow acquiring the lock again") {
 
@@ -58,7 +59,7 @@ class UptimeCheckLockRegistryTest : BehaviorSpec({
             }
 
             // Simulate the passage of time beyond the lock timeout
-            delay(2001) // Sleep for slightly more than the lock timeout
+            delay(2001.milliseconds) // Sleep for slightly more than the lock timeout
 
             then("it should allow acquiring the lock again") {
 

@@ -76,6 +76,7 @@ import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class HttpMonitorControllerTest(
@@ -141,6 +142,7 @@ class HttpMonitorControllerTest(
                     responseItem.id shouldBe monitor.id
                     responseItem.name shouldBe monitor.name
                     responseItem.url.toString() shouldBe monitor.url
+                    responseItem.sensitiveUrl shouldBe false
                     responseItem.enabled shouldBe monitor.enabled
                     responseItem.sslCheckEnabled shouldBe monitor.sslCheckEnabled
                     responseItem.uptimeStatus shouldBe UptimeStatus.UP
@@ -252,6 +254,7 @@ class HttpMonitorControllerTest(
                     responseItem.id shouldBe enabledMonitor.id
                     responseItem.name shouldBe enabledMonitor.name
                     responseItem.url.toString() shouldBe enabledMonitor.url
+                    responseItem.sensitiveUrl shouldBe enabledMonitor.sensitiveUrl
                     responseItem.enabled shouldBe enabledMonitor.enabled
                     responseItem.sslCheckEnabled shouldBe enabledMonitor.sslCheckEnabled
                     responseItem.uptimeStatus shouldBe null
@@ -268,7 +271,8 @@ class HttpMonitorControllerTest(
             }
 
             `when`("enabled parameter is set to false") {
-                val disabledMonitor = createHttpMonitor(monitorRepository, enabled = false, monitorName = "name1")
+                val disabledMonitor =
+                    createHttpMonitor(monitorRepository, enabled = false, monitorName = "name1", sensitiveUrl = true)
                 createHttpMonitor(monitorRepository, monitorName = "name2")
 
                 val response = monitorClient.getMonitorsWithDetails(
@@ -284,6 +288,7 @@ class HttpMonitorControllerTest(
                     responseItem.id shouldBe disabledMonitor.id
                     responseItem.name shouldBe disabledMonitor.name
                     responseItem.url.toString() shouldBe disabledMonitor.url
+                    responseItem.sensitiveUrl shouldBe disabledMonitor.sensitiveUrl
                     responseItem.enabled shouldBe disabledMonitor.enabled
                     responseItem.sslCheckEnabled shouldBe disabledMonitor.sslCheckEnabled
                     responseItem.uptimeStatus shouldBe null
@@ -566,6 +571,7 @@ class HttpMonitorControllerTest(
                     response.url.toString() shouldBe monitor.url
                     response.enabled shouldBe monitor.enabled
                     response.sslCheckEnabled shouldBe monitor.sslCheckEnabled
+                    response.sensitiveUrl shouldBe monitor.sensitiveUrl
                     response.uptimeStatus shouldBe UptimeStatus.UP
                     response.createdAt shouldBe monitor.createdAt
                     response.lastUptimeCheck shouldBe now
@@ -908,6 +914,8 @@ class HttpMonitorControllerTest(
                     val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
                     monitorInDb.name shouldBe createdMonitor.name
                     monitorInDb.url shouldBe createdMonitor.url
+                    monitorInDb.sensitiveUrl shouldBe false
+                    monitorInDb.sensitiveUrl shouldBe createdMonitor.sensitiveUrl
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
                     monitorInDb.enabled shouldBe true
                     monitorInDb.enabled shouldBe createdMonitor.enabled
@@ -969,6 +977,7 @@ class HttpMonitorControllerTest(
                     expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue"),
                     requestBody = "{\"key\": \"value\"}",
                     failureCountThreshold = 4,
+                    sensitiveUrl = true,
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -978,6 +987,8 @@ class HttpMonitorControllerTest(
                     monitorInDb.name shouldBe createdMonitor.name
                     monitorInDb.url shouldBe "https://valid-url2.com"
                     monitorInDb.url shouldBe createdMonitor.url
+                    monitorInDb.sensitiveUrl shouldBe true
+                    monitorInDb.sensitiveUrl shouldBe createdMonitor.sensitiveUrl
                     monitorInDb.uptimeCheckInterval shouldBe 65
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
                     monitorInDb.enabled shouldBe false
@@ -1341,7 +1352,7 @@ class HttpMonitorControllerTest(
                         MonitorID(MonitorType.HTTP_SSL, anotherMonitor.name),
                     )
                 )
-                delay(1000) // Make sure that the status page update time is after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time is after the creation time
 
                 val response = client.exchange(deleteRequest).awaitFirst()
                 val monitorInDb = monitorRepository.findById(createdMonitor.id, null)
@@ -1392,7 +1403,7 @@ class HttpMonitorControllerTest(
                         MonitorID(MonitorType.HTTP_SSL, createdMonitor.name)
                     )
                 )
-                delay(1000) // Make sure that the status page update time might be after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time might be after the creation time
                 appConfig.disableStatusPageExternalWrite()
 
                 val ex = shouldThrow<HttpClientResponseException> { client.exchange(deleteRequest).awaitFirst() }
@@ -1502,6 +1513,7 @@ class HttpMonitorControllerTest(
                         mapper.createObjectNode()
                     )
                     .put(HttpMonitorUpdateDto::requestBody.name, "{\"newKey\": \"newValue\"}")
+                    .put(HttpMonitorUpdateDto::sensitiveUrl.name, true)
 
                 val subscriber = TestSubscriber<MonitorLifecycleEvent>()
                 eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
@@ -1512,6 +1524,7 @@ class HttpMonitorControllerTest(
                 then("it should update the monitor and remove the checks of it") {
                     monitorInDb.name shouldBe "updated_test_monitor"
                     monitorInDb.url shouldBe "https://updated-url.com"
+                    monitorInDb.sensitiveUrl shouldBe true
                     monitorInDb.uptimeCheckInterval shouldBe 5000
                     monitorInDb.enabled shouldBe false
                     monitorInDb.sslCheckEnabled shouldBe false
@@ -1568,6 +1581,7 @@ class HttpMonitorControllerTest(
                 then("it should update the monitor and create the checks of it and update only the present props") {
                     monitorInDb.name shouldBe createdMonitor.name
                     monitorInDb.url shouldBe createdMonitor.url
+                    monitorInDb.sensitiveUrl shouldBe createdMonitor.sensitiveUrl
                     monitorInDb.uptimeCheckInterval shouldBe createdMonitor.uptimeCheckInterval
                     monitorInDb.enabled shouldBe true
                     monitorInDb.sslCheckEnabled shouldBe true
@@ -1721,7 +1735,7 @@ class HttpMonitorControllerTest(
                     )
                 )
 
-                delay(1000) // Make sure that the status page update time is after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time is after the creation time
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(HttpMonitorUpdateDto::name.name, "updated_monitor1")
 
@@ -1765,7 +1779,7 @@ class HttpMonitorControllerTest(
 
                 appConfig.disableStatusPageExternalWrite()
 
-                delay(1000) // Make sure that the status page update time is after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time is after the creation time
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(HttpMonitorUpdateDto::name.name, "updated_monitor1")
 

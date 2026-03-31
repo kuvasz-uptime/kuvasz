@@ -11,6 +11,7 @@ import io.micronaut.core.annotation.Introspected
 data class HttpMonitorExportDto(
     val name: String,
     val url: String,
+    val sensitiveUrl: Boolean,
     val uptimeCheckInterval: Int,
     val enabled: Boolean,
     val sslCheckEnabled: Boolean,
@@ -35,6 +36,7 @@ data class HttpMonitorExportDto(
             return HttpMonitorExportDto(
                 name = record.name,
                 url = record.url,
+                sensitiveUrl = record.sensitiveUrl,
                 uptimeCheckInterval = record.uptimeCheckInterval,
                 enabled = record.enabled,
                 sslCheckEnabled = record.sslCheckEnabled,

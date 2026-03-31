@@ -158,6 +158,7 @@ class HttpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext)
             then("it should fall back to the right default values") {
                 val monitorConfig = applicationContext.getBean<HttpMonitorConfig>()
                 monitorConfig.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+                monitorConfig.sensitiveUrl shouldBe HttpMonitorDefaults.SENSITIVE_URL
                 monitorConfig.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
                 monitorConfig.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
                 monitorConfig.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED

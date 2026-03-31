@@ -104,6 +104,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                     .update(HTTP_MONITOR)
                     .set(HTTP_MONITOR.NAME, updatedMonitor.name)
                     .set(HTTP_MONITOR.URL, updatedMonitor.url)
+                    .set(HTTP_MONITOR.SENSITIVE_URL, updatedMonitor.sensitiveUrl)
                     .set(HTTP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
                     .set(HTTP_MONITOR.ENABLED, updatedMonitor.enabled)
                     .set(HTTP_MONITOR.SSL_CHECK_ENABLED, updatedMonitor.sslCheckEnabled)
@@ -174,6 +175,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             HTTP_MONITOR.ID.`as`(HttpMonitorDetailsDto::id.name),
             HTTP_MONITOR.NAME.`as`(HttpMonitorDetailsDto::name.name),
             HTTP_MONITOR.URL.`as`(HttpMonitorDetailsDto::url.name),
+            HTTP_MONITOR.SENSITIVE_URL.`as`(HttpMonitorDetailsDto::sensitiveUrl.name),
             HTTP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(HttpMonitorDetailsDto::uptimeCheckInterval.name),
             HTTP_MONITOR.ENABLED.`as`(HttpMonitorDetailsDto::enabled.name),
             HTTP_MONITOR.SSL_CHECK_ENABLED.`as`(HttpMonitorDetailsDto::sslCheckEnabled.name),

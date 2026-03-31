@@ -32,6 +32,7 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.context.exceptions.BeanInstantiationException
 import kotlinx.coroutines.delay
 import org.jooq.DSLContext
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * These tests are a bit different from the others, because:
@@ -90,6 +91,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
             firstMonitor.url shouldBe "http://example.com"
+            firstMonitor.sensitiveUrl shouldBe HttpMonitorDefaults.SENSITIVE_URL
             firstMonitor.uptimeCheckInterval shouldBe 120
             firstMonitor.enabled shouldBe false
             firstMonitor.sslCheckEnabled shouldBe true
@@ -109,6 +111,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             secondMonitor.url shouldBe "http://example.org"
             secondMonitor.uptimeCheckInterval shouldBe 60
             secondMonitor.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+            secondMonitor.sensitiveUrl shouldBe true
             secondMonitor.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
             secondMonitor.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
             secondMonitor.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
@@ -158,7 +161,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
      */
     "2. step: the app is restarted with some changes to the YAML configs" {
         // Waiting a whole second to make sure that the updatedAt timestamp is different from the createdAt timestamp
-        delay(1000)
+        delay(1000.milliseconds)
 
         appContext = testAppContext("yaml-monitors-changed")
         val checkScheduler = getCheckScheduler()
@@ -214,6 +217,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             secondMonitor.url shouldBe "http://example.org"
             secondMonitor.uptimeCheckInterval shouldBe 60
             secondMonitor.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
+            secondMonitor.sensitiveUrl shouldBe false
             secondMonitor.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
             secondMonitor.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
             secondMonitor.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED

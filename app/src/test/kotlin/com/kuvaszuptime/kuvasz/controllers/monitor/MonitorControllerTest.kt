@@ -53,6 +53,7 @@ class MonitorControllerTest(
                 val httpMonitor2 = createHttpMonitor(
                     httpMonitorRepository,
                     enabled = false,
+                    sensitiveUrl = true,
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
                     sslExpiryThreshold = 15,
@@ -129,6 +130,7 @@ class MonitorControllerTest(
                     parsedHttpMonitors.forOne { firstMonitor ->
                         firstMonitor.name shouldBe httpMonitor.name
                         firstMonitor.url shouldBe httpMonitor.url
+                        firstMonitor.sensitiveUrl shouldBe httpMonitor.sensitiveUrl
                         firstMonitor.uptimeCheckInterval shouldBe httpMonitor.uptimeCheckInterval
                         firstMonitor.enabled shouldBe httpMonitor.enabled
                         firstMonitor.sslCheckEnabled shouldBe httpMonitor.sslCheckEnabled
@@ -142,6 +144,7 @@ class MonitorControllerTest(
                     parsedHttpMonitors.forOne { secondMonitor ->
                         secondMonitor.name shouldBe httpMonitor2.name
                         secondMonitor.url shouldBe httpMonitor2.url
+                        secondMonitor.sensitiveUrl shouldBe httpMonitor2.sensitiveUrl
                         secondMonitor.uptimeCheckInterval shouldBe httpMonitor2.uptimeCheckInterval
                         secondMonitor.enabled shouldBe httpMonitor2.enabled
                         secondMonitor.sslCheckEnabled shouldBe httpMonitor2.sslCheckEnabled

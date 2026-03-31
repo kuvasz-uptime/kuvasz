@@ -38,6 +38,7 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.delay
 import org.jooq.DSLContext
+import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest(startApplication = false)
 class DatabaseEventHandlerTest(
@@ -436,7 +437,7 @@ class DatabaseEventHandlerTest(
                 )
                 dbEventHandler.handleUptimeMonitorEvent(firstEvent)
                 val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                delay(1000)
+                delay(1000.milliseconds)
 
                 val secondEvent = PushMonitorDownEvent(
                     monitor = monitor,
@@ -470,7 +471,7 @@ class DatabaseEventHandlerTest(
                 )
                 dbEventHandler.handleUptimeMonitorEvent(firstEvent)
                 val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                delay(1000)
+                delay(1000.milliseconds)
 
                 val secondEvent = PushMonitorDownEvent(
                     monitor = monitor,

@@ -17,6 +17,8 @@ data class HttpMonitorDto(
     val name: String,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     val url: String,
+    @param:Schema(description = HttpMonitorDocs.SENSITIVE_URL, required = true)
+    val sensitiveUrl: Boolean,
     @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
     @param:Schema(description = HttpMonitorDocs.ENABLED, required = true)
@@ -64,6 +66,7 @@ data class HttpMonitorDto(
                 id = record.id,
                 name = record.name,
                 url = record.url,
+                sensitiveUrl = record.sensitiveUrl,
                 uptimeCheckInterval = record.uptimeCheckInterval,
                 enabled = record.enabled,
                 sslCheckEnabled = record.sslCheckEnabled,

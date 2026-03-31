@@ -67,7 +67,7 @@ http-monitors:
   - name: "test2"
     url: "https://kuvasz-uptime.dev"
     uptime-check-interval: 60
-    enabled: false
+    enabled: true
     ssl-check-enabled: false
     latency-history-enabled: true
     request-method: "HEAD"
@@ -85,8 +85,9 @@ http-monitors:
     request-body: null
   - name: "Tralala #!: j[ő"
     url: "https://akobor.me"
+    sensitive-url: true
     uptime-check-interval: 60
-    enabled: false
+    enabled: true
     ssl-check-enabled: false
     latency-history-enabled: true
     request-method: "GET"

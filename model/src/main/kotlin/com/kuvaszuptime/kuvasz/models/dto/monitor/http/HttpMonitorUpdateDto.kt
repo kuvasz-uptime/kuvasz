@@ -30,6 +30,10 @@ data class HttpMonitorUpdateDto(
     @get:NotNull(message = MonitorValidationMessages.URL_NOT_NULL)
     val url: String?,
 
+    @get:NotNull
+    @param:Schema(description = HttpMonitorDocs.SENSITIVE_URL, required = false, nullable = false)
+    val sensitiveUrl: Boolean?,
+
     @get:Min(MIN_UPTIME_CHECK_INTERVAL, message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
     @get:NotNull
     @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = false, nullable = false)

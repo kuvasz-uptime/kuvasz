@@ -24,6 +24,7 @@ interface HttpMonitorCreator {
     @get:NotNull(message = MonitorValidationMessages.URL_NOT_NULL)
     @get:Pattern(regexp = Validation.URI_REGEX, message = MonitorValidationMessages.URL_PATTERN)
     val url: String
+    val sensitiveUrl: Boolean
 
     @get:NotNull(message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_NOT_NULL)
     @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL, message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
@@ -72,6 +73,7 @@ fun HttpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
     HttpMonitorRecord()
         .setName(name)
         .setUrl(url)
+        .setSensitiveUrl(sensitiveUrl)
         .setEnabled(enabled)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setSslCheckEnabled(sslCheckEnabled)

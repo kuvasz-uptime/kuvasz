@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 object HttpMonitorDefaults {
     const val MONITOR_ENABLED = true
     const val SSL_CHECK_ENABLED = false
+    const val SENSITIVE_URL = false
     const val REQUEST_METHOD = "GET"
     const val LATENCY_HISTORY_ENABLED = true
     const val FORCE_NO_CACHE = true
