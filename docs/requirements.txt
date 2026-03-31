@@ -27,12 +27,12 @@ pathspec==1.0.4
 pillow==12.1.1
 platformdirs==4.9.4
 pycparser==3.0
-Pygments==2.19.2
-pymdown-extensions==10.21
+Pygments==2.20.0
+pymdown-extensions==10.21.2
 python-dateutil==2.9.0.post0
 PyYAML==6.0.3
 pyyaml_env_tag==1.1
-requests==2.33.0
+requests==2.33.1
 selectolax==0.4.7
 six==1.17.0
 tinycss2==1.5.1
