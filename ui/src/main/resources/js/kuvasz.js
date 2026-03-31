@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (currentPath === linkPath
             || (currentPath.startsWith(linkPath) && linkPath !== "/")
-            || (currentPath.startsWith('/http-monitors') && linkPath === '#navbar-monitors')
+            || ((currentPath.startsWith('/http-monitors') || currentPath.startsWith('/push-monitors')) && linkPath === '#navbar-monitors')
         ) {
             link.parentNode.classList.add('active');
         }
@@ -103,10 +103,10 @@ const showToast = (header, content, backgroundClass, autoHide) => {
 // Generates a UUID-like 36 characters long secret
 const createRandomSecret = () => {
     let dt = new Date().getTime()
-    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = (dt + Math.random()*16)%16 | 0
-        dt = Math.floor(dt/16)
-        return (c=='x' ? r :(r&0x3|0x8)).toString(16)
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = (dt + Math.random() * 16) % 16 | 0
+        dt = Math.floor(dt / 16)
+        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16)
     });
     return uuid;
 };
@@ -1225,9 +1225,12 @@ const patchPushMonitorRequest = (
 
 const deleteStatusPageRequest = (
     statusPageId,
-    beforeRequest = () => {},
-    onSuccess = () => {},
-    onError = () => {}
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
 ) => {
     beforeRequest();
     fetch('/api/v2/status-pages/' + statusPageId, {
@@ -1247,9 +1250,12 @@ const deleteStatusPageRequest = (
 const patchStatusPageRequest = (
     statusPageId,
     body,
-    beforeRequest = () => {},
-    onSuccess = () => {},
-    onError = () => {}
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
 ) => {
     beforeRequest();
     fetch('/api/v2/status-pages/' + statusPageId, {
