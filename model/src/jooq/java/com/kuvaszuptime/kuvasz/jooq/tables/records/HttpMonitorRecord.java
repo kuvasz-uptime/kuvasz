@@ -377,6 +377,21 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
         return (Long) get(22);
     }
 
+    /**
+     * Setter for <code>kuvasz.http_monitor.sensitive_url</code>.
+     */
+    public HttpMonitorRecord setSensitiveUrl(Boolean value) {
+        set(23, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.http_monitor.sensitive_url</code>.
+     */
+    public Boolean getSensitiveUrl() {
+        return (Boolean) get(23);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -400,7 +415,7 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
     /**
      * Create a detached, initialised HttpMonitorRecord
      */
-    public HttpMonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated, JsonNode requestHeaders, JsonNode expectedHeaders, String requestBody, Long failureCountThreshold) {
+    public HttpMonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean latencyHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated, JsonNode requestHeaders, JsonNode expectedHeaders, String requestBody, Long failureCountThreshold, Boolean sensitiveUrl) {
         super(HttpMonitor.HTTP_MONITOR);
 
         setId(id);
@@ -426,6 +441,7 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
         setExpectedHeaders(expectedHeaders);
         setRequestBody(requestBody);
         setFailureCountThreshold(failureCountThreshold);
+        setSensitiveUrl(sensitiveUrl);
         resetTouchedOnNotNull();
     }
 
@@ -459,6 +475,7 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
             setExpectedHeaders(value.getExpectedHeaders());
             setRequestBody(value.getRequestBody());
             setFailureCountThreshold(value.getFailureCountThreshold());
+            setSensitiveUrl(value.getSensitiveUrl());
             resetTouchedOnNotNull();
         }
     }
