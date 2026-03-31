@@ -41,16 +41,19 @@ internal fun withLayout(
                     }
                     div {
                         classes(PAGE)
-                        // Main header
-                        val navbarMenuId = "navbar-menu"
-                        mainHeader(
-                            isAuthenticated = globals.isAuthenticated(),
-                            navbarMenuId = navbarMenuId,
-                            versionInfo = globals.versionInfo(),
-                        )
-                        // Navigation - only if logged in
-                        if (globals.isAuthenticated()) {
-                            navigation(isAuthEnabled = globals.isAuthEnabled, navbarMenuId = navbarMenuId)
+                        div {
+                            classes(STICKY_TOP)
+                            // Main header
+                            val navbarMenuId = "navbar-menu"
+                            mainHeader(
+                                isAuthenticated = globals.isAuthenticated(),
+                                navbarMenuId = navbarMenuId,
+                                versionInfo = globals.versionInfo(),
+                            )
+                            // Navigation - only if logged in
+                            if (globals.isAuthenticated()) {
+                                navigation(isAuthEnabled = globals.isAuthEnabled, navbarMenuId = navbarMenuId)
+                            }
                         }
                         div {
                             classes(PAGE_WRAPPER)
