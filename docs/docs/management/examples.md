@@ -399,6 +399,7 @@ integrations:
 http-monitors:
   - name: "full configuration example"
     url: "https://akobor.me"
+    sensitive-url: false
     uptime-check-interval: 30
     enabled: true
     ssl-check-enabled: false

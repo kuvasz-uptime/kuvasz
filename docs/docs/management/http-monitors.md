@@ -16,6 +16,7 @@
     http-monitors:
     - name: "My Monitor" # (1)!
       url: "https://kuvasz-uptime.dev" # (2)!
+      sensitive-url: false # (21)!
       uptime-check-interval: 60 # (3)!
       enabled: true # (4)!
       ssl-check-enabled: false # (5)!
@@ -63,6 +64,7 @@
     18. **Expected headers**: A map of expected response headers that the monitor should check for in the response.
     19. **Request body**: The JSON request body to send with the request.
     20. **Failure count threshold**: The number of consecutive failures that should occur before the monitor is considered down. Defaults to 1.
+    21. **Sensitive URL**: Whether the URL of the monitor is considered sensitive or not. If it's set to `true`, the URL will be masked in the metrics, logs and notifications/integrations.
 
 === "API (expert)"
 
@@ -93,6 +95,15 @@ The name of the monitor, which **must be unique** across all HTTP monitors.
 <!-- md:yaml_prop `url` -->
 
 The URL of the monitor, which is **the endpoint that will be monitored**. It can be an HTTP or HTTPS URL.
+
+### Sensitive URL
+
+<!-- md:version 3.6.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `sensitive-url` -->
+
+Whether the URL of the monitor is considered sensitive or not. If it's set to `true`, the URL will be **masked in the metrics, logs and notifications/integrations** to prevent accidental exposure of sensitive information like tokens, API keys, etc.
 
 ### Uptime check interval
 
