@@ -91,7 +91,8 @@ class DiscordEventHandlerTest(
                         globalDiscordConfig.id,
                         otherDiscordConfig.id,
                         disabledDiscordConfig.id,
-                    )
+                    ),
+                    sensitiveUrl = true,
                 )
                 val event = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -111,7 +112,7 @@ class DiscordEventHandlerTest(
                     verify(inverse = true) { webhookServiceSpy.sendMessage(disabledDiscordConfig, any()) }
 
                     slot.forAll { message ->
-                        message shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN"
+                        message shouldContain "Your monitor \"${monitor.name}\" (MASKED URL) is DOWN"
                     }
                 }
             }
@@ -568,7 +569,7 @@ class DiscordEventHandlerTest(
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(globalDiscordConfig, capture(slot)) }
                     slot.captured shouldContain
-                        "Your SSL certificate for ${monitor.url} will expire soon"
+                        "Your SSL certificate for \"${monitor.name}\" will expire soon"
                 }
             }
 
@@ -600,7 +601,7 @@ class DiscordEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is a previous event with different status") {
-                val monitor = createHttpMonitor(httpMonitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository, sensitiveUrl = true)
                 val firstEvent = SSLValidEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -626,7 +627,8 @@ class DiscordEventHandlerTest(
                             capture(notificationSent)
                         )
                     }
-                    notificationSent.captured shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
+                    notificationSent.captured shouldContain
+                        "Your SSL certificate for \"${monitor.name}\" will expire soon"
                 }
             }
         }

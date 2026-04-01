@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.metrics
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.micrometer.core.instrument.Gauge
@@ -36,7 +37,7 @@ abstract class GaugeExporter<SOURCE_VAL : Any, MONITOR : MonitorRecord>(
             .builder(prefixedMeterName(), value) { it.toDouble() }
             .nameTag(name = monitor.name)
         if (monitor is HttpMonitorRecord) {
-            gauge.targetTag(monitor.url)
+            gauge.targetTag(monitor.safeDisplayUrl)
         }
 
         return MeterDefinition(gauge.register(meterRegistry).id, value)

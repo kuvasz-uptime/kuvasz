@@ -90,7 +90,8 @@ class SlackEventHandlerTest(
                         globalSlackConfig.id,
                         otherSlackConfig.id,
                         disabledSlackConfig.id,
-                    )
+                    ),
+                    sensitiveUrl = true,
                 )
                 val event = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -110,7 +111,7 @@ class SlackEventHandlerTest(
                     verify(inverse = true) { webhookServiceSpy.sendMessage(disabledSlackConfig, any()) }
 
                     slot.forAll { message ->
-                        message shouldContain "Your monitor \"${monitor.name}\" (${monitor.url}) is DOWN"
+                        message shouldContain "Your monitor \"${monitor.name}\" (MASKED URL) is DOWN"
                     }
                 }
             }
@@ -520,7 +521,7 @@ class SlackEventHandlerTest(
             }
 
             `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
-                val monitor = createHttpMonitor(httpMonitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository, sensitiveUrl = true)
                 val event = SSLWillExpireEvent(
                     monitor = monitor,
                     certInfo = generateCertificateInfo(),
@@ -535,7 +536,7 @@ class SlackEventHandlerTest(
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(globalSlackConfig, capture(slot)) }
                     slot.captured shouldContain
-                        "Your SSL certificate for ${monitor.url} will expire soon"
+                        "Your SSL certificate for \"${monitor.name}\" will expire soon"
                 }
             }
 
@@ -588,7 +589,8 @@ class SlackEventHandlerTest(
                     val notificationSent = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(globalSlackConfig, capture(notificationSent)) }
-                    notificationSent.captured shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
+                    notificationSent.captured shouldContain
+                        "Your SSL certificate for \"${monitor.name}\" will expire soon"
                 }
             }
         }

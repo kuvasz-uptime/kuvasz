@@ -162,6 +162,7 @@ class HttpUptimeStatusExporterTest : HttpExporterTest("enabled-metrics-uptime-st
                     monitorName = "test-enabled-other",
                     url = "https://test.enabled.other",
                     enabled = true,
+                    sensitiveUrl = true,
                 )
                 val yetAnotherEnabledMonitorWithStatus = createHttpMonitor(
                     httpMonitorRepository(),
@@ -233,6 +234,7 @@ class HttpUptimeStatusExporterTest : HttpExporterTest("enabled-metrics-uptime-st
                     registeredMeters.forOne { updatedMonitor ->
                         updatedMonitor shouldHaveNameTag "new-name"
                         updatedMonitor shouldHaveValue 1.0
+                        updatedMonitor shouldHaveTargetTag "MASKED URL"
                     }
                     // The meter for the newly enabled monitor should be created
                     registeredMeters.forOne { newlyEnabledMonitor ->

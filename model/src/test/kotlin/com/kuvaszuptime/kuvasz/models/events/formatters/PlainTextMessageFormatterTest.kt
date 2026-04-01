@@ -30,6 +30,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
             .setId(1111)
             .setName("test_monitor")
             .setUrl("https://test.url")
+            .setSensitiveUrl(false)
 
         given("toFormattedMessage(event: UptimeMonitorEvent) - HTTP") {
 
@@ -39,6 +40,17 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                 then("it should return the correct message") {
                     val expectedMessage =
                         "Your monitor \"test_monitor\" (https://test.url) is UP (200)\nLatency: 300ms"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("the URL is sensitive") {
+                val sensitiveMonitor = httpMonitor.copy().apply { setSensitiveUrl(true) }
+                val event = HttpMonitorUpEvent(sensitiveMonitor, HttpStatus.OK, 300, null)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "Your monitor \"test_monitor\" (MASKED URL) is UP (200)\nLatency: 300ms"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }
@@ -296,7 +308,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
                 then("it should return the correct message") {
                     val expectedMessage =
-                        "Your SSL certificate for https://test.url will expire soon\n" +
+                        "Your SSL certificate for \"test_monitor\" will expire soon\n" +
                             "Expiry date: ${event.certInfo.validTo}"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }

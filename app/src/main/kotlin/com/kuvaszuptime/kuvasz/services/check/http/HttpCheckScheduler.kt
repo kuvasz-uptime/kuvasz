@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.check.http
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
+import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
@@ -58,13 +59,16 @@ class HttpCheckScheduler(
     private fun logCreated(monitor: HttpMonitorRecord, checkType: CheckType, task: ScheduledFuture<*>) {
         val estimatedNextCheck = task.getNextCheck()
         logger.debug(
-            "${checkType.name} check for \"${monitor.name}\" (${monitor.url}) has been set up successfully. " +
-                "Next check will happen around: $estimatedNextCheck"
+            "${checkType.name} check for \"${monitor.name}\" (${monitor.safeDisplayUrl}) has been " +
+                "set up successfully. Next check will happen around: $estimatedNextCheck"
         )
     }
 
     private fun logError(monitor: HttpMonitorRecord, checkType: CheckType, ex: Throwable) {
-        logger.error("${checkType.name} check for \"${monitor.name}\" (${monitor.url}) cannot be set up: ${ex.message}")
+        logger.error(
+            "${checkType.name} check for \"${monitor.name}\" (${monitor.safeDisplayUrl}) cannot be " +
+                "set up: ${ex.message}"
+        )
     }
 
     private fun scheduledUptimeCheckSuccessHandler(monitor: HttpMonitorRecord, doAfter: () -> Unit = {}) =
@@ -149,7 +153,7 @@ class HttpCheckScheduler(
         scheduledUptimeChecks.remove(monitor.id)
         monitor.cancelCheck(CheckType.SSL)
         scheduledSSLChecks.remove(monitor.id)
-        logger.debug("Checks for \"${monitor.name}\" (${monitor.url}) has been removed successfully")
+        logger.debug("Checks for \"${monitor.name}\" (${monitor.safeDisplayUrl}) has been removed successfully")
     }
 
     /**

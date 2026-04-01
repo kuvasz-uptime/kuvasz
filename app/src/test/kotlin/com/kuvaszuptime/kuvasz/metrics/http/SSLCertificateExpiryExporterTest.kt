@@ -169,6 +169,7 @@ class SSLCertificateExpiryExporterTest : HttpExporterTest("enabled-metrics-ssl-e
                     url = "https://test.enabled.other",
                     enabled = true,
                     sslCheckEnabled = true,
+                    sensitiveUrl = true,
                 )
                 val yetAnotherEnabledMonitorWithExpiry = createHttpMonitor(
                     httpMonitorRepository(),
@@ -243,6 +244,7 @@ class SSLCertificateExpiryExporterTest : HttpExporterTest("enabled-metrics-ssl-e
                     registeredMeters.forOne { updatedMonitor ->
                         updatedMonitor shouldHaveNameTag "new-name"
                         updatedMonitor shouldHaveValue secondExpiry.toEpochSecond().toDouble()
+                        updatedMonitor shouldHaveTargetTag "MASKED URL"
                     }
                     // The meter for the newly enabled monitor should be created
                     registeredMeters.forOne { newlyEnabledMonitor ->

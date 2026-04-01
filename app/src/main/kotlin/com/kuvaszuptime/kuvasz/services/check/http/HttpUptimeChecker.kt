@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
+import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.isServerRelatedError
 import io.micronaut.core.io.buffer.ByteBuffer
@@ -46,7 +47,7 @@ class HttpUptimeChecker(
         doAfter: ((monitor: HttpMonitorRecord) -> Unit)? = null,
     ) {
         if (uriOverride == null) {
-            logger.debug("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.url}")
+            logger.debug("Starting uptime check for monitor (${monitor.name}) on URL: ${monitor.safeDisplayUrl}")
         }
 
         @Suppress("TooGenericExceptionCaught")
