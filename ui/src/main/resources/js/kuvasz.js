@@ -516,6 +516,7 @@ const upsertHttpMonitorForm = (
         resetState() {
             this.name = originalMonitor?.name || '';
             this.url = originalMonitor?.url || '';
+            this.sensitiveUrl = (originalMonitor?.sensitiveUrl != null ? originalMonitor?.sensitiveUrl : false);
             this.sslExpiryThreshold = originalMonitor?.sslExpiryThreshold || 30;
             this.failureCountThreshold = originalMonitor?.failureCountThreshold || 1;
             this.uptimeCheckInterval = originalMonitor?.uptimeCheckInterval || 60;
@@ -688,6 +689,7 @@ const upsertHttpMonitorForm = (
                 const body = {
                     name: this.name,
                     url: this.url,
+                    sensitiveUrl: this.sensitiveUrl,
                     sslCheckEnabled: this.sslCheckEnabled,
                     latencyHistoryEnabled: this.latencyHistoryEnabled,
                     sslExpiryThreshold: this.sslExpiryThreshold,
