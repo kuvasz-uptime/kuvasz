@@ -22,6 +22,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 @MicronautTest(startApplication = false)
@@ -133,7 +134,7 @@ class VersionCheckSchedulerTest(gitHubClient: GitHubClient) : StringSpec({
         )
 
         // Wait a bit to let the scheduler kick in (it has a 2s initial delay)
-        delay(1000)
+        delay(1000.milliseconds)
         eventually(5.seconds) {
             coVerify(exactly = 1) { mockClient.getLatestRelease() }
         }

@@ -4,6 +4,8 @@ object HttpMonitorDocs {
     const val ID = "Unique identifier of the monitor"
     const val NAME = "Unique name for the monitor, e.g., 'My Website Monitor'"
     const val URL = "The URL that is monitored"
+    const val SENSITIVE_URL =
+        "Whether the URL is sensitive (e.g. contains a secret token). If true, the URL will be masked in integrations, logs and metrics to protect sensitive information."
     const val UPTIME_CHECK_INTERVAL = "The interval in seconds at which the monitor checks for uptime"
     const val ENABLED = "Whether the monitor is enabled. If false, the monitor will not perform checks."
     const val SSL_CHECK_ENABLED = "Whether the monitor checks the SSL certificate for expiry and validity."

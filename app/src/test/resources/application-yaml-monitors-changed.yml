@@ -27,6 +27,7 @@ http-monitors:
   - name: test2
     url: http://example.org
     uptime-check-interval: 60
+    sensitive-url: false
   - name: test4
     url: http://example.io
     uptime-check-interval: 300

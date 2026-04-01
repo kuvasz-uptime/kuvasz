@@ -44,6 +44,7 @@ public class HttpMonitor implements Serializable {
     private JsonNode expectedHeaders;
     private String requestBody;
     private Long failureCountThreshold;
+    private Boolean sensitiveUrl;
 
     public HttpMonitor() {}
 
@@ -71,6 +72,7 @@ public class HttpMonitor implements Serializable {
         this.expectedHeaders = value.expectedHeaders;
         this.requestBody = value.requestBody;
         this.failureCountThreshold = value.failureCountThreshold;
+        this.sensitiveUrl = value.sensitiveUrl;
     }
 
     public HttpMonitor(
@@ -96,7 +98,8 @@ public class HttpMonitor implements Serializable {
         JsonNode requestHeaders,
         JsonNode expectedHeaders,
         String requestBody,
-        Long failureCountThreshold
+        Long failureCountThreshold,
+        Boolean sensitiveUrl
     ) {
         this.id = id;
         this.name = name;
@@ -121,6 +124,7 @@ public class HttpMonitor implements Serializable {
         this.expectedHeaders = expectedHeaders;
         this.requestBody = requestBody;
         this.failureCountThreshold = failureCountThreshold;
+        this.sensitiveUrl = sensitiveUrl;
     }
 
     /**
@@ -476,6 +480,21 @@ public class HttpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.http_monitor.sensitive_url</code>.
+     */
+    public Boolean getSensitiveUrl() {
+        return this.sensitiveUrl;
+    }
+
+    /**
+     * Setter for <code>kuvasz.http_monitor.sensitive_url</code>.
+     */
+    public HttpMonitor setSensitiveUrl(Boolean sensitiveUrl) {
+        this.sensitiveUrl = sensitiveUrl;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -623,6 +642,12 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.failureCountThreshold.equals(other.failureCountThreshold))
             return false;
+        if (this.sensitiveUrl == null) {
+            if (other.sensitiveUrl != null)
+                return false;
+        }
+        else if (!this.sensitiveUrl.equals(other.sensitiveUrl))
+            return false;
         return true;
     }
 
@@ -653,6 +678,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.expectedHeaders == null) ? 0 : this.expectedHeaders.hashCode());
         result = prime * result + ((this.requestBody == null) ? 0 : this.requestBody.hashCode());
         result = prime * result + ((this.failureCountThreshold == null) ? 0 : this.failureCountThreshold.hashCode());
+        result = prime * result + ((this.sensitiveUrl == null) ? 0 : this.sensitiveUrl.hashCode());
         return result;
     }
 
@@ -683,6 +709,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(expectedHeaders);
         sb.append(", ").append(requestBody);
         sb.append(", ").append(failureCountThreshold);
+        sb.append(", ").append(sensitiveUrl);
 
         sb.append(")");
         return sb.toString();

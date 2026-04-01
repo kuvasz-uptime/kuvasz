@@ -25,6 +25,7 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.context.exceptions.BeanInstantiationException
 import kotlinx.coroutines.delay
 import org.jooq.DSLContext
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * These tests are a bit different from the others, because:
@@ -122,7 +123,7 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
      */
     "2. step: the app is restarted with some changes to the YAML configs" {
         // Waiting a whole second to make sure that the updatedAt timestamp is different from the createdAt timestamp
-        delay(1000)
+        delay(1000.milliseconds)
 
         appContext = testAppContext("yaml-push-monitors-changed", "full-integrations-setup")
         val monitorRepository = getMonitorRepository()

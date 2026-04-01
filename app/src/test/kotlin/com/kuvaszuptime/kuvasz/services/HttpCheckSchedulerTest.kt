@@ -28,6 +28,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest(startApplication = false)
 class HttpCheckSchedulerTest(
@@ -98,7 +99,7 @@ class HttpCheckSchedulerTest(
                     createHttpMonitor(monitorRepository, monitorName = "m2", uptimeCheckInterval = 30)
                 // Make sure that the set-up check won't be rescheduled because of a too fast check invocation
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(any(), any(), any(), any()) } coAnswers { delay(10000) }
+                coEvery { uptimeCheckerMock.check(any(), any(), any(), any()) } coAnswers { delay(10000.milliseconds) }
 
                 checkScheduler.initialize()
 
@@ -121,7 +122,7 @@ class HttpCheckSchedulerTest(
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
 
                 checkScheduler.initialize()
-                delay(4000) // Wait for the check to be executed
+                delay(4000.milliseconds) // Wait for the check to be executed
 
                 then("it should try to acquire a lock for it & release it afterwards") {
                     coVerifyOrder {
@@ -139,7 +140,7 @@ class HttpCheckSchedulerTest(
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns false
 
                 checkScheduler.initialize()
-                delay(4000) // Wait for the check to be executed
+                delay(4000.milliseconds) // Wait for the check to be executed
 
                 then("it should not run the check") {
                     coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
@@ -160,7 +161,7 @@ class HttpCheckSchedulerTest(
 
                 checkScheduler.initialize()
                 val checkBefore = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
-                delay(4000) // Wait for the check to be executed
+                delay(4000.milliseconds) // Wait for the check to be executed
 
                 then("the next check should be re-scheduled via the check's callback") {
                     coVerifyOrder {
@@ -182,7 +183,7 @@ class HttpCheckSchedulerTest(
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
 
                 checkScheduler.initialize()
-                delay(4000) // Wait for the check to be executed
+                delay(4000.milliseconds) // Wait for the check to be executed
 
                 then("the lock should be released anyway") {
                     coVerifyOrder {

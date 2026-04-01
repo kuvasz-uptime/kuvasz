@@ -411,7 +411,8 @@ class TelegramEventHandlerTest(
                         globalTelegramConfig.id,
                         otherTelegramConfig.id,
                         disabledTelegramConfig.id,
-                    )
+                    ),
+                    sensitiveUrl = true,
                 )
                 val event = SSLInvalidEvent(
                     monitor = monitor,
@@ -430,7 +431,7 @@ class TelegramEventHandlerTest(
                     verify(exactly = 1) { apiServiceSpy.sendMessage(otherTelegramConfig, capture(slot)) }
                     verify(inverse = true) { apiServiceSpy.sendMessage(disabledTelegramConfig, any()) }
                     slot.forAll { message ->
-                        message shouldContain "Your site \"testMonitor\" (${monitor.url}) has an INVALID certificate"
+                        message shouldContain "Your site \"testMonitor\" (MASKED URL) has an INVALID certificate"
                     }
                     verify {
                         mockClient.sendMessage(globalTelegramConfig.apiToken, any())
@@ -557,7 +558,7 @@ class TelegramEventHandlerTest(
 
                     verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
                     slot.captured shouldContain
-                        "Your SSL certificate for ${monitor.url} will expire soon"
+                        "Your SSL certificate for \"${monitor.name}\" will expire soon"
                 }
             }
 
@@ -610,7 +611,8 @@ class TelegramEventHandlerTest(
                     val notificationSent = slot<String>()
 
                     verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationSent)) }
-                    notificationSent.captured shouldContain "Your SSL certificate for ${monitor.url} will expire soon"
+                    notificationSent.captured shouldContain
+                        "Your SSL certificate for \"${monitor.name}\" will expire soon"
                 }
             }
         }

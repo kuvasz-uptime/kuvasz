@@ -22,6 +22,8 @@ data class HttpMonitorDetailsDto(
     override val name: String,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     val url: URI,
+    @param:Schema(description = HttpMonitorDocs.SENSITIVE_URL, required = true)
+    val sensitiveUrl: Boolean,
     @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
     @param:Schema(description = HttpMonitorDocs.ENABLED, required = true)

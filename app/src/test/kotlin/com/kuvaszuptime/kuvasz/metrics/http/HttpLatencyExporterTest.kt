@@ -124,6 +124,7 @@ class HttpLatencyExporterTest : HttpExporterTest("enabled-metrics-latency") {
                     url = "https://test.enabled.other",
                     enabled = true,
                     latencyHistoryEnabled = true,
+                    sensitiveUrl = true,
                 )
                 val yetAnotherEnabledMonitorWithLatency = createHttpMonitor(
                     httpMonitorRepository(),
@@ -168,6 +169,7 @@ class HttpLatencyExporterTest : HttpExporterTest("enabled-metrics-latency") {
                     registeredMeters.forOne { updatedMonitor ->
                         updatedMonitor shouldHaveNameTag "new-name"
                         updatedMonitor shouldHaveValue 20.0
+                        updatedMonitor shouldHaveTargetTag "MASKED URL"
                     }
                     // The meter for the newly enabled monitor should be created
                     registeredMeters.forOne { newlyEnabledMonitor ->

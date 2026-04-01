@@ -167,6 +167,7 @@ class SSLStatusExporterTest : HttpExporterTest("enabled-metrics-ssl-status") {
                     url = "https://test.enabled.other",
                     enabled = true,
                     sslCheckEnabled = true,
+                    sensitiveUrl = true,
                 )
                 val yetAnotherEnabledMonitorWithStatus = createHttpMonitor(
                     httpMonitorRepository(),
@@ -237,6 +238,7 @@ class SSLStatusExporterTest : HttpExporterTest("enabled-metrics-ssl-status") {
                     registeredMeters.forOne { updatedMonitor ->
                         updatedMonitor shouldHaveNameTag "new-name"
                         updatedMonitor shouldHaveValue 1.0
+                        updatedMonitor shouldHaveTargetTag "MASKED URL"
                     }
                     // The meter for the newly enabled monitor should be created
                     registeredMeters.forOne { newlyEnabledMonitor ->

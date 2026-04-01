@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.ERROR_MAX_LENGTH
+import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import java.net.URI
 
@@ -25,7 +26,7 @@ data class HttpRedirectEvent(
 ) : MonitorEvent<HttpMonitorRecord>() {
 
     override fun toStructuredMessage() = StructuredRedirectMessage(
-        summary = Messages.requestHasBeenRedirected(monitor.name, monitor.url, redirectLocation),
+        summary = Messages.requestHasBeenRedirected(monitor.name, monitor.safeDisplayUrl, redirectLocation),
     )
 }
 

@@ -20,6 +20,7 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.context.ApplicationContext
 import kotlinx.coroutines.delay
 import org.jooq.DSLContext
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * These tests are a bit different from the others, because:
@@ -124,7 +125,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
      */
     "2. step: the app is restarted with some changes to the YAML configs" {
         // Waiting a whole second to make sure that the updatedAt timestamp is different from the createdAt timestamp
-        delay(1000)
+        delay(1000.milliseconds)
 
         appContext = testAppContext(
             "yaml-monitors",

@@ -184,6 +184,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     public final TableField<HttpMonitorRecord, Long> FAILURE_COUNT_THRESHOLD = createField(DSL.name("failure_count_threshold"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.field(DSL.raw("1"), SQLDataType.BIGINT)), this, "");
 
+    /**
+     * The column <code>kuvasz.http_monitor.sensitive_url</code>.
+     */
+    public final TableField<HttpMonitorRecord, Boolean> SENSITIVE_URL = createField(DSL.name("sensitive_url"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

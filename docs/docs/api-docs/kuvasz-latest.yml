@@ -1134,6 +1134,12 @@ components:
           description: The URL that is monitored
           x-pattern-message: URL must be a valid HTTP(S) URI
           x-not-null-message: URL must not be null
+        sensitiveUrl:
+          type: boolean
+          description: "Whether the URL is sensitive (e.g. contains a secret token).\
+            \ If true, the URL will be masked in integrations, logs and metrics to\
+            \ protect sensitive information."
+          default: false
         uptimeCheckInterval:
           minimum: 5
           type: integer
@@ -1276,6 +1282,7 @@ components:
       - requestHeaders
       - requestMethod
       - responseTimeThresholdMillis
+      - sensitiveUrl
       - sslCheckEnabled
       - sslError
       - sslExpiryThreshold
@@ -1302,6 +1309,11 @@ components:
           type: string
           description: The URL that is monitored
           format: uri
+        sensitiveUrl:
+          type: boolean
+          description: "Whether the URL is sensitive (e.g. contains a secret token).\
+            \ If true, the URL will be masked in integrations, logs and metrics to\
+            \ protect sensitive information."
         uptimeCheckInterval:
           type: integer
           description: The interval in seconds at which the monitor checks for uptime
@@ -1488,6 +1500,7 @@ components:
       - requestHeaders
       - requestMethod
       - responseTimeThresholdMillis
+      - sensitiveUrl
       - sslCheckEnabled
       - sslExpiryThreshold
       - updatedAt
@@ -1505,6 +1518,11 @@ components:
         url:
           type: string
           description: The URL that is monitored
+        sensitiveUrl:
+          type: boolean
+          description: "Whether the URL is sensitive (e.g. contains a secret token).\
+            \ If true, the URL will be masked in integrations, logs and metrics to\
+            \ protect sensitive information."
         uptimeCheckInterval:
           type: integer
           description: The interval in seconds at which the monitor checks for uptime
@@ -1651,6 +1669,12 @@ components:
           nullable: false
           x-pattern-message: URL must be a valid HTTP(S) URI
           x-not-null-message: URL must not be null
+        sensitiveUrl:
+          type: boolean
+          description: "Whether the URL is sensitive (e.g. contains a secret token).\
+            \ If true, the URL will be masked in integrations, logs and metrics to\
+            \ protect sensitive information."
+          nullable: false
         uptimeCheckInterval:
           minimum: 5
           type: integer

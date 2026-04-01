@@ -41,16 +41,19 @@ internal fun withLayout(
                     }
                     div {
                         classes(PAGE)
-                        // Main header
-                        val navbarMenuId = "navbar-menu"
-                        mainHeader(
-                            isAuthenticated = globals.isAuthenticated(),
-                            navbarMenuId = navbarMenuId,
-                            versionInfo = globals.versionInfo(),
-                        )
-                        // Navigation - only if logged in
-                        if (globals.isAuthenticated()) {
-                            navigation(isAuthEnabled = globals.isAuthEnabled, navbarMenuId = navbarMenuId)
+                        div {
+                            classes(STICKY_TOP)
+                            // Main header
+                            val navbarMenuId = "navbar-menu"
+                            mainHeader(
+                                isAuthenticated = globals.isAuthenticated(),
+                                navbarMenuId = navbarMenuId,
+                                versionInfo = globals.versionInfo(),
+                            )
+                            // Navigation - only if logged in
+                            if (globals.isAuthenticated()) {
+                                navigation(isAuthEnabled = globals.isAuthEnabled, navbarMenuId = navbarMenuId)
+                            }
                         }
                         div {
                             classes(PAGE_WRAPPER)
@@ -75,7 +78,7 @@ internal fun withLayout(
                     }
                     commonScripts(globals.appVersion)
                     script(src = "/public/ext/js/htmx.2.0.8.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.15.8.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.15.10.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
@@ -99,6 +102,9 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
             """.trimIndent()
         }
     }
+    link(rel = "preconnect", href = "https://fonts.googleapis.com")
+    link(rel = "preconnect", href = "https://fonts.gstatic.com") { attributes["crossorigin"] = "" }
+    link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap")
     link(rel = "stylesheet", href = "/public/ext/css/tabler.1.4.0.min.css")
     link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=$appVersion")
 }

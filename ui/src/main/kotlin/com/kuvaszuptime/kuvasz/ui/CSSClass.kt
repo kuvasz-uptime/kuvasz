@@ -239,6 +239,7 @@ internal enum class CSSClass(val className: String) {
     STATUS_ORANGE("status-orange"),
     STATUS_RED("status-red"),
     STATUS_YELLOW("status-yellow"),
+    STICKY_TOP("sticky-top"),
     SUBHEADER("subheader"),
     TABLE("table"),
     TABLE_RESPONSIVE("table-responsive"),

@@ -60,6 +60,7 @@ import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
 import java.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class PushMonitorControllerTest(
@@ -729,7 +730,7 @@ class PushMonitorControllerTest(
                         MonitorID(MonitorType.PUSH, anotherMonitor.name),
                     )
                 )
-                delay(1000) // Make sure that the status page update time is after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time is after the creation time
 
                 val response = client.exchange(deleteRequest).awaitFirst()
                 val monitorInDb = monitorRepository.findById(createdMonitor.id, null)
@@ -777,7 +778,7 @@ class PushMonitorControllerTest(
                         MonitorID(MonitorType.PUSH, createdMonitor.name)
                     )
                 )
-                delay(1000) // Make sure that the status page update time might be after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time might be after the creation time
                 appConfig.disableStatusPageExternalWrite()
 
                 val ex = shouldThrow<HttpClientResponseException> { client.exchange(deleteRequest).awaitFirst() }
@@ -1039,7 +1040,7 @@ class PushMonitorControllerTest(
                     )
                 )
 
-                delay(1000) // Make sure that the status page update time is after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time is after the creation time
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(PushMonitorUpdateDto::name.name, "updated_monitor1")
 
@@ -1083,7 +1084,7 @@ class PushMonitorControllerTest(
 
                 appConfig.disableStatusPageExternalWrite()
 
-                delay(1000) // Make sure that the status page update time is after the creation time
+                delay(1000.milliseconds) // Make sure that the status page update time is after the creation time
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .put(PushMonitorUpdateDto::name.name, "updated_monitor1")
 

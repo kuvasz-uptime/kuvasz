@@ -20,6 +20,9 @@ interface HttpMonitorConfig : HttpMonitorCreator {
     override val url: String
     override val uptimeCheckInterval: Int
 
+    @get:Bindable(defaultValue = HttpMonitorDefaults.SENSITIVE_URL.toString())
+    override val sensitiveUrl: Boolean
+
     @get:Bindable(defaultValue = HttpMonitorDefaults.MONITOR_ENABLED.toString())
     override val enabled: Boolean
 

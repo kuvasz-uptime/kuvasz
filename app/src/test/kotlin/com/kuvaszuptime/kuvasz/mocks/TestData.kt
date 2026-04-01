@@ -49,6 +49,7 @@ fun createHttpMonitor(
     expectedHeaders: Map<String, String> = emptyMap(),
     requestBody: String? = null,
     failureCountThreshold: Long = 1L,
+    sensitiveUrl: Boolean = false,
 ): HttpMonitorRecord {
     val monitor = HttpMonitorRecord()
         .setName(monitorName)
@@ -73,6 +74,7 @@ fun createHttpMonitor(
         .setExpectedHeaders(expectedHeaders.toJsonNode())
         .setRequestBody(requestBody)
         .setFailureCountThreshold(failureCountThreshold)
+        .setSensitiveUrl(sensitiveUrl)
     return repository.returningInsert(monitor).orNull().shouldNotBeNull()
 }
 

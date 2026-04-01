@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.monitor.http
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.JsonNodeToMapConverter
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -16,3 +17,6 @@ fun Map<String, String>.toJsonNode(): JsonNode = converter.to(this)
 
 fun HttpMonitorRecord.monitorId() = MonitorID(MonitorType.HTTP_SSL, name)
 fun HttpMonitorRecord.numericMonitorId() = NumericMonitorID(MonitorType.HTTP_SSL, id)
+
+val HttpMonitorRecord.safeDisplayUrl: String
+    get() = if (sensitiveUrl) Messages.maskedUrl() else url

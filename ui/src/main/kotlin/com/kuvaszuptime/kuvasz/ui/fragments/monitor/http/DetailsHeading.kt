@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
 fun renderHttpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto): String =
     buildString { appendHTML().div { httpMonitorDetailsHeading(monitor) } }
 
-private const val MONITOR_URL_MAX_LENGTH = 60
+private const val MONITOR_URL_MAX_LENGTH = 40
 
 internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto) {
     div {

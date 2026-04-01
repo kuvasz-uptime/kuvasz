@@ -1,3 +1,14 @@
+## 3.6.0 <small>2026-04-02</small> { id="3.6.0" data-toc-label="3.6.0" }
+
+### Features
+
+- Added an option to **flag certain HTTP monitors with a sensitive/secret URL**, so the URL can be redacted in the metrics, logs and integrations/notifications related to these monitors, to prevent leaking sensitive information. See the [**Sensitive URL**](management/http-monitors.md#sensitive-url) configuration option for more details.
+- The **navigation bar is sticky now**, so you can easily navigate through the UI even on long pages without the need to scroll back to the top.
+
+### Fixes
+
+- Fixed a few minor UI glitches regarding the custom fonts, and navbar states.
+
 ## 3.5.1 <small>2026-02-17</small> { id="3.5.1" data-toc-label="3.5.1" }
 
 ### Fixes

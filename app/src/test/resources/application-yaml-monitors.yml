@@ -12,6 +12,7 @@ http-monitors:
     failure-count-threshold: 3
   - name: test2
     url: http://example.org
+    sensitive-url: true
     uptime-check-interval: 60
     ssl-expiry-threshold: 10
     integrations:

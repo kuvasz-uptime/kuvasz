@@ -36,7 +36,7 @@ class EmailFactory(private val config: EmailNotificationConfig) {
             SslStatus.WILL_EXPIRE -> Messages.hasAnExpiringCertificate()
         }
 
-        return "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${monitor.url} $statusString"
+        return "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] $statusString"
     }
 
     private fun createEmailBase() =

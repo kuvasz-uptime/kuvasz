@@ -11,6 +11,12 @@ data class HttpMonitorCreateDto(
     override val name: String,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     override val url: String,
+    @param:Schema(
+        description = HttpMonitorDocs.SENSITIVE_URL,
+        required = false,
+        defaultValue = HttpMonitorDefaults.SENSITIVE_URL.toString()
+    )
+    override val sensitiveUrl: Boolean = HttpMonitorDefaults.SENSITIVE_URL,
     @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     override val uptimeCheckInterval: Int,
     @param:Schema(description = HttpMonitorDocs.ENABLED, defaultValue = HttpMonitorDefaults.MONITOR_ENABLED.toString())

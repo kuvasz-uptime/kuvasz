@@ -45,6 +45,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
+import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest
 class StatusPageControllerTest(
@@ -515,7 +516,7 @@ class StatusPageControllerTest(
                             .add("push:${monitor3.name}")
                     )
 
-                delay(1000) // Ensure that updatedAt will be different than createdAt
+                delay(1000.milliseconds) // Ensure that updatedAt will be different than createdAt
                 statusPageClient.updateStatusPage(statusPage.id, updateDto)
                 val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
 

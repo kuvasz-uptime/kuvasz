@@ -116,6 +116,15 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                             disabledIf = "$isReadOnlyMode",
                         )
                     }
+                    div {
+                        classes(MB_3)
+                        toggleSwitch(
+                            propName = "sensitiveUrl",
+                            label = Messages.sensitiveUrlLabel(),
+                            description = Messages.sensitiveUrlDescription(),
+                            isDisabled = isReadOnlyMode,
+                        )
+                    }
                     // Uptime Check Interval
                     div {
                         classes(MB_3)

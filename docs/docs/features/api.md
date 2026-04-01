@@ -26,6 +26,7 @@ curl -X GET "http://your.kuvasz.host/api/v2/http-monitors/107" \
   "id": 107,
   "name": "kuvasz docs",
   "url": "https://kuvasz-uptime.dev",
+  "sensitiveUrl": false,
   "uptimeCheckInterval": 300,
   "enabled": true,
   "sslCheckEnabled": true,
