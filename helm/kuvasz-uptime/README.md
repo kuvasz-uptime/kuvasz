@@ -146,6 +146,11 @@ kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-passwor
 kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-api-key}' | base64 -d
 ```
 
+If you want to manage the admin secret externally (e.g. sealed secrets) you can disable the autogeneration with:
+```yaml
+externalAdminSecret: true
+```
+
 ## Upgrading
 
 ```bash
