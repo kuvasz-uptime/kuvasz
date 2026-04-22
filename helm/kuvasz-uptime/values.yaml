@@ -106,6 +106,9 @@ readinessProbe:
 # Timezone
 timezone: "UTC"
 
+# externally managed secret?
+externalAdminSecret: false
+
 # Authentication configuration
 auth:
   enabled: true
