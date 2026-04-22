@@ -1,3 +1,13 @@
+## 3.7.0 <small>2026-04-22</small> { id="3.7.0" data-toc-label="3.7.0" }
+
+### Features
+
+- Added support to optionally **use external admin credentials in the Helm chart**. Thanks for the contribution to [**@hercherf**](https://github.com/hercherf){ target="_blank" }!
+
+### Chore
+
+- Bumped dependencies to their latest versions and changed the base image to `eclipse-temurin:25-jre-ubi10-minimal` which also results in a few security fixes
+
 ## 3.6.0 <small>2026-04-02</small> { id="3.6.0" data-toc-label="3.6.0" }
 
 ### Features
