@@ -136,7 +136,7 @@ tasks.withType<Detekt>().configureEach {
 
 jib {
     from {
-        image = "eclipse-temurin:25-jre-ubi10-minimal"
+        image = "eclipse-temurin:25-jre-alpine-3.23"
         platforms {
             platform {
                 os = "linux"

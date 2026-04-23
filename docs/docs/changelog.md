@@ -1,3 +1,9 @@
+## 3.7.1 <small>2026-04-23</small> { id="3.7.1" data-toc-label="3.7.1" }
+
+### Fixes
+
+- Reverted the base image change from 3.7.0, because it caused incompatibility issues with older CPUs that don't support `x86-64-v3`
+
 ## 3.7.0 <small>2026-04-22</small> { id="3.7.0" data-toc-label="3.7.0" }
 
 ### Features
