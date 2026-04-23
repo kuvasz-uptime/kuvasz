@@ -128,11 +128,11 @@ Otherwise you can just use your own "patched" `cacerts` for every new version of
 
 ```shell
 # 1. Pull the current base image
-docker pull eclipse-temurin:25-jre-ubi10-minimal
+docker pull eclipse-temurin:25-jre-alpine-3.23
 # 2. Copy the "original" cacerts to a local file
-docker run --rm --entrypoint cat eclipse-temurin:25-jre-ubi10-minimal /opt/java/openjdk/lib/security/cacerts > cacerts
+docker run --rm --entrypoint cat eclipse-temurin:25-jre-alpine-3.23 /opt/java/openjdk/lib/security/cacerts > cacerts
 # 3. This is the tricky step: we attach back the current folder where the cacerts, and also the custom certificate should exist and we add the custom certificate to the keystore
-docker run --rm -v `pwd`:/tmp/certs eclipse-temurin:25-jre-ubi10-minimal sh -c 'cd /tmp/certs && keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts -importcert -alias your-custom-alias -file your-custom-cert.crt'
+docker run --rm -v `pwd`:/tmp/certs eclipse-temurin:25-jre-alpine-3.23 sh -c 'cd /tmp/certs && keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts -importcert -alias your-custom-alias -file your-custom-cert.crt'
 ```
 
 Watch out for `your-custom-alias` and `your-custom-cert.crt` in the example, these are the moving parts, depending on your own preferences.
