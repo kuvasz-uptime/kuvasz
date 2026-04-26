@@ -122,7 +122,7 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
 
 You need to **fire HTTP requests** against your _Kuvasz_ instance in order to **send a heartbeat** and you can optionally **signal a failure** of your monitor too. 
 
-Heartbeats will make your monitors "UP", and manual failures will immediately make them "DOWN" (besides the, automatic background checks of course that will mark it as "DOWN" anyway if a heartbeat hasn't been received for the configured period).
+Heartbeats will make your monitors "UP", and manual failures will immediately make them "DOWN" (besides the automatic background checks of course that will mark it as "DOWN" anyway if a heartbeat hasn't been received for the configured period).
 
 These endpoints are not protected by any authentication mechanism, the client secret is not just an identifier for the monitor, but also something that implicitly authenticates the request.
 

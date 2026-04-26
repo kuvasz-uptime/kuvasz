@@ -173,7 +173,7 @@ Whether the monitor **should follow redirects** or not. If it's disabled, the mo
 <!-- md:type boolean -->
 <!-- md:yaml_prop `force-no-cache` -->
 
-Whether the monitor should send a `Cache-Control: no-cache` header with the request. This is useful to ensure that the **response is not cached by the server** or any intermediate proxies, and you always get the latest response.
+Whether the monitor should send a `Cache-Control: no-cache` header with the request. This is useful to ensure that the **response is not cached by the server** or any intermediate proxies, and you always get an up-to-date response.
 
 ### Request headers
 

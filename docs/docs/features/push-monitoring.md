@@ -26,4 +26,4 @@ If you specify a heartbeat interval of 60 seconds and a grace period of 10 secon
 
 ## Configuration <!-- md:config ../management/push-monitors.md -->
 
-Please refer to the [**Managing push monitors**](../management/http-monitors.md) section of the documentation for more information on how to configure push monitoring.
+Please refer to the [**Managing push monitors**](../management/push-monitors.md) section of the documentation for more information on how to configure push monitoring.

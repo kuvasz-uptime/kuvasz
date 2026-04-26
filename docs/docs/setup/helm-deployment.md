@@ -5,7 +5,7 @@ Kuvasz provides an official Helm chart for deploying to Kubernetes clusters. Thi
 ## Prerequisites
 
 - A running Kubernetes cluster
-- [Helm 4.x](https://helm.sh/docs/intro/install/) installed
+- [Helm 4.x](https://helm.sh/docs/intro/install/){target="_blank"} installed
 - `kubectl` configured to access your cluster
 
 ## Quick start
@@ -89,7 +89,7 @@ By default, Kuvasz is exposed via a ClusterIP service. To access it locally, you
 kubectl port-forward -n kuvasz-uptime svc/kuvasz-uptime 8080:8080
 ```
 
-Then open your browser to [http://localhost:8080](http://localhost:8080).
+Then open your browser to [http://localhost:8080](http://localhost:8080){target="_blank"}.
 
 ## Configuration options
 
@@ -239,5 +239,5 @@ kubectl exec -n kuvasz-uptime deployment/kuvasz-uptime -- wget -q -O- http://loc
 
 ## Additional resources
 
-- [Helm Documentation](https://helm.sh/docs/)
-- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Helm Documentation](https://helm.sh/docs/){target="_blank"}
+- [Kubernetes Documentation](https://kubernetes.io/docs/){target="_blank"}
