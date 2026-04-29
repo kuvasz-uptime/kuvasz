@@ -17,8 +17,9 @@ This guide will walk you through the deployment process.
 Kuvasz can be deployed in several ways depending on your infrastructure:
 
 - [**Docker Compose**](#quick-start-with-docker-compose) - Recommended for quick start and simple deployments
-- [**Helm Chart**](helm-deployment.md) - Recommended for Kubernetes clusters
-- [**Other Methods**](#other-deployment-methods) - For other container orchestration systems
+- [**Helm Chart**](#kubernetes-with-helm) - Recommended for Kubernetes clusters
+- [**Other Deployment Methods**](#other-deployment-methods)
+- [**One-click Deployment Options**](#one-click-deployment-options)
 
 ## Quick start with Docker Compose
 
@@ -168,18 +169,16 @@ If you run _Kuvasz_ in a container orchestration system, you can use the `GET /a
 
     Besides the response body, the HTTP status code will also indicate the health of the application: **non 2xx status codes** indicate that the application is **not healthy**.
 
-## Other deployment methods
-
-### Kubernetes with Helm
+## Kubernetes with Helm
 
 For Kubernetes deployments, we provide an official Helm chart. This is the recommended method for deploying Kuvasz to Kubernetes clusters as it handles all the configuration complexity for you.
 See the [Helm Chart Deployment Guide](helm-deployment.md) for detailed instructions.
 
-### Other Container Orchestration Systems
+## Other deployment methods
 
 If you use another container orchestration system (e.g. _Kubernetes without Helm_, _Docker Swarm_, etc.), you can still use the same image and the same configuration options. Just make sure to set the environment variables and mount the configuration file as shown in the Docker Compose example above.
 
-## Unofficial guides
+### Unofficial guides
 
 !!!warning
 

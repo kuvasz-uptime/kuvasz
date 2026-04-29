@@ -141,7 +141,7 @@ class StatusPageCacheTest(
 
                 verify(exactly = 2) { repoMock.findById(invalidStatusPageId, any()) }
                 ex shouldBe ex2
-                ex.statusPageId shouldBe invalidStatusPageId
+                ex.statusPageId shouldBe invalidStatusPageId.toString()
             }
         }
 

@@ -73,7 +73,7 @@ dependencyResolutionManagement {
             // UI
             library("kotlinx-html-jvm", "org.jetbrains.kotlinx", "kotlinx-html-jvm").version("0.12.0")
             library("kotlin-htmx", "com.iodesystems.kotlin-htmx", "htmx").version("0.0.1")
-            library("i18n4k", "de.comahe.i18n4k", "i18n4k-core-jvm").version("0.11.1")
+            library("i18n4k", "de.comahe.i18n4k", "i18n4k-core-jvm").version("0.11.2")
 
             // jOOQ
             library("jooq-kotlin", "org.jooq", "jooq-kotlin").version(jooqVersion)
@@ -89,7 +89,7 @@ dependencyResolutionManagement {
             // Tests
             library("mockk", "io.mockk", "mockk").version("1.14.9")
             library("mockserver-netty", "org.mock-server", "mockserver-netty").version("5.15.0")
-            val testcontainersVersion = "2.0.3"
+            val testcontainersVersion = "2.0.5"
             library("testcontainers", "org.testcontainers", "testcontainers").version(testcontainersVersion)
             library("testcontainers-pg", "org.testcontainers", "testcontainers-postgresql").version(
                 testcontainersVersion

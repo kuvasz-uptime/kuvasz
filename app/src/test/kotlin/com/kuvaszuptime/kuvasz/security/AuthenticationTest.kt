@@ -278,8 +278,27 @@ class PublicStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("an anonymous user requests it - API") {
+                val response = client.exchange("/api/v2/status-pages/0/details").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user provides a wrong API key in the X-API-KEY header") {
                 val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", "irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header - API") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .header("X-API-KEY", "irrelevant")
                 val response = client.exchange(request).awaitFirst()
 
                 then("it should return 200") {
@@ -296,8 +315,30 @@ class PublicStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides a wrong API key in the Authorization header - API") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .bearerAuth("irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user provides the right API key in the X-API-KEY header") {
                 val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .header("X-API-KEY", TEST_API_KEY)
                 val response = client.exchange(request).awaitFirst()
 
                 then("it should return 200") {
@@ -314,11 +355,36 @@ class PublicStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides the right API key in the Authorization header") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user is authenticated via a JWT cookie") {
                 val jwt = getValidJWT(client, authConfig)
 
                 val request = HttpRequest
                     .GET<Any>("/status")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie - API") {
+                val jwt = getValidJWT(client, authConfig)
+
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
                     .header(HttpHeaders.COOKIE, "JWT=$jwt")
 
                 val response = client.exchange(request).awaitFirst()
@@ -340,10 +406,31 @@ class PublicStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("an anonymous user requests it - API") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val response = client.exchange("/api/v2/status-pages/${statusPage.id}/details").awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user provides a wrong API key in the X-API-KEY header") {
                 val statusPage = createStatusPage(dslContext, public = true)
                 val request = HttpRequest
                     .GET<Any>("/status/${statusPage.slug}")
+                    .header("X-API-KEY", "irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header - API") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
                     .header("X-API-KEY", "irrelevant")
                 val response = client.exchange(request).awaitFirst()
 
@@ -364,10 +451,34 @@ class PublicStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides a wrong API key in the Authorization header - API") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
+                    .bearerAuth("irrelevant")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user provides the right API key in the X-API-KEY header") {
                 val statusPage = createStatusPage(dslContext, public = true)
                 val request = HttpRequest
                     .GET<Any>("/status/${statusPage.slug}")
+                    .header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header - API") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
                     .header("X-API-KEY", TEST_API_KEY)
                 val response = client.exchange(request).awaitFirst()
 
@@ -388,11 +499,37 @@ class PublicStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides the right API key in the Authorization header - API") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
+                    .bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user is authenticated via a JWT cookie") {
                 val statusPage = createStatusPage(dslContext, public = true)
                 val jwt = getValidJWT(client, authConfig)
                 val request = HttpRequest
                     .GET<Any>("/status/${statusPage.slug}")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie - API") {
+                val statusPage = createStatusPage(dslContext, public = true)
+                val jwt = getValidJWT(client, authConfig)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
                     .header(HttpHeaders.COOKIE, "JWT=$jwt")
 
                 val response = client.exchange(request).awaitFirst()
@@ -427,12 +564,33 @@ class PrivateStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("an anonymous user requests it - API") {
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v2/status-pages/0/details").awaitFirst()
+                }
+
+                then("it should return 401") {
+                    ex.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
             `when`("a user provides a wrong API key in the X-API-KEY header") {
                 val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", "irrelevant")
                 val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
 
                 then("it should return 404") {
                     ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header - API") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .header("X-API-KEY", "irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
+
+                then("it should return 401") {
+                    ex.status shouldBe HttpStatus.UNAUTHORIZED
                 }
             }
 
@@ -445,12 +603,34 @@ class PrivateStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides a wrong API key in the Authorization header - API") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .bearerAuth("irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
+
+                then("it should return 401") {
+                    ex.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
             `when`("a user provides the right API key in the X-API-KEY header") {
                 val request = HttpRequest.GET<Any>("/status").header("X-API-KEY", TEST_API_KEY)
                 val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
 
                 then("it should return 404") {
                     ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header - API") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
                 }
             }
 
@@ -463,11 +643,36 @@ class PrivateStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides the right API key in the Authorization header - API") {
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
+                    .bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user is authenticated via a JWT cookie") {
                 val jwt = getValidJWT(client, authConfig)
 
                 val request = HttpRequest
                     .GET<Any>("/status")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie - API") {
+                val jwt = getValidJWT(client, authConfig)
+
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/0/details")
                     .header(HttpHeaders.COOKIE, "JWT=$jwt")
 
                 val response = client.exchange(request).awaitFirst()
@@ -491,6 +696,17 @@ class PrivateStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("an anonymous user requests it - API") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v2/status-pages/${statusPage.id}/details").awaitFirst()
+                }
+
+                then("it should return 401") {
+                    ex.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
             `when`("a user provides a wrong API key in the X-API-KEY header") {
                 val statusPage = createStatusPage(dslContext, public = false)
                 val request = HttpRequest
@@ -502,6 +718,20 @@ class PrivateStatusPageAuthenticationTest(
 
                 then("it should return 404") {
                     ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header - API") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
+                    .header("X-API-KEY", "irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 401") {
+                    ex.status shouldBe HttpStatus.UNAUTHORIZED
                 }
             }
 
@@ -519,6 +749,20 @@ class PrivateStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides a wrong API key in the Authorization header - API") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
+                    .bearerAuth("irrelevant")
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 401") {
+                    ex.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
             `when`("a user provides the right API key in the X-API-KEY header") {
                 val statusPage = createStatusPage(dslContext, public = false)
                 val request = HttpRequest
@@ -530,6 +774,18 @@ class PrivateStatusPageAuthenticationTest(
 
                 then("it should return 404") {
                     ex.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header - API") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
+                    .header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
                 }
             }
 
@@ -547,11 +803,37 @@ class PrivateStatusPageAuthenticationTest(
                 }
             }
 
+            `when`("a user provides the right API key in the Authorization header - API") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
+                    .bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
             `when`("a user is authenticated via a JWT cookie") {
                 val statusPage = createStatusPage(dslContext, public = false)
                 val jwt = getValidJWT(client, authConfig)
                 val request = HttpRequest
                     .GET<Any>("/status/${statusPage.slug}")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie - API") {
+                val statusPage = createStatusPage(dslContext, public = false)
+                val jwt = getValidJWT(client, authConfig)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/status-pages/${statusPage.id}/details")
                     .header(HttpHeaders.COOKIE, "JWT=$jwt")
 
                 val response = client.exchange(request).awaitFirst()

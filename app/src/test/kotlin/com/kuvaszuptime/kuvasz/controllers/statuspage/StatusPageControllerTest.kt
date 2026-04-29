@@ -8,20 +8,27 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forOne
@@ -35,6 +42,8 @@ import io.kotest.matchers.date.shouldBeAfter
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.micronaut.context.annotation.Property
+import io.micronaut.core.util.StringUtils
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
@@ -42,18 +51,25 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.test.annotation.MockBean
+import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest
+@Property(name = "default-status-page.public", value = StringUtils.TRUE)
 class StatusPageControllerTest(
     @param:Client("/") private val client: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val statusPageClient: StatusPageClient,
     private val statusPageRepository: StatusPageRepository,
+    private val statusPageDataActions: StatusPageDataActions,
+    private val defaultStatusPageConfig: DefaultStatusPageConfig,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
@@ -314,6 +330,122 @@ class StatusPageControllerTest(
             `when`("there is no status page with the given ID in the database") {
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange("/api/v2/status-pages/1232132432").awaitFirst()
+                }
+                then("it should return a 404") {
+                    response.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+        }
+
+        given("StatusPageController's getStatusPageDetails() endpoint") {
+            `when`("there is a status page with the given ID in the database") {
+                val httpMonitor = createHttpMonitor(httpMonitorRepository)
+                val pushMonitor = createPushMonitor(pushMonitorRepository)
+                val statusPage = createStatusPage(
+                    dslContext,
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    public = true,
+                    monitors = listOf(
+                        MonitorID(MonitorType.HTTP_SSL, httpMonitor.name),
+                        MonitorID(MonitorType.PUSH, pushMonitor.name),
+                    ),
+                )
+
+                val dataMock = getMock(statusPageDataActions)
+                val mockDataResponse = StatusPageDataDto(
+                    title = statusPage.title,
+                    customLogoUrl = statusPage.customLogoUrl,
+                    customFaviconUrl = statusPage.customFaviconUrl,
+                    systemStatus = SystemStatus.PARTIAL_OUTAGE,
+                    generatedAt = getCurrentTimestamp(),
+                    monitors = listOf(
+                        StatusPageHttpMonitorDetailsDto(
+                            name = "irrelevant",
+                            lastCheck = getCurrentTimestamp().minusMinutes(5),
+                            uptimeRatio = 0.97,
+                            uptimeStatus = UptimeStatus.UP,
+                            uptimeStatusHistory = emptyList(),
+                            averageLatencyInMs = 123,
+                        )
+                    )
+                )
+                every { dataMock.getCachedStatusPageData(statusPage.id) } returns mockDataResponse
+
+                val response = statusPageClient.getStatusPageDetails(statusPageId = statusPage.id)
+
+                then("it should return it") {
+                    response.id shouldBe statusPage.id
+                    response.title shouldBe statusPage.title
+                    response.slug shouldBe statusPage.slug
+                    response.public shouldBe statusPage.public
+                    response.customLogoUrl shouldBe statusPage.customLogoUrl
+                    response.customFaviconUrl shouldBe statusPage.customFaviconUrl
+                    response.monitors.forOne { monitorDetails ->
+                        mockDataResponse.monitors.single().let { mockDetails ->
+                            monitorDetails.uptimeStatus shouldBe mockDetails.uptimeStatus
+                            monitorDetails.uptimeRatio shouldBe mockDetails.uptimeRatio
+                            monitorDetails.uptimeStatusHistory shouldBe mockDetails.uptimeStatusHistory
+                            monitorDetails.name shouldBe mockDetails.name
+                            monitorDetails.type shouldBe mockDetails.type
+                            monitorDetails.lastCheck shouldBe mockDetails.lastCheck.shouldNotBeNull()
+                        }
+                    }
+
+                    response.systemStatus shouldBe mockDataResponse.systemStatus
+                    response.generatedAt shouldBe mockDataResponse.generatedAt
+                }
+            }
+
+            `when`("the default status page is requested") {
+                val dataMock = getMock(statusPageDataActions)
+                val mockDataResponse = StatusPageDataDto(
+                    title = defaultStatusPageConfig.title,
+                    customLogoUrl = defaultStatusPageConfig.customLogoUrl,
+                    customFaviconUrl = defaultStatusPageConfig.customFaviconUrl,
+                    systemStatus = SystemStatus.PARTIAL_OUTAGE,
+                    generatedAt = getCurrentTimestamp(),
+                    monitors = listOf(
+                        StatusPageHttpMonitorDetailsDto(
+                            name = "irrelevant",
+                            lastCheck = getCurrentTimestamp().minusMinutes(5),
+                            uptimeRatio = 0.97,
+                            uptimeStatus = UptimeStatus.UP,
+                            uptimeStatusHistory = emptyList(),
+                            averageLatencyInMs = 123,
+                        )
+                    )
+                )
+                every { dataMock.getCachedDefaultStatusPageData() } returns mockDataResponse
+
+                val response = statusPageClient.getStatusPageDetails(statusPageId = 0)
+
+                then("it should return it") {
+                    response.id shouldBe 0
+                    response.title shouldBe defaultStatusPageConfig.title
+                    response.slug shouldBe null
+                    response.public shouldBe defaultStatusPageConfig.public
+                    response.customLogoUrl shouldBe defaultStatusPageConfig.customLogoUrl
+                    response.customFaviconUrl shouldBe defaultStatusPageConfig.customFaviconUrl
+                    response.monitors.forOne { monitorDetails ->
+                        mockDataResponse.monitors.single().let { mockDetails ->
+                            monitorDetails.uptimeStatus shouldBe mockDetails.uptimeStatus
+                            monitorDetails.uptimeRatio shouldBe mockDetails.uptimeRatio
+                            monitorDetails.uptimeStatusHistory shouldBe mockDetails.uptimeStatusHistory
+                            monitorDetails.name shouldBe mockDetails.name
+                            monitorDetails.type shouldBe mockDetails.type
+                            monitorDetails.lastCheck shouldBe mockDetails.lastCheck.shouldNotBeNull()
+                        }
+                    }
+
+                    response.systemStatus shouldBe mockDataResponse.systemStatus
+                    response.generatedAt shouldBe mockDataResponse.generatedAt
+                }
+            }
+
+            `when`("there is no status page with the given ID in the database") {
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v2/status-pages/1232132432/details").awaitFirst()
                 }
                 then("it should return a 404") {
                     response.status shouldBe HttpStatus.NOT_FOUND
@@ -801,4 +933,7 @@ class StatusPageControllerTest(
             }
         }
     }
+
+    @MockBean(StatusPageDataActions::class)
+    fun mockStatusPageDataActions(): StatusPageDataActions = mockk()
 }

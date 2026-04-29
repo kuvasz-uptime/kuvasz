@@ -24,7 +24,7 @@ data class StatusPageDto(
     val monitors: Set<MonitorID>,
     @param:Schema(description = StatusPageDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
-    @param:Schema(description = StatusPageDocs.UPDATED_AT, required = true, nullable = true)
+    @param:Schema(description = StatusPageDocs.UPDATED_AT, required = true)
     val updatedAt: OffsetDateTime,
 ) {
     companion object {
