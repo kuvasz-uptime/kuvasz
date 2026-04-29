@@ -46,7 +46,7 @@ class ExternalStatusPageController(
             statusPageActions.getStatusPageBySlug(slug, public = true)
         } else {
             statusPageActions.getStatusPageBySlug(slug)
-        } ?: throw NotFoundException()
+        }
         val pageData = statusPageDataActions.getCachedStatusPageData(existingPage.id)
 
         return renderPublicStatusPage(

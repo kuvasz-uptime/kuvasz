@@ -959,6 +959,36 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/status-pages/{statusPageId}/details:
+    get:
+      tags:
+      - Status pages
+      summary: Get a status page's details
+      description: Use "0" as an ID to get the default status page's details
+      operationId: getStatusPageDetails
+      parameters:
+      - name: statusPageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/health:
     get:
       tags:
@@ -2842,6 +2872,18 @@ components:
       - VALID
       - INVALID
       - WILL_EXPIRE
+    StatusHistoryDto:
+      required:
+      - date
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        outageCnt:
+          type: integer
+          format: int32
+          nullable: true
     StatusPageCreateDto:
       required:
       - slug
@@ -2881,6 +2923,58 @@ components:
           nullable: true
           items:
             type: string
+    StatusPageDetailsDto:
+      required:
+      - customFaviconUrl
+      - customLogoUrl
+      - generatedAt
+      - id
+      - monitors
+      - public
+      - slug
+      - systemStatus
+      - title
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the status page
+          format: int64
+        title:
+          type: string
+          description: Title of the status page
+        slug:
+          type: string
+          description: "Unique slug of the status page, used in the URL"
+          nullable: true
+        customLogoUrl:
+          type: string
+          description: The absolute URL of the custom logo displayed on the status
+            page
+          nullable: true
+        customFaviconUrl:
+          type: string
+          description: The absolute URL of the custom favicon displayed on the status
+            page. Only PNG format is supported.
+          nullable: true
+        public:
+          type: boolean
+          description: Whether the status page is publicly accessible
+        systemStatus:
+          description: The cumulated status of the monitors included in the status
+            page
+          allOf:
+          - $ref: "#/components/schemas/SystemStatus"
+        generatedAt:
+          type: string
+          description: Timestamp of when the status page was generated
+          format: date-time
+        monitors:
+          type: array
+          description: "The details of the monitors included in the status page, such\
+            \ as their uptime status and uptime ratio"
+          items:
+            $ref: "#/components/schemas/StatusPageMonitorDetailsDto"
     StatusPageDto:
       required:
       - createdAt
@@ -2932,6 +3026,97 @@ components:
           type: string
           description: Timestamp of when the status page was last updated
           format: date-time
+    StatusPageHttpMonitorDetailsDto:
+      required:
+      - name
+      - type
+      - uptimeStatusHistory
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        lastCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeRatio:
+          type: number
+          format: double
+          nullable: true
+        uptimeStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistoryDto"
+        averageLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+    StatusPageMonitorDetailsDto:
+      required:
+      - name
+      - type
+      - uptimeStatusHistory
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        lastCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeRatio:
+          type: number
+          format: double
+          nullable: true
+        uptimeStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistoryDto"
+      oneOf:
+      - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
+      - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
+    StatusPagePushMonitorDetailsDto:
+      required:
+      - name
+      - type
+      - uptimeStatusHistory
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        lastCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeRatio:
+          type: number
+          format: double
+          nullable: true
+        uptimeStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistoryDto"
+        lastHeartbeat:
+          type: string
+          format: date-time
           nullable: true
     StatusPageUpdateDto:
       type: object
@@ -2973,6 +3158,13 @@ components:
             type: string
             description: "A unique identifier for a monitor, formatted as 'type:name'."
             example: http:My precious monitor
+    SystemStatus:
+      type: string
+      enum:
+      - OPERATIONAL
+      - PARTIAL_OUTAGE
+      - MAJOR_OUTAGE
+      - PENDING
     TelegramNotificationConfigDto:
       required:
       - chatId

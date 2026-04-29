@@ -3,15 +3,19 @@ package com.kuvaszuptime.kuvasz.controllers.statuspage
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
 import com.kuvaszuptime.kuvasz.OpenApiTags
+import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDocs.STATUS_PAGES_405_REASON
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
+import com.kuvaszuptime.kuvasz.security.Role
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -20,6 +24,10 @@ import io.micronaut.http.annotation.Status
 import io.micronaut.http.server.types.files.SystemFile
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
+import io.micronaut.security.annotation.Secured
+import io.micronaut.security.authentication.AuthorizationException
+import io.micronaut.security.rules.SecurityRule
+import io.micronaut.security.utils.SecurityService
 import io.micronaut.validation.Validated
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
@@ -40,7 +48,10 @@ import jakarta.validation.Valid
 )
 class StatusPageController(
     private val statusPageActions: StatusPageActions,
+    private val statusPageDataActions: StatusPageDataActions,
     private val exportHandler: ExportHandler,
+    private val defaultStatusPageConfig: DefaultStatusPageConfig,
+    private val securityService: SecurityService?,
 ) : StatusPageOperations {
 
     @ApiResponses(
@@ -67,6 +78,58 @@ class StatusPageController(
     )
     @ExecuteOn(TaskExecutors.IO)
     override fun getStatusPage(statusPageId: Long): StatusPageDto = statusPageActions.getStatusPageById(statusPageId)
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+            content = [Content(schema = Schema(implementation = StatusPageDetailsDto::class))]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    @ExecuteOn(TaskExecutors.IO)
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    override fun getStatusPageDetails(statusPageId: Long): StatusPageDetailsDto =
+        if (statusPageId == 0L) {
+            if (!defaultStatusPageConfig.public && !hasApiRole()) {
+                throw AuthorizationException(null)
+            }
+
+            val dataDto = statusPageDataActions.getCachedDefaultStatusPageData()
+            StatusPageDetailsDto(
+                id = 0L,
+                title = defaultStatusPageConfig.title,
+                slug = null,
+                customLogoUrl = defaultStatusPageConfig.customLogoUrl,
+                customFaviconUrl = defaultStatusPageConfig.customFaviconUrl,
+                public = defaultStatusPageConfig.public,
+                systemStatus = dataDto.systemStatus,
+                generatedAt = dataDto.generatedAt,
+                monitors = dataDto.monitors,
+            )
+        } else {
+            val pageDto = statusPageActions.getStatusPageById(statusPageId)
+            if (!pageDto.public && !hasApiRole()) {
+                throw AuthorizationException(null)
+            }
+            val dataDto = statusPageDataActions.getCachedStatusPageData(pageDto.id)
+
+            StatusPageDetailsDto(
+                id = pageDto.id,
+                title = pageDto.title,
+                slug = pageDto.slug,
+                customLogoUrl = pageDto.customLogoUrl,
+                customFaviconUrl = pageDto.customFaviconUrl,
+                public = pageDto.public,
+                systemStatus = dataDto.systemStatus,
+                generatedAt = dataDto.generatedAt,
+                monitors = dataDto.monitors,
+            )
+        }
 
     @Status(HttpStatus.CREATED)
     @ApiResponses(
@@ -167,4 +230,6 @@ class StatusPageController(
     companion object {
         private const val EXPORT_FILE_NAME_PREFIX = "kuvasz-status-pages-export-"
     }
+
+    private fun hasApiRole() = securityService?.hasRole(Role.API.alias) == true
 }

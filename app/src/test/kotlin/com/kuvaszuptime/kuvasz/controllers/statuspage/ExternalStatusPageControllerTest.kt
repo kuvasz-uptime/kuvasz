@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import io.kotest.assertions.throwables.shouldThrow
@@ -73,7 +74,7 @@ class ExternalStatusPageControllerTest(
             then("it should return 404 Not Found") {
                 val mockService = getMock(statusPageActions)
                 val mockDataService = getMock(statusPageDataActions)
-                every { mockService.getStatusPageBySlug(testSlug, null) } returns null
+                every { mockService.getStatusPageBySlug(testSlug, null) } throws StatusPageNotFoundException(testSlug)
 
                 val ex = shouldThrow<HttpClientResponseException> {
                     client.exchange("/status/$testSlug").awaitFirst()

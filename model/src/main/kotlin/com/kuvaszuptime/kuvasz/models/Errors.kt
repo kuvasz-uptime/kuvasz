@@ -65,8 +65,8 @@ class StatusPageDuplicatedException(
 ) : DuplicationException()
 
 class StatusPageNotFoundException(
-    val statusPageId: Long,
-    override val message: String? = "There is no status page with ID: $statusPageId",
+    val statusPageId: String,
+    override val message: String? = "There is no status page with ID/slug: $statusPageId",
 ) : ResourceNotFoundException()
 
 sealed class ReadOnlyResourceException(override val message: String) : Exception()

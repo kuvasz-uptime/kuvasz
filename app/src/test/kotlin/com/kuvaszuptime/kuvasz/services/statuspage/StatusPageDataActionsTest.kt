@@ -361,7 +361,7 @@ class StatusPageDataActionsTest(
             }
 
             then("it should throw StatusPageNotFoundException") {
-                ex.statusPageId shouldBe invalidStatusPageId
+                ex.statusPageId shouldBe invalidStatusPageId.toString()
             }
         }
 
