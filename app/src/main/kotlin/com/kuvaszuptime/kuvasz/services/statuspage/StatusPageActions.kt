@@ -44,11 +44,12 @@ class StatusPageActions(
             .map { StatusPageDto.fromStatusPageRecord(it) }
 
     fun getStatusPageById(statusPageId: Long): StatusPageDto =
-        statusPageRepository.findById(statusPageId)?.let { StatusPageDto.fromStatusPageRecord(it) }
-            ?: throw StatusPageNotFoundException(statusPageId)
+        statusPageRepository.findById(statusPageId).orThrowNotFound(statusPageId.toString())
+            .let { StatusPageDto.fromStatusPageRecord(it) }
 
-    fun getStatusPageBySlug(slug: String, public: Boolean? = null): StatusPageDto? =
-        statusPageRepository.findBySlug(slug, public = public)?.let { StatusPageDto.fromStatusPageRecord(it) }
+    fun getStatusPageBySlug(slug: String, public: Boolean? = null): StatusPageDto =
+        statusPageRepository.findBySlug(slug, public = public).orThrowNotFound(slug)
+            .let { StatusPageDto.fromStatusPageRecord(it) }
 
     fun createStatusPage(statusPageCreateDto: StatusPageCreateDto): StatusPageRecord {
         // Validate the raw monitors from the DTO
@@ -61,7 +62,7 @@ class StatusPageActions(
     @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = false, parameters = ["statusPageId"])
     fun deleteStatusPageById(statusPageId: Long): Unit =
         statusPageRepository.findById(statusPageId)
-            .orThrowNotFound(statusPageId)
+            .orThrowNotFound(statusPageId.toString())
             .let { statusPage ->
                 statusPageRepository.deleteById(statusPage.id)
             }
@@ -70,7 +71,8 @@ class StatusPageActions(
     fun updateStatusPage(statusPageId: Long, updates: ObjectNode): StatusPageRecord =
         dslContext.transactionResultWithError { config ->
             val txCtx = config.dsl()
-            val existingStatusPage = statusPageRepository.findById(statusPageId, txCtx).orThrowNotFound(statusPageId)
+            val existingStatusPage =
+                statusPageRepository.findById(statusPageId, txCtx).orThrowNotFound(statusPageId.toString())
             val toUpdate = existingStatusPage.into(StatusPage::class.java)
             val filteredUpdates = updates.fieldNames().asSequence()
                 .fold(objectMapper.createObjectNode()) { acc, fieldName ->
@@ -90,8 +92,8 @@ class StatusPageActions(
             statusPageRepository.returningUpdate(StatusPageRecord(updatedStatusPage), txCtx)
         }
 
-    private fun StatusPageRecord?.orThrowNotFound(statusPageId: Long): StatusPageRecord =
-        this ?: throw StatusPageNotFoundException(statusPageId)
-
     fun getStatusPagesExport(): List<StatusPageRecord> = statusPageRepository.fetchAll()
 }
+
+fun StatusPageRecord?.orThrowNotFound(statusPageId: String): StatusPageRecord =
+    this ?: throw StatusPageNotFoundException(statusPageId)

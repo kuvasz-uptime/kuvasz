@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.controllers.statuspage
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
 import io.micronaut.http.annotation.Body
@@ -30,6 +31,13 @@ interface StatusPageOperations {
     @Operation(summary = "Get a status page")
     @Get("/{statusPageId}")
     fun getStatusPage(statusPageId: Long): StatusPageDto
+
+    @Operation(
+        summary = "Get a status page's details",
+        description = "Use \"0\" as an ID to get the default status page's details"
+    )
+    @Get("/{statusPageId}/details")
+    fun getStatusPageDetails(statusPageId: Long): StatusPageDetailsDto
 
     @Operation(summary = "Create a status page")
     @Post("/")

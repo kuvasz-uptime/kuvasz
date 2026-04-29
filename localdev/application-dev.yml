@@ -127,3 +127,10 @@ integrations:
 default-status-page:
   public: true
   title: "Default System Status"
+---
+status-pages:
+  - title: "My Status Page"
+    slug: test
+    public: false
+    monitors:
+      - http:test2

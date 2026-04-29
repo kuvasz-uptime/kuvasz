@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.services.statuspage
 
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
@@ -65,7 +64,7 @@ class StatusPageDataActions(
     fun getCachedStatusPageData(statusPageId: Long) = getStatusPageData(statusPageId)
 
     fun getStatusPageData(statusPageId: Long): StatusPageDataDto {
-        val statusPage = statusPageRepository.findById(statusPageId) ?: throw StatusPageNotFoundException(statusPageId)
+        val statusPage = statusPageRepository.findById(statusPageId).orThrowNotFound(statusPageId.toString())
         val monitors = monitorDataProviders.flatMap { provider ->
             provider.getStatusPageDataOfEnabledMonitors(
                 period = Duration.parse(DEFAULT_METRICS_PERIOD),
