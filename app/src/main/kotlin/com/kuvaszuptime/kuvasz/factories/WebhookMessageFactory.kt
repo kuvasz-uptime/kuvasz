@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -13,7 +15,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
-import com.kuvaszuptime.kuvasz.models.handlers.WebhookMonitorStatus
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
@@ -21,7 +23,6 @@ import io.pebbletemplates.pebble.PebbleEngine
 import io.pebbletemplates.pebble.loader.StringLoader
 import jakarta.inject.Singleton
 import java.io.StringWriter
-import java.time.Instant
 
 @Singleton
 class WebhookMessageFactory {
@@ -40,17 +41,17 @@ class WebhookMessageFactory {
         else -> throw IllegalArgumentException("Invalid monitor type: $this")
     }
 
-    private fun UptimeMonitorEvent.getWebhookStatus(): WebhookMonitorStatus = when (this) {
-        is HttpMonitorDownEvent -> WebhookMonitorStatus.HTTP_DOWN
-        is HttpMonitorUpEvent -> WebhookMonitorStatus.HTTP_UP
-        is PushMonitorDownEvent -> WebhookMonitorStatus.PUSH_DOWN
-        is PushMonitorUpEvent -> WebhookMonitorStatus.PUSH_UP
+    private fun UptimeMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
+        is HttpMonitorDownEvent -> WebhookEventType.HTTP_DOWN
+        is HttpMonitorUpEvent -> WebhookEventType.HTTP_UP
+        is PushMonitorDownEvent -> WebhookEventType.PUSH_DOWN
+        is PushMonitorUpEvent -> WebhookEventType.PUSH_UP
     }
 
-    private fun SSLMonitorEvent.getWebhookStatus(): WebhookMonitorStatus = when (this) {
-        is SSLInvalidEvent -> WebhookMonitorStatus.SSL_INVALID
-        is SSLValidEvent -> WebhookMonitorStatus.SSL_VALID
-        is SSLWillExpireEvent -> WebhookMonitorStatus.SSL_WILL_EXPIRE
+    private fun SSLMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
+        is SSLInvalidEvent -> WebhookEventType.SSL_INVALID
+        is SSLValidEvent -> WebhookEventType.SSL_VALID
+        is SSLWillExpireEvent -> WebhookEventType.SSL_WILL_EXPIRE
     }
 
     private fun UptimeMonitorEvent.getEventDetails(): String? = when (this) {
@@ -65,37 +66,45 @@ class WebhookMessageFactory {
         is SSLValidEvent -> this.toStructuredMessage().summary
     }
 
-    fun fromUptimeEvent(event: UptimeMonitorEvent): GenericWebhookMessage =
+    private fun fromUptimeEvent(event: UptimeMonitorEvent): GenericWebhookMessage =
         GenericWebhookMessage(
             deduplicationKey = event.deduplicationKey,
             monitorId = event.monitor.richMonitorId(),
             monitorName = event.monitor.name,
-            timestamp = Instant.now().toEpochMilli(),
-            status = event.getWebhookStatus(),
+            timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
+            type = event.getWebhookEventType(),
             eventDetails = event.getEventDetails(),
         )
 
-    fun fromSslEvent(event: SSLMonitorEvent): GenericWebhookMessage =
+    private fun fromSslEvent(event: SSLMonitorEvent): GenericWebhookMessage =
         GenericWebhookMessage(
             deduplicationKey = event.deduplicationKey,
             monitorId = event.monitor.richMonitorId(),
             monitorName = event.monitor.name,
-            timestamp = Instant.now().toEpochMilli(),
-            status = event.getWebhookStatus(),
+            timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
+            type = event.getWebhookEventType(),
             eventDetails = event.getEventDetails(),
         )
 
-    // TODO this is just a PoC
-    // validate templates (here or during app bootstrap)
-    // handle errors gracefully
-    // provide a hydrated, unified input instead the current event that could be documented for templating
-    fun fromUptimeEvent(event: UptimeMonitorEvent, literalTemplate: String): String {
+    @Suppress("NotImplementedDeclaration")
+    fun fromMonitorEvent(event: MonitorEvent<*>): GenericWebhookMessage = when (event) {
+        is UptimeMonitorEvent -> fromUptimeEvent(event)
+        is SSLMonitorEvent -> fromSslEvent(event)
+        is HttpRedirectEvent -> throw NotImplementedError("Redirect events are not supported in webhooks")
+    }
+
+    // TODO validate templates (here or during app bootstrap)
+    @Suppress("NotImplementedDeclaration")
+    fun fromMonitorEvent(event: MonitorEvent<*>, literalTemplate: String): String {
         val compiledTemplate = templateEngine.getTemplate(literalTemplate)
-        val context = mapOf(
-            "event" to event,
-        )
+        val context = when (event) {
+            is UptimeMonitorEvent -> fromUptimeEvent(event)
+            is SSLMonitorEvent -> fromSslEvent(event)
+            is HttpRedirectEvent -> throw NotImplementedError("Redirect events are not supported in webhooks")
+        }
         val writer = StringWriter()
-        compiledTemplate.evaluate(writer, context)
+        // TODO move "ctx" to constant
+        compiledTemplate.evaluate(writer, mapOf("ctx" to context))
 
         return writer.toString()
     }

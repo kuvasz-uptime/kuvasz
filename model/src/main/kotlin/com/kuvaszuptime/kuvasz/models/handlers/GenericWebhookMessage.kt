@@ -9,11 +9,11 @@ data class GenericWebhookMessage(
     val monitorId: MonitorID,
     val monitorName: String,
     val timestamp: Long,
-    val status: WebhookMonitorStatus,
+    val type: WebhookEventType,
     val eventDetails: String?,
 )
 
-enum class WebhookMonitorStatus {
+enum class WebhookEventType {
     HTTP_UP,
     HTTP_DOWN,
     PUSH_UP,

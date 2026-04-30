@@ -3229,12 +3229,25 @@ components:
           type: boolean
           description: "Whether the installed version is up to date. If update checks\
             \ are disabled, it's always true"
+    WebhookEventType:
+      type: string
+      enum:
+      - HTTP_UP
+      - HTTP_DOWN
+      - PUSH_UP
+      - PUSH_DOWN
+      - SSL_VALID
+      - SSL_INVALID
+      - SSL_WILL_EXPIRE
     WebhookNotificationConfigDto:
       required:
       - enabled
+      - eventTypes
       - global
       - id
       - name
+      - payloadTemplate
+      - requestHeaders
       - type
       - url
       type: object
@@ -3260,6 +3273,21 @@ components:
         url:
           type: string
           description: The target URL of the webhook
+        payloadTemplate:
+          type: string
+          description: "The template for the webhook request body. If not provided,\
+            \ a generic payload will be sent"
+          nullable: true
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: The HTTP headers to include in the webhook request
+        eventTypes:
+          type: array
+          description: The event types that trigger the webhook
+          items:
+            $ref: "#/components/schemas/WebhookEventType"
   securitySchemes:
     apiKey:
       type: apiKey

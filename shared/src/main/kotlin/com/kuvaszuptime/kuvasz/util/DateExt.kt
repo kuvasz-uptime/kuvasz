@@ -45,7 +45,7 @@ fun Duration?.toDurationString(): String? = this?.toComponents { days, hours, mi
     Messages.durationParts(days, hours, minutes, seconds)
 }
 
-fun Int.toDurationOfSeconds(): java.time.Duration = java.time.Duration.ofSeconds(toLong())
+fun Int.toDurationOfSeconds(): JavaDuration = JavaDuration.ofSeconds(toLong())
 
 fun Date.toOffsetDateTime(): OffsetDateTime = toInstant().toOffsetDateTime()
 

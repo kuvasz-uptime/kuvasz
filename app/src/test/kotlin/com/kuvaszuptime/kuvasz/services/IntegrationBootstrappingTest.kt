@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -18,7 +19,10 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.maps.shouldContainAll
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -176,6 +180,11 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.url shouldBe "https://custom-webhook.com/webhook"
                     config.enabled shouldBe true
                     config.global shouldBe false
+                    config.payloadTemplate shouldBe
+                        "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
+                        "{{ctx.type}}{% endif %}}"
+                    config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
+                    config.eventTypes.shouldBeNull()
                 }
                 forOne { globallyEnabledWebhook ->
                     globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
@@ -185,6 +194,12 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.url shouldBe "https://custom-global-webhook.com"
                     config.enabled shouldBe true
                     config.global shouldBe true
+                    config.requestHeaders.shouldNotBeNull() shouldContainAll mapOf(
+                        "User-Agent" to "Mozilla/5.0",
+                        "X-Custom-Header" to "custom-value",
+                    )
+                    config.payloadTemplate.shouldBeNull()
+                    config.eventTypes.shouldBeNull()
                 }
                 forOne { disabledWebhook ->
                     disabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "disabled")
@@ -194,6 +209,12 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.url shouldBe "https://disabled-webhook.com"
                     config.enabled shouldBe false
                     config.global shouldBe false
+                    config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
+                    config.payloadTemplate.shouldBeNull()
+                    config.eventTypes shouldContainExactlyInAnyOrder listOf(
+                        WebhookEventType.HTTP_DOWN,
+                        WebhookEventType.PUSH_DOWN,
+                    )
                 }
             }
 
@@ -297,6 +318,11 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.url shouldBe "https://custom-webhook.com/webhook"
                     config.enabled shouldBe true
                     config.global shouldBe false
+                    config.payloadTemplate shouldBe
+                        "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
+                        "{{ctx.type}}{% endif %}}"
+                    config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
+                    config.eventTypes.shouldBeNull()
                 }
                 forOne { globallyEnabledWebhook ->
                     globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
@@ -306,6 +332,12 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.url shouldBe "https://custom-global-webhook.com"
                     config.enabled shouldBe true
                     config.global shouldBe true
+                    config.requestHeaders.shouldNotBeNull() shouldContainAll mapOf(
+                        "User-Agent" to "Mozilla/5.0",
+                        "X-Custom-Header" to "custom-value",
+                    )
+                    config.payloadTemplate.shouldBeNull()
+                    config.eventTypes.shouldBeNull()
                 }
             }
 

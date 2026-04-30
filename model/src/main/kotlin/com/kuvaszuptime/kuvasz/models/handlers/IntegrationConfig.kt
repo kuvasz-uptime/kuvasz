@@ -105,6 +105,8 @@ interface WebhookNotificationConfig : IntegrationConfig {
     // TODO startup-time validation for template syntax
     val payloadTemplate: String?
 
+    val eventTypes: List<WebhookEventType>?
+
     companion object {
         const val IDENTIFIER = "webhook"
         const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"

@@ -121,10 +121,25 @@ push-monitors:
 ---
 integrations:
   webhook:
-    name: webhook-test
-    url: https://jklfdsjfskld.com
-    request-headers:
-      Something: Value
+    - name: webhook-test
+      global: true
+      event-types:
+        - HTTP_DOWN
+      url: https://jklfdsjfskld.com
+      request-headers:
+        Something: Value
+    - name: webhook-templated
+      global: true
+      url: https://irrelevant2342.com
+      event-types:
+        - PUSH_DOWN
+      request-headers:
+        Content-Type: text/html
+      payload-template: |
+        {
+          "monitorName": "{{ctx.monitorName}}",
+          "status": "{{ctx.status}}"
+        }
   slack:
     - name: test
       webhook-url: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX

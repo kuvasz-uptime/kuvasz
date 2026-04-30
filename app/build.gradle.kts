@@ -100,7 +100,7 @@ dependencies {
     implementation(mn.micronaut.micrometer.registry.otlp)
 
     // Templating
-    implementation("io.pebbletemplates:pebble:4.1.0")
+    implementation(libs.pebble)
 
     // Testing
     testImplementation(libs.mockk)

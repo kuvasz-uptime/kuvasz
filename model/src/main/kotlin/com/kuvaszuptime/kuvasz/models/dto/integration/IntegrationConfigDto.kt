@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -173,6 +174,15 @@ data class WebhookNotificationConfigDto(
     override val global: Boolean,
     @param:Schema(description = "The target URL of the webhook", required = true)
     val url: String,
+    @param:Schema(
+        description = "The template for the webhook request body. If not provided, a generic payload will be sent",
+        required = true,
+    )
+    val payloadTemplate: String?,
+    @param:Schema(description = "The HTTP headers to include in the webhook request", required = true)
+    val requestHeaders: Map<String, String>,
+    @param:Schema(description = "The event types that trigger the webhook", required = true)
+    val eventTypes: List<WebhookEventType>,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: WebhookNotificationConfig) : this(
         id = integrationID,
@@ -181,5 +191,8 @@ data class WebhookNotificationConfigDto(
         enabled = config.enabled,
         global = config.global,
         url = config.url,
+        payloadTemplate = config.payloadTemplate,
+        requestHeaders = config.requestHeaders.orEmpty(),
+        eventTypes = config.eventTypes.orEmpty(),
     )
 }

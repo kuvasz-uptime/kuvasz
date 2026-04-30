@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -23,7 +24,10 @@ import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeSortedBy
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldContainAll
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -172,6 +176,10 @@ class IntegrationControllerTest(
                 implicitlyEnabledWebhook.name shouldBe "test_implicitly_enabled"
                 implicitlyEnabledWebhook.enabled shouldBe true
                 implicitlyEnabledWebhook.global shouldBe false
+                implicitlyEnabledWebhook.url shouldBe "https://custom-webhook.com/webhook"
+                implicitlyEnabledWebhook.payloadTemplate shouldBe
+                    "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
+                    "{{ctx.type}}{% endif %}}"
             }
             response.forOne { globalWebhook ->
                 globalWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
@@ -179,6 +187,12 @@ class IntegrationControllerTest(
                 globalWebhook.name shouldBe "Global2_with_headers"
                 globalWebhook.enabled shouldBe true
                 globalWebhook.global shouldBe true
+                globalWebhook.url shouldBe "https://custom-global-webhook.com"
+                globalWebhook.payloadTemplate.shouldBeNull()
+                globalWebhook.requestHeaders shouldContainAll mapOf(
+                    "User-Agent" to "Mozilla/5.0",
+                    "X-Custom-Header" to "custom-value",
+                )
             }
             response.forOne { disabledWebhook ->
                 disabledWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
@@ -186,6 +200,12 @@ class IntegrationControllerTest(
                 disabledWebhook.name shouldBe "disabled"
                 disabledWebhook.enabled shouldBe false
                 disabledWebhook.global shouldBe false
+                disabledWebhook.url shouldBe "https://disabled-webhook.com"
+                disabledWebhook.payloadTemplate.shouldBeNull()
+                disabledWebhook.eventTypes shouldContainExactlyInAnyOrder listOf(
+                    WebhookEventType.HTTP_DOWN,
+                    WebhookEventType.PUSH_DOWN,
+                )
             }
         }
     }
