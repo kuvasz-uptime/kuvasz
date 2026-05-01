@@ -58,11 +58,10 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
 
     private fun sendRequestWithHeaders(request: MutableHttpRequest<*>, headers: Map<String, String>): Single<String> {
         val effectiveContentType = headers.getOrDefault(HttpHeaders.CONTENT_TYPE, DEFAULT_MEDIA_TYPE)
-        // TODO test correct content-type header in different scenarios
         request.contentType(effectiveContentType)
         headers.filter { it.key != HttpHeaders.CONTENT_TYPE }.forEach { request.header(it.key, it.value) }
 
-        // TODO test requests with mockServer
+        // TODO test requests with mockServer + correct content-type header in different scenarios
         return Single.fromPublisher(client.retrieve(request, String::class.java))
     }
 }
@@ -156,9 +155,10 @@ class GenericWebhookService(
                 }
             } else null
         }
-        val combinedResult = Observable.fromIterable(results)
 
-        return combinedResult.concatMapSingle { it }
+        return Observable
+            .fromIterable(results)
+            .concatMapSingle { it }
             .reduce { accumulator, next -> "$accumulator, $next" }
             .toSingle().toNotificationTestResult()
     }

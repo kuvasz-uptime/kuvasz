@@ -54,12 +54,12 @@ class IntegrationRepository(
             }
 
             // Validate webhook payload templates
-            // TODO write tests
             @Suppress("SwallowedException", "TooGenericExceptionCaught")
-            if (integrationConfig is WebhookNotificationConfig
-                && !integrationConfig.payloadTemplate.isNullOrEmpty() && templateEngine != null
+            if (
+                integrationConfig is WebhookNotificationConfig
+                && !integrationConfig.payloadTemplate.isNullOrEmpty()
+                && templateEngine != null
             ) {
-
                 try {
                     templateEngine.getTemplate(integrationConfig.payloadTemplate)
                 } catch (ex: Exception) {

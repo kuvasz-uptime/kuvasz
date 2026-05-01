@@ -24,6 +24,7 @@ import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
 import org.slf4j.LoggerFactory
 
+// TODO test
 @Context
 @Requires(bean = WebhookNotificationConfig::class)
 class WebhookEventHandler(
