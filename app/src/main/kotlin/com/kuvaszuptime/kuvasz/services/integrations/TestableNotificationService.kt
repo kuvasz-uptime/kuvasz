@@ -3,6 +3,9 @@ package com.kuvaszuptime.kuvasz.services.integrations
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import io.reactivex.rxjava3.core.Single
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger(TestableNotificationService::class.java)
 
 interface TestableNotificationService<T : IntegrationConfig> {
     fun sendTestMessage(integrationConfig: T): Single<NotificationTestResult>
@@ -21,5 +24,9 @@ data class NotificationTestResult(
 internal fun Single<String>.toNotificationTestResult(): Single<NotificationTestResult> {
     return this
         .map { NotificationTestResult.success() }
-        .onErrorReturn { NotificationTestResult.failure(it.message ?: it.toString()) }
+        .onErrorReturn { error ->
+            val errorDetails = error.message ?: error.toString()
+            logger.error("Failed to send test notification: $errorDetails")
+            NotificationTestResult.failure(errorDetails)
+        }
 }

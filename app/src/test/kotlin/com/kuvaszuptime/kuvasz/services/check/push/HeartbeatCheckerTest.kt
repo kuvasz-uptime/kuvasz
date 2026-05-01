@@ -94,7 +94,6 @@ class HeartbeatCheckerTest(
             then("it should dispatch a down event for every monitor that has a missed heartbeat") {
 
                 val events = testSubscriber.awaitCount(3).values()
-                println(events)
                 events.forAll { event ->
                     event.shouldBeInstanceOf<PushMonitorDownEvent>()
                     event.error shouldBe Messages.missedHeartbeat()
