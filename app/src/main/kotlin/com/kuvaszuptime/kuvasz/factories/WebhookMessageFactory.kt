@@ -20,14 +20,15 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import io.pebbletemplates.pebble.PebbleEngine
-import io.pebbletemplates.pebble.loader.StringLoader
 import jakarta.inject.Singleton
 import java.io.StringWriter
 
 @Singleton
-class WebhookMessageFactory {
+class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
 
-    private val templateEngine = PebbleEngine.Builder().loader(StringLoader()).build()
+    companion object {
+        private const val CONTEXT_TEMPLATE_KEY = "ctx"
+    }
 
     private val UptimeMonitorEvent.deduplicationKey: String
         get() = "kuvasz_uptime_${monitor.id}"
@@ -39,19 +40,6 @@ class WebhookMessageFactory {
         is HttpMonitorRecord -> this.monitorId()
         is PushMonitorRecord -> this.monitorId()
         else -> throw IllegalArgumentException("Invalid monitor type: $this")
-    }
-
-    private fun UptimeMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
-        is HttpMonitorDownEvent -> WebhookEventType.HTTP_DOWN
-        is HttpMonitorUpEvent -> WebhookEventType.HTTP_UP
-        is PushMonitorDownEvent -> WebhookEventType.PUSH_DOWN
-        is PushMonitorUpEvent -> WebhookEventType.PUSH_UP
-    }
-
-    private fun SSLMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
-        is SSLInvalidEvent -> WebhookEventType.SSL_INVALID
-        is SSLValidEvent -> WebhookEventType.SSL_VALID
-        is SSLWillExpireEvent -> WebhookEventType.SSL_WILL_EXPIRE
     }
 
     private fun UptimeMonitorEvent.getEventDetails(): String? = when (this) {
@@ -93,7 +81,6 @@ class WebhookMessageFactory {
         is HttpRedirectEvent -> throw NotImplementedError("Redirect events are not supported in webhooks")
     }
 
-    // TODO validate templates (here or during app bootstrap)
     @Suppress("NotImplementedDeclaration")
     fun fromMonitorEvent(event: MonitorEvent<*>, literalTemplate: String): String {
         val compiledTemplate = templateEngine.getTemplate(literalTemplate)
@@ -103,9 +90,21 @@ class WebhookMessageFactory {
             is HttpRedirectEvent -> throw NotImplementedError("Redirect events are not supported in webhooks")
         }
         val writer = StringWriter()
-        // TODO move "ctx" to constant
-        compiledTemplate.evaluate(writer, mapOf("ctx" to context))
+        compiledTemplate.evaluate(writer, mapOf(CONTEXT_TEMPLATE_KEY to context))
 
         return writer.toString()
     }
+}
+
+fun UptimeMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
+    is HttpMonitorDownEvent -> WebhookEventType.HTTP_DOWN
+    is HttpMonitorUpEvent -> WebhookEventType.HTTP_UP
+    is PushMonitorDownEvent -> WebhookEventType.PUSH_DOWN
+    is PushMonitorUpEvent -> WebhookEventType.PUSH_UP
+}
+
+fun SSLMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
+    is SSLInvalidEvent -> WebhookEventType.SSL_INVALID
+    is SSLValidEvent -> WebhookEventType.SSL_VALID
+    is SSLWillExpireEvent -> WebhookEventType.SSL_WILL_EXPIRE
 }

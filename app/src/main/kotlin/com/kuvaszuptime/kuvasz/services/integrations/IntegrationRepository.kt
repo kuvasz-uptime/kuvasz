@@ -22,6 +22,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import io.micronaut.context.annotation.Context
+import io.pebbletemplates.pebble.PebbleEngine
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory
 class IntegrationRepository(
     private val integrationConfigs: List<IntegrationConfig>,
     private val smtpConfig: SMTPMailerConfig?,
+    private val templateEngine: PebbleEngine?,
 ) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
@@ -50,6 +52,23 @@ class IntegrationRepository(
                         "Please ensure each integration has a unique name."
                 )
             }
+
+            // Validate webhook payload templates
+            // TODO write tests
+            @Suppress("SwallowedException", "TooGenericExceptionCaught")
+            if (integrationConfig is WebhookNotificationConfig
+                && !integrationConfig.payloadTemplate.isNullOrEmpty() && templateEngine != null
+            ) {
+
+                try {
+                    templateEngine.getTemplate(integrationConfig.payloadTemplate)
+                } catch (ex: Exception) {
+                    throw IntegrationConfigException(
+                        "Failed to parse payload template for ${integrationConfig.id}: ${ex.message}",
+                    )
+                }
+            }
+
             result[integrationConfig.id] = integrationConfig
         }
         result.toMap()

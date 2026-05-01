@@ -102,7 +102,6 @@ interface WebhookNotificationConfig : IntegrationConfig {
     @get:ValidHeaderNames
     val requestHeaders: Map<String, String>?
 
-    // TODO startup-time validation for template syntax
     val payloadTemplate: String?
 
     val eventTypes: List<WebhookEventType>?
