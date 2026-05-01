@@ -457,13 +457,21 @@ class IntegrationBootstrappingTest : StringSpec({
             IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
 
-    "app should not start if a webhook contains an invalid header" {
+    "app should not start if a webhook config contains an invalid header" {
         val ex = shouldThrow<BeanInstantiationException> {
             testAppContext("invalid-webhook-header")
         }
 
         ex.message shouldContain "WebhookNotificationConfig.getRequestHeaders - " +
             ValidationMessages.VALID_HEADER_NAMES
+    }
+
+    "app should not start if a webhook config contains an invalid payload template" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-webhook-template")
+        }
+
+        ex.message shouldContain "Failed to parse payload template for webhook:Global2_with_headers"
     }
 })
 
