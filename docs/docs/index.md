@@ -46,7 +46,7 @@
 
     ---
 
-    Supports multiple notification channels, currently including email, Slack, Discord, Telegram, and PagerDuty. You can configure the notification channels on a per-monitor basis.
+    Supports multiple notification channels, currently including email, Slack, Discord, Telegram, PagerDuty and custom webhooks. You can configure the notification channels on a per-monitor basis.
 
     [:octicons-arrow-right-24: Notifications](features/notifications.md)
 
@@ -143,8 +143,8 @@
 | Slack                                     |       ✅       |        ❌         |        ✅         |
 | Telegram                                  |       ✅       |        ❌         |        ✅         |
 | Pagerduty                                 |       ✅       |        ❌         |        ❌         |
+| Webhook                                   |       ✅       |        ❌         |        ❌         |
 | MS Teams                                  |      📆       |        ❌         |        ✅         |
-| Webhook                                   |      📆       |        ❌         |        ❌         |
 | SMS / Voice call                          |     📆^2^     |        ❌         |  10 incl./month  |
 | Google Chat, Pushover, Pushbullet, Splunk |       ❌       |        ✅         |        ✅         |
 | Mattermost                                |       ❌       |        ❌         |        ✅         |

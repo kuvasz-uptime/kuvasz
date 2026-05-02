@@ -65,6 +65,8 @@ plugins:
       skip_classes:
         - skip-lb
 extra:
+  annotate:
+    json: [ .s2 ]
   consent:
     title: Cookie consent
     actions:

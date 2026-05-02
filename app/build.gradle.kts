@@ -67,6 +67,7 @@ dependencies {
 
     // OpenAPI
     kapt(mn.micronaut.openapi)
+    compileOnly(mn.micronaut.openapi.annotations)
     implementation(mn.swagger.annotations)
 
     // DB & jOOQ & Flyway
