@@ -398,7 +398,7 @@ integrations:
   webhook:
     - name: webhook_templated
       url: https://any-other-http.service/webhooks
-      excluded-event-types:
+      excluded-events:
         - PUSH_UP
         - HTTP_UP
         - SSL_WILL_EXPIRE

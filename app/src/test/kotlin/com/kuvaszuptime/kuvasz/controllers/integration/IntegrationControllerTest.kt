@@ -202,7 +202,7 @@ class IntegrationControllerTest(
                 disabledWebhook.global shouldBe false
                 disabledWebhook.url shouldBe "https://disabled-webhook.com"
                 disabledWebhook.payloadTemplate.shouldBeNull()
-                disabledWebhook.excludedEventTypes shouldContainExactlyInAnyOrder listOf(
+                disabledWebhook.excludedEvents shouldContainExactlyInAnyOrder listOf(
                     IntegrationEventType.HTTP_UP,
                     IntegrationEventType.PUSH_UP,
                 )

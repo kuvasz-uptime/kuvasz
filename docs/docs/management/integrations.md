@@ -73,14 +73,14 @@ integrations:
       integration-key: YourOwnIntegrationKey
 ```
 
-### Excluded event types
+### Excluded events
 
 <!-- md:version 3.8.0 -->
 <!-- md:default empty -->
 <!-- md:type list -->
-<!-- md:yaml_prop `excluded-event-types` -->
+<!-- md:yaml_prop `excluded-events` -->
 
-Integrations are listening to every event by default, but you can configure them to **exclude specific event types** if you don't want to receive notifications for them.
+Integrations are listening to every event by default, but you can configure them to **exclude specific events** if you don't want to receive notifications for them.
 
 The valid options are the following:
 
@@ -99,7 +99,7 @@ integrations:
   pagerduty:
     - name: pd_global
       global: true
-      excluded-event-types:
+      excluded-events:
         - PUSH_DOWN
         - PUSH_UP
         - SSL_WILL_EXPIRE
@@ -418,7 +418,7 @@ The context variables are available in an object named `ctx`, and the structure 
 webhook:
   - name: webhook_templated
     url: https://any-other-http.service/webhooks
-    excluded-event-types:
+    excluded-events:
       - PUSH_UP
       - HTTP_UP
       - SSL_WILL_EXPIRE

@@ -147,7 +147,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -155,7 +155,7 @@ class PushMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -163,7 +163,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -171,7 +171,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -179,7 +179,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:test_implicitly_enabled",
@@ -187,7 +187,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.WEBHOOK,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -196,7 +196,7 @@ class PushMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -204,7 +204,7 @@ class PushMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -212,7 +212,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:Global2_with_headers",
@@ -220,7 +220,7 @@ class PushMonitorControllerTest(
                             name = "Global2_with_headers",
                             type = IntegrationType.WEBHOOK,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                     )
                 }
@@ -369,7 +369,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -377,7 +377,7 @@ class PushMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -385,7 +385,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -393,7 +393,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -401,7 +401,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:test_implicitly_enabled",
@@ -409,7 +409,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.WEBHOOK,
                             global = false,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -418,7 +418,7 @@ class PushMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -426,7 +426,7 @@ class PushMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -434,7 +434,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:Global2_with_headers",
@@ -442,7 +442,7 @@ class PushMonitorControllerTest(
                             name = "Global2_with_headers",
                             type = IntegrationType.WEBHOOK,
                             global = true,
-                            excludedEventTypes = emptyList(),
+                            excludedEvents = emptyList(),
                         ),
                     )
                 }

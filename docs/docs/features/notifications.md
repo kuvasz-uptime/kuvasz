@@ -30,9 +30,9 @@ Every integration **watches a set of events** by default, which are fired by the
 | `SSL_INVALID`     | Fired, when an SSL certificate is **invalid or expired** now                                           |
 | `SSL_WILL_EXPIRE` | Fired, when an SSL certificate **will expire in the next X days** (`X` is configurable per monitor)    |
 
-!!! tip "Excluding certain event types"
+!!! tip "Excluding certain events"
 
-    You can [exclude certain event types](../management/integrations.md#excluded-event-types) from triggering notifications on a per-integration basis. This allows you to, for example, only receive notifications about downtime, but not about SSL certificate issues.
+    You can [exclude certain events](../management/integrations.md#excluded-events) from triggering notifications on a per-integration basis. This allows you to, for example, only receive notifications about downtime, but not about SSL certificate issues.
 
 ## Slack <!-- md:config ../management/integrations.md#slack -->
 

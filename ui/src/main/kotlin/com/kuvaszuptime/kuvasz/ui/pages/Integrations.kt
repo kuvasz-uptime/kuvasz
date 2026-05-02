@@ -91,7 +91,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 classes(TEXT_CENTER)
                                                 span {
                                                     val handledEventTypes = IntegrationEventType.entries
-                                                        .minus(integration.excludedEventTypes.toSet())
+                                                        .minus(integration.excludedEvents.toSet())
                                                     val tooltipLabel = handledEventTypes
                                                         .joinToString(separator = ", ")
                                                         .ifEmpty { Messages.noEventsForIntegration() }

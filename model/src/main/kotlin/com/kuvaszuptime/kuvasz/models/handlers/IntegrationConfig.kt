@@ -16,7 +16,7 @@ sealed interface IntegrationConfig {
     @get:Bindable(defaultValue = "false")
     val global: Boolean
 
-    val excludedEventTypes: List<IntegrationEventType>?
+    val excludedEvents: List<IntegrationEventType>?
 
     companion object {
         const val CONFIG_PREFIX = "integrations"

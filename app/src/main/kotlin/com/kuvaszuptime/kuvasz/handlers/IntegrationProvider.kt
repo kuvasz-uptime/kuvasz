@@ -44,5 +44,5 @@ abstract class AbstractIntegrationProvider(
         }.toSet()
 
     private fun IntegrationConfig.supportsEventType(eventType: IntegrationEventType) =
-        !excludedEventTypes.orEmpty().contains(eventType)
+        !excludedEvents.orEmpty().contains(eventType)
 }

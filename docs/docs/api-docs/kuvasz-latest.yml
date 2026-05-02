@@ -1038,7 +1038,7 @@ components:
     DiscordNotificationConfigDto:
       required:
       - enabled
-      - excludedEventTypes
+      - excludedEvents
       - global
       - id
       - name
@@ -1063,16 +1063,16 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
-        excludedEventTypes:
+        excludedEvents:
           type: array
-          description: "The list of the event types that should be excluded from notifications\
+          description: "The list of the events that should be excluded from notifications\
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
     EmailNotificationConfigDto:
       required:
       - enabled
-      - excludedEventTypes
+      - excludedEvents
       - fromAddress
       - global
       - id
@@ -1099,9 +1099,9 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
-        excludedEventTypes:
+        excludedEvents:
           type: array
-          description: "The list of the event types that should be excluded from notifications\
+          description: "The list of the events that should be excluded from notifications\
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
@@ -2058,7 +2058,7 @@ components:
       - PUSH
     IntegrationConfigDto:
       required:
-      - excludedEventTypes
+      - excludedEvents
       - id
       - name
       - type
@@ -2076,7 +2076,7 @@ components:
           type: boolean
         global:
           type: boolean
-        excludedEventTypes:
+        excludedEvents:
           type: array
           items:
             $ref: "#/components/schemas/IntegrationEventType"
@@ -2090,7 +2090,7 @@ components:
     IntegrationDetailsDto:
       required:
       - enabled
-      - excludedEventTypes
+      - excludedEvents
       - global
       - id
       - name
@@ -2115,9 +2115,9 @@ components:
         global:
           type: boolean
           description: Whether the integration is global or not
-        excludedEventTypes:
+        excludedEvents:
           type: array
-          description: "The list of the event types that should be excluded from notifications\
+          description: "The list of the events that should be excluded from notifications\
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
@@ -2212,7 +2212,7 @@ components:
     PagerdutyConfigDto:
       required:
       - enabled
-      - excludedEventTypes
+      - excludedEvents
       - global
       - id
       - name
@@ -2237,9 +2237,9 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
-        excludedEventTypes:
+        excludedEvents:
           type: array
-          description: "The list of the event types that should be excluded from notifications\
+          description: "The list of the events that should be excluded from notifications\
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
@@ -2909,7 +2909,7 @@ components:
     SlackNotificationConfigDto:
       required:
       - enabled
-      - excludedEventTypes
+      - excludedEvents
       - global
       - id
       - name
@@ -2934,9 +2934,9 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
-        excludedEventTypes:
+        excludedEvents:
           type: array
-          description: "The list of the event types that should be excluded from notifications\
+          description: "The list of the events that should be excluded from notifications\
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
@@ -3243,7 +3243,7 @@ components:
       required:
       - chatId
       - enabled
-      - excludedEventTypes
+      - excludedEvents
       - global
       - id
       - name
@@ -3268,9 +3268,9 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
-        excludedEventTypes:
+        excludedEvents:
           type: array
-          description: "The list of the event types that should be excluded from notifications\
+          description: "The list of the events that should be excluded from notifications\
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
@@ -3311,7 +3311,7 @@ components:
     WebhookNotificationConfigDto:
       required:
       - enabled
-      - excludedEventTypes
+      - excludedEvents
       - global
       - id
       - name
@@ -3339,9 +3339,9 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
-        excludedEventTypes:
+        excludedEvents:
           type: array
-          description: "The list of the event types that should be excluded from notifications\
+          description: "The list of the events that should be excluded from notifications\
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"

@@ -137,7 +137,7 @@ class GenericWebhookService(
 
     // TODO test
     override fun sendTestMessage(integrationConfig: WebhookNotificationConfig): Single<NotificationTestResult> {
-        val ignoredEventTypes = integrationConfig.excludedEventTypes.orEmpty()
+        val ignoredEventTypes = integrationConfig.excludedEvents.orEmpty()
         val results = testEvents.mapNotNull { testEvent ->
             @Suppress("NotImplementedDeclaration")
             val eventType = when (testEvent) {

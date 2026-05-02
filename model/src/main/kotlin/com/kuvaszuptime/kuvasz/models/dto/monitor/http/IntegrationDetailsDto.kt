@@ -25,8 +25,8 @@ data class IntegrationDetailsDto(
     val enabled: Boolean,
     @param:Schema(description = "Whether the integration is global or not", required = true)
     val global: Boolean,
-    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENT_TYPES, required = true)
-    val excludedEventTypes: List<IntegrationEventType>,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENTS, required = true)
+    val excludedEvents: List<IntegrationEventType>,
 ) {
     companion object {
         fun fromConfig(config: IntegrationConfig): IntegrationDetailsDto = IntegrationDetailsDto(
@@ -35,7 +35,7 @@ data class IntegrationDetailsDto(
             name = config.name,
             enabled = config.enabled,
             global = config.global,
-            excludedEventTypes = config.excludedEventTypes.orEmpty(),
+            excludedEvents = config.excludedEvents.orEmpty(),
         )
     }
 }

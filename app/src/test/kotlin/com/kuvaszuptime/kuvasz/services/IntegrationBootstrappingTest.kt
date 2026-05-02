@@ -184,7 +184,7 @@ class IntegrationBootstrappingTest : StringSpec({
                         "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
                         "{{ctx.type}}{% endif %}}"
                     config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
-                    config.excludedEventTypes.shouldBeNull()
+                    config.excludedEvents.shouldBeNull()
                 }
                 forOne { globallyEnabledWebhook ->
                     globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
@@ -199,7 +199,7 @@ class IntegrationBootstrappingTest : StringSpec({
                         "X-Custom-Header" to "custom-value",
                     )
                     config.payloadTemplate.shouldBeNull()
-                    config.excludedEventTypes.shouldBeNull()
+                    config.excludedEvents.shouldBeNull()
                 }
                 forOne { disabledWebhook ->
                     disabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "disabled")
@@ -211,7 +211,7 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.global shouldBe false
                     config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
                     config.payloadTemplate.shouldBeNull()
-                    config.excludedEventTypes shouldContainExactlyInAnyOrder listOf(
+                    config.excludedEvents shouldContainExactlyInAnyOrder listOf(
                         IntegrationEventType.HTTP_UP,
                         IntegrationEventType.PUSH_UP,
                     )
@@ -322,7 +322,7 @@ class IntegrationBootstrappingTest : StringSpec({
                         "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
                         "{{ctx.type}}{% endif %}}"
                     config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
-                    config.excludedEventTypes.shouldBeNull()
+                    config.excludedEvents.shouldBeNull()
                 }
                 forOne { globallyEnabledWebhook ->
                     globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
@@ -337,7 +337,7 @@ class IntegrationBootstrappingTest : StringSpec({
                         "X-Custom-Header" to "custom-value",
                     )
                     config.payloadTemplate.shouldBeNull()
-                    config.excludedEventTypes.shouldBeNull()
+                    config.excludedEvents.shouldBeNull()
                 }
             }
 
