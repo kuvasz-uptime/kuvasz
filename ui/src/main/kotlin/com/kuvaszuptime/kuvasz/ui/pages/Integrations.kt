@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -36,6 +37,11 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                         th { classes(TEXT_CENTER) }
                                         // ID
                                         th { +"ID" }
+                                        // Events
+                                        th {
+                                            classes(TEXT_CENTER)
+                                            +Messages.triggers()
+                                        }
                                         // Enabled, global
                                         th { classes(TEXT_CENTER) }
                                         // Test
@@ -79,6 +85,21 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                         )
                                                         icon(Icon.INFO_CIRCLE)
                                                     }
+                                                }
+                                            }
+                                            td {
+                                                classes(TEXT_CENTER)
+                                                span {
+                                                    val handledEventTypes = IntegrationEventType.entries
+                                                        .minus(integration.excludedEventTypes.toSet())
+                                                    val tooltipLabel = handledEventTypes
+                                                        .joinToString(separator = ", ")
+                                                        .ifEmpty { Messages.noEventsForIntegration() }
+                                                    if (handledEventTypes.isEmpty()) {
+                                                        classes(TEXT_RED)
+                                                    }
+                                                    tooltip(tooltipLabel)
+                                                    icon(Icon.QUEUE)
                                                 }
                                             }
                                             // Enabled, global

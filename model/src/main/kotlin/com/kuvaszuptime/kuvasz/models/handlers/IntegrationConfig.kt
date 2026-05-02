@@ -16,7 +16,6 @@ sealed interface IntegrationConfig {
     @get:Bindable(defaultValue = "false")
     val global: Boolean
 
-    // TODO expose it on the UI
     val excludedEventTypes: List<IntegrationEventType>?
 
     companion object {

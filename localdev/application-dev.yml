@@ -132,6 +132,9 @@ integrations:
       url: http://localhost:8081/webhook-templated
       excluded-event-types:
         - PUSH_UP
+        - HTTP_UP
+        - SSL_VALID
+        - SSL_WILL_EXPIRE
       payload-template: |
         {
           "monitorName": "{{ctx.monitorName}}",
