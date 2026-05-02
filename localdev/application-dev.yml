@@ -123,15 +123,15 @@ integrations:
   webhook:
     - name: webhook-test
       global: true
-      event-types: [ ]
+      excluded-event-types: [ ]
       url: http://localhost:8081/webhook
       request-headers:
         Something: Value
     - name: webhook-templated
       global: true
       url: http://localhost:8081/webhook-templated
-      event-types:
-        - PUSH_DOWN
+      excluded-event-types:
+        - PUSH_UP
       payload-template: |
         {
           "monitorName": "{{ctx.monitorName}}",

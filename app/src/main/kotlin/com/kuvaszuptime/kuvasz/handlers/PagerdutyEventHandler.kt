@@ -93,8 +93,7 @@ class PagerdutyEventHandler(
 
     private fun UptimeMonitorEvent.handle() {
         runWhenStateChanges { event ->
-            val integrations = filterTargetConfigs(event.monitor.integrations)
-                .map { (it as PagerdutyConfig).integrationKey }
+            val integrations = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
             when (event) {
                 is HttpMonitorUpEvent, is PushMonitorUpEvent -> {
                     if (previousEvent != null) {
@@ -123,8 +122,7 @@ class PagerdutyEventHandler(
 
     private fun SSLMonitorEvent.handle() {
         runWhenStateChanges { event ->
-            val integrations = filterTargetConfigs(event.monitor.integrations)
-                .map { (it as PagerdutyConfig).integrationKey }
+            val integrations = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
             when (event) {
                 is SSLValidEvent -> {
                     if (previousEvent != null) {

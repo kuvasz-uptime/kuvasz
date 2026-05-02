@@ -7,12 +7,12 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.dto.integration.WebhookNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -202,9 +202,9 @@ class IntegrationControllerTest(
                 disabledWebhook.global shouldBe false
                 disabledWebhook.url shouldBe "https://disabled-webhook.com"
                 disabledWebhook.payloadTemplate.shouldBeNull()
-                disabledWebhook.eventTypes shouldContainExactlyInAnyOrder listOf(
-                    WebhookEventType.HTTP_DOWN,
-                    WebhookEventType.PUSH_DOWN,
+                disabledWebhook.excludedEventTypes shouldContainExactlyInAnyOrder listOf(
+                    IntegrationEventType.HTTP_UP,
+                    IntegrationEventType.PUSH_UP,
                 )
             }
         }

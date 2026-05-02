@@ -12,5 +12,9 @@ import jakarta.inject.Singleton
 class WebhookTemplateEngineFactory {
 
     @Singleton
-    fun provideTemplateEngine(): PebbleEngine = PebbleEngine.Builder().loader(StringLoader()).build()
+    fun provideTemplateEngine(): PebbleEngine = PebbleEngine
+        .Builder()
+        .loader(StringLoader())
+        .strictVariables(true)
+        .build()
 }

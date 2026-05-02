@@ -16,6 +16,8 @@ sealed interface IntegrationConfig {
     @get:Bindable(defaultValue = "false")
     val global: Boolean
 
+    val excludedEventTypes: List<IntegrationEventType>?
+
     companion object {
         const val CONFIG_PREFIX = "integrations"
     }
@@ -103,8 +105,6 @@ interface WebhookNotificationConfig : IntegrationConfig {
     val requestHeaders: Map<String, String>?
 
     val payloadTemplate: String?
-
-    val eventTypes: List<WebhookEventType>?
 
     companion object {
         const val IDENTIFIER = "webhook"

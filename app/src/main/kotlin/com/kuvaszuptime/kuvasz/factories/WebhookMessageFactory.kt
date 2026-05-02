@@ -15,7 +15,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
-import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
@@ -29,12 +29,6 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
     companion object {
         private const val CONTEXT_TEMPLATE_KEY = "ctx"
     }
-
-    private val UptimeMonitorEvent.deduplicationKey: String
-        get() = "kuvasz_uptime_${monitor.id}"
-
-    private val SSLMonitorEvent.deduplicationKey: String
-        get() = "kuvasz_ssl_${monitor.id}"
 
     private fun MonitorRecord.richMonitorId(): MonitorID = when (this) {
         is HttpMonitorRecord -> this.monitorId()
@@ -56,21 +50,19 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
 
     private fun fromUptimeEvent(event: UptimeMonitorEvent): GenericWebhookMessage =
         GenericWebhookMessage(
-            deduplicationKey = event.deduplicationKey,
             monitorId = event.monitor.richMonitorId(),
             monitorName = event.monitor.name,
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
-            type = event.getWebhookEventType(),
+            type = event.getIntegrationEventType(),
             eventDetails = event.getEventDetails(),
         )
 
     private fun fromSslEvent(event: SSLMonitorEvent): GenericWebhookMessage =
         GenericWebhookMessage(
-            deduplicationKey = event.deduplicationKey,
             monitorId = event.monitor.richMonitorId(),
             monitorName = event.monitor.name,
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
-            type = event.getWebhookEventType(),
+            type = event.getIntegrationEventType(),
             eventDetails = event.getEventDetails(),
         )
 
@@ -96,15 +88,15 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
     }
 }
 
-fun UptimeMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
-    is HttpMonitorDownEvent -> WebhookEventType.HTTP_DOWN
-    is HttpMonitorUpEvent -> WebhookEventType.HTTP_UP
-    is PushMonitorDownEvent -> WebhookEventType.PUSH_DOWN
-    is PushMonitorUpEvent -> WebhookEventType.PUSH_UP
+fun UptimeMonitorEvent.getIntegrationEventType(): IntegrationEventType = when (this) {
+    is HttpMonitorDownEvent -> IntegrationEventType.HTTP_DOWN
+    is HttpMonitorUpEvent -> IntegrationEventType.HTTP_UP
+    is PushMonitorDownEvent -> IntegrationEventType.PUSH_DOWN
+    is PushMonitorUpEvent -> IntegrationEventType.PUSH_UP
 }
 
-fun SSLMonitorEvent.getWebhookEventType(): WebhookEventType = when (this) {
-    is SSLInvalidEvent -> WebhookEventType.SSL_INVALID
-    is SSLValidEvent -> WebhookEventType.SSL_VALID
-    is SSLWillExpireEvent -> WebhookEventType.SSL_WILL_EXPIRE
+fun SSLMonitorEvent.getIntegrationEventType(): IntegrationEventType = when (this) {
+    is SSLInvalidEvent -> IntegrationEventType.SSL_INVALID
+    is SSLValidEvent -> IntegrationEventType.SSL_VALID
+    is SSLWillExpireEvent -> IntegrationEventType.SSL_WILL_EXPIRE
 }

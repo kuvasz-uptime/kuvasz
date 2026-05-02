@@ -64,7 +64,7 @@ class SMTPEventHandler(
             if (this.isUp() && previousEvent == null) {
                 return@runWhenStateChanges
             }
-            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+            filterTargetConfigs(event).forEach { target ->
                 val emailFactory = EmailFactory(target as EmailNotificationConfig)
                 smtpMailer.sendAsync(emailFactory.fromUptimeEvent(event))
             }
@@ -76,7 +76,7 @@ class SMTPEventHandler(
             if (this is SSLValidEvent && previousEvent == null) {
                 return@runWhenStateChanges
             }
-            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+            filterTargetConfigs(event).forEach { target ->
                 val emailFactory = EmailFactory(target as EmailNotificationConfig)
                 smtpMailer.sendAsync(emailFactory.fromSSLEvent(event))
             }

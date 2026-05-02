@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -45,6 +45,7 @@ sealed interface IntegrationConfigDto {
     val name: String
     val enabled: Boolean
     val global: Boolean
+    val excludedEventTypes: List<IntegrationEventType>
 }
 
 @Introspected
@@ -58,6 +59,8 @@ data class SlackNotificationConfigDto(
     override val enabled: Boolean,
     @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
     override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENT_TYPES, required = true)
+    override val excludedEventTypes: List<IntegrationEventType>,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: SlackNotificationConfig) : this(
         id = integrationID,
@@ -65,6 +68,7 @@ data class SlackNotificationConfigDto(
         name = config.name,
         enabled = config.enabled,
         global = config.global,
+        excludedEventTypes = config.excludedEventTypes.orEmpty(),
     )
 }
 
@@ -78,14 +82,17 @@ data class DiscordNotificationConfigDto(
     @param:Schema(description = IntegrationDocs.ENABLED, required = true)
     override val enabled: Boolean,
     @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
-    override val global: Boolean
+    override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENT_TYPES, required = true)
+    override val excludedEventTypes: List<IntegrationEventType>,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: DiscordNotificationConfig) : this(
         id = integrationID,
         type = integrationID.type,
         name = config.name,
         enabled = config.enabled,
-        global = config.global
+        global = config.global,
+        excludedEventTypes = config.excludedEventTypes.orEmpty(),
     )
 }
 
@@ -100,6 +107,8 @@ data class PagerdutyConfigDto(
     override val enabled: Boolean,
     @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
     override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENT_TYPES, required = true)
+    override val excludedEventTypes: List<IntegrationEventType>,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: PagerdutyConfig) : this(
         id = integrationID,
@@ -107,6 +116,7 @@ data class PagerdutyConfigDto(
         name = config.name,
         enabled = config.enabled,
         global = config.global,
+        excludedEventTypes = config.excludedEventTypes.orEmpty(),
     )
 }
 
@@ -121,6 +131,8 @@ data class EmailNotificationConfigDto(
     override val enabled: Boolean,
     @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
     override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENT_TYPES, required = true)
+    override val excludedEventTypes: List<IntegrationEventType>,
     @param:Schema(description = "The email address from which notifications are sent", required = true)
     val fromAddress: String,
     @param:Schema(description = "The email address to which notifications are sent", required = true)
@@ -132,6 +144,7 @@ data class EmailNotificationConfigDto(
         name = config.name,
         enabled = config.enabled,
         global = config.global,
+        excludedEventTypes = config.excludedEventTypes.orEmpty(),
         fromAddress = config.fromAddress,
         toAddress = config.toAddress,
     )
@@ -148,6 +161,8 @@ data class TelegramNotificationConfigDto(
     override val enabled: Boolean,
     @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
     override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENT_TYPES, required = true)
+    override val excludedEventTypes: List<IntegrationEventType>,
     @param:Schema(description = "The chat ID for Telegram notifications", required = true)
     val chatId: String,
 ) : IntegrationConfigDto {
@@ -157,6 +172,7 @@ data class TelegramNotificationConfigDto(
         name = config.name,
         enabled = config.enabled,
         global = config.global,
+        excludedEventTypes = config.excludedEventTypes.orEmpty(),
         chatId = config.chatId,
     )
 }
@@ -172,6 +188,8 @@ data class WebhookNotificationConfigDto(
     override val enabled: Boolean,
     @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
     override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENT_TYPES, required = true)
+    override val excludedEventTypes: List<IntegrationEventType>,
     @param:Schema(description = "The target URL of the webhook", required = true)
     val url: String,
     @param:Schema(
@@ -181,8 +199,6 @@ data class WebhookNotificationConfigDto(
     val payloadTemplate: String?,
     @param:Schema(description = "The HTTP headers to include in the webhook request", required = true)
     val requestHeaders: Map<String, String>,
-    @param:Schema(description = "The event types that trigger the webhook", required = true)
-    val eventTypes: List<WebhookEventType>,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: WebhookNotificationConfig) : this(
         id = integrationID,
@@ -190,9 +206,9 @@ data class WebhookNotificationConfigDto(
         name = config.name,
         enabled = config.enabled,
         global = config.global,
+        excludedEventTypes = config.excludedEventTypes.orEmpty(),
         url = config.url,
         payloadTemplate = config.payloadTemplate,
         requestHeaders = config.requestHeaders.orEmpty(),
-        eventTypes = config.eventTypes.orEmpty(),
     )
 }

@@ -61,7 +61,7 @@ abstract class RTCMessageEventHandler(
                 return@runWhenStateChanges
             }
             val message = formatter.toFormattedMessage(event)
-            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+            filterTargetConfigs(event).forEach { target ->
                 messageService.sendMessage(target, message).handleResponse()
             }
         }
@@ -72,7 +72,7 @@ abstract class RTCMessageEventHandler(
                 return@runWhenStateChanges
             }
             val message = formatter.toFormattedMessage(event)
-            filterTargetConfigs(event.monitor.integrations).forEach { target ->
+            filterTargetConfigs(event).forEach { target ->
                 messageService.sendMessage(target, message).handleResponse()
             }
         }

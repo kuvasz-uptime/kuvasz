@@ -184,6 +184,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -191,6 +192,7 @@ class HttpMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -198,6 +200,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -205,6 +208,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -212,6 +216,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:test_implicitly_enabled",
@@ -219,6 +224,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.WEBHOOK,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -227,6 +233,7 @@ class HttpMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -234,6 +241,7 @@ class HttpMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -241,6 +249,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:Global2_with_headers",
@@ -248,6 +257,7 @@ class HttpMonitorControllerTest(
                             name = "Global2_with_headers",
                             type = IntegrationType.WEBHOOK,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                     )
                 }
@@ -630,6 +640,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -637,6 +648,7 @@ class HttpMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -644,6 +656,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -651,6 +664,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -658,6 +672,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:test_implicitly_enabled",
@@ -665,6 +680,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.WEBHOOK,
                             global = false,
+                            excludedEventTypes = emptyList(),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -673,6 +689,7 @@ class HttpMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -680,6 +697,7 @@ class HttpMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -687,6 +705,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "webhook:Global2_with_headers",
@@ -694,6 +713,7 @@ class HttpMonitorControllerTest(
                             name = "Global2_with_headers",
                             type = IntegrationType.WEBHOOK,
                             global = true,
+                            excludedEventTypes = emptyList(),
                         ),
                     )
                 }

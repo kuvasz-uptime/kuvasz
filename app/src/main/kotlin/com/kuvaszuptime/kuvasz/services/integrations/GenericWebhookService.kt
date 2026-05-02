@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
-import com.kuvaszuptime.kuvasz.factories.getWebhookEventType
+import com.kuvaszuptime.kuvasz.factories.getIntegrationEventType
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -16,7 +16,6 @@ import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.WebhookEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -138,20 +137,28 @@ class GenericWebhookService(
 
     // TODO test
     override fun sendTestMessage(integrationConfig: WebhookNotificationConfig): Single<NotificationTestResult> {
-        val handledEventTypes = integrationConfig.eventTypes.orEmpty().ifEmpty { WebhookEventType.entries }
+        val ignoredEventTypes = integrationConfig.excludedEventTypes.orEmpty()
         val results = testEvents.mapNotNull { testEvent ->
             @Suppress("NotImplementedDeclaration")
-            val webhookEventType = when (testEvent) {
-                is UptimeMonitorEvent -> testEvent.getWebhookEventType()
-                is SSLMonitorEvent -> testEvent.getWebhookEventType()
+            val eventType = when (testEvent) {
+                is UptimeMonitorEvent -> testEvent.getIntegrationEventType()
+                is SSLMonitorEvent -> testEvent.getIntegrationEventType()
                 else -> throw NotImplementedError()
             }
-            if (handledEventTypes.contains(webhookEventType)) {
+            if (!ignoredEventTypes.contains(eventType)) {
                 val template = integrationConfig.payloadTemplate
                 if (template.isNullOrEmpty()) {
                     sendGenericWebhookEvent(integrationConfig, messageFactory.fromMonitorEvent(testEvent))
                 } else {
-                    sendTemplatedWebhookEvent(integrationConfig, messageFactory.fromMonitorEvent(testEvent, template))
+                    @Suppress("TooGenericExceptionCaught")
+                    try {
+                        sendTemplatedWebhookEvent(
+                            integrationConfig = integrationConfig,
+                            payload = messageFactory.fromMonitorEvent(testEvent, template),
+                        )
+                    } catch (ex: Exception) {
+                        return@mapNotNull Single.error(ex)
+                    }
                 }
             } else null
         }

@@ -63,6 +63,6 @@ integrations:
     - name: disabled
       url: https://disabled-webhook.com
       enabled: false
-      event-types:
-        - HTTP_DOWN
-        - PUSH_DOWN
+      excluded-event-types:
+        - HTTP_UP
+        - PUSH_UP

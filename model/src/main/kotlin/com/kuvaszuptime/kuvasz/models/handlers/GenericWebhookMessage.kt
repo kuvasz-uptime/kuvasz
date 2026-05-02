@@ -5,20 +5,9 @@ import io.micronaut.core.annotation.Introspected
 
 @Introspected
 data class GenericWebhookMessage(
-    val deduplicationKey: String,
     val monitorId: MonitorID,
     val monitorName: String,
     val timestamp: Long,
-    val type: WebhookEventType,
+    val type: IntegrationEventType,
     val eventDetails: String?,
 )
-
-enum class WebhookEventType {
-    HTTP_UP,
-    HTTP_DOWN,
-    PUSH_UP,
-    PUSH_DOWN,
-    SSL_VALID,
-    SSL_INVALID,
-    SSL_WILL_EXPIRE,
-}
