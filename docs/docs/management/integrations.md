@@ -318,7 +318,7 @@ integrations:
 
 **Configuration alias**: `webhook`
 
-The _Webhook_ integration allows you to send notifications to any endpoint that can receive HTTP requests. You can use it to integrate with 3rd party services that are not natively supported by _Kuvasz_, or to implement custom notification logic within your own infrastructure.
+The _Webhook_ integration allows you to **send notifications to any endpoint that can receive HTTP POST requests**. You can use it to integrate with 3rd party services that are not natively supported by _Kuvasz_, or to implement custom notification logic within your own infrastructure.
 
 The generic webhook message (if you don't use a custom template) has the following structure:
 
