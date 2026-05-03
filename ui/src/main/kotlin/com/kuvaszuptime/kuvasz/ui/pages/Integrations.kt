@@ -95,11 +95,16 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                     val tooltipLabel = handledEventTypes
                                                         .joinToString(separator = ", ")
                                                         .ifEmpty { Messages.noEventsForIntegration() }
-                                                    if (handledEventTypes.isEmpty()) {
-                                                        classes(TEXT_RED)
-                                                    }
-                                                    tooltip(tooltipLabel)
-                                                    icon(Icon.QUEUE)
+                                                    inlineStatusBadge(
+                                                        text = handledEventTypes.size.toString(),
+                                                        color = if (handledEventTypes.isEmpty()) {
+                                                            Color.RED_LT
+                                                        } else {
+                                                            Color.DEFAULT
+                                                        },
+                                                        icon = Icon.BOLT,
+                                                        tooltip = tooltipLabel
+                                                    )
                                                 }
                                             }
                                             // Enabled, global

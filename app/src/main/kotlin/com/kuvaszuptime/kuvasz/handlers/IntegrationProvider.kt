@@ -24,25 +24,22 @@ abstract class AbstractIntegrationProvider(
     private val integrationRepository: IntegrationRepository,
 ) : IntegrationProvider {
 
-    override fun filterTargetConfigs(event: MonitorEvent<*>): Set<IntegrationConfig> = integrationRepository
-        .getEnabledIntegrations(event.monitor.integrations, integrationType)
-        .filterByEventType(event)
-
-    @Suppress("NotImplementedDeclaration")
-    private fun Set<IntegrationConfig>.filterByEventType(event: MonitorEvent<*>): Set<IntegrationConfig> =
-        filter { config ->
-            when (event) {
-                is SSLInvalidEvent -> config.supportsEventType(IntegrationEventType.SSL_INVALID)
-                is SSLValidEvent -> config.supportsEventType(IntegrationEventType.SSL_VALID)
-                is SSLWillExpireEvent -> config.supportsEventType(IntegrationEventType.SSL_WILL_EXPIRE)
-                is HttpMonitorDownEvent -> config.supportsEventType(IntegrationEventType.HTTP_DOWN)
-                is HttpMonitorUpEvent -> config.supportsEventType(IntegrationEventType.HTTP_UP)
-                is PushMonitorDownEvent -> config.supportsEventType(IntegrationEventType.PUSH_DOWN)
-                is PushMonitorUpEvent -> config.supportsEventType(IntegrationEventType.PUSH_UP)
-                is HttpRedirectEvent -> throw NotImplementedError("Redirect events are not supported in integrations")
-            }
-        }.toSet()
-
-    private fun IntegrationConfig.supportsEventType(eventType: IntegrationEventType) =
-        !excludedEvents.orEmpty().contains(eventType)
+    override fun filterTargetConfigs(event: MonitorEvent<*>): Set<IntegrationConfig> {
+        return integrationRepository
+            .getEnabledIntegrations(event.monitor.integrations, integrationType)
+            .filter { config ->
+                val excludedEvents = config.excludedEvents.orEmpty()
+                when (event) {
+                    is SSLInvalidEvent -> !excludedEvents.contains(IntegrationEventType.SSL_INVALID)
+                    is SSLValidEvent -> !excludedEvents.contains(IntegrationEventType.SSL_VALID)
+                    is SSLWillExpireEvent -> !excludedEvents.contains(IntegrationEventType.SSL_WILL_EXPIRE)
+                    is HttpMonitorDownEvent -> !excludedEvents.contains(IntegrationEventType.HTTP_DOWN)
+                    is HttpMonitorUpEvent -> !excludedEvents.contains(IntegrationEventType.HTTP_UP)
+                    is PushMonitorDownEvent -> !excludedEvents.contains(IntegrationEventType.PUSH_DOWN)
+                    is PushMonitorUpEvent -> !excludedEvents.contains(IntegrationEventType.PUSH_UP)
+                    is HttpRedirectEvent ->
+                        throw NotImplementedError("Redirect events are not supported in integrations")
+                }
+            }.toSet()
+    }
 }
