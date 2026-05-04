@@ -34,7 +34,8 @@ interface StatusPageOperations {
 
     @Operation(
         summary = "Get a status page's details",
-        description = "Use \"0\" as an ID to get the default status page's details"
+        description = "Use \"0\" as an ID to get the default status page's details. " +
+            "The requests that are targeting public status pages doesn't need to be authenticated!"
     )
     @Get("/{statusPageId}/details")
     fun getStatusPageDetails(statusPageId: Long): StatusPageDetailsDto

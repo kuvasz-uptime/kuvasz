@@ -24,6 +24,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -224,7 +225,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.WEBHOOK,
                             global = false,
-                            excludedEvents = emptyList(),
+                            excludedEvents = listOf(IntegrationEventType.HTTP_UP),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -680,7 +681,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.WEBHOOK,
                             global = false,
-                            excludedEvents = emptyList(),
+                            excludedEvents = listOf(IntegrationEventType.HTTP_UP),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(

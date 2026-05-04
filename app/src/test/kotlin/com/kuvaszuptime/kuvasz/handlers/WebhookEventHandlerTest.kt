@@ -1,0 +1,680 @@
+package com.kuvaszuptime.kuvasz.handlers
+
+import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookClient
+import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.core.test.TestCase
+import io.kotest.core.test.TestResult
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.spyk
+import io.mockk.verify
+import io.reactivex.rxjava3.core.Single
+
+@MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
+class WebhookEventHandlerTest(
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val pushMonitorRepository: PushMonitorRepository,
+    private val httpUptimeEventRepository: HttpUptimeEventRepository,
+    private val pushUptimeEventRepository: PushUptimeEventRepository,
+    private val sslEventRepository: SSLEventRepository,
+    integrationRepository: IntegrationRepository,
+    webhookConfigs: List<WebhookNotificationConfig>,
+    databaseEventHandler: DatabaseEventHandler,
+    messageFactory: WebhookMessageFactory,
+) : EventHandlerTest(databaseEventHandler) {
+    private val mockClient = mockk<GenericWebhookClient>()
+
+    private val globalWebhookConfig = webhookConfigs.first { it.enabled && it.global }
+    private val otherWebhookConfig = webhookConfigs.first { it.enabled && !it.global }
+    private val disabledWebhookConfig = webhookConfigs.first { !it.enabled }
+
+    init {
+        val eventDispatcher = EventDispatcher()
+        val messageFactorySpy = spyk(messageFactory)
+        val webhookService = GenericWebhookService(mockClient, messageFactorySpy)
+        val webhookServiceSpy = spyk(webhookService)
+
+        WebhookEventHandler(eventDispatcher, webhookServiceSpy, integrationRepository, messageFactorySpy)
+
+        given("the WebhookEventHandler - HTTP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val event = HttpMonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1000,
+                    previousEvent = null
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    ),
+                    sensitiveUrl = true,
+                )
+                val event = HttpMonitorDownEvent(
+                    monitor = monitor,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    error = Exception(),
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a webhook message about the event to all enabled integrations") {
+                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendTemplatedWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(disabledWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = HttpMonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1000,
+                    previousEvent = null
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = HttpMonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1200,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send notifications about them") {
+                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = HttpMonitorDownEvent(
+                    monitor = monitor,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    error = Exception("First error"),
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = HttpMonitorDownEvent(
+                    monitor = monitor,
+                    status = HttpStatus.NOT_FOUND,
+                    error = Exception("Second error"),
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+
+                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    ),
+                )
+                val firstEvent = HttpMonitorDownEvent(
+                    monitor = monitor,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    previousEvent = null,
+                    error = Exception()
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = HttpMonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1000,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val genericNotificationsSent = mutableListOf<GenericWebhookMessage>()
+
+                    verify(exactly = 2) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            capture(genericNotificationsSent)
+                        )
+                    }
+                    genericNotificationsSent[0].type shouldBe IntegrationEventType.HTTP_DOWN
+                    genericNotificationsSent[0].eventDetails shouldContain "Reason: 500 Internal Server Error"
+                    genericNotificationsSent[1].type shouldBe IntegrationEventType.HTTP_UP
+                    genericNotificationsSent[1].eventDetails shouldContain "is UP (200)"
+                    // HTTP_UP events are excluded on the other integration
+                    val templatedNotificationsSent = mutableListOf<String>()
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendTemplatedWebhookEvent(
+                            any(),
+                            capture(templatedNotificationsSent),
+                        )
+                    }
+                    templatedNotificationsSent[0] shouldContain "\"status\": HTTP_DOWN"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = HttpMonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1000,
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = HttpMonitorDownEvent(
+                    monitor = monitor,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    previousEvent = firstUptimeRecord,
+                    error = Exception()
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any())
+                    }
+                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - PUSH UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val event = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "irrelevant",
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a webhook message about the event to all enabled integrations") {
+
+                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendTemplatedWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(disabledWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send notifications about them") {
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+
+                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = "First error"
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<GenericWebhookMessage>()
+
+                    verify(exactly = 2) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationsSent)
+                        )
+                    }
+                    notificationsSent[0].type shouldBe IntegrationEventType.PUSH_DOWN
+                    notificationsSent[1].type shouldBe IntegrationEventType.PUSH_UP
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val firstEvent = PushMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = PushMonitorDownEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    error = "irrelevant",
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<GenericWebhookMessage>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationSent)
+                        )
+                    }
+                    notificationSent.captured.type shouldBe IntegrationEventType.PUSH_DOWN
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - SSL events") {
+            `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val event = SSLValidEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(),
+                    previousEvent = null
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives an SSLInvalidEvent and there is no previous event for the monitor") {
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val event = SSLInvalidEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = SSLValidationError("ssl error")
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a webhook message about the event to all enabled integrations") {
+
+                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendTemplatedWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(disabledWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives an SSLValidEvent and there is a previous event with the same status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = SSLValidEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(),
+                    previousEvent = null
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = SSLValidEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.plusDays(10)),
+                    previousEvent = firstSSLRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send notifications about them") {
+                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives an SSLInvalidEvent and there is a previous event with the same status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = SSLInvalidEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = SSLValidationError("ssl error1")
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = SSLInvalidEvent(
+                    monitor = monitor,
+                    previousEvent = firstSSLRecord,
+                    error = SSLValidationError("ssl error2")
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+
+                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives an SSLValidEvent and there is a previous event with different status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = SSLInvalidEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = SSLValidationError("ssl error1")
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = SSLValidEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(),
+                    previousEvent = firstSSLRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<GenericWebhookMessage>()
+
+                    verify(exactly = 2) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationsSent)
+                        )
+                    }
+                    notificationsSent[0].type shouldBe IntegrationEventType.SSL_INVALID
+                    notificationsSent[0].eventDetails shouldContain "Reason: ssl error1"
+                    notificationsSent[1].type shouldBe IntegrationEventType.SSL_VALID
+                    notificationsSent[1].eventDetails shouldContain "has a VALID certificate"
+                }
+            }
+
+            `when`("it receives an SSLInvalidEvent and there is a previous event with different status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = SSLValidEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(),
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = SSLInvalidEvent(
+                    monitor = monitor,
+                    previousEvent = firstSSLRecord,
+                    error = SSLValidationError("ssl error")
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the invalid event") {
+                    val notificationSent = slot<GenericWebhookMessage>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationSent)
+                        )
+                    }
+                    notificationSent.captured.type shouldBe IntegrationEventType.SSL_INVALID
+                }
+            }
+
+            `when`("it receives an SSLWillExpireEvent and there is no previous event for the monitor") {
+                val monitor = createHttpMonitor(httpMonitorRepository, sensitiveUrl = true)
+                val event = SSLWillExpireEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(),
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a webhook message about the event") {
+                    val slot = slot<GenericWebhookMessage>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            capture(slot),
+                        )
+                    }
+                    slot.captured.type shouldBe IntegrationEventType.SSL_WILL_EXPIRE
+                }
+            }
+
+            `when`("it receives an SSLWillExpireEvent and there is a previous event with the same status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val originalValidTo = getCurrentTimestamp()
+                val firstEvent = SSLWillExpireEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(validTo = originalValidTo),
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = SSLWillExpireEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(validTo = firstEvent.certInfo.validTo.plusDays(10)),
+                    previousEvent = firstSSLRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            any(),
+                        )
+                    }
+                }
+            }
+
+            `when`("it receives an SSLWillExpireEvent and there is a previous event with different status") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val firstEvent = SSLValidEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(),
+                    previousEvent = null
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = SSLWillExpireEvent(
+                    monitor = monitor,
+                    certInfo = generateCertificateInfo(),
+                    previousEvent = firstSSLRecord
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the expiration") {
+                    val notificationSent = slot<GenericWebhookMessage>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendGenericWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationSent)
+                        )
+                    }
+                    notificationSent.captured.type shouldBe IntegrationEventType.SSL_WILL_EXPIRE
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - error handling logic") {
+            `when`("it receives an event but an error happens when it calls the webhook") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val event = HttpMonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 1000,
+                    previousEvent = null
+                )
+                mockHttpErrorResponse()
+
+                then("it should not throw an exception") {
+                    shouldNotThrowAny { eventDispatcher.testDispatch(event) }
+                }
+            }
+        }
+    }
+
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
+        clearAllMocks()
+        super.afterTest(testCase, result)
+    }
+
+    private fun mockSuccessfulHttpResponses() {
+        every {
+            mockClient.sendMessage(any(), any<GenericWebhookMessage>(), any())
+        } returns Single.just("ok")
+        every {
+            mockClient.sendMessage(any(), any<String>(), any())
+        } returns Single.just("ok")
+    }
+
+    private fun mockHttpErrorResponse() {
+        every {
+            mockClient.sendMessage(any(), any<GenericWebhookMessage>(), any())
+        } returns Single.error(
+            HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
+        )
+        every {
+            mockClient.sendMessage(any(), any<String>(), any())
+        } returns Single.error(
+            HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
+        )
+    }
+}

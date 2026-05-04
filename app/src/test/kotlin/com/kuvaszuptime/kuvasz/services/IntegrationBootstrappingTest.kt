@@ -19,6 +19,7 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldBeEmpty
@@ -184,7 +185,9 @@ class IntegrationBootstrappingTest : StringSpec({
                         "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
                         "{{ctx.type}}{% endif %}}"
                     config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
-                    config.excludedEvents.shouldBeNull()
+                    config.excludedEvents.shouldContainExactly(
+                        IntegrationEventType.HTTP_UP,
+                    )
                 }
                 forOne { globallyEnabledWebhook ->
                     globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
@@ -322,7 +325,9 @@ class IntegrationBootstrappingTest : StringSpec({
                         "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
                         "{{ctx.type}}{% endif %}}"
                     config.requestHeaders.shouldNotBeNull().shouldBeEmpty()
-                    config.excludedEvents.shouldBeNull()
+                    config.excludedEvents.shouldContainExactly(
+                        IntegrationEventType.HTTP_UP,
+                    )
                 }
                 forOne { globallyEnabledWebhook ->
                     globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
