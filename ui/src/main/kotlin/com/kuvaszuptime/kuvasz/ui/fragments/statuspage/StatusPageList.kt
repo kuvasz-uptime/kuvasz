@@ -21,6 +21,11 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                 classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
                 thead {
                     tr {
+                        // ID
+                        th {
+                            classes(TEXT_CENTER)
+                            +"ID"
+                        }
                         // Title
                         th { +Messages.title() }
                         // Slug
@@ -49,6 +54,11 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                 tbody {
                     // Default status page - special row
                     tr {
+                        // ID
+                        th {
+                            classes(TEXT_CENTER)
+                            +"0"
+                        }
                         // Title
                         td {
                             classes(TEXT_WRAP, TEXT_BREAK)
@@ -120,6 +130,11 @@ private fun FlowContent.statusPageVisibilityStatus(isPublic: Boolean) {
 private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDto) {
     tr {
         xData("statusPageListItem(${page.id}, ${page.public})")
+        // ID
+        th {
+            classes(TEXT_CENTER)
+            +page.id.toString()
+        }
         // Title
         td {
             a(href = "/status-pages/${page.id}") {
