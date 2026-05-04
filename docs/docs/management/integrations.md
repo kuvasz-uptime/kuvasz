@@ -320,6 +320,10 @@ integrations:
 
 The _Webhook_ integration allows you to **send notifications to any endpoint that can receive HTTP POST requests**. You can use it to integrate with 3rd party services that are not natively supported by _Kuvasz_, or to implement custom notification logic within your own infrastructure.
 
+!!! warning
+
+    Make sure that your target endpoint handles `POST` requests and is able to process the payload sent by _Kuvasz_. Otherwise, you might end up with failed notifications and missed alerts.
+
 The generic webhook message (if you don't use a custom template) has the following structure:
 
 === "JSON"
@@ -334,7 +338,7 @@ The generic webhook message (if you don't use a custom template) has the followi
     }
     ```
     
-    1. **monitorId**: A unique identifier for a monitor, formatted as 'type:name'.
+    1. **monitorId**: A unique identifier of a monitor, formatted as 'type:name'.
     2. **monitorName**: The name of the monitor, which must be unique.
     3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
     4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.

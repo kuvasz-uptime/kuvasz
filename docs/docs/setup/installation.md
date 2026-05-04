@@ -17,7 +17,7 @@ This guide will walk you through the deployment process.
 Kuvasz can be deployed in several ways depending on your infrastructure:
 
 - [**Docker Compose**](#quick-start-with-docker-compose) - Recommended for quick start and simple deployments
-- [**Helm Chart**](#kubernetes-with-helm) - Recommended for Kubernetes clusters
+- [**Helm Chart**](helm-deployment.md) - Recommended for Kubernetes clusters
 - [**Other Deployment Methods**](#other-deployment-methods)
 - [**One-click Deployment Options**](#one-click-deployment-options)
 
@@ -169,11 +169,6 @@ If you run _Kuvasz_ in a container orchestration system, you can use the `GET /a
 
     Besides the response body, the HTTP status code will also indicate the health of the application: **non 2xx status codes** indicate that the application is **not healthy**.
 
-## Kubernetes with Helm
-
-For Kubernetes deployments, we provide an official Helm chart. This is the recommended method for deploying Kuvasz to Kubernetes clusters as it handles all the configuration complexity for you.
-See the [Helm Chart Deployment Guide](helm-deployment.md) for detailed instructions.
-
 ## Other deployment methods
 
 If you use another container orchestration system (e.g. _Kubernetes without Helm_, _Docker Swarm_, etc.), you can still use the same image and the same configuration options. Just make sure to set the environment variables and mount the configuration file as shown in the Docker Compose example above.
@@ -190,12 +185,12 @@ If you use another container orchestration system (e.g. _Kubernetes without Helm
 - [Install Kuvasz via Docker (French)](https://belginux.com/installer-kuvasz-avec-docker/){target="_blank" }
 - [Install Kuvasz on Debian 12 (Spanish)](https://voidnull.es/instalacion-de-kuvasz-uptime-en-debian-12/){target="_blank" }
 
-## One-click deployment options
+### One-click deployment options
 
 !!! warning
 
     The one-click deployment options linked below are **provided by third-party services** and are **not official deployment methods**. They may have limitations, costs, or specific requirements. Use them at your own discretion.
 
-### Cloudzy
+#### Cloudzy
 
 _Kuvasz_ is available as a one-click deployment on [Cloudzy](https://cloudzy.com/marketplace/kuvasz-uptime/){target="_blank"}, which allows you to get started with Kuvasz in just a few minutes without worrying about the underlying infrastructure. You can choose from various server configurations and locations to best suit your needs.
