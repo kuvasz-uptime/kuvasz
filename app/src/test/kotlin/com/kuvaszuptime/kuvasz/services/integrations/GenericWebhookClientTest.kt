@@ -49,6 +49,7 @@ class GenericWebhookClientTest(
 
     context("the webhook client") {
 
+        @Suppress("MaxLineLength")
         should("should send a correct request to the provided target - generic message") {
 
             val request = request()
@@ -72,6 +73,7 @@ class GenericWebhookClientTest(
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
+        @Suppress("MaxLineLength")
         should("return a failed result when the target responds with an error - generic message") {
             val request = request()
                 .withMethod(HttpMethod.POST.name)
