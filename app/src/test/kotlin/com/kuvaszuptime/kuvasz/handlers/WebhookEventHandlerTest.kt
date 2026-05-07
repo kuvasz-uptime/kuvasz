@@ -6,13 +6,13 @@ import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -29,8 +29,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -63,11 +62,10 @@ class WebhookEventHandlerTest(
 
     init {
         val eventDispatcher = EventDispatcher()
-        val messageFactorySpy = spyk(messageFactory)
-        val webhookService = GenericWebhookService(mockClient, messageFactorySpy)
+        val webhookService = GenericWebhookService(mockClient, messageFactory)
         val webhookServiceSpy = spyk(webhookService)
 
-        WebhookEventHandler(eventDispatcher, webhookServiceSpy, integrationRepository, messageFactorySpy)
+        WebhookEventHandler(eventDispatcher, webhookServiceSpy, integrationRepository)
 
         given("the WebhookEventHandler - HTTP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
@@ -82,8 +80,7 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
-                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
                 }
             }
 
@@ -108,9 +105,9 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event to all enabled integrations") {
-                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
-                    verify(exactly = 1) { webhookServiceSpy.sendTemplatedWebhookEvent(otherWebhookConfig, any()) }
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(disabledWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }
                 }
             }
 
@@ -134,8 +131,7 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
                 }
             }
 
@@ -161,7 +157,7 @@ class WebhookEventHandlerTest(
 
                 then("it should send only one notification about them") {
 
-                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
                 }
             }
 
@@ -193,27 +189,25 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val genericNotificationsSent = mutableListOf<GenericWebhookMessage>()
+                    val eventsSent = mutableListOf<MonitorEvent<*>>()
 
                     verify(exactly = 2) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
-                            capture(genericNotificationsSent)
+                            capture(eventsSent)
                         )
                     }
-                    genericNotificationsSent[0].type shouldBe IntegrationEventType.HTTP_DOWN
-                    genericNotificationsSent[0].eventDetails shouldContain "Reason: 500 Internal Server Error"
-                    genericNotificationsSent[1].type shouldBe IntegrationEventType.HTTP_UP
-                    genericNotificationsSent[1].eventDetails shouldContain "is UP (200)"
+                    eventsSent[0].shouldBeInstanceOf<HttpMonitorDownEvent>()
+                    eventsSent[1].shouldBeInstanceOf<HttpMonitorUpEvent>()
                     // HTTP_UP events are excluded on the other integration
-                    val templatedNotificationsSent = mutableListOf<String>()
+                    val eventsSentToOtherWebhook = mutableListOf<MonitorEvent<*>>()
                     verify(exactly = 1) {
-                        webhookServiceSpy.sendTemplatedWebhookEvent(
-                            any(),
-                            capture(templatedNotificationsSent),
+                        webhookServiceSpy.sendWebhookEvent(
+                            otherWebhookConfig,
+                            capture(eventsSentToOtherWebhook),
                         )
                     }
-                    templatedNotificationsSent[0] shouldContain "\"status\": HTTP_DOWN"
+                    eventsSentToOtherWebhook[0].shouldBeInstanceOf<HttpMonitorDownEvent>()
                 }
             }
 
@@ -239,9 +233,8 @@ class WebhookEventHandlerTest(
 
                 then("it should send only one notification, about the down event") {
                     verify(exactly = 1) {
-                        webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any())
+                        webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any())
                     }
-                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
                 }
             }
         }
@@ -257,8 +250,7 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
-                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
                 }
             }
 
@@ -282,9 +274,9 @@ class WebhookEventHandlerTest(
 
                 then("it should send a webhook message about the event to all enabled integrations") {
 
-                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
-                    verify(exactly = 1) { webhookServiceSpy.sendTemplatedWebhookEvent(otherWebhookConfig, any()) }
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(disabledWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }
                 }
             }
 
@@ -304,7 +296,7 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
                 }
             }
 
@@ -328,7 +320,7 @@ class WebhookEventHandlerTest(
 
                 then("it should send only one notification about them") {
 
-                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
                 }
             }
 
@@ -350,16 +342,16 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<GenericWebhookMessage>()
+                    val notificationsSent = mutableListOf<MonitorEvent<*>>()
 
                     verify(exactly = 2) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
                             capture(notificationsSent)
                         )
                     }
-                    notificationsSent[0].type shouldBe IntegrationEventType.PUSH_DOWN
-                    notificationsSent[1].type shouldBe IntegrationEventType.PUSH_UP
+                    notificationsSent[0].shouldBeInstanceOf<PushMonitorDownEvent>()
+                    notificationsSent[1].shouldBeInstanceOf<PushMonitorUpEvent>()
                 }
             }
 
@@ -381,15 +373,15 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the down event") {
-                    val notificationSent = slot<GenericWebhookMessage>()
+                    val notificationSent = slot<MonitorEvent<*>>()
 
                     verify(exactly = 1) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
                             capture(notificationSent)
                         )
                     }
-                    notificationSent.captured.type shouldBe IntegrationEventType.PUSH_DOWN
+                    notificationSent.captured.shouldBeInstanceOf<PushMonitorDownEvent>()
                 }
             }
         }
@@ -406,8 +398,7 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { webhookServiceSpy.sendTemplatedWebhookEvent(any(), any()) }
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
                 }
             }
 
@@ -431,9 +422,9 @@ class WebhookEventHandlerTest(
 
                 then("it should send a webhook message about the event to all enabled integrations") {
 
-                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
-                    verify(exactly = 1) { webhookServiceSpy.sendTemplatedWebhookEvent(otherWebhookConfig, any()) }
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(disabledWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }
                 }
             }
 
@@ -455,7 +446,7 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { webhookServiceSpy.sendGenericWebhookEvent(any(), any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
                 }
             }
 
@@ -479,7 +470,7 @@ class WebhookEventHandlerTest(
 
                 then("it should send only one notification about them") {
 
-                    verify(exactly = 1) { webhookServiceSpy.sendGenericWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
                 }
             }
 
@@ -502,18 +493,16 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<GenericWebhookMessage>()
+                    val notificationsSent = mutableListOf<MonitorEvent<*>>()
 
                     verify(exactly = 2) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
                             capture(notificationsSent)
                         )
                     }
-                    notificationsSent[0].type shouldBe IntegrationEventType.SSL_INVALID
-                    notificationsSent[0].eventDetails shouldContain "Reason: ssl error1"
-                    notificationsSent[1].type shouldBe IntegrationEventType.SSL_VALID
-                    notificationsSent[1].eventDetails shouldContain "has a VALID certificate"
+                    notificationsSent[0].shouldBeInstanceOf<SSLInvalidEvent>()
+                    notificationsSent[1].shouldBeInstanceOf<SSLValidEvent>()
                 }
             }
 
@@ -536,15 +525,15 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the invalid event") {
-                    val notificationSent = slot<GenericWebhookMessage>()
+                    val notificationSent = slot<MonitorEvent<*>>()
 
                     verify(exactly = 1) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
                             capture(notificationSent)
                         )
                     }
-                    notificationSent.captured.type shouldBe IntegrationEventType.SSL_INVALID
+                    notificationSent.captured.shouldBeInstanceOf<SSLInvalidEvent>()
                 }
             }
 
@@ -560,15 +549,15 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<GenericWebhookMessage>()
+                    val slot = slot<MonitorEvent<*>>()
 
                     verify(exactly = 1) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
                             capture(slot),
                         )
                     }
-                    slot.captured.type shouldBe IntegrationEventType.SSL_WILL_EXPIRE
+                    slot.captured.shouldBeInstanceOf<SSLWillExpireEvent>()
                 }
             }
 
@@ -593,7 +582,7 @@ class WebhookEventHandlerTest(
 
                 then("it should send only one notification about them") {
                     verify(exactly = 1) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
                             any(),
                         )
@@ -620,15 +609,15 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the expiration") {
-                    val notificationSent = slot<GenericWebhookMessage>()
+                    val notificationSent = slot<MonitorEvent<*>>()
 
                     verify(exactly = 1) {
-                        webhookServiceSpy.sendGenericWebhookEvent(
+                        webhookServiceSpy.sendWebhookEvent(
                             globalWebhookConfig,
                             capture(notificationSent)
                         )
                     }
-                    notificationSent.captured.type shouldBe IntegrationEventType.SSL_WILL_EXPIRE
+                    notificationSent.captured.shouldBeInstanceOf<SSLWillExpireEvent>()
                 }
             }
         }
@@ -658,21 +647,21 @@ class WebhookEventHandlerTest(
 
     private fun mockSuccessfulHttpResponses() {
         every {
-            mockClient.sendMessage(any(), any<GenericWebhookMessage>(), any())
+            mockClient.sendGenericMessage(any(), any<GenericWebhookMessage>(), any())
         } returns Single.just("ok")
         every {
-            mockClient.sendMessage(any(), any<String>(), any())
+            mockClient.sendTemplatedMessage(any(), any<String>(), any())
         } returns Single.just("ok")
     }
 
     private fun mockHttpErrorResponse() {
         every {
-            mockClient.sendMessage(any(), any<GenericWebhookMessage>(), any())
+            mockClient.sendGenericMessage(any(), any<GenericWebhookMessage>(), any())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )
         every {
-            mockClient.sendMessage(any(), any<String>(), any())
+            mockClient.sendTemplatedMessage(any(), any<String>(), any())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )

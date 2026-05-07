@@ -15,7 +15,6 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -29,10 +28,10 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.MutableHttpRequest
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
-import io.micronaut.retry.annotation.Retryable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import jakarta.inject.Singleton
+import org.slf4j.LoggerFactory
 import java.net.URI
 
 @Singleton
@@ -43,14 +42,16 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
         private const val DEFAULT_MEDIA_TYPE = MediaType.APPLICATION_JSON
     }
 
-    @Retryable
-    fun sendMessage(webhookUrl: URI, message: GenericWebhookMessage, headers: Map<String, String>): Single<String> {
+    fun sendGenericMessage(
+        webhookUrl: URI,
+        message: GenericWebhookMessage,
+        headers: Map<String, String>
+    ): Single<String> {
         val req = HttpRequest.POST(webhookUrl, message)
         return sendRequestWithHeaders(req, headers)
     }
 
-    @Retryable
-    fun sendMessage(webhookUrl: URI, payload: String, headers: Map<String, String>): Single<String> {
+    fun sendTemplatedMessage(webhookUrl: URI, payload: String, headers: Map<String, String>): Single<String> {
         val req = HttpRequest.POST(webhookUrl, payload)
         return sendRequestWithHeaders(req, headers)
     }
@@ -60,7 +61,6 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
         request.contentType(effectiveContentType)
         headers.filter { it.key != HttpHeaders.CONTENT_TYPE }.forEach { request.header(it.key, it.value) }
 
-        // TODO test requests with mockServer + correct content-type header in different scenarios
         return Single.fromPublisher(client.retrieve(request, String::class.java))
     }
 }
@@ -72,17 +72,21 @@ class GenericWebhookService(
     private val messageFactory: WebhookMessageFactory,
 ) : TestableNotificationService<WebhookNotificationConfig> {
 
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     private val testHttpMonitorRecord = HttpMonitorRecord().apply {
-        name = "Test HTTP monitor"
+        id = 1
+        name = "Test monitor"
         sensitiveUrl = false
-        url = "https://irrelevant"
+        url = "https://test.monitor"
     }
     private val testPushMonitorRecord = PushMonitorRecord().apply {
-        name = "Test push monitor"
+        id = 2
+        name = "Test monitor"
     }
 
     @Suppress("MagicNumber")
-    private val testEvents: List<MonitorEvent<*>> = listOf(
+    val testEvents: List<MonitorEvent<*>> = listOf(
         HttpMonitorDownEvent(
             monitor = testHttpMonitorRecord,
             status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -121,21 +125,28 @@ class GenericWebhookService(
         ),
     )
 
-    fun sendGenericWebhookEvent(integrationConfig: IntegrationConfig, message: GenericWebhookMessage): Single<String> {
-        val config = integrationConfig as WebhookNotificationConfig
-        val webhookUrl = config.url.toUri()
+    @Suppress("TooGenericExceptionCaught")
+    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<*>): Single<String> {
+        val template = target.payloadTemplate
+        val webhookUrl = target.url.toUri()
 
-        return client.sendMessage(webhookUrl, message, config.requestHeaders.orEmpty())
+        return if (template.isNullOrBlank()) {
+            client.sendGenericMessage(
+                webhookUrl,
+                messageFactory.fromMonitorEvent(event),
+                target.requestHeaders.orEmpty()
+            )
+        } else {
+            val payload = try {
+                messageFactory.fromMonitorEvent(event, template)
+            } catch (ex: Exception) {
+                logger.error("Failed to parse webhook template: ${ex.message}")
+                return Single.error(ex)
+            }
+            client.sendTemplatedMessage(webhookUrl, payload, target.requestHeaders.orEmpty())
+        }
     }
 
-    fun sendTemplatedWebhookEvent(integrationConfig: IntegrationConfig, payload: String): Single<String> {
-        val config = integrationConfig as WebhookNotificationConfig
-        val webhookUrl = config.url.toUri()
-
-        return client.sendMessage(webhookUrl, payload, config.requestHeaders.orEmpty())
-    }
-
-    // TODO test
     override fun sendTestMessage(integrationConfig: WebhookNotificationConfig): Single<NotificationTestResult> {
         val ignoredEventTypes = integrationConfig.excludedEvents.orEmpty()
         val results = testEvents.mapNotNull { testEvent ->
@@ -146,20 +157,7 @@ class GenericWebhookService(
                 else -> throw NotImplementedError()
             }
             if (!ignoredEventTypes.contains(eventType)) {
-                val template = integrationConfig.payloadTemplate
-                if (template.isNullOrEmpty()) {
-                    sendGenericWebhookEvent(integrationConfig, messageFactory.fromMonitorEvent(testEvent))
-                } else {
-                    @Suppress("TooGenericExceptionCaught")
-                    try {
-                        sendTemplatedWebhookEvent(
-                            integrationConfig = integrationConfig,
-                            payload = messageFactory.fromMonitorEvent(testEvent, template),
-                        )
-                    } catch (ex: Exception) {
-                        return@mapNotNull Single.error(ex)
-                    }
-                }
+                sendWebhookEvent(integrationConfig, testEvent)
             } else null
         }
 

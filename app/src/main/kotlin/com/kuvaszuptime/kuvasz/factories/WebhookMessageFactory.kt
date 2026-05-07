@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -30,40 +31,32 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
         private const val CONTEXT_TEMPLATE_KEY = "ctx"
     }
 
-    private fun MonitorRecord.richMonitorId(): MonitorID = when (this) {
+    private val formatter = PlainTextMessageFormatter
+
+    private fun MonitorRecord.urn(): MonitorID = when (this) {
         is HttpMonitorRecord -> this.monitorId()
         is PushMonitorRecord -> this.monitorId()
         else -> throw IllegalArgumentException("Invalid monitor type: $this")
     }
 
-    private fun UptimeMonitorEvent.getEventDetails(): String? = when (this) {
-        is HttpMonitorDownEvent -> this.toStructuredMessage().error
-        is PushMonitorDownEvent -> this.toStructuredMessage().error
-        is HttpMonitorUpEvent, is PushMonitorUpEvent -> this.toStructuredMessage().summary
-    }
-
-    private fun SSLMonitorEvent.getEventDetails(): String? = when (this) {
-        is SSLInvalidEvent -> this.toStructuredMessage().error
-        is SSLWillExpireEvent -> this.toStructuredMessage().validUntil
-        is SSLValidEvent -> this.toStructuredMessage().summary
-    }
-
     private fun fromUptimeEvent(event: UptimeMonitorEvent): GenericWebhookMessage =
         GenericWebhookMessage(
-            monitorId = event.monitor.richMonitorId(),
+            monitorId = event.monitor.id,
+            monitorUrn = event.monitor.urn(),
             monitorName = event.monitor.name,
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
             type = event.getIntegrationEventType(),
-            eventDetails = event.getEventDetails(),
+            eventDetails = formatter.toFormattedMessage(event),
         )
 
     private fun fromSslEvent(event: SSLMonitorEvent): GenericWebhookMessage =
         GenericWebhookMessage(
-            monitorId = event.monitor.richMonitorId(),
+            monitorId = event.monitor.id,
+            monitorUrn = event.monitor.urn(),
             monitorName = event.monitor.name,
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
             type = event.getIntegrationEventType(),
-            eventDetails = event.getEventDetails(),
+            eventDetails = formatter.toFormattedMessage(event),
         )
 
     @Suppress("NotImplementedDeclaration")

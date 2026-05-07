@@ -330,7 +330,8 @@ The generic webhook message (if you don't use a custom template) has the followi
 
     ```json
     {
-      "monitorId": "http:GitHub API (1)",
+      "monitorId": "234 (6)",
+      "monitorUrn": "http:GitHub API (1)",
       "monitorName": "GitHub API (2)",
       "timestamp": "1777661064488 (3)", 
       "type": "HTTP_DOWN (4)",
@@ -338,11 +339,12 @@ The generic webhook message (if you don't use a custom template) has the followi
     }
     ```
     
-    1. **monitorId**: A unique identifier of a monitor, formatted as 'type:name'.
+    1. **monitorUrn**: A unique identifier of a monitor, formatted as 'type:name'.
     2. **monitorName**: The name of the monitor, which must be unique.
     3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
     4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
     5. **eventDetails**: A human-readable message with more details about the event. Optional, can be `null` if no additional details are available.
+    6. **monitorId**: A unique, numeric ID of a monitor.
 
 
 === "OpenAPI (YAML)"
@@ -351,12 +353,17 @@ The generic webhook message (if you don't use a custom template) has the followi
     GenericWebhookMessage:
       required:
       - monitorId
+      - monitorUrn
       - monitorName
       - timestamp
       - type
+      - eventDetails
       type: object
       properties:
         monitorId:
+          type: integer
+          format: int64
+        monitorUrn:
           type: string
         monitorName:
           type: string
@@ -375,7 +382,6 @@ The generic webhook message (if you don't use a custom template) has the followi
             - SSL_WILL_EXPIRE
         eventDetails:
           type: string
-          nullable: true
     ```
 
 ### URL

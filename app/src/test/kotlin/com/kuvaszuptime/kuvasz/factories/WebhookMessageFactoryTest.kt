@@ -22,6 +22,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             val resultFromUpEvent = factory.fromMonitorEvent(
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
+                        id = 23423
                         name = "something"
                         sensitiveUrl = false
                         url = "https://irrelevant"
@@ -35,6 +36,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             val resultFromDownMonitor = factory.fromMonitorEvent(
                 event = HttpMonitorDownEvent(
                     monitor = HttpMonitorRecord().apply {
+                        id = 23423
                         name = "something"
                         sensitiveUrl = false
                         url = "https://irrelevant"
@@ -58,6 +60,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             factory.fromMonitorEvent(
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
+                        id = 23423
                         name = "something"
                         sensitiveUrl = false
                         url = "https://irrelevant"
@@ -79,6 +82,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             factory.fromMonitorEvent(
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
+                        id = 23423
                         name = "something"
                         sensitiveUrl = false
                         url = "https://irrelevant"

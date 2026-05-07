@@ -1114,13 +1114,18 @@ components:
           description: The email address to which notifications are sent
     GenericWebhookMessage:
       required:
+      - eventDetails
       - monitorId
       - monitorName
+      - monitorUrn
       - timestamp
       - type
       type: object
       properties:
         monitorId:
+          type: integer
+          format: int64
+        monitorUrn:
           type: string
           description: "A unique identifier for a monitor, formatted as 'type:name'."
           example: http:My precious monitor
@@ -1133,7 +1138,6 @@ components:
           $ref: "#/components/schemas/IntegrationEventType"
         eventDetails:
           type: string
-          nullable: true
     HealthResult:
       type: object
       properties:

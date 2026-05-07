@@ -1,9 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -16,10 +14,13 @@ import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import org.slf4j.LoggerFactory
 
 @Context
@@ -28,10 +29,9 @@ class WebhookEventHandler(
     private val eventDispatcher: EventDispatcher,
     private val webhookService: GenericWebhookService,
     integrationRepository: IntegrationRepository,
-    private val messageFactory: WebhookMessageFactory,
 ) : AbstractIntegrationProvider(integrationRepository) {
     companion object {
-        private val logger = LoggerFactory.getLogger(WebhookEventHandler::class.java)
+        private val logger = LoggerFactory.getLogger(this::class.java)
     }
 
     init {
@@ -69,12 +69,17 @@ class WebhookEventHandler(
     }
 
     private fun Single<String>.handleResponse(): Disposable =
-        subscribe(
+        subscribeOn(Schedulers.io()).subscribe(
             {
-                logger.debug("The event has been successfully sent to the webhook target")
+                logger.debug("The message to your configured webhook has been successfully sent")
             },
             { ex ->
-                logger.error("The event cannot be sent to the webhook target: ${ex.message}")
+                val message = if (ex is HttpClientResponseException) {
+                    ex.response.getBodyAs<String>() ?: "Empty response"
+                } else {
+                    ex.message
+                }
+                logger.error("The message cannot be sent to your configured webhook: $message")
             }
         )
 
@@ -84,12 +89,12 @@ class WebhookEventHandler(
                 when (event) {
                     is HttpMonitorUpEvent, is PushMonitorUpEvent -> {
                         if (previousEvent != null) {
-                            assembleAndSendRequest(event, target as WebhookNotificationConfig).handleResponse()
+                            webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
                         }
                     }
 
                     is HttpMonitorDownEvent, is PushMonitorDownEvent ->
-                        assembleAndSendRequest(event, target as WebhookNotificationConfig).handleResponse()
+                        webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
                 }
             }
         }
@@ -101,31 +106,14 @@ class WebhookEventHandler(
                 when (event) {
                     is SSLValidEvent -> {
                         if (previousEvent != null) {
-                            assembleAndSendRequest(event, target as WebhookNotificationConfig).handleResponse()
+                            webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
                         }
                     }
 
                     is SSLInvalidEvent, is SSLWillExpireEvent ->
-                        assembleAndSendRequest(event, target as WebhookNotificationConfig).handleResponse()
+                        webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
                 }
             }
-        }
-    }
-
-    @Suppress("TooGenericExceptionCaught")
-    private fun assembleAndSendRequest(event: MonitorEvent<*>, config: WebhookNotificationConfig): Single<String> {
-        val template = config.payloadTemplate
-
-        return if (template.isNullOrBlank()) {
-            webhookService.sendGenericWebhookEvent(config, messageFactory.fromMonitorEvent(event))
-        } else {
-            val payload = try {
-                messageFactory.fromMonitorEvent(event, template)
-            } catch (ex: Exception) {
-                logger.error("Failed to parse webhook template: ${ex.message}")
-                return Single.error(ex)
-            }
-            webhookService.sendTemplatedWebhookEvent(config, payload)
         }
     }
 }

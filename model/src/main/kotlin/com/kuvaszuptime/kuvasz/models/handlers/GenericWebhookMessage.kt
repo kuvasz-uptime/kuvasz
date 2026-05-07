@@ -5,9 +5,10 @@ import io.micronaut.core.annotation.Introspected
 
 @Introspected
 data class GenericWebhookMessage(
-    val monitorId: MonitorID,
+    val monitorId: Long,
+    val monitorUrn: MonitorID,
     val monitorName: String,
     val timestamp: Long,
     val type: IntegrationEventType,
-    val eventDetails: String?,
+    val eventDetails: String,
 )
