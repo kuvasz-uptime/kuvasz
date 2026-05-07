@@ -24,6 +24,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -102,6 +103,7 @@ class HttpMonitorControllerTest(
                     IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val monitor = createHttpMonitor(
                     monitorRepository,
@@ -183,6 +185,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -190,6 +193,7 @@ class HttpMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -197,6 +201,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -204,6 +209,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -211,6 +217,15 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.WEBHOOK,
+                            global = false,
+                            excludedEvents = listOf(IntegrationEventType.HTTP_UP),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -219,6 +234,7 @@ class HttpMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -226,6 +242,7 @@ class HttpMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -233,6 +250,15 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:Global2_with_headers",
+                            enabled = true,
+                            name = "Global2_with_headers",
+                            type = IntegrationType.WEBHOOK,
+                            global = true,
+                            excludedEvents = emptyList(),
                         ),
                     )
                 }
@@ -517,6 +543,7 @@ class HttpMonitorControllerTest(
                     IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val monitor = createHttpMonitor(
                     monitorRepository,
@@ -614,6 +641,7 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -621,6 +649,7 @@ class HttpMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -628,6 +657,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -635,6 +665,7 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -642,6 +673,15 @@ class HttpMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.WEBHOOK,
+                            global = false,
+                            excludedEvents = listOf(IntegrationEventType.HTTP_UP),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -650,6 +690,7 @@ class HttpMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -657,6 +698,7 @@ class HttpMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -664,6 +706,15 @@ class HttpMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:Global2_with_headers",
+                            enabled = true,
+                            name = "Global2_with_headers",
+                            type = IntegrationType.WEBHOOK,
+                            global = true,
+                            excludedEvents = emptyList(),
                         ),
                     )
                 }
@@ -1226,7 +1277,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -1245,7 +1296,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -2147,7 +2198,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.requestHeadersAsMap() shouldContainExactly createdMonitor.requestHeaders
                 }
             }
@@ -2175,7 +2226,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.VALID_HEADER_NAMES
+                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.expectedHeadersAsMap() shouldContainExactly createdMonitor.expectedHeaders
                 }
             }

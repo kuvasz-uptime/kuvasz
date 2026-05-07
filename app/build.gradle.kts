@@ -67,6 +67,7 @@ dependencies {
 
     // OpenAPI
     kapt(mn.micronaut.openapi)
+    compileOnly(mn.micronaut.openapi.annotations)
     implementation(mn.swagger.annotations)
 
     // DB & jOOQ & Flyway
@@ -98,6 +99,9 @@ dependencies {
     implementation(mn.micrometer.core)
     implementation(mn.micronaut.micrometer.registry.prometheus)
     implementation(mn.micronaut.micrometer.registry.otlp)
+
+    // Templating
+    implementation(libs.pebble)
 
     // Testing
     testImplementation(libs.mockk)

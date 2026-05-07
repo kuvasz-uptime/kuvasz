@@ -1,0 +1,13 @@
+integrations:
+  webhook:
+    - name: test_implicitly_enabled
+      url: https://custom-webhook.com/webhook
+    - name: Global2_with_headers
+      url: https://custom-global-webhook.com
+      global: true
+      request-headers:
+        User-Agent: "Mozilla/5.0"
+        "1 invalid-header": value
+    - name: disabled
+      url: https://disabled-webhook.com
+      enabled: false

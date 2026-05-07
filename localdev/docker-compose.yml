@@ -26,3 +26,8 @@ services:
       - ./application-dev.yml:/config/kuvasz.yml
     depends_on:
       - postgres-16
+  http-echo:
+    image: mendhak/http-https-echo:40
+    ports:
+      - "8081:8080"
+      - "8443:8443"

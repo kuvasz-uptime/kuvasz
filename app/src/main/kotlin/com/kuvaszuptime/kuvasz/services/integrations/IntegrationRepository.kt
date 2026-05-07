@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.WebhookNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
@@ -17,9 +18,11 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import io.micronaut.context.annotation.Context
+import io.pebbletemplates.pebble.PebbleEngine
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 
@@ -27,6 +30,7 @@ import org.slf4j.LoggerFactory
 class IntegrationRepository(
     private val integrationConfigs: List<IntegrationConfig>,
     private val smtpConfig: SMTPMailerConfig?,
+    private val templateEngine: PebbleEngine?,
 ) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
@@ -48,6 +52,23 @@ class IntegrationRepository(
                         "Please ensure each integration has a unique name."
                 )
             }
+
+            // Validate webhook payload templates
+            @Suppress("SwallowedException", "TooGenericExceptionCaught")
+            if (
+                integrationConfig is WebhookNotificationConfig
+                && !integrationConfig.payloadTemplate.isNullOrEmpty()
+                && templateEngine != null
+            ) {
+                try {
+                    templateEngine.getTemplate(integrationConfig.payloadTemplate)
+                } catch (ex: Exception) {
+                    throw IntegrationConfigException(
+                        "Failed to parse payload template for ${integrationConfig.id}: ${ex.message}",
+                    )
+                }
+            }
+
             result[integrationConfig.id] = integrationConfig
         }
         result.toMap()
@@ -134,6 +155,7 @@ class IntegrationRepository(
                 is PagerdutyConfig -> PagerdutyConfigDto(config.id, config)
                 is EmailNotificationConfig -> EmailNotificationConfigDto(config.id, config)
                 is TelegramNotificationConfig -> TelegramNotificationConfigDto(config.id, config)
+                is WebhookNotificationConfig -> WebhookNotificationConfigDto(config.id, config)
             }
         }
 }

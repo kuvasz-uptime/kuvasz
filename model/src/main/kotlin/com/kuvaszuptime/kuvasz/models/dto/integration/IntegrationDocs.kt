@@ -6,4 +6,6 @@ object IntegrationDocs {
     const val TYPE = "Type of the integration"
     const val ENABLED = "Whether the integration is enabled"
     const val GLOBAL = "Whether the integration is global (applies to all monitors by default)"
+    const val EXCLUDED_EVENTS = "The list of the events that should be excluded from notifications for " +
+        "this integration. If empty or null, no event types are excluded."
 }

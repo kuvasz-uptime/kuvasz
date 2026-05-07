@@ -52,7 +52,7 @@ dependencyResolutionManagement {
             val kotlinCoroutinesVersion: String by settings
             val jooqVersion: String by settings
             val jooqPluginVersion: String by settings
-            val detektVersion: String by settings
+            val detektVersion = "1.23.8"
 
             // Kotlin
             version("kotlin", kotlinVersion)
@@ -97,11 +97,12 @@ dependencyResolutionManagement {
 
             // Misc
             library("arrow-core-data", "io.arrow-kt", "arrow-core-data").version("0.12.1")
+            library("pebble", "io.pebbletemplates", "pebble").version("4.1.1")
             library(
                 "detekt-formatting",
                 "io.gitlab.arturbosch.detekt",
                 "detekt-formatting"
-            ).version("1.23.8")
+            ).version(detektVersion)
         }
     }
 }

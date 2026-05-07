@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -36,6 +37,11 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                         th { classes(TEXT_CENTER) }
                                         // ID
                                         th { +"ID" }
+                                        // Events
+                                        th {
+                                            classes(TEXT_CENTER)
+                                            +Messages.triggers()
+                                        }
                                         // Enabled, global
                                         th { classes(TEXT_CENTER) }
                                         // Test
@@ -79,6 +85,26 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                         )
                                                         icon(Icon.INFO_CIRCLE)
                                                     }
+                                                }
+                                            }
+                                            td {
+                                                classes(TEXT_CENTER)
+                                                span {
+                                                    val handledEventTypes = IntegrationEventType.entries
+                                                        .minus(integration.excludedEvents.toSet())
+                                                    val tooltipLabel = handledEventTypes
+                                                        .joinToString(separator = ", ")
+                                                        .ifEmpty { Messages.noEventsForIntegration() }
+                                                    inlineStatusBadge(
+                                                        text = handledEventTypes.size.toString(),
+                                                        color = if (handledEventTypes.isEmpty()) {
+                                                            Color.RED_LT
+                                                        } else {
+                                                            Color.DEFAULT
+                                                        },
+                                                        icon = Icon.BOLT,
+                                                        tooltip = tooltipLabel
+                                                    )
                                                 }
                                             }
                                             // Enabled, global
@@ -201,4 +227,5 @@ private fun IntegrationType.toCssColor(): CSSClass? = when (this) {
     IntegrationType.PAGERDUTY -> TEXT_GREEN
     IntegrationType.EMAIL -> null
     IntegrationType.DISCORD -> TEXT_INDIGO
+    IntegrationType.WEBHOOK -> TEXT_YELLOW
 }

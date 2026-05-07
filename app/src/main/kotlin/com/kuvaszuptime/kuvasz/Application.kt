@@ -2,7 +2,9 @@
 
 package com.kuvaszuptime.kuvasz
 
+import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader
+import io.micronaut.openapi.annotation.OpenAPIExtraSchema
 import io.micronaut.runtime.Micronaut.build
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn
@@ -56,6 +58,9 @@ import io.swagger.v3.oas.annotations.tags.Tag
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
     )
+)
+@OpenAPIExtraSchema(
+    classes = [GenericWebhookMessage::class],
 )
 @Suppress("SpreadOperator")
 object Application {

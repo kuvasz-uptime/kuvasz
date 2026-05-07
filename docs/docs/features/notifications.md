@@ -13,22 +13,26 @@ _Kuvasz_ supports a variety of integrations to help you **stay informed** about 
 
 ## Watched events
 
-Every integration **watches a set of events**, which are fired by the monitors. These events are currently the following:
+Every integration **watches a set of events** by default, which are fired by the monitors. These events are currently the following:
 
 ### Uptime events
 
-| Event  | Description                                                         |
-|--------|---------------------------------------------------------------------|
-| `UP`   | Fired, when a monitor is **healthy** now (and it was `DOWN` before) |
-| `DOWN` | Fired, when a monitors is **unhealthy**                             |
+| Event                   | Description                                                            |
+|-------------------------|------------------------------------------------------------------------|
+| `HTTP_UP` `PUSH_UP`     | Fired, when a monitor is **healthy** now (and it was unhealthy before) |
+| `HTTP_DOWN` `PUSH_DOWN` | Fired, when a monitors is **unhealthy**                                |
 
 ### SSL events
 
-| Event         | Description                                                                                         |
-|---------------|-----------------------------------------------------------------------------------------------------|
-| `VALID`       | Fired, when an SSL certificate is **valid** now (and it was `INVALID` or `WILL_EXPIRE` before)      |
-| `INVALID`     | Fired, when an SSL certificate is **invalid or expired** now                                        |
-| `WILL_EXPIRE` | Fired, when an SSL certificate **will expire in the next X days** (`X` is configurable per monitor) |
+| Event             | Description                                                                                            |
+|-------------------|--------------------------------------------------------------------------------------------------------|
+| `SSL_VALID`       | Fired, when an SSL certificate is **valid** now (and it was `SSL_INVALID` or `SSL_WILL_EXPIRE` before) |
+| `SSL_INVALID`     | Fired, when an SSL certificate is **invalid or expired** now                                           |
+| `SSL_WILL_EXPIRE` | Fired, when an SSL certificate **will expire in the next X days** (`X` is configurable per monitor)    |
+
+!!! tip "Excluding certain events"
+
+    You can [exclude certain events](../management/integrations.md#excluded-events) from triggering notifications on a per-integration basis. This allows you to, for example, only receive notifications about downtime, but not about SSL certificate issues.
 
 ## Slack <!-- md:config ../management/integrations.md#slack -->
 
@@ -58,6 +62,12 @@ The _PagerDuty_ integration allows you to trigger **incidents in PagerDuty** whe
 The _Telegram_ integration allows you to send notifications **to a specific Telegram chat** via the Bot API. You can use it to receive notifications about the status of your monitors **directly in your Telegram app**.
 
 ![Telegram integration](../images/integrations/telegram.webp)
+
+## Webhooks <!-- md:config ../management/integrations.md#webhooks -->
+
+The _Webhook_ integration allows you to send notifications to **any HTTP endpoint**. This is a very flexible integration, as it allows you to integrate with **any service that supports incoming webhooks**, or even with your own custom backend.
+
+Since you can configure which events the webhook should watch, and also the payload via custom templates, you can use this integration to **build your own custom notifications** or to integrate with services that are not supported out of the box.
 
 !!! tip "Do you miss an integration?"
 

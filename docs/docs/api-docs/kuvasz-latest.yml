@@ -964,7 +964,8 @@ paths:
       tags:
       - Status pages
       summary: Get a status page's details
-      description: Use "0" as an ID to get the default status page's details
+      description: Use "0" as an ID to get the default status page's details. The
+        requests that are targeting public status pages doesn't need to be authenticated!
       operationId: getStatusPageDetails
       parameters:
       - name: statusPageId
@@ -1038,6 +1039,7 @@ components:
     DiscordNotificationConfigDto:
       required:
       - enabled
+      - excludedEvents
       - global
       - id
       - name
@@ -1062,9 +1064,16 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
     EmailNotificationConfigDto:
       required:
       - enabled
+      - excludedEvents
       - fromAddress
       - global
       - id
@@ -1091,12 +1100,44 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
         fromAddress:
           type: string
           description: The email address from which notifications are sent
         toAddress:
           type: string
           description: The email address to which notifications are sent
+    GenericWebhookMessage:
+      required:
+      - eventDetails
+      - monitorId
+      - monitorName
+      - monitorUrn
+      - timestamp
+      - type
+      type: object
+      properties:
+        monitorId:
+          type: integer
+          format: int64
+        monitorUrn:
+          type: string
+          description: "A unique identifier for a monitor, formatted as 'type:name'."
+          example: http:My precious monitor
+        monitorName:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/IntegrationEventType"
+        eventDetails:
+          type: string
     HealthResult:
       type: object
       properties:
@@ -2022,6 +2063,7 @@ components:
       - PUSH
     IntegrationConfigDto:
       required:
+      - excludedEvents
       - id
       - name
       - type
@@ -2039,15 +2081,21 @@ components:
           type: boolean
         global:
           type: boolean
+        excludedEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
       oneOf:
       - $ref: "#/components/schemas/SlackNotificationConfigDto"
       - $ref: "#/components/schemas/DiscordNotificationConfigDto"
       - $ref: "#/components/schemas/PagerdutyConfigDto"
       - $ref: "#/components/schemas/EmailNotificationConfigDto"
       - $ref: "#/components/schemas/TelegramNotificationConfigDto"
+      - $ref: "#/components/schemas/WebhookNotificationConfigDto"
     IntegrationDetailsDto:
       required:
       - enabled
+      - excludedEvents
       - global
       - id
       - name
@@ -2072,6 +2120,22 @@ components:
         global:
           type: boolean
           description: Whether the integration is global or not
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
+    IntegrationEventType:
+      type: string
+      enum:
+      - HTTP_UP
+      - HTTP_DOWN
+      - PUSH_UP
+      - PUSH_DOWN
+      - SSL_VALID
+      - SSL_INVALID
+      - SSL_WILL_EXPIRE
     IntegrationType:
       type: string
       enum:
@@ -2080,6 +2144,7 @@ components:
       - SLACK
       - TELEGRAM
       - DISCORD
+      - WEBHOOK
     LatencyLogDto:
       required:
       - createdAt
@@ -2152,6 +2217,7 @@ components:
     PagerdutyConfigDto:
       required:
       - enabled
+      - excludedEvents
       - global
       - id
       - name
@@ -2176,6 +2242,12 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
     PushMonitorCreateDto:
       required:
       - clientSecret
@@ -2842,6 +2914,7 @@ components:
     SlackNotificationConfigDto:
       required:
       - enabled
+      - excludedEvents
       - global
       - id
       - name
@@ -2866,6 +2939,12 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
     SslStatus:
       type: string
       enum:
@@ -3169,6 +3248,7 @@ components:
       required:
       - chatId
       - enabled
+      - excludedEvents
       - global
       - id
       - name
@@ -3193,6 +3273,12 @@ components:
           type: boolean
           description: Whether the integration is global (applies to all monitors
             by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
         chatId:
           type: string
           description: The chat ID for Telegram notifications
@@ -3227,6 +3313,56 @@ components:
           type: boolean
           description: "Whether the installed version is up to date. If update checks\
             \ are disabled, it's always true"
+    WebhookNotificationConfigDto:
+      required:
+      - enabled
+      - excludedEvents
+      - global
+      - id
+      - name
+      - payloadTemplate
+      - requestHeaders
+      - type
+      - url
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
+        url:
+          type: string
+          description: The target URL of the webhook
+        payloadTemplate:
+          type: string
+          description: "The template for the webhook request body. If not provided,\
+            \ a generic payload will be sent"
+          nullable: true
+        requestHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: The HTTP headers to include in the webhook request
   securitySchemes:
     apiKey:
       type: apiKey

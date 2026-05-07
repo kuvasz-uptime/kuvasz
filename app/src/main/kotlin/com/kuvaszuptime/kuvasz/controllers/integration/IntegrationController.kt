@@ -13,8 +13,10 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
+import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.NotificationTestResult
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyTestService
@@ -75,6 +77,7 @@ class IntegrationController(
             is PagerdutyConfig -> sendTestMessage<PagerdutyConfig, PagerdutyTestService>(config)
             is SlackNotificationConfig -> sendTestMessage<SlackNotificationConfig, SlackWebhookService>(config)
             is TelegramNotificationConfig -> sendTestMessage<TelegramNotificationConfig, TelegramAPIService>(config)
+            is WebhookNotificationConfig -> sendTestMessage<WebhookNotificationConfig, GenericWebhookService>(config)
         }
         logger.debug("Test notification result for integration ID $integrationId: $result")
         return result

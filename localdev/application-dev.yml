@@ -120,6 +120,26 @@ push-monitors:
       - "slack:test"
 ---
 integrations:
+  webhook:
+    - name: webhook-test
+      global: true
+      excluded-events: [ ]
+      url: http://localhost:8081/webhook
+      request-headers:
+        Something: Value
+    - name: webhook-templated
+      global: true
+      url: http://localhost:8081/webhook-templated
+      excluded-events:
+        - PUSH_UP
+        - HTTP_UP
+        - SSL_VALID
+        - SSL_WILL_EXPIRE
+      payload-template: |
+        {
+          "monitorName": "{{ctx.monitorName}}",
+          "type": "{{ctx.type}}"
+        }
   slack:
     - name: test
       webhook-url: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX

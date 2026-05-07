@@ -1,3 +1,13 @@
+## 3.8.0 <small>2026-05-07</small> { id="3.8.0" data-toc-label="3.8.0" }
+
+By adding the **webhooks support**, this release introduces a huge step towards making _Kuvasz_ more extensible and integrable with other systems. Webhooks allow you to send real-time notifications about monitor status changes to any 3rd party service, or even to your own custom-built solutions, without the need for a built-in integration.
+
+### Features
+
+- **Webhooks** are in da house! 🎉 With the (optional) custom template support, and the ability to include your own headers, the number of use-cases you can cover with webhooks is pretty much endless. You can set them up just like any other integration, for further details, please refer to the [**documentation**](management/integrations.md#webhooks).
+- It's now possible to **exclude certain events from an integration's triggering conditions**, by using the new `excluded-events` attribute of the [**integration configuration**](management/integrations.md#excluded-events). 
+- Added a **new endpoint to the API** under `GET /api/v2/status-pages/{statusPageId}/details` where you can get the same **details of a status page as on the UI**, including the monitors' incident stats, so you can build your own custom status pages or integrate the details into your existing system. In case you want to get the details of a public status page, you don't even have to be authenticated, in order to be able to build publicly available status pages on your own. For further details, please refer to the [**API documentation**](https://api-docs.kuvasz-uptime.dev/#operation/getStatusPageDetails){ target="_blank" }.
+
 ## 3.7.1 <small>2026-04-23</small> { id="3.7.1" data-toc-label="3.7.1" }
 
 ### Fixes

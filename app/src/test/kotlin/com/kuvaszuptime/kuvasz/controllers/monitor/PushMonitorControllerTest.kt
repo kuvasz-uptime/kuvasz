@@ -20,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -84,6 +85,7 @@ class PushMonitorControllerTest(
                     IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val now = getCurrentTimestamp()
                 val monitor = createPushMonitor(
@@ -146,6 +148,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -153,6 +156,7 @@ class PushMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -160,6 +164,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -167,6 +172,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -174,6 +180,15 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.WEBHOOK,
+                            global = false,
+                            excludedEvents = listOf(IntegrationEventType.HTTP_UP),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -182,6 +197,7 @@ class PushMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -189,6 +205,7 @@ class PushMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -196,6 +213,15 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:Global2_with_headers",
+                            enabled = true,
+                            name = "Global2_with_headers",
+                            type = IntegrationType.WEBHOOK,
+                            global = true,
+                            excludedEvents = emptyList(),
                         ),
                     )
                 }
@@ -290,6 +316,7 @@ class PushMonitorControllerTest(
                     IntegrationID(IntegrationType.DISCORD, "global"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val now = getCurrentTimestamp()
                 val monitor = createPushMonitor(
@@ -343,6 +370,7 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.SLACK,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "email:disabled",
@@ -350,6 +378,7 @@ class PushMonitorControllerTest(
                             name = "disabled",
                             type = IntegrationType.EMAIL,
                             global = false,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "discord:global",
@@ -357,6 +386,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.DISCORD,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "telegram:global",
@@ -364,6 +394,7 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.TELEGRAM,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:test_implicitly_enabled",
@@ -371,6 +402,15 @@ class PushMonitorControllerTest(
                             name = "test_implicitly_enabled",
                             type = IntegrationType.PAGERDUTY,
                             global = false,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:test_implicitly_enabled",
+                            enabled = true,
+                            name = "test_implicitly_enabled",
+                            type = IntegrationType.WEBHOOK,
+                            global = false,
+                            excludedEvents = listOf(IntegrationEventType.HTTP_UP),
                         ),
                         // Implicit globals should be included too
                         IntegrationDetailsDto(
@@ -379,6 +419,7 @@ class PushMonitorControllerTest(
                             name = "Global-343",
                             type = IntegrationType.EMAIL,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "slack:Global2",
@@ -386,6 +427,7 @@ class PushMonitorControllerTest(
                             name = "Global2",
                             type = IntegrationType.SLACK,
                             global = true,
+                            excludedEvents = emptyList(),
                         ),
                         IntegrationDetailsDto(
                             id = "pagerduty:global",
@@ -393,6 +435,15 @@ class PushMonitorControllerTest(
                             name = "global",
                             type = IntegrationType.PAGERDUTY,
                             global = true,
+                            excludedEvents = emptyList(),
+                        ),
+                        IntegrationDetailsDto(
+                            id = "webhook:Global2_with_headers",
+                            enabled = true,
+                            name = "Global2_with_headers",
+                            type = IntegrationType.WEBHOOK,
+                            global = true,
+                            excludedEvents = emptyList(),
                         ),
                     )
                 }
@@ -826,6 +877,7 @@ class PushMonitorControllerTest(
                     IntegrationID(IntegrationType.EMAIL, "disabled"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val createDto = PushMonitorCreateDto(
                     name = "test_monitor",
@@ -850,6 +902,7 @@ class PushMonitorControllerTest(
                         mapper
                             .createArrayNode()
                             .add("slack:test_implicitly_enabled")
+                            .add("webhook:test_implicitly_enabled")
                             .add("telegram:disabled")
                     )
 
@@ -871,6 +924,7 @@ class PushMonitorControllerTest(
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
                         arrayOf(
                             IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                            IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                             IntegrationID(IntegrationType.TELEGRAM, "disabled"),
                         )
 
@@ -910,6 +964,7 @@ class PushMonitorControllerTest(
                     IntegrationID(IntegrationType.EMAIL, "disabled"),
                     IntegrationID(IntegrationType.TELEGRAM, "global"),
                     IntegrationID(IntegrationType.PAGERDUTY, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.WEBHOOK, "test_implicitly_enabled"),
                 )
                 val createDto = PushMonitorCreateDto(
                     name = "test_monitor",

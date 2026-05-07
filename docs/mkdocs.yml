@@ -65,6 +65,8 @@ plugins:
       skip_classes:
         - skip-lb
 extra:
+  annotate:
+    json: [ .s2 ]
   consent:
     title: Cookie consent
     actions:
@@ -93,6 +95,7 @@ nav:
   - Getting started:
       - Deployment: setup/installation.md
       - Configuration reference: setup/configuration.md
+      - Official Helm chart: setup/helm-deployment.md
   - Management:
       - Integrations setup: management/integrations.md
       - Managing monitors:

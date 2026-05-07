@@ -395,6 +395,22 @@ integrations:
       api-token: 'YourToken'
       chat-id: '-1232642423121'
       enabled: false
+  webhook:
+    - name: webhook_templated
+      url: https://any-other-http.service/webhooks
+      excluded-events:
+        - PUSH_UP
+        - HTTP_UP
+        - SSL_WILL_EXPIRE
+      request-headers:
+        Accept: '*/*'
+        Authorization: Bearer your-webhook-secret-token
+        X-Custom-Header: custom-value
+      payload-template: |
+        {
+          "monitorName": "{{ctx.monitorName}}",
+          "type": "{{ctx.type}}"
+        }
 ---
 http-monitors:
   - name: "full configuration example"

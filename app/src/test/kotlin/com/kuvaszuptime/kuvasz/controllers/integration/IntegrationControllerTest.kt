@@ -4,8 +4,10 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.WebhookNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
@@ -22,7 +24,10 @@ import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeSortedBy
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldContainAll
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -50,7 +55,7 @@ class IntegrationControllerTest(
         should("return all the configured integrations, ordered by their names") {
             val response = integrationClient.getIntegrations()
 
-            response shouldHaveSize 15
+            response shouldHaveSize 18
             response.shouldBeSortedBy { it.name }
 
             response.forOne { implicitlyEnabledSlack ->
@@ -160,6 +165,47 @@ class IntegrationControllerTest(
                 disabledTelegram.enabled shouldBe false
                 disabledTelegram.global shouldBe false
                 disabledTelegram.chatId shouldBe "-1001122334455"
+            }
+
+            response.forOne { implicitlyEnabledWebhook ->
+                implicitlyEnabledWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
+                implicitlyEnabledWebhook.id shouldBe IntegrationID(
+                    IntegrationType.WEBHOOK,
+                    "test_implicitly_enabled"
+                )
+                implicitlyEnabledWebhook.name shouldBe "test_implicitly_enabled"
+                implicitlyEnabledWebhook.enabled shouldBe true
+                implicitlyEnabledWebhook.global shouldBe false
+                implicitlyEnabledWebhook.url shouldBe "https://custom-webhook.com/webhook"
+                implicitlyEnabledWebhook.payloadTemplate shouldBe
+                    "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
+                    "{{ctx.type}}{% endif %}}"
+            }
+            response.forOne { globalWebhook ->
+                globalWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
+                globalWebhook.id shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
+                globalWebhook.name shouldBe "Global2_with_headers"
+                globalWebhook.enabled shouldBe true
+                globalWebhook.global shouldBe true
+                globalWebhook.url shouldBe "https://custom-global-webhook.com"
+                globalWebhook.payloadTemplate.shouldBeNull()
+                globalWebhook.requestHeaders shouldContainAll mapOf(
+                    "User-Agent" to "Mozilla/5.0",
+                    "X-Custom-Header" to "custom-value",
+                )
+            }
+            response.forOne { disabledWebhook ->
+                disabledWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
+                disabledWebhook.id shouldBe IntegrationID(IntegrationType.WEBHOOK, "disabled")
+                disabledWebhook.name shouldBe "disabled"
+                disabledWebhook.enabled shouldBe false
+                disabledWebhook.global shouldBe false
+                disabledWebhook.url shouldBe "https://disabled-webhook.com"
+                disabledWebhook.payloadTemplate.shouldBeNull()
+                disabledWebhook.excludedEvents shouldContainExactlyInAnyOrder listOf(
+                    IntegrationEventType.HTTP_UP,
+                    IntegrationEventType.PUSH_UP,
+                )
             }
         }
     }

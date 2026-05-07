@@ -50,3 +50,21 @@ integrations:
       api-token: 0987654321zyxwvutsrqponmlkjihgfedcba
       chat-id: -1001122334455
       enabled: false
+  webhook:
+    - name: test_implicitly_enabled
+      url: https://custom-webhook.com/webhook
+      payload-template: "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}{{ctx.type}}{% endif %}}"
+      excluded-events:
+        - HTTP_UP
+    - name: Global2_with_headers
+      url: https://custom-global-webhook.com
+      global: true
+      request-headers:
+        User-Agent: "Mozilla/5.0"
+        X-Custom-Header: "custom-value"
+    - name: disabled
+      url: https://disabled-webhook.com
+      enabled: false
+      excluded-events:
+        - HTTP_UP
+        - PUSH_UP

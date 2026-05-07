@@ -36,6 +36,7 @@ class AppBootstrappingSanitizationTest(
                     IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
                     IntegrationID(IntegrationType.EMAIL, "disabled"),
                     IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
+                    IntegrationID(IntegrationType.WEBHOOK, "disabled"),
                 )
             )
             .awaitFirst()
@@ -45,6 +46,7 @@ class AppBootstrappingSanitizationTest(
             IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
             IntegrationID(IntegrationType.EMAIL, "disabled"),
             IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
+            IntegrationID(IntegrationType.WEBHOOK, "disabled"),
         )
 
         // Simulating the restart of the application
@@ -55,6 +57,7 @@ class AppBootstrappingSanitizationTest(
         sanitizedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(
             IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
             IntegrationID(IntegrationType.EMAIL, "disabled"),
+            IntegrationID(IntegrationType.WEBHOOK, "disabled"),
         )
     }
 

@@ -73,6 +73,39 @@ integrations:
       integration-key: YourOwnIntegrationKey
 ```
 
+### Excluded events
+
+<!-- md:version 3.8.0 -->
+<!-- md:default empty -->
+<!-- md:type list -->
+<!-- md:yaml_prop `excluded-events` -->
+
+Integrations are listening to every event by default, but you can configure them to **exclude specific events** if you don't want to receive notifications for them.
+
+The valid options are the following:
+
+- `HTTP_UP`
+- `HTTP_DOWN`
+- `PUSH_UP`
+- `PUSH_DOWN`
+- `SSL_VALID`
+- `SSL_INVALID`
+- `SSL_WILL_EXPIRE`
+
+In case you don't specify any event types, or you provide an empty list, the integration **will receive all the events**.
+
+```yaml hl_lines="5"
+integrations:
+  pagerduty:
+    - name: pd_global
+      global: true
+      excluded-events:
+        - PUSH_DOWN
+        - PUSH_UP
+        - SSL_WILL_EXPIRE
+      integration-key: YourOwnIntegrationKey
+```
+
 ## Slack
 
 **Configuration alias**: `slack`
@@ -281,6 +314,136 @@ integrations:
     # ... other Telegram integrations
 ```
 
+## Webhooks
+
+**Configuration alias**: `webhook`
+
+The _Webhook_ integration allows you to **send notifications to any endpoint that can receive HTTP POST requests**. You can use it to integrate with 3rd party services that are not natively supported by _Kuvasz_, or to implement custom notification logic within your own infrastructure.
+
+!!! warning
+
+    Make sure that your target endpoint handles `POST` requests and is able to process the payload sent by _Kuvasz_. Otherwise, you might end up with failed notifications and missed alerts.
+
+The generic webhook message (if you don't use a custom template) has the following structure:
+
+=== "JSON"
+
+    ```json
+    {
+      "monitorId": "234 (6)",
+      "monitorUrn": "http:GitHub API (1)",
+      "monitorName": "GitHub API (2)",
+      "timestamp": "1777661064488 (3)", 
+      "type": "HTTP_DOWN (4)",
+      "eventDetails": "Your monitor \"GitHub API\" (https://api.github.com) is DOWN. Reason: Connect Error: Connection refused: api.github.com (5)"
+    }
+    ```
+    
+    1. **monitorUrn**: A unique identifier of a monitor, formatted as 'type:name'.
+    2. **monitorName**: The name of the monitor, which must be unique.
+    3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
+    4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
+    5. **eventDetails**: A human-readable message with more details about the event. Optional, can be `null` if no additional details are available.
+    6. **monitorId**: A unique, numeric ID of a monitor.
+
+
+=== "OpenAPI (YAML)"
+
+    ```yaml
+    GenericWebhookMessage:
+      required:
+      - monitorId
+      - monitorUrn
+      - monitorName
+      - timestamp
+      - type
+      - eventDetails
+      type: object
+      properties:
+        monitorId:
+          type: integer
+          format: int64
+        monitorUrn:
+          type: string
+        monitorName:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum:
+            - HTTP_UP
+            - HTTP_DOWN
+            - PUSH_UP
+            - PUSH_DOWN
+            - SSL_VALID
+            - SSL_INVALID
+            - SSL_WILL_EXPIRE
+        eventDetails:
+          type: string
+    ```
+
+### URL
+
+<!-- md:version 3.8.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `url` -->
+
+The URL of the **endpoint where the notifications will be sent**. This can be any URL that can receive HTTP requests, for example, an API endpoint of a 3rd party service, or an endpoint of your own backend.
+
+### Request headers
+
+<!-- md:version 3.8.0 -->
+<!-- md:type map -->
+<!-- md:yaml_prop `request-headers` -->
+
+Optional **HTTP headers that will be included in the requests** sent to the target URL. This can be useful, for example, to include an `Authorization` header if the target endpoint requires authentication.
+The only header that is **always included in the requests** is the `Content-Type` header, which is set to `application/json` by default, but you can override it with your own value if needed.
+
+### Payload template
+
+<!-- md:version 3.8.0 -->
+<!-- md:type string -->
+<!-- md:yaml_prop `payload-template` -->
+
+You can **customize the payload of the requests** sent to the target URL by providing a payload template. This template can include any of the available context variables, which will be replaced with their actual values when the request is sent. This allows you to create custom payloads that fit the requirements of your target endpoint.
+
+_Kuvasz_ uses the [**Pebble**](https://pebbletemplates.io/){target="_blank"} templating engine, so you can use all the features provided by Pebble in your templates, including conditionals, loops, filters, and more. Pebble is very similar to Twig (PHP) and Jinja (Python) in order to make it easy to use and understand, even if you didn't work with a JVM templating engine before.
+
+For further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
+
+!!! tip "Strict variables"
+
+    Keep in mind that template **variables are handled in a strict way**, which means that if you try to use a variable that is not available in the context, or if you make a typo in the variable name, the template **rendering will fail and the request won't be sent**. So make sure to double-check your templates and test them before using them in production.
+
+#### Available context variables in webhook templates
+
+The context variables are available in an object named `ctx`, and the structure is the **same as the generic webhook message** [described above](#webhooks), so for example you can use `{{ctx.monitorName}}` to include the name of the monitor in your payload, or `{{ctx.type}}` to include the type of the event that triggered the webhook.
+
+---
+
+```yaml title="Webhook integration example"
+webhook:
+  - name: webhook_templated
+    url: https://any-other-http.service/webhooks
+    excluded-events:
+      - PUSH_UP
+      - HTTP_UP
+      - SSL_WILL_EXPIRE
+    request-headers:
+      Accept: '*/*'
+      Authorization: Bearer your-webhook-secret-token
+      X-Custom-Header: custom-value
+    payload-template: |
+      {
+        "monitorName": "{{ctx.monitorName}}",
+        "type": "{{ctx.type}}"
+      }
+  # ... other Webhook integrations
+```
+
 ## Testing integrations
 
 It's vital to ensure that your integrations are correctly set up to receive notifications. You can **test your integrations** (even the disabled ones) directly either:
@@ -291,6 +454,10 @@ It's vital to ensure that your integrations are correctly set up to receive noti
 !!!info "Testing PagerDuty integrations"
 
     Please note that when testing _PagerDuty_ integrations, a **real incident will be created** in your account, which will be immediately resolved by _Kuvasz_.
+
+!!!info "Testing webhook integrations"
+
+    When you test a _Webhook_ integration, **a separate test message will be generated and sent for every event type that the integration watches**, so for example if you have an integration that watches both `HTTP_UP` and `HTTP_DOWN` events, you will receive two separate messages in your target endpoint when you test the integration: one for the `UP` event and one for the `DOWN` event. The **"down" events will be always fired first** to simulate a real downtime scenario, and the "up" events will be fired immediately after to simulate the recovery of the monitor.
 
 ![Integrations list](../images/integrations/integrations_list.webp)
 
