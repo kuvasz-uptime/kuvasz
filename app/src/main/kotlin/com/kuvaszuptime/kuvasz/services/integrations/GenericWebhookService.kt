@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
-import com.kuvaszuptime.kuvasz.factories.getIntegrationEventType
+import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -10,10 +10,8 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
-import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
@@ -150,13 +148,7 @@ class GenericWebhookService(
     override fun sendTestMessage(integrationConfig: WebhookNotificationConfig): Single<NotificationTestResult> {
         val ignoredEventTypes = integrationConfig.excludedEvents.orEmpty()
         val results = testEvents.mapNotNull { testEvent ->
-            @Suppress("NotImplementedDeclaration")
-            val eventType = when (testEvent) {
-                is UptimeMonitorEvent -> testEvent.getIntegrationEventType()
-                is SSLMonitorEvent -> testEvent.getIntegrationEventType()
-                else -> throw NotImplementedError()
-            }
-            if (!ignoredEventTypes.contains(eventType)) {
+            if (!ignoredEventTypes.contains(testEvent.toIntegrationEventType())) {
                 sendWebhookEvent(integrationConfig, testEvent)
             } else null
         }

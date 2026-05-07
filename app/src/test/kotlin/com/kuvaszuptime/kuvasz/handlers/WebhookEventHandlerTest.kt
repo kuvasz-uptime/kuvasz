@@ -625,11 +625,11 @@ class WebhookEventHandlerTest(
         given("the WebhookEventHandler - error handling logic") {
             `when`("it receives an event but an error happens when it calls the webhook") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
-                val event = HttpMonitorUpEvent(
+                val event = HttpMonitorDownEvent(
                     monitor = monitor,
-                    status = HttpStatus.OK,
-                    latency = 1000,
-                    previousEvent = null
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    error = Exception("error"),
+                    previousEvent = null,
                 )
                 mockHttpErrorResponse()
 
@@ -656,12 +656,12 @@ class WebhookEventHandlerTest(
 
     private fun mockHttpErrorResponse() {
         every {
-            mockClient.sendGenericMessage(any(), any<GenericWebhookMessage>(), any())
+            mockClient.sendGenericMessage(any(), any(), any())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )
         every {
-            mockClient.sendTemplatedMessage(any(), any<String>(), any())
+            mockClient.sendTemplatedMessage(any(), any(), any())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )

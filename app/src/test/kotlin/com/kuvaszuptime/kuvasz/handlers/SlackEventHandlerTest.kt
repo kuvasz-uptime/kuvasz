@@ -598,11 +598,11 @@ class SlackEventHandlerTest(
         given("the SlackEventHandler - error handling logic") {
             `when`("it receives an event but an error happens when it calls the webhook") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
-                val event = HttpMonitorUpEvent(
+                val event = HttpMonitorDownEvent(
                     monitor = monitor,
-                    status = HttpStatus.OK,
-                    latency = 1000,
-                    previousEvent = null
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    error = Exception("error"),
+                    previousEvent = null,
                 )
                 mockHttpErrorResponse()
 
