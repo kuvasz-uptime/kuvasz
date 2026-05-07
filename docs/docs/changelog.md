@@ -1,4 +1,4 @@
-## 3.8.0 <small>2026-05-xx</small> { id="3.8.0" data-toc-label="3.8.0" }
+## 3.8.0 <small>2026-05-07</small> { id="3.8.0" data-toc-label="3.8.0" }
 
 By adding the **webhooks support**, this release introduces a huge step towards making _Kuvasz_ more extensible and integrable with other systems. Webhooks allow you to send real-time notifications about monitor status changes to any 3rd party service, or even to your own custom-built solutions, without the need for a built-in integration.
 
