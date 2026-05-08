@@ -40,9 +40,10 @@ class GenericWebhookServiceTest(
     fun buildConfig(
         template: String? = null,
         excludedEventTypes: List<IntegrationEventType> = emptyList(),
+        customHeaders: Map<String, String> = mapOf("X-Custom-Header" to "custom-value"),
     ) = mockk<WebhookNotificationConfig>(relaxed = true) {
         every { url } returns webhookUrl
-        every { requestHeaders } returns mapOf("X-Custom-Header" to "custom-value")
+        every { requestHeaders } returns customHeaders
         every { payloadTemplate } returns template
         every { excludedEvents } returns excludedEventTypes
     }
@@ -93,11 +94,11 @@ class GenericWebhookServiceTest(
                 }
                 genericMessages.forExactly(5) { message ->
                     message.monitorId shouldBe 1
-                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor").toString()
                 }
                 genericMessages.forExactly(2) { message ->
                     message.monitorId shouldBe 2
-                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor").toString()
                 }
             }
         }
@@ -136,11 +137,43 @@ class GenericWebhookServiceTest(
                 }
                 genericMessages.forExactly(4) { message ->
                     message.monitorId shouldBe 1
-                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor").toString()
                 }
                 genericMessages.forExactly(1) { message ->
                     message.monitorId shouldBe 2
-                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor").toString()
+                }
+            }
+        }
+
+        `when`("templated headers are present") {
+            val config = buildConfig(
+                excludedEventTypes = IntegrationEventType.entries.minus(IntegrationEventType.PUSH_DOWN),
+                customHeaders = mapOf(
+                    "X-Custom-Header" to "custom-value",
+                    "X-Event-Type" to "{{ ctx.type }}",
+                    "ThisIsAlsoTemplated" to "{{ ctx.monitorName}}",
+                )
+            )
+
+            every { mockClient.sendGenericMessage(any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should compile them with the event") {
+                result.success shouldBe true
+                result.message shouldBe Messages.successfulTestResultMessage()
+
+                verify(exactly = 1) {
+                    mockClient.sendGenericMessage(
+                        webhookUrl = URI(webhookUrl),
+                        message = any(),
+                        headers = mapOf(
+                            "X-Custom-Header" to "custom-value",
+                            "X-Event-Type" to "PUSH_DOWN",
+                            "ThisIsAlsoTemplated" to "Test monitor",
+                        ),
+                    )
                 }
             }
         }
@@ -228,6 +261,41 @@ class GenericWebhookServiceTest(
                     "Event type: SSL_VALID",
                     "Event type: PUSH_DOWN",
                 )
+            }
+        }
+
+        `when`("templated headers are present") {
+            val config = buildConfig(
+                excludedEventTypes = IntegrationEventType.entries.minus(IntegrationEventType.PUSH_DOWN),
+                template = "Event type: {{ ctx.type }}",
+                customHeaders = mapOf(
+                    "X-Custom-Header" to "custom-value",
+                    "X-Event-Type" to "{{ ctx.type }}",
+                    "ThisIsAlsoTemplated" to "{{ ctx.monitorName}}",
+                    "VerbatimShouldBeFineToo" to "{% verbatim %}{%{% endverbatim %}"
+                )
+            )
+
+            every { mockClient.sendTemplatedMessage(any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should compile them with the event") {
+                result.success shouldBe true
+                result.message shouldBe Messages.successfulTestResultMessage()
+
+                verify(exactly = 1) {
+                    mockClient.sendTemplatedMessage(
+                        webhookUrl = URI(webhookUrl),
+                        payload = "Event type: PUSH_DOWN",
+                        headers = mapOf(
+                            "X-Custom-Header" to "custom-value",
+                            "X-Event-Type" to "PUSH_DOWN",
+                            "ThisIsAlsoTemplated" to "Test monitor",
+                            "VerbatimShouldBeFineToo" to "{%",
+                        ),
+                    )
+                }
             }
         }
 

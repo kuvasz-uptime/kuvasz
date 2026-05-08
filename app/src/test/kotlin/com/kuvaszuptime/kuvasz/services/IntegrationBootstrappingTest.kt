@@ -476,7 +476,15 @@ class IntegrationBootstrappingTest : StringSpec({
             testAppContext("invalid-webhook-template")
         }
 
-        ex.message shouldContain "Failed to parse payload template for webhook:Global2_with_headers"
+        ex.message shouldContain "Failed to parse payload/header template for webhook:Global2_with_headers"
+    }
+
+    "app should not start if a webhook config contains an invalid request header template" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-webhook-header-template")
+        }
+
+        ex.message shouldContain "Failed to parse payload/header template for webhook:Global2_with_headers"
     }
 })
 

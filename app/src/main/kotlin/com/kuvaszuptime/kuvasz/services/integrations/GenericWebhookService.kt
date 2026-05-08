@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
+import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -84,7 +85,7 @@ class GenericWebhookService(
     }
 
     @Suppress("MagicNumber")
-    val testEvents: List<MonitorEvent<*>> = listOf(
+    val testEvents: List<MonitorEvent<out MonitorRecord>> = listOf(
         HttpMonitorDownEvent(
             monitor = testHttpMonitorRecord,
             status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -124,15 +125,18 @@ class GenericWebhookService(
     )
 
     @Suppress("TooGenericExceptionCaught")
-    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<*>): Single<String> {
+    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<out MonitorRecord>): Single<String> {
         val template = target.payloadTemplate
         val webhookUrl = target.url.toUri()
+        val preparedHeaders = target.requestHeaders.orEmpty().mapValues { (_, value) ->
+            messageFactory.fromMonitorEvent(event, value)
+        }
 
         return if (template.isNullOrBlank()) {
             client.sendGenericMessage(
-                webhookUrl,
-                messageFactory.fromMonitorEvent(event),
-                target.requestHeaders.orEmpty()
+                webhookUrl = webhookUrl,
+                message = messageFactory.fromMonitorEvent(event),
+                headers = preparedHeaders,
             )
         } else {
             val payload = try {
@@ -141,7 +145,11 @@ class GenericWebhookService(
                 logger.error("Failed to parse webhook template: ${ex.message}")
                 return Single.error(ex)
             }
-            client.sendTemplatedMessage(webhookUrl, payload, target.requestHeaders.orEmpty())
+            client.sendTemplatedMessage(
+                webhookUrl = webhookUrl,
+                payload = payload,
+                headers = preparedHeaders,
+            )
         }
     }
 

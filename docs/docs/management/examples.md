@@ -344,6 +344,38 @@ The examples below doesn't necessarily map all the possible fields, but it gives
 
 ```
 
+## Webhook examples
+
+Here are some examples of webhook configurations that you can use for different 3rd party services as a starting point.
+_Kuvasz_ is using _Pebble_ as a templating engine under the hood, for further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
+
+!!! tip "Sharing is caring!"
+
+    Did you make a cool webhook configuration that you would like to share with the community? Feel free to open a PR on [GitHub](https://github.com/kuvasz-uptime/kuvasz){target="_blank"} with your example, and we will add it to the documentation!
+
+### ntfy
+
+```yaml
+integrations:
+  webhook:
+    - name: ntfy_test
+      url: https://ntfy.sh
+      payload-template: |
+        {
+          "topic": "kuvasz_uptime_test",
+          "message": "{{ ctx.eventDetails | escape(strategy="js") }}",
+          "title": "Kuvasz Uptime Alert",
+          "tags": [ "rotating_light" ],
+          "priority": 4,
+          "attach": null,
+          "filename": null,
+          "click": null,
+          "actions": [ { "action": "view", "label": "View details", "url": "https://demo.kuvasz-uptime.dev{{ctx.monitorDetailsUrl}}" } ]
+        }
+```
+
+![Ntfy test notification](../images/examples/ntfy_webhook.webp)
+
 ## Full YAML example (app-config + monitors + integrations)
 
 This is just a full example of a _YAML_ configuration file, which you can use as a **starting point** for your own configuration. You can copy and paste it into your own configuration file, and then modify it to suit your needs, but always make sure that **you read the corresponding documentation** sections for each feature or integration you want to use.
@@ -405,7 +437,7 @@ integrations:
       request-headers:
         Accept: '*/*'
         Authorization: Bearer your-webhook-secret-token
-        X-Custom-Header: custom-value
+        X-Custom-Header: "This can be a template as well: {{ ctx.type }}"
       payload-template: |
         {
           "monitorName": "{{ctx.monitorName}}",

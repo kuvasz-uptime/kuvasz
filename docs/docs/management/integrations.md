@@ -333,6 +333,7 @@ The generic webhook message (if you don't use a custom template) has the followi
       "monitorId": "234 (6)",
       "monitorUrn": "http:GitHub API (1)",
       "monitorName": "GitHub API (2)",
+      "monitorDetailsUrl": "/http-monitors/1 (7)",
       "timestamp": "1777661064488 (3)", 
       "type": "HTTP_DOWN (4)",
       "eventDetails": "Your monitor \"GitHub API\" (https://api.github.com) is DOWN. Reason: Connect Error: Connection refused: api.github.com (5)"
@@ -343,8 +344,9 @@ The generic webhook message (if you don't use a custom template) has the followi
     2. **monitorName**: The name of the monitor, which must be unique.
     3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
     4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
-    5. **eventDetails**: A human-readable message with more details about the event. Optional, can be `null` if no additional details are available.
+    5. **eventDetails**: A human-readable message with more details about the event.
     6. **monitorId**: A unique, numeric ID of a monitor.
+    7. **monitorDetailsUrl**: The relative URL to the monitor details page in the _Kuvasz_ web interface.
 
 
 === "OpenAPI (YAML)"
@@ -355,6 +357,7 @@ The generic webhook message (if you don't use a custom template) has the followi
       - monitorId
       - monitorUrn
       - monitorName
+      - monitorDetailsUrl
       - timestamp
       - type
       - eventDetails
@@ -366,6 +369,8 @@ The generic webhook message (if you don't use a custom template) has the followi
         monitorUrn:
           type: string
         monitorName:
+          type: string
+        monitorDetailsUrl:
           type: string
         timestamp:
           type: integer
@@ -383,6 +388,33 @@ The generic webhook message (if you don't use a custom template) has the followi
         eventDetails:
           type: string
     ```
+
+### Header & payload templates
+
+_Kuvasz_ uses the [**Pebble**](https://pebbletemplates.io/){target="_blank"} templating engine, so you can use all the features provided by Pebble in your templates, including conditionals, loops, filters, and more. Pebble is very similar to Twig (PHP) and Jinja (Python) in order to make it easy to use and understand, even if you didn't work with a JVM templating engine before.
+
+For further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
+
+!!! warning "Strict variables"
+
+    Keep in mind that template **variables are handled in a strict way**, which means that if you try to use a variable that is not available in the context, or if you make a typo in the variable name, the template **rendering will fail and the request won't be sent**. So make sure to double-check your templates and test them before using them in production.
+
+#### Available context variables
+
+The context variables are available in an object named `ctx`, and the structure is the **same as the generic webhook message** [described above](#webhooks), so for example you can use `{{ctx.monitorName}}` to include the name of the monitor in your payload, or `{{ctx.type}}` to include the type of the event that triggered the webhook.
+
+!!! question "Having conflicting characters in your hard-coded headers?"
+
+    In case your template would contain some characters that interfere with Pebble's own syntax, you can use the `{% verbatim %}` tag to bypass parsing them, like this:
+
+    ```yaml
+    request-headers:
+      This-Should-Work-Too: "{% verbatim %}{%{% endverbatim %}" # Rendered as "{%"
+    ```
+
+#### Webhook examples for 3rd party services
+
+You can find some examples of how to use the _Webhook_ integration to **integrate with 3rd party services** [here](examples.md#webhook-examples).
 
 ### URL
 
@@ -402,6 +434,14 @@ The URL of the **endpoint where the notifications will be sent**. This can be an
 Optional **HTTP headers that will be included in the requests** sent to the target URL. This can be useful, for example, to include an `Authorization` header if the target endpoint requires authentication.
 The only header that is **always included in the requests** is the `Content-Type` header, which is set to `application/json` by default, but you can override it with your own value if needed.
 
+Starting **from version 3.9.0**, you can also **use templates in the header values**, which allows you to include dynamic information in the headers based on the context of the event that triggered the webhook. For example, you can include the monitor name or the event type in a custom header by using a template like this:
+
+```yaml
+request-headers:
+  X-Monitor-Name: "{{ctx.monitorName}}"
+  X-Event-Type: "{{ctx.type}}"
+```
+
 ### Payload template
 
 <!-- md:version 3.8.0 -->
@@ -409,18 +449,6 @@ The only header that is **always included in the requests** is the `Content-Type
 <!-- md:yaml_prop `payload-template` -->
 
 You can **customize the payload of the requests** sent to the target URL by providing a payload template. This template can include any of the available context variables, which will be replaced with their actual values when the request is sent. This allows you to create custom payloads that fit the requirements of your target endpoint.
-
-_Kuvasz_ uses the [**Pebble**](https://pebbletemplates.io/){target="_blank"} templating engine, so you can use all the features provided by Pebble in your templates, including conditionals, loops, filters, and more. Pebble is very similar to Twig (PHP) and Jinja (Python) in order to make it easy to use and understand, even if you didn't work with a JVM templating engine before.
-
-For further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
-
-!!! tip "Strict variables"
-
-    Keep in mind that template **variables are handled in a strict way**, which means that if you try to use a variable that is not available in the context, or if you make a typo in the variable name, the template **rendering will fail and the request won't be sent**. So make sure to double-check your templates and test them before using them in production.
-
-#### Available context variables in webhook templates
-
-The context variables are available in an object named `ctx`, and the structure is the **same as the generic webhook message** [described above](#webhooks), so for example you can use `{{ctx.monitorName}}` to include the name of the monitor in your payload, or `{{ctx.type}}` to include the type of the event that triggered the webhook.
 
 ---
 

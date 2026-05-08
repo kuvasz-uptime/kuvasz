@@ -1,3 +1,18 @@
+## 3.9.0 <small>2026-05-08</small> { id="3.9.0" data-toc-label="3.9.0" }
+
+### Features
+
+- Added a **new property called `monitorDetailsUrl`** to the [webhook messages](management/integrations.md#webhooks) (also available in the webhook templates as `ctx.monitorDetailsUrl`), which is a relative URL to the affected monitor's details page on the UI. This allows you to easily include a direct link to the monitor's details page in your webhook notifications, so you or your team can quickly access more information about the incident and take necessary actions.
+- The webhook [**request headers**](management/integrations.md#request-headers) **can be templated** from now on, so you can include dynamic values in the headers as well, based on the context of the event that triggered the webhook.
+
+### Fixes
+
+- Fixed a bug in the webhook templating logic that caused templates fail to render in case the `ctx.monitorUrn` variable was referenced inside.
+
+### Docs
+
+- Added a [**dedicated section**](management/examples.md#webhook-examples) **of webhook examples** for 3rd party services (with [ntfy](https://ntfy.sh/){target=_blank} included).
+
 ## 3.8.0 <small>2026-05-07</small> { id="3.8.0" data-toc-label="3.8.0" }
 
 By adding the **webhooks support**, this release introduces a huge step towards making _Kuvasz_ more extensible and integrable with other systems. Webhooks allow you to send real-time notifications about monitor status changes to any 3rd party service, or even to your own custom-built solutions, without the need for a built-in integration.

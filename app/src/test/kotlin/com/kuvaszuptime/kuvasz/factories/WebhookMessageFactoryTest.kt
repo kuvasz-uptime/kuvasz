@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.HttpStatus
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
@@ -17,7 +18,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
         should("render the correct output if template is valid") {
             @Suppress("MaxLineLength")
             val template =
-                """{"request_id": "342342","status": {% if ctx.type == 'HTTP_UP' %}"OK"{% else %}"{{ctx.type}}"{% endif %}}"""
+                """{"id": "{{ctx.monitorUrn}}","status": {% if ctx.type == 'HTTP_UP' %}"OK"{% else %}"{{ctx.type}}"{% endif %}}"""
 
             val resultFromUpEvent = factory.fromMonitorEvent(
                 event = HttpMonitorUpEvent(
@@ -48,10 +49,37 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 literalTemplate = template,
             )
 
-            resultFromUpEvent shouldBe """{"request_id": "342342","status": "OK"}"""
-            resultFromDownMonitor shouldBe """{"request_id": "342342","status": "HTTP_DOWN"}"""
+            resultFromUpEvent shouldBe """{"id": "http:something","status": "OK"}"""
+            resultFromDownMonitor shouldBe """{"id": "http:something","status": "HTTP_DOWN"}"""
+        }
+
+        should("escape special characters according to the provided strategy") {
+            @Suppress("MaxLineLength")
+            val jsEscapedTemplate =
+                """{{ ctx.eventDetails | escape(strategy="js") }}"""
+            val defaultEscapedTemplate =
+                """{{ ctx.eventDetails }}"""
+            val testEvent = HttpMonitorUpEvent(
+                monitor = HttpMonitorRecord().apply {
+                    id = 23423
+                    name = "something"
+                    sensitiveUrl = false
+                    url = "https://irrelevant"
+                },
+                status = HttpStatus.OK,
+                latency = 123,
+                previousEvent = null,
+            )
+
+            val defaultResult = factory.fromMonitorEvent(testEvent, defaultEscapedTemplate)
+            val jsEscapedResult = factory.fromMonitorEvent(testEvent, jsEscapedTemplate)
+
+            defaultResult shouldContain "Your monitor &quot;something&quot;"
+            jsEscapedResult shouldContain """Your monitor \"something\""""
         }
     }
+
+
 
     should("throw if template is invalid") {
         val template = """{"request_id": "342342","status": {% if ctx.type == 'UP' endif %}}"""

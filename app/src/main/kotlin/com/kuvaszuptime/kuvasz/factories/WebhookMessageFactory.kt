@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.relativeDetailsUrl
 import io.pebbletemplates.pebble.PebbleEngine
 import jakarta.inject.Singleton
 import java.io.StringWriter
@@ -30,11 +31,12 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
         else -> throw IllegalArgumentException("Invalid monitor type: $this")
     }
 
-    fun fromMonitorEvent(event: MonitorEvent<*>): GenericWebhookMessage =
+    fun fromMonitorEvent(event: MonitorEvent<out MonitorRecord>): GenericWebhookMessage =
         GenericWebhookMessage(
             monitorId = event.monitor.id,
-            monitorUrn = event.monitor.urn(),
+            monitorUrn = event.monitor.urn().toString(),
             monitorName = event.monitor.name,
+            monitorDetailsUrl = event.monitor.relativeDetailsUrl,
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
             type = event.toIntegrationEventType(),
             eventDetails = event.toFormattedMessage(),

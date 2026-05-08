@@ -1115,6 +1115,7 @@ components:
     GenericWebhookMessage:
       required:
       - eventDetails
+      - monitorDetailsUrl
       - monitorId
       - monitorName
       - monitorUrn
@@ -1127,9 +1128,9 @@ components:
           format: int64
         monitorUrn:
           type: string
-          description: "A unique identifier for a monitor, formatted as 'type:name'."
-          example: http:My precious monitor
         monitorName:
+          type: string
+        monitorDetailsUrl:
           type: string
         timestamp:
           type: integer
