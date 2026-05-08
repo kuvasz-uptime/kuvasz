@@ -128,12 +128,15 @@ class GenericWebhookService(
     fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<out MonitorRecord>): Single<String> {
         val template = target.payloadTemplate
         val webhookUrl = target.url.toUri()
+        val preparedHeaders = target.requestHeaders.orEmpty().mapValues { (_, value) ->
+            messageFactory.fromMonitorEvent(event, value)
+        }
 
         return if (template.isNullOrBlank()) {
             client.sendGenericMessage(
-                webhookUrl,
-                messageFactory.fromMonitorEvent(event),
-                target.requestHeaders.orEmpty()
+                webhookUrl = webhookUrl,
+                message = messageFactory.fromMonitorEvent(event),
+                headers = preparedHeaders,
             )
         } else {
             val payload = try {
@@ -142,7 +145,11 @@ class GenericWebhookService(
                 logger.error("Failed to parse webhook template: ${ex.message}")
                 return Single.error(ex)
             }
-            client.sendTemplatedMessage(webhookUrl, payload, target.requestHeaders.orEmpty())
+            client.sendTemplatedMessage(
+                webhookUrl = webhookUrl,
+                payload = payload,
+                headers = preparedHeaders,
+            )
         }
     }
 

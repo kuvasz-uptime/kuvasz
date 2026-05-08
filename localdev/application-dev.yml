@@ -126,7 +126,7 @@ integrations:
       excluded-events: [ ]
       url: http://localhost:8081/webhook
       request-headers:
-        Something: Value
+        Something: "{{ctx.type}}"
     - name: webhook-templated
       global: true
       url: http://localhost:8081/webhook-templated

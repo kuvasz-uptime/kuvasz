@@ -53,18 +53,17 @@ class IntegrationRepository(
                 )
             }
 
-            // Validate webhook payload templates
+            // Validate webhook templates
             @Suppress("SwallowedException", "TooGenericExceptionCaught")
-            if (
-                integrationConfig is WebhookNotificationConfig
-                && !integrationConfig.payloadTemplate.isNullOrEmpty()
-                && templateEngine != null
-            ) {
+            if (integrationConfig is WebhookNotificationConfig && templateEngine != null) {
                 try {
-                    templateEngine.getTemplate(integrationConfig.payloadTemplate)
+                    integrationConfig.payloadTemplate
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.let { templateEngine.getTemplate(it) }
+                    integrationConfig.requestHeaders?.values?.forEach { templateEngine.getTemplate(it) }
                 } catch (ex: Exception) {
                     throw IntegrationConfigException(
-                        "Failed to parse payload template for ${integrationConfig.id}: ${ex.message}",
+                        "Failed to parse payload/header template for ${integrationConfig.id}: ${ex.message}",
                     )
                 }
             }
@@ -110,21 +109,15 @@ class IntegrationRepository(
     fun init() {
         configuredIntegrations.entries
             .joinToString(", ") { it.key.toString() }
-            .let {
-                logger.info("Configured integrations: [$it]")
-            }
+            .let { logger.info("Configured integrations: [$it]") }
         enabledIntegrations.entries
             .joinToString(", ") { it.key.toString() }
-            .let {
-                logger.info("Enabled integrations: [$it]")
-            }
+            .let { logger.info("Enabled integrations: [$it]") }
         enabledIntegrations.entries
             .asSequence()
             .filter { it.value.global }
             .joinToString(", ") { it.key.toString() }
-            .let {
-                logger.info("Globally enabled integrations: [$it]")
-            }
+            .let { logger.info("Globally enabled integrations: [$it]") }
     }
 
     /**
