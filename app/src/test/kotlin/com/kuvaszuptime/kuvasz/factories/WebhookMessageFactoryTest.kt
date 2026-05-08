@@ -17,7 +17,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
         should("render the correct output if template is valid") {
             @Suppress("MaxLineLength")
             val template =
-                """{"request_id": "342342","status": {% if ctx.type == 'HTTP_UP' %}"OK"{% else %}"{{ctx.type}}"{% endif %}}"""
+                """{"id": "{{ctx.monitorUrn}}","status": {% if ctx.type == 'HTTP_UP' %}"OK"{% else %}"{{ctx.type}}"{% endif %}}"""
 
             val resultFromUpEvent = factory.fromMonitorEvent(
                 event = HttpMonitorUpEvent(
@@ -48,8 +48,8 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 literalTemplate = template,
             )
 
-            resultFromUpEvent shouldBe """{"request_id": "342342","status": "OK"}"""
-            resultFromDownMonitor shouldBe """{"request_id": "342342","status": "HTTP_DOWN"}"""
+            resultFromUpEvent shouldBe """{"id": "http:something","status": "OK"}"""
+            resultFromDownMonitor shouldBe """{"id": "http:something","status": "HTTP_DOWN"}"""
         }
     }
 

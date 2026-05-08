@@ -93,11 +93,11 @@ class GenericWebhookServiceTest(
                 }
                 genericMessages.forExactly(5) { message ->
                     message.monitorId shouldBe 1
-                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor").toString()
                 }
                 genericMessages.forExactly(2) { message ->
                     message.monitorId shouldBe 2
-                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor").toString()
                 }
             }
         }
@@ -136,11 +136,11 @@ class GenericWebhookServiceTest(
                 }
                 genericMessages.forExactly(4) { message ->
                     message.monitorId shouldBe 1
-                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.HTTP_SSL, "Test monitor").toString()
                 }
                 genericMessages.forExactly(1) { message ->
                     message.monitorId shouldBe 2
-                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor")
+                    message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor").toString()
                 }
             }
         }

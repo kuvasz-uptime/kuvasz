@@ -33,7 +33,7 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
     fun fromMonitorEvent(event: MonitorEvent<*>): GenericWebhookMessage =
         GenericWebhookMessage(
             monitorId = event.monitor.id,
-            monitorUrn = event.monitor.urn(),
+            monitorUrn = event.monitor.urn().toString(),
             monitorName = event.monitor.name,
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
             type = event.toIntegrationEventType(),

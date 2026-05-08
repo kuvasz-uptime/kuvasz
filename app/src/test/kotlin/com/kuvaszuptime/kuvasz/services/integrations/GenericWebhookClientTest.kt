@@ -40,7 +40,7 @@ class GenericWebhookClientTest(
 
     val testMessage = GenericWebhookMessage(
         monitorId = 123,
-        monitorUrn = MonitorID(MonitorType.HTTP_SSL, "test"),
+        monitorUrn = MonitorID(MonitorType.HTTP_SSL, "test").toString(),
         monitorName = "test",
         timestamp = 1278432,
         type = IntegrationEventType.HTTP_DOWN,
