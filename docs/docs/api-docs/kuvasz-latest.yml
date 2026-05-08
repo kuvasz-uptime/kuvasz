@@ -1130,6 +1130,8 @@ components:
           type: string
         monitorName:
           type: string
+        monitorDetailsUrl:
+          type: string
         timestamp:
           type: integer
           format: int64

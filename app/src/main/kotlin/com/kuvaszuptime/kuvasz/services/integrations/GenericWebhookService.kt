@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
+import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -84,7 +85,7 @@ class GenericWebhookService(
     }
 
     @Suppress("MagicNumber")
-    val testEvents: List<MonitorEvent<*>> = listOf(
+    val testEvents: List<MonitorEvent<out MonitorRecord>> = listOf(
         HttpMonitorDownEvent(
             monitor = testHttpMonitorRecord,
             status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -124,7 +125,7 @@ class GenericWebhookService(
     )
 
     @Suppress("TooGenericExceptionCaught")
-    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<*>): Single<String> {
+    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<out MonitorRecord>): Single<String> {
         val template = target.payloadTemplate
         val webhookUrl = target.url.toUri()
 
