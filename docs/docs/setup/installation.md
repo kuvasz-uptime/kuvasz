@@ -23,6 +23,40 @@ Kuvasz can be deployed in several ways depending on your infrastructure:
 
 ## Quick start with Docker Compose
 
+!!!tip "TL;DR - A very quick start"
+
+    1. Make sure you have [**Docker**](https://docs.docker.com/engine/install/){target="_blank"} & [**Docker Compose**](https://docs.docker.com/compose/install/){target="_blank"} installed.
+    2. Run the following commands in your terminal
+        
+        === "UNIX"
+
+            ```shell
+            mkdir kuvasz-uptime && cd kuvasz-uptime
+            touch kuvasz.yml
+            curl -L https://raw.githubusercontent.com/kuvasz-uptime/kuvasz/refs/heads/main/docker-examples/docker-compose.yml -o docker-compose.yml
+            # At this point you might want to change your docker-compose.yml and/or your
+            # kuvasz.yml files to change the default configuration, especially the 
+            # credentials and secrets in there  
+            docker compose up -d
+            ```
+        
+        
+        === "PowerShell"
+        
+            ```powershell
+            mkdir kuvasz-uptime; cd kuvasz-uptime
+            New-Item kuvasz.yml -ItemType File
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kuvasz-uptime/kuvasz/refs/heads/main/docker-examples/docker-compose.yml" -OutFile "docker-compose.yml"
+            # At this point you might want to change your docker-compose.yml and/or your
+            # kuvasz.yml files to change the default configuration, especially the 
+            # credentials and secrets in there  
+            docker compose up -d
+            ```
+
+    3. Go to [`http://0.0.0.0:8080`](http://0.0.0.0:8080){target="_blank"}, provide `YourSuperSecretUsername` and `YourSuperSecretPassword` as credentials, click "Sign in".
+    4. Look around and make sure that you **change the** [**default values**](#docker-compose-file) of secrets and credentials in the `docker-compose.yml` file ASAP! Setting your **timezone** might be also necessary if you are not located in UTC. 
+    5. Read the [**Configuration reference**](configuration.md){target="_blank"} & the [**Integration setup guide**](../management/integrations.md){target="_blank"}.
+
 ### 1. Configuration file
 
 Create a file called `kuvasz.yml` somewhere on your machine, where you will create your Docker Compose file too in the next step.
