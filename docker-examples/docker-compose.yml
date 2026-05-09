@@ -1,0 +1,38 @@
+services:
+  kuvasz-db:
+    image: pgautoupgrade/pgautoupgrade:18-alpine
+    container_name: kuvaszdb
+    environment:
+      POSTGRES_USER: kuvasz
+      POSTGRES_PASSWORD: YourSuperSecretDbPassword # change it!
+      TZ: 'UTC'
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "kuvasz" ]
+      interval: 10s
+      start_period: 30s
+    volumes:
+      - kuvasz-db-data:/var/lib/postgresql
+  kuvasz:
+    image: kuvaszmonitoring/kuvasz:latest
+    # platform: linux/arm64 #
+    container_name: kuvasz
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: 'UTC'
+      DATABASE_HOST: kuvaszdb
+      DATABASE_USER: kuvasz
+      DATABASE_PASSWORD: YourSuperSecretDbPassword
+      ADMIN_USER: YourSuperSecretUsername # change it
+      ADMIN_PASSWORD: YourSuperSecretPassword # change it
+      ADMIN_API_KEY: ThisShouldBeVeryVerySecureToo # change it
+    volumes:
+      - ./kuvasz.yml:/config/kuvasz.yml
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/api/v2/health || exit 1" ]
+      interval: 60s
+      start_period: 30s
+    depends_on:
+      - kuvasz-db
+volumes:
+  kuvasz-db-data:
