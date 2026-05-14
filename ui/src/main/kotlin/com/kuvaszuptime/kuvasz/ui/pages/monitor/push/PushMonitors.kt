@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
+import kotlin.time.Duration.Companion.seconds
 
 fun renderPushMonitorsPage(globals: AppGlobals) =
     withLayout(
@@ -29,6 +30,7 @@ fun renderPushMonitorsPage(globals: AppGlobals) =
                             trigger {
                                 load()
                                 event("refresh-monitor-list")
+                                every(15.seconds)
                             }
                             onSwapReinitTooltips()
                         }

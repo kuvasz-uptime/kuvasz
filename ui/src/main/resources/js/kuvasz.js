@@ -36,6 +36,9 @@ const sendWindowEvent = (eventName) => {
 
 // Reinitialize Bootstrap tooltips (useful after HTMX content swap)
 const reInitTooltips = () => {
+    // First remove all tooltips to prevent burn-ins upon HTMX swaps
+    document.querySelectorAll('div.tooltip.show').forEach(tooltip => tooltip.remove());
+
     let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         // If the tooltip is already initialized, dispose it
