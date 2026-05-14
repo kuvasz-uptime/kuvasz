@@ -7,6 +7,9 @@ package com.kuvaszuptime.kuvasz.jooq;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
@@ -34,6 +37,21 @@ public class Tables {
      * The table <code>kuvasz.http_uptime_event</code>.
      */
     public static final HttpUptimeEvent HTTP_UPTIME_EVENT = HttpUptimeEvent.HTTP_UPTIME_EVENT;
+
+    /**
+     * The table <code>kuvasz.icmp_metrics_log</code>.
+     */
+    public static final IcmpMetricsLog ICMP_METRICS_LOG = IcmpMetricsLog.ICMP_METRICS_LOG;
+
+    /**
+     * The table <code>kuvasz.icmp_monitor</code>.
+     */
+    public static final IcmpMonitor ICMP_MONITOR = IcmpMonitor.ICMP_MONITOR;
+
+    /**
+     * The table <code>kuvasz.icmp_uptime_event</code>.
+     */
+    public static final IcmpUptimeEvent ICMP_UPTIME_EVENT = IcmpUptimeEvent.ICMP_UPTIME_EVENT;
 
     /**
      * The table <code>kuvasz.pending_failure</code>.
