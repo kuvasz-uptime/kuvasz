@@ -11,6 +11,20 @@ data class StructuredPushMonitorUpMessage(
     val previousDownTime: String?,
 ) : StructuredMonitorMessage()
 
+data class StructuredIcmpMonitorUpMessage(
+    override val summary: String,
+    val latency: String?,
+    val packetLoss: String,
+    val previousDownTime: String?,
+) : StructuredMonitorMessage()
+
+data class StructuredIcmpMonitorDownMessage(
+    override val summary: String,
+    val error: String,
+    val packetLoss: String,
+    val previousUpTime: String?,
+) : StructuredMonitorMessage()
+
 data class StructuredHttpMonitorUpMessage(
     override val summary: String,
     val latency: String,

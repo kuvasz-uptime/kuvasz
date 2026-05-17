@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
@@ -11,17 +12,17 @@ import java.time.OffsetDateTime
 
 @Introspected
 data class HttpMonitorDto(
-    @param:Schema(description = HttpMonitorDocs.ID, required = true)
+    @param:Schema(description = MonitorDocs.ID, required = true)
     val id: Long,
-    @param:Schema(description = HttpMonitorDocs.NAME, required = true)
+    @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     val url: String,
     @param:Schema(description = HttpMonitorDocs.SENSITIVE_URL, required = true)
     val sensitiveUrl: Boolean,
-    @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
+    @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
-    @param:Schema(description = HttpMonitorDocs.ENABLED, required = true)
+    @param:Schema(description = MonitorDocs.ENABLED, required = true)
     val enabled: Boolean,
     @param:Schema(description = HttpMonitorDocs.SSL_CHECK_ENABLED, required = true)
     val sslCheckEnabled: Boolean,
@@ -35,9 +36,9 @@ data class HttpMonitorDto(
     val followRedirects: Boolean,
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = true)
     val sslExpiryThreshold: Int,
-    @param:Schema(description = HttpMonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
+    @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
     val failureCountThreshold: Long,
-    @param:Schema(description = HttpMonitorDocs.INTEGRATIONS, required = true)
+    @param:Schema(description = MonitorDocs.INTEGRATIONS, required = true)
     val integrations: Set<IntegrationID>,
     @param:Schema(description = HttpMonitorDocs.EXPECTED_STATUS_CODES, required = true)
     val expectedStatusCodes: Set<Int>,
@@ -55,9 +56,9 @@ data class HttpMonitorDto(
     val expectedHeaders: Map<String, String>,
     @param:Schema(description = HttpMonitorDocs.REQUEST_BODY, required = true, nullable = true)
     val requestBody: String?,
-    @param:Schema(description = HttpMonitorDocs.CREATED_AT, required = true)
+    @param:Schema(description = MonitorDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
-    @param:Schema(description = HttpMonitorDocs.UPDATED_AT, required = true, nullable = true)
+    @param:Schema(description = MonitorDocs.UPDATED_AT, required = true, nullable = true)
     val updatedAt: OffsetDateTime?
 ) {
     companion object {

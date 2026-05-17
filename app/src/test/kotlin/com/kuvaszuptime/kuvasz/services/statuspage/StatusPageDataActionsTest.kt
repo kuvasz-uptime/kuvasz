@@ -6,11 +6,13 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
@@ -29,6 +31,7 @@ class StatusPageDataActionsTest(
     private val statusPageActions: StatusPageDataActions,
     private val httpMonitorActions: HttpMonitorActions,
     private val pushMonitorActions: PushMonitorActions,
+    private val icmpMonitorActions: IcmpMonitorActions,
     private val statusPageRepository: StatusPageRepository,
 ) : BehaviorSpec({
 
@@ -328,6 +331,117 @@ class StatusPageDataActionsTest(
 
                 result.monitors shouldBe emptyList()
                 result.systemStatus shouldBe SystemStatus.PENDING
+            }
+        }
+
+        `when`("there are ICMP monitors alongside healthy HTTP monitors") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "HTTP monitor",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 50,
+                    uptimeRatio = 1.0,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                ),
+            )
+            val mockIcmpMonitorList = listOf(
+                StatusPageIcmpMonitorDetailsDto(
+                    name = "ICMP monitor pending",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    lastPacketLossPercentage = null,
+                    uptimeRatio = null,
+                    uptimeStatus = null,
+                    uptimeStatusHistory = emptyList(),
+                ),
+                StatusPageIcmpMonitorDetailsDto(
+                    name = "ICMP monitor up",
+                    lastCheck = getCurrentTimestamp().minusSeconds(5),
+                    averageLatencyInMs = 12,
+                    lastPacketLossPercentage = 0,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 0,
+                        )
+                    ),
+                ),
+            )
+
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            val mockIcmpMonitorActions = getMock(icmpMonitorActions)
+            every {
+                mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockIcmpMonitorList
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("it should include ICMP monitors in the result and return PENDING as system status") {
+
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockIcmpMonitorList
+                result.systemStatus shouldBe SystemStatus.PENDING
+            }
+        }
+
+        `when`("a DOWN ICMP monitor is mixed with UP HTTP monitors") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "HTTP monitor",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 50,
+                    uptimeRatio = 1.0,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                ),
+            )
+            val mockIcmpMonitorList = listOf(
+                StatusPageIcmpMonitorDetailsDto(
+                    name = "ICMP monitor down",
+                    lastCheck = getCurrentTimestamp().minusSeconds(5),
+                    averageLatencyInMs = null,
+                    lastPacketLossPercentage = 100,
+                    uptimeRatio = 0.95,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 2,
+                        )
+                    ),
+                ),
+            )
+
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            val mockIcmpMonitorActions = getMock(icmpMonitorActions)
+            every {
+                mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockIcmpMonitorList
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("it should include the ICMP monitor in the result and return PARTIAL_OUTAGE") {
+
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockIcmpMonitorList
+                result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
             }
         }
     }
@@ -699,6 +813,114 @@ class StatusPageDataActionsTest(
                 result.systemStatus shouldBe SystemStatus.PENDING
             }
         }
+
+        `when`("there are ICMP monitors assigned to the status page") {
+
+            fun icmpStatusPageRecord() = StatusPageRecord().apply {
+                id = 2L
+                slug = "icmp-status"
+                title = "ICMP Status"
+                customLogoUrl = null
+                customFaviconUrl = null
+                public = true
+                monitors = listOf(
+                    MonitorID(MonitorType.HTTP_SSL, "http-monitor-1"),
+                    MonitorID(MonitorType.ICMP, "icmp-monitor-1"),
+                    MonitorID(MonitorType.ICMP, "icmp-monitor-2"),
+                ).toTypedArray()
+                createdAt = getCurrentTimestamp()
+                updatedAt = getCurrentTimestamp()
+            }
+
+            val repoMock = getMock(statusPageRepository)
+            every { repoMock.findById(2L, any()) } returns icmpStatusPageRecord()
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "http-monitor-1",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 80,
+                    uptimeRatio = 1.0,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                ),
+            )
+            val mockIcmpMonitorList = listOf(
+                StatusPageIcmpMonitorDetailsDto(
+                    name = "icmp-monitor-1",
+                    lastCheck = getCurrentTimestamp().minusSeconds(5),
+                    averageLatencyInMs = 15,
+                    lastPacketLossPercentage = 0,
+                    uptimeRatio = 1.0,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 0,
+                        )
+                    ),
+                ),
+                StatusPageIcmpMonitorDetailsDto(
+                    name = "icmp-monitor-2",
+                    lastCheck = getCurrentTimestamp().minusSeconds(5),
+                    averageLatencyInMs = null,
+                    lastPacketLossPercentage = 100,
+                    uptimeRatio = 0.9,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 3,
+                        )
+                    ),
+                ),
+            )
+
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    icmpStatusPageRecord().monitors?.toList(),
+                )
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    icmpStatusPageRecord().monitors?.toList(),
+                )
+            } returns emptyList()
+            val mockIcmpMonitorActions = getMock(icmpMonitorActions)
+            every {
+                mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    icmpStatusPageRecord().monitors?.toList(),
+                )
+            } returns mockIcmpMonitorList
+
+            val result = statusPageActions.getStatusPageData(icmpStatusPageRecord().id)
+
+            then("it should include ICMP monitors in the result with correct fields and return PARTIAL_OUTAGE") {
+
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockIcmpMonitorList
+                result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
+                result.title shouldBe "ICMP Status"
+
+                val icmpUp = result.monitors.filterIsInstance<StatusPageIcmpMonitorDetailsDto>()
+                    .first { it.name == "icmp-monitor-1" }
+                icmpUp.averageLatencyInMs shouldBe 15
+                icmpUp.lastPacketLossPercentage shouldBe 0
+                icmpUp.uptimeRatio shouldBe 1.0
+                icmpUp.uptimeStatus shouldBe UptimeStatus.UP
+
+                val icmpDown = result.monitors.filterIsInstance<StatusPageIcmpMonitorDetailsDto>()
+                    .first { it.name == "icmp-monitor-2" }
+                icmpDown.averageLatencyInMs shouldBe null
+                icmpDown.lastPacketLossPercentage shouldBe 100
+                icmpDown.uptimeRatio shouldBe 0.9
+                icmpDown.uptimeStatus shouldBe UptimeStatus.DOWN
+            }
+        }
     }
 }) {
     @MockBean(HttpMonitorActions::class)
@@ -706,6 +928,11 @@ class StatusPageDataActionsTest(
 
     @MockBean(PushMonitorActions::class)
     fun pushMonitorActions(): PushMonitorActions = mockk()
+
+    @MockBean(IcmpMonitorActions::class)
+    fun icmpMonitorActions(): IcmpMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any()) } returns emptyList()
+    }
 
     @MockBean(StatusPageRepository::class)
     fun statusPageRepository(): StatusPageRepository = mockk()

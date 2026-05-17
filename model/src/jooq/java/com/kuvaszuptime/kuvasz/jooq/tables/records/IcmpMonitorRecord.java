@@ -70,7 +70,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
     /**
      * Setter for <code>kuvasz.icmp_monitor.uptime_check_interval</code>.
      */
-    public IcmpMonitorRecord setUptimeCheckInterval(Long value) {
+    public IcmpMonitorRecord setUptimeCheckInterval(Integer value) {
         set(3, value);
         return this;
     }
@@ -78,8 +78,8 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
     /**
      * Getter for <code>kuvasz.icmp_monitor.uptime_check_interval</code>.
      */
-    public Long getUptimeCheckInterval() {
-        return (Long) get(3);
+    public Integer getUptimeCheckInterval() {
+        return (Integer) get(3);
     }
 
     /**
@@ -240,7 +240,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
     /**
      * Create a detached, initialised IcmpMonitorRecord
      */
-    public IcmpMonitorRecord(Long id, String name, String host, Long uptimeCheckInterval, Integer packetCount, Integer timeoutSeconds, Integer packetLossThreshold, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public IcmpMonitorRecord(Long id, String name, String host, Integer uptimeCheckInterval, Integer packetCount, Integer timeoutSeconds, Integer packetLossThreshold, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
         super(IcmpMonitor.ICMP_MONITOR);
 
         setId(id);

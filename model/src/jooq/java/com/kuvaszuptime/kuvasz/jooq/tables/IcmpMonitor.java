@@ -81,7 +81,7 @@ public class IcmpMonitor extends TableImpl<IcmpMonitorRecord> {
     /**
      * The column <code>kuvasz.icmp_monitor.uptime_check_interval</code>.
      */
-    public final TableField<IcmpMonitorRecord, Long> UPTIME_CHECK_INTERVAL = createField(DSL.name("uptime_check_interval"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<IcmpMonitorRecord, Integer> UPTIME_CHECK_INTERVAL = createField(DSL.name("uptime_check_interval"), SQLDataType.INTEGER.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.icmp_monitor.packet_count</code>.

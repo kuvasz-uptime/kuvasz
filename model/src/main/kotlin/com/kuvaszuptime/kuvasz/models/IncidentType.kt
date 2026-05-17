@@ -7,4 +7,5 @@ enum class IncidentType {
     HTTP,
     SSL,
     PUSH,
+    ICMP,
 }

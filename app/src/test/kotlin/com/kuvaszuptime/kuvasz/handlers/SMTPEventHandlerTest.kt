@@ -2,10 +2,13 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -16,6 +19,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -44,8 +49,10 @@ import org.simplejavamail.api.email.Email
 class SMTPEventHandlerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
+    private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     smtpMailer: SMTPMailer,
     integrationRepository: IntegrationRepository,
@@ -401,6 +408,188 @@ class SMTPEventHandlerTest(
                     monitor = monitor,
                     previousEvent = firstUptimeRecord,
                     error = "Some error",
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+
+                then("it should send an email only about the down event") {
+                    val emailSent = slot<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
+                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
+                    emailSent.captured.subject shouldContain "is DOWN"
+                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                }
+            }
+        }
+
+        given("the SMTPEventHandler - ICMP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val event = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send an email about the event") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(
+                    repository = icmpMonitorRepository,
+                    integrations = listOf(
+                        globalEmailConfig.id,
+                        otherEmailConfig.id,
+                        disabledEmailConfig.id,
+                    ),
+                )
+                val event = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100
+                )
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send an email about the event to every enabled integration") {
+                    val sentEmails = mutableListOf<Email>()
+
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldBe expectedEmail.subject
+                        email.subject shouldContain "is DOWN"
+                    }
+                    sentEmails.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
+                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
+                    }
+                    sentEmails.forOne { fromOtherConfig ->
+                        fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                    }
+                    sentEmails.forNone { fromDisabledConfig ->
+                        fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
+                            disabledEmailConfig.fromAddress
+                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                    }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 6,
+                    packetLossPercentage = 0
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send out any email about them") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one email about them") {
+                    val slot = slot<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
+                    slot.captured.plainText shouldBe expectedEmail.plainText
+                    slot.captured.subject shouldContain "is DOWN"
+                    slot.captured.subject shouldBe expectedEmail.subject
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+
+                then("it should send two different emails about them") {
+                    val emailsSent = mutableListOf<Email>()
+
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
+                    emailsSent[0].subject shouldContain "is DOWN"
+                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
+                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
+                    emailsSent[1].subject shouldContain "is UP"
+                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100
                 )
                 eventDispatcher.testDispatch(secondEvent)
 

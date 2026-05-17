@@ -4,7 +4,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.GaugeExporter
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportConfig
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.http.numericMonitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
@@ -40,13 +39,10 @@ class HttpLatencyExporter(
 
     override fun subscribeToEvents() {
         eventDispatcher.subscribeToHttpMonitorUpEvents { event ->
-            event.handle()
+            val latency = event.latency
+            logger.debug("Updating latency for monitor with ID: ${event.monitor.id} to $latency")
+            upsertMeter(event.monitor.numericMonitorId(), latency)
         }
-    }
-
-    private fun HttpMonitorUpEvent.handle() {
-        logger.debug("Updating latency for monitor with ID: ${monitor.id} to $latency")
-        upsertMeter(monitor.numericMonitorId(), latency)
     }
 
     override fun transform(valueSource: Int): Long = valueSource.toLong()

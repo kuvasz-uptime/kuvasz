@@ -2,12 +2,14 @@ package com.kuvaszuptime.kuvasz.metrics
 
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.numericMonitorId
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.numericMonitorId
 import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -194,7 +196,8 @@ abstract class BaseHttpMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, MET
 internal fun MonitorRecord.numericMonitorId(): NumericMonitorID = when (this) {
     is HttpMonitorRecord -> this.numericMonitorId()
     is PushMonitorRecord -> this.numericMonitorId()
+    is IcmpMonitorRecord -> this.numericMonitorId()
     else -> throw IllegalStateException(
-        "The given monitor is not an instance of HttpMonitorRecord or PushMonitorRecord"
+        "The given monitor is not an instance of HttpMonitorRecord, PushMonitorRecord, or IcmpMonitorRecord"
     )
 }

@@ -54,6 +54,9 @@ data class SettingsDto(
 
             @param:Schema(description = "Whether the push monitors are in read-only mode", required = true)
             val arePushMonitorsReadOnly: Boolean,
+
+            @param:Schema(description = "Whether the ICMP monitors are in read-only mode", required = true)
+            val areIcmpMonitorsReadOnly: Boolean,
         )
     }
 
@@ -86,6 +89,14 @@ data class SettingsDto(
             val httpUptimeStatus: Boolean,
             @param:Schema(description = "Whether SSL status exporter is enabled", required = true)
             val sslStatus: Boolean,
+            @param:Schema(description = "Whether push monitor status exporter is enabled", required = true)
+            val pushUptimeStatus: Boolean,
+            @param:Schema(description = "Whether ICMP monitor status exporter is enabled", required = true)
+            val icmpUptimeStatus: Boolean,
+            @param:Schema(description = "Whether ICMP latest latency exporter is enabled", required = true)
+            val icmpLatestLatency: Boolean,
+            @param:Schema(description = "Whether ICMP latest packet loss exporter is enabled", required = true)
+            val icmpLatestPacketLoss: Boolean,
         )
 
         @Introspected

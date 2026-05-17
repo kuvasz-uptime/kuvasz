@@ -57,6 +57,14 @@ class SMTPEventHandler(
             logger.debug("An SSLWillExpireEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
+        eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
+            logger.debug("An IcmpMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
+            logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
     }
 
     private fun UptimeMonitorEvent.handle() {

@@ -126,6 +126,7 @@ tasks.withType<JavaExec> {
         "-Xms64M",
         "-Xmx192M",
     )
+    systemProperty("micronaut.environments", "macos") // TODO revisit
     systemProperty("micronaut.config.files", file("../localdev/application-dev.yml"))
 }
 

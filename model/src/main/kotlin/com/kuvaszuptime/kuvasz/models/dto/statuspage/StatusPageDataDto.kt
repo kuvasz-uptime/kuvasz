@@ -21,6 +21,7 @@ data class StatusPageDataDto(
     oneOf = [
         StatusPagePushMonitorDetailsDto::class,
         StatusPageHttpMonitorDetailsDto::class,
+        StatusPageIcmpMonitorDetailsDto::class,
     ]
 )
 // JSON subtypes are needed only for the tests
@@ -33,6 +34,7 @@ data class StatusPageDataDto(
 @JsonSubTypes(
     JsonSubTypes.Type(value = StatusPagePushMonitorDetailsDto::class, name = "push"),
     JsonSubTypes.Type(value = StatusPageHttpMonitorDetailsDto::class, name = "http"),
+    JsonSubTypes.Type(value = StatusPageIcmpMonitorDetailsDto::class, name = "icmp"),
 )
 sealed interface StatusPageMonitorDetailsDto {
     val name: String
@@ -61,6 +63,17 @@ data class StatusPageHttpMonitorDetailsDto(
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
     val averageLatencyInMs: Int?,
+) : StatusPageMonitorDetailsDto
+
+data class StatusPageIcmpMonitorDetailsDto(
+    override val name: String,
+    override val type: String = "icmp",
+    override val lastCheck: OffsetDateTime?,
+    override val uptimeRatio: Double?,
+    override val uptimeStatus: UptimeStatus?,
+    override val uptimeStatusHistory: List<StatusHistoryDto>,
+    val averageLatencyInMs: Int?,
+    val lastPacketLossPercentage: Int?,
 ) : StatusPageMonitorDetailsDto
 
 /**

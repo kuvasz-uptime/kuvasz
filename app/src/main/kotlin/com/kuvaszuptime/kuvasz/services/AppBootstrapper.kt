@@ -3,15 +3,19 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
+import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageImporter
@@ -25,12 +29,15 @@ import org.slf4j.LoggerFactory
 class AppBootstrapper(
     private val yamlHttpMonitorConfigs: List<HttpMonitorConfig>,
     private val yamlPushMonitorConfigs: List<PushMonitorConfig>,
+    private val yamlIcmpMonitorConfigs: List<IcmpMonitorConfig>,
     private val monitorImporter: MonitorImporter,
     private val appConfig: AppConfig,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
     private val integrationRepository: IntegrationRepository,
     private val httpCheckScheduler: HttpCheckScheduler,
+    private val icmpCheckScheduler: IcmpCheckScheduler,
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
@@ -45,6 +52,11 @@ class AppBootstrapper(
     @Nullable
     @field:Property(name = PushMonitorConfig.CONFIG_PREFIX)
     protected var pushMonitorYAMLConfigChecker: List<Any>? = null
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = IcmpMonitorConfig.CONFIG_PREFIX)
+    protected var icmpMonitorYAMLConfigChecker: List<Any>? = null
 
     @Suppress("ProtectedMemberInFinalClass")
     @Nullable
@@ -65,6 +77,8 @@ class AppBootstrapper(
         metricsExportRegistry?.initialize()
         // Scheduling the initial checks (HTTP uptime & SSL)
         httpCheckScheduler.initialize()
+        // Scheduling the initial ICMP uptime checks
+        icmpCheckScheduler.initialize()
 
         logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
     }
@@ -96,6 +110,11 @@ class AppBootstrapper(
                         id,
                         matchedIntegrations.toTypedArray(),
                     )
+
+                    is IcmpMonitorRecord -> icmpMonitorRepository.updateIntegrations(
+                        id,
+                        matchedIntegrations.toTypedArray(),
+                    )
                 }
             }
         }
@@ -108,6 +127,11 @@ class AppBootstrapper(
         // Only sanitize integrations if push monitors were not configured via YAML
         if (!appConfig.isPushMonitorExternalWriteDisabled()) {
             pushMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+        }
+
+        // Only sanitize integrations if ICMP monitors were not configured via YAML
+        if (!appConfig.isIcmpMonitorExternalWriteDisabled()) {
+            icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
         }
     }
 
@@ -156,6 +180,25 @@ class AppBootstrapper(
             logger.info(
                 "No YAML push monitor config was found. " +
                     "External modifications of push monitors are enabled. Loading monitors from DB..."
+            )
+        }
+
+        // The icmpMonitorYAMLConfigChecker is a workaround to check if the icmp-monitors config is present in the
+        // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
+        // have zero ICMP monitors, so we should disable external writes and delete all monitors from the
+        // DB eventually.
+        val isYamlIcmpConfigEffective = yamlIcmpMonitorConfigs.isNotEmpty() || icmpMonitorYAMLConfigChecker != null
+        if (isYamlIcmpConfigEffective) {
+            appConfig.disableIcmpMonitorExternalWrite()
+            logger.info(
+                "Disabled external modifications of ICMP monitors, because a YAML monitor config was found. " +
+                    "Loading ICMP monitors from YAML config..."
+            )
+            monitorImporter.importIcmpMonitorConfigs(yamlIcmpMonitorConfigs)
+        } else {
+            logger.info(
+                "No YAML ICMP monitor config was found. " +
+                    "External modifications of ICMP monitors are enabled. Loading monitors from DB..."
             )
         }
     }

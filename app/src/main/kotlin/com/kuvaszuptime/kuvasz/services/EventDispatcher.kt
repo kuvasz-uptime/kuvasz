@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
@@ -25,6 +27,8 @@ class EventDispatcher {
     private val httpUpEvents = PublishSubject.create<HttpMonitorUpEvent>().toSerialized()
     private val httpDownEvents = PublishSubject.create<HttpMonitorDownEvent>().toSerialized()
     private val pushUptimeEvents = PublishSubject.create<PushUptimeMonitorEvent>().toSerialized()
+    private val icmpUpEvents = PublishSubject.create<IcmpMonitorUpEvent>().toSerialized()
+    private val icmpDownEvents = PublishSubject.create<IcmpMonitorDownEvent>().toSerialized()
     private val httpRedirectEvents = PublishSubject.create<HttpRedirectEvent>().toSerialized()
     private val sslValidEvents = PublishSubject.create<SSLValidEvent>().toSerialized()
     private val sslWillExpireEvents = PublishSubject.create<SSLWillExpireEvent>().toSerialized()
@@ -40,6 +44,8 @@ class EventDispatcher {
             is SSLInvalidEvent -> sslInvalidEvents.onNext(event)
             is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
             is PushMonitorDownEvent, is PushMonitorUpEvent -> pushUptimeEvents.onNext(event)
+            is IcmpMonitorUpEvent -> icmpUpEvents.onNext(event)
+            is IcmpMonitorDownEvent -> icmpDownEvents.onNext(event)
         }
 
     fun dispatch(event: MonitorLifecycleEvent) {
@@ -64,6 +70,12 @@ class EventDispatcher {
 
     fun subscribeToPushMonitorEvents(consumer: (PushUptimeMonitorEvent) -> Unit): Disposable =
         pushUptimeEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToIcmpMonitorUpEvents(consumer: (IcmpMonitorUpEvent) -> Unit): Disposable =
+        icmpUpEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToIcmpMonitorDownEvents(consumer: (IcmpMonitorDownEvent) -> Unit): Disposable =
+        icmpDownEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToHttpRedirectEvents(consumer: (HttpRedirectEvent) -> Unit): Disposable =
         httpRedirectEvents.safeSubscribeOnIo(consumer)

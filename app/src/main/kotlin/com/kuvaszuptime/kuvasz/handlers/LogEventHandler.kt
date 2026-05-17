@@ -40,6 +40,12 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
         eventDispatcher.subscribeToSSLWillExpireEvents { event ->
             event.handle()
         }
+        eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
+            event.handle()
+        }
+        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
+            event.handle()
+        }
     }
 
     private fun UptimeMonitorEvent.handle() {

@@ -3,7 +3,7 @@ CREATE TABLE icmp_monitor
     id                      BIGINT                            DEFAULT nextval('monitor_id_seq'::regclass) NOT NULL,
     name                    TEXT                     NOT NULL,
     host                    TEXT                     NOT NULL,
-    uptime_check_interval   BIGINT                   NOT NULL,
+    uptime_check_interval   INTEGER                  NOT NULL,
     packet_count            INT                      NOT NULL DEFAULT 3,
     timeout_seconds         INT                      NOT NULL DEFAULT 5,
     packet_loss_threshold   INT                      NOT NULL DEFAULT 100,

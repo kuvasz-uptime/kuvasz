@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -70,6 +72,14 @@ class PagerdutyEventHandler(
             logger.debug("An SSLWillExpireEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
+        eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
+            logger.debug("An IcmpMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
+            logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
     }
 
     private fun Single<String>.handleResponse(): Disposable =
@@ -95,7 +105,7 @@ class PagerdutyEventHandler(
         runWhenStateChanges { event ->
             val integrations = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
             when (event) {
-                is HttpMonitorUpEvent, is PushMonitorUpEvent -> {
+                is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent -> {
                     if (previousEvent != null) {
                         integrations.forEach { integrationKey ->
                             val request = createResolveRequest(
@@ -107,7 +117,7 @@ class PagerdutyEventHandler(
                     }
                 }
 
-                is HttpMonitorDownEvent, is PushMonitorDownEvent -> {
+                is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent -> {
                     integrations.forEach { integrationKey ->
                         val request = event.toTriggerRequest(
                             serviceKey = integrationKey,

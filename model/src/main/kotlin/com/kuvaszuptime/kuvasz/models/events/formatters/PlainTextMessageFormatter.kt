@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -42,6 +44,24 @@ object PlainTextMessageFormatter : TextMessageFormatter {
                 listOfNotNull(
                     details.summary,
                     details.previousDownTime
+                )
+            }
+
+            is IcmpMonitorUpEvent -> event.toStructuredMessage().let { details ->
+                listOfNotNull(
+                    details.summary,
+                    details.latency,
+                    details.packetLoss,
+                    details.previousDownTime
+                )
+            }
+
+            is IcmpMonitorDownEvent -> event.toStructuredMessage().let { details ->
+                listOfNotNull(
+                    details.summary,
+                    details.error,
+                    details.packetLoss,
+                    details.previousUpTime
                 )
             }
         }

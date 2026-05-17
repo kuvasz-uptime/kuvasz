@@ -1,0 +1,18 @@
+icmp-monitors:
+  - name: test1
+    host: 127.0.0.1
+    uptime-check-interval: 120
+    enabled: false
+    packet-count: 5
+    timeout-seconds: 10
+    packet-loss-threshold: 50
+    failure-count-threshold: 3
+  - name: test2
+    host: 192.168.1.1
+    uptime-check-interval: 60
+    integrations:
+      - 'slack:test_implicitly_enabled'
+  - name: test3
+    host: 10.0.0.1
+    uptime-check-interval: 120
+    enabled: true

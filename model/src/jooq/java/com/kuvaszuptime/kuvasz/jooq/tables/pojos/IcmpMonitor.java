@@ -22,7 +22,7 @@ public class IcmpMonitor implements Serializable {
     private Long id;
     private String name;
     private String host;
-    private Long uptimeCheckInterval;
+    private Integer uptimeCheckInterval;
     private Integer packetCount;
     private Integer timeoutSeconds;
     private Integer packetLossThreshold;
@@ -55,7 +55,7 @@ public class IcmpMonitor implements Serializable {
         Long id,
         String name,
         String host,
-        Long uptimeCheckInterval,
+        Integer uptimeCheckInterval,
         Integer packetCount,
         Integer timeoutSeconds,
         Integer packetLossThreshold,
@@ -129,14 +129,14 @@ public class IcmpMonitor implements Serializable {
     /**
      * Getter for <code>kuvasz.icmp_monitor.uptime_check_interval</code>.
      */
-    public Long getUptimeCheckInterval() {
+    public Integer getUptimeCheckInterval() {
         return this.uptimeCheckInterval;
     }
 
     /**
      * Setter for <code>kuvasz.icmp_monitor.uptime_check_interval</code>.
      */
-    public IcmpMonitor setUptimeCheckInterval(Long uptimeCheckInterval) {
+    public IcmpMonitor setUptimeCheckInterval(Integer uptimeCheckInterval) {
         this.uptimeCheckInterval = uptimeCheckInterval;
         return this;
     }

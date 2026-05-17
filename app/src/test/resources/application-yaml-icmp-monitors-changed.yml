@@ -1,0 +1,16 @@
+icmp-monitors:
+  - name: test1
+    host: 127.0.0.1
+    uptime-check-interval: 180
+    enabled: true
+    packet-count: 3
+    timeout-seconds: 5
+    packet-loss-threshold: 80
+    failure-count-threshold: 2
+  - name: test2
+    host: 192.168.1.1
+    uptime-check-interval: 60
+  - name: test4
+    host: 172.16.0.1
+    uptime-check-interval: 300
+    enabled: false

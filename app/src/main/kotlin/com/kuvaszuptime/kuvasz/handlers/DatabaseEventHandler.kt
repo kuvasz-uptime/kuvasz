@@ -2,10 +2,12 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import jakarta.inject.Singleton
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory
 class DatabaseEventHandler(
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
+    private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
 ) {
@@ -69,8 +72,12 @@ class DatabaseEventHandler(
                 endedAt = currentEvent.dispatchedAt,
                 ctx = txCtx,
             )
-
             is PushUptimeMonitorEvent -> pushUptimeEventRepository.endEventById(
+                eventId = previousEvent.id,
+                endedAt = currentEvent.dispatchedAt,
+                ctx = txCtx,
+            )
+            is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.endEventById(
                 eventId = previousEvent.id,
                 endedAt = currentEvent.dispatchedAt,
                 ctx = txCtx,
@@ -81,12 +88,14 @@ class DatabaseEventHandler(
         when (currentEvent) {
             is HttpUptimeMonitorEvent -> httpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
             is PushUptimeMonitorEvent -> pushUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
+            is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
         }
 
     private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord) =
         when (currentEvent) {
             is HttpUptimeMonitorEvent -> httpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
             is PushUptimeMonitorEvent -> pushUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
+            is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
         }
 
     fun handleSSLMonitorEvent(currentEvent: SSLMonitorEvent) {

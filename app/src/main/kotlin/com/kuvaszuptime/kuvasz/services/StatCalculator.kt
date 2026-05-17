@@ -3,11 +3,14 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -21,8 +24,10 @@ import java.time.OffsetDateTime
 class StatCalculator(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
+    private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
 ) {
     @Suppress("NestedBlockDepth")
     fun calculateOverallHttpStats(period: Duration): HttpMonitoringStatsDto {
@@ -141,6 +146,52 @@ class StatCalculator(
         monitorId: Long,
     ): HistoricalUptimeStatsDto {
         val uptimeEvents = pushUptimeEventRepository.fetchAllInPeriod(period, monitorId)
+
+        return calculateHistoricalUptimeStats(period, uptimeEvents)
+    }
+
+    fun calculateOverallIcmpStats(period: Duration): IcmpMonitoringStatsDto {
+        val monitors = icmpMonitorRepository.getMonitorsWithDetails()
+        val uptimeEvents = icmpUptimeEventRepository.fetchAllInPeriod(period)
+        var downMonitors = 0
+        var upMonitors = 0
+        var pausedMonitors = 0
+        var uptimeInProgressMonitors = 0
+
+        monitors.forEach { monitor ->
+            if (monitor.enabled) {
+                when (monitor.uptimeStatus) {
+                    UptimeStatus.DOWN -> downMonitors++
+                    UptimeStatus.UP -> upMonitors++
+                    null -> uptimeInProgressMonitors++
+                }
+            } else {
+                pausedMonitors++
+            }
+        }
+
+        return IcmpMonitoringStatsDto(
+            actual = IcmpMonitoringStatsDto.ActualMonitoringStats(
+                uptimeStats = IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                    total = monitors.size,
+                    down = downMonitors,
+                    up = upMonitors,
+                    paused = pausedMonitors,
+                    inProgress = uptimeInProgressMonitors,
+                    lastIncident = icmpUptimeEventRepository.fetchLatestIncidentTimestamp(),
+                ),
+            ),
+            history = IcmpMonitoringStatsDto.HistoricalMonitoringStats(
+                uptimeStats = calculateHistoricalUptimeStats(period, uptimeEvents)
+            )
+        )
+    }
+
+    fun calculateHistoricalIcmpUptimeStats(
+        period: Duration,
+        monitorId: Long,
+    ): HistoricalUptimeStatsDto {
+        val uptimeEvents = icmpUptimeEventRepository.fetchAllInPeriod(period, monitorId)
 
         return calculateHistoricalUptimeStats(period, uptimeEvents)
     }

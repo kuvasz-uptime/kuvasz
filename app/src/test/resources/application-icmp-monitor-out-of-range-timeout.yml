@@ -1,0 +1,5 @@
+icmp-monitors:
+  - name: test
+    host: 127.0.0.1
+    uptime-check-interval: 60
+    timeout-seconds: 31

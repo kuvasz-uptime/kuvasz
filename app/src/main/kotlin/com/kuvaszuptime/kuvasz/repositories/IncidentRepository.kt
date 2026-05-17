@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.IncidentType
@@ -43,6 +45,8 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .httpUptimeIncidentSelect(monitorId, period, includeResolved)
             // Push incidents
             .unionAll(dslContext.pushUptimeIncidentSelect(monitorId, period, includeResolved))
+            // ICMP incidents
+            .unionAll(dslContext.icmpUptimeIncidentSelect(monitorId, period, includeResolved))
             // SSL incidents
             .unionAll(dslContext.sslIncidentsSelect(monitorId, period, includeResolved))
             .orderBy(DSL.field(orderFieldName).desc())
@@ -128,6 +132,42 @@ class IncidentRepository(private val dslContext: DSLContext) {
         }
 
     @Suppress("IgnoredReturnValue")
+    private fun DSLContext.icmpUptimeIncidentSelect(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean
+    ) = this
+        .select(
+            ICMP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
+            ICMP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            ICMP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
+            DSL.inline(IncidentType.ICMP.name).`as`(IncidentDto::incidentType.name),
+            DSL.`when`(ICMP_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
+                .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
+            ICMP_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
+            ICMP_UPTIME_EVENT.STARTED_AT.`as`(IncidentDto::startedAt.name),
+            ICMP_UPTIME_EVENT.ENDED_AT.`as`(IncidentDto::endedAt.name),
+            ICMP_UPTIME_EVENT.UPDATED_AT.`as`(IncidentDto::updatedAt.name),
+        )
+        .from(ICMP_UPTIME_EVENT)
+        .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))
+        .where(ICMP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+        .apply {
+            if (monitorId != null) {
+                and(ICMP_MONITOR.ID.eq(monitorId))
+            } else {
+                and(ICMP_MONITOR.ENABLED.isTrue)
+            }
+            period?.let {
+                val periodStart = getCurrentTimestamp().minus(period)
+                and(DSL.coalesce(ICMP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            }
+            if (!includeResolved) {
+                and(ICMP_UPTIME_EVENT.ENDED_AT.isNull)
+            }
+        }
+
+    @Suppress("IgnoredReturnValue")
     private fun DSLContext.sslIncidentsSelect(
         monitorId: Long? = null,
         period: Duration? = null,
@@ -189,6 +229,19 @@ class IncidentRepository(private val dslContext: DSLContext) {
 
         return dslContext
             .pushUptimeIncidentSelect(monitorId, period, includeResolved)
+            .orderBy(DSL.field(orderFieldName).desc())
+            .fetchInto(IncidentDto::class.java)
+    }
+
+    fun getIcmpUptimeIncidents(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean,
+    ): List<IncidentDto> {
+        val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
+
+        return dslContext
+            .icmpUptimeIncidentSelect(monitorId, period, includeResolved)
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }

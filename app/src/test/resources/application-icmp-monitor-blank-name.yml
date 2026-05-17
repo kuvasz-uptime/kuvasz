@@ -1,0 +1,4 @@
+icmp-monitors:
+  - name: ''
+    host: 127.0.0.1
+    uptime-check-interval: 60
