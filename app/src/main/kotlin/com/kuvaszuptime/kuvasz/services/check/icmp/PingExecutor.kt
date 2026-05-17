@@ -1,44 +1,44 @@
 package com.kuvaszuptime.kuvasz.services.check.icmp
 
-import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import kotlin.math.roundToInt
 
 data class PingResult(
     val packetsSent: Int,
     val packetsReceived: Int,
+    val packetLossPercentage: Int,
     val avgLatencyMs: Int?,
     val rawOutput: String,
     val isOutputRecognized: Boolean,
-) {
-    @Suppress("MagicNumber")
-    val packetLossPercentage: Int
-        get() = if (packetsSent == 0) 100 else (packetsSent - packetsReceived) * 100 / packetsSent
-}
+)
 
 interface PingExecutor {
     val receivedPattern: Regex
     val rttPattern: Regex
     fun prepareCommand(host: String, count: Int, timeoutSeconds: Int): List<String>
-    fun execute(host: String, count: Int, timeoutSeconds: Int): PingResult
-}
 
-@Singleton
-class SystemPingExecutor : PingExecutor {
+    @Suppress("MagicNumber")
+    fun parsePingOutput(output: String): PingResult {
+        val receivedMatch = receivedPattern.find(output)
+        val transmitted = receivedMatch?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
+        val received = receivedMatch?.groupValues?.getOrNull(2)?.toIntOrNull() ?: 0
+        val lossPercentage = receivedMatch?.groupValues?.getOrNull(3)?.toIntOrNull() ?: 100
 
-    private val logger: Logger = LoggerFactory.getLogger(SystemPingExecutor::class.java)
+        val avgLatencyMs = rttPattern.find(output)?.groupValues?.get(1)?.toDoubleOrNull()?.roundToInt()
 
-    override val receivedPattern = Regex("""(\d+) received""")
-    override val rttPattern = Regex("""rtt .* = [\d.]+/([\d.]+)/""")
+        return PingResult(
+            packetsSent = transmitted,
+            packetsReceived = received,
+            packetLossPercentage = lossPercentage,
+            avgLatencyMs = avgLatencyMs.takeIf { received > 0 },
+            rawOutput = output,
+            isOutputRecognized = receivedMatch != null,
+        )
+    }
 
-    override fun prepareCommand(host: String, count: Int, timeoutSeconds: Int): List<String> =
-        listOf("ping", "-c", count.toString(), "-W", timeoutSeconds.toString(), host)
-
-    override fun execute(host: String, count: Int, timeoutSeconds: Int): PingResult {
+    fun execute(host: String, count: Int, timeoutSeconds: Int): PingResult {
         val command = prepareCommand(host, count, timeoutSeconds)
-        logger.debug("Running ping: ${command.joinToString(" ")}")
 
         val process = ProcessBuilder(command)
             .redirectErrorStream(true)
@@ -46,24 +46,20 @@ class SystemPingExecutor : PingExecutor {
         val output = process.inputStream.bufferedReader().readText()
         process.waitFor()
 
-        return parsePingOutput(output, count)
+        return parsePingOutput(output)
     }
+}
 
-    fun parsePingOutput(output: String, packetsSent: Int): PingResult {
-        logger.debug("Ping output:\n$output")
+@Singleton
+@Requires(notEnv = ["macos"])
+class BusyboxPingExecutor : PingExecutor {
 
-        val receivedMatch = receivedPattern.find(output)
-        val packetsReceived = receivedMatch?.groupValues?.get(1)?.toIntOrNull() ?: 0
-        val avgLatencyMs = rttPattern.find(output)?.groupValues?.get(1)?.toDoubleOrNull()?.toInt()
+    override val receivedPattern =
+        Regex("""(\d+) packets transmitted, (\d+) packets received, (\d+)% packet loss""")
+    override val rttPattern = Regex("""round-trip min/avg/max = [\d.]+/([\d.]+)/""")
 
-        return PingResult(
-            packetsSent = packetsSent,
-            packetsReceived = packetsReceived,
-            avgLatencyMs = avgLatencyMs.takeIf { packetsReceived > 0 },
-            rawOutput = output,
-            isOutputRecognized = receivedMatch != null,
-        )
-    }
+    override fun prepareCommand(host: String, count: Int, timeoutSeconds: Int): List<String> =
+        listOf("ping", "-c", count.toString(), "-W", timeoutSeconds.toString(), host)
 }
 
 /**
@@ -74,10 +70,11 @@ class SystemPingExecutor : PingExecutor {
  */
 @Singleton
 @Requires(env = ["macos"])
-@Primary
-class LocalMacOsPingExecutor : SystemPingExecutor() {
-    override val receivedPattern = Regex("""(\d+) packets received""")
-    override val rttPattern = Regex("""round-trip .* = [\d.]+/([\d.]+)/""")
+class MacOsPingExecutor : PingExecutor {
+
+    override val receivedPattern =
+        Regex("""(\d+) packets transmitted, (\d+) packets received, (\d+)(?:\.\d+)?% packet loss""")
+    override val rttPattern = Regex("""round-trip min/avg/max/stddev = [\d.]+/([\d.]+)/""")
 
     @Suppress("MagicNumber")
     override fun prepareCommand(host: String, count: Int, timeoutSeconds: Int): List<String> =

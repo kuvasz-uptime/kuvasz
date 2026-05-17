@@ -38,6 +38,7 @@ class IcmpUptimeChecker(
             PingResult(
                 packetsSent = monitor.packetCount,
                 packetsReceived = 0,
+                packetLossPercentage = 100,
                 avgLatencyMs = null,
                 rawOutput = ex.message ?: ex.javaClass.simpleName,
                 isOutputRecognized = false,

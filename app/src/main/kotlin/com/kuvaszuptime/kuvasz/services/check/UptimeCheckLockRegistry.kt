@@ -28,6 +28,8 @@ class UptimeCheckLockRegistry(private val appConfig: AppConfig) {
         logger.debug("Uptime check for monitor with ID: $monitorId is completed, released lock")
     }
 
+    fun hasLocks() = activeChecks.isNotEmpty()
+
     companion object {
         private val logger = LoggerFactory.getLogger(UptimeCheckLockRegistry::class.java)
     }

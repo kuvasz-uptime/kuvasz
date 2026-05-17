@@ -79,6 +79,7 @@ class IcmpMonitorControllerTest(
         every { execute(any(), any(), any()) } returns PingResult(
             packetsSent = 3,
             packetsReceived = 3,
+            packetLossPercentage = 0,
             avgLatencyMs = 10,
             rawOutput = "",
             isOutputRecognized = true,

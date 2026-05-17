@@ -41,7 +41,7 @@ kover {
             }
             filters {
                 excludes {
-                    classes("*ApplicationKt*", "*LocalMacOsPingExecutor*")
+                    classes("*ApplicationKt*", "*MacOsPingExecutor*")
                     packages("com.kuvaszuptime.kuvasz.jooq")
                 }
             }

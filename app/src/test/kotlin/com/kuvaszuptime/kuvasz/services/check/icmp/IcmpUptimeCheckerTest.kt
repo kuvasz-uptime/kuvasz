@@ -47,6 +47,7 @@ class IcmpUptimeCheckerTest(
                 } returns PingResult(
                     packetsSent = 3,
                     packetsReceived = 3,
+                    packetLossPercentage = 0,
                     avgLatencyMs = 12,
                     rawOutput = "",
                     isOutputRecognized = true
@@ -94,6 +95,7 @@ class IcmpUptimeCheckerTest(
                 } returns PingResult(
                     packetsSent = 3,
                     packetsReceived = 0,
+                    packetLossPercentage = 100,
                     avgLatencyMs = null,
                     rawOutput = "",
                     isOutputRecognized = true
@@ -140,6 +142,7 @@ class IcmpUptimeCheckerTest(
                 } returns PingResult(
                     packetsSent = 4,
                     packetsReceived = 2,
+                    packetLossPercentage = 50,
                     avgLatencyMs = 20,
                     rawOutput = "",
                     isOutputRecognized = true
@@ -171,6 +174,7 @@ class IcmpUptimeCheckerTest(
                 } returns PingResult(
                     packetsSent = 4,
                     packetsReceived = 2,
+                    packetLossPercentage = 50,
                     avgLatencyMs = null,
                     rawOutput = "",
                     isOutputRecognized = true
@@ -203,6 +207,7 @@ class IcmpUptimeCheckerTest(
                 } returns PingResult(
                     packetsSent = 3,
                     packetsReceived = 0,
+                    packetLossPercentage = 100,
                     avgLatencyMs = null,
                     rawOutput = "",
                     isOutputRecognized = true
@@ -233,6 +238,7 @@ class IcmpUptimeCheckerTest(
                 } returns PingResult(
                     packetsSent = 3,
                     packetsReceived = 0,
+                    packetLossPercentage = 100,
                     avgLatencyMs = null,
                     rawOutput = rawOutput,
                     isOutputRecognized = false,
@@ -267,6 +273,7 @@ class IcmpUptimeCheckerTest(
                 } returns PingResult(
                     packetsSent = 3,
                     packetsReceived = 3,
+                    packetLossPercentage = 0,
                     avgLatencyMs = 10,
                     rawOutput = "",
                     isOutputRecognized = true,

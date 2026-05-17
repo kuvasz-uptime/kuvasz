@@ -8,10 +8,12 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.getNextCheck
 import com.kuvaszuptime.kuvasz.services.check.gracefulCancel
+import com.kuvaszuptime.kuvasz.services.check.initiateShutdown
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -33,7 +35,7 @@ class HttpCheckScheduler(
     private val sslChecker: SSLChecker,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
-) {
+) : AutoCloseable {
     private val coroutineExHandler = CoroutineExceptionHandler { _, ex ->
         logger.warn("Coroutine failed with ${ex::class.simpleName}: ${ex.message}")
     }
@@ -236,6 +238,11 @@ class HttpCheckScheduler(
             CheckType.SSL -> scheduledSSLChecks[monitorId]
         }
         return scheduledTask?.getNextCheck()
+    }
+
+    @PreDestroy
+    override fun close() {
+        initiateShutdown(scheduledUptimeChecks, lockRegistry)
     }
 
     companion object {

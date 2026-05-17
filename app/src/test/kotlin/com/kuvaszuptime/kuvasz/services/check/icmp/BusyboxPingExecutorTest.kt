@@ -4,27 +4,26 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 
-class PingExecutorTest : StringSpec({
+class BusyboxPingExecutorTest : StringSpec({
 
-    val executor = SystemPingExecutor()
+    val executor = BusyboxPingExecutor()
 
     "parsePingOutput returns correct result for a typical Linux ping output" {
         val output = """
-            PING example.com (93.184.216.34) 56(84) bytes of data.
-            64 bytes from 93.184.216.34: icmp_seq=1 ttl=56 time=11.2 ms
-            64 bytes from 93.184.216.34: icmp_seq=2 ttl=56 time=10.8 ms
-            64 bytes from 93.184.216.34: icmp_seq=3 ttl=56 time=11.1 ms
-
-            --- example.com ping statistics ---
-            3 packets transmitted, 3 received, 0% packet loss, time 2003ms
-            rtt min/avg/max/mdev = 10.800/11.033/11.200/0.172 ms
+            PING kuvasz-uptime.dev (185.199.109.153): 56 data bytes
+            64 bytes from 185.199.109.153: seq=0 ttl=63 time=14.714 ms
+            64 bytes from 185.199.109.153: seq=1 ttl=63 time=28.656 ms
+            
+            --- kuvasz-uptime.dev ping statistics ---
+            2 packets transmitted, 2 packets received, 0% packet loss
+            round-trip min/avg/max = 14.714/21.685/28.656 ms
         """.trimIndent()
 
-        val result = executor.parsePingOutput(output, packetsSent = 3)
+        val result = executor.parsePingOutput(output)
 
-        result.packetsSent shouldBe 3
-        result.packetsReceived shouldBe 3
-        result.avgLatencyMs shouldBe 11
+        result.packetsSent shouldBe 2
+        result.packetsReceived shouldBe 2
+        result.avgLatencyMs shouldBe 22
         result.packetLossPercentage shouldBe 0
         result.rawOutput shouldBe output
         result.isOutputRecognized shouldBe true
@@ -32,15 +31,16 @@ class PingExecutorTest : StringSpec({
 
     "parsePingOutput returns correct result for a Linux ping output with 100% packet loss" {
         val output = """
-            PING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.
-
-            --- 192.0.2.1 ping statistics ---
-            3 packets transmitted, 0 received, 100% packet loss, time 2002ms
+            PING kuvasz-uptime.dev (185.199.109.153): 56 data bytes
+            
+            --- kuvasz-uptime.dev ping statistics ---
+            2 packets transmitted, 0 packets received, 100% packet loss
+            round-trip min/avg/max = 14.714/21.685/28.656 ms
         """.trimIndent()
 
-        val result = executor.parsePingOutput(output, packetsSent = 3)
+        val result = executor.parsePingOutput(output)
 
-        result.packetsSent shouldBe 3
+        result.packetsSent shouldBe 2
         result.packetsReceived shouldBe 0
         result.avgLatencyMs.shouldBeNull()
         result.packetLossPercentage shouldBe 100
@@ -51,9 +51,9 @@ class PingExecutorTest : StringSpec({
     "parsePingOutput returns isOutputRecognized=false for unrecognized output" {
         val output = "ping: unknown host does-not-exist.invalid"
 
-        val result = executor.parsePingOutput(output, packetsSent = 3)
+        val result = executor.parsePingOutput(output)
 
-        result.packetsSent shouldBe 3
+        result.packetsSent shouldBe 0
         result.packetsReceived shouldBe 0
         result.avgLatencyMs.shouldBeNull()
         result.packetLossPercentage shouldBe 100
@@ -62,7 +62,7 @@ class PingExecutorTest : StringSpec({
     }
 
     "parsePingOutput returns isOutputRecognized=false for empty output" {
-        val result = executor.parsePingOutput("", packetsSent = 3)
+        val result = executor.parsePingOutput("")
 
         result.isOutputRecognized shouldBe false
         result.rawOutput shouldBe ""
