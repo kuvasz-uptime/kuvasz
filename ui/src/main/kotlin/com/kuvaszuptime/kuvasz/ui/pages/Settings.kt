@@ -70,6 +70,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         checked = settings.app.editabilityState.arePushMonitorsReadOnly
                     )
                     settingsToggle(
+                        label = Messages.icmpMonitorsReadOnlyMode(),
+                        checked = settings.app.editabilityState.areIcmpMonitorsReadOnly
+                    )
+                    settingsToggle(
                         label = Messages.statusPagesReadOnlyMode(),
                         checked = settings.app.editabilityState.areStatusPagesReadOnly
                     )
@@ -149,6 +153,22 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                                     )
                                     multiSettingsToggle(label = Messages.sslStatus(), checked = metersConfig.sslStatus)
                                     multiSettingsToggle(label = Messages.sslExpiry(), checked = metersConfig.sslExpiry)
+                                    multiSettingsToggle(
+                                        label = Messages.pushUptimeStatus(),
+                                        checked = metersConfig.pushUptimeStatus
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.icmpUptimeStatus(),
+                                        checked = metersConfig.icmpUptimeStatus
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.icmpLatestLatency(),
+                                        checked = metersConfig.icmpLatestLatency
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.icmpLatestPacketLoss(),
+                                        checked = metersConfig.icmpLatestPacketLoss
+                                    )
                                 }
                             }
                         }

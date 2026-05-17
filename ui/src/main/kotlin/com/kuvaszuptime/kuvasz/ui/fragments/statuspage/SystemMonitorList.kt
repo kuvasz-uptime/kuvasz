@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -53,14 +54,17 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                                     +(monitor.uptimeRatio?.formatAsPercentage() ?: Messages.noData())
                                 }
                                 // Average response time on the right if available
-                                if (monitor is StatusPageHttpMonitorDetailsDto) {
-                                    monitor.averageLatencyInMs?.let { avgResponseTime ->
-                                        div {
-                                            classes(MS_AUTO)
-                                            span {
-                                                classes(TEXT_SECONDARY, D_INLINE_FLEX, ALIGN_ITEMS_CENTER, LH_1)
-                                                +Messages.avgResponseTime(avgResponseTime)
-                                            }
+                                val avgLatency: Int? = when (monitor) {
+                                    is StatusPageHttpMonitorDetailsDto -> monitor.averageLatencyInMs
+                                    is StatusPageIcmpMonitorDetailsDto -> monitor.averageLatencyInMs
+                                    else -> null
+                                }
+                                avgLatency?.let {
+                                    div {
+                                        classes(MS_AUTO)
+                                        span {
+                                            classes(TEXT_SECONDARY, D_INLINE_FLEX, ALIGN_ITEMS_CENTER, LH_1)
+                                            +Messages.avgResponseTime(avgLatency)
                                         }
                                     }
                                 }
@@ -85,6 +89,11 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                                     is StatusPagePushMonitorDetailsDto -> {
                                         val lastHeartbeatText = monitor.lastHeartbeat?.timeAgo() ?: Messages.noData()
                                         +"${Messages.lastHeartbeat()}: $lastHeartbeatText"
+                                    }
+
+                                    is StatusPageIcmpMonitorDetailsDto -> {
+                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
+                                        +"${Messages.lastCheck()}: $lastCheckText"
                                     }
                                 }
                             }
