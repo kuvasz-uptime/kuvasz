@@ -65,8 +65,8 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 | Custom request body                       |       ✅       |        ❌         |        ✅         |
 | **SSL monitoring**                        |       ✅       |        ❌         |        ✅         |
 | **Heartbeat (push) monitoring**           |       ✅       |        ❌         |        ✅         |
-| **Ping (ICMP) monitoring**                |      📆       |        ✅         |        ✅         |
-| **Port monitoring**                       |       ❌       |        ✅         |        ✅         |
+| **Ping (ICMP) monitoring**                |       ✅       |        ✅         |        ✅         |
+| **TCP monitoring**                        |      📆       |        ✅         |        ✅         |
 | **DNS monitoring**                        |       ❌       |        ❌         |        ✅         |
 | **Domain expiration monitoring**          |       ❌       |        ❌         |        ✅         |
 | **Notifications**                         |               |                  |                  |

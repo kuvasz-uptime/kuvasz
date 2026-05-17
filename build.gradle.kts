@@ -30,20 +30,6 @@ val javaTargetVersion = "25"
 kover {
     reports {
         total {
-            filters {
-                excludes {
-                    classes("*ApplicationKt*")
-                    packages("com.kuvaszuptime.kuvasz.jooq")
-                }
-            }
-            html { onCheck = false }
-        }
-    }
-}
-
-kover {
-    reports {
-        total {
             verify {
                 onCheck = true
                 rule {
@@ -53,6 +39,13 @@ kover {
                     }
                 }
             }
+            filters {
+                excludes {
+                    classes("*ApplicationKt*", "*LocalMacOsPingExecutor*")
+                    packages("com.kuvaszuptime.kuvasz.jooq")
+                }
+            }
+            html { onCheck = false }
         }
     }
 }
