@@ -34,7 +34,8 @@ class IcmpUptimeCheckerTest(
     fun pingExecutorMock(): PingExecutor = mockk()
 
     init {
-        given("IcmpUptimeChecker - check with no packet loss") {
+        given("IcmpUptimeChecker") {
+
             `when`("all packets are received") {
                 val monitor = createIcmpMonitor(
                     monitorRepository,
@@ -80,9 +81,7 @@ class IcmpUptimeCheckerTest(
                     events.first().status shouldBe UptimeStatus.UP
                 }
             }
-        }
 
-        given("IcmpUptimeChecker - check with total packet loss") {
             `when`("no packets are received and threshold is 100") {
                 val monitor = createIcmpMonitor(
                     monitorRepository,
@@ -127,9 +126,7 @@ class IcmpUptimeCheckerTest(
                     events.first().status shouldBe UptimeStatus.DOWN
                 }
             }
-        }
 
-        given("IcmpUptimeChecker - partial packet loss below threshold") {
             `when`("50% packets are lost but threshold is 100") {
                 val monitor = createIcmpMonitor(
                     monitorRepository,
@@ -159,9 +156,7 @@ class IcmpUptimeCheckerTest(
                     upSubscriber.values().first().packetLossPercentage shouldBe 50
                 }
             }
-        }
 
-        given("IcmpUptimeChecker - partial packet loss at threshold") {
             `when`("50% packets are lost and threshold is 50") {
                 val monitor = createIcmpMonitor(
                     monitorRepository,
@@ -191,9 +186,7 @@ class IcmpUptimeCheckerTest(
                     downSubscriber.values().first().packetLossPercentage shouldBe 50
                 }
             }
-        }
 
-        given("IcmpUptimeChecker - failure count threshold") {
             `when`("a DOWN check occurs but failureCountThreshold is 2 (first occurrence)") {
                 val monitor = createIcmpMonitor(
                     monitorRepository,
@@ -222,9 +215,7 @@ class IcmpUptimeCheckerTest(
                     downSubscriber.values().shouldHaveSize(0)
                 }
             }
-        }
 
-        given("IcmpUptimeChecker - unrecognized ping output") {
             `when`("the ping output could not be parsed and packetLossThreshold is met") {
                 val monitor = createIcmpMonitor(
                     monitorRepository,
@@ -257,9 +248,39 @@ class IcmpUptimeCheckerTest(
                     downEvent.packetLossPercentage shouldBe 100
                 }
             }
-        }
 
-        given("IcmpUptimeChecker - metricsHistoryEnabled is false") {
+            `when`("execute() throws a RuntimeException") {
+                val monitor = createIcmpMonitor(
+                    monitorRepository,
+                    packetCount = 3,
+                    packetLossThreshold = 100,
+                )
+                val pingExecutorMock = getMock(pingExecutor)
+                every {
+                    pingExecutorMock.execute(monitor.host, monitor.packetCount, monitor.timeoutSeconds)
+                } throws RuntimeException("Unexpected ping failure")
+
+                val upSubscriber = TestSubscriber<IcmpMonitorUpEvent>()
+                val downSubscriber = TestSubscriber<IcmpMonitorDownEvent>()
+                eventDispatcher.subscribeToIcmpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+                eventDispatcher.subscribeToIcmpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                uptimeChecker.check(monitor)
+
+                then("a DOWN event should be dispatched with the exception message as the error") {
+                    downSubscriber.awaitCount(1)
+                    downSubscriber.values().shouldHaveSize(1)
+                    val downEvent = downSubscriber.values().first()
+                    downEvent.monitor.id shouldBe monitor.id
+                    downEvent.error shouldBe "Unexpected ping failure"
+                    downEvent.packetLossPercentage shouldBe 100
+                }
+
+                then("no UP event should be dispatched") {
+                    upSubscriber.values().shouldHaveSize(0)
+                }
+            }
+
             `when`("the monitor has metricsHistoryEnabled=false and a check runs") {
                 val monitor = createIcmpMonitor(
                     monitorRepository,
