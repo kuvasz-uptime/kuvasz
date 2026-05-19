@@ -53,7 +53,10 @@ class WebhookEventHandler(
             event.handle()
         }
         eventDispatcher.subscribeToPushMonitorEvents { event ->
-            logger.debug("A PushMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            logger.debug(
+                "A PushMonitorEvent (${event.toIntegrationEventType()}) has been received for " +
+                    "monitor with ID: ${event.monitor.id}"
+            )
             event.handle()
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->
