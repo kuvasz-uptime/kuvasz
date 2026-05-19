@@ -144,7 +144,7 @@ private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
         IncidentType.HTTP -> mutableSetOf(BG_BLUE_LT, TEXT_BLUE_LT_FG)
         IncidentType.SSL -> mutableSetOf(BG_YELLOW_LT, TEXT_YELLOW_LT_FG)
         IncidentType.PUSH -> mutableSetOf(BG_RED_LT, TEXT_RED_LT_FG)
-        IncidentType.ICMP -> mutableSetOf(BG_ORANGE_LT, TEXT_YELLOW_LT_FG)
+        IncidentType.ICMP -> mutableSetOf(BG_ORANGE_LT, TEXT_ORANGE_LT_FG)
     }
     span {
         classes(colorClasses.plus(STATUS))
