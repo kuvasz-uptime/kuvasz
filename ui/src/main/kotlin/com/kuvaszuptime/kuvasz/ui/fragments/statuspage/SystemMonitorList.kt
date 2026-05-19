@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.WithLatency
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -54,11 +55,9 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                                     +(monitor.uptimeRatio?.formatAsPercentage() ?: Messages.noData())
                                 }
                                 // Average response time on the right if available
-                                val avgLatency: Int? = when (monitor) {
-                                    is StatusPageHttpMonitorDetailsDto -> monitor.averageLatencyInMs
-                                    is StatusPageIcmpMonitorDetailsDto -> monitor.averageLatencyInMs
-                                    else -> null
-                                }
+                                val avgLatency: Int? = if (monitor is WithLatency) {
+                                    monitor.averageLatencyInMs
+                                } else null
                                 avgLatency?.let {
                                     div {
                                         classes(MS_AUTO)

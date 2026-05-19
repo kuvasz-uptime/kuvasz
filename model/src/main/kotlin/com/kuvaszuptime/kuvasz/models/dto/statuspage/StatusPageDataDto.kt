@@ -45,6 +45,10 @@ sealed interface StatusPageMonitorDetailsDto {
     val uptimeStatusHistory: List<StatusHistoryDto>
 }
 
+sealed interface WithLatency {
+    val averageLatencyInMs: Int?
+}
+
 data class StatusPagePushMonitorDetailsDto(
     override val name: String,
     override val type: String = "push",
@@ -62,8 +66,8 @@ data class StatusPageHttpMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
-    val averageLatencyInMs: Int?,
-) : StatusPageMonitorDetailsDto
+    override val averageLatencyInMs: Int?,
+) : StatusPageMonitorDetailsDto, WithLatency
 
 data class StatusPageIcmpMonitorDetailsDto(
     override val name: String,
@@ -72,9 +76,9 @@ data class StatusPageIcmpMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
-    val averageLatencyInMs: Int?,
+    override val averageLatencyInMs: Int?,
     val lastPacketLossPercentage: Int?,
-) : StatusPageMonitorDetailsDto
+) : StatusPageMonitorDetailsDto, WithLatency
 
 /**
  * A data point in the uptime status history of the monitor.
