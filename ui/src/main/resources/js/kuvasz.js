@@ -884,7 +884,7 @@ const upsertHttpMonitorForm = (
         },
 
         validateName() {
-            if (!this.name) {
+            if (!this.name || this.name.trim() === '') {
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
@@ -1081,7 +1081,7 @@ const upsertPushMonitorForm = (
         },
 
         validateName() {
-            if (!this.name) {
+            if (!this.name || this.name.trim() === '') {
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
@@ -1236,7 +1236,7 @@ const upsertIcmpMonitorForm = (
         },
 
         validateName() {
-            if (!this.name) {
+            if (!this.name || this.name.trim() === '') {
                 this.errors.name = this.errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
@@ -1261,7 +1261,7 @@ const upsertIcmpMonitorForm = (
 
         validatePacketCount() {
             const val = parseInt(this.packetCount);
-            if (isNaN(val) || val < 1 || val > 10) {
+            if (!this.packetCount || isNaN(this.packetCount) || this.packetCount < 1 || this.packetCount > 10) {
                 this.errors.packetCount = this.errorMessages.packetCountInvalid;
             } else {
                 this.errors.packetCount = null;
@@ -1269,8 +1269,7 @@ const upsertIcmpMonitorForm = (
         },
 
         validateTimeoutSeconds() {
-            const val = parseInt(this.timeoutSeconds);
-            if (isNaN(val) || val < 1 || val > 30) {
+            if (!this.timeoutSeconds || isNaN(this.timeoutSeconds) || this.timeoutSeconds < 1 || this.timeoutSeconds > 30) {
                 this.errors.timeoutSeconds = this.errorMessages.timeoutSecondsInvalid;
             } else {
                 this.errors.timeoutSeconds = null;
@@ -1278,8 +1277,7 @@ const upsertIcmpMonitorForm = (
         },
 
         validatePacketLossThreshold() {
-            const val = parseInt(this.packetLossThreshold);
-            if (isNaN(val) || val < 1 || val > 100) {
+            if (!this.packetLossThreshold || isNaN(this.packetLossThreshold) || this.packetLossThreshold < 1 || this.packetLossThreshold > 100) {
                 this.errors.packetLossThreshold = this.errorMessages.packetLossThresholdInvalid;
             } else {
                 this.errors.packetLossThreshold = null;
