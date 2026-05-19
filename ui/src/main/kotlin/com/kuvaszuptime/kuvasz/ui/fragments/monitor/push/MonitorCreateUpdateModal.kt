@@ -211,27 +211,11 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                     }
                 }
                 // Modal footer
-                div {
-                    classes(MODAL_FOOTER)
-                    a(href = "#") {
-                        classes(BTN, BTN_LINK, LINK_SECONDARY)
-                        modalCloser()
-                        if (isReadOnlyMode) {
-                            +Messages.close()
-                        } else {
-                            +Messages.cancel()
-                        }
-                    }
-                    if (!isReadOnlyMode) {
-                        button {
-                            classes(BTN, BTN_PRIMARY, MS_AUTO)
-                            xBindDisabled("hasNonNullValue(errors) || isRequestLoading")
-                            xOnClick("submitForm()")
-                            icon(Icon.FLOPPY)
-                            +Messages.save()
-                        }
-                    }
-                }
+                upsertModalFooter(
+                    isReadOnlyMode,
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading",
+                    xOnSaveClicked = "submitForm()",
+                )
             }
         }
     }

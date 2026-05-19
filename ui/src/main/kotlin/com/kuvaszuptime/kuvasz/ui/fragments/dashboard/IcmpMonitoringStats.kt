@@ -25,7 +25,7 @@ fun renderIcmpMonitoringStats(
                 title = "ICMP",
                 lastIncident = monitoringStats.actual.uptimeStats.lastIncident,
                 icon = Icon.WAVE_SQUARE,
-                colorClasses = setOf(BG_ORANGE_LT, TEXT_YELLOW_LT_FG)
+                colorClasses = setOf(Color.ORANGE_LT.bgColor, Color.ORANGE_LT.textColor)
             )
             statCard(
                 cssClasses = setOf(COL_6, COL_MD_3),
