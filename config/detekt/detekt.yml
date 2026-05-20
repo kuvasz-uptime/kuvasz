@@ -550,7 +550,7 @@ style:
   AbstractClassCanBeConcreteClass:
     active: false
   AbstractClassCanBeInterface:
-    active: true
+    active: false
   AlsoCouldBeApply:
     active: false
   BracesOnIfStatements:
@@ -751,8 +751,8 @@ style:
     active: true
   SerialVersionUIDInSerializableClass:
     active: true
-  SpacingAfterPackageDeclaration:
-    active: false
+  SpacingAfterPackageAndImports:
+    active: true
   StringShouldBeRawString:
     active: false
     maxEscapedCharacterCount: 2
