@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz
 
 object OpenApiTags {
     const val HTTP_MONITORS = "HTTP monitors"
+    const val ICMP_MONITORS = "ICMP monitors"
     const val INCIDENTS = "Incidents"
     const val INTEGRATIONS = "Integrations"
     const val MANAGEMENT = "Management"

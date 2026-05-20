@@ -7,6 +7,12 @@ object Validation {
     const val SLUG_REGEX = "^[a-z0-9_-]{1,50}$"
     const val MIN_HEARTBEAT_INTERVAL = 10L
     const val MIN_CLIENT_SECRET_LENGTH = 36
+    const val MIN_PACKET_COUNT = 1L
+    const val MAX_PACKET_COUNT = 10L
+    const val MIN_TIMEOUT_SECONDS = 1L
+    const val MAX_TIMEOUT_SECONDS = 30L
+    const val MIN_PACKET_LOSS_THRESHOLD = 1L
+    const val MAX_PACKET_LOSS_THRESHOLD = 100L
 }
 
 object ValidationMessages {
@@ -51,6 +57,16 @@ object MonitorValidationMessages {
     const val CLIENT_SECRET_MIN_LENGTH = "Client secret must be at least {min} characters long"
     const val FAILURE_COUNT_THRESHOLD_NOT_NULL = "Failure count threshold must not be null"
     const val FAILURE_COUNT_THRESHOLD_POSITIVE = "Failure count threshold must be greater than 0"
+    const val HOST_NOT_BLANK = "Host must not be blank"
+    const val PACKET_COUNT_NOT_NULL = "Packet count must not be null"
+    const val PACKET_COUNT_MIN = "Packet count must be at least {value}"
+    const val PACKET_COUNT_MAX = "Packet count must be at most {value}"
+    const val TIMEOUT_SECONDS_NOT_NULL = "Timeout must not be null"
+    const val TIMEOUT_SECONDS_MIN = "Timeout must be at least {value} second(s)"
+    const val TIMEOUT_SECONDS_MAX = "Timeout must be at most {value} seconds"
+    const val PACKET_LOSS_THRESHOLD_NOT_NULL = "Packet loss threshold must not be null"
+    const val PACKET_LOSS_THRESHOLD_MIN = "Packet loss threshold must be at least {value}%"
+    const val PACKET_LOSS_THRESHOLD_MAX = "Packet loss threshold must be at most {value}%"
 }
 
 object StatusPageValidationMessages {

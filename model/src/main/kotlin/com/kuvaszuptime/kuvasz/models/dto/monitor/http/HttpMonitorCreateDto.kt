@@ -1,13 +1,14 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Introspected
 data class HttpMonitorCreateDto(
-    @param:Schema(description = HttpMonitorDocs.NAME, required = true)
+    @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     override val url: String,
@@ -17,9 +18,9 @@ data class HttpMonitorCreateDto(
         defaultValue = HttpMonitorDefaults.SENSITIVE_URL.toString()
     )
     override val sensitiveUrl: Boolean = HttpMonitorDefaults.SENSITIVE_URL,
-    @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
+    @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     override val uptimeCheckInterval: Int,
-    @param:Schema(description = HttpMonitorDocs.ENABLED, defaultValue = HttpMonitorDefaults.MONITOR_ENABLED.toString())
+    @param:Schema(description = MonitorDocs.ENABLED, defaultValue = HttpMonitorDefaults.MONITOR_ENABLED.toString())
     override val enabled: Boolean = HttpMonitorDefaults.MONITOR_ENABLED,
     @param:Schema(
         description = HttpMonitorDocs.SSL_CHECK_ENABLED,
@@ -57,7 +58,7 @@ data class HttpMonitorCreateDto(
         defaultValue = HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS.toString()
     )
     override val sslExpiryThreshold: Int = HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS,
-    @param:Schema(description = HttpMonitorDocs.INTEGRATIONS, required = false)
+    @param:Schema(description = MonitorDocs.INTEGRATIONS, required = false)
     override val integrations: List<String>? = emptyList(),
     @param:Schema(description = HttpMonitorDocs.EXPECTED_STATUS_CODES, required = false)
     override val expectedStatusCodes: List<Int>? = emptyList(),
@@ -88,7 +89,7 @@ data class HttpMonitorCreateDto(
     override val requestBody: String? = null,
 
     @param:Schema(
-        description = HttpMonitorDocs.FAILURE_COUNT_THRESHOLD,
+        description = MonitorDocs.FAILURE_COUNT_THRESHOLD,
         required = false,
         defaultValue = HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD.toString()
     )

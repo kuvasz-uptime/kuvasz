@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import arrow.core.Either
 import arrow.core.left
+import arrow.core.right
 import com.kuvaszuptime.kuvasz.jooq.JsonNodeToMapConverter
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
@@ -99,35 +100,33 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         txCtx: DSLContext = dslContext,
     ): Either<PersistenceException, HttpMonitorRecord> =
         try {
-            Either.Right(
-                txCtx
-                    .update(HTTP_MONITOR)
-                    .set(HTTP_MONITOR.NAME, updatedMonitor.name)
-                    .set(HTTP_MONITOR.URL, updatedMonitor.url)
-                    .set(HTTP_MONITOR.SENSITIVE_URL, updatedMonitor.sensitiveUrl)
-                    .set(HTTP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
-                    .set(HTTP_MONITOR.ENABLED, updatedMonitor.enabled)
-                    .set(HTTP_MONITOR.SSL_CHECK_ENABLED, updatedMonitor.sslCheckEnabled)
-                    .set(HTTP_MONITOR.UPDATED_AT, getCurrentTimestamp())
-                    .set(HTTP_MONITOR.REQUEST_METHOD, updatedMonitor.requestMethod)
-                    .set(HTTP_MONITOR.FOLLOW_REDIRECTS, updatedMonitor.followRedirects)
-                    .set(HTTP_MONITOR.LATENCY_HISTORY_ENABLED, updatedMonitor.latencyHistoryEnabled)
-                    .set(HTTP_MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
-                    .set(HTTP_MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
-                    .set(HTTP_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
-                    .set(HTTP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
-                    .set(HTTP_MONITOR.EXPECTED_STATUS_CODES, updatedMonitor.expectedStatusCodes)
-                    .set(HTTP_MONITOR.RESPONSE_TIME_THRESHOLD_MILLIS, updatedMonitor.responseTimeThresholdMillis)
-                    .set(HTTP_MONITOR.EXPECTED_KEYWORD, updatedMonitor.expectedKeyword)
-                    .set(HTTP_MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE, updatedMonitor.expectedKeywordCaseSensitive)
-                    .set(HTTP_MONITOR.EXPECTED_KEYWORD_NEGATED, updatedMonitor.expectedKeywordNegated)
-                    .set(HTTP_MONITOR.REQUEST_HEADERS, updatedMonitor.requestHeaders)
-                    .set(HTTP_MONITOR.EXPECTED_HEADERS, updatedMonitor.expectedHeaders)
-                    .set(HTTP_MONITOR.REQUEST_BODY, updatedMonitor.requestBody)
-                    .where(HTTP_MONITOR.ID.eq(updatedMonitor.id))
-                    .returning(HTTP_MONITOR.asterisk())
-                    .fetchOneOrThrow<HttpMonitorRecord>()
-            )
+            txCtx
+                .update(HTTP_MONITOR)
+                .set(HTTP_MONITOR.NAME, updatedMonitor.name)
+                .set(HTTP_MONITOR.URL, updatedMonitor.url)
+                .set(HTTP_MONITOR.SENSITIVE_URL, updatedMonitor.sensitiveUrl)
+                .set(HTTP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
+                .set(HTTP_MONITOR.ENABLED, updatedMonitor.enabled)
+                .set(HTTP_MONITOR.SSL_CHECK_ENABLED, updatedMonitor.sslCheckEnabled)
+                .set(HTTP_MONITOR.UPDATED_AT, getCurrentTimestamp())
+                .set(HTTP_MONITOR.REQUEST_METHOD, updatedMonitor.requestMethod)
+                .set(HTTP_MONITOR.FOLLOW_REDIRECTS, updatedMonitor.followRedirects)
+                .set(HTTP_MONITOR.LATENCY_HISTORY_ENABLED, updatedMonitor.latencyHistoryEnabled)
+                .set(HTTP_MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
+                .set(HTTP_MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
+                .set(HTTP_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
+                .set(HTTP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
+                .set(HTTP_MONITOR.EXPECTED_STATUS_CODES, updatedMonitor.expectedStatusCodes)
+                .set(HTTP_MONITOR.RESPONSE_TIME_THRESHOLD_MILLIS, updatedMonitor.responseTimeThresholdMillis)
+                .set(HTTP_MONITOR.EXPECTED_KEYWORD, updatedMonitor.expectedKeyword)
+                .set(HTTP_MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE, updatedMonitor.expectedKeywordCaseSensitive)
+                .set(HTTP_MONITOR.EXPECTED_KEYWORD_NEGATED, updatedMonitor.expectedKeywordNegated)
+                .set(HTTP_MONITOR.REQUEST_HEADERS, updatedMonitor.requestHeaders)
+                .set(HTTP_MONITOR.EXPECTED_HEADERS, updatedMonitor.expectedHeaders)
+                .set(HTTP_MONITOR.REQUEST_BODY, updatedMonitor.requestBody)
+                .where(HTTP_MONITOR.ID.eq(updatedMonitor.id))
+                .returning(HTTP_MONITOR.asterisk())
+                .fetchOneOrThrow<HttpMonitorRecord>().right()
         } catch (e: DataAccessException) {
             e.checkForDuplication().left()
         }

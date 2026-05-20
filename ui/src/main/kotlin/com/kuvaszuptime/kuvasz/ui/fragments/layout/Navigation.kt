@@ -45,6 +45,11 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                             link = "/push-monitors",
                                             icon = Icon.HEARTBEAT,
                                         ),
+                                        NavItem(
+                                            label = "ICMP",
+                                            link = "/icmp-monitors",
+                                            icon = Icon.WAVE_SQUARE,
+                                        ),
                                     )
                                 )
                                 navItem(

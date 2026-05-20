@@ -38,12 +38,37 @@ metrics-exports:
   http-uptime-status: true
   push-uptime-status: true
   http-latest-latency: true
+  icmp-uptime-status: true
+  icmp-latest-latency: true
+  icmp-latest-packet-loss: true
   ssl-status: true
   ssl-expiry: true
 ---
 http-monitors:
+  - name: "Tralala #!: j[ő"
+    url: "https://akobor.me"
+    sensitive-url: true
+    uptime-check-interval: 60
+    enabled: true
+    ssl-check-enabled: false
+    latency-history-enabled: true
+    request-method: "GET"
+    follow-redirects: true
+    force-no-cache: true
+    ssl-expiry-threshold: 30
+    failure-count-threshold: 1
+    integrations: [ ]
+    expected-status-codes: [ ]
+    response-time-threshold-millis: null
+    expected-keyword: null
+    expected-keyword-case-sensitive: false
+    expected-keyword-negated: false
+    request-headers: { }
+    expected-headers: { }
+    request-body: null
   - name: "test1"
     url: "https://demo.kuvasz-uptime.dev"
+    sensitive-url: false
     uptime-check-interval: 120
     enabled: true
     ssl-check-enabled: true
@@ -52,6 +77,7 @@ http-monitors:
     follow-redirects: true
     force-no-cache: false
     ssl-expiry-threshold: 30
+    failure-count-threshold: 1
     integrations: [ ]
     expected-status-codes:
       - 200
@@ -66,6 +92,7 @@ http-monitors:
     request-body: null
   - name: "test2"
     url: "https://kuvasz-uptime.dev"
+    sensitive-url: false
     uptime-check-interval: 60
     enabled: true
     ssl-check-enabled: false
@@ -74,6 +101,7 @@ http-monitors:
     follow-redirects: true
     force-no-cache: true
     ssl-expiry-threshold: 30
+    failure-count-threshold: 1
     integrations: [ ]
     expected-status-codes: [ ]
     response-time-threshold-millis: null
@@ -83,34 +111,7 @@ http-monitors:
     request-headers: { }
     expected-headers: { }
     request-body: null
-  - name: "Tralala #!: j[ő"
-    url: "https://akobor.me"
-    sensitive-url: true
-    uptime-check-interval: 60
-    enabled: true
-    ssl-check-enabled: false
-    latency-history-enabled: true
-    request-method: "GET"
-    follow-redirects: true
-    force-no-cache: true
-    ssl-expiry-threshold: 30
-    integrations: [ ]
-    expected-status-codes: [ ]
-    response-time-threshold-millis: null
-    expected-keyword: null
-    expected-keyword-case-sensitive: false
-    expected-keyword-negated: false
-    request-headers: { }
-    expected-headers: { }
-    request-body: null
----
 push-monitors:
-  - name: "My Push Monitor"
-    heartbeat-interval: 10
-    grace-period: 0
-    client-secret: "d6d5a85c-82c0-4bea-9926-c3eed32de32a"
-    enabled: true
-    integrations: [ ]
   - name: "Another Push Monitor"
     heartbeat-interval: 20
     grace-period: 3
@@ -118,6 +119,35 @@ push-monitors:
     enabled: false
     integrations:
       - "slack:test"
+    failure-count-threshold: 1
+  - name: "My Push Monitor"
+    heartbeat-interval: 10
+    grace-period: 0
+    client-secret: "d6d5a85c-82c0-4bea-9926-c3eed32de32a"
+    enabled: true
+    integrations: [ ]
+    failure-count-threshold: 1
+icmp-monitors:
+  - name: "test"
+    host: "github.com"
+    uptime-check-interval: 5
+    packet-count: 3
+    timeout-seconds: 5
+    packet-loss-threshold: 100
+    failure-count-threshold: 1
+    enabled: true
+    integrations: [ ]
+    metrics-history-enabled: true
+  - name: "test2"
+    host: "telex.hu"
+    uptime-check-interval: 10
+    packet-count: 3
+    timeout-seconds: 5
+    packet-loss-threshold: 10
+    failure-count-threshold: 1
+    enabled: true
+    integrations: [ ]
+    metrics-history-enabled: true
 ---
 integrations:
   webhook:

@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
-import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
@@ -154,27 +153,11 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                     }
                 }
                 // Modal footer
-                div {
-                    classes(MODAL_FOOTER)
-                    a(href = "#") {
-                        classes(BTN, BTN_LINK, LINK_SECONDARY)
-                        modalCloser()
-                        if (isReadOnlyMode) {
-                            +Messages.close()
-                        } else {
-                            +Messages.cancel()
-                        }
-                    }
-                    if (!isReadOnlyMode) {
-                        button {
-                            classes(BTN, BTN_PRIMARY, MS_AUTO)
-                            xBindDisabled("hasNonNullValue(errors) || isRequestLoading")
-                            xOnClick("submitForm()")
-                            icon(Icon.FLOPPY)
-                            +Messages.save()
-                        }
-                    }
-                }
+                upsertModalFooter(
+                    isReadOnlyMode,
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading",
+                    xOnSaveClicked = "submitForm()",
+                )
             }
         }
     }

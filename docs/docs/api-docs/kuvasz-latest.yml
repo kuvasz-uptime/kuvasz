@@ -326,6 +326,274 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/icmp-monitors:
+    get:
+      tags:
+      - ICMP monitors
+      summary: Get all monitors with their details
+      operationId: getMonitorsWithDetails_1
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IcmpMonitorDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - ICMP monitors
+      summary: Create a monitor
+      operationId: createMonitor_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IcmpMonitorCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IcmpMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "ICMP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/icmp-monitors/stats:
+    get:
+      tags:
+      - ICMP monitors
+      summary: "Get the overall, cumulative stats of all monitors"
+      operationId: getMonitoringStats_1
+      parameters:
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IcmpMonitoringStatsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/icmp-monitors/{monitorId}:
+    get:
+      tags:
+      - ICMP monitors
+      summary: Get a monitor's details
+      operationId: getMonitorDetails_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IcmpMonitorDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - ICMP monitors
+      summary: Delete a monitor by ID
+      operationId: deleteMonitor_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "ICMP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - ICMP monitors
+      summary: Update a monitor by ID
+      description: Updates the monitor with the given ID. Only fields that are present
+        in the request body will be updated. Fields not present in the request body
+        will remain unchanged.
+      operationId: updateMonitor_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IcmpMonitorUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IcmpMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "ICMP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/icmp-monitors/{monitorId}/stats:
+    get:
+      tags:
+      - ICMP monitors
+      summary: Get the stats of the given monitor
+      operationId: getMonitorStats_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P1D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IcmpMonitorStatsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/icmp-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - ICMP monitors
+      summary: Get the uptime events of the given monitor
+      operationId: getUptimeEvents_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IcmpUptimeEventDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/incidents:
     get:
       tags:
@@ -433,7 +701,7 @@ paths:
       tags:
       - Push monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_1
+      operationId: getMonitorsWithDetails_2
       parameters:
       - name: enabled
         in: query
@@ -465,7 +733,7 @@ paths:
       tags:
       - Push monitors
       summary: Create a monitor
-      operationId: createMonitor_1
+      operationId: createMonitor_2
       requestBody:
         content:
           application/json:
@@ -564,7 +832,7 @@ paths:
       tags:
       - Push monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_1
+      operationId: getMonitoringStats_2
       parameters:
       - name: period
         in: query
@@ -588,7 +856,7 @@ paths:
       tags:
       - Push monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_1
+      operationId: getMonitorDetails_2
       parameters:
       - name: monitorId
         in: path
@@ -616,7 +884,7 @@ paths:
       tags:
       - Push monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_1
+      operationId: deleteMonitor_2
       parameters:
       - name: monitorId
         in: path
@@ -656,7 +924,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_1
+      operationId: updateMonitor_2
       parameters:
       - name: monitorId
         in: path
@@ -704,7 +972,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_1
+      operationId: getMonitorStats_2
       parameters:
       - name: monitorId
         in: path
@@ -740,7 +1008,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_1
+      operationId: getUptimeEvents_2
       parameters:
       - name: monitorId
         in: path
@@ -1198,7 +1466,7 @@ components:
         name:
           minLength: 1
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
@@ -1215,7 +1483,7 @@ components:
         uptimeCheckInterval:
           minimum: 5
           type: integer
-          description: The interval in seconds at which the monitor checks for uptime
+          description: The interval in seconds at which the monitor will be checked
           format: int32
           x-minimum-message: "Uptime check interval must be at least {value} seconds"
           x-not-null-message: Uptime check interval must not be null
@@ -1376,7 +1644,7 @@ components:
           format: int64
         name:
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
         url:
           type: string
           description: The URL that is monitored
@@ -1388,7 +1656,7 @@ components:
             \ protect sensitive information."
         uptimeCheckInterval:
           type: integer
-          description: The interval in seconds at which the monitor checks for uptime
+          description: The interval in seconds at which the monitor will be checked
           format: int32
         enabled:
           type: boolean
@@ -1408,8 +1676,8 @@ components:
           format: date-time
           nullable: true
         uptimeStatus:
-          description: "The current uptime status of the monitor. If it's null, the\
-            \ monitor has not been checked yet."
+          description: "The current uptime status of the monitor. If it's null, no\
+            \ check has completed yet."
           nullable: true
           allOf:
           - $ref: "#/components/schemas/UptimeStatus"
@@ -1586,7 +1854,7 @@ components:
           format: int64
         name:
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
         url:
           type: string
           description: The URL that is monitored
@@ -1597,7 +1865,7 @@ components:
             \ protect sensitive information."
         uptimeCheckInterval:
           type: integer
-          description: The interval in seconds at which the monitor checks for uptime
+          description: The interval in seconds at which the monitor will be checked
           format: int32
         enabled:
           type: boolean
@@ -1731,7 +1999,7 @@ components:
         name:
           minLength: 1
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
         url:
@@ -1750,10 +2018,11 @@ components:
         uptimeCheckInterval:
           minimum: 5
           type: integer
-          description: The interval in seconds at which the monitor checks for uptime
+          description: The interval in seconds at which the monitor will be checked
           format: int32
           nullable: false
           x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
         enabled:
           type: boolean
           description: "Whether the monitor is enabled. If false, the monitor will\
@@ -2003,6 +2272,529 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
+    IcmpMetricsLogDto:
+      required:
+      - createdAt
+      - id
+      - latencyInMs
+      - packetLossPercentage
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the metrics log
+          format: int64
+        latencyInMs:
+          type: integer
+          description: "The latency in milliseconds recorded for the monitor, null\
+            \ if the monitor was down"
+          format: int32
+          nullable: true
+        packetLossPercentage:
+          type: integer
+          description: The packet loss percentage recorded for the monitor
+          format: int32
+        createdAt:
+          type: string
+          description: The timestamp when the metrics were recorded
+          format: date-time
+    IcmpMonitorCreateDto:
+      required:
+      - host
+      - name
+      - uptimeCheckInterval
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          x-size-message: Monitor name must not be blank
+        host:
+          minLength: 1
+          type: string
+          description: The hostname or IP address to ping
+          x-size-message: Host must not be blank
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        packetCount:
+          maximum: 10
+          minimum: 1
+          type: integer
+          description: The number of ICMP packets to send per check (1-10)
+          format: int32
+          default: 3
+          x-maximum-message: "Packet count must be at most {value}"
+          x-minimum-message: "Packet count must be at least {value}"
+          x-not-null-message: Packet count must not be null
+        timeoutSeconds:
+          maximum: 30
+          minimum: 1
+          type: integer
+          description: The per-ping timeout in seconds (1-30)
+          format: int32
+          default: 5
+          x-maximum-message: "Timeout must be at most {value} seconds"
+          x-minimum-message: "Timeout must be at least {value} second(s)"
+          x-not-null-message: Timeout must not be null
+        packetLossThreshold:
+          maximum: 100
+          minimum: 1
+          type: integer
+          description: The packet loss percentage (1-100) at or above which the check
+            is considered DOWN. Default 100 means all packets must fail to trigger
+            DOWN.
+          format: int32
+          default: 100
+          x-maximum-message: "Packet loss threshold must be at most {value}%"
+          x-minimum-message: "Packet loss threshold must be at least {value}%"
+          x-not-null-message: Packet loss threshold must not be null
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          default: 1
+          x-minimum-message: Failure count threshold must be greater than 0
+          x-not-null-message: Failure count threshold must not be null
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          default: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+          default: true
+    IcmpMonitorDetailsDto:
+      required:
+      - createdAt
+      - effectiveIntegrations
+      - enabled
+      - failureCountThreshold
+      - host
+      - id
+      - integrations
+      - lastUptimeCheck
+      - metricsHistoryEnabled
+      - name
+      - nextUptimeCheck
+      - packetCount
+      - packetLossThreshold
+      - statusPages
+      - timeoutSeconds
+      - updatedAt
+      - uptimeCheckInterval
+      - uptimeError
+      - uptimeStatus
+      - uptimeStatusStartedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        host:
+          type: string
+          description: The hostname or IP address to ping
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        packetCount:
+          type: integer
+          description: The number of ICMP packets to send per check (1-10)
+          format: int32
+        timeoutSeconds:
+          type: integer
+          description: The per-ping timeout in seconds (1-30)
+          format: int32
+        packetLossThreshold:
+          type: integer
+          description: The packet loss percentage (1-100) at or above which the check
+            is considered DOWN. Default 100 means all packets must fail to trigger
+            DOWN.
+          format: int32
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+        uptimeStatus:
+          description: "The current uptime status of the monitor. If it's null, no\
+            \ check has completed yet."
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusStartedAt:
+          type: string
+          description: The timestamp when the uptime status was last changed
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          description: The timestamp when the last uptime check was performed
+          format: date-time
+          nullable: true
+        nextUptimeCheck:
+          type: string
+          description: The timestamp when the next uptime check is scheduled
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          description: The error message if the last uptime check failed
+          nullable: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        effectiveIntegrations:
+          type: array
+          description: "List of integrations that are effective for the monitor, including\
+            \ global integrations"
+          items:
+            $ref: "#/components/schemas/IntegrationDetailsDto"
+        statusPages:
+          type: array
+          description: List of slugs of the status pages the monitor is explicitly
+            assigned to
+          items:
+            type: string
+    IcmpMonitorDto:
+      required:
+      - createdAt
+      - enabled
+      - failureCountThreshold
+      - host
+      - id
+      - integrations
+      - metricsHistoryEnabled
+      - name
+      - packetCount
+      - packetLossThreshold
+      - timeoutSeconds
+      - updatedAt
+      - uptimeCheckInterval
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        host:
+          type: string
+          description: The hostname or IP address to ping
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        packetCount:
+          type: integer
+          description: The number of ICMP packets to send per check (1-10)
+          format: int32
+        timeoutSeconds:
+          type: integer
+          description: The per-ping timeout in seconds (1-30)
+          format: int32
+        packetLossThreshold:
+          type: integer
+          description: The packet loss percentage (1-100) at or above which the check
+            is considered DOWN. Default 100 means all packets must fail to trigger
+            DOWN.
+          format: int32
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+    IcmpMonitorStatsDto:
+      required:
+      - id
+      - latencyStats
+      - metricsHistoryEnabled
+      - metricsLogs
+      - packetLossStats
+      - uptimeHistory
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        uptimeHistory:
+          description: Uptime related statistics of the monitor in the given period
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+        latencyStats:
+          description: Latency related statistics of the monitor in the given period
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/LatencyStatsDto"
+        packetLossStats:
+          description: Packet loss related statistics of the monitor in the given
+            period
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/PacketLossStatsDto"
+        metricsLogs:
+          type: array
+          description: All the latency and packet loss logs recorded for the monitor
+            in the given period
+          items:
+            $ref: "#/components/schemas/IcmpMetricsLogDto"
+    IcmpMonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          nullable: false
+          x-size-message: Monitor name must not be blank
+        host:
+          minLength: 1
+          type: string
+          description: The hostname or IP address to ping
+          nullable: false
+          x-size-message: Host must not be blank
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          nullable: false
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        packetCount:
+          maximum: 10
+          minimum: 1
+          type: integer
+          description: The number of ICMP packets to send per check (1-10)
+          format: int32
+          nullable: false
+          x-maximum-message: "Packet count must be at most {value}"
+          x-minimum-message: "Packet count must be at least {value}"
+          x-not-null-message: Packet count must not be null
+        timeoutSeconds:
+          maximum: 30
+          minimum: 1
+          type: integer
+          description: The per-ping timeout in seconds (1-30)
+          format: int32
+          nullable: false
+          x-maximum-message: "Timeout must be at most {value} seconds"
+          x-minimum-message: "Timeout must be at least {value} second(s)"
+          x-not-null-message: Timeout must not be null
+        packetLossThreshold:
+          maximum: 100
+          minimum: 1
+          type: integer
+          description: The packet loss percentage (1-100) at or above which the check
+            is considered DOWN. Default 100 means all packets must fail to trigger
+            DOWN.
+          format: int32
+          nullable: false
+          x-maximum-message: "Packet loss threshold must be at most {value}%"
+          x-minimum-message: "Packet loss threshold must be at least {value}%"
+          x-not-null-message: Packet loss threshold must not be null
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          nullable: false
+          x-minimum-message: Failure count threshold must be greater than 0
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          nullable: false
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+          nullable: false
+    IcmpMonitoringStatsDto:
+      required:
+      - actual
+      - history
+      type: object
+      properties:
+        actual:
+          description: The actual monitoring statistics for the current state of the
+            monitors.
+          allOf:
+          - $ref: "#/components/schemas/IcmpMonitoringStatsDto.ActualMonitoringStats"
+        history:
+          description: "The historical monitoring statistics, summarizing incidents\
+            \ and uptime ratios over time."
+          allOf:
+          - $ref: "#/components/schemas/IcmpMonitoringStatsDto.HistoricalMonitoringStats"
+    IcmpMonitoringStatsDto.ActualMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the current state of uptime for all monitors.
+          allOf:
+          - $ref: "#/components/schemas/IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
+    IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
+      required:
+      - down
+      - inProgress
+      - lastIncident
+      - paused
+      - total
+      - up
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of monitors currently being monitored.
+          format: int32
+        down:
+          type: integer
+          description: Number of monitors currently down.
+          format: int32
+        up:
+          type: integer
+          description: Number of monitors currently up.
+          format: int32
+        paused:
+          type: integer
+          description: Number of monitors currently paused.
+          format: int32
+        inProgress:
+          type: integer
+          description: "Number of monitors currently in progress (e.g., waiting for\
+            \ first check)."
+          format: int32
+        lastIncident:
+          type: string
+          description: The timestamp of the last incident detected across all monitors.
+          format: date-time
+          nullable: true
+    IcmpMonitoringStatsDto.HistoricalMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the historical uptime of all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+    IcmpUptimeEventDto:
+      required:
+      - endedAt
+      - error
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the uptime event
+          format: int64
+        status:
+          description: The status of the uptime event
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        startedAt:
+          type: string
+          description: The timestamp when the uptime event started
+          format: date-time
+        endedAt:
+          type: string
+          description: "The timestamp when the uptime event ended, if applicable"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: The timestamp when the uptime event was updated
+          format: date-time
     IncidentDto:
       required:
       - details
@@ -2062,6 +2854,7 @@ components:
       - HTTP
       - SSL
       - PUSH
+      - ICMP
     IntegrationConfigDto:
       required:
       - excludedEvents
@@ -2134,6 +2927,8 @@ components:
       - HTTP_DOWN
       - PUSH_UP
       - PUSH_DOWN
+      - ICMP_UP
+      - ICMP_DOWN
       - SSL_VALID
       - SSL_INVALID
       - SSL_WILL_EXPIRE
@@ -2215,6 +3010,46 @@ components:
           type: boolean
         message:
           type: string
+    PacketLossStatsDto:
+      required:
+      - averagePacketLossPercentage
+      - maxPacketLossPercentage
+      - minPacketLossPercentage
+      - p90PacketLossPercentage
+      - p95PacketLossPercentage
+      - p99PacketLossPercentage
+      type: object
+      properties:
+        averagePacketLossPercentage:
+          type: integer
+          description: The average packet loss percentage for the monitor
+          format: int32
+          nullable: true
+        minPacketLossPercentage:
+          type: integer
+          description: The minimum packet loss percentage for the monitor
+          format: int32
+          nullable: true
+        maxPacketLossPercentage:
+          type: integer
+          description: The maximum packet loss percentage for the monitor
+          format: int32
+          nullable: true
+        p90PacketLossPercentage:
+          type: integer
+          description: The 90th percentile packet loss percentage for the monitor
+          format: int32
+          nullable: true
+        p95PacketLossPercentage:
+          type: integer
+          description: The 95th percentile packet loss percentage for the monitor
+          format: int32
+          nullable: true
+        p99PacketLossPercentage:
+          type: integer
+          description: The 99th percentile packet loss percentage for the monitor
+          format: int32
+          nullable: true
     PagerdutyConfigDto:
       required:
       - enabled
@@ -2260,7 +3095,7 @@ components:
         name:
           minLength: 1
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
         heartbeatInterval:
           minimum: 10
@@ -2334,7 +3169,7 @@ components:
           format: int64
         name:
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
         heartbeatInterval:
           type: integer
           description: The interval in seconds at which the monitor expects to receive
@@ -2362,8 +3197,8 @@ components:
           format: date-time
           nullable: true
         uptimeStatus:
-          description: "The current uptime status of the monitor. If it's null, the\
-            \ monitor has not received a heartbeat yet."
+          description: "The current uptime status of the monitor. If it's null, no\
+            \ check has completed yet."
           nullable: true
           allOf:
           - $ref: "#/components/schemas/UptimeStatus"
@@ -2437,7 +3272,7 @@ components:
           format: int64
         name:
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
         heartbeatInterval:
           type: integer
           description: The interval in seconds at which the monitor expects to receive
@@ -2510,7 +3345,7 @@ components:
         name:
           minLength: 1
           type: string
-          description: "Unique name for the monitor, e.g., 'My Website Monitor'"
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
         heartbeatInterval:
@@ -2788,6 +3623,7 @@ components:
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areHttpMonitorsReadOnly
+      - areIcmpMonitorsReadOnly
       - arePushMonitorsReadOnly
       - areStatusPagesReadOnly
       type: object
@@ -2801,6 +3637,9 @@ components:
         arePushMonitorsReadOnly:
           type: boolean
           description: Whether the push monitors are in read-only mode
+        areIcmpMonitorsReadOnly:
+          type: boolean
+          description: Whether the ICMP monitors are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge
@@ -2879,6 +3718,10 @@ components:
       required:
       - httpLatestLatency
       - httpUptimeStatus
+      - icmpLatestLatency
+      - icmpLatestPacketLoss
+      - icmpUptimeStatus
+      - pushUptimeStatus
       - sslExpiry
       - sslStatus
       type: object
@@ -2895,6 +3738,18 @@ components:
         sslStatus:
           type: boolean
           description: Whether SSL status exporter is enabled
+        pushUptimeStatus:
+          type: boolean
+          description: Whether push monitor status exporter is enabled
+        icmpUptimeStatus:
+          type: boolean
+          description: Whether ICMP monitor status exporter is enabled
+        icmpLatestLatency:
+          type: boolean
+          description: Whether ICMP latest latency exporter is enabled
+        icmpLatestPacketLoss:
+          type: boolean
+          description: Whether ICMP latest packet loss exporter is enabled
     SettingsDto.SmtpConfigDto:
       required:
       - host
@@ -3137,6 +3992,41 @@ components:
           type: integer
           format: int32
           nullable: true
+    StatusPageIcmpMonitorDetailsDto:
+      required:
+      - name
+      - type
+      - uptimeStatusHistory
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        lastCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeRatio:
+          type: number
+          format: double
+          nullable: true
+        uptimeStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistoryDto"
+        averageLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        lastPacketLossPercentage:
+          type: integer
+          format: int32
+          nullable: true
     StatusPageMonitorDetailsDto:
       required:
       - name
@@ -3167,6 +4057,7 @@ components:
       oneOf:
       - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
+      - $ref: "#/components/schemas/StatusPageIcmpMonitorDetailsDto"
     StatusPagePushMonitorDetailsDto:
       required:
       - name

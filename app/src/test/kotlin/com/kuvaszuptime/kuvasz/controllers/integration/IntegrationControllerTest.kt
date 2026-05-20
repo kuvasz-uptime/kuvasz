@@ -13,8 +13,10 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
+import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.NotificationTestResult
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyTestService
@@ -48,6 +50,7 @@ class IntegrationControllerTest(
     private val pagerdutyTestService: PagerdutyTestService,
     private val telegramAPIService: TelegramAPIService,
     private val discordWebhookService: DiscordWebhookService,
+    private val genericWebhookService: GenericWebhookService,
     private val integrationRepository: IntegrationRepository,
 ) : ShouldSpec({
 
@@ -297,6 +300,19 @@ class IntegrationControllerTest(
                 mockedService.sendTestMessage(integrationConfig(integrationId) as DiscordNotificationConfig)
             }
         }
+
+        should("return success when the integration ID is found (even if it's disabled) - Webhook") {
+            val integrationId = IntegrationID(IntegrationType.WEBHOOK, "disabled")
+            val mockedService = getMock(genericWebhookService)
+            every { mockedService.sendTestMessage(any()) } returns successResponse(integrationId)
+            val response = integrationClient.sendTestNotification(integrationId).blockingGet()
+
+            response.success shouldBe true
+            response.message shouldBe "OK: $integrationId"
+            verify(exactly = 1) {
+                mockedService.sendTestMessage(integrationConfig(integrationId) as WebhookNotificationConfig)
+            }
+        }
     }
 }) {
     @MockBean(SlackWebhookService::class)
@@ -313,4 +329,7 @@ class IntegrationControllerTest(
 
     @MockBean(DiscordWebhookService::class)
     fun mockDiscordWebhookService(): DiscordWebhookService = mockk()
+
+    @MockBean(GenericWebhookService::class)
+    fun mockGenericWebhookService(): GenericWebhookService = mockk()
 }

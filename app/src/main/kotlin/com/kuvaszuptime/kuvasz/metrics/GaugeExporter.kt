@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.metrics
 
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
@@ -36,8 +37,9 @@ abstract class GaugeExporter<SOURCE_VAL : Any, MONITOR : MonitorRecord>(
         val gauge = Gauge
             .builder(prefixedMeterName(), value) { it.toDouble() }
             .nameTag(name = monitor.name)
-        if (monitor is HttpMonitorRecord) {
-            gauge.targetTag(monitor.safeDisplayUrl)
+        when (monitor) {
+            is HttpMonitorRecord -> gauge.targetTag(monitor.safeDisplayUrl)
+            is IcmpMonitorRecord -> gauge.targetTag(monitor.host)
         }
 
         return MeterDefinition(gauge.register(meterRegistry).id, value)

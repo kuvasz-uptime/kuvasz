@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
@@ -26,6 +27,12 @@ class SharedMonitorRepository(private val dslContext: DSLContext) {
             MonitorType.PUSH -> {
                 ctx.selectFrom(PUSH_MONITOR)
                     .where(PUSH_MONITOR.ID.eq(monitorId.id))
+                    .fetchOne()
+            }
+
+            MonitorType.ICMP -> {
+                ctx.selectFrom(ICMP_MONITOR)
+                    .where(ICMP_MONITOR.ID.eq(monitorId.id))
                     .fetchOne()
             }
         } as R?

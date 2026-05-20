@@ -22,6 +22,7 @@ import io.mockk.mockk
         "full-integrations-setup",
         "yaml-monitors",
         "yaml-push-monitors",
+        "yaml-icmp-monitors",
         "enabled-metrics-otlp",
         "enabled-metrics-prometheus",
         "status-pages",
@@ -63,6 +64,7 @@ class SettingsControllerTest(
                 result.app.version.shouldNotBeEmpty() shouldBe appGlobals.appVersion
                 result.app.editabilityState.areHttpMonitorsReadOnly shouldBe true
                 result.app.editabilityState.arePushMonitorsReadOnly shouldBe true
+                result.app.editabilityState.areIcmpMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areStatusPagesReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false
                 result.app.httpCheckTimeoutSeconds shouldBe 10
@@ -79,6 +81,10 @@ class SettingsControllerTest(
                     meters.httpLatestLatency shouldBe true
                     meters.httpUptimeStatus shouldBe true
                     meters.sslStatus shouldBe true
+                    meters.pushUptimeStatus shouldBe true
+                    meters.icmpUptimeStatus shouldBe true
+                    meters.icmpLatestLatency shouldBe true
+                    meters.icmpLatestPacketLoss shouldBe true
 
                     with(exporters.prometheus) {
                         enabled shouldBe true

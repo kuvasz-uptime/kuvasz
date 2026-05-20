@@ -6,14 +6,17 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.inspectors.forOne
@@ -37,6 +40,7 @@ class MonitorControllerTest(
     @param:Client("/") private val client: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -107,6 +111,26 @@ class MonitorControllerTest(
                     gracePeriod = 54321,
                     clientSecret = "ab".repeat(18),
                     failureCountThreshold = 3,
+                )
+                val icmpMonitor = createIcmpMonitor(
+                    icmpMonitorRepository,
+                    monitorName = "irrelevant5",
+                    integrations = listOf(
+                        IntegrationID(IntegrationType.SLACK, "global"),
+                        IntegrationID(IntegrationType.EMAIL, "global"),
+                    ),
+                )
+                val icmpMonitor2 = createIcmpMonitor(
+                    icmpMonitorRepository,
+                    enabled = false,
+                    host = "example.com",
+                    monitorName = "irrelevant6",
+                    uptimeCheckInterval = 120,
+                    packetCount = 5,
+                    timeoutSeconds = 10,
+                    packetLossThreshold = 50,
+                    failureCountThreshold = 3L,
+                    metricsHistoryEnabled = false,
                 )
 
                 val request = HttpRequest.GET<Any>("/api/v2/monitors/export/yaml").accept(MediaType.APPLICATION_YAML)
@@ -193,6 +217,38 @@ class MonitorControllerTest(
                         secondMonitor.failureCountThreshold shouldBe pushMonitor2.failureCountThreshold
                         secondMonitor.integrations.shouldBeEmpty()
                     }
+
+                    val exportedIcmpMonitorsRaw = mapper.readTree(responseBody)["icmp-monitors"].shouldNotBeNull()
+                    val parsedIcmpMonitors =
+                        mapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldNotBeEmpty()
+                    parsedIcmpMonitors.size shouldBe 2
+                    parsedIcmpMonitors.forOne { firstMonitor ->
+                        firstMonitor.name shouldBe icmpMonitor.name
+                        firstMonitor.host shouldBe icmpMonitor.host
+                        firstMonitor.uptimeCheckInterval shouldBe icmpMonitor.uptimeCheckInterval
+                        firstMonitor.packetCount shouldBe icmpMonitor.packetCount
+                        firstMonitor.timeoutSeconds shouldBe icmpMonitor.timeoutSeconds
+                        firstMonitor.packetLossThreshold shouldBe icmpMonitor.packetLossThreshold
+                        firstMonitor.failureCountThreshold shouldBe icmpMonitor.failureCountThreshold
+                        firstMonitor.enabled shouldBe icmpMonitor.enabled
+                        firstMonitor.metricsHistoryEnabled shouldBe icmpMonitor.metricsHistoryEnabled
+                        firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
+                            IntegrationID(IntegrationType.SLACK, "global"),
+                            IntegrationID(IntegrationType.EMAIL, "global"),
+                        )
+                    }
+                    parsedIcmpMonitors.forOne { secondMonitor ->
+                        secondMonitor.name shouldBe icmpMonitor2.name
+                        secondMonitor.host shouldBe icmpMonitor2.host
+                        secondMonitor.uptimeCheckInterval shouldBe icmpMonitor2.uptimeCheckInterval
+                        secondMonitor.packetCount shouldBe icmpMonitor2.packetCount
+                        secondMonitor.timeoutSeconds shouldBe icmpMonitor2.timeoutSeconds
+                        secondMonitor.packetLossThreshold shouldBe icmpMonitor2.packetLossThreshold
+                        secondMonitor.failureCountThreshold shouldBe icmpMonitor2.failureCountThreshold
+                        secondMonitor.enabled shouldBe icmpMonitor2.enabled
+                        secondMonitor.metricsHistoryEnabled shouldBe icmpMonitor2.metricsHistoryEnabled
+                        secondMonitor.integrations.shouldBeEmpty()
+                    }
                 }
             }
 
@@ -209,6 +265,8 @@ class MonitorControllerTest(
                     mapper.convertValue<List<HttpMonitorExportDto>>(exportedHttpMonitorsRaw).shouldBeEmpty()
                     val exportedPushMonitorsRaw = mapper.readTree(responseBody)["push-monitors"].shouldNotBeNull()
                     mapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldBeEmpty()
+                    val exportedIcmpMonitorsRaw = mapper.readTree(responseBody)["icmp-monitors"].shouldNotBeNull()
+                    mapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldBeEmpty()
                 }
             }
         }

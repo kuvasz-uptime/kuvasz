@@ -5,6 +5,8 @@ enum class IntegrationEventType {
     HTTP_DOWN,
     PUSH_UP,
     PUSH_DOWN,
+    ICMP_UP,
+    ICMP_DOWN,
     SSL_VALID,
     SSL_INVALID,
     SSL_WILL_EXPIRE,

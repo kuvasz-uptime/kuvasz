@@ -2,9 +2,11 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -25,11 +27,13 @@ class DisabledWebUIAuthenticationTest(
     @Client("/") client: HttpClient,
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
+    icmpMonitorRepository: IcmpMonitorRepository,
 ) : DatabaseStringSpec() {
     init {
         "all the web UI endpoints should be publicly available" {
             val httpMonitor = createHttpMonitor(httpMonitorRepository)
             val pushMonitor = createPushMonitor(pushMonitorRepository)
+            val icmpMonitor = createIcmpMonitor(icmpMonitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
 
             table(
@@ -48,6 +52,12 @@ class DisabledWebUIAuthenticationTest(
                 row("/push-monitors/fragments/details-heading/${pushMonitor.id}"),
                 row("/push-monitors/fragments/details-uptime-incidents/${pushMonitor.id}"),
                 row("/push-monitors/fragments/stats"),
+                row("/icmp-monitors"),
+                row("/icmp-monitors/${icmpMonitor.id}"),
+                row("/icmp-monitors/fragments/list"),
+                row("/icmp-monitors/fragments/details-heading/${icmpMonitor.id}"),
+                row("/icmp-monitors/fragments/details-uptime-incidents/${icmpMonitor.id}"),
+                row("/icmp-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),

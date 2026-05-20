@@ -4,8 +4,10 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.InvalidMonitorIdException
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import jakarta.inject.Singleton
 
@@ -13,12 +15,14 @@ import jakarta.inject.Singleton
 class MonitorIdValidator(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
 ) {
 
     private fun MonitorID.checkIfConfigured(): MonitorID? =
         when (type) {
             MonitorType.HTTP_SSL -> httpMonitorRepository.findByName(name)?.monitorId()
             MonitorType.PUSH -> pushMonitorRepository.findByName(name)?.monitorId()
+            MonitorType.ICMP -> icmpMonitorRepository.findByName(name)?.monitorId()
         }
 
     /**

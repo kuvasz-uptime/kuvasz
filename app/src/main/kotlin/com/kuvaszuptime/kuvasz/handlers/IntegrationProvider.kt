@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -43,6 +45,8 @@ fun MonitorEvent<*>.toIntegrationEventType() = when (this) {
     is HttpMonitorUpEvent -> IntegrationEventType.HTTP_UP
     is PushMonitorDownEvent -> IntegrationEventType.PUSH_DOWN
     is PushMonitorUpEvent -> IntegrationEventType.PUSH_UP
+    is IcmpMonitorDownEvent -> IntegrationEventType.ICMP_DOWN
+    is IcmpMonitorUpEvent -> IntegrationEventType.ICMP_UP
     is HttpRedirectEvent ->
         throw NotImplementedError("Redirect events are not supported in integrations")
 }

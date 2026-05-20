@@ -1,10 +1,13 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -19,6 +22,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -47,8 +52,10 @@ import io.reactivex.rxjava3.core.Single
 class PagerdutyEventHandlerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
+    private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     sslEventRepository: SSLEventRepository,
     integrationRepository: IntegrationRepository,
     pagerdutyConfigs: List<PagerdutyConfig>,
@@ -446,6 +453,210 @@ class PagerdutyEventHandlerTest(
                     monitor = monitor,
                     previousEvent = firstUptimeRecord,
                     error = "irrelevant",
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should call only triggerAlert()") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+        }
+
+        given("the PagerdutyEventHandler - ICMP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val event = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(
+                    icmpMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val event = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should trigger an alert on PD for each enabled integration") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe event.toStructuredMessage().summary
+                    }
+                    slot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    slot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    slot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                    packetLossPercentage = 0,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should call triggerAlert() only once") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(
+                    icmpMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                mockSuccessfulResolveResponse()
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should trigger an alert and then resolve it for each enabled integration") {
+                    val triggerSlot = mutableListOf<PagerdutyTriggerRequest>()
+                    val resolveSlot = mutableListOf<PagerdutyResolveRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(triggerSlot)) }
+                    verify(exactly = 2) { mockClient.resolveAlert(capture(resolveSlot)) }
+
+                    triggerSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe firstEvent.toStructuredMessage().summary
+                    }
+                    triggerSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+
+                    resolveSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.RESOLVE
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                    }
+                    resolveSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100,
                 )
                 mockSuccessfulTriggerResponse()
                 eventDispatcher.testDispatch(secondEvent)

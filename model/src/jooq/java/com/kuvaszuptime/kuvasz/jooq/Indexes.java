@@ -6,6 +6,9 @@ package com.kuvaszuptime.kuvasz.jooq;
 
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
@@ -27,6 +30,11 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
+    public static final Index ICMP_METRICS_LOG_CREATED_AT_IDX = Internal.createIndex(DSL.name("icmp_metrics_log_created_at_idx"), IcmpMetricsLog.ICMP_METRICS_LOG, new OrderField[] { IcmpMetricsLog.ICMP_METRICS_LOG.CREATED_AT }, false);
+    public static final Index ICMP_METRICS_LOG_MONITOR_ID_IDX = Internal.createIndex(DSL.name("icmp_metrics_log_monitor_id_idx"), IcmpMetricsLog.ICMP_METRICS_LOG, new OrderField[] { IcmpMetricsLog.ICMP_METRICS_LOG.MONITOR_ID }, false);
+    public static final Index ICMP_MONITOR_ENABLED_IDX = Internal.createIndex(DSL.name("icmp_monitor_enabled_idx"), IcmpMonitor.ICMP_MONITOR, new OrderField[] { IcmpMonitor.ICMP_MONITOR.ENABLED }, false);
+    public static final Index ICMP_UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("icmp_uptime_event_ended_at_idx"), IcmpUptimeEvent.ICMP_UPTIME_EVENT, new OrderField[] { IcmpUptimeEvent.ICMP_UPTIME_EVENT.ENDED_AT }, false);
+    public static final Index ICMP_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("icmp_uptime_event_monitor_idx"), IcmpUptimeEvent.ICMP_UPTIME_EVENT, new OrderField[] { IcmpUptimeEvent.ICMP_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index LATENCY_LOG_LATENCY_IDX = Internal.createIndex(DSL.name("latency_log_latency_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.LATENCY }, false);
     public static final Index LATENCY_LOG_MONITOR_IDX = Internal.createIndex(DSL.name("latency_log_monitor_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.MONITOR_ID }, false);
     public static final Index PUSH_MONITOR_EFFECTIVE_MONITORS_IDX = Internal.createIndex(DSL.name("push_monitor_effective_monitors_idx"), PushMonitor.PUSH_MONITOR, new OrderField[] { PushMonitor.PUSH_MONITOR.LAST_HEARTBEAT, PushMonitor.PUSH_MONITOR.ENABLED }, false);

@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -17,7 +19,9 @@ class DatabaseCleaner(
     private val appConfig: AppConfig,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
+    private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
+    private val icmpMetricsLogRepository: IcmpMetricsLogRepository,
     private val sslEventRepository: SSLEventRepository
 ) {
 
@@ -33,12 +37,16 @@ class DatabaseCleaner(
 
         val deletedHttpUptimeEvents = httpUptimeEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedPushUptimeEvents = pushUptimeEventRepository.deleteEventsBeforeDate(eventLimit)
+        val deletedIcmpUptimeEvents = icmpUptimeEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedSSLEvents = sslEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedLatencyLogs = latencyLogRepository.deleteLogsBeforeDate(latencyLimit)
+        val deletedIcmpMetricsLogs = icmpMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
 
         logger.info("$deletedHttpUptimeEvents HTTP_UPTIME_EVENT record has been deleted")
         logger.info("$deletedPushUptimeEvents PUSH_UPTIME_EVENT record has been deleted")
+        logger.info("$deletedIcmpUptimeEvents ICMP_UPTIME_EVENT record has been deleted")
         logger.info("$deletedLatencyLogs LATENCY_LOG record has been deleted")
+        logger.info("$deletedIcmpMetricsLogs ICMP_METRICS_LOG record has been deleted")
         logger.info("$deletedSSLEvents SSL_EVENT record has been deleted")
     }
 }

@@ -21,4 +21,16 @@ interface MetricsExportConfig {
 
     @get:Bindable(defaultValue = "false")
     val sslExpiry: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val pushUptimeStatus: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val icmpUptimeStatus: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val icmpLatestLatency: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val icmpLatestPacketLoss: Boolean
 }

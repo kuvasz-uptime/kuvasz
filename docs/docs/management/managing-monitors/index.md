@@ -35,13 +35,15 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     http-monitors: []
     # or
     push-monitors: []
+    # or
+    icmp-monitors: []
     ```
 
     In this case all monitors of that type in the database **will be deleted**.
 
     **What happens if you remove the relevant properties from the YAML file?**
 
-    By that we mean that your YAML file **doesn't contain the relevant property keys** (i.e. `push-monitors`, `http-monitors`, etc.), or they are **not explicitly set to an empty array** (see the example below).
+    By that we mean that your YAML file **doesn't contain the relevant property keys** (i.e. `push-monitors`, `http-monitors`, `icmp-monitors`, etc.), or they are **not explicitly set to an empty array** (see the example below).
 
     ```yaml
     # Watch out for the missing property values here. 
@@ -51,6 +53,8 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     http-monitors:
     # or
     push-monitors:
+    # or
+    icmp-monitors:
     ```
 
     In this case all monitors in the database **will be kept** (i.e. the ones that were created before via YAML). This is especially useful if you want to **restore your monitors from your exported YAML backup**, but you want to manage them on the UI in the future.
@@ -85,10 +89,18 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 
     [:octicons-arrow-right-24: Push monitors](../push-monitors.md)
 
+-   :ping_pong:{ .lg .card-header-icon } __Ping (ICMP) monitors__
+
+    ---
+
+    Check the reachability and latency of any host by sending ICMP echo requests (pings) to it.
+
+    [:octicons-arrow-right-24: ICMP monitors](../icmp-monitors.md)
+
 -   :construction:{ .lg .card-header-icon } __More to come...__
 
     ---
 
     Planned new monitor types:
 
-    - **ICMP** (a.k.a "_ping_")
+    - **TCP** port monitoring

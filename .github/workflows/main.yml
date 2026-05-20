@@ -32,7 +32,7 @@ jobs:
     - name: Run detekt
       run: ./gradlew detektAll
     - name: Run check
-      run: ./gradlew check --info
+      run: ./gradlew check
     - name: Generate code coverage report for Codecov
       run: ./gradlew koverXmlReport
       # TODO migrate to v5

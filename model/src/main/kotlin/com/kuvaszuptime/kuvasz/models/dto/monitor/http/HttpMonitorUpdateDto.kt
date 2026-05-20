@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
@@ -21,7 +22,7 @@ import jakarta.validation.constraints.PositiveOrZero
 
 @Introspected
 data class HttpMonitorUpdateDto(
-    @param:Schema(description = HttpMonitorDocs.NAME, required = false, nullable = false)
+    @param:Schema(description = MonitorDocs.NAME, required = false, nullable = false)
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String?,
 
@@ -35,12 +36,12 @@ data class HttpMonitorUpdateDto(
     val sensitiveUrl: Boolean?,
 
     @get:Min(MIN_UPTIME_CHECK_INTERVAL, message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
-    @get:NotNull
-    @param:Schema(description = HttpMonitorDocs.UPTIME_CHECK_INTERVAL, required = false, nullable = false)
+    @get:NotNull(message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_NOT_NULL)
+    @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = false, nullable = false)
     val uptimeCheckInterval: Int?,
 
     @get:NotNull
-    @param:Schema(description = HttpMonitorDocs.ENABLED, required = false, nullable = false)
+    @param:Schema(description = MonitorDocs.ENABLED, required = false, nullable = false)
     val enabled: Boolean?,
 
     @get:NotNull
@@ -68,7 +69,7 @@ data class HttpMonitorUpdateDto(
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = false, nullable = false)
     val sslExpiryThreshold: Int?,
 
-    @param:Schema(description = HttpMonitorDocs.INTEGRATIONS, required = false, nullable = true)
+    @param:Schema(description = MonitorDocs.INTEGRATIONS, required = false, nullable = true)
     val integrations: Set<IntegrationID>?,
 
     @get:SupportedStatusCodes
@@ -110,6 +111,6 @@ data class HttpMonitorUpdateDto(
 
     @get:NotNull
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
-    @param:Schema(description = HttpMonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
+    @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
     val failureCountThreshold: Long?,
 )

@@ -26,5 +26,5 @@ data class HttpUptimeEventDto(
     )
     val endedAt: OffsetDateTime?,
     @param:Schema(description = UptimeEventDocs.UPDATED_AT, required = true)
-    val updatedAt: OffsetDateTime
+    val updatedAt: OffsetDateTime,
 )

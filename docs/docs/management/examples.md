@@ -120,19 +120,18 @@ The advantage of this approach is, that you only need to do the following steps 
 
 - you have a new cert, or you would like to update the existing custom one
 - we change the base image of the _Docker_ build (should not happen in the near future)
-- we change the Java version in the project (happens really not that often)
 
 Otherwise you can just use your own "patched" `cacerts` for every new version of Kuvasz.
 
 ### Preparing the custom `cacerts` file
 
 ```shell
-# 1. Pull the current base image
-docker pull eclipse-temurin:25-jre-alpine-3.23
+# 1. Pull the current image
+docker pull kuvaszmonitoring/kuvasz:latest
 # 2. Copy the "original" cacerts to a local file
-docker run --rm --entrypoint cat eclipse-temurin:25-jre-alpine-3.23 /opt/java/openjdk/lib/security/cacerts > cacerts
+docker run --rm --entrypoint cat kuvaszmonitoring/kuvasz:latest /opt/java/openjdk/lib/security/cacerts > cacerts
 # 3. This is the tricky step: we attach back the current folder where the cacerts, and also the custom certificate should exist and we add the custom certificate to the keystore
-docker run --rm -v `pwd`:/tmp/certs eclipse-temurin:25-jre-alpine-3.23 sh -c 'cd /tmp/certs && keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts -importcert -alias your-custom-alias -file your-custom-cert.crt'
+docker run --rm -v `pwd`:/tmp/certs kuvaszmonitoring/kuvasz:latest sh -c 'cd /tmp/certs && keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts -importcert -alias your-custom-alias -file your-custom-cert.crt'
 ```
 
 Watch out for `your-custom-alias` and `your-custom-cert.crt` in the example, these are the moving parts, depending on your own preferences.
@@ -144,7 +143,7 @@ This is easier, and quite straightforward, you just need to mount another volume
 ```yaml
 # ...
 volumes:
-  - /path/to/your/cacerts:/opt/java/openjdk/lib/security/cacerts:ro
+  - /path/to/your/patched/cacerts:/opt/java/openjdk/lib/security/cacerts:ro
 # ...
 ```
 Make sure that you completely re-create your container after these changes!
@@ -491,6 +490,22 @@ push-monitors:
     enabled: false
     integrations:
       - "slack:slack_default"
+icmp-monitors:
+  - name: "My ICMP Monitor"
+    host: "example.com"
+    uptime-check-interval: 60
+    packet-count: 3
+    timeout-seconds: 5
+    packet-loss-threshold: 100
+    failure-count-threshold: 1
+    enabled: true
+    metrics-history-enabled: true
+    integrations:
+      - "slack:slack_default"
+  - name: "Local router"
+    host: "192.168.1.1"
+    uptime-check-interval: 30
+    enabled: true
 ---
 default-status-page:
   public: true
@@ -507,4 +522,5 @@ status-pages:
       - "http:full configuration example"
       - "http:minimal configuration example"
       - "push:My Push Monitor"
+      - "icmp:My ICMP Monitor"
 ```

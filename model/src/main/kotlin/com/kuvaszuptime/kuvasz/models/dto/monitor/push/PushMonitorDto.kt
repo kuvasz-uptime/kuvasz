@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.push
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -8,9 +9,9 @@ import java.time.OffsetDateTime
 
 @Introspected
 data class PushMonitorDto(
-    @param:Schema(description = PushMonitorDocs.ID, required = true)
+    @param:Schema(description = MonitorDocs.ID, required = true)
     val id: Long,
-    @param:Schema(description = PushMonitorDocs.NAME, required = true)
+    @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
     @param:Schema(description = PushMonitorDocs.HEARTBEAT_INTERVAL, required = true)
     val heartbeatInterval: Long,
@@ -20,15 +21,15 @@ data class PushMonitorDto(
     val lastHeartbeat: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.CLIENT_SECRET, required = true)
     val clientSecret: String,
-    @param:Schema(description = PushMonitorDocs.ENABLED, required = true)
+    @param:Schema(description = MonitorDocs.ENABLED, required = true)
     val enabled: Boolean,
-    @param:Schema(description = PushMonitorDocs.INTEGRATIONS, required = true)
+    @param:Schema(description = MonitorDocs.INTEGRATIONS, required = true)
     val integrations: Set<IntegrationID>,
-    @param:Schema(description = PushMonitorDocs.CREATED_AT, required = true)
+    @param:Schema(description = MonitorDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
-    @param:Schema(description = PushMonitorDocs.UPDATED_AT, required = true, nullable = true)
+    @param:Schema(description = MonitorDocs.UPDATED_AT, required = true, nullable = true)
     val updatedAt: OffsetDateTime,
-    @param:Schema(description = PushMonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
+    @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
     val failureCountThreshold: Long,
 ) {
     companion object {

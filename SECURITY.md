@@ -51,9 +51,10 @@ We strive to fix critical vulnerabilities as quickly as possible, typically with
 We currently provide security updates for the following versions of Kuvasz:
 
 | Version | Supported |
-|--|--|
-| 1.x.x | ❌ No |
-| 2.x.x | ✅ Yes |
+|---------|-----------|
+| 1.x.x   | ❌ No      |
+| 2.x.x   | ❌ No      |
+| 3.x.x   | ✅ Yes     |
 
 Users are strongly encouraged to use the latest supported version to ensure they receive all security patches.
 

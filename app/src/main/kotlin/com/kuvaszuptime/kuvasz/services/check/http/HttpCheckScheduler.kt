@@ -6,11 +6,14 @@ import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
+import com.kuvaszuptime.kuvasz.services.check.getNextCheck
+import com.kuvaszuptime.kuvasz.services.check.gracefulCancel
+import com.kuvaszuptime.kuvasz.services.check.initiateShutdown
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
-import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -20,11 +23,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.time.Duration
-import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 
 @Singleton
 class HttpCheckScheduler(
@@ -34,7 +35,7 @@ class HttpCheckScheduler(
     private val sslChecker: SSLChecker,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
-) {
+) : AutoCloseable {
     private val coroutineExHandler = CoroutineExceptionHandler { _, ex ->
         logger.warn("Coroutine failed with ${ex::class.simpleName}: ${ex.message}")
     }
@@ -43,10 +44,6 @@ class HttpCheckScheduler(
 
     private val scheduledUptimeChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> = ConcurrentHashMap()
     private val scheduledSSLChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> = ConcurrentHashMap()
-
-    private fun ScheduledFuture<*>?.gracefulCancel() {
-        this?.cancel(false)
-    }
 
     fun initialize() {
         // Scheduling the uptime checks for the enabled monitors
@@ -243,9 +240,9 @@ class HttpCheckScheduler(
         return scheduledTask?.getNextCheck()
     }
 
-    private fun ScheduledFuture<*>.getNextCheck(): OffsetDateTime {
-        val nextCheckEpoch = System.currentTimeMillis() + this.getDelay(TimeUnit.MILLISECONDS)
-        return Instant.ofEpochMilli(nextCheckEpoch).toOffsetDateTime()
+    @PreDestroy
+    override fun close() {
+        initiateShutdown(scheduledUptimeChecks, lockRegistry)
     }
 
     companion object {

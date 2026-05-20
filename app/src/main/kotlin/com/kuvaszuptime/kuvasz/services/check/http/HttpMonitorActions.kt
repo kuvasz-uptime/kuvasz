@@ -115,7 +115,7 @@ class HttpMonitorActions(
     }
 
     fun deleteMonitorById(monitorId: Long) =
-        deleteMonitorById(monitorId) { deletedMonitor ->
+        super.deleteMonitorById(monitorId) { deletedMonitor ->
             // Remove any scheduled checks
             checkScheduler.removeChecksOfMonitor(deletedMonitor)
         }

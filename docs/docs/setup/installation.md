@@ -54,7 +54,7 @@ Kuvasz can be deployed in several ways depending on your infrastructure:
             ```
 
     3. Go to [`http://0.0.0.0:8080`](http://0.0.0.0:8080){target="_blank"}, provide `YourSuperSecretUsername` and `YourSuperSecretPassword` as credentials, click "Sign in".
-    4. Look around and make sure that you **change the** [**default values**](#docker-compose-file) of secrets and credentials in the `docker-compose.yml` file ASAP! Setting your **timezone** might be also necessary if you are not located in UTC. 
+    4. Look around and make sure that you **change the** [**default values**](#2-docker-compose-file) of secrets and credentials in the `docker-compose.yml` file ASAP! Setting your **timezone** might be also necessary if you are not located in UTC. 
     5. Read the [**Configuration reference**](configuration.md){target="_blank"} & the [**Integration setup guide**](../management/integrations.md){target="_blank"}.
 
 ### 1. Configuration file

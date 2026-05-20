@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.push
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_HEARTBEAT_INTERVAL
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -15,7 +16,7 @@ import jakarta.validation.constraints.Size
 
 @Introspected
 data class PushMonitorUpdateDto(
-    @param:Schema(description = PushMonitorDocs.NAME, required = false, nullable = false)
+    @param:Schema(description = MonitorDocs.NAME, required = false, nullable = false)
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String?,
 
@@ -36,14 +37,14 @@ data class PushMonitorUpdateDto(
     val clientSecret: String?,
 
     @get:NotNull
-    @param:Schema(description = PushMonitorDocs.ENABLED, required = false, nullable = false)
+    @param:Schema(description = MonitorDocs.ENABLED, required = false, nullable = false)
     val enabled: Boolean?,
 
-    @param:Schema(description = PushMonitorDocs.INTEGRATIONS, required = false, nullable = true)
+    @param:Schema(description = MonitorDocs.INTEGRATIONS, required = false, nullable = true)
     val integrations: Set<IntegrationID>?,
 
     @get:NotNull
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
-    @param:Schema(description = PushMonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
+    @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
     val failureCountThreshold: Long?,
 )

@@ -14,7 +14,7 @@ import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto

@@ -87,6 +87,7 @@ nav:
       - HTTP monitoring: features/http-monitoring.md
       - SSL monitoring: features/ssl-monitoring.md
       - Push monitoring: features/push-monitoring.md
+      - Ping (ICMP) monitoring: features/icmp-monitoring.md
       - Status pages: features/status-pages.md
       - Notifications: features/notifications.md
       - Web UI: features/ui.md
@@ -102,6 +103,7 @@ nav:
           - management/managing-monitors/index.md
           - HTTP & SSL monitors: management/http-monitors.md
           - Push monitors: management/push-monitors.md
+          - ICMP monitors: management/icmp-monitors.md
       - Status pages: management/status-pages.md
       - Metrics exporters: management/metrics-exporters.md
       - Recipes & examples: management/examples.md

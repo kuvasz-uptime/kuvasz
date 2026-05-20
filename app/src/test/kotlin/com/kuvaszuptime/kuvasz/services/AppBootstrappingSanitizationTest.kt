@@ -2,12 +2,15 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -21,6 +24,7 @@ import org.jooq.DSLContext
 class AppBootstrappingSanitizationTest(
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
+    icmpMonitorRepository: IcmpMonitorRepository,
     dslContext: DSLContext,
 ) : DatabaseStringSpec({
 
@@ -87,6 +91,40 @@ class AppBootstrappingSanitizationTest(
         // Simulating the restart of the application
         shouldNotThrowAny { testAppContext("full-integrations-setup") }
         val sanitizedMonitor = pushMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
+
+        // The configured ones should be kept, even the disabled one
+        sanitizedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(
+            IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+            IntegrationID(IntegrationType.EMAIL, "disabled"),
+        )
+    }
+
+    "non-existing integrations should be removed from ICMP monitors upon startup, disabled should be kept" {
+        val monitor = createIcmpMonitor(icmpMonitorRepository)
+
+        // Manually adding non-existing integrations to the monitor
+        dslContext
+            .update(ICMP_MONITOR)
+            .set(
+                ICMP_MONITOR.INTEGRATIONS,
+                arrayOf(
+                    IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
+                )
+            )
+            .awaitFirst()
+        val updatedMonitor = icmpMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
+
+        updatedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(
+            IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+            IntegrationID(IntegrationType.EMAIL, "disabled"),
+            IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
+        )
+
+        // Simulating the restart of the application
+        shouldNotThrowAny { testAppContext("full-integrations-setup") }
+        val sanitizedMonitor = icmpMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
         // The configured ones should be kept, even the disabled one
         sanitizedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(

@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.factories
 import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
@@ -12,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatte
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.relativeDetailsUrl
 import io.pebbletemplates.pebble.PebbleEngine
@@ -28,6 +30,7 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
     private fun MonitorRecord.urn(): MonitorID = when (this) {
         is HttpMonitorRecord -> this.monitorId()
         is PushMonitorRecord -> this.monitorId()
+        is IcmpMonitorRecord -> this.monitorId()
         else -> throw IllegalArgumentException("Invalid monitor type: $this")
     }
 

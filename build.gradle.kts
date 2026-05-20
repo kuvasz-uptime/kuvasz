@@ -1,3 +1,4 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import dev.detekt.gradle.Detekt
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
@@ -16,6 +17,7 @@ plugins {
     id("dev.detekt") apply false
     id("org.jetbrains.kotlinx.kover")
     id("com.palantir.git-version")
+    id("com.github.ben-manes.versions") apply false
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
@@ -28,20 +30,6 @@ val javaTargetVersion = "25"
 kover {
     reports {
         total {
-            filters {
-                excludes {
-                    classes("*ApplicationKt*")
-                    packages("com.kuvaszuptime.kuvasz.jooq")
-                }
-            }
-            html { onCheck = false }
-        }
-    }
-}
-
-kover {
-    reports {
-        total {
             verify {
                 onCheck = true
                 rule {
@@ -51,6 +39,13 @@ kover {
                     }
                 }
             }
+            filters {
+                excludes {
+                    classes("*ApplicationKt*", "*MacOsPingExecutor*")
+                    packages("com.kuvaszuptime.kuvasz.jooq")
+                }
+            }
+            html { onCheck = false }
         }
     }
 }
@@ -106,4 +101,17 @@ subprojects {
             this.languageVersion.set(JavaLanguageVersion.of(javaTargetVersion))
         }
     }
+
+    tasks.withType<DependencyUpdatesTask> {
+        rejectVersionIf {
+            isNonStable(candidate.version)
+        }
+    }
+}
+
+fun isNonStable(version: String): Boolean {
+    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
+    val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+    val isStable = stableKeyword || regex.matches(version)
+    return isStable.not()
 }

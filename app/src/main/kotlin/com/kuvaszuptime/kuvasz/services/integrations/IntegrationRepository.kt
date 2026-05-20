@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.WebhookNotificationConfigDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig

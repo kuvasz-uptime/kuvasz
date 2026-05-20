@@ -42,6 +42,14 @@
 
     [:octicons-arrow-right-24: Push monitors](features/push-monitoring.md)
 
+-   :ping_pong:{ .lg .card-header-icon } __Ping (ICMP) monitors__
+
+    ---
+
+    Check the reachability and latency of any host by sending ICMP echo requests (pings) to it.
+
+    [:octicons-arrow-right-24: ICMP monitors](features/icmp-monitoring.md)
+
 -   :bell:{ .lg .card-header-icon } __Notifications__
 
     ---
@@ -133,8 +141,8 @@
 | Custom request body                       |       ✅       |        ❌         |        ✅         |
 | **SSL monitoring**                        |       ✅       |        ❌         |        ✅         |
 | **Heartbeat (push) monitoring**           |       ✅       |        ❌         |        ✅         |
-| **Ping (ICMP) monitoring**                |      📆       |        ✅         |        ✅         |
-| **Port monitoring**                       |       ❌       |        ✅         |        ✅         |
+| **Ping (ICMP) monitoring**                |       ✅       |        ✅         |        ✅         |
+| **TCP monitoring**                        |      📆       |        ✅         |        ✅         |
 | **DNS monitoring**                        |       ❌       |        ❌         |        ✅         |
 | **Domain expiration monitoring**          |       ❌       |        ❌         |        ✅         |
 | **Notifications**                         |               |                  |                  |

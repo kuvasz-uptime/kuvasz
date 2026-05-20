@@ -16,7 +16,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (currentPath === linkPath
             || (currentPath.startsWith(linkPath) && linkPath !== "/")
-            || ((currentPath.startsWith('/http-monitors') || currentPath.startsWith('/push-monitors')) && linkPath === '#navbar-monitors')
+            || (
+                (currentPath.startsWith('/http-monitors')
+                    || currentPath.startsWith('/push-monitors')
+                    || currentPath.startsWith('/icmp-monitors')
+                ) && linkPath === '#navbar-monitors')
         ) {
             link.parentNode.classList.add('active');
         }
@@ -36,6 +40,9 @@ const sendWindowEvent = (eventName) => {
 
 // Reinitialize Bootstrap tooltips (useful after HTMX content swap)
 const reInitTooltips = () => {
+    // First remove all tooltips to prevent burn-ins upon HTMX swaps
+    document.querySelectorAll('div.tooltip.show').forEach(tooltip => tooltip.remove());
+
     let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         // If the tooltip is already initialized, dispose it
@@ -132,6 +139,31 @@ const httpMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) 
                 this.monitorId,
                 () => this.isRequestLoading = true,
                 () => refreshHttpMonitorList(),
+            );
+        }
+    }
+};
+
+const icmpMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) => {
+    return {
+        monitorId: monitorId,
+        isMonitorEnabled: isMonitorEnabled,
+        assignedToStatusPage: assignedToStatusPage,
+        isRequestLoading: false,
+        toggleMonitor() {
+            patchIcmpMonitorRequest(
+                this.monitorId,
+                {enabled: !this.isMonitorEnabled},
+                () => this.isRequestLoading = true,
+                () => refreshIcmpMonitorList(),
+                () => this.isRequestLoading = false
+            );
+        },
+        deleteMonitor() {
+            deleteIcmpMonitorRequest(
+                this.monitorId,
+                () => this.isRequestLoading = true,
+                () => refreshIcmpMonitorList(),
             );
         }
     }
@@ -254,6 +286,40 @@ const pushMonitorDetails = (monitorId, isMonitorEnabled) => {
     }
 };
 
+const icmpMonitorDetails = (monitorId, isMonitorEnabled) => {
+    return {
+        monitorId,
+        isMonitorEnabled,
+        isRequestLoading: false,
+
+        toggleMonitor() {
+            patchIcmpMonitorRequest(
+                this.monitorId,
+                {enabled: !this.isMonitorEnabled},
+                () => this.isRequestLoading = true,
+                () => {
+                    this.isRequestLoading = false;
+                    this.isMonitorEnabled = !this.isMonitorEnabled;
+                    this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
+                    console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
+                    refreshIcmpMonitorDetailStatus();
+                },
+                () => this.isRequestLoading = false
+            );
+        },
+
+        deleteMonitor() {
+            deleteIcmpMonitorRequest(
+                this.monitorId,
+                () => this.isRequestLoading = true,
+                () => window.location.href = '/icmp-monitors',
+                () => this.isRequestLoading = false
+            );
+            this.isRequestLoading = true;
+        }
+    }
+};
+
 const statusPageDetails = (statusPageId, isStatusPagePublic) => {
     return {
         statusPageId,
@@ -301,6 +367,16 @@ const refreshPushMonitorList = () => {
     sendHtmxEvent('#push-monitors-list', 'refresh-monitor-list');
 };
 
+// Refreshes the ICMP monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
+const refreshIcmpMonitorDetailStatus = () => {
+    sendHtmxEvent('#icmp-monitor-detail-heading', 'refresh-monitor-detail-status');
+};
+
+// Refreshes the ICMP monitor list by triggering an HTMX event
+const refreshIcmpMonitorList = () => {
+    sendHtmxEvent('#icmp-monitors-list', 'refresh-monitor-list');
+};
+
 // Refreshes the status page list by triggering an HTMX event
 const refreshStatusPageList = () => {
     sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
@@ -310,6 +386,7 @@ const refreshStatusPageList = () => {
 const refreshDashboard = () => {
     sendHtmxEvent('#http-monitoring-dashboard', 'refresh-dashboard');
     sendHtmxEvent('#push-monitoring-dashboard', 'refresh-dashboard');
+    sendHtmxEvent('#icmp-monitoring-dashboard', 'refresh-dashboard');
 };
 
 const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
@@ -481,6 +558,203 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
     };
 };
 
+const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
+    return {
+        isMonitorEnabled,
+        latencyChart: null,
+        packetLossChart: null,
+        previousData: null,
+        endpointUrl: `/api/v2/icmp-monitors/${monitorId}/stats?period=PT${statPeriodInHours}H`,
+        pollInterval: uptimeCheckInterval * 1000,
+        isAutoRefreshEnabled: false,
+        intervalId: null,
+        lastResponse: null,
+        noDataLabel,
+
+        init() {
+            this.initializeCharts();
+            this.startPolling();
+            if (!this.isAutoRefreshEnabled) {
+                this.stopPolling();
+            }
+            this.$watch('isAutoRefreshEnabled', (value) => {
+                console.debug('Auto-refresh setting changed:', value);
+                if (value) {
+                    this.startPolling();
+                } else {
+                    this.stopPolling();
+                }
+            });
+        },
+
+        startPolling() {
+            this.pollEndpoint();
+            this.intervalId = setInterval(() => this.pollEndpoint(), this.pollInterval);
+        },
+
+        stopPolling() {
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+        },
+
+        buildChartOptions(elementId, tooltipFormatter) {
+            return {
+                chart: {
+                    type: "area",
+                    fontFamily: "inherit",
+                    height: 240,
+                    parentHeightOffset: 0,
+                    toolbar: {
+                        show: false,
+                    },
+                    animations: {
+                        enabled: false,
+                    },
+                },
+                dataLabels: {
+                    enabled: false,
+                },
+                fill: {
+                    colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 16%)", "color-mix(in srgb, transparent, var(--tblr-primary) 16%)"],
+                    type: "solid",
+                },
+                stroke: {
+                    width: 2,
+                    lineCap: "round",
+                    curve: "smooth",
+                },
+                noData: {
+                    text: this.noDataLabel,
+                    align: "center",
+                    verticalAlign: "middle",
+                },
+                series: [],
+                tooltip: {
+                    enabled: true,
+                    x: {
+                        format: "yyyy/MM/dd HH:mm:ss",
+                    },
+                    y: {
+                        formatter: tooltipFormatter,
+                    },
+                    theme: "dark",
+                },
+                grid: {
+                    padding: {
+                        top: -20,
+                        right: 0,
+                        left: -4,
+                        bottom: -4,
+                    },
+                    strokeDashArray: 4,
+                },
+                xaxis: {
+                    labels: {
+                        padding: 0,
+                        datetimeUTC: false
+                    },
+                    tooltip: {
+                        enabled: false,
+                    },
+                    axisBorder: {
+                        show: false,
+                    },
+                    type: "datetime",
+                },
+                yaxis: {
+                    labels: {
+                        padding: 4,
+                    },
+                },
+                labels: [],
+                colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 100%)"],
+                legend: {
+                    show: false,
+                },
+                el: document.getElementById(elementId),
+            };
+        },
+
+        initializeCharts() {
+            const latencyOptions = this.buildChartOptions(
+                "icmp-monitor-details-latency-chart",
+                (val) => val + " ms"
+            );
+            delete latencyOptions.el;
+            this.latencyChart = new ApexCharts(document.getElementById("icmp-monitor-details-latency-chart"), latencyOptions);
+            this.latencyChart.render();
+
+            const packetLossOptions = this.buildChartOptions(
+                "icmp-monitor-details-packet-loss-chart",
+                (val) => val + "%"
+            );
+            delete packetLossOptions.el;
+            this.packetLossChart = new ApexCharts(document.getElementById("icmp-monitor-details-packet-loss-chart"), packetLossOptions);
+            this.packetLossChart.render();
+        },
+
+        async pollEndpoint() {
+            try {
+                const response = await fetch(this.endpointUrl);
+                if (!response.ok) {
+                    console.error('Error fetching data:', response.status);
+                    return;
+                }
+                const rawData = await response.json();
+                this.lastResponse = rawData;
+                const transformedData = this.transformData(rawData);
+
+                if (!this.previousData || JSON.stringify(transformedData) !== JSON.stringify(this.previousData)) {
+                    this.updateCharts(transformedData);
+                    this.previousData = transformedData;
+                }
+            } catch (error) {
+                console.error('Error during polling:', error);
+            }
+        },
+
+        transformData(rawData) {
+            const latencyLabels = [];
+            const latencyData = [];
+            const packetLossLabels = [];
+            const packetLossData = [];
+
+            rawData.metricsLogs.forEach(item => {
+                const timestamp = new Date(item.createdAt).toString();
+                latencyLabels.push(timestamp);
+                latencyData.push(item.latencyInMs !== null ? parseInt(item.latencyInMs) : null);
+                packetLossLabels.push(timestamp);
+                packetLossData.push(parseInt(item.packetLossPercentage));
+            });
+
+            return {
+                latency: {
+                    labels: latencyLabels,
+                    series: [{name: 'Latency', data: latencyData}],
+                },
+                packetLoss: {
+                    labels: packetLossLabels,
+                    series: [{name: 'Packet loss', data: packetLossData}],
+                },
+            };
+        },
+
+        updateCharts(newData) {
+            console.debug('Updating charts with new data:', newData);
+            this.latencyChart.updateOptions({
+                labels: newData.latency.labels,
+                series: newData.latency.series,
+            });
+            this.packetLossChart.updateOptions({
+                labels: newData.packetLoss.labels,
+                series: newData.packetLoss.series,
+            });
+        },
+    };
+};
+
 const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null);
 
 const isValidUrl = (url) => {
@@ -610,7 +884,7 @@ const upsertHttpMonitorForm = (
         },
 
         validateName() {
-            if (!this.name) {
+            if (!this.name || this.name.trim() === '') {
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
@@ -807,7 +1081,7 @@ const upsertPushMonitorForm = (
         },
 
         validateName() {
-            if (!this.name) {
+            if (!this.name || this.name.trim() === '') {
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
@@ -914,6 +1188,178 @@ const upsertPushMonitorForm = (
             } catch (error) {
                 this.isRequestLoading = false;
                 console.error('Error creating monitor:', error);
+                alert('An error occurred while creating/updating the monitor. Please try again.');
+            }
+        }
+    }
+};
+
+const upsertIcmpMonitorForm = (
+    monitor,
+    errorMessages,
+    globalIntegrationCount
+) => {
+    const originalMonitor = monitor || null;
+    return {
+        errorMessages: errorMessages || {},
+        isRequestLoading: false,
+        isUpdate: !!monitor,
+        globalIntegrationCount: globalIntegrationCount || 0,
+
+        init() {
+            this.resetState();
+            console.debug('ICMP monitor form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
+        },
+
+        resetState() {
+            this.name = originalMonitor?.name || '';
+            this.host = originalMonitor?.host || '';
+            this.uptimeCheckInterval = originalMonitor?.uptimeCheckInterval || 60;
+            this.packetCount = originalMonitor?.packetCount || 3;
+            this.timeoutSeconds = originalMonitor?.timeoutSeconds || 5;
+            this.packetLossThreshold = originalMonitor?.packetLossThreshold || 100;
+            this.failureCountThreshold = originalMonitor?.failureCountThreshold || 1;
+            this.integrations = originalMonitor?.integrations || [];
+            this.metricsHistoryEnabled = (originalMonitor?.metricsHistoryEnabled != null ? originalMonitor?.metricsHistoryEnabled : true);
+            this.errors = {};
+        },
+
+        validate() {
+            this.errors = {};
+            this.validateName();
+            this.validateHost();
+            this.validateUptimeCheckInterval();
+            this.validatePacketCount();
+            this.validateTimeoutSeconds();
+            this.validatePacketLossThreshold();
+            this.validateFailureCountThreshold();
+        },
+
+        validateName() {
+            if (!this.name || this.name.trim() === '') {
+                this.errors.name = this.errorMessages.nameRequired;
+            } else {
+                this.errors.name = null;
+            }
+        },
+
+        validateHost() {
+            if (!this.host || this.host.trim() === '') {
+                this.errors.host = this.errorMessages.hostRequired;
+            } else {
+                this.errors.host = null;
+            }
+        },
+
+        validateUptimeCheckInterval() {
+            if (!this.uptimeCheckInterval || isNaN(this.uptimeCheckInterval) || this.uptimeCheckInterval < 5) {
+                this.errors.uptimeCheckInterval = this.errorMessages.uptimeCheckIntervalInvalid;
+            } else {
+                this.errors.uptimeCheckInterval = null;
+            }
+        },
+
+        validatePacketCount() {
+            const val = parseInt(this.packetCount);
+            if (!this.packetCount || isNaN(this.packetCount) || this.packetCount < 1 || this.packetCount > 10) {
+                this.errors.packetCount = this.errorMessages.packetCountInvalid;
+            } else {
+                this.errors.packetCount = null;
+            }
+        },
+
+        validateTimeoutSeconds() {
+            if (!this.timeoutSeconds || isNaN(this.timeoutSeconds) || this.timeoutSeconds < 1 || this.timeoutSeconds > 30) {
+                this.errors.timeoutSeconds = this.errorMessages.timeoutSecondsInvalid;
+            } else {
+                this.errors.timeoutSeconds = null;
+            }
+        },
+
+        validatePacketLossThreshold() {
+            if (!this.packetLossThreshold || isNaN(this.packetLossThreshold) || this.packetLossThreshold < 1 || this.packetLossThreshold > 100) {
+                this.errors.packetLossThreshold = this.errorMessages.packetLossThresholdInvalid;
+            } else {
+                this.errors.packetLossThreshold = null;
+            }
+        },
+
+        validateFailureCountThreshold() {
+            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
+                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
+            } else {
+                this.errors.failureCountThreshold = null;
+            }
+        },
+
+        submitForm() {
+            this.validate();
+            if (hasNonNullValue(this.errors)) {
+                console.debug('Form validation failed:', this.errors);
+                return;
+            }
+            this.upsertMonitor();
+        },
+
+        async upsertMonitor() {
+            try {
+                this.isRequestLoading = true;
+                const body = {
+                    name: this.name,
+                    host: this.host,
+                    uptimeCheckInterval: this.uptimeCheckInterval,
+                    packetCount: this.packetCount,
+                    timeoutSeconds: this.timeoutSeconds,
+                    packetLossThreshold: this.packetLossThreshold,
+                    failureCountThreshold: this.failureCountThreshold,
+                    integrations: this.integrations,
+                    metricsHistoryEnabled: this.metricsHistoryEnabled,
+                };
+                if (!this.isUpdate) {
+                    body.enabled = true;
+                }
+
+                console.debug('Submitting ICMP monitor form with data:', body);
+
+                const url = this.isUpdate ? '/api/v2/icmp-monitors/' + monitor.id : '/api/v2/icmp-monitors';
+                const method = this.isUpdate ? 'PATCH' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: jsonContentHeaders,
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    this.isRequestLoading = false;
+                    const responseData = await response.json();
+                    console.debug('ICMP monitor was created/updated successfully, redirecting to monitor', responseData);
+
+                    if (this.isUpdate) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/icmp-monitors/' + responseData.id;
+                    }
+                } else {
+                    if (response.status === 409) {
+                        this.isRequestLoading = false;
+                        console.debug('Monitor with this name already exists');
+                        this.errors.name = this.errorMessages.nameAlreadyExists;
+                    } else if (response.status === 400) {
+                        const errorData = await response.json();
+                        this.isRequestLoading = false;
+                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
+                            this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        }
+                    } else {
+                        console.error('Error creating/updating ICMP monitor:', response.statusText);
+                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
+                        this.isRequestLoading = false;
+                    }
+                }
+            } catch (error) {
+                this.isRequestLoading = false;
+                console.error('Error creating ICMP monitor:', error);
                 alert('An error occurred while creating/updating the monitor. Please try again.');
             }
         }
@@ -1100,7 +1546,7 @@ const renderMonitorOption = (data, escape) => {
     const parts = splitWithLimit(data.value, ':', 2);
     const type = parts[0];
     const name = parts[1];
-    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : '';
+    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : type === 'icmp' ? 'bg-orange-lt text-orange-lt-fg' : '';
     return `<div><span class="badge me-2 ${badgeColor}">${type.toUpperCase()}</span>${name}</div>`;
 };
 
@@ -1207,6 +1653,60 @@ const patchPushMonitorRequest = (
 ) => {
     this.isRequestLoading = true;
     fetch('/api/v2/push-monitors/' + monitorId, {
+        method: 'PATCH',
+        headers: jsonContentHeaders,
+        body: JSON.stringify(body)
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error toggling monitor:', response.statusText);
+            alert('An error occurred while toggling the monitor.');
+        }
+    }).catch(error => {
+        onError();
+        console.error('Error toggling monitor:', error);
+        alert('An error occurred while toggling the monitor.');
+    });
+};
+
+const deleteIcmpMonitorRequest = (
+    monitorId,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
+) => {
+    beforeRequest();
+    fetch('/api/v2/icmp-monitors/' + monitorId, {
+        method: 'DELETE',
+        headers: jsonContentHeaders
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error deleting monitor:', response.statusText);
+            alert('An error occurred while deleting the monitor.');
+        }
+    });
+};
+
+const patchIcmpMonitorRequest = (
+    monitorId,
+    body,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    },
+) => {
+    this.isRequestLoading = true;
+    fetch('/api/v2/icmp-monitors/' + monitorId, {
         method: 'PATCH',
         headers: jsonContentHeaders,
         body: JSON.stringify(body)

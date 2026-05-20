@@ -4,9 +4,12 @@ import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -85,6 +88,12 @@ class GenericWebhookService(
     }
 
     @Suppress("MagicNumber")
+    private val testIcmpMonitorRecord = IcmpMonitorRecord().apply {
+        id = 3
+        name = "Test monitor"
+    }
+
+    @Suppress("MagicNumber")
     val testEvents: List<MonitorEvent<out MonitorRecord>> = listOf(
         HttpMonitorDownEvent(
             monitor = testHttpMonitorRecord,
@@ -121,6 +130,18 @@ class GenericWebhookService(
         PushMonitorUpEvent(
             monitor = testPushMonitorRecord,
             previousEvent = null,
+        ),
+        IcmpMonitorDownEvent(
+            monitor = testIcmpMonitorRecord,
+            error = "Test ICMP error",
+            previousEvent = null,
+            packetLossPercentage = 100,
+        ),
+        IcmpMonitorUpEvent(
+            monitor = testIcmpMonitorRecord,
+            previousEvent = null,
+            latencyInMs = 42,
+            packetLossPercentage = 0,
         ),
     )
 

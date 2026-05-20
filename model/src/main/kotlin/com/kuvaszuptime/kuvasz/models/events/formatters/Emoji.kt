@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -20,8 +22,8 @@ object Emoji {
 
 fun MonitorEvent<*>.getEmoji(): String =
     when (this) {
-        is HttpMonitorUpEvent, is PushMonitorUpEvent -> Emoji.CHECK_OK
-        is HttpMonitorDownEvent, is PushMonitorDownEvent -> Emoji.ALERT
+        is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent -> Emoji.CHECK_OK
+        is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent -> Emoji.ALERT
         is HttpRedirectEvent -> Emoji.INFO
         is SSLValidEvent -> Emoji.LOCK
         is SSLInvalidEvent -> Emoji.ALERT

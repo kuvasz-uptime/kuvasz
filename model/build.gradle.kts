@@ -105,11 +105,19 @@ jooq {
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
                                 }
                                 table {
+                                    expression = "ICMP_UPTIME_EVENT"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
+                                }
+                                table {
                                     expression = "HTTP_MONITOR"
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
                                 }
                                 table {
                                     expression = "PUSH_MONITOR"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
+                                }
+                                table {
+                                    expression = "ICMP_MONITOR"
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
                                 }
                             }
@@ -125,7 +133,7 @@ jooq {
                                 userType = "com.kuvaszuptime.kuvasz.models.handlers.IntegrationID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter"
                                 isGenericConverter = false
-                                includeExpression = "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS"
+                                includeExpression = "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"

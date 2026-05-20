@@ -4,10 +4,13 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -16,6 +19,8 @@ import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -44,18 +49,22 @@ import kotlin.time.Duration.Companion.milliseconds
 class DatabaseEventHandlerTest(
     httpUptimeEventRepository: HttpUptimeEventRepository,
     pushUptimeEventRepository: PushUptimeEventRepository,
+    icmpUptimeEventRepository: IcmpUptimeEventRepository,
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
+    icmpMonitorRepository: IcmpMonitorRepository,
     sslEventRepository: SSLEventRepository,
     dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     init {
         val httpUptimeEventRepositorySpy = spyk(httpUptimeEventRepository)
         val pushUptimeEventRepositorySpy = spyk(pushUptimeEventRepository)
+        val icmpUptimeEventRepositorySpy = spyk(icmpUptimeEventRepository)
         val sslEventRepositorySpy = spyk(sslEventRepository)
         val dbEventHandler = DatabaseEventHandler(
             httpUptimeEventRepositorySpy,
             pushUptimeEventRepositorySpy,
+            icmpUptimeEventRepositorySpy,
             sslEventRepositorySpy,
             dslContext,
         )
@@ -493,6 +502,205 @@ class DatabaseEventHandlerTest(
                         event.endedAt.shouldBeNull()
                         event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
                         event.error shouldBe "Reason: ${secondEvent.error}"
+                    }
+                }
+            }
+        }
+
+        given("the DatabaseEventHandler - ICMP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val event = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+
+                dbEventHandler.handleUptimeMonitorEvent(event)
+
+                then("it should insert a new UptimeEvent record with status UP") {
+                    val expectedUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { icmpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { icmpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val event = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(event)
+
+                then("it should insert a new UptimeEvent record with status DOWN") {
+                    val expectedUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { icmpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { icmpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                    packetLossPercentage = 0,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should not insert a new UptimeEvent record") {
+                    val expectedUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                    verify(exactly = 1) { icmpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
+                    verify(exactly = 0) { icmpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should create a new UptimeEvent and end the previous one") {
+                    val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+
+                    verifyOrder {
+                        icmpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        icmpUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        icmpUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.UP
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should create a new UptimeEvent record and end the previous one") {
+                    val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+
+                    verifyOrder {
+                        icmpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        icmpUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        icmpUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.UP
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].error shouldBe "Reason: Packet loss: 100% (sent=3, received=0)"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "first error",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                delay(1000.milliseconds)
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "second error",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should update the updatedAt timestamp on the previous event") {
+                    val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id)
+
+                    verifyOrder {
+                        icmpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                    }
+
+                    uptimeRecords.shouldHaveSize(1).forOne { event ->
+                        event.status shouldBe UptimeStatus.DOWN
+                        event.endedAt.shouldBeNull()
+                        event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
+                        event.error shouldBe "Reason: second error"
                     }
                 }
             }

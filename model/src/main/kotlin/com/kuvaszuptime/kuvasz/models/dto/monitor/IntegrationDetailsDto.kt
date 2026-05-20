@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.dto.monitor.http
+package com.kuvaszuptime.kuvasz.models.dto.monitor
 
 import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig

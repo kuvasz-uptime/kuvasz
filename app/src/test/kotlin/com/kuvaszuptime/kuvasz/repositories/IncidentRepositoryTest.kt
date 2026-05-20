@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
@@ -23,6 +25,7 @@ import java.time.Duration
 class IncidentRepositoryTest(
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
+    icmpMonitorRepository: IcmpMonitorRepository,
     incidentRepository: IncidentRepository
 ) : DatabaseBehaviorSpec() {
     init {
@@ -37,6 +40,8 @@ class IncidentRepositoryTest(
                     val httpMonitor2 = createHttpMonitor(httpMonitorRepository)
                     val pushMonitor1 = createPushMonitor(pushMonitorRepository)
                     val pushMonitor2 = createPushMonitor(pushMonitorRepository)
+                    val icmpMonitor1 = createIcmpMonitor(icmpMonitorRepository)
+                    val icmpMonitor2 = createIcmpMonitor(icmpMonitorRepository)
 
                     // Should be ignored, it's not an incident
                     createHttpUptimeEventRecord(
@@ -68,6 +73,14 @@ class IncidentRepositoryTest(
                         status = SslStatus.WILL_EXPIRE,
                         startedAt = getCurrentTimestamp().minusDays(20),
                         endedAt = getCurrentTimestamp().minusDays(10),
+                    )
+                    // Should be ignored, it's not an incident
+                    createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor1.id,
+                        status = UptimeStatus.UP,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
                     )
                     val openDownHttpMonitor1 = createHttpUptimeEventRecord(
                         dslContext,
@@ -159,8 +172,38 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusDays(5),
                     )
 
+                    val openDownIcmpMonitor1 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    val resolvedDownIcmpMonitor1 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownIcmpMonitor2 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    val resolvedDownIcmpMonitor2 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+
                     val incidentsWithResolved = incidentRepository.getIncidents(includeResolved = true)
-                    incidentsWithResolved shouldHaveSize 12
+                    incidentsWithResolved shouldHaveSize 16
 
                     incidentsWithResolved.forOne { resolvedHttpMonitor2 ->
                         resolvedHttpMonitor2.monitorId shouldBe resolvedDownHttpMonitor2.monitorId
@@ -306,8 +349,56 @@ class IncidentRepositoryTest(
                         resolvedInvalidSSLMonitor2.details shouldBe null
                     }
 
+                    incidentsWithResolved.forOne { resolvedIcmpMonitor2 ->
+                        resolvedIcmpMonitor2.monitorId shouldBe resolvedDownIcmpMonitor2.monitorId
+                        resolvedIcmpMonitor2.monitorName shouldBe icmpMonitor2.name
+                        resolvedIcmpMonitor2.isMonitorEnabled shouldBe icmpMonitor2.enabled
+                        resolvedIcmpMonitor2.status shouldBe IncidentStatus.RESOLVED
+                        resolvedIcmpMonitor2.startedAt shouldBe resolvedDownIcmpMonitor2.startedAt
+                        resolvedIcmpMonitor2.endedAt shouldBe resolvedDownIcmpMonitor2.endedAt.shouldNotBeNull()
+                        resolvedIcmpMonitor2.updatedAt shouldBe resolvedDownIcmpMonitor2.updatedAt
+                        resolvedIcmpMonitor2.incidentType shouldBe IncidentType.ICMP
+                        resolvedIcmpMonitor2.details shouldBe null
+                    }
+
+                    incidentsWithResolved.forOne { resolvedIcmpMonitor1 ->
+                        resolvedIcmpMonitor1.monitorId shouldBe resolvedDownIcmpMonitor1.monitorId
+                        resolvedIcmpMonitor1.monitorName shouldBe icmpMonitor1.name
+                        resolvedIcmpMonitor1.isMonitorEnabled shouldBe icmpMonitor1.enabled
+                        resolvedIcmpMonitor1.status shouldBe IncidentStatus.RESOLVED
+                        resolvedIcmpMonitor1.startedAt shouldBe resolvedDownIcmpMonitor1.startedAt
+                        resolvedIcmpMonitor1.endedAt shouldBe resolvedDownIcmpMonitor1.endedAt.shouldNotBeNull()
+                        resolvedIcmpMonitor1.updatedAt shouldBe resolvedDownIcmpMonitor1.updatedAt
+                        resolvedIcmpMonitor1.incidentType shouldBe IncidentType.ICMP
+                        resolvedIcmpMonitor1.details shouldBe null
+                    }
+
+                    incidentsWithResolved.forOne { openIcmpMonitor2 ->
+                        openIcmpMonitor2.monitorId shouldBe openDownIcmpMonitor2.monitorId
+                        openIcmpMonitor2.monitorName shouldBe icmpMonitor2.name
+                        openIcmpMonitor2.isMonitorEnabled shouldBe icmpMonitor2.enabled
+                        openIcmpMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openIcmpMonitor2.startedAt shouldBe openDownIcmpMonitor2.startedAt
+                        openIcmpMonitor2.endedAt shouldBe null
+                        openIcmpMonitor2.updatedAt shouldBe openDownIcmpMonitor2.updatedAt
+                        openIcmpMonitor2.incidentType shouldBe IncidentType.ICMP
+                        openIcmpMonitor2.details shouldBe openDownIcmpMonitor2.error
+                    }
+
+                    incidentsWithResolved.forOne { openIcmpMonitor1 ->
+                        openIcmpMonitor1.monitorId shouldBe openDownIcmpMonitor1.monitorId
+                        openIcmpMonitor1.monitorName shouldBe icmpMonitor1.name
+                        openIcmpMonitor1.isMonitorEnabled shouldBe icmpMonitor1.enabled
+                        openIcmpMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openIcmpMonitor1.startedAt shouldBe openDownIcmpMonitor1.startedAt
+                        openIcmpMonitor1.endedAt shouldBe null
+                        openIcmpMonitor1.updatedAt shouldBe openDownIcmpMonitor1.updatedAt
+                        openIcmpMonitor1.incidentType shouldBe IncidentType.ICMP
+                        openIcmpMonitor1.details shouldBe null
+                    }
+
                     val incidentsWithoutResolved = incidentRepository.getIncidents(includeResolved = false)
-                    incidentsWithoutResolved shouldHaveSize 6
+                    incidentsWithoutResolved shouldHaveSize 8
 
                     incidentsWithoutResolved.forOne { openHttpMonitor2 ->
                         openHttpMonitor2.monitorId shouldBe openDownHttpMonitor2.monitorId
@@ -380,6 +471,30 @@ class IncidentRepositoryTest(
                         openInvalidSSLMonitor2.incidentType shouldBe IncidentType.SSL
                         openInvalidSSLMonitor2.details shouldBe "something"
                     }
+
+                    incidentsWithoutResolved.forOne { openIcmpMonitor2 ->
+                        openIcmpMonitor2.monitorId shouldBe openDownIcmpMonitor2.monitorId
+                        openIcmpMonitor2.monitorName shouldBe icmpMonitor2.name
+                        openIcmpMonitor2.isMonitorEnabled shouldBe icmpMonitor2.enabled
+                        openIcmpMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openIcmpMonitor2.startedAt shouldBe openDownIcmpMonitor2.startedAt
+                        openIcmpMonitor2.endedAt shouldBe null
+                        openIcmpMonitor2.updatedAt shouldBe openDownIcmpMonitor2.updatedAt
+                        openIcmpMonitor2.incidentType shouldBe IncidentType.ICMP
+                        openIcmpMonitor2.details shouldBe openDownIcmpMonitor2.error
+                    }
+
+                    incidentsWithoutResolved.forOne { openIcmpMonitor1 ->
+                        openIcmpMonitor1.monitorId shouldBe openDownIcmpMonitor1.monitorId
+                        openIcmpMonitor1.monitorName shouldBe icmpMonitor1.name
+                        openIcmpMonitor1.isMonitorEnabled shouldBe icmpMonitor1.enabled
+                        openIcmpMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openIcmpMonitor1.startedAt shouldBe openDownIcmpMonitor1.startedAt
+                        openIcmpMonitor1.endedAt shouldBe null
+                        openIcmpMonitor1.updatedAt shouldBe openDownIcmpMonitor1.updatedAt
+                        openIcmpMonitor1.incidentType shouldBe IncidentType.ICMP
+                        openIcmpMonitor1.details shouldBe null
+                    }
                 }
             }
 
@@ -391,6 +506,8 @@ class IncidentRepositoryTest(
                     val httpMonitor2 = createHttpMonitor(httpMonitorRepository)
                     val pushMonitor1 = createPushMonitor(pushMonitorRepository)
                     val pushMonitor2 = createPushMonitor(pushMonitorRepository)
+                    val icmpMonitor1 = createIcmpMonitor(icmpMonitorRepository)
+                    val icmpMonitor2 = createIcmpMonitor(icmpMonitorRepository)
 
                     val openDownHttpMonitor1 = createHttpUptimeEventRecord(
                         dslContext,
@@ -483,11 +600,41 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusDays(5),
                     )
 
+                    val openDownIcmpMonitor1 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownIcmpMonitor2 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    val resolvedDownIcmpMonitor2 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(1),
+                        endedAt = getCurrentTimestamp().minusHours(4),
+                    )
+
                     val incidentsInTheLast2Days = incidentRepository.getIncidents(
                         period = Duration.ofDays(2),
                         includeResolved = true,
                     )
-                    incidentsInTheLast2Days shouldHaveSize 8
+                    incidentsInTheLast2Days shouldHaveSize 11
 
                     incidentsInTheLast2Days.forOne { resolvedHttpMonitor2 ->
                         resolvedHttpMonitor2.monitorId shouldBe resolvedDownHttpMonitor2.monitorId
@@ -536,6 +683,24 @@ class IncidentRepositoryTest(
                         openInvalidSSLMonitor2.incidentType shouldBe IncidentType.SSL
                         openInvalidSSLMonitor2.startedAt shouldBe openInvalidMonitor2.startedAt
                     }
+
+                    incidentsInTheLast2Days.forOne { resolvedIcmpMonitor2 ->
+                        resolvedIcmpMonitor2.monitorId shouldBe resolvedDownIcmpMonitor2.monitorId
+                        resolvedIcmpMonitor2.incidentType shouldBe IncidentType.ICMP
+                        resolvedIcmpMonitor2.startedAt shouldBe resolvedDownIcmpMonitor2.startedAt
+                    }
+
+                    incidentsInTheLast2Days.forOne { openIcmpMonitor2 ->
+                        openIcmpMonitor2.monitorId shouldBe openDownIcmpMonitor2.monitorId
+                        openIcmpMonitor2.incidentType shouldBe IncidentType.ICMP
+                        openIcmpMonitor2.startedAt shouldBe openDownIcmpMonitor2.startedAt
+                    }
+
+                    incidentsInTheLast2Days.forOne { openIcmpMonitor1 ->
+                        openIcmpMonitor1.monitorId shouldBe openDownIcmpMonitor1.monitorId
+                        openIcmpMonitor1.incidentType shouldBe IncidentType.ICMP
+                        openIcmpMonitor1.startedAt shouldBe openDownIcmpMonitor1.startedAt
+                    }
                 }
             }
 
@@ -547,6 +712,8 @@ class IncidentRepositoryTest(
                     val httpMonitor2 = createHttpMonitor(httpMonitorRepository, enabled = false)
                     val pushMonitor1 = createPushMonitor(pushMonitorRepository)
                     val pushMonitor2 = createPushMonitor(pushMonitorRepository, enabled = false)
+                    val icmpMonitor1 = createIcmpMonitor(icmpMonitorRepository)
+                    val icmpMonitor2 = createIcmpMonitor(icmpMonitorRepository, enabled = false)
 
                     val openDownHttpMonitor1 = createHttpUptimeEventRecord(
                         dslContext,
@@ -639,6 +806,36 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusDays(4),
                     )
 
+                    val openDownIcmpMonitor1 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownIcmpMonitor2 = createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    createIcmpUptimeEventRecord(
+                        dslContext,
+                        monitorId = icmpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+
                     val incidentsOfHttpMonitor1 = incidentRepository.getIncidents(
                         includeResolved = false,
                         monitorId = httpMonitor1.id,
@@ -700,6 +897,32 @@ class IncidentRepositoryTest(
                         openMonitor2.monitorId shouldBe openDownPushMonitor2.monitorId
                         openMonitor2.status shouldBe IncidentStatus.ONGOING
                         openMonitor2.incidentType shouldBe IncidentType.PUSH
+                    }
+
+                    val incidentsOfIcmpMonitor1 = incidentRepository.getIncidents(
+                        includeResolved = false,
+                        monitorId = icmpMonitor1.id,
+                    )
+                    incidentsOfIcmpMonitor1 shouldHaveSize 1
+
+                    incidentsOfIcmpMonitor1.forOne { openMonitor1 ->
+                        openMonitor1.monitorId shouldBe openDownIcmpMonitor1.monitorId
+                        openMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openMonitor1.incidentType shouldBe IncidentType.ICMP
+                    }
+
+                    // Should return events for the disabled monitor as well
+                    val incidentsOfIcmpMonitor2 = incidentRepository.getIncidents(
+                        includeResolved = false,
+                        monitorId = icmpMonitor2.id,
+                    )
+
+                    incidentsOfIcmpMonitor2 shouldHaveSize 1
+
+                    incidentsOfIcmpMonitor2.forOne { openMonitor2 ->
+                        openMonitor2.monitorId shouldBe openDownIcmpMonitor2.monitorId
+                        openMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openMonitor2.incidentType shouldBe IncidentType.ICMP
                     }
                 }
             }

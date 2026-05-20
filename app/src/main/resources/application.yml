@@ -150,6 +150,9 @@ metrics-exports:
   ssl-status: ${ENABLE_SSL_STATUS_EXPORT:`false`}
   ssl-expiry: ${ENABLE_SSL_EXPIRY_EXPORT:`false`}
   push-uptime-status: ${ENABLE_PUSH_UPTIME_STATUS_EXPORT:`false`}
+  icmp-uptime-status: ${ENABLE_ICMP_UPTIME_STATUS_EXPORT:`false`}
+  icmp-latest-latency: ${ENABLE_ICMP_LATEST_LATENCY_EXPORT:`false`}
+  icmp-latest-packet-loss: ${ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT:`false`}
 ---
 default-status-page:
   public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}

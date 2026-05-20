@@ -18,10 +18,10 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
@@ -1843,7 +1843,7 @@ class HttpMonitorControllerTest(
                 }
             }
 
-            `when`("it is called to update a monitor's name that is present on a non-writable a status page") {
+            `when`("it is called to update a monitor's name that is present on a non-writable status page") {
 
                 val createdMonitor = createHttpMonitor(
                     monitorRepository,

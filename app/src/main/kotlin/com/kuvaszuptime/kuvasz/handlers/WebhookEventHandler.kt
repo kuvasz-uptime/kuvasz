@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -51,7 +53,10 @@ class WebhookEventHandler(
             event.handle()
         }
         eventDispatcher.subscribeToPushMonitorEvents { event ->
-            logger.debug("A PushMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            logger.debug(
+                "A PushMonitorEvent (${event.toIntegrationEventType()}) has been received for " +
+                    "monitor with ID: ${event.monitor.id}"
+            )
             event.handle()
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->
@@ -64,6 +69,14 @@ class WebhookEventHandler(
         }
         eventDispatcher.subscribeToSSLWillExpireEvents { event ->
             logger.debug("An SSLWillExpireEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
+            logger.debug("An IcmpMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
+            logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
     }
@@ -87,13 +100,13 @@ class WebhookEventHandler(
         runWhenStateChanges { event ->
             filterTargetConfigs(event).forEach { target ->
                 when (event) {
-                    is HttpMonitorUpEvent, is PushMonitorUpEvent -> {
+                    is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent -> {
                         if (previousEvent != null) {
                             webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
                         }
                     }
 
-                    is HttpMonitorDownEvent, is PushMonitorDownEvent ->
+                    is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent ->
                         webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
                 }
             }

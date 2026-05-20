@@ -2,10 +2,13 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -18,6 +21,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -46,8 +51,10 @@ import io.reactivex.rxjava3.core.Single
 class WebhookEventHandlerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
+    private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     integrationRepository: IntegrationRepository,
     webhookConfigs: List<WebhookNotificationConfig>,
@@ -382,6 +389,173 @@ class WebhookEventHandlerTest(
                         )
                     }
                     notificationSent.captured.shouldBeInstanceOf<PushMonitorDownEvent>()
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - ICMP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val event = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createIcmpMonitor(
+                    icmpMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val event = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a webhook message about the event to all enabled integrations") {
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                    packetLossPercentage = 0,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send notifications about them") {
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(
+                    icmpMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val firstEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = null,
+                    packetLossPercentage = 100,
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<MonitorEvent<*>>()
+
+                    verify(exactly = 2) {
+                        webhookServiceSpy.sendWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationsSent)
+                        )
+                    }
+                    notificationsSent[0].shouldBeInstanceOf<IcmpMonitorDownEvent>()
+                    notificationsSent[1].shouldBeInstanceOf<IcmpMonitorUpEvent>()
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val firstEvent = IcmpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                    packetLossPercentage = 0,
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = IcmpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Packet loss: 100% (sent=3, received=0)",
+                    previousEvent = firstUptimeRecord,
+                    packetLossPercentage = 100,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<MonitorEvent<*>>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationSent)
+                        )
+                    }
+                    notificationSent.captured.shouldBeInstanceOf<IcmpMonitorDownEvent>()
                 }
             }
         }

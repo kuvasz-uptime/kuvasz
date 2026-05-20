@@ -4,12 +4,16 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -236,6 +240,96 @@ class LogMessageFormatterTest : BehaviorSpec({
                     previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                 val expectedMessage =
                     "🚨 Your monitor \"test_push_monitor\" is DOWN. Reason: uptime error. " +
+                        "Was up for $expectedDurationString"
+                formatter.toFormattedMessage(event) shouldBe expectedMessage
+            }
+        }
+    }
+
+    given("toFormattedMessage(event: UptimeMonitorEvent) - ICMP") {
+
+        val icmpMonitor = IcmpMonitorRecord()
+            .setId(3333L)
+            .setName("test_icmp_monitor")
+            .setHost("example.com")
+
+        `when`("it gets an IcmpMonitorUpEvent without a previousEvent") {
+            val event = IcmpMonitorUpEvent(icmpMonitor, null, 300, 0)
+
+            then("it should return the correct message") {
+                val expectedMessage =
+                    "✅ Your monitor \"test_icmp_monitor\" is UP. Avg. latency: 300 ms. Packet loss: 0%"
+                formatter.toFormattedMessage(event) shouldBe expectedMessage
+            }
+        }
+
+        `when`("it gets an IcmpMonitorUpEvent with null latency") {
+            val event = IcmpMonitorUpEvent(icmpMonitor, null, null, 50)
+
+            then("it should return the correct message") {
+                val expectedMessage =
+                    "✅ Your monitor \"test_icmp_monitor\" is UP. Packet loss: 50%"
+                formatter.toFormattedMessage(event) shouldBe expectedMessage
+            }
+        }
+
+        `when`("it gets an IcmpMonitorUpEvent with a previousEvent with the same status") {
+            val previousEvent = IcmpUptimeEventRecord().setStatus(UptimeStatus.UP)
+            val event = IcmpMonitorUpEvent(icmpMonitor, previousEvent, 300, 0)
+
+            then("it should return the correct message") {
+                val expectedMessage =
+                    "✅ Your monitor \"test_icmp_monitor\" is UP. Avg. latency: 300 ms. Packet loss: 0%"
+                formatter.toFormattedMessage(event) shouldBe expectedMessage
+            }
+        }
+
+        `when`("it gets an IcmpMonitorUpEvent with a previousEvent with different status") {
+            val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+            val previousEvent = IcmpUptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
+            val event = IcmpMonitorUpEvent(icmpMonitor, previousEvent, 300, 0)
+
+            then("it should return the correct message") {
+                val expectedDurationString =
+                    previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                val expectedMessage =
+                    "✅ Your monitor \"test_icmp_monitor\" is UP. Avg. latency: 300 ms. Packet loss: 0%. " +
+                        "Was down for $expectedDurationString"
+                formatter.toFormattedMessage(event) shouldBe expectedMessage
+            }
+        }
+
+        `when`("it gets an IcmpMonitorDownEvent without a previousEvent") {
+            val event = IcmpMonitorDownEvent(icmpMonitor, "icmp error", null, 100)
+
+            then("it should return the correct message") {
+                val expectedMessage =
+                    "🚨 Your monitor \"test_icmp_monitor\" is DOWN. Reason: icmp error. Packet loss: 100%"
+                formatter.toFormattedMessage(event) shouldBe expectedMessage
+            }
+        }
+
+        `when`("it gets an IcmpMonitorDownEvent with a previousEvent with the same status") {
+            val previousEvent = IcmpUptimeEventRecord().setStatus(UptimeStatus.DOWN)
+            val event = IcmpMonitorDownEvent(icmpMonitor, "icmp error", previousEvent, 100)
+
+            then("it should return the correct message") {
+                val expectedMessage =
+                    "🚨 Your monitor \"test_icmp_monitor\" is DOWN. Reason: icmp error. Packet loss: 100%"
+                formatter.toFormattedMessage(event) shouldBe expectedMessage
+            }
+        }
+
+        `when`("it gets an IcmpMonitorDownEvent with a previousEvent with different status") {
+            val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+            val previousEvent = IcmpUptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
+            val event = IcmpMonitorDownEvent(icmpMonitor, "icmp error", previousEvent, 100)
+
+            then("it should return the correct message") {
+                val expectedDurationString =
+                    previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                val expectedMessage =
+                    "🚨 Your monitor \"test_icmp_monitor\" is DOWN. Reason: icmp error. Packet loss: 100%. " +
                         "Was up for $expectedDurationString"
                 formatter.toFormattedMessage(event) shouldBe expectedMessage
             }

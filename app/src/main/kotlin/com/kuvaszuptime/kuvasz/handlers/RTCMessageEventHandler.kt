@@ -38,7 +38,10 @@ abstract class RTCMessageEventHandler(
             event.handle()
         }
         eventDispatcher.subscribeToPushMonitorEvents { event ->
-            logger.debug("A PushMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            logger.debug(
+                "A PushMonitorEvent (${event.toIntegrationEventType()}) has been received for " +
+                    "monitor with ID: ${event.monitor.id}"
+            )
             event.handle()
         }
         eventDispatcher.subscribeToSSLValidEvents { event ->
@@ -51,6 +54,14 @@ abstract class RTCMessageEventHandler(
         }
         eventDispatcher.subscribeToSSLWillExpireEvents { event ->
             logger.debug("An SSLWillExpireEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
+            logger.debug("An IcmpMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
+            logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
     }

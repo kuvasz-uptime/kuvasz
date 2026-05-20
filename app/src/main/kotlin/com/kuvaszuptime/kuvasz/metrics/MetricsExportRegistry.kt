@@ -2,8 +2,10 @@ package com.kuvaszuptime.kuvasz.metrics
 
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requires
@@ -19,8 +21,10 @@ import org.slf4j.LoggerFactory
 class MetricsExportRegistry(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val icmpMonitorRepository: IcmpMonitorRepository,
     private val httpMetricsExporters: List<MetricsExporter<HttpMonitorRecord>>,
     private val pushMetricsExporters: List<MetricsExporter<PushMonitorRecord>>,
+    private val icmpMetricsExporters: List<MetricsExporter<IcmpMonitorRecord>>,
 ) {
 
     companion object {
@@ -28,7 +32,7 @@ class MetricsExportRegistry(
     }
 
     /**
-     * Reads the actually available HTTP monitors from the database and initializes the metrics exporters with them
+     * Reads the actually available monitors from the database and initializes the metrics exporters with them
      */
     fun initialize() {
         val httpMonitors = httpMonitorRepository.fetchByEnabled(enabled = true)
@@ -36,6 +40,9 @@ class MetricsExportRegistry(
 
         val pushMonitors = pushMonitorRepository.fetchByEnabled(enabled = true)
         pushMetricsExporters.forEach { it.init(pushMonitors) }
+
+        val icmpMonitors = icmpMonitorRepository.fetchByEnabled(enabled = true)
+        icmpMetricsExporters.forEach { it.init(icmpMonitors) }
     }
 
     private fun <M : MonitorRecord> MetricsExporter<M>.init(monitors: List<M>) {

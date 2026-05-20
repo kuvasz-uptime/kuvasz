@@ -28,6 +28,7 @@ class AppGlobalsFactory {
         editabilityState = AppGlobals.EditabilityState(
             areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() },
             arePushMonitorsReadOnly = { appConfig.isPushMonitorExternalWriteDisabled() },
+            areIcmpMonitorsReadOnly = { appConfig.isIcmpMonitorExternalWriteDisabled() },
             areStatusPagesReadOnly = { appConfig.isStatusPageExternalWriteDisabled() },
         ),
         isAuthenticated = { securityService?.isAuthenticated ?: true },

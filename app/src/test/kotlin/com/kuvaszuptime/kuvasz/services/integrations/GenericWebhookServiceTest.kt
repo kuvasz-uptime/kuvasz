@@ -70,7 +70,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
-                verify(exactly = 7) {
+                verify(exactly = 9) {
                     mockClient.sendGenericMessage(
                         webhookUrl = URI(webhookUrl),
                         message = capture(genericMessages),
@@ -85,6 +85,8 @@ class GenericWebhookServiceTest(
                     IntegrationEventType.SSL_VALID,
                     IntegrationEventType.PUSH_DOWN,
                     IntegrationEventType.PUSH_UP,
+                    IntegrationEventType.ICMP_DOWN,
+                    IntegrationEventType.ICMP_UP,
                 )
 
                 genericMessages.map { it.eventDetails } shouldContainExactly expectedEventDetails
@@ -99,6 +101,10 @@ class GenericWebhookServiceTest(
                 genericMessages.forExactly(2) { message ->
                     message.monitorId shouldBe 2
                     message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor").toString()
+                }
+                genericMessages.forExactly(2) { message ->
+                    message.monitorId shouldBe 3
+                    message.monitorUrn shouldBe MonitorID(MonitorType.ICMP, "Test monitor").toString()
                 }
             }
         }
@@ -117,7 +123,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
-                verify(exactly = 5) {
+                verify(exactly = 7) {
                     mockClient.sendGenericMessage(
                         webhookUrl = URI(webhookUrl),
                         message = capture(genericMessages),
@@ -130,6 +136,8 @@ class GenericWebhookServiceTest(
                     IntegrationEventType.SSL_INVALID,
                     IntegrationEventType.SSL_VALID,
                     IntegrationEventType.PUSH_DOWN,
+                    IntegrationEventType.ICMP_DOWN,
+                    IntegrationEventType.ICMP_UP,
                 )
 
                 genericMessages.forAll { message ->
@@ -142,6 +150,10 @@ class GenericWebhookServiceTest(
                 genericMessages.forExactly(1) { message ->
                     message.monitorId shouldBe 2
                     message.monitorUrn shouldBe MonitorID(MonitorType.PUSH, "Test monitor").toString()
+                }
+                genericMessages.forExactly(2) { message ->
+                    message.monitorId shouldBe 3
+                    message.monitorUrn shouldBe MonitorID(MonitorType.ICMP, "Test monitor").toString()
                 }
             }
         }
@@ -213,7 +225,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val templatedMessages = mutableListOf<String>()
-                verify(exactly = 7) {
+                verify(exactly = 9) {
                     mockClient.sendTemplatedMessage(
                         webhookUrl = URI(webhookUrl),
                         payload = capture(templatedMessages),
@@ -228,6 +240,8 @@ class GenericWebhookServiceTest(
                     "Event type: SSL_VALID",
                     "Event type: PUSH_DOWN",
                     "Event type: PUSH_UP",
+                    "Event type: ICMP_DOWN",
+                    "Event type: ICMP_UP",
                 )
             }
         }
@@ -247,7 +261,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val templatedMessages = mutableListOf<String>()
-                verify(exactly = 5) {
+                verify(exactly = 7) {
                     mockClient.sendTemplatedMessage(
                         webhookUrl = URI(webhookUrl),
                         payload = capture(templatedMessages),
@@ -260,6 +274,8 @@ class GenericWebhookServiceTest(
                     "Event type: SSL_INVALID",
                     "Event type: SSL_VALID",
                     "Event type: PUSH_DOWN",
+                    "Event type: ICMP_DOWN",
+                    "Event type: ICMP_UP",
                 )
             }
         }

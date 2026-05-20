@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -43,6 +45,23 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
                 listOfNotNull(
                     event.getEmoji() + " " + bold(details.summary),
                     details.previousDownTime
+                )
+            }
+
+            is IcmpMonitorUpEvent -> event.toStructuredMessage().let { details ->
+                listOfNotNull(
+                    event.getEmoji() + " " + bold(details.summary),
+                    details.latency?.let { italic(it) },
+                    details.packetLoss,
+                    details.previousDownTime
+                )
+            }
+
+            is IcmpMonitorDownEvent -> event.toStructuredMessage().let { details ->
+                listOfNotNull(
+                    event.getEmoji() + " " + bold(details.summary),
+                    details.packetLoss,
+                    details.previousUpTime
                 )
             }
         }
