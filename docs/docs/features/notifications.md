@@ -1,9 +1,10 @@
-_Kuvasz_ supports a variety of integrations to help you **stay informed** about the status of your monitors. If you're curious about the configuration options, just click on the <!-- md:config --> icon, next to the integration name, and it will take you to the relevant section of the configuration documentation.
+_Kuvasz_ supports a variety of integrations to help you **stay informed
+** about the status of your monitors. If you're curious about the configuration options, just click on the <!-- md:config --> icon, next to the integration name, and it will take you to the relevant section of the configuration documentation.
 
 ![Integrations list](../images/integrations/integrations_list.webp)
 
-!!! info 
-  
+!!! info
+
     Integrations can be:
     
     - **global**, meaning that they can be used for all monitors by default, or
@@ -13,14 +14,15 @@ _Kuvasz_ supports a variety of integrations to help you **stay informed** about 
 
 ## Watched events
 
-Every integration **watches a set of events** by default, which are fired by the monitors. These events are currently the following:
+Every integration **watches a set of events
+** by default, which are fired by the monitors. These events are currently the following:
 
 ### Uptime events
 
-| Event                   | Description                                                            |
-|-------------------------|------------------------------------------------------------------------|
-| `HTTP_UP` `PUSH_UP`     | Fired, when a monitor is **healthy** now (and it was unhealthy before) |
-| `HTTP_DOWN` `PUSH_DOWN` | Fired, when a monitors is **unhealthy**                                |
+| Event                               | Description                                                            |
+|-------------------------------------|------------------------------------------------------------------------|
+| `HTTP_UP` `PUSH_UP` `ICMP_UP`       | Fired, when a monitor is **healthy** now (and it was unhealthy before) |
+| `HTTP_DOWN` `PUSH_DOWN` `ICMP_DOWN` | Fired, when a monitors is **unhealthy**                                |
 
 ### SSL events
 
@@ -43,8 +45,8 @@ _Slack_ as a notification channel for your monitors. This allows you to receive 
 
 ## Discord <!-- md:config ../management/integrations.md#discord -->
 
-The _Discord_ integration allows you to send notifications **to Discord channels**. This allows you to receive notifications about the status of your monitors directly in your Discord channels.
-
+The _Discord_ integration allows you to send notifications **to Discord channels
+**. This allows you to receive notifications about the status of your monitors directly in your Discord channels.
 
 ## Email <!-- md:config ../management/integrations.md#email -->
 
@@ -53,21 +55,28 @@ _Kuvasz_ can send you simple email notifications about the status of your monito
 
 ## PagerDuty <!-- md:config ../management/integrations.md#pagerduty -->
 
-The _PagerDuty_ integration allows you to trigger **incidents in PagerDuty** when a monitor goes down or an SSL certificate is invalid or will expire soon. This way, you can ensure that your team is notified immediately about critical issues. Incidents will be **automatically resolved** when the monitor is back up or the SSL certificate is valid again.
+The _PagerDuty_ integration allows you to trigger **incidents in PagerDuty
+** when a monitor goes down or an SSL certificate is invalid or will expire soon. This way, you can ensure that your team is notified immediately about critical issues. Incidents will be
+**automatically resolved** when the monitor is back up or the SSL certificate is valid again.
 
 ![PagerDuty integration](../images/integrations/pagerduty.webp)
 
 ## Telegram <!-- md:config ../management/integrations.md#telegram -->
 
-The _Telegram_ integration allows you to send notifications **to a specific Telegram chat** via the Bot API. You can use it to receive notifications about the status of your monitors **directly in your Telegram app**.
+The _Telegram_ integration allows you to send notifications **to a specific Telegram chat
+** via the Bot API. You can use it to receive notifications about the status of your monitors **directly in your
+Telegram app**.
 
 ![Telegram integration](../images/integrations/telegram.webp)
 
 ## Webhooks <!-- md:config ../management/integrations.md#webhooks -->
 
-The _Webhook_ integration allows you to send notifications to **any HTTP endpoint**. This is a very flexible integration, as it allows you to integrate with **any service that supports incoming webhooks**, or even with your own custom backend.
+The _Webhook_ integration allows you to send notifications to **any HTTP endpoint
+**. This is a very flexible integration, as it allows you to integrate with **any service that supports incoming
+webhooks**, or even with your own custom backend.
 
-Since you can configure which events the webhook should watch, and also the payload via custom templates, you can use this integration to **build your own custom notifications** or to integrate with services that are not supported out of the box.
+Since you can configure which events the webhook should watch, and also the payload via custom templates, you can use this integration to
+**build your own custom notifications** or to integrate with services that are not supported out of the box.
 
 !!! tip "Do you miss an integration?"
 

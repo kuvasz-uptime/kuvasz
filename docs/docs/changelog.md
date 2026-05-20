@@ -1,3 +1,17 @@
+## 3.10.0 <small>2026-05-xx</small> { id="3.10.0" data-toc-label="3.10.0" }
+
+### Features
+
+- Added **Ping (ICMP) monitoring**: you can now create ICMP monitors to check the reachability and latency of any host by sending ICMP echo requests to it. Configurable parameters include the number of packets per check, the per-ping timeout, and the packet loss threshold that triggers a DOWN event. See the [**Managing ICMP monitors**](management/icmp-monitors.md) section for further details.
+
+### Improvements
+
+- Monitor lists are periodically updated on the UI, there is no need to manually refresh the pages to see the latest status updates
+
+### Fixes
+
+- Fixed a UI bug that made the tooltips "burn in" in case a tooltip was visible during a data update
+
 ## 3.9.0 <small>2026-05-08</small> { id="3.9.0" data-toc-label="3.9.0" }
 
 ### Features

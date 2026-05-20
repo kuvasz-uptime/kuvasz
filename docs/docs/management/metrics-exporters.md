@@ -31,15 +31,18 @@ Metrics have the following **labels/tags**, that you can use to filter/group the
 every metric has all of them:
 
 - `name`: the name of the monitor
-- `target`: the target that is monitored (i.e. a URL or an IP address)
+- `target`: the target that is monitored (i.e. a URL or an IP address / hostname)
 
-|                     | `name` | `target` |
-|---------------------|--------|----------|
-| HTTP uptime status  | ✅      | ✅        |
-| HTTP latest latency | ✅      | ✅        |
-| SSL status          | ✅      | ✅        |
-| SSL expiry          | ✅      | ✅        |
-| Push uptime status  | ✅      | ❌        |
+|                      | `name` | `target` |
+|----------------------|--------|----------|
+| HTTP uptime status   | ✅      | ✅        |
+| HTTP latest latency  | ✅      | ✅        |
+| SSL status           | ✅      | ✅        |
+| SSL expiry           | ✅      | ✅        |
+| Push uptime status   | ✅      | ❌        |
+| ICMP uptime status   | ✅      | ✅        |
+| ICMP latest latency  | ✅      | ✅        |
+| ICMP packet loss     | ✅      | ✅        |
 
 ### HTTP uptime status
 
@@ -156,6 +159,71 @@ This metric is exported as a **gauge** and indicates the current uptime status o
 | UP                                    | 1           |
 | DOWN                                  | 0           |
 
+### ICMP uptime status
+
+<!-- md:version 3.10.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.icmp-uptime-status: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_ICMP_UPTIME_STATUS_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and indicates the current uptime status of the given ICMP (ping) monitor.
+
+| Status                                | Gauge value |
+|---------------------------------------|-------------|
+| UP                                    | 1           |
+| DOWN                                  | 0           |
+
+### ICMP latest latency
+
+<!-- md:version 3.10.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.icmp-latest-latency: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_ICMP_LATEST_LATENCY_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports the latest recorded average round-trip latency of the monitored host, in milliseconds.
+
+### ICMP packet loss
+
+<!-- md:version 3.10.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.icmp-latest-packet-loss: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports the latest recorded packet loss percentage (0-100) of the monitored host.
+
 ## Prometheus
 
 The _Prometheus_ exporter is a built-in exporter that allows you to **expose your metrics** in a format that **can be scraped** by _Prometheus_. It supports the standard _Prometheus_ text format, which is widely used for monitoring and alerting.
@@ -211,6 +279,9 @@ kuvasz_http_uptime_status{name="nytimes.com",target="https://www.nytimes.com"} 1
 kuvasz_http_latency_latest_milliseconds{name="nytimes.com",target="https://www.nytimes.com"} 29.0
 kuvasz_http_ssl_status{name="nytimes.com",target="https://www.nytimes.com"} 1.0
 kuvasz_http_ssl_expiry_seconds{name="nytimes.com",target="https://www.nytimes.com"} 1.758828296E9
+kuvasz_icmp_uptime_status{name="my-router",target="192.168.1.1"} 1.0
+kuvasz_icmp_latency_latest_milliseconds{name="my-router",target="192.168.1.1"} 4.0
+kuvasz_icmp_packet_loss_latest_percentage{name="my-router",target="192.168.1.1"} 0.0
 ```
 
 ### Example config
@@ -232,6 +303,9 @@ kuvasz_http_ssl_expiry_seconds{name="nytimes.com",target="https://www.nytimes.co
         ssl-status: true
         ssl-expiry: true
         push-uptime-status: true
+        icmp-uptime-status: true
+        icmp-latest-latency: true
+        icmp-latest-packet-loss: true
     ```
 
 === "ENV"
@@ -245,6 +319,10 @@ kuvasz_http_ssl_expiry_seconds{name="nytimes.com",target="https://www.nytimes.co
     ENABLE_HTTP_LATEST_LATENCY_EXPORT=true
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
+    ENABLE_PUSH_UPTIME_STATUS_EXPORT=true
+    ENABLE_ICMP_UPTIME_STATUS_EXPORT=true
+    ENABLE_ICMP_LATEST_LATENCY_EXPORT=true
+    ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
     ```
 
 ## OpenTelemetry
@@ -340,6 +418,9 @@ kuvasz.http.ssl.status{name=weather.com,target=https://weather.com} 1
 kuvasz.http.latency.latest.milliseconds{name=samsung.com,target=https://www.samsung.com} 183
 kuvasz.http.uptime.status{name=google.com,target=https://www.google.com} 1
 kuvasz.http.ssl.expiry.seconds{name=bbc.com,target=https://www.bbc.com} 1.785147977e+09
+kuvasz.icmp.uptime.status{name=my-router,target=192.168.1.1} 1
+kuvasz.icmp.latency.latest.milliseconds{name=my-router,target=192.168.1.1} 4
+kuvasz.icmp.packet.loss.latest.percentage{name=my-router,target=192.168.1.1} 0
 ```
 
 ### Example config
@@ -363,6 +444,9 @@ kuvasz.http.ssl.expiry.seconds{name=bbc.com,target=https://www.bbc.com} 1.785147
       ssl-status: true
       ssl-expiry: true
       push-uptime-status: true
+      icmp-uptime-status: true
+      icmp-latest-latency: true
+      icmp-latest-packet-loss: true
     ```
 
 === "ENV"
@@ -378,6 +462,10 @@ kuvasz.http.ssl.expiry.seconds{name=bbc.com,target=https://www.bbc.com} 1.785147
     ENABLE_HTTP_LATEST_LATENCY_EXPORT=true
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
+    ENABLE_PUSH_UPTIME_STATUS_EXPORT=true
+    ENABLE_ICMP_UPTIME_STATUS_EXPORT=true
+    ENABLE_ICMP_LATEST_LATENCY_EXPORT=true
+    ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
     ```
 
 ## Checking the configuration on the UI

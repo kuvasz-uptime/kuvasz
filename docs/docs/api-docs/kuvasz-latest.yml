@@ -2326,7 +2326,7 @@ components:
           maximum: 10
           minimum: 1
           type: integer
-          description: The number of ICMP packets to send per check (1–10)
+          description: The number of ICMP packets to send per check (1-10)
           format: int32
           default: 3
           x-maximum-message: "Packet count must be at most {value}"
@@ -2336,7 +2336,7 @@ components:
           maximum: 30
           minimum: 1
           type: integer
-          description: The per-ping timeout in seconds (1–30)
+          description: The per-ping timeout in seconds (1-30)
           format: int32
           default: 5
           x-maximum-message: "Timeout must be at most {value} seconds"
@@ -2346,7 +2346,7 @@ components:
           maximum: 100
           minimum: 1
           type: integer
-          description: The packet loss percentage (1–100) at or above which the check
+          description: The packet loss percentage (1-100) at or above which the check
             is considered DOWN. Default 100 means all packets must fail to trigger
             DOWN.
           format: int32
@@ -2420,15 +2420,15 @@ components:
           format: int32
         packetCount:
           type: integer
-          description: The number of ICMP packets to send per check (1–10)
+          description: The number of ICMP packets to send per check (1-10)
           format: int32
         timeoutSeconds:
           type: integer
-          description: The per-ping timeout in seconds (1–30)
+          description: The per-ping timeout in seconds (1-30)
           format: int32
         packetLossThreshold:
           type: integer
-          description: The packet loss percentage (1–100) at or above which the check
+          description: The packet loss percentage (1-100) at or above which the check
             is considered DOWN. Default 100 means all packets must fail to trigger
             DOWN.
           format: int32
@@ -2530,15 +2530,15 @@ components:
           format: int32
         packetCount:
           type: integer
-          description: The number of ICMP packets to send per check (1–10)
+          description: The number of ICMP packets to send per check (1-10)
           format: int32
         timeoutSeconds:
           type: integer
-          description: The per-ping timeout in seconds (1–30)
+          description: The per-ping timeout in seconds (1-30)
           format: int32
         packetLossThreshold:
           type: integer
-          description: The packet loss percentage (1–100) at or above which the check
+          description: The packet loss percentage (1-100) at or above which the check
             is considered DOWN. Default 100 means all packets must fail to trigger
             DOWN.
           format: int32
@@ -2635,7 +2635,7 @@ components:
           maximum: 10
           minimum: 1
           type: integer
-          description: The number of ICMP packets to send per check (1–10)
+          description: The number of ICMP packets to send per check (1-10)
           format: int32
           nullable: false
           x-maximum-message: "Packet count must be at most {value}"
@@ -2645,7 +2645,7 @@ components:
           maximum: 30
           minimum: 1
           type: integer
-          description: The per-ping timeout in seconds (1–30)
+          description: The per-ping timeout in seconds (1-30)
           format: int32
           nullable: false
           x-maximum-message: "Timeout must be at most {value} seconds"
@@ -2655,7 +2655,7 @@ components:
           maximum: 100
           minimum: 1
           type: integer
-          description: The packet loss percentage (1–100) at or above which the check
+          description: The packet loss percentage (1-100) at or above which the check
             is considered DOWN. Default 100 means all packets must fail to trigger
             DOWN.
           format: int32

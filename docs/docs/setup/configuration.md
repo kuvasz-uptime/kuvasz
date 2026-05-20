@@ -456,6 +456,9 @@ You can find the full configuration example below, which includes all the option
       ssl-status: true
       ssl-expiry: true
       push-uptime-status: true
+      icmp-uptime-status: true
+      icmp-latest-latency: true
+      icmp-latest-packet-loss: true
     ---
     admin-auth:
       username: YourSuperSecretUsername
@@ -511,4 +514,7 @@ You can find the full configuration example below, which includes all the option
     ENABLE_SSL_STATUS_EXPORT=true
     ENABLE_SSL_EXPIRY_EXPORT=true
     ENABLE_PUSH_UPTIME_STATUS_EXPORT=true
+    ENABLE_ICMP_UPTIME_STATUS_EXPORT=true
+    ENABLE_ICMP_LATEST_LATENCY_EXPORT=true
+    ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
     ```
