@@ -1,11 +1,5 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.convertValue
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -44,6 +38,11 @@ import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ObjectNode
+import tools.jackson.module.kotlin.convertValue
+import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Duration
 
 @Singleton
@@ -64,9 +63,9 @@ class HttpMonitorActions(
 ) : StatusPageMonitorDataProvider,
     MonitorActions<HttpMonitorRecord>(dslContext, appConfig, statusPageRepository, monitorRepository, eventDispatcher) {
 
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
+    private val objectMapper: ObjectMapper = jacksonMapperBuilder()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .registerModules(JavaTimeModule())
+        .build()
 
     fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
@@ -125,7 +124,7 @@ class HttpMonitorActions(
             val txCtx = config.dsl()
             val existingMonitor = monitorRepository.findById(monitorId, txCtx).orThrowNotFound(monitorId)
             val toUpdate = existingMonitor.into(HttpMonitor::class.java)
-            val filteredUpdates = updates.fieldNames().asSequence()
+            val filteredUpdates = updates.propertyNames()
                 .fold(objectMapper.createObjectNode()) { acc, fieldName ->
                     acc.set(fieldName, updates.get(fieldName))
                 }

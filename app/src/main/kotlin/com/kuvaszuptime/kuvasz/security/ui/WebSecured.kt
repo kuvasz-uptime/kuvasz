@@ -24,9 +24,9 @@ annotation class WebSecured
 @InterceptorBean(WebSecured::class)
 class WebSecuredInterceptor(
     private val securityService: SecurityService?
-) : MethodInterceptor<Any?, Any?>, Ordered {
+) : MethodInterceptor<Any, Any>, Ordered {
 
-    override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
+    override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
         context.findAnnotation(WebSecured::class.java).ifPresent { _ ->
             if (securityService?.hasRole(Role.WEB.alias) == false) throw WebAuthError()
         }

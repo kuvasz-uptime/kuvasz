@@ -18,7 +18,6 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -28,13 +27,14 @@ import org.jooq.QueryPart;
 import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.Select;
 import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.TableLike;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -63,7 +63,7 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
     /**
      * The column <code>kuvasz.icmp_metrics_log.id</code>.
      */
-    public final TableField<IcmpMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<IcmpMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.icmp_metrics_log.monitor_id</code>.
@@ -158,11 +158,6 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
     }
 
     @Override
-    public Identity<IcmpMetricsLogRecord, Long> getIdentity() {
-        return (Identity<IcmpMetricsLogRecord, Long>) super.getIdentity();
-    }
-
-    @Override
     public UniqueKey<IcmpMetricsLogRecord> getPrimaryKey() {
         return Keys.ICMP_METRICS_LOG_PKEY;
     }
@@ -228,7 +223,7 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
      */
     @Override
     public IcmpMetricsLog where(Condition condition) {
-        return new IcmpMetricsLog(getQualifiedName(), aliased() ? this : null, null, condition);
+        return new IcmpMetricsLog(getQualifiedName(), aliased() ? this : null, null, Internal.condition(this, condition));
     }
 
     /**
@@ -295,7 +290,7 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public IcmpMetricsLog whereExists(Select<?> select) {
+    public IcmpMetricsLog whereExists(TableLike<?> select) {
         return where(DSL.exists(select));
     }
 
@@ -303,7 +298,7 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public IcmpMetricsLog whereNotExists(Select<?> select) {
+    public IcmpMetricsLog whereNotExists(TableLike<?> select) {
         return where(DSL.notExists(select));
     }
 }

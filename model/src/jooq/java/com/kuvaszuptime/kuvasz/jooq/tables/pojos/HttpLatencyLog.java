@@ -18,6 +18,10 @@ public class HttpLatencyLog implements Serializable {
 
     private Long id;
     private Long monitorId;
+
+    /**
+     * Lateny in ms
+     */
     private Integer latency;
     private OffsetDateTime createdAt;
 

@@ -13,6 +13,7 @@ dependencies {
 
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(mn.kotest.assertions.core.jvm)
+    testImplementation(libs.kotest.data)
     detektPlugins(libs.detekt.formatting)
 }
 

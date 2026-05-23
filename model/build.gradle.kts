@@ -52,6 +52,7 @@ dependencies {
     runtimeOnly(mn.flyway.postgresql)
 
     // Testing
+    kaptTest(mn.micronaut.inject.java)
     testImplementation(mn.micronaut.test.kotest5)
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(mn.kotest.assertions.core.jvm)

@@ -17,7 +17,6 @@ dependencies {
     implementation(libs.kotlin.htmx)
     implementation(mn.jackson.core)
     implementation(mn.jackson.module.kotlin)
-    implementation(mn.jackson.datatype.jsr310)
 
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(mn.kotest.assertions.core.jvm)

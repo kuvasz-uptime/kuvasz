@@ -19,7 +19,6 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -29,13 +28,14 @@ import org.jooq.QueryPart;
 import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.Select;
 import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.TableLike;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -64,7 +64,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
     /**
      * The column <code>kuvasz.icmp_uptime_event.id</code>.
      */
-    public final TableField<IcmpUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<IcmpUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.icmp_uptime_event.monitor_id</code>.
@@ -169,11 +169,6 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
     }
 
     @Override
-    public Identity<IcmpUptimeEventRecord, Long> getIdentity() {
-        return (Identity<IcmpUptimeEventRecord, Long>) super.getIdentity();
-    }
-
-    @Override
     public UniqueKey<IcmpUptimeEventRecord> getPrimaryKey() {
         return Keys.ICMP_UPTIME_EVENT_PKEY;
     }
@@ -244,7 +239,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
      */
     @Override
     public IcmpUptimeEvent where(Condition condition) {
-        return new IcmpUptimeEvent(getQualifiedName(), aliased() ? this : null, null, condition);
+        return new IcmpUptimeEvent(getQualifiedName(), aliased() ? this : null, null, Internal.condition(this, condition));
     }
 
     /**
@@ -311,7 +306,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public IcmpUptimeEvent whereExists(Select<?> select) {
+    public IcmpUptimeEvent whereExists(TableLike<?> select) {
         return where(DSL.exists(select));
     }
 
@@ -319,7 +314,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public IcmpUptimeEvent whereNotExists(Select<?> select) {
+    public IcmpUptimeEvent whereNotExists(TableLike<?> select) {
         return where(DSL.notExists(select));
     }
 }

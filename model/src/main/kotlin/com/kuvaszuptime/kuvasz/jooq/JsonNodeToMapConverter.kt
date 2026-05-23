@@ -1,10 +1,10 @@
 package com.kuvaszuptime.kuvasz.jooq
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.treeToValue
 import org.jooq.Converter
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.node.JsonNodeFactory
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.treeToValue
 
 /**
  * Since it's unfortunately not possible to use directly a JSONB -> Map<String, String> converter during the

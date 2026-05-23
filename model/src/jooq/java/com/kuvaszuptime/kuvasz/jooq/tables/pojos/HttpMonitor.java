@@ -22,9 +22,25 @@ public class HttpMonitor implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
+
+    /**
+     * Monitor's name
+     */
     private String name;
+
+    /**
+     * URL to check
+     */
     private String url;
+
+    /**
+     * Uptime checking interval in seconds
+     */
     private Integer uptimeCheckInterval;
+
+    /**
+     * Flag to toggle the monitor
+     */
     private Boolean enabled;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;

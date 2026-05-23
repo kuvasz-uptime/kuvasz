@@ -1,19 +1,20 @@
 package com.kuvaszuptime.kuvasz.services.export
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
-import com.fasterxml.jackson.module.kotlin.kotlinModule
 import io.micronaut.http.MediaType
 import io.micronaut.http.server.types.files.SystemFile
 import jakarta.inject.Singleton
+import tools.jackson.databind.PropertyNamingStrategies
+import tools.jackson.dataformat.yaml.YAMLMapper
+import tools.jackson.module.kotlin.kotlinModule
 import java.io.File
 import java.time.Instant
 
 @Singleton
 class ExportHandler {
-    private val yamlMapper = YAMLMapper()
-        .registerModules(kotlinModule())
-        .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+    private val yamlMapper = YAMLMapper.builder()
+        .addModules(kotlinModule())
+        .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+        .build()
 
     /**
      * Creates a temporary YAML file from the given content map and returns it as a SystemFile.

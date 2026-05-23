@@ -2,11 +2,11 @@ package com.kuvaszuptime.kuvasz.models.handlers
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.micronaut.core.convert.ConversionContext
 import io.micronaut.core.convert.TypeConverter
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.inject.Singleton
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.util.Optional
 
 @Schema(

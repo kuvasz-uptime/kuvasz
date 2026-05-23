@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.controllers.statuspage
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -58,6 +57,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.node.ObjectNode
 import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest

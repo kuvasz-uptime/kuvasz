@@ -85,7 +85,7 @@ class HttpCheckResponseEvaluator(
             // Invalid status codes (e.g. 498) are throwing an IllegalArgumentException for example
             // Better to have an explicit error, because the status won't be visible later, so it would be
             // harder for the users to figure out what was failing during the check
-            clarifiedError = HttpClientException(ex.message, ex)
+            clarifiedError = HttpClientException(ex.message.orEmpty(), ex)
             null
         }
         HttpMonitorDownEvent(

@@ -18,20 +18,20 @@ import java.util.List;
 
 import org.jooq.Condition;
 import org.jooq.Field;
-import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.PlainSQL;
 import org.jooq.QueryPart;
 import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.Select;
 import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.TableLike;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -60,7 +60,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
     /**
      * The column <code>kuvasz.status_page.id</code>.
      */
-    public final TableField<StatusPageRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<StatusPageRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.status_page.title</code>.
@@ -142,11 +142,6 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
     }
 
     @Override
-    public Identity<StatusPageRecord, Long> getIdentity() {
-        return (Identity<StatusPageRecord, Long>) super.getIdentity();
-    }
-
-    @Override
     public UniqueKey<StatusPageRecord> getPrimaryKey() {
         return Keys.STATUS_PAGE_PKEY;
     }
@@ -200,7 +195,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
      */
     @Override
     public StatusPage where(Condition condition) {
-        return new StatusPage(getQualifiedName(), aliased() ? this : null, null, condition);
+        return new StatusPage(getQualifiedName(), aliased() ? this : null, null, Internal.condition(this, condition));
     }
 
     /**
@@ -267,7 +262,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public StatusPage whereExists(Select<?> select) {
+    public StatusPage whereExists(TableLike<?> select) {
         return where(DSL.exists(select));
     }
 
@@ -275,7 +270,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public StatusPage whereNotExists(Select<?> select) {
+    public StatusPage whereNotExists(TableLike<?> select) {
         return where(DSL.notExists(select));
     }
 }

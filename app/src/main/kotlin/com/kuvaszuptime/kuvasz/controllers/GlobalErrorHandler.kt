@@ -2,7 +2,6 @@
 
 package com.kuvaszuptime.kuvasz.controllers
 
-import com.fasterxml.jackson.core.JsonParseException
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.DASHBOARD_PATH
 import com.kuvaszuptime.kuvasz.controllers.ui.WebUIController.Companion.LOGIN_PATH
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
@@ -20,6 +19,7 @@ import com.kuvaszuptime.kuvasz.security.ui.AlreadyLoggedInError
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthError
 import com.kuvaszuptime.kuvasz.util.toUri
 import com.kuvaszuptime.kuvasz.validation.NonExistingIntegrationIdException
+import com.nimbusds.jose.shaded.gson.JsonParseException
 import io.micronaut.core.convert.exceptions.ConversionErrorException
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse

@@ -1,11 +1,5 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.convertValue
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.StatusPage
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
@@ -23,6 +17,11 @@ import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ObjectNode
+import tools.jackson.module.kotlin.convertValue
+import tools.jackson.module.kotlin.jacksonMapperBuilder
 
 @Singleton
 class StatusPageActions(
@@ -32,9 +31,9 @@ class StatusPageActions(
     private val validator: Validator,
 ) {
 
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
+    private val objectMapper: ObjectMapper = jacksonMapperBuilder()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .registerModules(JavaTimeModule())
+        .build()
 
     fun getStatusPages(
         public: Boolean?,
@@ -74,7 +73,7 @@ class StatusPageActions(
             val existingStatusPage =
                 statusPageRepository.findById(statusPageId, txCtx).orThrowNotFound(statusPageId.toString())
             val toUpdate = existingStatusPage.into(StatusPage::class.java)
-            val filteredUpdates = updates.fieldNames().asSequence()
+            val filteredUpdates = updates.propertyNames()
                 .fold(objectMapper.createObjectNode()) { acc, fieldName ->
                     acc.set(fieldName, updates.get(fieldName))
                 }

@@ -20,9 +20,21 @@ public class HttpUptimeEvent implements Serializable {
 
     private Long id;
     private Long monitorId;
+
+    /**
+     * Status of the event
+     */
     private UptimeStatus status;
     private String error;
+
+    /**
+     * The current event started at
+     */
     private OffsetDateTime startedAt;
+
+    /**
+     * The current event ended at
+     */
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
 

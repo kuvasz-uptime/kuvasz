@@ -17,9 +17,9 @@ annotation class CheckStatusPagesWritable
 
 @Singleton
 @InterceptorBean(CheckStatusPagesWritable::class)
-class StatusPageWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
+class StatusPageWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any, Any>, Ordered {
 
-    override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
+    override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
         context.findAnnotation(CheckStatusPagesWritable::class.java).ifPresent { _ ->
             if (appConfig.isStatusPageExternalWriteDisabled()) throw ReadOnlyStatusPageException()
         }

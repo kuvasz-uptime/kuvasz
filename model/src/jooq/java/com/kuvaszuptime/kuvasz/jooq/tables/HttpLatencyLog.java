@@ -18,7 +18,6 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -28,13 +27,14 @@ import org.jooq.QueryPart;
 import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.Select;
 import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.TableLike;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -63,7 +63,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
     /**
      * The column <code>kuvasz.http_latency_log.id</code>.
      */
-    public final TableField<HttpLatencyLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<HttpLatencyLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.http_latency_log.monitor_id</code>.
@@ -153,11 +153,6 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
     }
 
     @Override
-    public Identity<HttpLatencyLogRecord, Long> getIdentity() {
-        return (Identity<HttpLatencyLogRecord, Long>) super.getIdentity();
-    }
-
-    @Override
     public UniqueKey<HttpLatencyLogRecord> getPrimaryKey() {
         return Keys.LATENCY_LOG_PKEY;
     }
@@ -223,7 +218,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
      */
     @Override
     public HttpLatencyLog where(Condition condition) {
-        return new HttpLatencyLog(getQualifiedName(), aliased() ? this : null, null, condition);
+        return new HttpLatencyLog(getQualifiedName(), aliased() ? this : null, null, Internal.condition(this, condition));
     }
 
     /**
@@ -290,7 +285,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public HttpLatencyLog whereExists(Select<?> select) {
+    public HttpLatencyLog whereExists(TableLike<?> select) {
         return where(DSL.exists(select));
     }
 
@@ -298,7 +293,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public HttpLatencyLog whereNotExists(Select<?> select) {
+    public HttpLatencyLog whereNotExists(TableLike<?> select) {
         return where(DSL.notExists(select));
     }
 }
