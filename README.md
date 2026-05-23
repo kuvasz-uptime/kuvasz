@@ -38,6 +38,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 - **Sleek UI**: Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.
 - **Full-fledged REST API**: Manage your monitors, check their status, and more through a powerful API.
 - **Metrics exporters**: Export your metrics to _OpenTelemetry_ and _Prometheus_ for better observability and integration with your existing monitoring stack.
+- **Home Assistant integration**: With the official [Home Assistant integration](https://github.com/kuvasz-uptime/ku-hass) you can easily integrate your monitors into your smart home setup, create custom dashboards, and automate actions based on the status of your services.
 - More to come: Take a look at our [**Roadmap**](https://github.com/orgs/kuvasz-uptime/projects/2/views/1)
 
 ## 🚀  Kuvasz vs. UptimeRobot
