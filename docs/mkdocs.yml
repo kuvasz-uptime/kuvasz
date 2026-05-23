@@ -107,6 +107,7 @@ nav:
       - Status pages: management/status-pages.md
       - Metrics exporters: management/metrics-exporters.md
       - Recipes & examples: management/examples.md
+  - Home Assistant: home-assistant.md
   - API docs ⏏: https://api-docs.kuvasz-uptime.dev
   - Changelog: changelog.md
   - Upgrade notes: upgrade-notes.md

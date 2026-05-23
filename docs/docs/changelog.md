@@ -1,8 +1,9 @@
-## 3.10.0 <small>2026-05-xx</small> { id="3.10.0" data-toc-label="3.10.0" }
+## 3.10.0 <small>2026-05-23</small> { id="3.10.0" data-toc-label="3.10.0" }
 
 ### Features
 
 - Added **Ping (ICMP) monitoring**: you can now create ICMP monitors to check the reachability and latency of any host by sending ICMP echo requests to it. Configurable parameters include the number of packets per check, the per-ping timeout, and the packet loss threshold that triggers a DOWN event. See the [**Managing ICMP monitors**](management/icmp-monitors.md) section for further details.
+- Published a separate, [**dedicated Home Assistant integration**](home-assistant.md), named [**ku-hass**](https://github.com/kuvasz-uptime/ku-hass#installation){ target="_blank" } that makes the integration with HA easier than ever.
 
 ### Improvements
 

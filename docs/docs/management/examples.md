@@ -12,6 +12,10 @@ logger:
 
 ## Home Assistant RESTful integration
 
+!!! warning
+
+    While the methods described below still work, there is a [dedicated integration](../home-assistant.md) for _Kuvasz_, which is the recommended way to integrate your monitors with Home Assistant, as it provides a better user experience, more features, and it's easier to set up and maintain.
+
 _Kuvasz_ can be easily **integrated with Home Assistant** using the [_RESTful_](https://www.home-assistant.io/integrations/rest/){target="_blank"} integration by using its [API](../features/api.md). This allows you to create sensors for your most precious monitors and use them in your **automations, scripts**, or just to visualize the status of your monitors. You can even **build your own custom dashboard** with the data from your monitors!
 
 !!! tip

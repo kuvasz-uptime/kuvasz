@@ -3,7 +3,7 @@
 <figure markdown="span">
   ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="350" .skip-lb }
   ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="350" .skip-lb }
-  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages</figcaption>
+  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages, webhooks and IAC support!</figcaption>
 </figure>
 
 !!! tip "TL;DR"
@@ -74,13 +74,13 @@
 
     [:octicons-arrow-right-24: Metrics exporters](management/metrics-exporters.md)
 
--   :sparkles:{ .lg .card-header-icon } __Sleek UI__
+-   :simple-homeassistant:{ .lg .card-header-icon } __Home Assistant__
 
     ---
 
-    Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.
+    Kuvasz has an **official Home Assistant integration** that allows you to easily integrate your monitors into your smart home setup, create custom dashboards, and automate actions based on the status of your services.
 
-    [:octicons-arrow-right-24: Web UI](features/ui.md)
+    [:octicons-arrow-right-24: Home Assistant integration](home-assistant.md)
 
 -   :octicons-law-16:{ .lg .card-header-icon } __Free & Open Source__
 
