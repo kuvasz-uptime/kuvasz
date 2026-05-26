@@ -61,9 +61,10 @@ class IntegrationRepository(
                         ?.takeIf { it.isNotEmpty() }
                         ?.let { templateEngine.getTemplate(it) }
                     integrationConfig.requestHeaders?.values?.forEach { templateEngine.getTemplate(it) }
+                    templateEngine.getTemplate(integrationConfig.url)
                 } catch (ex: Exception) {
                     throw IntegrationConfigException(
-                        "Failed to parse payload/header template for ${integrationConfig.id}: ${ex.message}",
+                        "Failed to parse payload/header/url template for ${integrationConfig.id}: ${ex.message}",
                     )
                 }
             }

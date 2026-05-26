@@ -4205,11 +4205,19 @@ components:
           type: boolean
           description: "Whether the installed version is up to date. If update checks\
             \ are disabled, it's always true"
+    WebhookHttpMethod:
+      type: string
+      enum:
+      - POST
+      - PUT
+      - PATCH
+      - GET
     WebhookNotificationConfigDto:
       required:
       - enabled
       - excludedEvents
       - global
+      - httpMethod
       - id
       - name
       - payloadTemplate
@@ -4255,6 +4263,11 @@ components:
           additionalProperties:
             type: string
           description: The HTTP headers to include in the webhook request
+        httpMethod:
+          description: The HTTP method used to send webhook requests
+          allOf:
+          - $ref: "#/components/schemas/WebhookHttpMethod"
+          default: POST
   securitySchemes:
     apiKey:
       type: apiKey

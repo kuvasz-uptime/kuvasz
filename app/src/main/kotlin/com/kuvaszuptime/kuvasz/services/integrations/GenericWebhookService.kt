@@ -16,7 +16,7 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
-import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -27,7 +27,6 @@ import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
-import io.micronaut.http.MutableHttpRequest
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.reactivex.rxjava3.core.Observable
@@ -44,23 +43,22 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
         private const val DEFAULT_MEDIA_TYPE = MediaType.APPLICATION_JSON
     }
 
-    fun sendGenericMessage(
-        webhookUrl: URI,
-        message: GenericWebhookMessage,
-        headers: Map<String, String>
+    fun sendMessage(
+        httpMethod: WebhookHttpMethod,
+        url: URI,
+        headers: Map<String, String>,
+        payload: Any,
     ): Single<String> {
-        val req = HttpRequest.POST(webhookUrl, message)
-        return sendRequestWithHeaders(req, headers)
-    }
-
-    fun sendTemplatedMessage(webhookUrl: URI, payload: String, headers: Map<String, String>): Single<String> {
-        val req = HttpRequest.POST(webhookUrl, payload)
-        return sendRequestWithHeaders(req, headers)
-    }
-
-    private fun sendRequestWithHeaders(request: MutableHttpRequest<*>, headers: Map<String, String>): Single<String> {
+        val request = when (httpMethod) {
+            WebhookHttpMethod.POST -> HttpRequest.POST(url, payload)
+            WebhookHttpMethod.PUT -> HttpRequest.PUT(url, payload)
+            WebhookHttpMethod.PATCH -> HttpRequest.PATCH(url, payload)
+            WebhookHttpMethod.GET -> HttpRequest.GET(url)
+        }
         val effectiveContentType = headers.getOrDefault(HttpHeaders.CONTENT_TYPE, DEFAULT_MEDIA_TYPE)
-        request.contentType(effectiveContentType)
+        if (httpMethod != WebhookHttpMethod.GET) {
+            request.contentType(effectiveContentType)
+        }
         headers.filter { it.key != HttpHeaders.CONTENT_TYPE }.forEach { request.header(it.key, it.value) }
 
         return Single.fromPublisher(client.retrieve(request, String::class.java))
@@ -148,30 +146,27 @@ class GenericWebhookService(
     @Suppress("TooGenericExceptionCaught")
     fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<out MonitorRecord>): Single<String> {
         val template = target.payloadTemplate
-        val webhookUrl = target.url.toUri()
+        val webhookUrl = messageFactory.fromMonitorEvent(event, target.url).toUri()
         val preparedHeaders = target.requestHeaders.orEmpty().mapValues { (_, value) ->
             messageFactory.fromMonitorEvent(event, value)
         }
-
-        return if (template.isNullOrBlank()) {
-            client.sendGenericMessage(
-                webhookUrl = webhookUrl,
-                message = messageFactory.fromMonitorEvent(event),
-                headers = preparedHeaders,
-            )
+        val payload = if (template.isNullOrBlank()) {
+            messageFactory.fromMonitorEvent(event)
         } else {
-            val payload = try {
+            try {
                 messageFactory.fromMonitorEvent(event, template)
             } catch (ex: Exception) {
                 logger.error("Failed to parse webhook template: ${ex.message}")
                 return Single.error(ex)
             }
-            client.sendTemplatedMessage(
-                webhookUrl = webhookUrl,
-                payload = payload,
-                headers = preparedHeaders,
-            )
         }
+
+        return client.sendMessage(
+            url = webhookUrl,
+            payload = payload,
+            headers = preparedHeaders,
+            httpMethod = target.httpMethod,
+        )
     }
 
     override fun sendTestMessage(integrationConfig: WebhookNotificationConfig): Single<NotificationTestResult> {

@@ -99,15 +99,16 @@ class WebhookEventHandler(
     private fun UptimeMonitorEvent.handle() {
         runWhenStateChanges { event ->
             filterTargetConfigs(event).forEach { target ->
+                val webhookConfig = target as WebhookNotificationConfig
                 when (event) {
                     is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent -> {
                         if (previousEvent != null) {
-                            webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
+                            webhookService.sendWebhookEvent(webhookConfig, event).handleResponse()
                         }
                     }
 
                     is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent ->
-                        webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
+                        webhookService.sendWebhookEvent(webhookConfig, event).handleResponse()
                 }
             }
         }

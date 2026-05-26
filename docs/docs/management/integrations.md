@@ -316,11 +316,11 @@ integrations:
 
 **Configuration alias**: `webhook`
 
-The _Webhook_ integration allows you to **send notifications to any endpoint that can receive HTTP POST requests**. You can use it to integrate with 3rd party services that are not natively supported by _Kuvasz_, or to implement custom notification logic within your own infrastructure.
+The _Webhook_ integration allows you to **send notifications to any endpoint that can receive HTTP requests**. You can use it to integrate with 3rd party services that are not natively supported by _Kuvasz_, or to implement custom notification logic within your own infrastructure.
 
 !!! warning
 
-    Make sure that your target endpoint handles `POST` requests and is able to process the payload sent by _Kuvasz_. Otherwise, you might end up with failed notifications and missed alerts.
+    Make sure that your target endpoint handles the configured HTTP method and is able to process the payload sent by _Kuvasz_. Otherwise, you might end up with failed notifications and missed alerts.
 
 The generic webhook message (if you don't use a custom template) has the following structure:
 
@@ -341,7 +341,7 @@ The generic webhook message (if you don't use a custom template) has the followi
     1. **monitorUrn**: A unique identifier of a monitor, formatted as 'type:name'.
     2. **monitorName**: The name of the monitor, which must be unique.
     3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
-    4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
+    4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `ICMP_UP`, `ICMP_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
     5. **eventDetails**: A human-readable message with more details about the event.
     6. **monitorId**: A unique, numeric ID of a monitor.
     7. **monitorDetailsUrl**: The relative URL to the monitor details page in the _Kuvasz_ web interface.
@@ -380,6 +380,8 @@ The generic webhook message (if you don't use a custom template) has the followi
             - HTTP_DOWN
             - PUSH_UP
             - PUSH_DOWN
+            - ICMP_UP
+            - ICMP_DOWN
             - SSL_VALID
             - SSL_INVALID
             - SSL_WILL_EXPIRE
@@ -423,6 +425,12 @@ You can find some examples of how to use the _Webhook_ integration to **integrat
 
 The URL of the **endpoint where the notifications will be sent**. This can be any URL that can receive HTTP requests, for example, an API endpoint of a 3rd party service, or an endpoint of your own backend.
 
+Starting **from version 3.11.0**, you can also **use templates in the URL**, which allows you to construct dynamic endpoint URLs based on the context of the event that triggered the webhook. For example, you can route notifications to different paths based on the event type:
+
+```yaml
+url: "https://my-backend.example.com/webhooks/{{ ctx.type }}/{{ ctx.monitorName }}"
+```
+
 ### Request headers
 
 <!-- md:version 3.8.0 -->
@@ -440,6 +448,23 @@ request-headers:
   X-Event-Type: "{{ctx.type}}"
 ```
 
+### HTTP method
+
+<!-- md:version 3.11.0 -->
+<!-- md:default `POST` -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `http-method` -->
+
+The **HTTP method** used when sending requests to the target URL. The valid options are `POST`, `PUT`, `PATCH`, and `GET`. Defaults to `POST` if not specified, which is the correct choice for most services. Use `PUT` or `PATCH` when your target endpoint explicitly requires it. Use `GET` for endpoints that only accept GET requests — note that in this case the payload will not be sent as a request body.
+
+```yaml
+integrations:
+  webhook:
+    - name: matrix
+      url: 'http://your-matrix-webhook-host:4785/!roomid:your-homeserver/your-shared-token'
+      http-method: PUT
+```
+
 ### Payload template
 
 <!-- md:version 3.8.0 -->
@@ -454,6 +479,7 @@ You can **customize the payload of the requests** sent to the target URL by prov
 webhook:
   - name: webhook_templated
     url: https://any-other-http.service/webhooks
+    http-method: POST
     excluded-events:
       - PUSH_UP
       - HTTP_UP
@@ -462,6 +488,14 @@ webhook:
       Accept: '*/*'
       Authorization: Bearer your-webhook-secret-token
       X-Custom-Header: custom-value
+    payload-template: |
+      {
+        "monitorName": "{{ctx.monitorName}}",
+        "type": "{{ctx.type}}"
+      }
+  - name: webhook_put
+    url: https://any-other-http.service/resource/123
+    http-method: PUT
     payload-template: |
       {
         "monitorName": "{{ctx.monitorName}}",

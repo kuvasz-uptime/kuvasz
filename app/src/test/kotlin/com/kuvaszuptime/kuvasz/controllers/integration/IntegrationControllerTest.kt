@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
@@ -58,7 +59,7 @@ class IntegrationControllerTest(
         should("return all the configured integrations, ordered by their names") {
             val response = integrationClient.getIntegrations()
 
-            response shouldHaveSize 18
+            response shouldHaveSize 21
             response.shouldBeSortedBy { it.name }
 
             response.forOne { implicitlyEnabledSlack ->
@@ -183,6 +184,7 @@ class IntegrationControllerTest(
                 implicitlyEnabledWebhook.payloadTemplate shouldBe
                     "{\"request_id\": \"342342\",\"status\": {% if ctx.type == 'HTTP_UP' %}OK{% else %}" +
                     "{{ctx.type}}{% endif %}}"
+                implicitlyEnabledWebhook.httpMethod shouldBe WebhookHttpMethod.POST
             }
             response.forOne { globalWebhook ->
                 globalWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
@@ -196,6 +198,7 @@ class IntegrationControllerTest(
                     "User-Agent" to "Mozilla/5.0",
                     "X-Custom-Header" to "custom-value",
                 )
+                globalWebhook.httpMethod shouldBe WebhookHttpMethod.POST
             }
             response.forOne { disabledWebhook ->
                 disabledWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
@@ -209,6 +212,34 @@ class IntegrationControllerTest(
                     IntegrationEventType.HTTP_UP,
                     IntegrationEventType.PUSH_UP,
                 )
+                disabledWebhook.httpMethod shouldBe WebhookHttpMethod.POST
+            }
+            response.forOne { putWebhook ->
+                putWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
+                putWebhook.id shouldBe IntegrationID(IntegrationType.WEBHOOK, "put_method")
+                putWebhook.name shouldBe "put_method"
+                putWebhook.enabled shouldBe true
+                putWebhook.global shouldBe false
+                putWebhook.url shouldBe "https://put-webhook.com/webhook"
+                putWebhook.httpMethod shouldBe WebhookHttpMethod.PUT
+            }
+            response.forOne { patchWebhook ->
+                patchWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
+                patchWebhook.id shouldBe IntegrationID(IntegrationType.WEBHOOK, "patch_method")
+                patchWebhook.name shouldBe "patch_method"
+                patchWebhook.enabled shouldBe true
+                patchWebhook.global shouldBe false
+                patchWebhook.url shouldBe "https://patch-webhook.com/webhook"
+                patchWebhook.httpMethod shouldBe WebhookHttpMethod.PATCH
+            }
+            response.forOne { getWebhook ->
+                getWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
+                getWebhook.id shouldBe IntegrationID(IntegrationType.WEBHOOK, "get_method")
+                getWebhook.name shouldBe "get_method"
+                getWebhook.enabled shouldBe true
+                getWebhook.global shouldBe false
+                getWebhook.url shouldBe "https://get-webhook.com/webhook"
+                getWebhook.httpMethod shouldBe WebhookHttpMethod.GET
             }
         }
     }

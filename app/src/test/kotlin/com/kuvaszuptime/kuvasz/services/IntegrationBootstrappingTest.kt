@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -38,8 +39,8 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 18
-            enabledIntegrations shouldHaveSize 12
+            configuredIntegrations shouldHaveSize 21
+            enabledIntegrations shouldHaveSize 15
             enabledIntegrationsByType shouldHaveSize 6
             globallyEnabledIntegrationsByType shouldHaveSize 6
 
@@ -188,6 +189,7 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.excludedEvents.shouldContainExactly(
                         IntegrationEventType.HTTP_UP,
                     )
+                    config.httpMethod shouldBe WebhookHttpMethod.POST
                 }
                 forOne { globallyEnabledWebhook ->
                     globallyEnabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "Global2_with_headers")
@@ -203,6 +205,7 @@ class IntegrationBootstrappingTest : StringSpec({
                     )
                     config.payloadTemplate.shouldBeNull()
                     config.excludedEvents.shouldBeNull()
+                    config.httpMethod shouldBe WebhookHttpMethod.POST
                 }
                 forOne { disabledWebhook ->
                     disabledWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "disabled")
@@ -218,6 +221,37 @@ class IntegrationBootstrappingTest : StringSpec({
                         IntegrationEventType.HTTP_UP,
                         IntegrationEventType.PUSH_UP,
                     )
+                    config.httpMethod shouldBe WebhookHttpMethod.POST
+                }
+                forOne { putWebhook ->
+                    putWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "put_method")
+                    val config = putWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "put_method"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://put-webhook.com/webhook"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                    config.httpMethod shouldBe WebhookHttpMethod.PUT
+                }
+                forOne { patchWebhook ->
+                    patchWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "patch_method")
+                    val config = patchWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "patch_method"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://patch-webhook.com/webhook"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                    config.httpMethod shouldBe WebhookHttpMethod.PATCH
+                }
+                forOne { getWebhook ->
+                    getWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "get_method")
+                    val config = getWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "get_method"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://get-webhook.com/webhook"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                    config.httpMethod shouldBe WebhookHttpMethod.GET
                 }
             }
 
@@ -351,7 +385,7 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType[IntegrationType.EMAIL].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.TELEGRAM].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.PAGERDUTY].shouldNotBeNull().shouldHaveSize(2)
-            enabledIntegrationsByType[IntegrationType.WEBHOOK].shouldNotBeNull().shouldHaveSize(2)
+            enabledIntegrationsByType[IntegrationType.WEBHOOK].shouldNotBeNull().shouldHaveSize(5)
 
             // Global integrations
             with(globallyEnabledIntegrationsByType[IntegrationType.SLACK]?.single() as SlackNotificationConfig) {
@@ -476,7 +510,7 @@ class IntegrationBootstrappingTest : StringSpec({
             testAppContext("invalid-webhook-template")
         }
 
-        ex.message shouldContain "Failed to parse payload/header template for webhook:Global2_with_headers"
+        ex.message shouldContain "Failed to parse payload/header/url template for webhook:Global2_with_headers"
     }
 
     "app should not start if a webhook config contains an invalid request header template" {
@@ -484,7 +518,15 @@ class IntegrationBootstrappingTest : StringSpec({
             testAppContext("invalid-webhook-header-template")
         }
 
-        ex.message shouldContain "Failed to parse payload/header template for webhook:Global2_with_headers"
+        ex.message shouldContain "Failed to parse payload/header/url template for webhook:Global2_with_headers"
+    }
+
+    "app should not start if a webhook config contains an invalid url template" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-webhook-url-template")
+        }
+
+        ex.message shouldContain "Failed to parse payload/header/url template for webhook:Global2_with_headers"
     }
 })
 
@@ -493,8 +535,8 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 18
-            enabledIntegrations shouldHaveSize 10 // Email configs should not be enabled without SMTP config
+            configuredIntegrations shouldHaveSize 21
+            enabledIntegrations shouldHaveSize 13 // Email configs should not be enabled without SMTP config
             enabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
             globallyEnabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
 

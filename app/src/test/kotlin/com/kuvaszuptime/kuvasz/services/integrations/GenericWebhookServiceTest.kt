@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import io.kotest.assertions.fail
@@ -38,14 +39,17 @@ class GenericWebhookServiceTest(
     afterTest { clearMocks(mockClient) }
 
     fun buildConfig(
+        targetUrl: String = webhookUrl,
         template: String? = null,
         excludedEventTypes: List<IntegrationEventType> = emptyList(),
         customHeaders: Map<String, String> = mapOf("X-Custom-Header" to "custom-value"),
+        httpMethod: WebhookHttpMethod = WebhookHttpMethod.POST,
     ) = mockk<WebhookNotificationConfig>(relaxed = true) {
-        every { url } returns webhookUrl
+        every { url } returns targetUrl
         every { requestHeaders } returns customHeaders
         every { payloadTemplate } returns template
         every { excludedEvents } returns excludedEventTypes
+        every { this@mockk.httpMethod } returns httpMethod
     }
 
     val expectedEventDetails = webhookService.testEvents.map { event ->
@@ -61,7 +65,7 @@ class GenericWebhookServiceTest(
         `when`("events are not excluded from the config") {
             val config = buildConfig()
 
-            every { mockClient.sendGenericMessage(any(), any(), any()) } returns Single.just("OK")
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -71,10 +75,11 @@ class GenericWebhookServiceTest(
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
                 verify(exactly = 9) {
-                    mockClient.sendGenericMessage(
-                        webhookUrl = URI(webhookUrl),
-                        message = capture(genericMessages),
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI(webhookUrl),
                         headers = mapOf("X-Custom-Header" to "custom-value"),
+                        payload = capture(genericMessages),
                     )
                 }
                 genericMessages.map { it.type } shouldContainExactly listOf(
@@ -114,20 +119,21 @@ class GenericWebhookServiceTest(
                 excludedEventTypes = listOf(IntegrationEventType.HTTP_UP, IntegrationEventType.PUSH_UP),
             )
 
-            every { mockClient.sendGenericMessage(any(), any(), any()) } returns Single.just("OK")
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
-            then("it should send a test message for every event type by default") {
+            then("it should send a test message only for non-excluded event types") {
                 result.success shouldBe true
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
                 verify(exactly = 7) {
-                    mockClient.sendGenericMessage(
-                        webhookUrl = URI(webhookUrl),
-                        message = capture(genericMessages),
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI(webhookUrl),
                         headers = mapOf("X-Custom-Header" to "custom-value"),
+                        payload = capture(genericMessages),
                     )
                 }
                 genericMessages.map { it.type } shouldContainExactly listOf(
@@ -168,7 +174,7 @@ class GenericWebhookServiceTest(
                 )
             )
 
-            every { mockClient.sendGenericMessage(any(), any(), any()) } returns Single.just("OK")
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -177,14 +183,40 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 verify(exactly = 1) {
-                    mockClient.sendGenericMessage(
-                        webhookUrl = URI(webhookUrl),
-                        message = any(),
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI(webhookUrl),
                         headers = mapOf(
                             "X-Custom-Header" to "custom-value",
                             "X-Event-Type" to "PUSH_DOWN",
                             "ThisIsAlsoTemplated" to "Test monitor",
                         ),
+                        payload = any(),
+                    )
+                }
+            }
+        }
+
+        `when`("the url is templated") {
+            val config = buildConfig(
+                excludedEventTypes = IntegrationEventType.entries.minus(IntegrationEventType.PUSH_DOWN),
+                targetUrl = "https://irrelevant.com/webhook/{{ ctx.type }}",
+            )
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should compile the url with the event") {
+                result.success shouldBe true
+                result.message shouldBe Messages.successfulTestResultMessage()
+
+                verify(exactly = 1) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI("https://irrelevant.com/webhook/PUSH_DOWN"),
+                        headers = any(),
+                        payload = any(),
                     )
                 }
             }
@@ -194,11 +226,7 @@ class GenericWebhookServiceTest(
             val config = buildConfig()
 
             every {
-                mockClient.sendGenericMessage(
-                    any(),
-                    any(),
-                    any(),
-                )
+                mockClient.sendMessage(any(), any(), any(), any())
             } returns Single.error(HttpClientException("error"))
 
             val result = webhookService.sendTestMessage(config).blockingGet()
@@ -216,7 +244,7 @@ class GenericWebhookServiceTest(
                 template = "Event type: {{ ctx.type }}",
             )
 
-            every { mockClient.sendTemplatedMessage(any(), any(), any()) } returns Single.just("OK")
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -226,10 +254,11 @@ class GenericWebhookServiceTest(
 
                 val templatedMessages = mutableListOf<String>()
                 verify(exactly = 9) {
-                    mockClient.sendTemplatedMessage(
-                        webhookUrl = URI(webhookUrl),
-                        payload = capture(templatedMessages),
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI(webhookUrl),
                         headers = mapOf("X-Custom-Header" to "custom-value"),
+                        payload = capture(templatedMessages),
                     )
                 }
                 templatedMessages shouldContainExactly listOf(
@@ -252,20 +281,21 @@ class GenericWebhookServiceTest(
                 excludedEventTypes = listOf(IntegrationEventType.HTTP_UP, IntegrationEventType.PUSH_UP),
             )
 
-            every { mockClient.sendTemplatedMessage(any(), any(), any()) } returns Single.just("OK")
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
-            then("it should send a test message for every event type by default") {
+            then("it should send a test message only for non-excluded event types") {
                 result.success shouldBe true
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val templatedMessages = mutableListOf<String>()
                 verify(exactly = 7) {
-                    mockClient.sendTemplatedMessage(
-                        webhookUrl = URI(webhookUrl),
-                        payload = capture(templatedMessages),
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI(webhookUrl),
                         headers = mapOf("X-Custom-Header" to "custom-value"),
+                        payload = capture(templatedMessages),
                     )
                 }
                 templatedMessages shouldContainExactly listOf(
@@ -292,7 +322,7 @@ class GenericWebhookServiceTest(
                 )
             )
 
-            every { mockClient.sendTemplatedMessage(any(), any(), any()) } returns Single.just("OK")
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -301,15 +331,42 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 verify(exactly = 1) {
-                    mockClient.sendTemplatedMessage(
-                        webhookUrl = URI(webhookUrl),
-                        payload = "Event type: PUSH_DOWN",
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI(webhookUrl),
                         headers = mapOf(
                             "X-Custom-Header" to "custom-value",
                             "X-Event-Type" to "PUSH_DOWN",
                             "ThisIsAlsoTemplated" to "Test monitor",
                             "VerbatimShouldBeFineToo" to "{%",
                         ),
+                        payload = "Event type: PUSH_DOWN",
+                    )
+                }
+            }
+        }
+
+        `when`("the url is templated") {
+            val config = buildConfig(
+                excludedEventTypes = IntegrationEventType.entries.minus(IntegrationEventType.PUSH_DOWN),
+                targetUrl = "https://irrelevant.com/webhook/{{ ctx.type }}",
+                template = "Event type: {{ ctx.type }}",
+            )
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should compile the url with the event") {
+                result.success shouldBe true
+                result.message shouldBe Messages.successfulTestResultMessage()
+
+                verify(exactly = 1) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.POST,
+                        url = URI("https://irrelevant.com/webhook/PUSH_DOWN"),
+                        headers = any(),
+                        payload = "Event type: PUSH_DOWN",
                     )
                 }
             }
@@ -321,11 +378,7 @@ class GenericWebhookServiceTest(
             )
 
             every {
-                mockClient.sendTemplatedMessage(
-                    any(),
-                    any(),
-                    any(),
-                )
+                mockClient.sendMessage(any(), any(), any(), any())
             } returns Single.error(HttpClientException("error"))
 
             val result = webhookService.sendTestMessage(config).blockingGet()
@@ -333,6 +386,138 @@ class GenericWebhookServiceTest(
             then("it should return a failed result") {}
             result.success shouldBe false
             result.message shouldBe Messages.failedTestResultMessage("error")
+        }
+    }
+
+    given("sendTestMessage() - HTTP method") {
+
+        `when`("http method is PUT and no payload template") {
+            val config = buildConfig(httpMethod = WebhookHttpMethod.PUT)
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all messages via PUT") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.PUT,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
+        }
+
+        `when`("http method is PATCH and no payload template") {
+            val config = buildConfig(httpMethod = WebhookHttpMethod.PATCH)
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all messages via PATCH") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.PATCH,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
+        }
+
+        `when`("http method is PUT and a payload template is set") {
+            val config = buildConfig(
+                template = "Event type: {{ ctx.type }}",
+                httpMethod = WebhookHttpMethod.PUT,
+            )
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all templated messages via PUT") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.PUT,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
+        }
+
+        `when`("http method is PATCH and a payload template is set") {
+            val config = buildConfig(
+                template = "Event type: {{ ctx.type }}",
+                httpMethod = WebhookHttpMethod.PATCH,
+            )
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all templated messages via PATCH") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.PATCH,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
+        }
+
+        `when`("http method is GET and no payload template") {
+            val config = buildConfig(httpMethod = WebhookHttpMethod.GET)
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all messages via GET") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.GET,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
+        }
+
+        `when`("http method is GET and a payload template is set") {
+            val config = buildConfig(
+                template = "Event type: {{ ctx.type }}",
+                httpMethod = WebhookHttpMethod.GET,
+            )
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all templated messages via GET") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.GET,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
         }
     }
 })

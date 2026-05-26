@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.assertions.fail
@@ -51,7 +52,7 @@ class GenericWebhookClientTest(
     context("the webhook client") {
 
         @Suppress("MaxLineLength")
-        should("should send a correct request to the provided target - generic message") {
+        should("send a correct POST request - generic message") {
 
             val request = request()
                 .withMethod(HttpMethod.POST.name)
@@ -68,7 +69,7 @@ class GenericWebhookClientTest(
                     .withBody("OK")
             )
 
-            val response = client.sendGenericMessage(webhookUrl, testMessage, emptyMap()).blockingGet()
+            val response = client.sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), testMessage).blockingGet()
 
             response shouldBe "OK"
             mockServer.verify(request, VerificationTimes.exactly(1))
@@ -89,14 +90,14 @@ class GenericWebhookClientTest(
                 response().withStatusCode(HttpStatus.UNAUTHORIZED.code)
             )
 
-            client.sendGenericMessage(webhookUrl, testMessage, emptyMap()).blockingSubscribe(
+            client.sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), testMessage).blockingSubscribe(
                 { fail("Should not succeed") },
                 { error -> error.message shouldBe "Unauthorized" }
             )
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
-        should("should send a correct request to the provided target - templated message") {
+        should("send a correct POST request - templated message") {
 
             val request = request()
                 .withMethod(HttpMethod.POST.name)
@@ -109,7 +110,9 @@ class GenericWebhookClientTest(
                     .withBody("OK")
             )
 
-            val response = client.sendTemplatedMessage(webhookUrl, """{"monitorId":123}""", emptyMap()).blockingGet()
+            val response = client
+                .sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), """{"monitorId":123}""")
+                .blockingGet()
 
             response shouldBe "OK"
             mockServer.verify(request, VerificationTimes.exactly(1))
@@ -126,7 +129,7 @@ class GenericWebhookClientTest(
                 response().withStatusCode(HttpStatus.UNAUTHORIZED.code)
             )
 
-            client.sendTemplatedMessage(webhookUrl, """{"monitorId":123}""", emptyMap())
+            client.sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), """{"monitorId":123}""")
                 .blockingSubscribe(
                     { fail("Should not succeed") },
                     { error -> error.message shouldBe "Unauthorized" }
@@ -152,14 +155,14 @@ class GenericWebhookClientTest(
                     .withBody("OK")
             )
 
-            val response = client.sendGenericMessage(webhookUrl, testMessage, emptyMap()).blockingGet()
+            val response = client.sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), testMessage).blockingGet()
 
             response shouldBe "OK"
             mockServer.verify(request, VerificationTimes.exactly(1))
             mockServer.verify(request2, VerificationTimes.exactly(1))
         }
 
-        should("be able overwrite the default Content-Type header and add custom ones") {
+        should("be able to overwrite the default Content-Type header and add custom ones") {
             val request = request()
                 .withMethod(HttpMethod.POST.name)
                 .withPath("/webhook")
@@ -170,17 +173,135 @@ class GenericWebhookClientTest(
                 response().withStatusCode(HttpStatus.OK.code).withBody("OK")
             )
 
-            val response = client.sendTemplatedMessage(
-                webhookUrl = webhookUrl,
-                payload = """<xml><monitorId>123</monitorId></xml>""",
+            val response = client.sendMessage(
+                httpMethod = WebhookHttpMethod.POST,
+                url = webhookUrl,
                 headers = mapOf(
                     "X-Custom-Header" to "CustomValue",
                     HttpHeaders.CONTENT_TYPE to MediaType.TEXT_XML,
                 ),
+                payload = """<xml><monitorId>123</monitorId></xml>""",
             ).blockingGet()
 
             response shouldBe "OK"
             mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("send a PUT request when http-method is PUT - generic message") {
+            val request = request()
+                .withMethod(HttpMethod.PUT.name)
+                .withPath("/webhook")
+                .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response = client.sendMessage(WebhookHttpMethod.PUT, webhookUrl, emptyMap(), testMessage).blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("send a PATCH request when http-method is PATCH - generic message") {
+            val request = request()
+                .withMethod(HttpMethod.PATCH.name)
+                .withPath("/webhook")
+                .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response =
+                client.sendMessage(WebhookHttpMethod.PATCH, webhookUrl, emptyMap(), testMessage).blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("send a PUT request when http-method is PUT - templated message") {
+            val request = request()
+                .withMethod(HttpMethod.PUT.name)
+                .withPath("/webhook")
+                .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .withBody(JsonBody.json("""{"monitorId":123}"""))
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response =
+                client.sendMessage(WebhookHttpMethod.PUT, webhookUrl, emptyMap(), """{"monitorId":123}""").blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("send a PATCH request when http-method is PATCH - templated message") {
+            val request = request()
+                .withMethod(HttpMethod.PATCH.name)
+                .withPath("/webhook")
+                .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .withBody(JsonBody.json("""{"monitorId":123}"""))
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response = client.sendMessage(WebhookHttpMethod.PATCH, webhookUrl, emptyMap(), """{"monitorId":123}""")
+                .blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("send a GET request when http-method is GET - generic message") {
+            val request = request()
+                .withMethod(HttpMethod.GET.name)
+                .withPath("/webhook")
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response = client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), testMessage).blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("send a GET request when http-method is GET - templated message") {
+            val request = request()
+                .withMethod(HttpMethod.GET.name)
+                .withPath("/webhook")
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response =
+                client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), """{"monitorId":123}""").blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("not send a Content-Type header when http-method is GET") {
+            val requestMatcher = request()
+                .withMethod(HttpMethod.GET.name)
+                .withPath("/webhook")
+
+            mockServer.`when`(requestMatcher).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response = client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), testMessage).blockingGet()
+
+            response shouldBe "OK"
+            val recordedRequests = mockServer.retrieveRecordedRequests(requestMatcher)
+            recordedRequests.size shouldBe 1
+            recordedRequests[0].containsHeader(HttpHeaders.CONTENT_TYPE) shouldBe false
         }
     }
 })
