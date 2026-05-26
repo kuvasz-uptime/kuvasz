@@ -476,5 +476,48 @@ class GenericWebhookServiceTest(
                 }
             }
         }
+
+        `when`("http method is GET and no payload template") {
+            val config = buildConfig(httpMethod = WebhookHttpMethod.GET)
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all messages via GET") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.GET,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
+        }
+
+        `when`("http method is GET and a payload template is set") {
+            val config = buildConfig(
+                template = "Event type: {{ ctx.type }}",
+                httpMethod = WebhookHttpMethod.GET,
+            )
+
+            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+
+            val result = webhookService.sendTestMessage(config).blockingGet()
+
+            then("it should send all templated messages via GET") {
+                result.success shouldBe true
+                verify(exactly = 9) {
+                    mockClient.sendMessage(
+                        httpMethod = WebhookHttpMethod.GET,
+                        url = URI(webhookUrl),
+                        headers = any(),
+                        payload = any(),
+                    )
+                }
+            }
+        }
     }
 })

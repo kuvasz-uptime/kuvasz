@@ -255,5 +255,36 @@ class GenericWebhookClientTest(
             response shouldBe "OK"
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
+
+        should("send a GET request when http-method is GET - generic message") {
+            val request = request()
+                .withMethod(HttpMethod.GET.name)
+                .withPath("/webhook")
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response = client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), testMessage).blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
+
+        should("send a GET request when http-method is GET - templated message") {
+            val request = request()
+                .withMethod(HttpMethod.GET.name)
+                .withPath("/webhook")
+
+            mockServer.`when`(request).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response =
+                client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), """{"monitorId":123}""").blockingGet()
+
+            response shouldBe "OK"
+            mockServer.verify(request, VerificationTimes.exactly(1))
+        }
     }
 })

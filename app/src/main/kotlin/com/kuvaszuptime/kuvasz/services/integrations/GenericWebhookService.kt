@@ -53,6 +53,7 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
             WebhookHttpMethod.POST -> HttpRequest.POST(url, payload)
             WebhookHttpMethod.PUT -> HttpRequest.PUT(url, payload)
             WebhookHttpMethod.PATCH -> HttpRequest.PATCH(url, payload)
+            WebhookHttpMethod.GET -> HttpRequest.GET(url)
         }
         val effectiveContentType = headers.getOrDefault(HttpHeaders.CONTENT_TYPE, DEFAULT_MEDIA_TYPE)
         request.contentType(effectiveContentType)

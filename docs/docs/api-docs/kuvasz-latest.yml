@@ -4211,6 +4211,7 @@ components:
       - POST
       - PUT
       - PATCH
+      - GET
     WebhookNotificationConfigDto:
       required:
       - enabled

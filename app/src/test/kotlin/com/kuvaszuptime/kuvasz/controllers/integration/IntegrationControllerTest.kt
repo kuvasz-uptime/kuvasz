@@ -59,7 +59,7 @@ class IntegrationControllerTest(
         should("return all the configured integrations, ordered by their names") {
             val response = integrationClient.getIntegrations()
 
-            response shouldHaveSize 20
+            response shouldHaveSize 21
             response.shouldBeSortedBy { it.name }
 
             response.forOne { implicitlyEnabledSlack ->
@@ -231,6 +231,15 @@ class IntegrationControllerTest(
                 patchWebhook.global shouldBe false
                 patchWebhook.url shouldBe "https://patch-webhook.com/webhook"
                 patchWebhook.httpMethod shouldBe WebhookHttpMethod.PATCH
+            }
+            response.forOne { getWebhook ->
+                getWebhook.shouldBeInstanceOf<WebhookNotificationConfigDto>()
+                getWebhook.id shouldBe IntegrationID(IntegrationType.WEBHOOK, "get_method")
+                getWebhook.name shouldBe "get_method"
+                getWebhook.enabled shouldBe true
+                getWebhook.global shouldBe false
+                getWebhook.url shouldBe "https://get-webhook.com/webhook"
+                getWebhook.httpMethod shouldBe WebhookHttpMethod.GET
             }
         }
     }

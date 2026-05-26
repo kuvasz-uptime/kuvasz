@@ -39,8 +39,8 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 20
-            enabledIntegrations shouldHaveSize 14
+            configuredIntegrations shouldHaveSize 21
+            enabledIntegrations shouldHaveSize 15
             enabledIntegrationsByType shouldHaveSize 6
             globallyEnabledIntegrationsByType shouldHaveSize 6
 
@@ -243,6 +243,16 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.global shouldBe false
                     config.httpMethod shouldBe WebhookHttpMethod.PATCH
                 }
+                forOne { getWebhook ->
+                    getWebhook.key shouldBe IntegrationID(IntegrationType.WEBHOOK, "get_method")
+                    val config = getWebhook.value as WebhookNotificationConfig
+                    config.name shouldBe "get_method"
+                    config.type shouldBe IntegrationType.WEBHOOK
+                    config.url shouldBe "https://get-webhook.com/webhook"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                    config.httpMethod shouldBe WebhookHttpMethod.GET
+                }
             }
 
             // Enabled integrations
@@ -375,7 +385,7 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType[IntegrationType.EMAIL].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.TELEGRAM].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.PAGERDUTY].shouldNotBeNull().shouldHaveSize(2)
-            enabledIntegrationsByType[IntegrationType.WEBHOOK].shouldNotBeNull().shouldHaveSize(4)
+            enabledIntegrationsByType[IntegrationType.WEBHOOK].shouldNotBeNull().shouldHaveSize(5)
 
             // Global integrations
             with(globallyEnabledIntegrationsByType[IntegrationType.SLACK]?.single() as SlackNotificationConfig) {
@@ -525,8 +535,8 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 20
-            enabledIntegrations shouldHaveSize 12 // Email configs should not be enabled without SMTP config
+            configuredIntegrations shouldHaveSize 21
+            enabledIntegrations shouldHaveSize 13 // Email configs should not be enabled without SMTP config
             enabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
             globallyEnabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
 

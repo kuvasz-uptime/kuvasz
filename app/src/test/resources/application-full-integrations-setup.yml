@@ -74,3 +74,6 @@ integrations:
     - name: patch_method
       url: https://patch-webhook.com/webhook
       http-method: PATCH
+    - name: get_method
+      url: https://get-webhook.com/webhook
+      http-method: GET

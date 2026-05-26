@@ -116,7 +116,10 @@ interface WebhookNotificationConfig : IntegrationConfig {
 }
 
 enum class WebhookHttpMethod {
-    POST, PUT, PATCH
+    POST,
+    PUT,
+    PATCH,
+    GET,
 }
 
 val IntegrationConfig.type: IntegrationType
