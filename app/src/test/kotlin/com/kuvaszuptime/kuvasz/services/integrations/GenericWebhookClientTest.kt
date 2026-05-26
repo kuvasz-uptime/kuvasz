@@ -286,5 +286,22 @@ class GenericWebhookClientTest(
             response shouldBe "OK"
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
+
+        should("not send a Content-Type header when http-method is GET") {
+            val requestMatcher = request()
+                .withMethod(HttpMethod.GET.name)
+                .withPath("/webhook")
+
+            mockServer.`when`(requestMatcher).respond(
+                response().withStatusCode(HttpStatus.OK.code).withBody("OK")
+            )
+
+            val response = client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), testMessage).blockingGet()
+
+            response shouldBe "OK"
+            val recordedRequests = mockServer.retrieveRecordedRequests(requestMatcher)
+            recordedRequests.size shouldBe 1
+            recordedRequests[0].containsHeader(HttpHeaders.CONTENT_TYPE) shouldBe false
+        }
     }
 })

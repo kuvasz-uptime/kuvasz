@@ -56,7 +56,9 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
             WebhookHttpMethod.GET -> HttpRequest.GET(url)
         }
         val effectiveContentType = headers.getOrDefault(HttpHeaders.CONTENT_TYPE, DEFAULT_MEDIA_TYPE)
-        request.contentType(effectiveContentType)
+        if (httpMethod != WebhookHttpMethod.GET) {
+            request.contentType(effectiveContentType)
+        }
         headers.filter { it.key != HttpHeaders.CONTENT_TYPE }.forEach { request.header(it.key, it.value) }
 
         return Single.fromPublisher(client.retrieve(request, String::class.java))
