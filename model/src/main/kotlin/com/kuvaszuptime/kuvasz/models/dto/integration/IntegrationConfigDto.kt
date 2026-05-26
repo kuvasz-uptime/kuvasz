@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -199,6 +200,8 @@ data class WebhookNotificationConfigDto(
     val payloadTemplate: String?,
     @param:Schema(description = "The HTTP headers to include in the webhook request", required = true)
     val requestHeaders: Map<String, String>,
+    @param:Schema(description = "The HTTP method used to send webhook requests", required = true, defaultValue = "POST")
+    val httpMethod: WebhookHttpMethod,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: WebhookNotificationConfig) : this(
         id = integrationID,
@@ -210,5 +213,6 @@ data class WebhookNotificationConfigDto(
         url = config.url,
         payloadTemplate = config.payloadTemplate,
         requestHeaders = config.requestHeaders.orEmpty(),
+        httpMethod = config.httpMethod,
     )
 }

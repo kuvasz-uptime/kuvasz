@@ -454,6 +454,7 @@ You can **customize the payload of the requests** sent to the target URL by prov
 webhook:
   - name: webhook_templated
     url: https://any-other-http.service/webhooks
+    http-method: POST
     excluded-events:
       - PUSH_UP
       - HTTP_UP
@@ -462,6 +463,14 @@ webhook:
       Accept: '*/*'
       Authorization: Bearer your-webhook-secret-token
       X-Custom-Header: custom-value
+    payload-template: |
+      {
+        "monitorName": "{{ctx.monitorName}}",
+        "type": "{{ctx.type}}"
+      }
+  - name: webhook_put
+    url: https://any-other-http.service/resource/123
+    http-method: PUT
     payload-template: |
       {
         "monitorName": "{{ctx.monitorName}}",

@@ -68,3 +68,9 @@ integrations:
       excluded-events:
         - HTTP_UP
         - PUSH_UP
+    - name: put_method
+      url: https://put-webhook.com/webhook
+      http-method: PUT
+    - name: patch_method
+      url: https://patch-webhook.com/webhook
+      http-method: PATCH

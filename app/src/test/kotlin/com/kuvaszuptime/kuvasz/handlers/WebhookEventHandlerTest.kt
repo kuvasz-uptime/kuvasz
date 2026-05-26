@@ -64,7 +64,8 @@ class WebhookEventHandlerTest(
     private val mockClient = mockk<GenericWebhookClient>()
 
     private val globalWebhookConfig = webhookConfigs.first { it.enabled && it.global }
-    private val otherWebhookConfig = webhookConfigs.first { it.enabled && !it.global }
+    private val otherWebhookConfig =
+        webhookConfigs.first { it.enabled && !it.global && !it.excludedEvents.isNullOrEmpty() }
     private val disabledWebhookConfig = webhookConfigs.first { !it.enabled }
 
     init {
@@ -821,21 +822,21 @@ class WebhookEventHandlerTest(
 
     private fun mockSuccessfulHttpResponses() {
         every {
-            mockClient.sendGenericMessage(any(), any<GenericWebhookMessage>(), any())
+            mockClient.sendMessage(any(), any(), any(), any<String>())
         } returns Single.just("ok")
         every {
-            mockClient.sendTemplatedMessage(any(), any<String>(), any())
+            mockClient.sendMessage(any(), any(), any(), any<GenericWebhookMessage>())
         } returns Single.just("ok")
     }
 
     private fun mockHttpErrorResponse() {
         every {
-            mockClient.sendGenericMessage(any(), any(), any())
+            mockClient.sendMessage(any(), any(), any(), any<String>())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )
         every {
-            mockClient.sendTemplatedMessage(any(), any(), any())
+            mockClient.sendMessage(any(), any(), any(), any<GenericWebhookMessage>())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )

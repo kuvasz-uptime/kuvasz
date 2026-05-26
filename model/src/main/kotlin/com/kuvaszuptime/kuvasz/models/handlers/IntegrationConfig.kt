@@ -106,10 +106,17 @@ interface WebhookNotificationConfig : IntegrationConfig {
 
     val payloadTemplate: String?
 
+    @get:Bindable(defaultValue = "POST")
+    val httpMethod: WebhookHttpMethod
+
     companion object {
         const val IDENTIFIER = "webhook"
         const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
     }
+}
+
+enum class WebhookHttpMethod {
+    POST, PUT, PATCH
 }
 
 val IntegrationConfig.type: IntegrationType
