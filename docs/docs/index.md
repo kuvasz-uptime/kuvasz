@@ -1,8 +1,12 @@
-# 
+---
+title: The developer- and cloud-friendly uptime monitor
+---
+
+#
 
 <figure markdown="span">
-  ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="350" .skip-lb }
-  ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="350" .skip-lb }
+  ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="550" .skip-lb }
+  ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="550" .skip-lb }
   <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages, webhooks and IAC support!</figcaption>
 </figure>
 

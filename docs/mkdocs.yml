@@ -13,6 +13,8 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -20,6 +22,8 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to system preference
@@ -60,7 +64,10 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 plugins:
   - search
-  - social
+  - social:
+      cards_layout_options:
+        background_image: docs/images/card-layout-bg.png
+        background_color: transparent
   - glightbox:
       skip_classes:
         - skip-lb
@@ -118,5 +125,5 @@ nav:
   - License ⏏: https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE
   - Sponsoring ♥: sponsoring.md
 copyright: >
-  Copyright &copy; 2020 - 2025 Kuvasz Uptime - 
+  Copyright &copy; 2020 - 2026 Kuvasz Uptime - 
   <a href="#__consent">Change cookie settings</a>

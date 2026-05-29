@@ -1,4 +1,4 @@
-![Kuvasz](docs/docs/images/kuvasz-banner-light.webp)
+![Kuvasz](docs/docs/images/kuvasz-banner.webp)
 
 [![CI](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml/badge.svg)](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml)
 [![GitHub known bugs](https://img.shields.io/github/issues-search/kuvasz-uptime/kuvasz?query=is%3Aopen%20label%3Abug&label=known%20bugs&color=red)](https://github.com/kuvasz-uptime/kuvasz/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug)
