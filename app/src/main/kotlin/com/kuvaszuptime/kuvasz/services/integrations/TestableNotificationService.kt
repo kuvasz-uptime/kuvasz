@@ -21,7 +21,7 @@ data class NotificationTestResult(
     }
 }
 
-internal fun Single<String>.toNotificationTestResult(): Single<NotificationTestResult> {
+internal fun Single<*>.toNotificationTestResult(): Single<NotificationTestResult> {
     return this
         .map { NotificationTestResult.success() }
         .onErrorReturn { error ->

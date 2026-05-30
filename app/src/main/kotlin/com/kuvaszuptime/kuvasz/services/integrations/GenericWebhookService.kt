@@ -23,8 +23,10 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
@@ -48,7 +50,7 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
         url: URI,
         headers: Map<String, String>,
         payload: Any,
-    ): Single<String> {
+    ): Single<HttpResponse<ByteBuffer<*>>> {
         val request = when (httpMethod) {
             WebhookHttpMethod.POST -> HttpRequest.POST(url, payload)
             WebhookHttpMethod.PUT -> HttpRequest.PUT(url, payload)
@@ -61,7 +63,7 @@ class GenericWebhookClient(@param:Client private val client: HttpClient) {
         }
         headers.filter { it.key != HttpHeaders.CONTENT_TYPE }.forEach { request.header(it.key, it.value) }
 
-        return Single.fromPublisher(client.retrieve(request, String::class.java))
+        return Single.fromPublisher(client.exchange(request))
     }
 }
 
@@ -144,7 +146,7 @@ class GenericWebhookService(
     )
 
     @Suppress("TooGenericExceptionCaught")
-    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<out MonitorRecord>): Single<String> {
+    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<out MonitorRecord>): Single<out Any> {
         val template = target.payloadTemplate
         val webhookUrl = messageFactory.fromMonitorEvent(event, target.url).toUri()
         val preparedHeaders = target.requestHeaders.orEmpty().mapValues { (_, value) ->

@@ -81,7 +81,7 @@ class WebhookEventHandler(
         }
     }
 
-    private fun Single<String>.handleResponse(): Disposable =
+    private fun Single<*>.handleResponse(): Disposable =
         subscribeOn(Schedulers.io()).subscribe(
             {
                 logger.debug("The message to your configured webhook has been successfully sent")

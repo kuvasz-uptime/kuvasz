@@ -17,6 +17,7 @@ import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forExactly
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import io.micronaut.http.HttpResponseFactory
 import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.clearMocks
@@ -65,7 +66,14 @@ class GenericWebhookServiceTest(
         `when`("events are not excluded from the config") {
             val config = buildConfig()
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -119,7 +127,14 @@ class GenericWebhookServiceTest(
                 excludedEventTypes = listOf(IntegrationEventType.HTTP_UP, IntegrationEventType.PUSH_UP),
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -174,7 +189,14 @@ class GenericWebhookServiceTest(
                 )
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -203,7 +225,14 @@ class GenericWebhookServiceTest(
                 targetUrl = "https://irrelevant.com/webhook/{{ ctx.type }}",
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -244,7 +273,14 @@ class GenericWebhookServiceTest(
                 template = "Event type: {{ ctx.type }}",
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -281,7 +317,14 @@ class GenericWebhookServiceTest(
                 excludedEventTypes = listOf(IntegrationEventType.HTTP_UP, IntegrationEventType.PUSH_UP),
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -322,7 +365,14 @@ class GenericWebhookServiceTest(
                 )
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -353,7 +403,14 @@ class GenericWebhookServiceTest(
                 template = "Event type: {{ ctx.type }}",
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -394,7 +451,14 @@ class GenericWebhookServiceTest(
         `when`("http method is PUT and no payload template") {
             val config = buildConfig(httpMethod = WebhookHttpMethod.PUT)
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -414,7 +478,14 @@ class GenericWebhookServiceTest(
         `when`("http method is PATCH and no payload template") {
             val config = buildConfig(httpMethod = WebhookHttpMethod.PATCH)
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -437,7 +508,14 @@ class GenericWebhookServiceTest(
                 httpMethod = WebhookHttpMethod.PUT,
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -460,7 +538,14 @@ class GenericWebhookServiceTest(
                 httpMethod = WebhookHttpMethod.PATCH,
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -480,7 +565,14 @@ class GenericWebhookServiceTest(
         `when`("http method is GET and no payload template") {
             val config = buildConfig(httpMethod = WebhookHttpMethod.GET)
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
@@ -503,7 +595,14 @@ class GenericWebhookServiceTest(
                 httpMethod = WebhookHttpMethod.GET,
             )
 
-            every { mockClient.sendMessage(any(), any(), any(), any()) } returns Single.just("OK")
+            every {
+                mockClient.sendMessage(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Single.just(HttpResponseFactory.INSTANCE.ok())
 
             val result = webhookService.sendTestMessage(config).blockingGet()
 
