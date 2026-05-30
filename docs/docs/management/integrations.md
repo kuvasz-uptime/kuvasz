@@ -412,10 +412,6 @@ The context variables are available in an object named `ctx`, and the structure 
       This-Should-Work-Too: "{% verbatim %}{%{% endverbatim %}" # Rendered as "{%"
     ```
 
-#### Webhook examples for 3rd party services
-
-You can find some examples of how to use the _Webhook_ integration to **integrate with 3rd party services** [here](examples.md#webhook-examples).
-
 ### URL
 
 <!-- md:version 3.8.0 -->
@@ -503,6 +499,281 @@ webhook:
       }
   # ... other Webhook integrations
 ```
+
+## Webhook examples
+
+Here are some examples of webhook configurations that you can use for different 3rd party services as a starting point.
+_Kuvasz_ is using _Pebble_ as a templating engine under the hood, for further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
+
+!!! tip "Sharing is caring!"
+
+    Did you make a cool webhook configuration that you would like to share with the community? Feel free to open a PR on [GitHub](https://github.com/kuvasz-uptime/kuvasz){target="_blank"} with your example, and we will add it to the documentation!
+
+### Signal (via signal-cli-rest-api)
+
+This example sends notifications to a _Signal_ chat using [**signal-cli-rest-api**](https://github.com/bbernhard/signal-cli-rest-api){target="_blank"} — a self-hosted, dockerized REST wrapper around `signal-cli`. You need a dedicated Signal number registered with the container (see the project's README for setup).
+
+```yaml
+integrations:
+  webhook:
+    - name: signal
+      url: 'http://your-signal-api-host:8080/v2/send'
+      payload-template: |
+        {
+          "message":    "{{ ctx.eventDetails | escape(strategy="js") }}",
+          "number":     "+15550001234",
+          "recipients": ["+15550005678"]
+        }
+```
+
+### Twilio — SMS
+
+This example sends an SMS via the [**Twilio Messaging API**](https://www.twilio.com/docs/messaging/api/message-resource){target="_blank"}.
+
+!!! info "Content type"
+
+    Twilio's Messaging API requires `application/x-www-form-urlencoded` payloads, not JSON. The example below overrides the default `Content-Type` header accordingly, and uses `escape(strategy="url_param")` to URL-encode the dynamic message body.
+
+**Twilio setup:**
+
+1. Log in to the [**Twilio Console**](https://console.twilio.com){target="_blank"}.
+2. On the dashboard, note your **Account SID** and **Auth Token**.
+3. Make sure you have a Twilio phone number capable of sending SMS. You can get one under **Phone Numbers → Manage → Buy a number**.
+4. Compute your Base64-encoded credentials by running the following command, then copy the output:
+
+    ```shell
+    echo -n "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:your_auth_token" | base64
+    ```
+
+```yaml title="Kuvasz configuration"
+integrations:
+  webhook:
+    - name: twilio-sms
+      url: 'https://api.twilio.com/2010-04-01/Accounts/ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/Messages.json'
+      request-headers:
+        Content-Type: "application/x-www-form-urlencoded"
+        Authorization: "Basic <your-base64-encoded-credentials>"
+      payload-template: |
+        From=%2B15551234567&To=%2B15550005678&Body={{ ctx.eventDetails | escape(strategy="url_param") }}
+```
+
+Replace `%2B15551234567` with your Twilio number and `%2B15550005678` with the recipient number — both with the leading `+` pre-encoded as `%2B`.
+
+### ntfy
+
+This example sends notifications to an [**ntfy**](https://ntfy.sh){target="_blank"} topic — a lightweight, self-hostable push notification service. ntfy supports both the hosted `ntfy.sh` server and self-hosted instances.
+
+```yaml title="Kuvasz configuration"
+integrations:
+  webhook:
+    - name: ntfy_test
+      url: https://ntfy.sh
+      payload-template: |
+        {
+          "topic": "kuvasz_uptime_test",
+          "message": "{{ ctx.eventDetails | escape(strategy="js") }}",
+          "title": "Kuvasz Uptime Alert",
+          "tags": [ "rotating_light" ],
+          "priority": 4,
+          "attach": null,
+          "filename": null,
+          "click": null,
+          "actions": [ { "action": "view", "label": "View details", "url": "https://demo.kuvasz-uptime.dev{{ctx.monitorDetailsUrl}}" } ]
+        }
+```
+
+![Ntfy test notification](../images/examples/ntfy_webhook.webp)
+
+### Pushover
+
+This example sends a push notification via [**Pushover**](https://pushover.net){target="_blank"} — a simple, cross-platform push notification service supporting Android, iOS, and desktop.
+
+**Pushover setup:**
+
+1. Sign up at [**pushover.net**](https://pushover.net){target="_blank"} and copy your **User Key** from the dashboard.
+2. Create a new **application** under _Your Applications_ and copy the resulting **API Token**.
+
+```yaml title="Kuvasz configuration"
+integrations:
+  webhook:
+    - name: pushover
+      url: 'https://api.pushover.net/1/messages.json'
+      payload-template: |
+        {
+          "token":    "your_app_api_token",
+          "user":     "your_user_or_group_key",
+          "title":    "{{ ctx.monitorName | escape(strategy="js") }}",
+          "message":  "{{ ctx.eventDetails | escape(strategy="js") }}",
+          "priority": {% if ctx.type == 'HTTP_DOWN' or ctx.type == 'ICMP_DOWN' or ctx.type == 'PUSH_DOWN' or ctx.type == 'SSL_INVALID' %}1{% else %}0{% endif %}
+        }
+```
+
+The `priority` field is set to `1` (high — bypasses quiet hours) for "down" and "invalid" events, and `0` (normal) for everything else. You can raise it to `2` (emergency — requires acknowledgement) for truly critical alerts, but that requires additional `retry` and `expire` fields in the payload — see the [**Pushover API documentation**](https://pushover.net/api){target="_blank"} for details.
+
+### Home Assistant — webhook automation
+
+This example triggers a [**Home Assistant webhook automation**](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger){target="_blank"} when a monitor event occurs, letting you react to uptime events natively within Home Assistant — for example, to send a mobile notification, toggle a switch, or run a script.
+
+!!! tip
+
+    If you want to read monitor data from Kuvasz instead of receiving push events, see the [**official Home Assistant integration**](../home-assistant.md).
+
+**Home Assistant setup:**
+
+1. Go to **Settings → Automations & Scenes → Automations** and click **+ Create automation**.
+2. Select **"Create new automation"** and add a **Webhook** trigger. Copy the generated, secure webhook ID and make sure **POST** is listed under _Allowed HTTP methods_. The resulting webhook URL is something like:  
+   `http://your-ha-instance:8123/api/webhook/yourVerySecretWebhookId`
+3. Add any actions you like, and save the automation.
+
+The fields from the Kuvasz payload are available in Home Assistant automation templates via `trigger.json`, for example:
+
+| Kuvasz field  | Home Assistant template          |
+|---------------|----------------------------------|
+| `type`        | `{{ trigger.json.type }}`        |
+| `monitorName` | `{{ trigger.json.monitorName }}` |
+| `message`     | `{{ trigger.json.message }}`     |
+
+```yaml title="Kuvasz configuration"
+integrations:
+  webhook:
+    - name: home-assistant
+      url: 'http://your-ha-instance:8123/api/webhook/yourVerySecretWebhookId'
+      payload-template: |
+        {
+          "type":        "{{ ctx.type }}",
+          "monitorName": "{{ ctx.monitorName | escape(strategy="js") }}",
+          "message":     "{{ ctx.eventDetails | escape(strategy="js") }}"
+        }
+```
+
+!!! info "Webhook ID is the secret"
+
+    Home Assistant webhook triggers don't require an `Authorization` header — the webhook ID itself acts as the shared secret. Keep it reasonably hard to guess and, where possible, restrict external access to the endpoint via your firewall or reverse proxy.
+
+### Google Chat
+
+This example posts a message to a [**Google Chat**](https://chat.google.com){target="_blank"} space via an incoming webhook.
+
+**Google Chat setup:**
+
+1. Open the target space in Google Chat and click the space name at the top.
+2. Go to **Integrations → Webhooks → Add webhook**.
+3. Give the webhook a name (e.g. _Kuvasz_) and click **Save**. Copy the generated **Webhook URL**.
+
+```yaml title="Kuvasz configuration — plain text"
+integrations:
+  webhook:
+    - name: google-chat
+      url: 'https://chat.googleapis.com/v1/spaces/SPACE_ID/messages?key=KEY&token=TOKEN'
+      payload-template: |
+        {
+          "text": "{{ ctx.eventDetails | escape(strategy="js") }}"
+        }
+```
+
+### Apprise API
+
+
+[**Apprise API**](https://github.com/caronc/apprise-api) is a self-hosted REST wrapper around 80+ notification services (Slack, Discord, Telegram, email, and many more). One _Kuvasz_ webhook config can fan out to multiple targets at once.
+
+**Apprise API setup:**
+
+Deploy the Apprise API server (Docker image: `caronc/apprise`). You can then use it in two ways:
+
+- **Stateless**: pass one or more notification URLs directly in the payload.
+- **Stateful**: persist a set of URLs under a named key in Apprise, then reference that key in the webhook URL — no secrets in the _Kuvasz_ config.
+
+```yaml title="Kuvasz configuration — stateless"
+integrations:
+  webhook:
+    - name: apprise-stateless
+      url: 'http://your-apprise-host/notify/'
+      payload-template: |
+        {
+          "urls":  "slack://TokenA/TokenB/TokenC",
+          "title": "{{ ctx.monitorName | escape(strategy="js") }}",
+          "body":  "{{ ctx.eventDetails | escape(strategy="js") }}"
+        }
+```
+
+```yaml title="Kuvasz configuration — stateful (recommended)"
+# Pre-configure your notification URLs in Apprise under a key (e.g. `kuvasz`) via `POST /add/kuvasz`, then:
+integrations:
+  webhook:
+    - name: apprise-stateful
+      url: 'http://your-apprise-host/notify/kuvasz'
+      payload-template: |
+        {
+          "title": "{{ ctx.monitorName | escape(strategy="js") }}",
+          "body":  "{{ ctx.eventDetails | escape(strategy="js") }}"
+        }
+```
+
+For the full list of supported service URL formats, see the [**Apprise wiki**](https://github.com/caronc/apprise/wiki){target="_blank"}.
+
+### Mattermost
+
+This example posts a message to a [**Mattermost**](https://mattermost.com){target="_blank"} channel via an incoming webhook. Mattermost's webhook format is **compatible with Slack's**, so the payload is identical.
+
+**Mattermost setup:**
+
+1. In Mattermost, go to **Main menu → Integrations → Incoming webhooks → Add incoming webhook**.
+2. Select the target channel, give the webhook a display name, and click **Save**.
+3. Copy the generated **webhook URL**.
+
+!!! info "Incoming webhooks may be disabled"
+
+    If you don't see the **Integrations** menu, ask your Mattermost system administrator to enable incoming webhooks.
+
+```yaml title="Kuvasz configuration"
+integrations:
+  webhook:
+    - name: mattermost
+      url: 'https://your-mattermost-instance/hooks/your_webhook_token'
+      payload-template: |
+        {
+          "text": "{{ ctx.eventDetails | escape(strategy="js") }}"
+        }
+```
+
+You can also target a different channel than the one set during webhook creation, set a custom username, or override the icon — all via standard Mattermost payload fields:
+
+```yaml title="Kuvasz configuration - with overrides"
+integrations:
+  webhook:
+    - name: mattermost-custom
+      url: 'https://your-mattermost-instance/hooks/your_webhook_token'
+      payload-template: |
+        {
+          "channel":   "town-square",
+          "username":  "Kuvasz",
+          "icon_url":  "https://kuvasz-uptime.dev/images/kuvasz-logo.webp",
+          "text":      "{{ ctx.eventDetails | escape(strategy="js") }}"
+        }
+```
+
+### Rocket.Chat
+
+This example posts a message to a [**Rocket.Chat**](https://www.rocket.chat){target="_blank"} channel via an incoming webhook. Like Mattermost, Rocket.Chat uses a **Slack-compatible** webhook format.
+
+**Rocket.Chat setup:**
+
+1. Go to **Administration → Integrations → New** and select **Incoming webhook**.
+2. Set **Enabled** to `true`, choose the target channel, and give the integration a name.
+3. Click **Save** and copy the generated **webhook URL**.
+
+```yaml title="Kuvasz configuration"
+integrations:
+  webhook:
+    - name: rocketchat
+      url: 'https://your-rocketchat-instance/hooks/your_token/your_secret'
+      payload-template: |
+        {
+          "text": "{{ ctx.eventDetails | escape(strategy="js") }}"
+        }
+```
+
+Rocket.Chat supports the same optional fields as Mattermost (`channel`, `username`, `icon_url`, `icon_emoji`) so you can use the same overrides shown in the Mattermost example above.
 
 ## Testing integrations
 
