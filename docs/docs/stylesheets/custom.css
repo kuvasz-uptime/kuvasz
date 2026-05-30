@@ -83,16 +83,6 @@
   border-radius: 0.5rem;
 }
 
-/* Code blocks */
-.md-typeset .highlight > pre,
-.md-typeset .highlight code {
-  border-radius: 0 0 0.4rem 0.4rem;
-}
-
-.md-typeset .highlight .filename {
-  border-radius: 0.4rem 0.4rem 0 0;
-}
-
 /* Navigation sidebar - active item accent */
 .md-nav__link--active,
 .md-nav__link:is(:focus, :hover) {

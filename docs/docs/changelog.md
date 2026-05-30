@@ -1,3 +1,22 @@
+## 3.11.0 <small>2026-05-30</small> { id="3.11.0" data-toc-label="3.11.0" }
+
+### Features
+
+- **Webhook URLs are templatized** now, so you can include dynamic values in the URL as well, based on the context of the event that triggered the webhook. For further details, please refer to the [**documentation**](management/integrations.md#url).
+- The [**HTTP method**](management/integrations.md#http-method) used for a given webhook can be configured now as well, so you are not limited to sending `POST` requests, but you can choose the most appropriate method (GET, POST, PUT or PATCH) for your use case.
+
+### Documentation
+
+- [**Documented the integration**](management/integrations.md#webhook-examples) with the following external notification services:
+    - Signal
+    - Twilio SMS
+    - Pushover
+    - Home Assistant webhooks
+    - Google Chat
+    - Apprise
+    - Mattermost
+    - Rocket.chat
+
 ## 3.10.0 <small>2026-05-23</small> { id="3.10.0" data-toc-label="3.10.0" }
 
 ### Features
@@ -26,7 +45,7 @@
 
 ### Docs
 
-- Added a [**dedicated section**](management/examples.md#webhook-examples) **of webhook examples** for 3rd party services (with [ntfy](https://ntfy.sh/){target=_blank} included).
+- Added a [**dedicated section**](management/integrations.md#webhook-examples) **of webhook examples** for 3rd party services (with [ntfy](https://ntfy.sh/){target=_blank} included).
 
 ## 3.8.0 <small>2026-05-07</small> { id="3.8.0" data-toc-label="3.8.0" }
 

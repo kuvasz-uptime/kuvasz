@@ -43,49 +43,50 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 
 ## 🚀  Kuvasz vs. UptimeRobot
 
-|                                           |    Kuvasz     | UptimeRobot Free | UptimeRobot Solo |
-|-------------------------------------------|:-------------:|:----------------:|:----------------:|
-| Price                                     |     Free      |       Free       |     $84/year     |
-| Monitoring interval                       | **5 seconds** |    5 minutes     |    60 seconds    |
-| Monitors limit                            | **unlimited** |        50        |        10        |
-| Location-specific monitoring              |      ✅\*      |        ❌         |        ✅         |
-| Translations                              |       ✅       |        ❌         |        ❌         |
-| Custom data retention                     |       ✅       |     3 months     |    12 months     |
-| REST API                                  |       ✅       |        ✅         |        ✅         |
-| Prometheus & OpenTelemetry exporters      |       ✅       |        ❌         |        ❌         |
-| Backups & YAML configuration              |       ✅       |        ❌         |        ❌         |
-| Status pages                              |       ✅       |      only 1      |      only 3      |
-| Maintenance windows                       |      📆       |        ❌         |        ✅         |
-| **HTTPs monitoring**                      |               |                  |                  |
-| Keyword matching                          |       ✅       |        ✅         |        ✅         |
-| Header matching                           |       ✅       |        ❌         |        ❌         |
-| Slow response alerts                      |       ✅       |        ❌         |        ✅         |
-| Custom HTTP methods                       |       ✅       |  ❌ (HEAD only)   |        ✅         |
-| Custom status matcher                     |       ✅       |        ❌         |        ✅         |
-| Custom headers                            |       ✅       |        ❌         |        ✅         |
-| Custom request body                       |       ✅       |        ❌         |        ✅         |
-| **SSL monitoring**                        |       ✅       |        ❌         |        ✅         |
-| **Heartbeat (push) monitoring**           |       ✅       |        ❌         |        ✅         |
-| **Ping (ICMP) monitoring**                |       ✅       |        ✅         |        ✅         |
-| **TCP monitoring**                        |      📆       |        ✅         |        ✅         |
-| **DNS monitoring**                        |       ❌       |        ❌         |        ✅         |
-| **Domain expiration monitoring**          |       ❌       |        ❌         |        ✅         |
-| **Notifications**                         |               |                  |                  |
-| Email                                     |       ✅       |        ✅         |        ✅         |
-| Discord                                   |       ✅       |        ✅         |        ✅         |
-| Slack                                     |       ✅       |        ❌         |        ✅         |
-| Telegram                                  |       ✅       |        ❌         |        ✅         |
-| Pagerduty                                 |       ✅       |        ❌         |        ❌         |
-| Webhook                                   |       ✅       |        ❌         |        ❌         |
-| MS Teams                                  |      📆       |        ❌         |        ✅         |
-| SMS / Voice call                          |     📆\**     |        ❌         |  10 incl./month  |
-| Google Chat, Pushover, Pushbullet, Splunk |       ❌       |        ✅         |        ✅         |
-| Mattermost                                |       ❌       |        ❌         |        ✅         |
+|                                      |    Kuvasz     | UptimeRobot Free | UptimeRobot Solo |
+|--------------------------------------|:-------------:|:----------------:|:----------------:|
+| Price                                |     Free      |       Free       |     $84/year     |
+| Monitoring interval                  | **5 seconds** |    5 minutes     |    60 seconds    |
+| Monitors limit                       | **unlimited** |        50        |        10        |
+| Location-specific monitoring         |      ✅\*      |        ❌         |        ✅         |
+| Translations                         |       ✅       |        ❌         |        ❌         |
+| Custom data retention                |       ✅       |     3 months     |    12 months     |
+| REST API                             |       ✅       |        ✅         |        ✅         |
+| Prometheus & OpenTelemetry exporters |       ✅       |        ❌         |        ❌         |
+| Backups & YAML configuration         |       ✅       |        ❌         |        ❌         |
+| Status pages                         |       ✅       |      only 1      |      only 3      |
+| Maintenance windows                  |      📆       |        ❌         |        ✅         |
+| **HTTPs monitoring**                 |               |                  |                  |
+| Keyword matching                     |       ✅       |        ✅         |        ✅         |
+| Header matching                      |       ✅       |        ❌         |        ❌         |
+| Slow response alerts                 |       ✅       |        ❌         |        ✅         |
+| Custom HTTP methods                  |       ✅       |  ❌ (HEAD only)   |        ✅         |
+| Custom status matcher                |       ✅       |        ❌         |        ✅         |
+| Custom headers                       |       ✅       |        ❌         |        ✅         |
+| Custom request body                  |       ✅       |        ❌         |        ✅         |
+| **SSL monitoring**                   |       ✅       |        ❌         |        ✅         |
+| **Heartbeat (push) monitoring**      |       ✅       |        ❌         |        ✅         |
+| **Ping (ICMP) monitoring**           |       ✅       |        ✅         |        ✅         |
+| **TCP monitoring**                   |      📆       |        ✅         |        ✅         |
+| **DNS monitoring**                   |       ❌       |        ❌         |        ✅         |
+| **Domain expiration monitoring**     |       ❌       |        ❌         |        ✅         |
+| **Notifications**                    |               |                  |                  |
+| Email                                |       ✅       |        ✅         |        ✅         |
+| Discord                              |       ✅       |        ✅         |        ✅         |
+| Slack                                |       ✅       |        ❌         |        ✅         |
+| Telegram                             |       ✅       |        ❌         |        ✅         |
+| Pagerduty                            |       ✅       |        ❌         |        ❌         |
+| Webhook                              |       ✅       |        ❌         |        ❌         |
+| MS Teams                             |     ✅\**      |        ❌         |        ✅         |
+| SMS / Voice call                     |     ✅\**      |        ❌         |  10 incl./month  |
+| Google Chat, Pushover                |     ✅\**      |        ✅         |        ✅         |
+| Mattermost                           |     ✅\**      |        ❌         |        ✅         |
+| Signal                               |     ✅\**      |        ❌         |        ❌         |
 
 ✅ Supported | ❌ Not supported | 📆 Planned
 
 - \* You can deploy _Kuvasz_ to multiple locations and monitor your services from those locations, but it does not support location-specific monitoring out of the box.
-- \** _Kuvasz_ will only provide the integration, but you will need to pay for the SMS or voice call service yourself
+- \** via [custom webhooks](https://kuvasz-uptime.dev/management/integrations/#webhooks)
 
 ### Where does the name come from?
 

@@ -344,40 +344,7 @@ The examples below doesn't necessarily map all the possible fields, but it gives
           - any: true
             to: 🟡
         target: https://demo.kuvasz-uptime.dev/http-monitors/{id}
-
 ```
-
-## Webhook examples
-
-Here are some examples of webhook configurations that you can use for different 3rd party services as a starting point.
-_Kuvasz_ is using _Pebble_ as a templating engine under the hood, for further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
-
-!!! tip "Sharing is caring!"
-
-    Did you make a cool webhook configuration that you would like to share with the community? Feel free to open a PR on [GitHub](https://github.com/kuvasz-uptime/kuvasz){target="_blank"} with your example, and we will add it to the documentation!
-
-### ntfy
-
-```yaml
-integrations:
-  webhook:
-    - name: ntfy_test
-      url: https://ntfy.sh
-      payload-template: |
-        {
-          "topic": "kuvasz_uptime_test",
-          "message": "{{ ctx.eventDetails | escape(strategy="js") }}",
-          "title": "Kuvasz Uptime Alert",
-          "tags": [ "rotating_light" ],
-          "priority": 4,
-          "attach": null,
-          "filename": null,
-          "click": null,
-          "actions": [ { "action": "view", "label": "View details", "url": "https://demo.kuvasz-uptime.dev{{ctx.monitorDetailsUrl}}" } ]
-        }
-```
-
-![Ntfy test notification](../images/examples/ntfy_webhook.webp)
 
 ## Full YAML example (app-config + monitors + integrations)
 
@@ -433,6 +400,7 @@ integrations:
   webhook:
     - name: webhook_templated
       url: https://any-other-http.service/webhooks
+      http-method: POST # optional, defaults to POST; PUT, PATCH and GET are also supported
       excluded-events:
         - PUSH_UP
         - HTTP_UP

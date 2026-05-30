@@ -36,6 +36,7 @@ import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpResponseFactory
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -823,10 +824,10 @@ class WebhookEventHandlerTest(
     private fun mockSuccessfulHttpResponses() {
         every {
             mockClient.sendMessage(any(), any(), any(), any<String>())
-        } returns Single.just("ok")
+        } returns Single.just(HttpResponseFactory.INSTANCE.ok())
         every {
             mockClient.sendMessage(any(), any(), any(), any<GenericWebhookMessage>())
-        } returns Single.just("ok")
+        } returns Single.just(HttpResponseFactory.INSTANCE.ok())
     }
 
     private fun mockHttpErrorResponse() {

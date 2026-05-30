@@ -71,7 +71,7 @@ class GenericWebhookClientTest(
 
             val response = client.sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), testMessage).blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.ACCEPTED
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -114,7 +114,7 @@ class GenericWebhookClientTest(
                 .sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), """{"monitorId":123}""")
                 .blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.ACCEPTED
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -157,7 +157,7 @@ class GenericWebhookClientTest(
 
             val response = client.sendMessage(WebhookHttpMethod.POST, webhookUrl, emptyMap(), testMessage).blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
             mockServer.verify(request2, VerificationTimes.exactly(1))
         }
@@ -183,7 +183,7 @@ class GenericWebhookClientTest(
                 payload = """<xml><monitorId>123</monitorId></xml>""",
             ).blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -199,7 +199,7 @@ class GenericWebhookClientTest(
 
             val response = client.sendMessage(WebhookHttpMethod.PUT, webhookUrl, emptyMap(), testMessage).blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -216,7 +216,7 @@ class GenericWebhookClientTest(
             val response =
                 client.sendMessage(WebhookHttpMethod.PATCH, webhookUrl, emptyMap(), testMessage).blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -234,7 +234,7 @@ class GenericWebhookClientTest(
             val response =
                 client.sendMessage(WebhookHttpMethod.PUT, webhookUrl, emptyMap(), """{"monitorId":123}""").blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -252,7 +252,7 @@ class GenericWebhookClientTest(
             val response = client.sendMessage(WebhookHttpMethod.PATCH, webhookUrl, emptyMap(), """{"monitorId":123}""")
                 .blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -267,7 +267,7 @@ class GenericWebhookClientTest(
 
             val response = client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), testMessage).blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -283,7 +283,7 @@ class GenericWebhookClientTest(
             val response =
                 client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), """{"monitorId":123}""").blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
@@ -298,7 +298,7 @@ class GenericWebhookClientTest(
 
             val response = client.sendMessage(WebhookHttpMethod.GET, webhookUrl, emptyMap(), testMessage).blockingGet()
 
-            response shouldBe "OK"
+            response.status shouldBe HttpStatus.OK
             val recordedRequests = mockServer.retrieveRecordedRequests(requestMatcher)
             recordedRequests.size shouldBe 1
             recordedRequests[0].containsHeader(HttpHeaders.CONTENT_TYPE) shouldBe false
