@@ -45,6 +45,19 @@
   box-shadow: 0 4px 20px rgba(67, 56, 202, 0.25);
 }
 
+/* Mobile sidebar drawer header */
+@media screen and (max-width: 76.1875em) {
+  .md-nav--primary .md-nav__title[for="__drawer"] {
+    background: linear-gradient(
+      135deg,
+      var(--kuvasz-grad-start) 0%,
+      var(--kuvasz-grad-mid)   60%,
+      var(--kuvasz-grad-end)   100%
+    );
+    color: var(--md-primary-bg-color);
+  }
+}
+
 /* Grid cards - hover lift + gradient border */
 .md-typeset .grid.cards > :is(ul, ol) > li,
 .md-typeset > .grid.cards > :is(ul, ol) > li {
