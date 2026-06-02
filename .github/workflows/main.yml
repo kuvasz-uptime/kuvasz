@@ -35,9 +35,8 @@ jobs:
       run: ./gradlew check
     - name: Generate code coverage report for Codecov
       run: ./gradlew koverXmlReport
-      # TODO migrate to v5
     - name: Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v6
       with:
         token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
         files: ./build/reports/kover/report.xml
