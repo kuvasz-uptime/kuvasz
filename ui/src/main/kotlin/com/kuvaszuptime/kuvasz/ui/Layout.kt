@@ -102,9 +102,6 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
             """.trimIndent()
         }
     }
-    link(rel = "preconnect", href = "https://fonts.googleapis.com")
-    link(rel = "preconnect", href = "https://fonts.gstatic.com") { attributes["crossorigin"] = "" }
-    link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap")
     link(rel = "stylesheet", href = "/public/ext/css/tabler.1.4.0.min.css")
     link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=$appVersion")
 }

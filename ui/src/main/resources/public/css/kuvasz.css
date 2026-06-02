@@ -1,3 +1,37 @@
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('/public/ext/fonts/Inter-Light.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/public/ext/fonts/Inter-Regular.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/public/ext/fonts/Inter-Medium.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/public/ext/fonts/Inter-SemiBold.woff2') format('woff2');
+}
+
+/* Disable Tabler's default cv11 (single-storey "a") */
+body {
+    font-feature-settings: "cv11" 0 !important;
+}
+
 /* TomSelect clear button */
 div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-button {
     border: none !important;
