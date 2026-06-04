@@ -29,7 +29,7 @@ pluginManagement {
         id("com.github.ben-manes.versions") version "0.54.0"
         id("org.flywaydb.flyway") version flywayPluginVersion
         id("com.gradleup.shadow") version "9.4.2"
-        id("com.github.gmazzo.buildconfig") version "6.0.9"
+        id("com.github.gmazzo.buildconfig") version "6.0.10"
         id("org.gradlewebtools.minify") version "2.1.1"
         id("org.jetbrains.kotlinx.kover") version "0.9.8"
         id("de.comahe.i18n4k") version "0.11.2"
