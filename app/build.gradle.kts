@@ -37,6 +37,7 @@ micronaut {
 kapt {
     arguments {
         arg("micronaut.openapi.project.dir", projectDir.toString())
+//        arg("micronaut.jsonschema.strictMode", "false")
     }
 }
 
@@ -49,6 +50,8 @@ dependencies {
     // Micronaut
     kapt(mn.micronaut.security.annotations)
     kapt(mn.micronaut.validation.processor)
+    implementation(mn.micronaut.mcp.server.java.sdk)
+    kapt(mn.micronaut.json.schema.processor)
     implementation(mn.jackson.module.kotlin)
     implementation(mn.jackson.dataformat.yaml)
     implementation(mn.micronaut.kotlin.runtime)
@@ -64,10 +67,11 @@ dependencies {
     implementation(mn.micronaut.cache.core)
     implementation(mn.micronaut.cache.caffeine)
 
-    // OpenAPI
+    // OpenAPI & JsonSchema
     kapt(mn.micronaut.openapi)
     compileOnly(mn.micronaut.openapi.annotations)
     implementation(mn.swagger.annotations)
+    implementation(mn.micronaut.json.schema.annotations)
 
     // DB & jOOQ & Flyway
     implementation(mn.micronaut.flyway)

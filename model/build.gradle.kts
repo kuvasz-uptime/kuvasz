@@ -49,9 +49,11 @@ dependencies {
 //    kapt(mn.micronaut.serde.processor)
     implementation(mn.micronaut.jackson.databind)
 
-    // OpenAPI
+    // OpenAPI & JsonSchema
     kapt(mn.micronaut.openapi)
     implementation(mn.swagger.annotations)
+    implementation(mn.micronaut.json.schema.annotations)
+    kapt(mn.micronaut.json.schema.processor)
 
     // DB & jOOQ & Flyway
     implementation(libs.jooq.kotlin)
