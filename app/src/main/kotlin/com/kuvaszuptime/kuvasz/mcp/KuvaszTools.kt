@@ -1,28 +1,27 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import io.modelcontextprotocol.spec.McpSchema
+import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
+import java.time.Duration
 
 abstract class KuvaszTools(private val objectMapper: ObjectMapper) {
 
-    protected fun extractMonitorIdAndUpdates(request: McpSchema.CallToolRequest): Pair<Long, ObjectNode>? =
-        objectMapper.valueToTree<ObjectNode>(request.arguments())?.let { args ->
-            val monitorId = args["monitorId"]?.longValue() ?: return@let null
-            val updates = args.deepCopy().apply { remove("monitorId") }
-            monitorId to updates
-        }
+    protected fun enabledPatch(enabled: Boolean): ObjectNode =
+        objectMapper.createObjectNode().put(MonitorDetailsDto::enabled.name, enabled)
+}
 
-    protected fun success(data: Any): McpSchema.CallToolResult =
-        McpSchema.CallToolResult.builder()
-            .addTextContent(objectMapper.writeValueAsString(data))
-            .structuredContent(data)
-            .isError(false)
-            .build()
+fun String?.asDuration() = this?.let { Duration.parse(it) }
 
-    protected fun error(message: String): McpSchema.CallToolResult =
-        McpSchema.CallToolResult.builder()
-            .addTextContent(message)
-            .isError(true)
-            .build()
+fun AppConfig.checkMonitorMutability(type: MonitorType) = when (type) {
+    MonitorType.HTTP_SSL -> isHttpMonitorExternalWriteDisabled()
+    MonitorType.PUSH -> isPushMonitorExternalWriteDisabled()
+    MonitorType.ICMP -> isIcmpMonitorExternalWriteDisabled()
+}.let { isNonMutable ->
+    if (isNonMutable) {
+        throw ReadOnlyMonitorException()
+    }
 }

@@ -3,16 +3,18 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
+import com.kuvaszuptime.kuvasz.mcp.models.IncidentSchema
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.modelcontextprotocol.spec.McpSchema
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.convertValue
 
@@ -21,7 +23,7 @@ class IncidentToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val monitorRepository: HttpMonitorRepository,
     private val objectMapper: ObjectMapper,
-) : McpToolTest(client, objectMapper) {
+) : McpToolTest(client) {
 
     init {
         given("the Incident tools") {
@@ -42,12 +44,12 @@ class IncidentToolsTest(
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    val incidents = objectMapper.convertValue<List<IncidentDto>>(
+                    val incidents = objectMapper.convertValue<List<IncidentSchema>>(
                         result.structuredContent.shouldNotBeNull()["incidents"]
                     )
                     incidents.forOne { it.monitorName shouldBe monitor.name }
 
-                    objectMapper.convertValue<List<IncidentDto>>(
+                    objectMapper.convertValue<List<IncidentSchema>>(
                         objectMapper.readTree(result.firstText())["incidents"]
                     ) shouldBe incidents
                 }
@@ -68,14 +70,23 @@ class IncidentToolsTest(
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    val incidents = objectMapper.convertValue<List<IncidentDto>>(
+                    val incidents = objectMapper.convertValue<List<IncidentSchema>>(
                         result.structuredContent.shouldNotBeNull()["incidents"]
                     )
                     incidents.forOne { it.monitorName shouldBe monitor.name }
 
-                    objectMapper.convertValue<List<IncidentDto>>(
+                    objectMapper.convertValue<List<IncidentSchema>>(
                         objectMapper.readTree(result.firstText())["incidents"]
                     ) shouldBe incidents
+                }
+            }
+
+            `when`("list-incidents is called with an invalid period string") {
+                val response = callTool("list-incidents", mapOf("period" to "not-a-valid-period"))
+
+                then("it should return an invalid-request protocol error with no result") {
+                    response.result.shouldBeNull()
+                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.INVALID_REQUEST
                 }
             }
 
@@ -87,11 +98,11 @@ class IncidentToolsTest(
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    objectMapper.convertValue<List<IncidentDto>>(
+                    objectMapper.convertValue<List<IncidentSchema>>(
                         result.structuredContent.shouldNotBeNull()["incidents"]
                     ).shouldBeEmpty()
 
-                    objectMapper.convertValue<List<IncidentDto>>(
+                    objectMapper.convertValue<List<IncidentSchema>>(
                         objectMapper.readTree(result.firstText())["incidents"]
                     ).shouldBeEmpty()
                 }

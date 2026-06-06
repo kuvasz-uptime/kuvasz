@@ -1,17 +1,18 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
+import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorDetailsListSchema
+import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorDetailsSchema
+import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorSchema
+import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import io.micronaut.mcp.annotations.Tool
 import io.micronaut.mcp.annotations.ToolArg
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult
 import jakarta.inject.Singleton
-import jakarta.validation.ConstraintViolationException
 import tools.jackson.databind.ObjectMapper
-import java.time.Duration
 
 @Singleton
 class IcmpMonitorTools(
@@ -25,8 +26,10 @@ class IcmpMonitorTools(
         description = "Lists all ICMP (ping) monitors configured in Kuvasz with their current uptime status",
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listIcmpMonitors(): CallToolResult =
-        success(mapOf("monitors" to icmpMonitorActions.getMonitorsWithDetails()))
+    fun listIcmpMonitors(): IcmpMonitorDetailsListSchema =
+        IcmpMonitorDetailsListSchema(
+            monitors = icmpMonitorActions.getMonitorsWithDetails().map { IcmpMonitorDetailsSchema.fromDto(it) }
+        )
 
     @Tool(
         name = ToolNames.GET_ICMP_MONITOR_DETAILS,
@@ -35,12 +38,8 @@ class IcmpMonitorTools(
     )
     fun getIcmpMonitorDetails(
         @ToolArg(description = "The numeric ID of the ICMP monitor") monitorId: Long,
-    ): CallToolResult =
-        try {
-            success(icmpMonitorActions.getMonitorDetails(monitorId))
-        } catch (_: MonitorNotFoundException) {
-            error("ICMP monitor with ID $monitorId not found")
-        }
+    ): IcmpMonitorDetailsSchema =
+        IcmpMonitorDetailsSchema.fromDto(icmpMonitorActions.getMonitorDetails(monitorId))
 
     @Tool(
         name = ToolNames.GET_ICMP_MONITOR_STATS,
@@ -51,13 +50,11 @@ class IcmpMonitorTools(
     fun getIcmpMonitorStats(
         @ToolArg(description = "The numeric ID of the ICMP monitor") monitorId: Long,
         @ToolArg(description = "ISO 8601 look-back window, e.g. 'P1D' or 'PT12H'. Defaults to P1D.")
-        period: Duration? = null,
-    ): CallToolResult =
-        try {
-            success(icmpMonitorActions.getMonitorStats(monitorId, period ?: DEFAULT_STATS_PERIOD))
-        } catch (_: MonitorNotFoundException) {
-            error("ICMP monitor with ID $monitorId not found")
-        }
+        period: String? = null,
+    ): IcmpMonitorStatsSchema {
+        val stats = icmpMonitorActions.getMonitorStats(monitorId, period.asDuration() ?: DEFAULT_STATS_PERIOD)
+        return IcmpMonitorStatsSchema.fromDto(stats)
+    }
 
     @Tool(
         name = ToolNames.CREATE_ICMP_MONITOR,
@@ -65,17 +62,25 @@ class IcmpMonitorTools(
             " are required; all other fields use sensible defaults.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
-    fun createIcmpMonitor(input: IcmpMonitorCreateDto): IcmpMonitorDto {
-        if (appConfig.isIcmpMonitorExternalWriteDisabled()) {
-            throw ConstraintViolationException(
-                "Creating ICMP monitors is currently disabled because they were configured via YAML",
-                emptySet(),
+    fun createIcmpMonitor(input: IcmpMonitorCreateDto): IcmpMonitorSchema {
+        appConfig.checkMonitorMutability(MonitorType.ICMP)
+        return IcmpMonitorSchema.fromDto(IcmpMonitorDto.fromMonitorRecord(icmpMonitorActions.createMonitor(input)))
+    }
+
+    @Tool(
+        name = ToolNames.TOGGLE_ICMP_MONITOR,
+        description = "Enables or disables an ICMP (ping) monitor.",
+        annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
+    )
+    fun toggleIcmpMonitor(
+        @ToolArg(description = "The numeric ID of the ICMP monitor") monitorId: Long,
+        @ToolArg(description = "Set to true to enable the monitor, false to disable it") enabled: Boolean,
+    ): IcmpMonitorSchema {
+        appConfig.checkMonitorMutability(MonitorType.ICMP)
+        return IcmpMonitorSchema.fromDto(
+            IcmpMonitorDto.fromMonitorRecord(
+                icmpMonitorActions.updateMonitor(monitorId, enabledPatch(enabled))
             )
-        }
-//        return try {
-        return IcmpMonitorDto.fromMonitorRecord(icmpMonitorActions.createMonitor(input))
-//        } catch (e: PersistenceException) {
-//            error(e.message.orEmpty())
-//        }
+        )
     }
 }

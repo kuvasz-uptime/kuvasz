@@ -5,8 +5,6 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import io.micronaut.core.annotation.Introspected
@@ -22,13 +20,13 @@ data class HttpMonitorDetailsListSchema(
 @JsonSchema
 @Introspected
 data class PushMonitorDetailsListSchema(
-    val monitors: List<PushMonitorDetailsDto>,
+    val monitors: List<PushMonitorDetailsSchema>,
 )
 
 @JsonSchema
 @Introspected
 data class IcmpMonitorDetailsListSchema(
-    val monitors: List<IcmpMonitorDetailsDto>,
+    val monitors: List<IcmpMonitorDetailsSchema>,
 )
 
 @JsonSchema

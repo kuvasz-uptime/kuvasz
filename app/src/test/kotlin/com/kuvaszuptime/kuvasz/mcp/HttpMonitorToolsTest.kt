@@ -1,18 +1,18 @@
 package com.kuvaszuptime.kuvasz.mcp
 
+import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsSchema
+import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorSchema
+import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.modelcontextprotocol.spec.McpSchema
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.readValue
@@ -22,7 +22,7 @@ class HttpMonitorToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val objectMapper: ObjectMapper,
-) : McpToolTest(client, objectMapper) {
+) : McpToolTest(client) {
 
     init {
         given("the HTTP monitor tools") {
@@ -35,12 +35,12 @@ class HttpMonitorToolsTest(
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    val monitors = objectMapper.convertValue<List<HttpMonitorDetailsDto>>(
+                    val monitors = objectMapper.convertValue<List<HttpMonitorDetailsSchema>>(
                         result.structuredContent.shouldNotBeNull()["monitors"]
                     )
                     monitors.forOne { it.name shouldBe monitor.name }
 
-                    objectMapper.convertValue<List<HttpMonitorDetailsDto>>(
+                    objectMapper.convertValue<List<HttpMonitorDetailsSchema>>(
                         objectMapper.readTree(result.firstText())["monitors"]
                     ) shouldBe monitors
                 }
@@ -54,24 +54,22 @@ class HttpMonitorToolsTest(
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    val details = objectMapper.convertValue<HttpMonitorDetailsDto>(
+                    val details = objectMapper.convertValue<HttpMonitorDetailsSchema>(
                         result.structuredContent.shouldNotBeNull()
                     )
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
 
-                    objectMapper.readValue<HttpMonitorDetailsDto>(result.firstText()) shouldBe details
+                    objectMapper.readValue<HttpMonitorDetailsSchema>(result.firstText()) shouldBe details
                 }
             }
 
             `when`("get-http-monitor-details is called with a non-existent ID") {
                 val response = callTool("get-http-monitor-details", mapOf("monitorId" to -999L))
 
-                then("it should return isError true with no structured content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe true
-                    result.firstText() shouldContain "-999"
-                    result.structuredContent.shouldBeNull()
+                then("it should return a resource-not-found protocol error with no result") {
+                    response.result.shouldBeNull()
+                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
                 }
             }
 
@@ -90,14 +88,14 @@ class HttpMonitorToolsTest(
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    val created = objectMapper.convertValue<HttpMonitorDto>(
+                    val created = objectMapper.convertValue<HttpMonitorSchema>(
                         result.structuredContent.shouldNotBeNull()
                     )
                     created.name shouldBe "mcp-created-monitor"
                     created.url shouldBe "https://example.com"
                     created.uptimeCheckInterval shouldBe 60
 
-                    objectMapper.readValue<HttpMonitorDto>(result.firstText()) shouldBe created
+                    objectMapper.readValue<HttpMonitorSchema>(result.firstText()) shouldBe created
                 }
             }
 
@@ -112,11 +110,9 @@ class HttpMonitorToolsTest(
                     )
                 )
 
-                then("it should return isError true with no structured content and no protocol error") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe true
-                    result.structuredContent.shouldBeNull()
-                    response.error.shouldBeNull()
+                then("it should return an invalid-params protocol error with no result") {
+                    response.result.shouldBeNull()
+                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.INVALID_PARAMS
                 }
             }
 
@@ -128,13 +124,13 @@ class HttpMonitorToolsTest(
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    val stats = objectMapper.convertValue<HttpMonitorStatsDto>(
+                    val stats = objectMapper.convertValue<HttpMonitorStatsSchema>(
                         result.structuredContent.shouldNotBeNull()
                     )
                     stats.id shouldBe monitor.id
                     stats.latencyHistoryEnabled shouldBe monitor.latencyHistoryEnabled
 
-                    objectMapper.readValue<HttpMonitorStatsDto>(result.firstText()) shouldBe stats
+                    objectMapper.readValue<HttpMonitorStatsSchema>(result.firstText()) shouldBe stats
                 }
             }
 
@@ -148,106 +144,76 @@ class HttpMonitorToolsTest(
                 then("it should return stats for the requested period") {
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
-                    objectMapper.convertValue<HttpMonitorStatsDto>(
+                    objectMapper.convertValue<HttpMonitorStatsSchema>(
                         result.structuredContent.shouldNotBeNull()
                     ).id shouldBe monitor.id
+                }
+            }
+
+            `when`("get-http-monitor-stats is called with an invalid period string") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val response = callTool(
+                    "get-http-monitor-stats",
+                    mapOf("monitorId" to monitor.id, "period" to "not-a-valid-period")
+                )
+
+                then("it should return an invalid-request protocol error with no result") {
+                    response.result.shouldBeNull()
+                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.INVALID_REQUEST
                 }
             }
 
             `when`("get-http-monitor-stats is called with a non-existent monitor ID") {
                 val response = callTool("get-http-monitor-stats", mapOf("monitorId" to -999L))
 
-                then("it should return isError true with no structured content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe true
-                    result.firstText() shouldContain "-999"
-                    result.structuredContent.shouldBeNull()
+                then("it should return a resource-not-found protocol error with no result") {
+                    response.result.shouldBeNull()
+                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
                 }
             }
 
-            `when`("update-http-monitor is called with a valid partial patch") {
+            `when`("toggle-http-monitor is called to disable a monitor") {
                 val monitor = createHttpMonitor(httpMonitorRepository, enabled = true)
                 val response = callTool(
-                    "update-http-monitor",
-                    mapOf("monitorId" to monitor.id, "enabled" to false, "name" to "updated-name")
+                    "toggle-http-monitor",
+                    mapOf("monitorId" to monitor.id, "enabled" to false)
                 )
 
-                then("it should return the updated monitor in both structured and text content") {
+                then("it should return the updated monitor with enabled=false in both structured and text content") {
                     val result = response.result.shouldNotBeNull()
                     result.isError shouldBe false
 
-                    val updated = objectMapper.convertValue<HttpMonitorDto>(
+                    val updated = objectMapper.convertValue<HttpMonitorSchema>(
                         result.structuredContent.shouldNotBeNull()
                     )
                     updated.id shouldBe monitor.id
                     updated.enabled shouldBe false
-                    updated.name shouldBe "updated-name"
 
-                    objectMapper.readValue<HttpMonitorDto>(result.firstText()) shouldBe updated
+                    objectMapper.readValue<HttpMonitorSchema>(result.firstText()) shouldBe updated
                 }
             }
 
-            `when`("update-http-monitor omits a field") {
-                val monitor = createHttpMonitor(
-                    httpMonitorRepository,
-                    uptimeCheckInterval = 60,
-                    expectedKeyword = "hello",
-                )
+            `when`("toggle-http-monitor is called to enable a monitor") {
+                val monitor = createHttpMonitor(httpMonitorRepository, enabled = false)
                 val response = callTool(
-                    "update-http-monitor",
-                    mapOf("monitorId" to monitor.id, "enabled" to false)
+                    "toggle-http-monitor",
+                    mapOf("monitorId" to monitor.id, "enabled" to true)
                 )
 
-                then("the omitted fields should keep their current values") {
-                    val updated = objectMapper.convertValue<HttpMonitorDto>(
+                then("it should return the updated monitor with enabled=true") {
+                    val updated = objectMapper.convertValue<HttpMonitorSchema>(
                         response.result.shouldNotBeNull().structuredContent.shouldNotBeNull()
                     )
-                    updated.uptimeCheckInterval shouldBe 60
-                    updated.expectedKeyword shouldBe "hello"
+                    updated.enabled shouldBe true
                 }
             }
 
-            `when`("update-http-monitor sets a nullable field to null explicitly") {
-                val monitor = createHttpMonitor(
-                    httpMonitorRepository,
-                    expectedKeyword = "hello",
-                    responseTimeThresholdMillis = 500,
-                )
-                val response = callTool(
-                    "update-http-monitor",
-                    mapOf("monitorId" to monitor.id, "expectedKeyword" to null, "responseTimeThresholdMillis" to null)
-                )
+            `when`("toggle-http-monitor is called with a non-existent monitor ID") {
+                val response = callTool("toggle-http-monitor", mapOf("monitorId" to -999L, "enabled" to false))
 
-                then("the nullable fields should be cleared") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe false
-
-                    val updated = objectMapper.convertValue<HttpMonitorDto>(
-                        result.structuredContent.shouldNotBeNull()
-                    )
-                    updated.expectedKeyword.shouldBeNull()
-                    updated.responseTimeThresholdMillis.shouldBeNull()
-                }
-            }
-
-            `when`("update-http-monitor is called with a non-existent monitor ID") {
-                val response = callTool("update-http-monitor", mapOf("monitorId" to -999L, "enabled" to false))
-
-                then("it should return isError true with no structured content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe true
-                    result.firstText() shouldContain "-999"
-                    result.structuredContent.shouldBeNull()
-                }
-            }
-
-            `when`("update-http-monitor is called without monitorId") {
-                val response = callTool("update-http-monitor", mapOf("enabled" to false))
-
-                then("it should return isError true with no structured content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe true
-                    result.structuredContent.shouldBeNull()
+                then("it should return a resource-not-found protocol error with no result") {
+                    response.result.shouldBeNull()
+                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
                 }
             }
         }

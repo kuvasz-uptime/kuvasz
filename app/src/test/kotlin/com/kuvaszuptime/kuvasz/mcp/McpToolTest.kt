@@ -2,16 +2,14 @@ package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
-import io.kotest.matchers.nulls.shouldNotBeNull
+import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import kotlinx.coroutines.reactive.awaitFirst
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.module.kotlin.readValue
 
 abstract class McpToolTest(
     private val client: HttpClient,
-    private val objectMapper: ObjectMapper,
 ) : DatabaseBehaviorSpec() {
 
     protected suspend fun callTool(
@@ -27,7 +25,14 @@ abstract class McpToolTest(
                 "params" to mapOf("name" to toolName, "arguments" to arguments)
             )
         )
-        val body = client.exchange(request, String::class.java).awaitFirst().body().shouldNotBeNull()
-        return objectMapper.readValue(body)
+        return try {
+            client.retrieve(request, McpToolCallResponse::class.java).awaitFirst()
+        } catch (e: HttpClientResponseException) {
+            try {
+                e.response.getBodyAs<McpToolCallResponse>()!!
+            } catch (_: Exception) {
+                McpToolCallResponse(error = McpToolCallResponse.ProtocolError(e.status.code, e.message))
+            }
+        }
     }
 }

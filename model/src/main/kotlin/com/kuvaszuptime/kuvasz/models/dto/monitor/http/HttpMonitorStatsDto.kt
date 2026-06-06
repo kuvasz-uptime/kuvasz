@@ -2,12 +2,10 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import io.micronaut.core.annotation.Introspected
-import io.micronaut.jsonschema.JsonSchema
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
 
 @Introspected
-@JsonSchema
 data class HttpMonitorStatsDto(
     @param:Schema(description = "Unique identifier of the monitor", required = true)
     val id: Long,

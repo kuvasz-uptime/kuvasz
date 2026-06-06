@@ -7,12 +7,10 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import io.micronaut.core.annotation.Introspected
-import io.micronaut.jsonschema.JsonSchema
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
 
 @Introspected
-@JsonSchema
 data class HttpMonitorDto(
     @param:Schema(description = MonitorDocs.ID, required = true)
     val id: Long,

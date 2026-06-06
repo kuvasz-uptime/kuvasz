@@ -3,9 +3,11 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.push
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
 import io.micronaut.core.annotation.Introspected
+import io.micronaut.jsonschema.JsonSchema
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Introspected
+@JsonSchema
 data class PushMonitorCreateDto(
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,

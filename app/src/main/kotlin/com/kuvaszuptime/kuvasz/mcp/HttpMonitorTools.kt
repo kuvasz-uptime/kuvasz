@@ -3,18 +3,17 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsListSchema
 import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsSchema
+import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorSchema
+import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import io.micronaut.mcp.annotations.Tool
 import io.micronaut.mcp.annotations.ToolArg
 import jakarta.inject.Singleton
-import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.ObjectMapper
-import java.time.Duration
 
 @Singleton
 class HttpMonitorTools(
@@ -44,14 +43,7 @@ class HttpMonitorTools(
     )
     fun getHttpMonitorDetails(
         @ToolArg(description = "The numeric ID of the HTTP monitor") monitorId: Long,
-    ): HttpMonitorDetailsDto {
-        //        try {
-        logger.info("Getting detailed information about HTTP monitor: $monitorId")
-        return httpMonitorActions.getMonitorDetails(monitorId)
-    }
-//        } catch (_: MonitorNotFoundException) {
-//            error("Monitor with ID $monitorId not found")
-//        }
+    ): HttpMonitorDetailsSchema = HttpMonitorDetailsSchema.fromDto(httpMonitorActions.getMonitorDetails(monitorId))
 
     @Tool(
         name = ToolNames.CREATE_HTTP_MONITOR,
@@ -59,18 +51,9 @@ class HttpMonitorTools(
             " are required; all other fields use sensible defaults.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
-    fun createHttpMonitor(input: HttpMonitorCreateDto): HttpMonitorDto {
-        if (appConfig.isHttpMonitorExternalWriteDisabled()) {
-            throw ConstraintViolationException(
-                "Creating HTTP monitors is currently disabled because they were configured via YAML",
-                emptySet(),
-            )
-        }
-//        return try {
-        return HttpMonitorDto.fromMonitorRecord(httpMonitorActions.createMonitor(input))
-//        } catch (e: PersistenceException) {
-//            error(e.message.orEmpty())
-//        }
+    fun createHttpMonitor(input: HttpMonitorCreateDto): HttpMonitorSchema {
+        appConfig.checkMonitorMutability(MonitorType.HTTP_SSL)
+        return HttpMonitorSchema.fromDto(HttpMonitorDto.fromMonitorRecord(httpMonitorActions.createMonitor(input)))
     }
 
     @Tool(
@@ -82,11 +65,26 @@ class HttpMonitorTools(
     fun getHttpMonitorStats(
         @ToolArg(description = "The numeric ID of the HTTP monitor") monitorId: Long,
         @ToolArg(description = "ISO 8601 look-back window, e.g. 'P1D' or 'PT12H'. Defaults to P1D.")
-        period: Duration? = null,
-    ): HttpMonitorStatsDto =
-//        try {
-        httpMonitorActions.getMonitorStats(monitorId, period ?: DEFAULT_STATS_PERIOD)
-//        } catch (_: MonitorNotFoundException) {
-//            error("HTTP monitor with ID $monitorId not found")
-//        }
+        period: String? = null,
+    ): HttpMonitorStatsSchema {
+        val stats = httpMonitorActions.getMonitorStats(monitorId, period.asDuration() ?: DEFAULT_STATS_PERIOD)
+        return HttpMonitorStatsSchema.fromDto(stats)
+    }
+
+    @Tool(
+        name = ToolNames.TOGGLE_HTTP_MONITOR,
+        description = "Enables or disables an HTTP monitor.",
+        annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
+    )
+    fun toggleHttpMonitor(
+        @ToolArg(description = "The numeric ID of the HTTP monitor") monitorId: Long,
+        @ToolArg(description = "Set to true to enable the monitor, false to disable it") enabled: Boolean,
+    ): HttpMonitorSchema {
+        appConfig.checkMonitorMutability(MonitorType.HTTP_SSL)
+        return HttpMonitorSchema.fromDto(
+            HttpMonitorDto.fromMonitorRecord(
+                httpMonitorActions.updateMonitor(monitorId, enabledPatch(enabled))
+            )
+        )
+    }
 }

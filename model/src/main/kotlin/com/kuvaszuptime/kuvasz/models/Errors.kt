@@ -72,7 +72,7 @@ class StatusPageNotFoundException(
 sealed class ReadOnlyResourceException(override val message: String) : Exception()
 
 class ReadOnlyMonitorException : ReadOnlyResourceException(
-    "The monitors were configured via a YAML file. " +
+    "The given type of monitors were configured via a YAML file. " +
         "You cannot modify them via the API. Please change the configuration in the YAML file and restart the server."
 )
 

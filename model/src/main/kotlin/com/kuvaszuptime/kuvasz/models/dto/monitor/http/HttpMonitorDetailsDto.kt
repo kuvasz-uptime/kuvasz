@@ -8,13 +8,11 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
-import io.micronaut.jsonschema.JsonSchema
 import io.swagger.v3.oas.annotations.media.Schema
 import java.net.URI
 import java.time.OffsetDateTime
 
 @Introspected
-@JsonSchema
 data class HttpMonitorDetailsDto(
     @param:Schema(description = MonitorDocs.ID, required = true)
     override val id: Long,
