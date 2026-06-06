@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
@@ -11,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import io.micronaut.http.client.annotation.Client
+import tools.jackson.databind.node.ObjectNode
 import java.time.Duration
 
 @Client("/api/v2/http-monitors")

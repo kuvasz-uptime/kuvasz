@@ -1,3 +1,4 @@
+import org.jooq.meta.jaxb.JSONConverterImplementation
 import org.jooq.meta.kotlin.database
 import org.jooq.meta.kotlin.forcedType
 import org.jooq.meta.kotlin.forcedTypes
@@ -14,6 +15,13 @@ buildscript {
     val flywayPluginVersion: String by project
     dependencies {
         classpath("org.flywaydb:flyway-database-postgresql:$flywayPluginVersion")
+    }
+
+    val jooqVersion: String by project
+    configurations["classpath"].resolutionStrategy.eachDependency {
+        if (requested.group == "org.jooq") {
+            useVersion(jooqVersion)
+        }
     }
 }
 
@@ -38,6 +46,8 @@ dependencies {
     implementation(mn.micronaut.validation)
     implementation(mn.jackson.module.kotlin)
     implementation(mn.micronaut.http.client)
+//    kapt(mn.micronaut.serde.processor)
+    implementation(mn.micronaut.jackson.databind)
 
     // OpenAPI
     kapt(mn.micronaut.openapi)
@@ -52,6 +62,7 @@ dependencies {
     runtimeOnly(mn.flyway.postgresql)
 
     // Testing
+    kaptTest(mn.micronaut.inject.java)
     testImplementation(mn.micronaut.test.kotest5)
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(mn.kotest.assertions.core.jvm)
@@ -133,17 +144,21 @@ jooq {
                                 userType = "com.kuvaszuptime.kuvasz.models.handlers.IntegrationID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter"
                                 isGenericConverter = false
-                                includeExpression = "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS"
+                                jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
+                                includeExpression =
+                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToMonitorIdArrayConverter"
                                 isGenericConverter = false
+                                jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression = "STATUS_PAGE.MONITORS"
                             }
                             forcedType {
-                                userType = "com.fasterxml.jackson.databind.JsonNode"
+                                userType = "tools.jackson.databind.JsonNode"
                                 isJsonConverter = true
+                                jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression = "HTTP_MONITOR.REQUEST_HEADERS|HTTP_MONITOR.EXPECTED_HEADERS"
                             }
                         }

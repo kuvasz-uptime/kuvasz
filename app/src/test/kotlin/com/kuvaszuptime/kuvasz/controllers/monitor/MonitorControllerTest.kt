@@ -1,9 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
-import com.fasterxml.jackson.module.kotlin.convertValue
-import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
@@ -34,6 +30,10 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.PropertyNamingStrategies
+import tools.jackson.dataformat.yaml.YAMLMapper
+import tools.jackson.module.kotlin.convertValue
+import tools.jackson.module.kotlin.kotlinModule
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class MonitorControllerTest(
@@ -45,9 +45,10 @@ class MonitorControllerTest(
 
     init {
         given("MonitorController's getMonitorsExport() endpoint") {
-            val mapper = YAMLMapper()
-                .registerModules(kotlinModule())
-                .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+            val mapper = YAMLMapper.builder()
+                .addModules(kotlinModule())
+                .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+                .build()
 
             `when`("there are monitors in the database") {
                 val httpMonitor = createHttpMonitor(

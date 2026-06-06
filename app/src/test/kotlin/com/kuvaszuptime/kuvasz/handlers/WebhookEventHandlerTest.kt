@@ -33,7 +33,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpResponseFactory

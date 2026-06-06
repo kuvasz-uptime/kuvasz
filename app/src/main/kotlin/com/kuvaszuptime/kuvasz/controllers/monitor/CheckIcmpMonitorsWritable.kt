@@ -17,9 +17,9 @@ annotation class CheckIcmpMonitorsWritable
 
 @Singleton
 @InterceptorBean(CheckIcmpMonitorsWritable::class)
-class IcmpMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
+class IcmpMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any, Any>, Ordered {
 
-    override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
+    override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
         context.findAnnotation(CheckIcmpMonitorsWritable::class.java).ifPresent { _ ->
             if (appConfig.isIcmpMonitorExternalWriteDisabled()) throw ReadOnlyMonitorException()
         }

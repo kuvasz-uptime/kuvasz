@@ -16,7 +16,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:

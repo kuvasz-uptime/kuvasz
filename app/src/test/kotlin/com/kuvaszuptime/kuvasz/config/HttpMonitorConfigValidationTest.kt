@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.maps.shouldBeEmpty
@@ -32,7 +31,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-blank-name")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getName - ${MonitorValidationMessages.NAME_NOT_BLANK}"
             }
         }
@@ -42,7 +41,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-blank-url")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
             }
         }
@@ -52,7 +51,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-invalid-url")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getUrl - ${MonitorValidationMessages.URL_PATTERN}"
             }
         }
@@ -62,7 +61,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-short-uptime-check-interval")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getUptimeCheckInterval - Uptime check interval must be at least 5 seconds"
             }
         }
@@ -72,7 +71,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-negative-ssl-expiry-threshold")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getSslExpiryThreshold - " +
                     MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
             }
@@ -83,7 +82,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("http-monitor-zero-failure-count-threshold")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getFailureCountThreshold - " +
                     MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
             }
@@ -94,7 +93,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-invalid-status-code")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "getExpectedStatusCodes - ${MonitorValidationMessages.SUPPORTED_STATUS_CODES}"
             }
         }
@@ -104,7 +103,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-invalid-response-time-threshold")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getResponseTimeThresholdMillis - " +
                     "Response time threshold must be less than or equal to 30000 milliseconds"
             }
@@ -115,7 +114,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-invalid-request-header")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getRequestHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
             }
         }
@@ -125,7 +124,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-invalid-expected-header")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getExpectedHeaders - ${ValidationMessages.VALID_HEADER_NAMES}"
             }
         }
@@ -135,7 +134,7 @@ class HttpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("monitor-invalid-request-body")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "HttpMonitorConfig.getRequestBody - ${ValidationMessages.WELL_FORMED_JSON_STRING}"
             }
         }

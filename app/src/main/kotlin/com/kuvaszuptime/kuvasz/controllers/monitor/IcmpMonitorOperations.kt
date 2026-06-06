@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.event.IcmpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
@@ -20,6 +19,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
+import tools.jackson.databind.node.ObjectNode
 import java.time.Duration
 
 interface IcmpMonitorOperations {

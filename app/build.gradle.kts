@@ -51,7 +51,6 @@ dependencies {
     kapt(mn.micronaut.validation.processor)
     implementation(mn.jackson.module.kotlin)
     implementation(mn.jackson.dataformat.yaml)
-    implementation(mn.jackson.datatype.jsr310)
     implementation(mn.micronaut.kotlin.runtime)
     implementation(mn.micronaut.jackson.databind)
     runtimeOnly(mn.snakeyaml)
@@ -104,7 +103,11 @@ dependencies {
     implementation(libs.pebble)
 
     // Testing
+    kaptTest(mn.micronaut.inject.java)
     testImplementation(libs.mockk)
+    testImplementation(mn.micronaut.test.kotest5)
+    testImplementation(libs.kotest.data)
+    testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.pg)
     testImplementation(libs.mockserver.netty)

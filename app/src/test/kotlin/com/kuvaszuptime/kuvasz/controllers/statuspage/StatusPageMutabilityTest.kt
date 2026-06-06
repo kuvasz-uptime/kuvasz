@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
@@ -20,6 +19,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.node.JsonNodeFactory
 
 @MicronautTest(environments = ["yaml-monitors", "full-integrations-setup", "status-pages"])
 class StatusPageMutabilityTest(

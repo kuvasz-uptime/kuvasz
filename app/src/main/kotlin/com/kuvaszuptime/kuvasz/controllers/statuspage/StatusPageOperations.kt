@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
@@ -17,6 +16,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
+import tools.jackson.databind.node.ObjectNode
 
 interface StatusPageOperations {
 

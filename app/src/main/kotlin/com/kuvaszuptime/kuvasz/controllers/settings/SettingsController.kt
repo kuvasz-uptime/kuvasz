@@ -34,6 +34,6 @@ class SettingsController(private val settingsRepository: SettingsRepository) : S
             content = [Content(schema = Schema(implementation = SettingsDto::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getSettings() = settingsRepository.getSettings()
 }

@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
 import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
@@ -32,6 +31,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import tools.jackson.databind.node.ObjectNode
 import java.time.Duration
 
 @Controller("${API_V2_PREFIX}/push-monitors", produces = [MediaType.APPLICATION_JSON])
@@ -53,7 +53,7 @@ class PushMonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = PushMonitorDetailsDto::class)))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitorsWithDetails(
         @QueryValue enabled: Boolean?,
         @QueryValue uptimeStatus: List<UptimeStatus>?,
@@ -75,7 +75,7 @@ class PushMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitorDetails(monitorId: Long): PushMonitorDetailsDto =
         monitorActions.getMonitorDetails(monitorId)
 
@@ -97,7 +97,7 @@ class PushMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckPushMonitorsWritable
     override fun createMonitor(@Valid monitor: PushMonitorCreateDto): PushMonitorDto {
         val createdMonitor = monitorActions.createMonitor(monitor)
@@ -126,7 +126,7 @@ class PushMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckPushMonitorsWritable
     override fun deleteMonitor(monitorId: Long) = monitorActions.deleteMonitorById(monitorId)
 
@@ -152,7 +152,7 @@ class PushMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckPushMonitorsWritable
     override fun updateMonitor(monitorId: Long, updates: ObjectNode): PushMonitorDto {
         val updatedMonitor = monitorActions.updateMonitor(monitorId, updates)
@@ -166,7 +166,7 @@ class PushMonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = PushUptimeEventDto::class)))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getUptimeEvents(monitorId: Long): List<PushUptimeEventDto> =
         monitorActions.getUptimeEventsByMonitorId(monitorId)
 
@@ -182,7 +182,7 @@ class PushMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitorStats(
         monitorId: Long,
         @QueryValue period: Duration?,
@@ -201,7 +201,7 @@ class PushMonitorController(
             content = [Content(schema = Schema(implementation = PushMonitoringStatsDto::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitoringStats(period: Duration?): PushMonitoringStatsDto {
         return statCalculator.calculateOverallPushStats(period ?: Duration.ofDays(MONITORING_STATS_PERIOD_DEFAULT_DAYS))
     }

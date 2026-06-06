@@ -17,9 +17,9 @@ annotation class CheckHttpMonitorsWritable
 
 @Singleton
 @InterceptorBean(CheckHttpMonitorsWritable::class)
-class HttpMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
+class HttpMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any, Any>, Ordered {
 
-    override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
+    override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
         context.findAnnotation(CheckHttpMonitorsWritable::class.java).ifPresent { _ ->
             if (appConfig.isHttpMonitorExternalWriteDisabled()) throw ReadOnlyMonitorException()
         }

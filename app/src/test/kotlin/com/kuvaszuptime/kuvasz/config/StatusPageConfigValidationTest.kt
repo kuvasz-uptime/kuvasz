@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -32,7 +31,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
                 testAppContext("sp-blank-slug")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "StatusPageConfig.getSlug - ${StatusPageValidationMessages.SLUG_NOT_BLANK}"
             }
         }
@@ -42,7 +41,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
                 testAppContext("sp-invalid-slug")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "StatusPageConfig.getSlug - ${StatusPageValidationMessages.SLUG_PATTERN}"
             }
         }
@@ -52,7 +51,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
                 testAppContext("sp-blank-title")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "StatusPageConfig.getTitle - ${StatusPageValidationMessages.TITLE_NOT_BLANK}"
             }
         }
@@ -62,7 +61,7 @@ class StatusPageConfigValidationTest : DatabaseBehaviorSpec({
                 testAppContext("sp-invalid-monitor")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "Invalid monitor ID format: htt:test1. Expected format is 'type:name'"
             }
         }

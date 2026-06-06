@@ -65,7 +65,7 @@ class GlobalErrorHandlerTest(
 
                 exception.status shouldBe HttpStatus.BAD_REQUEST
                 val responseBody = exception.response.getBodyAs<ServiceError>().shouldNotBeNull()
-                responseBody.message shouldStartWith "Failed to convert argument:"
+                responseBody.message shouldStartWith "Invalid JSON"
             }
         }
 

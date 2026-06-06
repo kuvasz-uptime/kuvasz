@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import jakarta.inject.Inject
 import org.jooq.DSLContext
 

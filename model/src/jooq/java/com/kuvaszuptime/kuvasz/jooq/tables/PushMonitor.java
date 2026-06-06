@@ -20,7 +20,6 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -30,13 +29,14 @@ import org.jooq.QueryPart;
 import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.Select;
 import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.TableLike;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -65,7 +65,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
     /**
      * The column <code>kuvasz.push_monitor.id</code>.
      */
-    public final TableField<PushMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<PushMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.push_monitor.name</code>.
@@ -190,11 +190,6 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
     }
 
     @Override
-    public Identity<PushMonitorRecord, Long> getIdentity() {
-        return (Identity<PushMonitorRecord, Long>) super.getIdentity();
-    }
-
-    @Override
     public UniqueKey<PushMonitorRecord> getPrimaryKey() {
         return Keys.PUSH_MONITOR_PKEY;
     }
@@ -261,7 +256,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
      */
     @Override
     public PushMonitor where(Condition condition) {
-        return new PushMonitor(getQualifiedName(), aliased() ? this : null, null, condition);
+        return new PushMonitor(getQualifiedName(), aliased() ? this : null, null, Internal.condition(this, condition));
     }
 
     /**
@@ -328,7 +323,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public PushMonitor whereExists(Select<?> select) {
+    public PushMonitor whereExists(TableLike<?> select) {
         return where(DSL.exists(select));
     }
 
@@ -336,7 +331,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public PushMonitor whereNotExists(Select<?> select) {
+    public PushMonitor whereNotExists(TableLike<?> select) {
         return where(DSL.notExists(select));
     }
 }

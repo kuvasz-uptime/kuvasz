@@ -1,13 +1,13 @@
 package com.kuvaszuptime.kuvasz.validation
 
-import com.fasterxml.jackson.core.JacksonException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
 import jakarta.validation.Constraint
 import org.slf4j.LoggerFactory
+import tools.jackson.core.JacksonException
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [])

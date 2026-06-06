@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
 import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
@@ -38,6 +37,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import tools.jackson.databind.node.ObjectNode
 
 @Controller("${API_V2_PREFIX}/status-pages", produces = [MediaType.APPLICATION_JSON])
 @Validated
@@ -61,7 +61,7 @@ class StatusPageController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = StatusPageDto::class)))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getStatusPages(public: Boolean?): List<StatusPageDto> = statusPageActions.getStatusPages(public)
 
     @ApiResponses(
@@ -76,7 +76,7 @@ class StatusPageController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getStatusPage(statusPageId: Long): StatusPageDto = statusPageActions.getStatusPageById(statusPageId)
 
     @ApiResponses(
@@ -91,7 +91,7 @@ class StatusPageController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Secured(SecurityRule.IS_ANONYMOUS)
     override fun getStatusPageDetails(statusPageId: Long): StatusPageDetailsDto =
         if (statusPageId == 0L) {
@@ -149,7 +149,7 @@ class StatusPageController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckStatusPagesWritable
     override fun createStatuspage(@Valid statusPage: StatusPageCreateDto): StatusPageDto {
         val created = statusPageActions.createStatusPage(statusPage)
@@ -173,7 +173,7 @@ class StatusPageController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckStatusPagesWritable
     override fun deleteStatusPage(statusPageId: Long) = statusPageActions.deleteStatusPageById(statusPageId)
 
@@ -199,7 +199,7 @@ class StatusPageController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckStatusPagesWritable
     override fun updateStatusPage(
         statusPageId: Long,
@@ -217,7 +217,7 @@ class StatusPageController(
         )
     )
     @Produces(MediaType.APPLICATION_YAML)
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getYamlStatusPagesExport(): SystemFile {
         val export = mapOf(
             StatusPageConfig.CONFIG_PREFIX to statusPageActions.getStatusPagesExport()

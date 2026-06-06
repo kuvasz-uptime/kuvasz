@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -27,7 +26,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-blank-name")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "PushMonitorConfig.getName - ${MonitorValidationMessages.NAME_NOT_BLANK}"
             }
         }
@@ -37,7 +36,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-null-heartbeat-interval")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "No property found for name [push-monitors[0].heartbeat-interval]"
             }
         }
@@ -47,7 +46,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-short-heartbeat-interval")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "PushMonitorConfig.getHeartbeatInterval - Heartbeat interval must be at least 10 seconds"
             }
         }
@@ -57,7 +56,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-negative-grace-period")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "PushMonitorConfig.getGracePeriod - " +
                     MonitorValidationMessages.GRACE_PERIOD_POSITIVE_OR_ZERO
             }
@@ -68,7 +67,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-empty-client-secret")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "PushMonitorConfig.getClientSecret - Client secret must be at least 36 characters long"
             }
         }
@@ -78,7 +77,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-blank-client-secret")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "PushMonitorConfig.getClientSecret - Client secret must not be blank"
             }
         }
@@ -88,7 +87,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-short-client-secret")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "PushMonitorConfig.getClientSecret - Client secret must be at least 36 characters long"
             }
         }
@@ -98,7 +97,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-conflicting-client-secret")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "YAML push monitor configs must have unique client secrets!"
             }
         }
@@ -108,7 +107,7 @@ class PushMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("push-monitor-zero-failure-count-threshold")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "PushMonitorConfig.getFailureCountThreshold - " +
                     MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
             }

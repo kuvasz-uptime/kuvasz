@@ -4,13 +4,14 @@
 package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -22,9 +23,25 @@ public class HttpMonitor implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
+
+    /**
+     * Monitor's name
+     */
     private String name;
+
+    /**
+     * URL to check
+     */
     private String url;
+
+    /**
+     * Uptime checking interval in seconds
+     */
     private Integer uptimeCheckInterval;
+
+    /**
+     * Flag to toggle the monitor
+     */
     private Boolean enabled;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;

@@ -35,7 +35,7 @@ class WebUIIcmpMonitorController(
 
     @Get("/icmp-monitors/fragments/stats")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun icmpMonitoringStats(): String {
         val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
@@ -72,7 +72,7 @@ class WebUIIcmpMonitorController(
 
     @Get("/icmp-monitors/fragments/list")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun icmpMonitorList(): String {
         val monitors = monitorActions.getMonitorsWithDetails(sortedBy = ICMP_MONITOR.NAME.asc())
@@ -82,7 +82,7 @@ class WebUIIcmpMonitorController(
 
     @Get("/icmp-monitors/fragments/details-heading/{monitorId}")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun icmpMonitorHeading(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)
@@ -102,7 +102,7 @@ class WebUIIcmpMonitorController(
 
     @Get("/icmp-monitors/fragments/details-uptime-incidents/{monitorId}")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun icmpMonitorUptimeIncidents(@PathVariable monitorId: Long) =
         monitorRepository.findById(monitorId, null)?.let { monitor ->

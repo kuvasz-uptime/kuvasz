@@ -1,8 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
@@ -41,10 +38,9 @@ import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -76,6 +72,8 @@ import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.node.JsonNodeFactory
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -1121,7 +1119,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.URL_PATTERN
+                    response.message shouldContain MonitorValidationMessages.URL_PATTERN
                 }
             }
 
@@ -1139,7 +1137,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Uptime check interval must be at least 5 seconds"
+                    response.message shouldContain "Uptime check interval must be at least 5 seconds"
                 }
             }
 
@@ -1158,7 +1156,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO
                 }
             }
@@ -1178,7 +1176,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Invalid integration ID format: invalid-integration. Expected format is 'type:name'"
                 }
             }
@@ -1198,7 +1196,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Non-existing integration ID found: email:non-existing-integration."
                 }
             }
@@ -1218,7 +1216,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.SUPPORTED_STATUS_CODES
+                    response.message shouldContain MonitorValidationMessages.SUPPORTED_STATUS_CODES
                 }
             }
 
@@ -1237,7 +1235,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         MonitorValidationMessages.RESPONSE_TIME_THRESHOLD_POSITIVE
                 }
             }
@@ -1257,7 +1255,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Response time threshold must be less than or equal to 30000 milliseconds"
                 }
             }
@@ -1277,7 +1275,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    response.message shouldContain ValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -1296,7 +1294,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    response.message shouldContain ValidationMessages.VALID_HEADER_NAMES
                 }
             }
 
@@ -1315,7 +1313,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
+                    response.message shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
                 }
             }
 
@@ -1334,7 +1332,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
                 }
             }
@@ -1540,14 +1538,14 @@ class HttpMonitorControllerTest(
                     .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, "5000")
                     .put(HttpMonitorUpdateDto::sslExpiryThreshold.name, "20")
                     .put(HttpMonitorUpdateDto::failureCountThreshold.name, "2")
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::integrations.name,
                         mapper
                             .createArrayNode()
                             .add("slack:test_implicitly_enabled")
                             .add("telegram:disabled")
                     )
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::expectedStatusCodes.name,
                         mapper.createArrayNode().add(200).add(201)
                     )
@@ -1555,11 +1553,11 @@ class HttpMonitorControllerTest(
                     .put(HttpMonitorUpdateDto::expectedKeyword.name, "updated_keyword")
                     .put(HttpMonitorUpdateDto::expectedKeywordCaseSensitive.name, false)
                     .put(HttpMonitorUpdateDto::expectedKeywordNegated.name, false)
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::requestHeaders.name,
                         mapper.createObjectNode().put("X-New-Header", "UpdatedValue")
                     )
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::expectedHeaders.name,
                         mapper.createObjectNode()
                     )
@@ -1694,7 +1692,7 @@ class HttpMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(HttpMonitorUpdateDto::integrations.name, mapper.createArrayNode())
+                    .set(HttpMonitorUpdateDto::integrations.name, mapper.createArrayNode())
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
@@ -2031,7 +2029,7 @@ class HttpMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::integrations.name,
                         mapper.createArrayNode().add("invalid-integration")
                     )
@@ -2044,7 +2042,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Invalid JSON"
+                    response.message shouldContain "Invalid JSON"
                     monitorInDb.integrations shouldContainExactlyInAnyOrder createdMonitor.integrations.toTypedArray()
                 }
             }
@@ -2058,7 +2056,7 @@ class HttpMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::integrations.name,
                         mapper.createArrayNode().add("email:non-existing-integration")
                     )
@@ -2071,7 +2069,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Non-existing integration ID found: email:non-existing-integration."
                     monitorInDb.integrations shouldContainExactlyInAnyOrder createdMonitor.integrations.toTypedArray()
                 }
@@ -2156,7 +2154,7 @@ class HttpMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::expectedStatusCodes.name,
                         mapper.createArrayNode().add(200).add(999) // 999 is not a valid status code
                     )
@@ -2169,7 +2167,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain MonitorValidationMessages.SUPPORTED_STATUS_CODES
+                    response.message shouldContain MonitorValidationMessages.SUPPORTED_STATUS_CODES
                     monitorInDb.expectedStatusCodes shouldContainExactlyInAnyOrder
                         createdMonitor.expectedStatusCodes.toTypedArray()
                 }
@@ -2185,7 +2183,7 @@ class HttpMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::requestHeaders.name,
                         mapper.createObjectNode().put("- Header", "NewValue")
                     )
@@ -2198,7 +2196,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    response.message shouldContain ValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.requestHeadersAsMap() shouldContainExactly createdMonitor.requestHeaders
                 }
             }
@@ -2213,7 +2211,7 @@ class HttpMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         HttpMonitorUpdateDto::expectedHeaders.name,
                         mapper.createObjectNode().put("12 41", "NewValue")
                     )
@@ -2226,7 +2224,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.VALID_HEADER_NAMES
+                    response.message shouldContain ValidationMessages.VALID_HEADER_NAMES
                     monitorInDb.expectedHeadersAsMap() shouldContainExactly createdMonitor.expectedHeaders
                 }
             }
@@ -2251,7 +2249,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
+                    response.message shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
                     monitorInDb.requestBody shouldBe createdMonitor.requestBody
                 }
             }

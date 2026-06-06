@@ -4,7 +4,6 @@
 package com.kuvaszuptime.kuvasz.jooq.tables;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
 import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
@@ -23,7 +22,6 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Identity;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
 import org.jooq.Path;
@@ -32,16 +30,19 @@ import org.jooq.QueryPart;
 import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.Select;
 import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.TableLike;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import org.jooq.jackson.extensions.converters.JSONBtoJacksonConverter;
+import org.jooq.jackson3.extensions.converters.JSONBtoJacksonConverter;
+
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -68,7 +69,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     /**
      * The column <code>kuvasz.http_monitor.id</code>.
      */
-    public final TableField<HttpMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<HttpMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>kuvasz.http_monitor.name</code>. Monitor's name
@@ -257,11 +258,6 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     }
 
     @Override
-    public Identity<HttpMonitorRecord, Long> getIdentity() {
-        return (Identity<HttpMonitorRecord, Long>) super.getIdentity();
-    }
-
-    @Override
     public UniqueKey<HttpMonitorRecord> getPrimaryKey() {
         return Keys.MONITOR_PKEY;
     }
@@ -354,7 +350,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     @Override
     public HttpMonitor where(Condition condition) {
-        return new HttpMonitor(getQualifiedName(), aliased() ? this : null, null, condition);
+        return new HttpMonitor(getQualifiedName(), aliased() ? this : null, null, Internal.condition(this, condition));
     }
 
     /**
@@ -421,7 +417,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public HttpMonitor whereExists(Select<?> select) {
+    public HttpMonitor whereExists(TableLike<?> select) {
         return where(DSL.exists(select));
     }
 
@@ -429,7 +425,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      * Create an inline derived table from this table
      */
     @Override
-    public HttpMonitor whereNotExists(Select<?> select) {
+    public HttpMonitor whereNotExists(TableLike<?> select) {
         return where(DSL.notExists(select));
     }
 }

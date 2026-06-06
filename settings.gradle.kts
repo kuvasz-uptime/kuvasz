@@ -11,7 +11,7 @@ pluginManagement {
         val jooqPluginVersion: String by settings
         val flywayPluginVersion: String by settings
         val detektVersion: String by settings
-        val micronautGradlePluginVersion = "4.6.2"
+        val micronautGradlePluginVersion = "5.0.0"
 
         kotlin("jvm") version kotlinVersion
         kotlin("kapt") version kotlinVersion
@@ -78,7 +78,7 @@ dependencyResolutionManagement {
             // jOOQ
             library("jooq-kotlin", "org.jooq", "jooq-kotlin").version(jooqVersion)
             library("jooq-postgres-extensions", "org.jooq", "jooq-postgres-extensions").version(jooqVersion)
-            library("jooq-jackson-extensions", "org.jooq", "jooq-jackson-extensions").version(jooqVersion)
+            library("jooq-jackson-extensions", "org.jooq", "jooq-jackson3-extensions").version(jooqVersion)
             library("jooq-gradle-plugin", "nu.studer", "gradle-jooq-plugin").version(jooqPluginVersion)
 
             // Simple Java Mail
@@ -87,8 +87,9 @@ dependencyResolutionManagement {
             library("simplejavamail-batchmodule", "org.simplejavamail", "batch-module").versionRef("simpleJavaMail")
 
             // Tests
+            library("kotest-data", "io.kotest", "kotest-assertions-table").version("6.1.11")
             library("mockk", "io.mockk", "mockk").version("1.14.9")
-            library("mockserver-netty", "org.mock-server", "mockserver-netty").version("5.15.0")
+            library("mockserver-netty", "org.mock-server", "mockserver-netty-no-dependencies").version("6.1.0")
             val testcontainersVersion = "2.0.5"
             library("testcontainers", "org.testcontainers", "testcontainers").version(testcontainersVersion)
             library("testcontainers-pg", "org.testcontainers", "testcontainers-postgresql").version(

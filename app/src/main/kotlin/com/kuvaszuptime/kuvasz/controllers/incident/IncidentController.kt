@@ -39,7 +39,7 @@ class IncidentController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = IncidentDto::class)))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getIncidents(
         @QueryValue monitorId: Long?,
         @QueryValue period: Duration?,

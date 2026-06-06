@@ -36,7 +36,7 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors/fragments/stats")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitoringStats(): String {
         val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
@@ -78,7 +78,7 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors/fragments/list")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorTable(): String {
         val monitors = monitorActions.getMonitorsWithDetails(sortedBy = HTTP_MONITOR.NAME.asc())
@@ -88,7 +88,7 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors/fragments/details-heading/{monitorId}")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorHeading(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)
@@ -111,7 +111,7 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors/fragments/details-uptime-incidents/{monitorId}")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorUptimeIncidents(@PathVariable monitorId: Long) =
         monitorRepository.findById(monitorId, null)?.let { monitor ->
@@ -126,7 +126,7 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors/fragments/details-ssl-incidents/{monitorId}")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorSSLIncidents(@PathVariable monitorId: Long) =
         monitorRepository.findById(monitorId, null)?.let { monitor ->

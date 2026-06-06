@@ -1,8 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -33,7 +30,6 @@ import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
@@ -60,6 +56,8 @@ import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.node.JsonNodeFactory
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -640,7 +638,7 @@ class PushMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Heartbeat interval must be at least 10 seconds"
+                    response.message shouldContain "Heartbeat interval must be at least 10 seconds"
                 }
             }
 
@@ -658,7 +656,7 @@ class PushMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Grace period must be greater than or equal to 0 seconds"
+                    response.message shouldContain "Grace period must be greater than or equal to 0 seconds"
                 }
             }
 
@@ -676,7 +674,7 @@ class PushMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Client secret must be at least 36 characters long"
+                    response.message shouldContain "Client secret must be at least 36 characters long"
                 }
             }
 
@@ -695,7 +693,7 @@ class PushMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Invalid integration ID format: invalid-integration. Expected format is 'type:name'"
                 }
             }
@@ -715,7 +713,7 @@ class PushMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Non-existing integration ID found: email:non-existing-integration."
                 }
             }
@@ -897,7 +895,7 @@ class PushMonitorControllerTest(
                     .put(PushMonitorUpdateDto::gracePeriod.name, "20")
                     .put(PushMonitorUpdateDto::clientSecret.name, newClientSecret)
                     .put(PushMonitorUpdateDto::failureCountThreshold.name, 3)
-                    .set<ObjectNode>(
+                    .set(
                         PushMonitorUpdateDto::integrations.name,
                         mapper
                             .createArrayNode()
@@ -976,7 +974,7 @@ class PushMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(PushMonitorUpdateDto::integrations.name, mapper.createArrayNode())
+                    .set(PushMonitorUpdateDto::integrations.name, mapper.createArrayNode())
                 monitorClient.updateMonitor(createdMonitor.id, updateDto)
                 val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
 
@@ -1398,7 +1396,7 @@ class PushMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         PushMonitorUpdateDto::integrations.name,
                         mapper.createArrayNode().add("invalid-integration")
                     )
@@ -1411,7 +1409,7 @@ class PushMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Invalid JSON"
+                    response.message shouldContain "Invalid JSON"
                     monitorInDb.integrations shouldContainExactlyInAnyOrder createdMonitor.integrations.toTypedArray()
                 }
             }
@@ -1426,7 +1424,7 @@ class PushMonitorControllerTest(
                 val createdMonitor = monitorClient.createMonitor(createDto)
 
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         PushMonitorUpdateDto::integrations.name,
                         mapper.createArrayNode().add("email:non-existing-integration")
                     )
@@ -1439,7 +1437,7 @@ class PushMonitorControllerTest(
 
                 then("it should return a 400 with a validation error") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Non-existing integration ID found: email:non-existing-integration."
                     monitorInDb.integrations shouldContainExactlyInAnyOrder createdMonitor.integrations.toTypedArray()
                 }

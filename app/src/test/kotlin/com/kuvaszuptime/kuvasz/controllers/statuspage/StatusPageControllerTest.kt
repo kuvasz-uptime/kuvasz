@@ -1,12 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
-import com.fasterxml.jackson.module.kotlin.convertValue
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -29,7 +22,6 @@ import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -58,6 +50,12 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.PropertyNamingStrategies
+import tools.jackson.databind.node.JsonNodeFactory
+import tools.jackson.dataformat.yaml.YAMLMapper
+import tools.jackson.module.kotlin.convertValue
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.kotlinModule
 import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest
@@ -76,9 +74,10 @@ class StatusPageControllerTest(
 
     init {
         given("StatusPageController's getStatusPagesExport() endpoint") {
-            val mapper = YAMLMapper()
-                .registerModules(kotlinModule())
-                .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+            val mapper = YAMLMapper.builder()
+                .addModules(kotlinModule())
+                .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+                .build()
 
             `when`("there are status pages in the database") {
                 val monitor = createHttpMonitor(
@@ -546,7 +545,7 @@ class StatusPageControllerTest(
 
                 then("the DTO should be validated, response should be a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain StatusPageValidationMessages.SLUG_PATTERN
+                    response.message shouldContain StatusPageValidationMessages.SLUG_PATTERN
                 }
             }
 
@@ -563,7 +562,7 @@ class StatusPageControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Invalid monitor ID format: invalid-monitor-id. Expected format is 'type:name'"
                 }
             }
@@ -639,7 +638,7 @@ class StatusPageControllerTest(
                     .put(StatusPageUpdateDto::slug.name, "updated-status-page")
                     .put(StatusPageUpdateDto::customLogoUrl.name, "https://example.com/logo2.png")
                     .put(StatusPageUpdateDto::customFaviconUrl.name, "https://example.com/favicon2.png")
-                    .set<ObjectNode>(
+                    .set(
                         StatusPageUpdateDto::monitors.name,
                         mapper
                             .createArrayNode()
@@ -683,7 +682,7 @@ class StatusPageControllerTest(
                     )
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         StatusPageUpdateDto::monitors.name,
                         mapper.createArrayNode()
                     )
@@ -772,7 +771,7 @@ class StatusPageControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain
+                    response.message shouldContain
                         "Validation failed: title: Status page title must not be blank"
                     statusPageInDb.title shouldBe statusPage.title
                 }
@@ -793,7 +792,7 @@ class StatusPageControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Validation failed: public: must not be null"
+                    response.message shouldContain "Validation failed: public: must not be null"
                     statusPageInDb.public shouldBe statusPage.public
                 }
             }
@@ -814,7 +813,7 @@ class StatusPageControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain StatusPageValidationMessages.SLUG_PATTERN
+                    response.message shouldContain StatusPageValidationMessages.SLUG_PATTERN
                     statusPageInDb.slug shouldBe statusPage.slug
                 }
             }
@@ -845,7 +844,7 @@ class StatusPageControllerTest(
                     slug = "status-page-1",
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         StatusPageUpdateDto::monitors.name,
                         mapper.createArrayNode().add("invalid-monitor-id")
                     )
@@ -860,7 +859,7 @@ class StatusPageControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    exceptionToMessage(response) shouldContain "Invalid JSON"
+                    response.message shouldContain "Invalid JSON"
                     statusPageInDb.monitors.shouldBeEmpty()
                 }
             }
@@ -873,7 +872,7 @@ class StatusPageControllerTest(
                     slug = "status-page-1",
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         StatusPageUpdateDto::monitors.name,
                         mapper
                             .createArrayNode()
@@ -898,7 +897,7 @@ class StatusPageControllerTest(
                     slug = "status-page-1",
                 )
                 val updateDto = JsonNodeFactory.instance.objectNode()
-                    .set<ObjectNode>(
+                    .set(
                         StatusPageUpdateDto::monitors.name,
                         mapper
                             .createArrayNode()

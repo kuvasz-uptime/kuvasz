@@ -1,12 +1,12 @@
 package com.kuvaszuptime.kuvasz.models.monitor.http
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.JsonNodeToMapConverter
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import tools.jackson.databind.JsonNode
 
 private val converter = JsonNodeToMapConverter()
 

@@ -20,6 +20,7 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import org.mockserver.client.MockServerClient
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpError
 import org.mockserver.model.HttpRequest
@@ -1426,9 +1427,8 @@ private fun headRequest(path: String) =
         .withPath(path)
         .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT)
 
-private fun ClientAndServer.verifyRequest(request: HttpRequest, exactly: Int = 1) =
+private fun MockServerClient.verifyRequest(request: HttpRequest, exactly: Int = 1) =
     verify(
-        request
-            .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT),
+        request,
         if (exactly == 0) VerificationTimes.never() else VerificationTimes.exactly(exactly)
     )

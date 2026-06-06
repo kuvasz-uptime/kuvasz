@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.testAppContext
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
@@ -23,7 +22,7 @@ class SMTPMailerConfigTest : BehaviorSpec(
                     val exception = shouldThrow<BeanInstantiationException> {
                         testAppContext(properties, "full-integrations-setup")
                     }
-                    exceptionToMessage(exception) shouldContain "Error when trying to open connection to the server"
+                    exception.message shouldContain "Error when trying to open connection to the server"
                 }
             }
         }

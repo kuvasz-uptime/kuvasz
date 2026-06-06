@@ -10,34 +10,34 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-java@v3
-      with:
-        distribution: adopt
-        java-version: 25
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-    - name: Validate translations
-      run: ./gradlew :shared:validateI18n
-    - name: Generate OpenAPI spec
-      run: ./gradlew :app:updateApiDoc
-    - name: Validate that generated sources are committed
-      run: git diff --quiet --exit-code HEAD --
-    - name: Run detekt
-      run: ./gradlew detektAll
-    - name: Run check
-      run: ./gradlew check
-    - name: Generate code coverage report for Codecov
-      run: ./gradlew koverXmlReport
-    - name: Codecov
-      uses: codecov/codecov-action@v6
-      with:
-        token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
-        files: ./build/reports/kover/report.xml
-        fail_ci_if_error: false
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: adopt
+          java-version: 25
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Validate translations
+        run: ./gradlew :shared:validateI18n
+      - name: Generate OpenAPI spec
+        run: ./gradlew :app:updateApiDoc
+      - name: Validate that generated sources are committed
+        run: git diff --quiet --exit-code HEAD --
+      - name: Run detekt
+        run: ./gradlew detektAll
+      - name: Run check
+        run: ./gradlew check
+      - name: Generate code coverage report for Codecov
+        run: ./gradlew koverXmlReport
+      - name: Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
+          files: ./build/reports/kover/report.xml
+          fail_ci_if_error: false

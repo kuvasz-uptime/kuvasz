@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpUptimeChecker
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.maps.shouldBeEmpty

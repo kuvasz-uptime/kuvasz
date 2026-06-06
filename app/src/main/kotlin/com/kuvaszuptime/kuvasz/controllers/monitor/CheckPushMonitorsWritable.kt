@@ -17,9 +17,9 @@ annotation class CheckPushMonitorsWritable
 
 @Singleton
 @InterceptorBean(CheckPushMonitorsWritable::class)
-class PushMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any?, Any?>, Ordered {
+class PushMonitorWriteInterceptor(private val appConfig: AppConfig) : MethodInterceptor<Any, Any>, Ordered {
 
-    override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
+    override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
         context.findAnnotation(CheckPushMonitorsWritable::class.java).ifPresent { _ ->
             if (appConfig.isPushMonitorExternalWriteDisabled()) throw ReadOnlyMonitorException()
         }

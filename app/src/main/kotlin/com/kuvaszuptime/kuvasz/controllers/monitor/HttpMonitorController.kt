@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.kuvaszuptime.kuvasz.OpenApiSecuritySchemes
 import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
@@ -34,6 +33,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import tools.jackson.databind.node.ObjectNode
 import java.time.Duration
 
 @Controller("${API_V2_PREFIX}/http-monitors", produces = [MediaType.APPLICATION_JSON])
@@ -55,7 +55,7 @@ class HttpMonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = HttpMonitorDetailsDto::class)))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitorsWithDetails(
         @QueryValue enabled: Boolean?,
         @QueryValue uptimeStatus: List<UptimeStatus>?,
@@ -81,7 +81,7 @@ class HttpMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto =
         monitorActions.getMonitorDetails(monitorId)
 
@@ -103,7 +103,7 @@ class HttpMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckHttpMonitorsWritable
     override fun createMonitor(@Valid monitor: HttpMonitorCreateDto): HttpMonitorDto {
         val createdMonitor = monitorActions.createMonitor(monitor)
@@ -132,7 +132,7 @@ class HttpMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckHttpMonitorsWritable
     override fun deleteMonitor(monitorId: Long) = monitorActions.deleteMonitorById(monitorId)
 
@@ -158,7 +158,7 @@ class HttpMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckHttpMonitorsWritable
     override fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorDto {
         val updatedMonitor = monitorActions.updateMonitor(monitorId, updates)
@@ -172,7 +172,7 @@ class HttpMonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = HttpUptimeEventDto::class)))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getUptimeEvents(monitorId: Long): List<HttpUptimeEventDto> =
         monitorActions.getUptimeEventsByMonitorId(monitorId)
 
@@ -183,7 +183,7 @@ class HttpMonitorController(
             content = [Content(array = ArraySchema(schema = Schema(implementation = SSLEventDto::class)))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getSSLEvents(monitorId: Long): List<SSLEventDto> =
         monitorActions.getSSLEventsByMonitorId(monitorId)
 
@@ -199,7 +199,7 @@ class HttpMonitorController(
             content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitorStats(
         monitorId: Long,
         @QueryValue period: Duration?,
@@ -218,7 +218,7 @@ class HttpMonitorController(
             content = [Content(schema = Schema(implementation = HttpMonitoringStatsDto::class))]
         )
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitoringStats(period: Duration?): HttpMonitoringStatsDto {
         return statCalculator.calculateOverallHttpStats(period ?: Duration.ofDays(MONITORING_STATS_PERIOD_DEFAULT_DAYS))
     }
