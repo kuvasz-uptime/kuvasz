@@ -18,7 +18,7 @@ import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe

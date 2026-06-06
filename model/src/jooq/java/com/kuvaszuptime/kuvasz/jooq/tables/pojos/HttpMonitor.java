@@ -4,13 +4,14 @@
 package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+
+import tools.jackson.databind.JsonNode;
 
 
 /**

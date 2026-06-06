@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.nulls.shouldBeNull
@@ -28,7 +27,7 @@ class IcmpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("icmp-monitor-blank-name")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "IcmpMonitorConfig.getName - ${MonitorValidationMessages.NAME_NOT_BLANK}"
             }
         }
@@ -38,7 +37,7 @@ class IcmpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("icmp-monitor-blank-host")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "IcmpMonitorConfig.getHost - ${MonitorValidationMessages.HOST_NOT_BLANK}"
             }
         }
@@ -48,7 +47,7 @@ class IcmpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("icmp-monitor-short-uptime-check-interval")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "IcmpMonitorConfig.getUptimeCheckInterval - Uptime check interval must be at least 5 seconds"
             }
         }
@@ -58,7 +57,7 @@ class IcmpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("icmp-monitor-zero-failure-count-threshold")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "IcmpMonitorConfig.getFailureCountThreshold - " +
                     MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE
             }
@@ -69,7 +68,7 @@ class IcmpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("icmp-monitor-out-of-range-packet-count")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "IcmpMonitorConfig.getPacketCount - ${MonitorValidationMessages.PACKET_COUNT_MAX}"
                         .replace("{value}", "10")
             }
@@ -80,7 +79,7 @@ class IcmpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("icmp-monitor-out-of-range-timeout")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "IcmpMonitorConfig.getTimeoutSeconds - ${MonitorValidationMessages.TIMEOUT_SECONDS_MAX}"
                         .replace("{value}", "30")
             }
@@ -91,7 +90,7 @@ class IcmpMonitorConfigValidationTest : BehaviorSpec({
                 testAppContext("icmp-monitor-out-of-range-packet-loss-threshold")
             }
             then("AppContext should throw a BeanInstantiationException") {
-                exceptionToMessage(exception) shouldContain
+                exception.message shouldContain
                     "IcmpMonitorConfig.getPacketLossThreshold - ${MonitorValidationMessages.PACKET_LOSS_THRESHOLD_MIN}"
                         .replace("{value}", "1")
             }

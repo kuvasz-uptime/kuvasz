@@ -3,15 +3,6 @@ import dev.detekt.gradle.Detekt
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
-buildscript {
-    val jooqVersion: String by project
-    configurations["classpath"].resolutionStrategy.eachDependency {
-        if (requested.group == "org.jooq") {
-            useVersion(jooqVersion)
-        }
-    }
-}
-
 plugins {
     kotlin("jvm") apply false
     id("dev.detekt") apply false

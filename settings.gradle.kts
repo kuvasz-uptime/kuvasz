@@ -87,9 +87,9 @@ dependencyResolutionManagement {
             library("simplejavamail-batchmodule", "org.simplejavamail", "batch-module").versionRef("simpleJavaMail")
 
             // Tests
-            library("kotest-data", "io.kotest", "kotest-assertions-table").version("6.1.9")
+            library("kotest-data", "io.kotest", "kotest-assertions-table").version("6.1.11")
             library("mockk", "io.mockk", "mockk").version("1.14.9")
-            library("mockserver-netty", "org.mock-server", "mockserver-netty").version("5.15.0")
+            library("mockserver-netty", "org.mock-server", "mockserver-netty").version("6.1.0")
             val testcontainersVersion = "2.0.5"
             library("testcontainers", "org.testcontainers", "testcontainers").version(testcontainersVersion)
             library("testcontainers-pg", "org.testcontainers", "testcontainers-postgresql").version(

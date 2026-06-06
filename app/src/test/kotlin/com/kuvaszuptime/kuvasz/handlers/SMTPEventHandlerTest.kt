@@ -29,7 +29,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.SMTPMailer
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne

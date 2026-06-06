@@ -30,7 +30,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
-import io.kotest.core.test.TestResult
+import io.kotest.engine.test.TestResult
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain

@@ -14,11 +14,13 @@ import io.micronaut.http.HttpMethod
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import org.mockserver.configuration.Configuration
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonBody
 import org.mockserver.verify.VerificationTimes
+import org.slf4j.event.Level
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
 class GenericWebhookClientTest(
@@ -28,9 +30,10 @@ class GenericWebhookClientTest(
     lateinit var mockServer: ClientAndServer
     val mockServerUrl = "http://localhost:1080"
     val webhookUrl = "$mockServerUrl/webhook".toUri()
+    val mockServerConfig = Configuration.configuration().logLevel(Level.DEBUG)
 
     beforeSpec {
-        mockServer = ClientAndServer.startClientAndServer(1080)
+        mockServer = ClientAndServer.startClientAndServer(mockServerConfig, 1080)
     }
 
     afterSpec {

@@ -27,7 +27,7 @@ java {
 
 micronaut {
     runtime("netty")
-    testRuntime("kotest6")
+    testRuntime("kotest5")
     processing {
         incremental(true)
         annotations("com.kuvaszuptime.kuvasz.*")
@@ -52,7 +52,7 @@ dependencies {
     implementation(mn.jackson.module.kotlin)
     implementation(mn.jackson.dataformat.yaml)
     implementation(mn.micronaut.kotlin.runtime)
-    implementation(mn.jackson.databind)
+    implementation(mn.micronaut.jackson.databind)
     runtimeOnly(mn.snakeyaml)
     implementation(mn.micronaut.validation)
     implementation(mn.logback.classic)
@@ -106,6 +106,7 @@ dependencies {
     kaptTest(mn.micronaut.inject.java)
     testImplementation(libs.mockk)
     testImplementation(mn.micronaut.test.kotest5)
+    testImplementation(libs.kotest.data)
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.pg)

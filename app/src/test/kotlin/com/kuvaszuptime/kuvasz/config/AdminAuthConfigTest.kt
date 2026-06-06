@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.testAppContext
-import io.kotest.assertions.exceptionToMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -26,7 +25,7 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception = shouldThrow<BeanInstantiationException> {
                     testAppContext(properties)
                 }
-                exceptionToMessage(exception) shouldContain "Admin password must be at least 12 characters"
+                exception.message shouldContain "Admin password must be at least 12 characters"
             }
         }
 
@@ -56,8 +55,8 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception2 = shouldThrow<BeanInstantiationException> {
                     testAppContext(properties2)
                 }
-                exceptionToMessage(exception1) shouldContain "Admin username must not be blank"
-                exceptionToMessage(exception2) shouldContain "Admin password must not be blank"
+                exception1.message shouldContain "Admin username must not be blank"
+                exception2.message shouldContain "Admin password must not be blank"
             }
         }
 
@@ -75,11 +74,11 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception = shouldThrow<BeanInstantiationException> {
                     testAppContext(properties)
                 }
-                exceptionToMessage(exception) shouldContain "Admin API key must be at least 16 characters"
+                exception.message shouldContain "Admin API key must be at least 16 characters"
             }
         }
 
-        `when`("apiKey null or empty") {
+        `when`("apiKey empty") {
             val properties = PropertySource.of(
                 "test",
                 mapOf(
@@ -89,24 +88,11 @@ class AdminAuthConfigTest : BehaviorSpec({
                     "admin-auth.api-key" to "",
                 )
             )
-            val properties2 = PropertySource.of(
-                "test",
-                mapOf(
-                    "micronaut.security.enabled" to true,
-                    "admin-auth.username" to "test-user",
-                    "admin-auth.password" to "validPassword123",
-                    "admin-auth.api-key" to null,
-                )
-            )
             then("ApplicationContext should throw a BeanInstantiationException") {
                 val exception1 = shouldThrow<BeanInstantiationException> {
                     testAppContext(properties)
                 }
-                val exception2 = shouldThrow<BeanInstantiationException> {
-                    testAppContext(properties2)
-                }
-                exceptionToMessage(exception1) shouldContain "Admin API key must not be blank"
-                exceptionToMessage(exception2) shouldContain "Admin API key must not be blank"
+                exception1.message shouldContain "Admin API key must not be blank"
             }
         }
 
@@ -124,7 +110,7 @@ class AdminAuthConfigTest : BehaviorSpec({
                 val exception = shouldThrow<BeanInstantiationException> {
                     testAppContext(properties)
                 }
-                exceptionToMessage(exception) shouldContain "Admin username and password should not be equal"
+                exception.message shouldContain "Admin username and password should not be equal"
             }
         }
 

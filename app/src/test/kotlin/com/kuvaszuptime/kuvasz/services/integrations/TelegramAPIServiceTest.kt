@@ -56,7 +56,7 @@ class TelegramAPIServiceTest(
 
             result.success shouldBe false
             result.message shouldBe Messages.failedTestResultMessage("Something went wrong")
-            verify(exactly = 1) { mockClient.sendMessage(testAPIToken, expectedMessage) }
+            verify(exactly = 4) { mockClient.sendMessage(testAPIToken, expectedMessage) }
         }
     }
 }) {

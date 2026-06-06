@@ -4,7 +4,6 @@
 package com.kuvaszuptime.kuvasz.jooq.tables;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
 import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
@@ -42,6 +41,8 @@ import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.jackson3.extensions.converters.JSONBtoJacksonConverter;
+
+import tools.jackson.databind.JsonNode;
 
 
 /**

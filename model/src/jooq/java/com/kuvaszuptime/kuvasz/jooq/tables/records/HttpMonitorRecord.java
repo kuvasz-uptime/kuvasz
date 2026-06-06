@@ -4,7 +4,6 @@
 package com.kuvaszuptime.kuvasz.jooq.tables.records;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord;
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
@@ -14,6 +13,8 @@ import java.time.OffsetDateTime;
 
 import org.jooq.Record1;
 import org.jooq.impl.UpdatableRecordImpl;
+
+import tools.jackson.databind.JsonNode;
 
 
 /**

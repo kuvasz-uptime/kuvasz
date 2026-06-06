@@ -1,8 +1,9 @@
-package io.micronaut.test.kotest
+package com.kuvaszuptime.kuvasz
 
 import com.kuvaszuptime.kuvasz.testutils.TestDbContainer
 import com.kuvaszuptime.kuvasz.testutils.TestSMTPExtension
 import io.kotest.core.config.AbstractProjectConfig
+import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension
 import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import io.reactivex.rxjava3.schedulers.Schedulers
 

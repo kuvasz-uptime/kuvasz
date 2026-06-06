@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -11,6 +10,7 @@ import io.kotest.data.row
 import io.kotest.data.table
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpHeaders
+import tools.jackson.databind.node.JsonNodeFactory
 
 @Suppress("Wrapping", "ArgumentListWrapping")
 class HttpCheckRequestConfiguratorTest : ShouldSpec({

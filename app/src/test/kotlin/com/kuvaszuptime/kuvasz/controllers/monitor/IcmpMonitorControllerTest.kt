@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -55,6 +54,7 @@ import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.node.JsonNodeFactory
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

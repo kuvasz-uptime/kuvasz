@@ -20,6 +20,8 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import org.mockserver.client.MockServerClient
+import org.mockserver.configuration.Configuration
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpError
 import org.mockserver.model.HttpRequest
@@ -28,6 +30,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.NottableString.not
 import org.mockserver.model.NottableString.string
 import org.mockserver.verify.VerificationTimes
+import org.slf4j.event.Level
 import java.util.concurrent.TimeUnit
 
 @MicronautTest(startApplication = false)
@@ -39,9 +42,10 @@ class UptimeCheckerE2ETest(
 
     lateinit var mockServer: ClientAndServer
     val mockServerUrl = "http://localhost:1080"
+    val mockServerConfig = Configuration.configuration().logLevel(Level.DEBUG)
 
     beforeSpec {
-        mockServer = ClientAndServer.startClientAndServer(1080)
+        mockServer = ClientAndServer.startClientAndServer(mockServerConfig, 1080)
     }
 
     afterSpec {
@@ -62,7 +66,7 @@ class UptimeCheckerE2ETest(
             eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
-            mockServer.`when`(request).respond(
+            MockServerClient("localhost", 1080).`when`(request).respond(
                 response()
                     .withStatusCode(HttpStatus.OK.code)
                     .withBody("Hello, world!")
@@ -1426,7 +1430,7 @@ private fun headRequest(path: String) =
         .withPath(path)
         .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT)
 
-private fun ClientAndServer.verifyRequest(request: HttpRequest, exactly: Int = 1) =
+private fun MockServerClient.verifyRequest(request: HttpRequest, exactly: Int = 1) =
     verify(
         request
             .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT),

@@ -23,9 +23,9 @@ annotation class UnauthorizedOnly
 @InterceptorBean(UnauthorizedOnly::class)
 class UnauthorizedOnlyInterceptor(
     private val securityService: SecurityService?
-) : MethodInterceptor<Any?, Any?>, Ordered {
+) : MethodInterceptor<Any, Any>, Ordered {
 
-    override fun intercept(context: MethodInvocationContext<Any?, Any?>): Any? {
+    override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
         context.findAnnotation(UnauthorizedOnly::class.java).ifPresent { _ ->
             if (securityService?.isAuthenticated != false) throw AlreadyLoggedInError()
         }
