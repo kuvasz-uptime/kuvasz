@@ -28,6 +28,9 @@ class SettingsRepository(
     @field:Property(name = "micronaut.metrics.enabled")
     protected var metricsExportEnabled: Boolean = false
 
+    @field:Property(name = "micronaut.mcp.server.enabled")
+    protected var mcpServerEnabled: Boolean = false
+
     fun getSettings(): SettingsDto =
         SettingsDto(
             authentication = SettingsDto.AuthenticationSettingsDto(
@@ -57,6 +60,7 @@ class SettingsRepository(
                 )
             },
             metricsExport = metricsExportSettingsDto(),
+            mcpServer = SettingsDto.McpServerSettingsDto(enabled = mcpServerEnabled),
             versionInfo = VersionInfoDto.fromVersionInfo(versionChecker.getVersionInfo()),
         )
 

@@ -119,6 +119,16 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     }
                 }
             }
+            // MCP server settings
+            settingsCard(
+                title = Messages.mcpServerSettings(),
+                icon = Icon.AI,
+            ) {
+                div {
+                    classes(DIVIDE_Y)
+                    settingsToggle(label = Messages.enabled(), checked = settings.mcpServer.enabled)
+                }
+            }
             // Exporter settings
             settingsCard(
                 title = Messages.exporterSettings(),
