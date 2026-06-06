@@ -20,8 +20,8 @@ fun AppConfig.checkMonitorMutability(type: MonitorType) = when (type) {
     MonitorType.HTTP_SSL -> isHttpMonitorExternalWriteDisabled()
     MonitorType.PUSH -> isPushMonitorExternalWriteDisabled()
     MonitorType.ICMP -> isIcmpMonitorExternalWriteDisabled()
-}.let { isNonMutable ->
-    if (isNonMutable) {
+}.let { isImmutable ->
+    if (isImmutable) {
         throw ReadOnlyMonitorException()
     }
 }

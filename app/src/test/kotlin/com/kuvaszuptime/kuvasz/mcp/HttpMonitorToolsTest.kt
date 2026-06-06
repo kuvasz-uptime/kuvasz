@@ -4,8 +4,12 @@ import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -17,10 +21,11 @@ import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.readValue
 
-@MicronautTest
+@MicronautTest(environments = ["full-integrations-setup"])
 class HttpMonitorToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
     private val objectMapper: ObjectMapper,
 ) : McpToolTest(client) {
 
@@ -214,6 +219,54 @@ class HttpMonitorToolsTest(
                 then("it should return a resource-not-found protocol error with no result") {
                     response.result.shouldBeNull()
                     response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
+                }
+            }
+
+            `when`("get-http-monitor-details is called for a monitor with integrations") {
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    integrations = listOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")),
+                )
+                val response = callTool("get-http-monitor-details", mapOf("monitorId" to monitor.id))
+
+                then("it should return populated effectiveIntegrations with IntegrationDetailsSchema entries") {
+                    val details = objectMapper.convertValue<HttpMonitorDetailsSchema>(
+                        response.result.shouldNotBeNull().structuredContent.shouldNotBeNull()
+                    )
+                    val effectiveIntegrations = details.effectiveIntegrations.shouldNotBeEmpty()
+                    effectiveIntegrations.forOne { integration ->
+                        integration.id shouldBe "slack:test_implicitly_enabled"
+                        integration.type shouldBe IntegrationType.SLACK
+                        integration.name shouldBe "test_implicitly_enabled"
+                        integration.enabled shouldBe true
+                        integration.global shouldBe false
+                    }
+                }
+            }
+
+            `when`("get-http-monitor-stats is called for a monitor with latency history") {
+                val monitor = createHttpMonitor(httpMonitorRepository, latencyHistoryEnabled = true)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 100)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 200)
+                latencyLogRepository.insertLatencyForMonitor(monitor.id, 300)
+                val response = callTool("get-http-monitor-stats", mapOf("monitorId" to monitor.id))
+
+                then("it should return populated LatencyStatsSchema and LatencyLogSchema entries") {
+                    val result = response.result.shouldNotBeNull()
+                    result.isError shouldBe false
+
+                    val stats = objectMapper.convertValue<HttpMonitorStatsSchema>(
+                        result.structuredContent.shouldNotBeNull()
+                    )
+                    val latencyStats = stats.latencyStats.shouldNotBeNull()
+                    latencyStats.averageLatencyInMs.shouldNotBeNull()
+                    latencyStats.minLatencyInMs.shouldNotBeNull()
+                    latencyStats.maxLatencyInMs.shouldNotBeNull()
+
+                    stats.latencyLogs.shouldNotBeEmpty()
+                    stats.latencyLogs.first().latencyInMs shouldBe 300
+
+                    objectMapper.readValue<HttpMonitorStatsSchema>(result.firstText()) shouldBe stats
                 }
             }
         }

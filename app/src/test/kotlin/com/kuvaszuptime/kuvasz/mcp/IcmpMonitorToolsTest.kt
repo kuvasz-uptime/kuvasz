@@ -3,9 +3,13 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.mocks.createIcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -17,7 +21,7 @@ import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.readValue
 
-@MicronautTest
+@MicronautTest(environments = ["full-integrations-setup"])
 class IcmpMonitorToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val icmpMonitorRepository: IcmpMonitorRepository,
@@ -214,6 +218,57 @@ class IcmpMonitorToolsTest(
                 then("it should return a resource-not-found protocol error with no result") {
                     response.result.shouldBeNull()
                     response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
+                }
+            }
+
+            `when`("get-icmp-monitor-details is called for a monitor with integrations") {
+                val monitor = createIcmpMonitor(
+                    icmpMonitorRepository,
+                    integrations = listOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")),
+                )
+                val response = callTool("get-icmp-monitor-details", mapOf("monitorId" to monitor.id))
+
+                then("it should return populated effectiveIntegrations with IntegrationDetailsSchema entries") {
+                    val details = objectMapper.convertValue<IcmpMonitorDetailsSchema>(
+                        response.result.shouldNotBeNull().structuredContent.shouldNotBeNull()
+                    )
+                    val effectiveIntegrations = details.effectiveIntegrations.shouldNotBeEmpty()
+                    effectiveIntegrations.forOne { integration ->
+                        integration.id shouldBe "slack:test_implicitly_enabled"
+                        integration.type shouldBe IntegrationType.SLACK
+                        integration.name shouldBe "test_implicitly_enabled"
+                        integration.enabled shouldBe true
+                        integration.global shouldBe false
+                    }
+                }
+            }
+
+            `when`("get-icmp-monitor-stats is called for a monitor with metrics history") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository, metricsHistoryEnabled = true)
+                createIcmpMetricsLogRecord(dslContext, monitorId = monitor.id, latencyMs = 10, packetLossPercentage = 0)
+                createIcmpMetricsLogRecord(dslContext, monitorId = monitor.id, latencyMs = 20, packetLossPercentage = 0)
+                createIcmpMetricsLogRecord(
+                    dslContext, monitorId = monitor.id, latencyMs = null, packetLossPercentage = 100
+                )
+                val response = callTool("get-icmp-monitor-stats", mapOf("monitorId" to monitor.id))
+
+                then("it should return populated PacketLossStatsSchema and IcmpMetricsLogSchema entries") {
+                    val result = response.result.shouldNotBeNull()
+                    result.isError shouldBe false
+
+                    val stats = objectMapper.convertValue<IcmpMonitorStatsSchema>(
+                        result.structuredContent.shouldNotBeNull()
+                    )
+                    val packetLossStats = stats.packetLossStats.shouldNotBeNull()
+                    packetLossStats.averagePacketLossPercentage.shouldNotBeNull()
+                    packetLossStats.minPacketLossPercentage.shouldNotBeNull()
+                    packetLossStats.maxPacketLossPercentage.shouldNotBeNull()
+
+                    stats.latencyStats.shouldNotBeNull()
+
+                    stats.metricsLogs.shouldNotBeEmpty()
+
+                    objectMapper.readValue<IcmpMonitorStatsSchema>(result.firstText()) shouldBe stats
                 }
             }
         }

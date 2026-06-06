@@ -4,8 +4,11 @@ import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -17,7 +20,7 @@ import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.readValue
 
-@MicronautTest
+@MicronautTest(environments = ["full-integrations-setup"])
 class PushMonitorToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val pushMonitorRepository: PushMonitorRepository,
@@ -215,6 +218,28 @@ class PushMonitorToolsTest(
                 then("it should return a resource-not-found protocol error with no result") {
                     response.result.shouldBeNull()
                     response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
+                }
+            }
+
+            `when`("get-push-monitor-details is called for a monitor with integrations") {
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    integrations = listOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")),
+                )
+                val response = callTool("get-push-monitor-details", mapOf("monitorId" to monitor.id))
+
+                then("it should return populated effectiveIntegrations with IntegrationDetailsSchema entries") {
+                    val details = objectMapper.convertValue<PushMonitorDetailsSchema>(
+                        response.result.shouldNotBeNull().structuredContent.shouldNotBeNull()
+                    )
+                    val effectiveIntegrations = details.effectiveIntegrations.shouldNotBeEmpty()
+                    effectiveIntegrations.forOne { integration ->
+                        integration.id shouldBe "slack:test_implicitly_enabled"
+                        integration.type shouldBe IntegrationType.SLACK
+                        integration.name shouldBe "test_implicitly_enabled"
+                        integration.enabled shouldBe true
+                        integration.global shouldBe false
+                    }
                 }
             }
         }
