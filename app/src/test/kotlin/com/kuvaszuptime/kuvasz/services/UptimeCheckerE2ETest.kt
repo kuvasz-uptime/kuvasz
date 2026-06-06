@@ -63,7 +63,7 @@ class UptimeCheckerE2ETest(
             eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
 
             val request = getRequest("/some-path")
-            MockServerClient("localhost", 1080).`when`(request).respond(
+            mockServer.`when`(request).respond(
                 response()
                     .withStatusCode(HttpStatus.OK.code)
                     .withBody("Hello, world!")
