@@ -36,7 +36,7 @@ class WebUIController(
     @Get(DASHBOARD_PATH)
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     fun dashboard() = renderDashboard(appGlobals)
 
     @Get(LOGIN_PATH)
@@ -50,13 +50,13 @@ class WebUIController(
     @Get("/settings")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     fun settings() = renderSettings(appGlobals, settingsRepository.getSettings())
 
     @Get("/integrations")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     fun integrations() = renderIntegrations(
         globals = appGlobals,
         integrations = integrationsRepository.getConfiguredIntegrationDtos().sortedBy { it.name },
@@ -66,7 +66,7 @@ class WebUIController(
     @Get("/incidents")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     fun incidents(@QueryValue period: Duration?): String {
         val effectivePeriod = period ?: Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
         return renderIncidentsPage(

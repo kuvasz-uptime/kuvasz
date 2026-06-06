@@ -35,7 +35,7 @@ class WebUIPushMonitorController(
 
     @Get("/push-monitors/fragments/stats")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun pushMonitoringStats(): String {
         val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
@@ -72,7 +72,7 @@ class WebUIPushMonitorController(
 
     @Get("/push-monitors/fragments/list")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun pushMonitorList(): String {
         val monitors = monitorActions.getMonitorsWithDetails(sortedBy = PUSH_MONITOR.NAME.asc())
@@ -82,7 +82,7 @@ class WebUIPushMonitorController(
 
     @Get("/push-monitors/fragments/details-heading/{monitorId}")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun pushMonitorHeading(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)
@@ -102,7 +102,7 @@ class WebUIPushMonitorController(
 
     @Get("/push-monitors/fragments/details-uptime-incidents/{monitorId}")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun pushMonitorUptimeIncidents(@PathVariable monitorId: Long) =
         monitorRepository.findById(monitorId, null)?.let { monitor ->

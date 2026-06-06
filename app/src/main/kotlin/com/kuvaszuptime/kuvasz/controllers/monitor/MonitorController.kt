@@ -49,7 +49,7 @@ class MonitorController(
         )
     )
     @Produces(MediaType.APPLICATION_YAML)
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getYamlMonitorsExport(): SystemFile {
         val export = mapOf(
             HttpMonitorConfig.CONFIG_PREFIX

@@ -45,7 +45,7 @@ class WebUIStatusPageController(
 
     @Get("/fragments/list")
     @WebSecured
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun statusPageList(): String {
         val statusPages = statusPageActions.getStatusPages(public = null, sortedBy = STATUS_PAGE.TITLE.asc())

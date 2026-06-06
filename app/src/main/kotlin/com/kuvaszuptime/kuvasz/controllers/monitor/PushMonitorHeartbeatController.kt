@@ -35,7 +35,7 @@ class PushMonitorHeartbeatController(
             description = "Heartbeat received"
         ),
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Status(HttpStatus.ACCEPTED)
     override fun sendHeartbeatViaPost(clientSecret: String) {
         monitorActions.updateLastHeartbeat(clientSecret, getCurrentTimestamp())
@@ -48,7 +48,7 @@ class PushMonitorHeartbeatController(
             description = "Heartbeat received"
         ),
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Status(HttpStatus.ACCEPTED)
     override fun sendHeartbeatViaGet(clientSecret: String) {
         monitorActions.updateLastHeartbeat(clientSecret, getCurrentTimestamp())
@@ -61,7 +61,7 @@ class PushMonitorHeartbeatController(
             description = "Failure received"
         ),
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Status(HttpStatus.ACCEPTED)
     override fun signalFailureViaPost(clientSecret: String, failureDetails: PushMonitorFailureDetailsDto?) {
         monitorActions.signalFailure(
@@ -76,7 +76,7 @@ class PushMonitorHeartbeatController(
             description = "Failure received"
         ),
     )
-    @ExecuteOn(TaskExecutors.IO)
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Status(HttpStatus.ACCEPTED)
     override fun signalFailureViaGet(clientSecret: String) {
         monitorActions.signalFailure(clientSecret, Messages.signaledExplicitError())
