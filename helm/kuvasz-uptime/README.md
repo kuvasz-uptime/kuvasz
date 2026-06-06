@@ -168,4 +168,4 @@ helm uninstall my-kuvasz
 
 ## License
 
-[Apache License 2.0](https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE)
+[AGPL-3.0](https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE)

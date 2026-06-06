@@ -90,7 +90,7 @@ title: The developer- and cloud-friendly uptime monitor
 
     ---
 
-    Kuvasz is licensed under the _Apache License 2.0_, it's free and it always will be.
+    Kuvasz is licensed under _AGPL-3.0_, it's free and it always will be.
 
     [:octicons-arrow-right-24: Sponsoring](https://ko-fi.com/L4L31DH59D){ target="_blank" }
 
