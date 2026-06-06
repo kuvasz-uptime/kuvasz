@@ -1,7 +1,5 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.convertValue
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
@@ -15,6 +13,8 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.convertValue
 
 @MicronautTest
 class IncidentToolsTest(

@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
@@ -11,6 +10,7 @@ import io.micronaut.mcp.annotations.ToolArg
 import io.modelcontextprotocol.spec.McpSchema
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult
 import jakarta.inject.Singleton
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
 @Singleton
@@ -67,6 +67,7 @@ class PushMonitorTools(
             "integrations, failureCountThreshold.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
     )
+    @Suppress("ReturnCount") // TODO refactor
     fun updatePushMonitor(request: McpSchema.CallToolRequest): CallToolResult {
         if (appConfig.isPushMonitorExternalWriteDisabled()) {
             return error("Updating push monitors is currently disabled because they were configured via YAML")

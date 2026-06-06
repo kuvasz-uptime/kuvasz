@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsListSchema
 import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsSchema
@@ -14,6 +13,7 @@ import io.micronaut.mcp.annotations.ToolArg
 import jakarta.inject.Singleton
 import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
 @Singleton

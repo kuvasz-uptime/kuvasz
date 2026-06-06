@@ -1,13 +1,13 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 abstract class McpToolTest(
     private val client: HttpClient,

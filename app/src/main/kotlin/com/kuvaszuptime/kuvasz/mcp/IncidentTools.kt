@@ -1,11 +1,11 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import io.micronaut.mcp.annotations.Tool
 import io.micronaut.mcp.annotations.ToolArg
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult
 import jakarta.inject.Singleton
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
 private const val INCIDENTS_PERIOD_DAYS = 7L

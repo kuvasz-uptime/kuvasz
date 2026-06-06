@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
@@ -11,6 +10,7 @@ import io.micronaut.mcp.annotations.ToolArg
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult
 import jakarta.inject.Singleton
 import jakarta.validation.ConstraintViolationException
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
 @Singleton
