@@ -21,7 +21,6 @@ import io.micronaut.http.MediaType
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import org.mockserver.client.MockServerClient
-import org.mockserver.configuration.Configuration
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpError
 import org.mockserver.model.HttpRequest
@@ -30,7 +29,6 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.NottableString.not
 import org.mockserver.model.NottableString.string
 import org.mockserver.verify.VerificationTimes
-import org.slf4j.event.Level
 import java.util.concurrent.TimeUnit
 
 @MicronautTest(startApplication = false)
@@ -42,10 +40,9 @@ class UptimeCheckerE2ETest(
 
     lateinit var mockServer: ClientAndServer
     val mockServerUrl = "http://localhost:1080"
-    val mockServerConfig = Configuration.configuration().logLevel(Level.DEBUG)
 
     beforeSpec {
-        mockServer = ClientAndServer.startClientAndServer(mockServerConfig, 1080)
+        mockServer = ClientAndServer.startClientAndServer(1080)
     }
 
     afterSpec {
@@ -1432,7 +1429,6 @@ private fun headRequest(path: String) =
 
 private fun MockServerClient.verifyRequest(request: HttpRequest, exactly: Int = 1) =
     verify(
-        request
-            .withHeader(HttpHeaders.USER_AGENT, HttpCheckRequestConfigurator.USER_AGENT),
+        request,
         if (exactly == 0) VerificationTimes.never() else VerificationTimes.exactly(exactly)
     )
