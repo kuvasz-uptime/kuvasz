@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.mcp
 
 import java.time.Duration
 
-val DEFAULT_STATS_PERIOD = Duration.ofDays(1)
+val DEFAULT_STATS_PERIOD: Duration = Duration.ofDays(1)
 
 object ToolNames {
     const val CREATE_HTTP_MONITOR = "create-http-monitor"
