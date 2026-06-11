@@ -37,7 +37,8 @@ micronaut {
 kapt {
     arguments {
         arg("micronaut.openapi.project.dir", projectDir.toString())
-//        arg("micronaut.jsonschema.strictMode", "false")
+        arg("micronaut.openapi.target.file", "../docs/docs/api-docs/kuvasz-latest.yml")
+        arg("micronaut.openapi.additional.files", "src/main/resources/swagger")
     }
 }
 
@@ -51,7 +52,6 @@ dependencies {
     kapt(mn.micronaut.security.annotations)
     kapt(mn.micronaut.validation.processor)
     implementation(mn.micronaut.mcp.server.java.sdk)
-    kapt(mn.micronaut.json.schema.processor)
     implementation(mn.jackson.module.kotlin)
     implementation(mn.jackson.dataformat.yaml)
     implementation(mn.micronaut.kotlin.runtime)
@@ -72,6 +72,7 @@ dependencies {
     compileOnly(mn.micronaut.openapi.annotations)
     implementation(mn.swagger.annotations)
     implementation(mn.micronaut.json.schema.annotations)
+    kapt(mn.micronaut.json.schema.processor)
 
     // DB & jOOQ & Flyway
     implementation(mn.micronaut.flyway)
@@ -115,6 +116,7 @@ dependencies {
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.pg)
     testImplementation(libs.mockserver.netty)
+    testImplementation(mn.micronaut.mcp.client.java.sdk)
     detektPlugins(libs.detekt.formatting)
 }
 

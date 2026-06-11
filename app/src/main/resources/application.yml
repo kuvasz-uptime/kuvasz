@@ -28,13 +28,10 @@ micronaut:
     server:
       enabled: ${ENABLE_MCP_SERVER:`false`}
       transport: HTTP
+      reactive: false
       info:
         name: kuvasz-uptime
         version: latest
-  openapi:
-    target.file: ../docs/docs/api-docs/kuvasz-latest.yml
-    additional:
-      files: 'src/main/resources/swagger'
   security:
     redirect:
       forbidden:
