@@ -189,9 +189,41 @@ jib {
 }
 
 val updateApiDoc by tasks.registering {
+    description = "Implicitly generates the OpenAPI docs (by depending on the kaptKotlin task)"
     dependsOn("kaptKotlin")
 }
 
+val validateJsonSchemas by tasks.registering {
+    dependsOn("kaptKotlin")
+    group = "Verification"
+    description =
+        "Checks that none of the generated JSON schema definitions contain a \"\$ref\" (external schema reference)."
+
+    val schemasDir = layout.buildDirectory.dir("tmp/kapt3/classes/main/META-INF/schemas")
+
+    doLast {
+        val dir = schemasDir.get().asFile
+        if (!dir.exists()) {
+            throw GradleException("Schemas directory not found: ${dir.absolutePath}")
+        }
+
+        val violations = dir.walkTopDown()
+            .filter { it.isFile && it.extension == "json" }
+            .filter { it.readText().contains("\"\$ref\"") }
+            .toList()
+
+        if (violations.isNotEmpty()) {
+            val fileList = violations.joinToString("\n") { "  - ${it.name}" }
+            throw GradleException(
+                "The following JSON schema(s) contain a \"\$ref\" (external schema references are not allowed):\n$fileList"
+            )
+        }
+
+        logger.lifecycle("✅ All JSON schemas are self-contained (no \"\$ref\" found).")
+    }
+}
+
+// Generates the Git-based project version into the Kotlin code
 buildConfig {
     packageName("com.kuvaszuptime.kuvasz.buildconfig")
     buildConfigField("APP_VERSION", provider { gitVersion() })
