@@ -3,11 +3,9 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.icmp
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
 import io.micronaut.core.annotation.Introspected
-import io.micronaut.jsonschema.JsonSchema
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Introspected
-@JsonSchema
 data class IcmpMonitorCreateDto(
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,

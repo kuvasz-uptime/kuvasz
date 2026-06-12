@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.mcp.models
+package com.kuvaszuptime.kuvasz.mcp.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyLogDto
@@ -7,10 +7,8 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.PacketLossStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import io.micronaut.core.annotation.Introspected
-import io.micronaut.jsonschema.JsonSchema
 import java.time.OffsetDateTime
 
-@JsonSchema
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class HistoricalUptimeStatsSchema(
@@ -31,7 +29,6 @@ data class HistoricalUptimeStatsSchema(
     }
 }
 
-@JsonSchema
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class LatencyStatsSchema(
@@ -54,7 +51,6 @@ data class LatencyStatsSchema(
     }
 }
 
-@JsonSchema
 @Introspected
 data class LatencyLogSchema(
     val id: Long,
@@ -70,7 +66,6 @@ data class LatencyLogSchema(
     }
 }
 
-@JsonSchema
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PacketLossStatsSchema(
@@ -93,7 +88,6 @@ data class PacketLossStatsSchema(
     }
 }
 
-@JsonSchema
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IcmpMetricsLogSchema(

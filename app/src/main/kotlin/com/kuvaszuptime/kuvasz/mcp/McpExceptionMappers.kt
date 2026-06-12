@@ -1,12 +1,13 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.models.DuplicationException
-import com.kuvaszuptime.kuvasz.models.ReadOnlyResourceException
+import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
 import com.kuvaszuptime.kuvasz.models.ResourceNotFoundException
 import io.micronaut.mcp.server.exceptions.McpErrorExceptionMapper
 import io.modelcontextprotocol.spec.McpError
 import io.modelcontextprotocol.spec.McpSchema
 import jakarta.inject.Singleton
+import jakarta.validation.ValidationException
 import java.time.format.DateTimeParseException
 
 @Singleton
@@ -32,11 +33,11 @@ internal class DuplicationExceptionMcpMapper : McpErrorExceptionMapper<Duplicati
 }
 
 @Singleton
-internal class ReadOnlyResourceExceptionMcpMapper : McpErrorExceptionMapper<ReadOnlyResourceException> {
+internal class ReadOnlyMonitorExceptionMcpMapper : McpErrorExceptionMapper<ReadOnlyMonitorException> {
     override fun canMap(clazz: Class<out Throwable>) =
-        ReadOnlyResourceException::class.java.isAssignableFrom(clazz)
+        ReadOnlyMonitorException::class.java.isAssignableFrom(clazz)
 
-    override fun map(exception: ReadOnlyResourceException): McpError =
+    override fun map(exception: ReadOnlyMonitorException): McpError =
         McpError.builder(McpSchema.ErrorCodes.INVALID_REQUEST)
             .message(exception.message)
             .build()
@@ -49,6 +50,17 @@ internal class DateTimeParseExceptionMcpMapper : McpErrorExceptionMapper<DateTim
 
     override fun map(exception: DateTimeParseException): McpError =
         McpError.builder(McpSchema.ErrorCodes.INVALID_REQUEST)
+            .message(exception.message)
+            .build()
+}
+
+@Singleton
+internal class ValidationExceptionMcpMapper : McpErrorExceptionMapper<ValidationException> {
+    override fun canMap(clazz: Class<out Throwable>) =
+        ValidationException::class.java.isAssignableFrom(clazz)
+
+    override fun map(exception: ValidationException): McpError =
+        McpError.builder(McpSchema.ErrorCodes.INVALID_PARAMS)
             .message(exception.message)
             .build()
 }

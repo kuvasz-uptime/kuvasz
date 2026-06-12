@@ -1,34 +1,34 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorDetailsListSchema
-import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorDetailsSchema
-import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorSchema
-import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorStatsSchema
-import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
+import com.kuvaszuptime.kuvasz.controllers.monitor.CheckPushMonitorsWritable
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorCreatorSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorDetailsSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorListSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDto
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
+import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
 import io.micronaut.mcp.annotations.ToolArg
+import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
-import tools.jackson.databind.ObjectMapper
 
 @Singleton
 class PushMonitorTools(
     private val pushMonitorActions: PushMonitorActions,
-    objectMapper: ObjectMapper,
-    private val appConfig: AppConfig,
-) : KuvaszTools(objectMapper) {
+    private val validator: Validator,
+) {
 
     @Tool(
         name = ToolNames.LIST_PUSH_MONITORS,
         description = "Lists all push (heartbeat) monitors configured in Kuvasz with their current uptime status",
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listPushMonitors(): PushMonitorDetailsListSchema =
-        PushMonitorDetailsListSchema(
-            monitors = pushMonitorActions.getMonitorsWithDetails().map { PushMonitorDetailsSchema.fromDto(it) }
+    fun listPushMonitors(): PushMonitorListSchema =
+        PushMonitorListSchema(
+            monitors = pushMonitorActions.getMonitorsWithDetails().map { PushMonitorSummarySchema.fromDto(it) }
         )
 
     @Tool(
@@ -47,9 +47,11 @@ class PushMonitorTools(
             " are required; all other fields use sensible defaults.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
-    fun createPushMonitor(input: PushMonitorCreateDto): PushMonitorSchema {
-        appConfig.checkMonitorMutability(MonitorType.PUSH)
-        return PushMonitorSchema.fromDto(PushMonitorDto.fromMonitorRecord(pushMonitorActions.createMonitor(input)))
+    @CheckPushMonitorsWritable
+    fun createPushMonitor(input: PushMonitorCreatorSchema): PushMonitorSchema {
+        val creatorDto = input.toDto()
+        validator.validate(creatorDto).throwIfNotEmpty()
+        return PushMonitorSchema.fromDto(PushMonitorDto.fromMonitorRecord(pushMonitorActions.createMonitor(creatorDto)))
     }
 
     @Tool(
@@ -74,15 +76,13 @@ class PushMonitorTools(
         description = "Enables or disables a push (heartbeat) monitor.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
     )
+    @CheckPushMonitorsWritable
     fun togglePushMonitor(
         @ToolArg(description = "The numeric ID of the push monitor") monitorId: Long,
         @ToolArg(description = "Set to true to enable the monitor, false to disable it") enabled: Boolean,
-    ): PushMonitorSchema {
-        appConfig.checkMonitorMutability(MonitorType.PUSH)
-        return PushMonitorSchema.fromDto(
-            PushMonitorDto.fromMonitorRecord(
-                pushMonitorActions.updateMonitor(monitorId, enabledPatch(enabled))
-            )
+    ) = PushMonitorSchema.fromDto(
+        PushMonitorDto.fromMonitorRecord(
+            pushMonitorActions.updateMonitor(monitorId, monitorToggleUpdate(enabled))
         )
-    }
+    )
 }

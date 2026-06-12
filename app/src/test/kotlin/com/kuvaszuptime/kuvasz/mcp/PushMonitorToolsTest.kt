@@ -1,245 +1,274 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorDetailsSchema
-import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorSchema
-import com.kuvaszuptime.kuvasz.mcp.models.PushMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_PUSH_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_DETAILS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_STATS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PUSH_MONITORS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_PUSH_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorDetailsSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorListSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import io.kotest.inspectors.forOne
-import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.modelcontextprotocol.client.McpSyncClient
 import io.modelcontextprotocol.spec.McpSchema
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.module.kotlin.convertValue
-import tools.jackson.module.kotlin.readValue
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class PushMonitorToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val pushMonitorRepository: PushMonitorRepository,
-    private val objectMapper: ObjectMapper,
-) : McpToolTest(client) {
+    mcpClient: McpSyncClient,
+) : McpToolTest(client, mcpClient) {
 
     init {
-        given("the PUSH monitor tools") {
+        given("the list-push-monitors tool") {
 
             `when`("list-push-monitors is called with monitors in the DB") {
                 val monitor = createPushMonitor(pushMonitorRepository)
-                val response = callTool("list-push-monitors")
+                val response = callToolWithMcpClient(LIST_PUSH_MONITORS)
 
                 then("it should return the list in both structured and text content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe false
+                    response.isError shouldBe false
 
-                    val monitors = objectMapper.convertValue<List<PushMonitorDetailsSchema>>(
-                        result.structuredContent.shouldNotBeNull()["monitors"]
-                    )
-                    monitors.forOne { it.name shouldBe monitor.name }
+                    val monitorList = response.structuredContentAs<PushMonitorListSchema>().shouldNotBeNull()
+                    monitorList.monitors.forOne { it.name shouldBe monitor.name }
 
-                    objectMapper.convertValue<List<PushMonitorDetailsSchema>>(
-                        objectMapper.readTree(result.firstText())["monitors"]
-                    ) shouldBe monitors
+                    response.contentAs<PushMonitorListSchema>() shouldBe monitorList
                 }
             }
+        }
+
+        given("the get-push-monitor-details tool") {
 
             `when`("get-push-monitor-details is called with a valid ID") {
                 val monitor = createPushMonitor(pushMonitorRepository)
-                val response = callTool("get-push-monitor-details", mapOf("monitorId" to monitor.id))
+                val response = callToolWithMcpClient(GET_PUSH_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
                 then("it should return the details in both structured and text content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe false
+                    response.isError shouldBe false
 
-                    val details = objectMapper.convertValue<PushMonitorDetailsSchema>(
-                        result.structuredContent.shouldNotBeNull()
-                    )
+                    val details = response.structuredContentAs<PushMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
 
-                    objectMapper.readValue<PushMonitorDetailsSchema>(result.firstText()) shouldBe details
+                    response.contentAs<PushMonitorDetailsSchema>() shouldBe details
                 }
             }
 
             `when`("get-push-monitor-details is called with a non-existent ID") {
-                val response = callTool("get-push-monitor-details", mapOf("monitorId" to -999L))
+                val response = callTool(GET_PUSH_MONITOR_DETAILS, mapOf("monitorId" to -999L))
 
                 then("it should return a resource-not-found protocol error with no result") {
-                    response.result.shouldBeNull()
-                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
+                    response.shouldHaveError(McpSchema.ErrorCodes.RESOURCE_NOT_FOUND)
                 }
             }
+        }
 
-            `when`("create-push-monitor is called with valid input") {
-                val response = callTool(
-                    "create-push-monitor",
+        given("the create-push-monitor tool") {
+
+            `when`("create-push-monitor is called with a minimal, valid input") {
+                val response = callToolWithMcpClient(
+                    CREATE_PUSH_MONITOR,
                     mapOf(
                         "name" to "mcp-created-push-monitor",
                         "heartbeatInterval" to 300,
-                        "gracePeriod" to 60,
-                        "clientSecret" to "test-secret-abc123",
-                        "enabled" to false,
+                        "clientSecret" to "test-secret-that-is-long-enough-abc123",
                     )
                 )
 
                 then("it should return the created monitor in both structured and text content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe false
+                    response.isError shouldBe false
 
-                    val created = objectMapper.convertValue<PushMonitorSchema>(
-                        result.structuredContent.shouldNotBeNull()
+                    with(response.structuredContentAs<PushMonitorSchema>().shouldNotBeNull()) {
+                        name shouldBe "mcp-created-push-monitor"
+                        heartbeatInterval shouldBe 300
+                        clientSecret shouldBe "test-secret-that-is-long-enough-abc123"
+                        enabled shouldBe true
+
+                        response.contentAs<PushMonitorSchema>() shouldBe this
+                    }
+                }
+            }
+
+            `when`("create-push-monitor is called with an invalid heartbeatInterval") {
+                val response = callTool(
+                    CREATE_PUSH_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-push-monitor",
+                        "heartbeatInterval" to 1,
+                        "clientSecret" to "test-secret-that-is-long-enough-abc123",
                     )
-                    created.name shouldBe "mcp-created-push-monitor"
-                    created.heartbeatInterval shouldBe 300
-                    created.gracePeriod shouldBe 60
-                    created.clientSecret shouldBe "test-secret-abc123"
+                )
 
-                    objectMapper.readValue<PushMonitorSchema>(result.firstText()) shouldBe created
+                then("it should return an invalid-params protocol error with no result") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_PARAMS,
+                        "Heartbeat interval must be at least 10 seconds",
+                    )
                 }
             }
 
             `when`("create-push-monitor is called with a duplicate name") {
                 val existing = createPushMonitor(pushMonitorRepository, monitorName = "duplicate-push-monitor")
                 val response = callTool(
-                    "create-push-monitor",
+                    CREATE_PUSH_MONITOR,
                     mapOf(
                         "name" to existing.name,
                         "heartbeatInterval" to 300,
-                        "clientSecret" to "other-secret",
+                        "clientSecret" to "test-secret-that-is-long-enough-abc123",
                     )
                 )
 
                 then("it should return an invalid-params protocol error with no result") {
-                    response.result.shouldBeNull()
-                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.INVALID_PARAMS
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_PARAMS,
+                        "There is already a monitor with the given name",
+                    )
                 }
             }
+        }
+
+        given("the get-push-monitor-stats tool") {
 
             `when`("get-push-monitor-stats is called with a valid monitor ID") {
                 val monitor = createPushMonitor(pushMonitorRepository)
-                val response = callTool("get-push-monitor-stats", mapOf("monitorId" to monitor.id))
-
-                then("it should return stats in both structured and text content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe false
-
-                    val stats = objectMapper.convertValue<PushMonitorStatsSchema>(
-                        result.structuredContent.shouldNotBeNull()
-                    )
-                    stats.id shouldBe monitor.id
-
-                    objectMapper.readValue<PushMonitorStatsSchema>(result.firstText()) shouldBe stats
-                }
-            }
-
-            `when`("get-push-monitor-stats is called with a custom ISO 8601 period") {
-                val monitor = createPushMonitor(pushMonitorRepository)
-                val response = callTool(
-                    "get-push-monitor-stats",
-                    mapOf("monitorId" to monitor.id, "period" to "PT12H")
+                val response = callToolWithMcpClient(
+                    GET_PUSH_MONITOR_STATS,
+                    mapOf("monitorId" to monitor.id, "period" to "PT12H"),
                 )
 
-                then("it should return stats for the requested period") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe false
-                    objectMapper.convertValue<PushMonitorStatsSchema>(
-                        result.structuredContent.shouldNotBeNull()
-                    ).id shouldBe monitor.id
+                then("it should return stats in both structured and text content") {
+                    response.isError shouldBe false
+
+                    with(response.structuredContentAs<PushMonitorStatsSchema>().shouldNotBeNull()) {
+                        id shouldBe monitor.id
+
+                        response.contentAs<PushMonitorStatsSchema>() shouldBe this
+                    }
                 }
             }
 
             `when`("get-push-monitor-stats is called with an invalid period string") {
                 val monitor = createPushMonitor(pushMonitorRepository)
                 val response = callTool(
-                    "get-push-monitor-stats",
-                    mapOf("monitorId" to monitor.id, "period" to "not-a-valid-period")
+                    GET_PUSH_MONITOR_STATS,
+                    mapOf("monitorId" to monitor.id, "period" to "not-a-valid-period"),
                 )
 
                 then("it should return an invalid-request protocol error with no result") {
-                    response.result.shouldBeNull()
-                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.INVALID_REQUEST
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_REQUEST,
+                        "Text cannot be parsed to a Duration",
+                    )
                 }
             }
 
             `when`("get-push-monitor-stats is called with a non-existent monitor ID") {
-                val response = callTool("get-push-monitor-stats", mapOf("monitorId" to -999L))
+                val response = callTool(GET_PUSH_MONITOR_STATS, mapOf("monitorId" to -999L))
 
                 then("it should return a resource-not-found protocol error with no result") {
-                    response.result.shouldBeNull()
-                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
+                    response.shouldHaveError(McpSchema.ErrorCodes.RESOURCE_NOT_FOUND)
                 }
             }
+        }
+
+        given("the toggle-push-monitor tool") {
 
             `when`("toggle-push-monitor is called to disable a monitor") {
                 val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
-                val response = callTool(
-                    "toggle-push-monitor",
+                val response = callToolWithMcpClient(
+                    TOGGLE_PUSH_MONITOR,
                     mapOf("monitorId" to monitor.id, "enabled" to false)
                 )
 
                 then("it should return the updated monitor with enabled=false in both structured and text content") {
-                    val result = response.result.shouldNotBeNull()
-                    result.isError shouldBe false
+                    response.isError shouldBe false
 
-                    val updated = objectMapper.convertValue<PushMonitorSchema>(
-                        result.structuredContent.shouldNotBeNull()
-                    )
-                    updated.id shouldBe monitor.id
-                    updated.enabled shouldBe false
+                    with(response.structuredContentAs<PushMonitorSchema>().shouldNotBeNull()) {
+                        id shouldBe monitor.id
+                        enabled shouldBe false
 
-                    objectMapper.readValue<PushMonitorSchema>(result.firstText()) shouldBe updated
+                        response.contentAs<PushMonitorSchema>() shouldBe this
+                    }
                 }
             }
 
             `when`("toggle-push-monitor is called to enable a monitor") {
                 val monitor = createPushMonitor(pushMonitorRepository, enabled = false)
-                val response = callTool(
-                    "toggle-push-monitor",
+                val response = callToolWithMcpClient(
+                    TOGGLE_PUSH_MONITOR,
                     mapOf("monitorId" to monitor.id, "enabled" to true)
                 )
 
-                then("it should return the updated monitor with enabled=true") {
-                    val updated = objectMapper.convertValue<PushMonitorSchema>(
-                        response.result.shouldNotBeNull().structuredContent.shouldNotBeNull()
-                    )
-                    updated.enabled shouldBe true
+                then("it should return the updated monitor with enabled=true in both structured and text content") {
+                    response.isError shouldBe false
+
+                    with(response.structuredContentAs<PushMonitorSchema>().shouldNotBeNull()) {
+                        id shouldBe monitor.id
+                        enabled shouldBe true
+
+                        response.contentAs<PushMonitorSchema>() shouldBe this
+                    }
                 }
             }
 
             `when`("toggle-push-monitor is called with a non-existent monitor ID") {
-                val response = callTool("toggle-push-monitor", mapOf("monitorId" to -999L, "enabled" to false))
+                val response = callTool(TOGGLE_PUSH_MONITOR, mapOf("monitorId" to -999L, "enabled" to false))
 
                 then("it should return a resource-not-found protocol error with no result") {
-                    response.result.shouldBeNull()
-                    response.error.shouldNotBeNull().code shouldBe McpSchema.ErrorCodes.RESOURCE_NOT_FOUND
+                    response.shouldHaveError(McpSchema.ErrorCodes.RESOURCE_NOT_FOUND)
+                }
+            }
+        }
+    }
+}
+
+@MicronautTest(environments = ["yaml-push-monitors-empty-array"])
+class PushReadOnlyMonitorMcpToolsTest(
+    @param:Client("/") private val client: HttpClient,
+    mcpClient: McpSyncClient,
+) : McpToolTest(client, mcpClient) {
+
+    init {
+        given("the push monitor MCP tools when monitors are configured via YAML") {
+
+            `when`("create-push-monitor is called") {
+                val response = callTool(
+                    CREATE_PUSH_MONITOR,
+                    mapOf(
+                        "name" to "readonly-test-push-monitor",
+                        "heartbeatInterval" to 300,
+                        "clientSecret" to "test-secret-that-is-long-enough-abc123",
+                    )
+                )
+
+                then("it should return an invalid-request protocol error with no result") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_REQUEST,
+                        "The given type of monitors were configured via a YAML file",
+                    )
                 }
             }
 
-            `when`("get-push-monitor-details is called for a monitor with integrations") {
-                val monitor = createPushMonitor(
-                    pushMonitorRepository,
-                    integrations = listOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")),
+            `when`("toggle-push-monitor is called") {
+                val response = callTool(
+                    TOGGLE_PUSH_MONITOR,
+                    mapOf("monitorId" to 1L, "enabled" to false)
                 )
-                val response = callTool("get-push-monitor-details", mapOf("monitorId" to monitor.id))
 
-                then("it should return populated effectiveIntegrations with IntegrationDetailsSchema entries") {
-                    val details = objectMapper.convertValue<PushMonitorDetailsSchema>(
-                        response.result.shouldNotBeNull().structuredContent.shouldNotBeNull()
+                then("it should return an invalid-request protocol error with no result") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_REQUEST,
+                        "The given type of monitors were configured via a YAML file",
                     )
-                    val effectiveIntegrations = details.effectiveIntegrations.shouldNotBeEmpty()
-                    effectiveIntegrations.forOne { integration ->
-                        integration.id shouldBe "slack:test_implicitly_enabled"
-                        integration.type shouldBe IntegrationType.SLACK
-                        integration.name shouldBe "test_implicitly_enabled"
-                        integration.enabled shouldBe true
-                        integration.global shouldBe false
-                    }
                 }
             }
         }

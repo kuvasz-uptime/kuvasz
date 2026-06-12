@@ -4,11 +4,9 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import io.micronaut.core.annotation.Introspected
-import io.micronaut.jsonschema.JsonSchema
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Introspected
-@JsonSchema
 data class HttpMonitorCreateDto(
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,

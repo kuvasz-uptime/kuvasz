@@ -15,6 +15,7 @@
     <logger name="org.flywaydb" level="WARN"/>
     <logger name="io.micronaut.flyway" level="WARN"/>
     <logger name="io.micronaut.logging" level="WARN"/>
+    <logger name="io.modelcontextprotocol.server" level="ERROR"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

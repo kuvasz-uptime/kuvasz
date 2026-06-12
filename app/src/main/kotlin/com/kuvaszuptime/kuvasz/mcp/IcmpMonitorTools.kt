@@ -1,34 +1,34 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorDetailsListSchema
-import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorDetailsSchema
-import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorSchema
-import com.kuvaszuptime.kuvasz.mcp.models.IcmpMonitorStatsSchema
-import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.controllers.monitor.CheckIcmpMonitorsWritable
+import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorCreatorSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorDetailsSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorListSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
+import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
 import io.micronaut.mcp.annotations.ToolArg
+import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
-import tools.jackson.databind.ObjectMapper
 
 @Singleton
 class IcmpMonitorTools(
     private val icmpMonitorActions: IcmpMonitorActions,
-    objectMapper: ObjectMapper,
-    private val appConfig: AppConfig,
-) : KuvaszTools(objectMapper) {
+    private val validator: Validator,
+) {
 
     @Tool(
         name = ToolNames.LIST_ICMP_MONITORS,
         description = "Lists all ICMP (ping) monitors configured in Kuvasz with their current uptime status",
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listIcmpMonitors(): IcmpMonitorDetailsListSchema =
-        IcmpMonitorDetailsListSchema(
-            monitors = icmpMonitorActions.getMonitorsWithDetails().map { IcmpMonitorDetailsSchema.fromDto(it) }
+    fun listIcmpMonitors(): IcmpMonitorListSchema =
+        IcmpMonitorListSchema(
+            monitors = icmpMonitorActions.getMonitorsWithDetails().map { IcmpMonitorSummarySchema.fromDto(it) }
         )
 
     @Tool(
@@ -62,9 +62,11 @@ class IcmpMonitorTools(
             " are required; all other fields use sensible defaults.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
-    fun createIcmpMonitor(input: IcmpMonitorCreateDto): IcmpMonitorSchema {
-        appConfig.checkMonitorMutability(MonitorType.ICMP)
-        return IcmpMonitorSchema.fromDto(IcmpMonitorDto.fromMonitorRecord(icmpMonitorActions.createMonitor(input)))
+    @CheckIcmpMonitorsWritable
+    fun createIcmpMonitor(input: IcmpMonitorCreatorSchema): IcmpMonitorSchema {
+        val creatorDto = input.toDto()
+        validator.validate(creatorDto).throwIfNotEmpty()
+        return IcmpMonitorSchema.fromDto(IcmpMonitorDto.fromMonitorRecord(icmpMonitorActions.createMonitor(creatorDto)))
     }
 
     @Tool(
@@ -72,15 +74,14 @@ class IcmpMonitorTools(
         description = "Enables or disables an ICMP (ping) monitor.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
     )
+    @CheckIcmpMonitorsWritable
     fun toggleIcmpMonitor(
         @ToolArg(description = "The numeric ID of the ICMP monitor") monitorId: Long,
         @ToolArg(description = "Set to true to enable the monitor, false to disable it") enabled: Boolean,
-    ): IcmpMonitorSchema {
-        appConfig.checkMonitorMutability(MonitorType.ICMP)
-        return IcmpMonitorSchema.fromDto(
+    ): IcmpMonitorSchema =
+        IcmpMonitorSchema.fromDto(
             IcmpMonitorDto.fromMonitorRecord(
-                icmpMonitorActions.updateMonitor(monitorId, enabledPatch(enabled))
+                icmpMonitorActions.updateMonitor(monitorId, monitorToggleUpdate(enabled))
             )
         )
-    }
 }

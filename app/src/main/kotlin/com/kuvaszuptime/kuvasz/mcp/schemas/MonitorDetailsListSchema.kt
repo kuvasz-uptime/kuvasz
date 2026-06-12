@@ -1,32 +1,30 @@
-package com.kuvaszuptime.kuvasz.mcp.models
+package com.kuvaszuptime.kuvasz.mcp.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.jsonschema.JsonSchema
 import java.time.OffsetDateTime
 
 @JsonSchema
 @Introspected
-data class HttpMonitorDetailsListSchema(
-    val monitors: List<HttpMonitorDetailsSchema>,
+data class HttpMonitorListSchema(
+    val monitors: List<HttpMonitorSummarySchema>,
 )
 
 @JsonSchema
 @Introspected
-data class PushMonitorDetailsListSchema(
-    val monitors: List<PushMonitorDetailsSchema>,
+data class PushMonitorListSchema(
+    val monitors: List<PushMonitorSummarySchema>,
 )
 
 @JsonSchema
 @Introspected
-data class IcmpMonitorDetailsListSchema(
-    val monitors: List<IcmpMonitorDetailsSchema>,
+data class IcmpMonitorListSchema(
+    val monitors: List<IcmpMonitorSummarySchema>,
 )
 
 @JsonSchema
@@ -60,7 +58,6 @@ data class HttpMonitorDetailsSchema(
     val failureCountThreshold: Long,
     val sslValidUntil: OffsetDateTime?,
     val integrations: Set<String>,
-    val effectiveIntegrations: Set<IntegrationDetailsSchema>,
     val expectedStatusCodes: Set<Int>,
     val responseTimeThresholdMillis: Int?,
     val expectedKeyword: String?,
@@ -101,16 +98,6 @@ data class HttpMonitorDetailsSchema(
                 failureCountThreshold = dto.failureCountThreshold,
                 sslValidUntil = dto.sslValidUntil,
                 integrations = dto.integrations.map { it.toString() }.toSet(),
-                effectiveIntegrations = dto.effectiveIntegrations.map { integration ->
-                    IntegrationDetailsSchema(
-                        id = integration.id,
-                        type = integration.type,
-                        name = integration.name,
-                        enabled = integration.enabled,
-                        global = integration.global,
-                        excludedEvents = integration.excludedEvents
-                    )
-                }.toSet(),
                 expectedStatusCodes = dto.expectedStatusCodes,
                 responseTimeThresholdMillis = dto.responseTimeThresholdMillis,
                 expectedKeyword = dto.expectedKeyword,
@@ -123,14 +110,3 @@ data class HttpMonitorDetailsSchema(
             )
     }
 }
-
-@JsonSchema
-@Introspected
-data class IntegrationDetailsSchema(
-    val id: String,
-    val type: IntegrationType,
-    val name: String,
-    val enabled: Boolean,
-    val global: Boolean,
-    val excludedEvents: List<IntegrationEventType>,
-)

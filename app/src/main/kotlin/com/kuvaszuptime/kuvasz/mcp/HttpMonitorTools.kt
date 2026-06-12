@@ -1,40 +1,38 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.kuvaszuptime.kuvasz.config.AppConfig
-import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsListSchema
-import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorDetailsSchema
-import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorSchema
-import com.kuvaszuptime.kuvasz.mcp.models.HttpMonitorStatsSchema
-import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.controllers.monitor.CheckHttpMonitorsWritable
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
+import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorCreatorSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorDetailsSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorListSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
+import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
 import io.micronaut.mcp.annotations.ToolArg
+import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
-import tools.jackson.databind.ObjectMapper
 
 @Singleton
 class HttpMonitorTools(
     private val httpMonitorActions: HttpMonitorActions,
-    objectMapper: ObjectMapper,
-    private val appConfig: AppConfig,
-) : KuvaszTools(objectMapper) {
-
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val validator: Validator,
+) {
 
     @Tool(
         name = ToolNames.LIST_HTTP_MONITORS,
-        description = "Lists all HTTP monitors configured in Kuvasz with their current uptime and SSL status",
+        description =
+            "Lists all HTTP monitors configured in Kuvasz with their current uptime, SSL status and basic details",
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listHttpMonitors(): HttpMonitorDetailsListSchema {
-        logger.info("Listing HTTP monitors...")
-        return HttpMonitorDetailsListSchema(
-            monitors = httpMonitorActions.getMonitorsWithDetails().map { HttpMonitorDetailsSchema.fromDto(it) }
+    fun listHttpMonitors(): HttpMonitorListSchema =
+        HttpMonitorListSchema(
+            httpMonitorActions.getMonitorsWithDetails().map { HttpMonitorSummarySchema.fromDto(it) }
         )
-    }
 
     @Tool(
         name = ToolNames.GET_HTTP_MONITOR_DETAILS,
@@ -48,12 +46,17 @@ class HttpMonitorTools(
     @Tool(
         name = ToolNames.CREATE_HTTP_MONITOR,
         description = "Creates a new HTTP monitor. Only 'name', 'url', and 'uptimeCheckInterval'" +
-            " are required; all other fields use sensible defaults.",
+            " are required; all other fields use sensible defaults. " +
+            "Refer to the docs for the default values: https://kuvasz-uptime.dev/management/http-monitors/." +
+            "The available integrations can be found via the $LIST_INTEGRATIONS tool." +
+            "To check if this tool is usable, use the $GET_APP_SETTINGS tool and look for the editabilityState",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
-    fun createHttpMonitor(input: HttpMonitorCreateDto): HttpMonitorSchema {
-        appConfig.checkMonitorMutability(MonitorType.HTTP_SSL)
-        return HttpMonitorSchema.fromDto(HttpMonitorDto.fromMonitorRecord(httpMonitorActions.createMonitor(input)))
+    @CheckHttpMonitorsWritable
+    fun createHttpMonitor(input: HttpMonitorCreatorSchema): HttpMonitorSchema {
+        val creatorDto = input.toDto()
+        validator.validate(creatorDto).throwIfNotEmpty()
+        return HttpMonitorSchema.fromDto(HttpMonitorDto.fromMonitorRecord(httpMonitorActions.createMonitor(creatorDto)))
     }
 
     @Tool(
@@ -67,24 +70,25 @@ class HttpMonitorTools(
         @ToolArg(description = "ISO 8601 look-back window, e.g. 'P1D' or 'PT12H'. Defaults to P1D.")
         period: String? = null,
     ): HttpMonitorStatsSchema {
-        val stats = httpMonitorActions.getMonitorStats(monitorId, period.asDuration() ?: DEFAULT_STATS_PERIOD)
-        return HttpMonitorStatsSchema.fromDto(stats)
+        val effectivePeriod = period.asDuration() ?: DEFAULT_STATS_PERIOD
+        val stats = httpMonitorActions.getMonitorStats(monitorId, effectivePeriod)
+        return HttpMonitorStatsSchema.fromDto(stats, effectivePeriod)
     }
 
     @Tool(
         name = ToolNames.TOGGLE_HTTP_MONITOR,
-        description = "Enables or disables an HTTP monitor.",
+        description = "Enables or disables an HTTP monitor completely. Disabling an HTTP monitor implicitly disables " +
+            "the SSL checks of it as well.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
     )
+    @CheckHttpMonitorsWritable
     fun toggleHttpMonitor(
         @ToolArg(description = "The numeric ID of the HTTP monitor") monitorId: Long,
         @ToolArg(description = "Set to true to enable the monitor, false to disable it") enabled: Boolean,
-    ): HttpMonitorSchema {
-        appConfig.checkMonitorMutability(MonitorType.HTTP_SSL)
-        return HttpMonitorSchema.fromDto(
+    ): HttpMonitorSchema =
+        HttpMonitorSchema.fromDto(
             HttpMonitorDto.fromMonitorRecord(
-                httpMonitorActions.updateMonitor(monitorId, enabledPatch(enabled))
+                httpMonitorActions.updateMonitor(monitorId, monitorToggleUpdate(enabled))
             )
         )
-    }
 }

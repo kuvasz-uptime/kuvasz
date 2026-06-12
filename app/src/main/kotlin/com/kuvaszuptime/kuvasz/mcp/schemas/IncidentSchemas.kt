@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.mcp.models
+package com.kuvaszuptime.kuvasz.mcp.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.models.IncidentType
@@ -12,7 +12,6 @@ import java.time.OffsetDateTime
 @Introspected
 data class IncidentListSchema(val incidents: List<IncidentSchema>)
 
-@JsonSchema
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IncidentSchema(

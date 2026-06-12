@@ -1,12 +1,11 @@
 package com.kuvaszuptime.kuvasz.mcp
 
-import com.kuvaszuptime.kuvasz.mcp.models.IncidentListSchema
-import com.kuvaszuptime.kuvasz.mcp.models.IncidentSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentListSchema
+import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentSchema
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import io.micronaut.mcp.annotations.Tool
 import io.micronaut.mcp.annotations.ToolArg
 import jakarta.inject.Singleton
-import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
 private const val INCIDENTS_PERIOD_DAYS = 7L
@@ -15,8 +14,7 @@ private val DEFAULT_INCIDENTS_PERIOD = Duration.ofDays(INCIDENTS_PERIOD_DAYS)
 @Singleton
 class IncidentTools(
     private val incidentRepository: IncidentRepository,
-    objectMapper: ObjectMapper,
-) : KuvaszTools(objectMapper) {
+) {
 
     @Tool(
         name = ToolNames.LIST_INCIDENTS,

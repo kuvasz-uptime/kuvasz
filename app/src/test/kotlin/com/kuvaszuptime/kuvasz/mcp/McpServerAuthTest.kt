@@ -2,11 +2,31 @@ package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_PUSH_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_DETAILS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_STATS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_ICMP_MONITOR_DETAILS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_ICMP_MONITOR_STATS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_DETAILS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_STATS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_STATUS_PAGE_DETAILS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_HTTP_MONITORS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_ICMP_MONITORS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INCIDENTS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PUSH_MONITORS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_STATUS_PAGES
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.security.TEST_API_KEY
 import com.kuvaszuptime.kuvasz.security.TEST_PASSWORD
 import com.kuvaszuptime.kuvasz.security.TEST_USERNAME
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.context.annotation.Property
@@ -17,7 +37,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
-import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import tools.jackson.module.kotlin.readValue
 
 @MicronautTest
@@ -27,8 +47,23 @@ import tools.jackson.module.kotlin.readValue
 @Property(name = "admin-auth.password", value = TEST_PASSWORD)
 class McpServerAuthTest(
     @param:Client("/") private val client: HttpClient,
-    private val objectMapper: ObjectMapper,
 ) : DatabaseBehaviorSpec() {
+
+    private val objectMapper = jacksonObjectMapper()
+
+    //    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class McpToolsListResponse(
+        val result: ToolsResult? = null,
+    ) {
+        //        @JsonIgnoreProperties(ignoreUnknown = true)
+        data class ToolsResult(val tools: List<ToolInfo> = emptyList())
+
+        //        @JsonIgnoreProperties(ignoreUnknown = true)
+        data class ToolInfo(val name: String)
+    }
+
+    fun jsonRpcRequest(method: String): Map<String, Any> =
+        mapOf("jsonrpc" to "2.0", "id" to 1, "method" to method)
 
     init {
         given("the MCP endpoint") {
@@ -55,35 +90,37 @@ class McpServerAuthTest(
             }
 
             `when`("a valid tools/list request is made") {
-                val response = listTools()
+                val request = HttpRequest.POST(MCP_PATH, jsonRpcRequest("tools/list"))
+                    .header("X-API-KEY", TEST_API_KEY)
+                val body = client.exchange(request, String::class.java).awaitFirst().body().shouldNotBeNull()
+                val response = objectMapper.readValue<McpToolsListResponse>(body)
 
                 then("it should return all registered MCP tools") {
                     val toolNames = response.result.shouldNotBeNull().tools.map { it.name }
-                    toolNames.shouldContainAll(
-                        "list-http-monitors",
-                        "get-http-monitor-details",
-                        "create-http-monitor",
-                        "toggle-http-monitor",
-                        "list-icmp-monitors",
-                        "get-icmp-monitor-details",
-                        "toggle-icmp-monitor",
-                        "list-push-monitors",
-                        "get-push-monitor-details",
-                        "toggle-push-monitor",
-                        "list-incidents",
-                        "get-http-monitor-stats",
-                        "get-icmp-monitor-stats",
-                        "get-push-monitor-stats",
+                    toolNames shouldContainExactlyInAnyOrder listOf(
+                        CREATE_HTTP_MONITOR,
+                        CREATE_ICMP_MONITOR,
+                        CREATE_PUSH_MONITOR,
+                        GET_APP_SETTINGS,
+                        GET_HTTP_MONITOR_DETAILS,
+                        GET_HTTP_MONITOR_STATS,
+                        GET_ICMP_MONITOR_DETAILS,
+                        GET_ICMP_MONITOR_STATS,
+                        GET_PUSH_MONITOR_DETAILS,
+                        GET_PUSH_MONITOR_STATS,
+                        GET_STATUS_PAGE_DETAILS,
+                        LIST_HTTP_MONITORS,
+                        LIST_ICMP_MONITORS,
+                        LIST_INCIDENTS,
+                        LIST_INTEGRATIONS,
+                        LIST_PUSH_MONITORS,
+                        LIST_STATUS_PAGES,
+                        TOGGLE_HTTP_MONITOR,
+                        TOGGLE_ICMP_MONITOR,
+                        TOGGLE_PUSH_MONITOR,
                     )
                 }
             }
         }
-    }
-
-    private suspend fun listTools(): McpToolsListResponse {
-        val request = HttpRequest.POST(MCP_PATH, jsonRpcRequest("tools/list"))
-            .header("X-API-KEY", TEST_API_KEY)
-        val body = client.exchange(request, String::class.java).awaitFirst().body().shouldNotBeNull()
-        return objectMapper.readValue(body)
     }
 }
