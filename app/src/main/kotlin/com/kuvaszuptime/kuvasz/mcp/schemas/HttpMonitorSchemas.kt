@@ -188,14 +188,14 @@ data class HttpMonitorCreatorSchema(
         followRedirects = followRedirects ?: HttpMonitorDefaults.FOLLOW_REDIRECTS,
         sslExpiryThreshold = sslExpiryThreshold ?: HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS,
         integrations = integrations,
-        expectedStatusCodes = expectedStatusCodes ?: emptyList(),
+        expectedStatusCodes = expectedStatusCodes.orEmpty(),
         responseTimeThresholdMillis = responseTimeThresholdMillis,
         expectedKeyword = expectedKeyword,
         expectedKeywordCaseSensitive = expectedKeywordCaseSensitive
             ?: HttpMonitorDefaults.EXPECTED_KEYWORD_CASE_SENSITIVE,
         expectedKeywordNegated = expectedKeywordNegated ?: HttpMonitorDefaults.EXPECTED_KEYWORD_NEGATED,
-        requestHeaders = requestHeaders ?: emptyMap(),
-        expectedHeaders = expectedHeaders ?: emptyMap(),
+        requestHeaders = requestHeaders.orEmpty(),
+        expectedHeaders = expectedHeaders.orEmpty(),
         requestBody = requestBody,
         failureCountThreshold = failureCountThreshold ?: HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
     )

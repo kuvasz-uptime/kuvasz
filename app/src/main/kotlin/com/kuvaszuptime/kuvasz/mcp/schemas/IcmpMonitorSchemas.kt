@@ -178,7 +178,7 @@ data class IcmpMonitorCreatorSchema(
         packetLossThreshold = packetLossThreshold ?: IcmpMonitorDefaults.PACKET_LOSS_THRESHOLD,
         failureCountThreshold = failureCountThreshold ?: IcmpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
         enabled = enabled ?: IcmpMonitorDefaults.MONITOR_ENABLED,
-        integrations = integrations ?: emptyList(),
+        integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: IcmpMonitorDefaults.METRICS_HISTORY_ENABLED
     )
 }

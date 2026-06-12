@@ -31,11 +31,11 @@ class IntegrationToolsTest(
                     integrationList.integrations.shouldHaveSize(21)
 
                     // Checking only one since the mapping should be the same for all of them
-                    integrationList.integrations.forOne {
-                        it.id shouldBe "slack:test_implicitly_enabled"
-                        it.enabled shouldBe true
-                        it.global shouldBe false
-                        it.type shouldBe IntegrationType.SLACK
+                    integrationList.integrations.forOne { integration ->
+                        integration.id shouldBe "slack:test_implicitly_enabled"
+                        integration.enabled shouldBe true
+                        integration.global shouldBe false
+                        integration.type shouldBe IntegrationType.SLACK
                     }
 
                     response.contentAs<IntegrationListSchema>() shouldBe integrationList
