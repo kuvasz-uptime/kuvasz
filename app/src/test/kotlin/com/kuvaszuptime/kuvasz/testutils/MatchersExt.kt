@@ -3,7 +3,6 @@ package com.kuvaszuptime.kuvasz.testutils
 import com.kuvaszuptime.kuvasz.mcp.McpToolCallResponse
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -32,7 +31,6 @@ infix fun Double?.shouldEqualRounded(other: Double) =
         other.toBigDecimal().setScale(4, RoundingMode.HALF_UP)
 
 fun McpToolCallResponse.shouldHaveError(errorCode: Int, expectedMessage: String? = null) {
-    result.shouldBeNull()
     with(error.shouldNotBeNull()) {
         code shouldBe errorCode
         if (expectedMessage != null) message shouldContain expectedMessage

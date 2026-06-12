@@ -36,11 +36,13 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.modelcontextprotocol.spec.McpSchema
+import io.modelcontextprotocol.spec.McpSchema.METHOD_TOOLS_LIST
 import kotlinx.coroutines.reactive.awaitFirst
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import tools.jackson.module.kotlin.readValue
 
-@MicronautTest
+@MicronautTest(environments = ["yaml-monitors", "full-integrations-setup"])
 @Property(name = "micronaut.security.enabled", value = "true")
 @Property(name = "admin-auth.api-key", value = TEST_API_KEY)
 @Property(name = "admin-auth.username", value = TEST_USERNAME)
@@ -51,27 +53,24 @@ class McpServerAuthTest(
 
     private val objectMapper = jacksonObjectMapper()
 
-    //    @JsonIgnoreProperties(ignoreUnknown = true)
     data class McpToolsListResponse(
         val result: ToolsResult? = null,
     ) {
-        //        @JsonIgnoreProperties(ignoreUnknown = true)
         data class ToolsResult(val tools: List<ToolInfo> = emptyList())
-
-        //        @JsonIgnoreProperties(ignoreUnknown = true)
         data class ToolInfo(val name: String)
     }
 
-    fun jsonRpcRequest(method: String): Map<String, Any> =
-        mapOf("jsonrpc" to "2.0", "id" to 1, "method" to method)
+    fun toolsRequest() = HttpRequest.POST(
+        MCP_PATH,
+        McpSchema.JSONRPCRequest(McpSchema.JSONRPC_VERSION, METHOD_TOOLS_LIST, 1, emptyMap<String, Any>())
+    )
 
     init {
         given("the MCP endpoint") {
 
             `when`("an unauthenticated request is made") {
-                val request = HttpRequest.POST(MCP_PATH, jsonRpcRequest("tools/list"))
                 val exception = shouldThrow<HttpClientResponseException> {
-                    client.exchange(request, String::class.java).awaitFirst()
+                    client.exchange(toolsRequest(), String::class.java).awaitFirst()
                 }
                 then("it should return 401") {
                     exception.status shouldBe HttpStatus.UNAUTHORIZED
@@ -79,8 +78,7 @@ class McpServerAuthTest(
             }
 
             `when`("a request is made with a wrong API key") {
-                val request = HttpRequest.POST(MCP_PATH, jsonRpcRequest("tools/list"))
-                    .header("X-API-KEY", "wrongkey1234567890")
+                val request = toolsRequest().header("X-API-KEY", "wrongkey1234567890")
                 val exception = shouldThrow<HttpClientResponseException> {
                     client.exchange(request, String::class.java).awaitFirst()
                 }
@@ -90,8 +88,7 @@ class McpServerAuthTest(
             }
 
             `when`("a valid tools/list request is made") {
-                val request = HttpRequest.POST(MCP_PATH, jsonRpcRequest("tools/list"))
-                    .header("X-API-KEY", TEST_API_KEY)
+                val request = toolsRequest().header("X-API-KEY", TEST_API_KEY)
                 val body = client.exchange(request, String::class.java).awaitFirst().body().shouldNotBeNull()
                 val response = objectMapper.readValue<McpToolsListResponse>(body)
 
