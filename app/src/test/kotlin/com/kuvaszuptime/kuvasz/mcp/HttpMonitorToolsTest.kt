@@ -1,17 +1,23 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_STATS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_HTTP_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.schemas.DeleteResultSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
@@ -261,6 +267,33 @@ class HttpMonitorToolsTest(
                 }
             }
         }
+
+        given("the delete-http-monitor tool") {
+
+            `when`("delete-http-monitor is called with a valid monitor ID") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val response = callToolWithMcpClient(DELETE_HTTP_MONITOR, mapOf("monitorId" to monitor.id))
+
+                then("it should return a delete result with deleted=true in both structured and text content") {
+                    response.isError shouldBe false
+
+                    with(response.structuredContentAs<DeleteResultSchema>().shouldNotBeNull()) {
+                        deleted shouldBe true
+                        id shouldBe monitor.id
+
+                        response.contentAs<DeleteResultSchema>() shouldBe this
+                    }
+                }
+            }
+
+            `when`("delete-http-monitor is called with a non-existent monitor ID") {
+                val response = callTool(DELETE_HTTP_MONITOR, mapOf("monitorId" to -999L))
+
+                then("it should return a resource-not-found protocol error with no result") {
+                    response.shouldHaveError(McpSchema.ErrorCodes.RESOURCE_NOT_FOUND)
+                }
+            }
+        }
     }
 }
 
@@ -301,6 +334,46 @@ class HttpReadOnlyMonitorMcpToolsTest(
                     response.shouldHaveError(
                         McpSchema.ErrorCodes.INVALID_REQUEST,
                         "The given type of monitors were configured via a YAML file"
+                    )
+                }
+            }
+
+            `when`("delete-http-monitor is called") {
+                val response = callTool(DELETE_HTTP_MONITOR, mapOf("monitorId" to 1L))
+
+                then("it should return an invalid-request protocol error with no result") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_REQUEST,
+                        "The given type of monitors were configured via a YAML file"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@MicronautTest(environments = ["full-integrations-setup"])
+class HttpMonitorReferencedByStatusPageMcpToolsTest(
+    @param:Client("/") private val client: HttpClient,
+    private val httpMonitorRepository: HttpMonitorRepository,
+    private val appConfig: AppConfig,
+    mcpClient: McpSyncClient,
+) : McpToolTest(client, mcpClient) {
+
+    init {
+        given("the delete-http-monitor tool when the monitor is referenced by a read-only status page") {
+
+            `when`("delete-http-monitor is called for such a monitor") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                createStatusPage(dslContext, monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)))
+                appConfig.disableStatusPageExternalWrite()
+
+                val response = callTool(DELETE_HTTP_MONITOR, mapOf("monitorId" to monitor.id))
+
+                then("it should return an invalid-request protocol error with no result") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_REQUEST,
+                        "Monitor cannot be deleted because it is referenced by a read-only status page"
                     )
                 }
             }

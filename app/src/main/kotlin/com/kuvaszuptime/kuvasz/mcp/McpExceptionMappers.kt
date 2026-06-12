@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.models.DuplicationException
+import com.kuvaszuptime.kuvasz.models.MonitorCannotBeDeletedException
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
 import com.kuvaszuptime.kuvasz.models.ResourceNotFoundException
 import io.micronaut.mcp.server.exceptions.McpErrorExceptionMapper
@@ -38,6 +39,17 @@ internal class ReadOnlyMonitorExceptionMcpMapper : McpErrorExceptionMapper<ReadO
         ReadOnlyMonitorException::class.java.isAssignableFrom(clazz)
 
     override fun map(exception: ReadOnlyMonitorException): McpError =
+        McpError.builder(McpSchema.ErrorCodes.INVALID_REQUEST)
+            .message(exception.message)
+            .build()
+}
+
+@Singleton
+internal class MonitorCannotBeDeletedExceptionMcpMapper : McpErrorExceptionMapper<MonitorCannotBeDeletedException> {
+    override fun canMap(clazz: Class<out Throwable>) =
+        MonitorCannotBeDeletedException::class.java.isAssignableFrom(clazz)
+
+    override fun map(exception: MonitorCannotBeDeletedException): McpError =
         McpError.builder(McpSchema.ErrorCodes.INVALID_REQUEST)
             .message(exception.message)
             .build()

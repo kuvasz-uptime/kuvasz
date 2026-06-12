@@ -1,15 +1,21 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_PUSH_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_STATS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PUSH_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_PUSH_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.schemas.DeleteResultSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorStatsSchema
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import io.kotest.inspectors.forOne
@@ -228,6 +234,33 @@ class PushMonitorToolsTest(
                 }
             }
         }
+
+        given("the delete-push-monitor tool") {
+
+            `when`("delete-push-monitor is called with a valid monitor ID") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val response = callToolWithMcpClient(DELETE_PUSH_MONITOR, mapOf("monitorId" to monitor.id))
+
+                then("it should return a delete result with deleted=true in both structured and text content") {
+                    response.isError shouldBe false
+
+                    with(response.structuredContentAs<DeleteResultSchema>().shouldNotBeNull()) {
+                        deleted shouldBe true
+                        id shouldBe monitor.id
+
+                        response.contentAs<DeleteResultSchema>() shouldBe this
+                    }
+                }
+            }
+
+            `when`("delete-push-monitor is called with a non-existent monitor ID") {
+                val response = callTool(DELETE_PUSH_MONITOR, mapOf("monitorId" to -999L))
+
+                then("it should return a resource-not-found protocol error with no result") {
+                    response.shouldHaveError(McpSchema.ErrorCodes.RESOURCE_NOT_FOUND)
+                }
+            }
+        }
     }
 }
 
@@ -268,6 +301,46 @@ class PushReadOnlyMonitorMcpToolsTest(
                     response.shouldHaveError(
                         McpSchema.ErrorCodes.INVALID_REQUEST,
                         "The given type of monitors were configured via a YAML file",
+                    )
+                }
+            }
+
+            `when`("delete-push-monitor is called") {
+                val response = callTool(DELETE_PUSH_MONITOR, mapOf("monitorId" to 1L))
+
+                then("it should return an invalid-request protocol error with no result") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_REQUEST,
+                        "The given type of monitors were configured via a YAML file",
+                    )
+                }
+            }
+        }
+    }
+}
+
+@MicronautTest(environments = ["full-integrations-setup"])
+class PushMonitorReferencedByStatusPageMcpToolsTest(
+    @param:Client("/") private val client: HttpClient,
+    private val pushMonitorRepository: PushMonitorRepository,
+    private val appConfig: AppConfig,
+    mcpClient: McpSyncClient,
+) : McpToolTest(client, mcpClient) {
+
+    init {
+        given("the delete-push-monitor tool when the monitor is referenced by a read-only status page") {
+
+            `when`("delete-push-monitor is called for such a monitor") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                createStatusPage(dslContext, monitors = listOf(MonitorID(MonitorType.PUSH, monitor.name)))
+                appConfig.disableStatusPageExternalWrite()
+
+                val response = callTool(DELETE_PUSH_MONITOR, mapOf("monitorId" to monitor.id))
+
+                then("it should return an invalid-request protocol error with no result") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_REQUEST,
+                        "Monitor cannot be deleted because it is referenced by a read-only status page"
                     )
                 }
             }

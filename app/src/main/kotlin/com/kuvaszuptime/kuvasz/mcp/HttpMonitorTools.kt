@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.controllers.monitor.CheckHttpMonitorsWritable
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
+import com.kuvaszuptime.kuvasz.mcp.schemas.DeleteResultSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorListSchema
@@ -94,4 +95,20 @@ class HttpMonitorTools(
                 httpMonitorActions.updateMonitor(monitorId, monitorToggleUpdate(enabled))
             )
         )
+
+    @Tool(
+        name = ToolNames.DELETE_HTTP_MONITOR,
+        description = "Permanently deletes an HTTP monitor by its ID, including all its history and events. " +
+            "This tool will work only if 'areHttpMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +
+            "call is 'false', otherwise it will return with an error. " +
+            "It will also fail if the monitor is referenced by a read-only status page.",
+        annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = true, idempotentHint = true)
+    )
+    @CheckHttpMonitorsWritable
+    fun deleteHttpMonitor(
+        @ToolArg(description = "The numeric ID of the HTTP monitor") monitorId: Long,
+    ): DeleteResultSchema {
+        httpMonitorActions.deleteMonitorById(monitorId)
+        return DeleteResultSchema(deleted = true, id = monitorId)
+    }
 }

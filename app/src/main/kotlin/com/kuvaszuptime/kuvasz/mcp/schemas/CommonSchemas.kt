@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.PacketLossStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import io.micronaut.core.annotation.Introspected
+import io.micronaut.jsonschema.JsonSchema
 import java.time.OffsetDateTime
 
 @Introspected
@@ -87,6 +88,13 @@ data class PacketLossStatsSchema(
         )
     }
 }
+
+@JsonSchema
+@Introspected
+data class DeleteResultSchema(
+    val deleted: Boolean,
+    val id: Long,
+)
 
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
