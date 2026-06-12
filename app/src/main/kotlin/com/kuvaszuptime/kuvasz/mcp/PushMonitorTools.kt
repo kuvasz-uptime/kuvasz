@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.controllers.monitor.CheckPushMonitorsWritable
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorListSchema
@@ -44,7 +46,11 @@ class PushMonitorTools(
     @Tool(
         name = ToolNames.CREATE_PUSH_MONITOR,
         description = "Creates a new push (heartbeat) monitor. 'name', 'heartbeatInterval', and 'clientSecret'" +
-            " are required; all other fields use sensible defaults.",
+            " are required; all other fields use sensible defaults." +
+            "Refer to the docs for the default values: https://kuvasz-uptime.dev/management/push-monitors/." +
+            "The available integrations can be found via the $LIST_INTEGRATIONS tool." +
+            "This tool will work only if 'arePushMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +
+            "call is 'false', otherwise it will return with an error.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
     @CheckPushMonitorsWritable
@@ -73,7 +79,9 @@ class PushMonitorTools(
 
     @Tool(
         name = ToolNames.TOGGLE_PUSH_MONITOR,
-        description = "Enables or disables a push (heartbeat) monitor.",
+        description = "Enables or disables a push (heartbeat) monitor." +
+            "This tool will work only if 'arePushMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +
+            "call is 'false', otherwise it will return with an error.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
     )
     @CheckPushMonitorsWritable

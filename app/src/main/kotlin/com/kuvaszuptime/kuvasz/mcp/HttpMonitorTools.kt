@@ -49,7 +49,8 @@ class HttpMonitorTools(
             " are required; all other fields use sensible defaults. " +
             "Refer to the docs for the default values: https://kuvasz-uptime.dev/management/http-monitors/." +
             "The available integrations can be found via the $LIST_INTEGRATIONS tool." +
-            "To check if this tool is usable, use the $GET_APP_SETTINGS tool and look for the editabilityState",
+            "This tool will work only if 'areHttpMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +
+            "call is 'false', otherwise it will return with an error.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
     @CheckHttpMonitorsWritable
@@ -78,7 +79,9 @@ class HttpMonitorTools(
     @Tool(
         name = ToolNames.TOGGLE_HTTP_MONITOR,
         description = "Enables or disables an HTTP monitor completely. Disabling an HTTP monitor implicitly disables " +
-            "the SSL checks of it as well.",
+            "the SSL checks of it as well." +
+            "This tool will work only if 'areHttpMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +
+            "call is 'false', otherwise it will return with an error.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
     )
     @CheckHttpMonitorsWritable

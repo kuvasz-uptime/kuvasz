@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.controllers.monitor.CheckIcmpMonitorsWritable
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorListSchema
@@ -59,7 +61,11 @@ class IcmpMonitorTools(
     @Tool(
         name = ToolNames.CREATE_ICMP_MONITOR,
         description = "Creates a new ICMP monitor. Only 'name', 'host', and 'uptimeCheckInterval'" +
-            " are required; all other fields use sensible defaults.",
+            " are required; all other fields use sensible defaults." +
+            "Refer to the docs for the default values: https://kuvasz-uptime.dev/management/icmp-monitors/." +
+            "The available integrations can be found via the $LIST_INTEGRATIONS tool." +
+            "This tool will work only if 'areIcmpMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +
+            "call is 'false', otherwise it will return with an error.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)
     )
     @CheckIcmpMonitorsWritable
@@ -71,7 +77,9 @@ class IcmpMonitorTools(
 
     @Tool(
         name = ToolNames.TOGGLE_ICMP_MONITOR,
-        description = "Enables or disables an ICMP (ping) monitor.",
+        description = "Enables or disables an ICMP (ping) monitor." +
+            "This tool will work only if 'areIcmpMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +
+            "call is 'false', otherwise it will return with an error.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true)
     )
     @CheckIcmpMonitorsWritable
