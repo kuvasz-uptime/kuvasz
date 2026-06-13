@@ -1,3 +1,4 @@
+
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dev.detekt.gradle.Detekt
 
@@ -127,6 +128,10 @@ allOpen {
     annotation("io.micronaut.aop.Around")
     annotation("io.micronaut.http.annotation.Controller")
     annotation("jakarta.inject.Singleton")
+}
+
+tasks.withType<Test> {
+    jvmArgs("-Xmx2048M")
 }
 
 tasks.withType<JavaExec> {
