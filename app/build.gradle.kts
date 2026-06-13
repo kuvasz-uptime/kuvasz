@@ -88,7 +88,6 @@ dependencies {
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactive)
-    implementation(libs.arrow.core.data)
 
     // Mailer
     implementation(libs.simplejavamail)

@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.services
 
-import arrow.core.Either
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
@@ -10,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
@@ -178,10 +178,10 @@ class SSLCheckerTest(
         validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)
     ) {
         val certInfo = CertificateInfo(validTo)
-        val mockResult: Either<SSLValidationError, CertificateInfo> = when (status) {
-            SslStatus.VALID -> Either.Right(certInfo)
-            SslStatus.WILL_EXPIRE -> Either.Right(certInfo)
-            SslStatus.INVALID -> Either.Left(SSLValidationError("validation error"))
+        val mockResult: SSLValidationResult = when (status) {
+            SslStatus.VALID -> SSLValidationResult.Valid(certInfo)
+            SslStatus.WILL_EXPIRE -> SSLValidationResult.Valid(certInfo)
+            SslStatus.INVALID -> SSLValidationResult.Invalid(SSLValidationError("validation error"))
         }
         every { sslValidator.validateHttps(any()) } returns mockResult
     }

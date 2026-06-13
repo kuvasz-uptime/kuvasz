@@ -97,7 +97,6 @@ dependencyResolutionManagement {
             )
 
             // Misc
-            library("arrow-core-data", "io.arrow-kt", "arrow-core-data").version("0.12.1")
             library("pebble", "io.pebbletemplates", "pebble").version("4.1.1")
             library(
                 "detekt-formatting",

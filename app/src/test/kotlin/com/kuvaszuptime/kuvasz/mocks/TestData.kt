@@ -28,7 +28,6 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import io.kotest.matchers.nulls.shouldNotBeNull
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -81,7 +80,7 @@ fun createHttpMonitor(
         .setRequestBody(requestBody)
         .setFailureCountThreshold(failureCountThreshold)
         .setSensitiveUrl(sensitiveUrl)
-    return repository.returningInsert(monitor).orNull().shouldNotBeNull()
+    return repository.returningInsert(monitor)
 }
 
 fun createPushMonitor(
