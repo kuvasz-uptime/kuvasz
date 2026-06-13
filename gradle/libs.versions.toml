@@ -1,0 +1,68 @@
+[versions]
+buildconfig = "6.0.10"
+detekt = "2.0.0-alpha.3"
+detektFormatting = "1.23.8"
+flywayPlugin = "12.8.1"
+gitVersion = "5.0.0"
+i18n4k = "0.11.2"
+jib = "3.5.3"
+jooq = "3.21.5"
+jooqPlugin = "10.2.1"
+kotest = "6.1.11"
+kotlin = "2.4.0"
+kotlinCoroutines = "1.11.0"
+kotlinHtmx = "0.0.1"
+kotlinxHtml = "0.12.0"
+kover = "0.9.8"
+# @keep used by Micronaut Gradle plugin implicitly
+micronaut = "5.0.2"
+micronautGradlePlugin = "5.0.0"
+minify = "2.1.1"
+mockk = "1.14.11"
+mockserver = "7.0.0"
+pebble = "4.1.2"
+shadow = "9.4.2"
+simpleJavaMail = "8.12.6"
+testcontainers = "2.0.5"
+versionCatalogUpdate = "1.1.0"
+
+[libraries]
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detektFormatting" }
+i18n4k = { module = "de.comahe.i18n4k:i18n4k-core-jvm", version.ref = "i18n4k" }
+jooq-gradle-plugin = { module = "nu.studer:gradle-jooq-plugin", version.ref = "jooqPlugin" }
+jooq-jackson-extensions = { module = "org.jooq:jooq-jackson3-extensions", version.ref = "jooq" }
+jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
+jooq-postgres-extensions = { module = "org.jooq:jooq-postgres-extensions", version.ref = "jooq" }
+kotest-data = { module = "io.kotest:kotest-assertions-table", version.ref = "kotest" }
+kotlin-htmx = { module = "com.iodesystems.kotlin-htmx:htmx", version.ref = "kotlinHtmx" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
+kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinCoroutines" }
+kotlinx-html-jvm = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version.ref = "kotlinxHtml" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+mockserver-netty = { module = "org.mock-server:mockserver-netty-no-dependencies", version.ref = "mockserver" }
+pebble = { module = "io.pebbletemplates:pebble", version.ref = "pebble" }
+simplejavamail = { module = "org.simplejavamail:simple-java-mail", version.ref = "simpleJavaMail" }
+simplejavamail-batchmodule = { module = "org.simplejavamail:batch-module", version.ref = "simpleJavaMail" }
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-pg = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+
+[plugins]
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
+flyway = { id = "org.flywaydb.flyway", version.ref = "flywayPlugin" }
+git-version = { id = "com.palantir.git-version", version.ref = "gitVersion" }
+i18n4k = { id = "de.comahe.i18n4k", version.ref = "i18n4k" }
+jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }
+jooq = { id = "nu.studer.jooq", version.ref = "jooqPlugin" }
+kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+micronaut-docker = { id = "io.micronaut.docker", version.ref = "micronautGradlePlugin" }
+micronaut-minimal-application = { id = "io.micronaut.minimal.application", version.ref = "micronautGradlePlugin" }
+micronaut-minimal-library = { id = "io.micronaut.minimal.library", version.ref = "micronautGradlePlugin" }
+minify = { id = "org.gradlewebtools.minify", version.ref = "minify" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "versionCatalogUpdate" }
