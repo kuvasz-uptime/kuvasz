@@ -7,7 +7,7 @@ title: The developer- and cloud-friendly uptime monitor
 <figure markdown="span">
   ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="550" .skip-lb }
   ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="550" .skip-lb }
-  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages, webhooks and IAC support!</figcaption>
+  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages, webhooks, an MCP server and IAC support!</figcaption>
 </figure>
 
 !!! tip "TL;DR"
@@ -117,6 +117,14 @@ title: The developer- and cloud-friendly uptime monitor
     Kuvasz is built with cloud-native principles in mind, distributed as a single Docker image, and only requires a _PostgreSQL_ database to run.
 
     [:octicons-arrow-right-24: Getting started](setup/installation.md)
+
+-   :robot:{ .lg .card-header-icon } __MCP server__
+
+    ---
+
+    Kuvasz ships with a built-in [**Model Context Protocol (MCP)**](https://modelcontextprotocol.io/){ target="_blank" } server, which exposes your monitoring data and management operations as **tools that AI assistants can call directly**. This lets you query monitor status, view incidents, and create or toggle monitors through natural language — right inside Claude, Cursor, or any MCP-compatible client.
+
+    [:octicons-arrow-right-24: MCP server](features/mcp-server.md)
 
 </div>
 

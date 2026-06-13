@@ -8,7 +8,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/kuvaszmonitoring/kuvasz)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
 ---
 
-**Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API, and supports multiple notification channels like email, Discord, Slack, Telegram, PagerDuty and custom webhooks.
+**Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API + MCP server and supports multiple notification channels like email, Discord, Slack, Telegram, PagerDuty and custom webhooks.
 
 ![Kuvasz](docs/docs/images/feature_carousel.webp)
 
@@ -39,6 +39,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 - **Full-fledged REST API**: Manage your monitors, check their status, and more through a powerful API.
 - **Metrics exporters**: Export your metrics to _OpenTelemetry_ and _Prometheus_ for better observability and integration with your existing monitoring stack.
 - **Home Assistant integration**: With the official [Home Assistant integration](https://github.com/kuvasz-uptime/ku-hass) you can easily integrate your monitors into your smart home setup, create custom dashboards, and automate actions based on the status of your services.
+- **MCP server**: The MCP server allows you to leverage the capabilities of _Kuvasz_ via **AI assistants**, enabling you to query monitor status, view incidents, and create or toggle monitors **through natural language**.
 - More to come: Take a look at our [**Roadmap**](https://github.com/orgs/kuvasz-uptime/projects/2/views/1)
 
 ## 🚀  Kuvasz vs. UptimeRobot
