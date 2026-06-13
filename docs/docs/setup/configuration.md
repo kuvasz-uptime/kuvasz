@@ -387,6 +387,27 @@ The language to use. If you would like to translate _Kuvasz_ to your desired lan
     - French (`fr`)
     - Polish (`pl`)
 
+### MCP server
+
+<!-- md:version 4.0.0 -->
+<!-- md:flag experimental -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    micronaut.mcp.server.enabled: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_MCP_SERVER=true
+    ```
+
+Enables the built-in [**MCP server**](../features/mcp-server.md), which exposes your monitors, incidents, configuration, etc. as tools that AI assistants can call. The server is available at `/mcp` once enabled and is protected by the same [API key](../setup/configuration.md#api-key) as the REST API.
+
 ### Check for updates
 
 <!-- md:version 3.0.1 -->
@@ -438,6 +459,7 @@ You can find the full configuration example below, which includes all the option
       security:
         enabled: true
         token.generator.access-token.expiration: 86400 # 24 hours
+      mcp.server.enabled: false
       metrics:
         enabled: true
         export:
@@ -500,6 +522,7 @@ You can find the full configuration example below, which includes all the option
     APP_LANGUAGE=en
     ENABLE_CHECK_UPDATES=true
     HTTP_CHECK_TIMEOUT_SECONDS=30
+    ENABLE_MCP_SERVER=false
     TZ=UTC
     ENABLE_METRICS_EXPORT=true
     ENABLE_OTLP_EXPORT=true

@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 object HttpMonitorDocs {
-    const val URL = "The URL that is monitored"
+    const val URL = "The URL that is monitored, must include the protocol (http(s)://) as well."
     const val SENSITIVE_URL =
         "Whether the URL is sensitive (e.g. contains a secret token). If true, the URL will be masked in integrations, logs and metrics to protect sensitive information."
     const val SSL_CHECK_ENABLED = "Whether the monitor checks the SSL certificate for expiry and validity."

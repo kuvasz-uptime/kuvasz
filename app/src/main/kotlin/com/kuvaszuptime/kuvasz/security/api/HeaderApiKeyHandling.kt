@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.security.api
 
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
+import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import com.kuvaszuptime.kuvasz.security.Role
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.async.publisher.Publishers
@@ -30,7 +31,8 @@ class ApiKeyTokenValidator(
 ) : TokenValidator<HttpRequest<*>?> {
 
     override fun validateToken(token: String, request: HttpRequest<*>?): Publisher<Authentication> {
-        val isApiRequest = request != null && request.path.startsWith(API_V2_PREFIX)
+        val isApiRequest = request != null &&
+            (request.path.startsWith(API_V2_PREFIX) || request.path.startsWith(MCP_PATH))
         return if (isApiRequest && token == adminAuthConfig.apiKey) {
             Publishers.just(Authentication.build(checkNotNull(adminAuthConfig.username), listOf(Role.API.alias)))
         } else {

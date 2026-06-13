@@ -25,6 +25,7 @@ import io.mockk.mockk
         "yaml-icmp-monitors",
         "enabled-metrics-otlp",
         "enabled-metrics-prometheus",
+        "enabled-mcp-server",
         "status-pages",
     ]
 )
@@ -95,6 +96,9 @@ class SettingsControllerTest(
                         url shouldBe "http://otel-collector.example:4317"
                         step shouldBe "PT30M"
                     }
+                }
+                with(result.mcpServer) {
+                    enabled shouldBe true
                 }
                 with(result.versionInfo) {
                     installedVersion shouldBe appGlobals.appVersion

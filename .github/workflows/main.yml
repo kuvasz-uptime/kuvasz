@@ -25,6 +25,8 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Validate translations
         run: ./gradlew :shared:validateI18n
+      - name: Validate that JSON schemas are self-contained
+        run: ./gradlew :app:validateJsonSchemas
       - name: Generate OpenAPI spec
         run: ./gradlew :app:updateApiDoc
       - name: Validate that generated sources are committed

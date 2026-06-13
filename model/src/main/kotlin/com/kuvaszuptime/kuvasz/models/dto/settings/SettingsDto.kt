@@ -11,6 +11,8 @@ data class SettingsDto(
     val app: AppSettingsDto,
     @param:Schema(description = "Metrics exporter settings", required = true)
     val metricsExport: MetricsExportSettingsDto,
+    @param:Schema(description = "MCP server settings", required = true)
+    val mcpServer: McpServerSettingsDto,
     @param:Schema(description = "SMTP configuration for email notifications", required = false, nullable = true)
     val smtp: SmtpConfigDto?,
     val versionInfo: VersionInfoDto
@@ -128,4 +130,10 @@ data class SettingsDto(
             )
         }
     }
+
+    @Introspected
+    data class McpServerSettingsDto(
+        @param:Schema(description = "Whether the MCP server is enabled", required = true)
+        val enabled: Boolean,
+    )
 }

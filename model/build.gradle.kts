@@ -46,12 +46,12 @@ dependencies {
     implementation(mn.micronaut.validation)
     implementation(mn.jackson.module.kotlin)
     implementation(mn.micronaut.http.client)
-//    kapt(mn.micronaut.serde.processor)
     implementation(mn.micronaut.jackson.databind)
 
-    // OpenAPI
+    // OpenAPI & JsonSchema
     kapt(mn.micronaut.openapi)
     implementation(mn.swagger.annotations)
+    implementation(mn.micronaut.json.schema.annotations)
 
     // DB & jOOQ & Flyway
     implementation(libs.jooq.kotlin)

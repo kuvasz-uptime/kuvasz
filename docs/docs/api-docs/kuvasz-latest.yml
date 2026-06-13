@@ -692,7 +692,7 @@ paths:
         "200":
           description: Successful query
           content:
-            application/x-yaml: {}
+            application/yaml: {}
       security:
       - apiKey: []
       - bearerAuth: []
@@ -1113,7 +1113,7 @@ paths:
         "200":
           description: Successful query
           content:
-            application/x-yaml: {}
+            application/yaml: {}
       security:
       - apiKey: []
       - bearerAuth: []
@@ -1471,7 +1471,8 @@ components:
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
-          description: The URL that is monitored
+          description: "The URL that is monitored, must include the protocol (http(s)://)\
+            \ as well."
           x-pattern-message: URL must be a valid HTTP(S) URI
           x-not-null-message: URL must not be null
         sensitiveUrl:
@@ -1647,7 +1648,8 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
         url:
           type: string
-          description: The URL that is monitored
+          description: "The URL that is monitored, must include the protocol (http(s)://)\
+            \ as well."
           format: uri
         sensitiveUrl:
           type: boolean
@@ -1857,7 +1859,8 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
         url:
           type: string
-          description: The URL that is monitored
+          description: "The URL that is monitored, must include the protocol (http(s)://)\
+            \ as well."
         sensitiveUrl:
           type: boolean
           description: "Whether the URL is sensitive (e.g. contains a secret token).\
@@ -2005,7 +2008,8 @@ components:
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
-          description: The URL that is monitored
+          description: "The URL that is monitored, must include the protocol (http(s)://)\
+            \ as well."
           nullable: false
           x-pattern-message: URL must be a valid HTTP(S) URI
           x-not-null-message: URL must not be null
@@ -3556,6 +3560,7 @@ components:
       required:
       - app
       - authentication
+      - mcpServer
       - metricsExport
       - versionInfo
       type: object
@@ -3572,6 +3577,10 @@ components:
           description: Metrics exporter settings
           allOf:
           - $ref: "#/components/schemas/SettingsDto.MetricsExportSettingsDto"
+        mcpServer:
+          description: MCP server settings
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.McpServerSettingsDto"
         smtp:
           description: SMTP configuration for email notifications
           nullable: true
@@ -3653,6 +3662,14 @@ components:
           type: integer
           description: The maximum age of the access token in seconds
           format: int64
+    SettingsDto.McpServerSettingsDto:
+      required:
+      - enabled
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the MCP server is enabled
     SettingsDto.MetricsExportSettingsDto:
       required:
       - exportEnabled

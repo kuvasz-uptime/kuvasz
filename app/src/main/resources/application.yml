@@ -24,10 +24,14 @@ micronaut:
       cache.enabled: false
   application:
     name: kuvasz
-  openapi:
-    target.file: ../docs/docs/api-docs/kuvasz-latest.yml
-    additional:
-      files: 'src/main/resources/swagger'
+  mcp:
+    server:
+      enabled: ${ENABLE_MCP_SERVER:`false`}
+      transport: HTTP
+      reactive: false
+      info:
+        name: kuvasz-uptime
+        version: latest
   security:
     redirect:
       forbidden:
@@ -70,6 +74,9 @@ micronaut:
       - pattern: /api/**
         access:
           - ROLE_API
+      - pattern: /mcp
+        access:
+          - ROLE_API
       - pattern: /auth/login
         method: POST
         access: isAnonymous()
@@ -77,6 +84,9 @@ micronaut:
         access: isAnonymous()
   router:
     static-resources:
+      jsonschema:
+        paths: classpath:META-INF/schemas
+        mapping: /schemas/**
       public:
         paths: classpath:public
         mapping: /public/**

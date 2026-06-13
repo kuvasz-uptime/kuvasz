@@ -8,6 +8,9 @@ micronaut:
             generator:
               secret: ${random.uuid2}
     enabled: false
+  mcp:
+    server:
+      enabled: true
 ---
 datasources:
   default:
