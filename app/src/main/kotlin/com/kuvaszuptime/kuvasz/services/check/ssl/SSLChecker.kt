@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -21,15 +22,15 @@ class SSLChecker(
 
     fun check(monitor: HttpMonitorRecord) {
         val previousEvent = sslEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
-        sslValidator.validateHttps(monitor.url.toUri()).fold(
-            { error ->
+        when (val result = sslValidator.validateHttps(monitor.url.toUri())) {
+            is SSLValidationResult.Invalid ->
                 SSLInvalidEvent(
                     monitor = monitor,
-                    error = error,
+                    error = result.error,
                     previousEvent = previousEvent
                 )
-            },
-            { certInfo ->
+            is SSLValidationResult.Valid -> {
+                val certInfo = result.certInfo
                 val expiryThresholdDays = monitor.sslExpiryThreshold.toLong()
                 if (certInfo.validTo.isBefore(getCurrentTimestamp().plusDays(expiryThresholdDays))) {
                     SSLWillExpireEvent(
@@ -45,7 +46,7 @@ class SSLChecker(
                     )
                 }
             }
-        ).also { event ->
+        }.also { event ->
             databaseEventHandler.handleSSLMonitorEvent(event)
             eventDispatcher.dispatch(event)
         }

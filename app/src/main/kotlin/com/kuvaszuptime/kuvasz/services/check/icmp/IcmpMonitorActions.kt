@@ -130,21 +130,17 @@ class IcmpMonitorActions(
         existingMonitor: IcmpMonitorRecord,
         txCtx: DSLContext,
     ): IcmpMonitorRecord =
-        monitorRepository.returningUpdate(this, txCtx).fold(
-            { persistenceError -> throw persistenceError },
-            { updatedMonitor ->
-                if (updatedMonitor.enabled) {
-                    checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
-                } else {
-                    checkScheduler.removeChecksOfMonitor(existingMonitor)
-                }
-                // If the metrics history is disabled, we need to delete all the existing logs
-                if (!updatedMonitor.metricsHistoryEnabled && existingMonitor.metricsHistoryEnabled) {
-                    metricsLogRepository.deleteAllByMonitorId(existingMonitor.id)
-                }
-                updatedMonitor
+        monitorRepository.returningUpdate(this, txCtx).also { updatedMonitor ->
+            if (updatedMonitor.enabled) {
+                checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
+            } else {
+                checkScheduler.removeChecksOfMonitor(existingMonitor)
             }
-        )
+            // If the metrics history is disabled, we need to delete all the existing logs
+            if (!updatedMonitor.metricsHistoryEnabled && existingMonitor.metricsHistoryEnabled) {
+                metricsLogRepository.deleteAllByMonitorId(existingMonitor.id)
+            }
+        }
 
     fun deleteMonitorById(monitorId: Long) =
         super.deleteMonitorById(monitorId) { monitor ->

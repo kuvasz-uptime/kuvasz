@@ -1,8 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_ICMP_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
@@ -10,7 +7,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -89,7 +85,7 @@ class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
     fun returningUpdate(
         updatedMonitor: IcmpMonitorRecord,
         txCtx: DSLContext = dslContext,
-    ): Either<PersistenceException, IcmpMonitorRecord> =
+    ): IcmpMonitorRecord =
         try {
             txCtx
                 .update(ICMP_MONITOR)
@@ -106,9 +102,9 @@ class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                 .set(ICMP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(ICMP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(ICMP_MONITOR.asterisk())
-                .fetchOneOrThrow<IcmpMonitorRecord>().right()
+                .fetchOneOrThrow<IcmpMonitorRecord>()
         } catch (e: DataAccessException) {
-            e.checkForDuplication().left()
+            throw e.checkForDuplication()
         }
 
     fun upsert(monitor: IcmpMonitorRecord, txCtx: DSLContext = this.dslContext): IcmpMonitorRecord = txCtx

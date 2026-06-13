@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services.check.ssl
 
-import arrow.core.Either
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
@@ -32,13 +32,15 @@ class SSLValidator {
      * Validates the SSL certificate chain of the given HTTPS URL
      *
      * @param url The HTTPS URL to validate.
-     * @return Either an SSLValidationError or CertificateInfo containing details of the server's certificate
-     * if the connection and chain validation succeed.
+     * @return An [SSLValidationResult.Invalid] with an SSLValidationError or an [SSLValidationResult.Valid] with a
+     * CertificateInfo containing details of the server's certificate if the connection and chain validation succeed.
      */
     @Suppress("TooGenericExceptionCaught", "ReturnCount")
-    fun validateHttps(url: URI): Either<SSLValidationError, CertificateInfo> {
+    fun validateHttps(url: URI): SSLValidationResult {
         if (url.scheme.lowercase() != "https") {
-            return Either.Left(SSLValidationError("URL protocol must be HTTPS, but was: ${url.scheme}"))
+            return SSLValidationResult.Invalid(
+                SSLValidationError("URL protocol must be HTTPS, but was: ${url.scheme}")
+            )
         }
         val start = System.currentTimeMillis()
 
@@ -49,11 +51,11 @@ class SSLValidator {
                 sslSocket.close()
                 val certificates = session.peerCertificates.filterIsInstance<X509Certificate>()
                 certificates.firstOrNull()?.let { peerCert ->
-                    Either.Right(CertificateInfo(validTo = peerCert.notAfter.toOffsetDateTime()))
-                } ?: Either.Left(SSLValidationError("No peer certificate was found"))
+                    SSLValidationResult.Valid(CertificateInfo(validTo = peerCert.notAfter.toOffsetDateTime()))
+                } ?: SSLValidationResult.Invalid(SSLValidationError("No peer certificate was found"))
             }
         } catch (ex: Exception) {
-            Either.Left(
+            SSLValidationResult.Invalid(
                 SSLValidationError("Error connecting or retrieving certificates for ${url.host}, reason: ${ex.message}")
             )
         }

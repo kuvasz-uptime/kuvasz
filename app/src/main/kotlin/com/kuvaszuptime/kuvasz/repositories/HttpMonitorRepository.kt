@@ -1,8 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
 import com.kuvaszuptime.kuvasz.jooq.JsonNodeToMapConverter
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
@@ -13,7 +10,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -82,23 +78,21 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             .and(HTTP_MONITOR.ID.eq(monitorId))
             .fetchOneInto(HttpMonitorDetailsDto::class.java)
 
-    fun returningInsert(monitor: HttpMonitorRecord): Either<PersistenceException, HttpMonitorRecord> =
+    fun returningInsert(monitor: HttpMonitorRecord): HttpMonitorRecord =
         try {
-            Either.Right(
-                dslContext
-                    .insertInto(HTTP_MONITOR)
-                    .set(monitor)
-                    .returning(HTTP_MONITOR.asterisk())
-                    .fetchOneOrThrow<HttpMonitorRecord>()
-            )
+            dslContext
+                .insertInto(HTTP_MONITOR)
+                .set(monitor)
+                .returning(HTTP_MONITOR.asterisk())
+                .fetchOneOrThrow<HttpMonitorRecord>()
         } catch (e: DataAccessException) {
-            e.checkForDuplication().left()
+            throw e.checkForDuplication()
         }
 
     fun returningUpdate(
         updatedMonitor: HttpMonitorRecord,
         txCtx: DSLContext = dslContext,
-    ): Either<PersistenceException, HttpMonitorRecord> =
+    ): HttpMonitorRecord =
         try {
             txCtx
                 .update(HTTP_MONITOR)
@@ -126,9 +120,9 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                 .set(HTTP_MONITOR.REQUEST_BODY, updatedMonitor.requestBody)
                 .where(HTTP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(HTTP_MONITOR.asterisk())
-                .fetchOneOrThrow<HttpMonitorRecord>().right()
+                .fetchOneOrThrow<HttpMonitorRecord>()
         } catch (e: DataAccessException) {
-            e.checkForDuplication().left()
+            throw e.checkForDuplication()
         }
 
     /**

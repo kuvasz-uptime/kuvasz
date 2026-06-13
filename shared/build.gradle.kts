@@ -1,11 +1,11 @@
 import dev.detekt.gradle.Detekt
 
 plugins {
-    kotlin("jvm")
-    id("org.jetbrains.kotlinx.kover")
-    id("dev.detekt")
-    id("de.comahe.i18n4k")
-    id("com.github.ben-manes.versions")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.i18n4k)
+
 }
 
 dependencies {

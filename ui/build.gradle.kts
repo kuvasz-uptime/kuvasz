@@ -1,9 +1,9 @@
 plugins {
-    kotlin("jvm")
-    id("org.jetbrains.kotlinx.kover")
-    id("dev.detekt")
-    id("org.gradlewebtools.minify")
-    id("com.github.ben-manes.versions")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.minify)
+
 }
 
 dependencies {

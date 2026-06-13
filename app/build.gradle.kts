@@ -1,19 +1,20 @@
+
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dev.detekt.gradle.Detekt
 
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("org.jetbrains.kotlin.kapt")
-    id("org.jetbrains.kotlin.plugin.allopen")
-    id("dev.detekt")
-    id("org.jetbrains.kotlinx.kover")
-    id("io.micronaut.minimal.application")
-    id("io.micronaut.docker")
-    id("com.google.cloud.tools.jib")
-    id("com.palantir.git-version")
-    id("com.github.ben-manes.versions")
-    id("com.gradleup.shadow")
-    id("com.github.gmazzo.buildconfig")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.allopen)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.micronaut.minimal.application)
+    alias(libs.plugins.micronaut.docker)
+    alias(libs.plugins.jib)
+    alias(libs.plugins.git.version)
+
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.buildconfig)
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
@@ -88,7 +89,6 @@ dependencies {
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactive)
-    implementation(libs.arrow.core.data)
 
     // Mailer
     implementation(libs.simplejavamail)
@@ -128,6 +128,10 @@ allOpen {
     annotation("io.micronaut.aop.Around")
     annotation("io.micronaut.http.annotation.Controller")
     annotation("jakarta.inject.Singleton")
+}
+
+tasks.withType<Test> {
+    jvmArgs("-Xmx2048M")
 }
 
 tasks.withType<JavaExec> {

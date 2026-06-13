@@ -7,22 +7,16 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  validate-generated-sources:
+    name: Validate generated sources
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
         with:
-          distribution: adopt
+          distribution: temurin
           java-version: 25
-      - uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - uses: gradle/actions/setup-gradle@v6
       - name: Validate translations
         run: ./gradlew :shared:validateI18n
       - name: Validate that JSON schemas are self-contained
@@ -31,10 +25,32 @@ jobs:
         run: ./gradlew :app:updateApiDoc
       - name: Validate that generated sources are committed
         run: git diff --quiet --exit-code HEAD --
+
+  detekt:
+    name: Run static analysis with Detekt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
       - name: Run detekt
         run: ./gradlew detektAll
+
+  check:
+    name: Run tests and generate code coverage report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
       - name: Run check
-        run: ./gradlew check
+        run: ./gradlew check -x detekt -x detektMain -x detektTest
       - name: Generate code coverage report for Codecov
         run: ./gradlew koverXmlReport
       - name: Codecov

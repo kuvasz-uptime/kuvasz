@@ -12,28 +12,26 @@ import org.jooq.meta.kotlin.tables
 import org.jooq.meta.kotlin.target
 
 buildscript {
-    val flywayPluginVersion: String by project
     dependencies {
-        classpath("org.flywaydb:flyway-database-postgresql:$flywayPluginVersion")
+        classpath("org.flywaydb:flyway-database-postgresql:${libs.versions.flywayPlugin.get()}")
     }
 
-    val jooqVersion: String by project
     configurations["classpath"].resolutionStrategy.eachDependency {
         if (requested.group == "org.jooq") {
-            useVersion(jooqVersion)
+            useVersion(libs.versions.jooq.get())
         }
     }
 }
 
 plugins {
-    kotlin("jvm")
-    id("org.jetbrains.kotlin.kapt")
-    id("io.micronaut.minimal.library")
-    id("dev.detekt")
-    id("org.jetbrains.kotlinx.kover")
-    id("nu.studer.jooq")
-    id("org.flywaydb.flyway")
-    id("com.github.ben-manes.versions")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.micronaut.minimal.library)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.jooq)
+    alias(libs.plugins.flyway)
+
 }
 
 dependencies {
@@ -89,8 +87,7 @@ flyway {
 }
 
 jooq {
-    val jooqVersion: String by project
-    version.set(jooqVersion)
+    version.set(libs.versions.jooq.get())
 
     configurations {
         create("main") {

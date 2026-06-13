@@ -99,18 +99,15 @@ class HttpMonitorActions(
         val validatedIntegrations =
             integrationIdValidator.validateIntegrationIds(monitorCreateDto.integrations.orEmpty())
 
-        return monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord(validatedIntegrations)).fold(
-            { persistenceError -> throw persistenceError },
-            { insertedMonitor ->
+        return monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord(validatedIntegrations))
+            .also { insertedMonitor ->
                 if (insertedMonitor.enabled) {
                     checkScheduler.createChecksForMonitor(insertedMonitor)?.let { schedulingError ->
                         monitorRepository.deleteById(insertedMonitor.id, null)
                         throw schedulingError
                     }
                 }
-                insertedMonitor
             }
-        )
     }
 
     fun deleteMonitorById(monitorId: Long) =
@@ -149,21 +146,17 @@ class HttpMonitorActions(
         existingMonitor: HttpMonitorRecord,
         txCtx: DSLContext,
     ): HttpMonitorRecord =
-        monitorRepository.returningUpdate(this, txCtx).fold(
-            { persistenceError -> throw persistenceError },
-            { updatedMonitor ->
-                if (updatedMonitor.enabled) {
-                    checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
-                } else {
-                    checkScheduler.removeChecksOfMonitor(existingMonitor)
-                }
-                // If the latency history is disabled, we need to delete all the existing logs
-                if (!updatedMonitor.latencyHistoryEnabled && existingMonitor.latencyHistoryEnabled) {
-                    latencyLogRepository.deleteAllByMonitorId(existingMonitor.id)
-                }
-                updatedMonitor
+        monitorRepository.returningUpdate(this, txCtx).also { updatedMonitor ->
+            if (updatedMonitor.enabled) {
+                checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
+            } else {
+                checkScheduler.removeChecksOfMonitor(existingMonitor)
             }
-        )
+            // If the latency history is disabled, we need to delete all the existing logs
+            if (!updatedMonitor.latencyHistoryEnabled && existingMonitor.latencyHistoryEnabled) {
+                latencyLogRepository.deleteAllByMonitorId(existingMonitor.id)
+            }
+        }
 
     fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> =
         monitorRepository.findById(monitorId, null)
