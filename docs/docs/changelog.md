@@ -1,3 +1,9 @@
+## 4.0.0 <small>2026-xx-xx</small> { id="4.0.0" data-toc-label="4.0.0" }
+
+### Features
+
+- **Built-in MCP server** (experimental): _Kuvasz_ now ships with a [**Model Context Protocol server**](features/mcp-server.md) that exposes your monitors and incidents as tools AI assistants can call directly. Enabled via the `ENABLE_MCP_SERVER` environment variable (disabled by default), the server is available at `/mcp` and secured by the existing API key. Supported tools cover listing, inspecting, creating, deleting and toggling your monitors, as well as querying incidents, configured integrations, and other configs. Compatible with practically every MCP client via the `mcp-remote` bridge.
+
 ## 3.11.0 <small>2026-05-30</small> { id="3.11.0" data-toc-label="3.11.0" }
 
 ### Features

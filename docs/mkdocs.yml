@@ -97,6 +97,7 @@ nav:
       - Ping (ICMP) monitoring: features/icmp-monitoring.md
       - Status pages: features/status-pages.md
       - Notifications: features/notifications.md
+      - MCP server: features/mcp-server.md
       - Web UI: features/ui.md
       - Flexibility: features/flexibility.md
       - API: features/api.md
