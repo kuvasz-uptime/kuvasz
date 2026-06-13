@@ -8,6 +8,7 @@ on:
 
 jobs:
   validate-generated-sources:
+    name: Validate generated sources
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -26,6 +27,7 @@ jobs:
         run: git diff --quiet --exit-code HEAD --
 
   detekt:
+    name: Run static analysis with Detekt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -38,6 +40,7 @@ jobs:
         run: ./gradlew detektAll
 
   check:
+    name: Run tests and generate code coverage report
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
