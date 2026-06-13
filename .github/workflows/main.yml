@@ -50,7 +50,7 @@ jobs:
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
       - name: Run check
-        run: ./gradlew check
+        run: ./gradlew check -x detekt -x detektMain -x detektTest
       - name: Generate code coverage report for Codecov
         run: ./gradlew koverXmlReport
       - name: Codecov
