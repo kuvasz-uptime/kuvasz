@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.controllers.settings
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
@@ -11,11 +12,15 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.micronaut.context.annotation.Property
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.client.HttpClient
+import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.reactive.awaitFirst
 
 @MicronautTest(
     environments = [
@@ -58,6 +63,8 @@ class SettingsControllerTest(
             then("it should return the settings") {
                 result.authentication.enabled shouldBe false
                 result.authentication.accessTokenMaxAge shouldBe 3600L
+                // OIDC is not enabled in this setup, so it should not be exposed
+                result.authentication.oidc shouldBe null
                 result.app.eventDataRetentionDays shouldBe 5
                 result.app.latencyDataRetentionDays shouldBe 6
                 result.app.language shouldBe "en"
@@ -113,3 +120,36 @@ class SettingsControllerTest(
     @MockBean(VersionChecker::class)
     fun versionChecker(): VersionChecker = mockk()
 }
+
+private const val TEST_OIDC_ISSUER = "http://localhost:59999/"
+private const val TEST_OIDC_CLIENT_ID = "dummy-client-id"
+private const val SETTINGS_API_KEY = "settingsApiKeysettingsApiKey"
+
+@MicronautTest
+@Property(name = "micronaut.security.enabled", value = "true")
+@Property(name = "admin-auth.api-key", value = SETTINGS_API_KEY)
+@Property(name = "micronaut.security.oauth2.clients.oidc.enabled", value = "true")
+@Property(name = "micronaut.security.oauth2.clients.oidc.client-id", value = TEST_OIDC_CLIENT_ID)
+@Property(name = "micronaut.security.oauth2.clients.oidc.client-secret", value = "dummy-client-secret")
+@Property(name = "micronaut.security.oauth2.clients.oidc.openid.issuer", value = TEST_OIDC_ISSUER)
+class SettingsControllerOidcTest(
+    @param:Client("/") private val client: HttpClient,
+) : DatabaseBehaviorSpec({
+
+    given("the SettingsController with OIDC enabled") {
+
+        `when`("the getSettings method is called") {
+
+            val request = HttpRequest.GET<Any>("/api/v2/settings").header("X-API-KEY", SETTINGS_API_KEY)
+            val result = client.exchange(request, SettingsDto::class.java).awaitFirst().body().shouldNotBeNull()
+
+            then("it should expose the OIDC provider settings") {
+                result.authentication.enabled shouldBe true
+                with(result.authentication.oidc.shouldNotBeNull()) {
+                    issuer shouldBe TEST_OIDC_ISSUER
+                    clientId shouldBe TEST_OIDC_CLIENT_ID
+                }
+            }
+        }
+    }
+})

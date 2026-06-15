@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_ICMP_MONITOR
@@ -26,6 +27,7 @@ import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.security.TEST_API_KEY
+import com.kuvaszuptime.kuvasz.security.TEST_MCP_API_KEY
 import com.kuvaszuptime.kuvasz.security.TEST_PASSWORD
 import com.kuvaszuptime.kuvasz.security.TEST_USERNAME
 import io.kotest.assertions.throwables.shouldThrow
@@ -48,6 +50,7 @@ import tools.jackson.module.kotlin.readValue
 @MicronautTest(environments = ["yaml-monitors", "full-integrations-setup"])
 @Property(name = "micronaut.security.enabled", value = "true")
 @Property(name = "admin-auth.api-key", value = TEST_API_KEY)
+@Property(name = "admin-auth.mcp-api-key", value = TEST_MCP_API_KEY)
 @Property(name = "admin-auth.username", value = TEST_USERNAME)
 @Property(name = "admin-auth.password", value = TEST_PASSWORD)
 class McpServerAuthTest(
@@ -90,8 +93,38 @@ class McpServerAuthTest(
                 }
             }
 
-            `when`("a valid tools/list request is made") {
+            `when`("a request is made with an empty API key in the X-API-KEY header") {
+                val request = toolsRequest().header("X-API-KEY", "")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request, String::class.java).awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a request is made with an empty API key in the Authorization header") {
+                val request = toolsRequest().bearerAuth("")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request, String::class.java).awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a request is made with the REST API key instead of the MCP API key") {
                 val request = toolsRequest().header("X-API-KEY", TEST_API_KEY)
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request, String::class.java).awaitFirst()
+                }
+                then("it should return 401, as the REST API key does not grant ROLE_MCP") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a valid tools/list request is made") {
+                val request = toolsRequest().header("X-API-KEY", TEST_MCP_API_KEY)
                 val body = client.exchange(request, String::class.java).awaitFirst().body().shouldNotBeNull()
                 val response = objectMapper.readValue<McpToolsListResponse>(body)
 
@@ -122,6 +155,20 @@ class McpServerAuthTest(
                         TOGGLE_ICMP_MONITOR,
                         TOGGLE_PUSH_MONITOR,
                     )
+                }
+            }
+        }
+
+        given("the REST API endpoint") {
+
+            `when`("a request is made with the MCP API key instead of the REST API key") {
+                val request = HttpRequest.GET<Any>("$API_V2_PREFIX/http-monitors")
+                    .header("X-API-KEY", TEST_MCP_API_KEY)
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request, String::class.java).awaitFirst()
+                }
+                then("it should return 401, as the MCP API key does not grant ROLE_API") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
                 }
             }
         }
