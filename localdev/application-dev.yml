@@ -56,6 +56,7 @@ admin-auth:
   username: user
   password: pass3j4hkhk23hk23k232hk3h232
   api-key: 3hjlkh23k2h3k2h3k2h3k2h3k2h3k2h3
+  mcp-api-key: mcp23k2h3k2h3k2h3k2h3k2h3k2h3k2h3
 ---
 smtp-config:
   host: ${SMTP_HOST:`sandbox.smtp.mailtrap.io`}

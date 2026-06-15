@@ -12,6 +12,9 @@ import de.comahe.i18n4k.i18n4k
 data class AppGlobals(
     val isAuthenticated: () -> Boolean,
     val isAuthEnabled: Boolean,
+    val isOidcEnabled: Boolean,
+    val isOidcLogoutEnabled: Boolean,
+    val isApiKeyAuthEnabled: Boolean,
     val appVersion: String,
     val locale: Locale,
     val configuredIntegrations: IntegrationMap,

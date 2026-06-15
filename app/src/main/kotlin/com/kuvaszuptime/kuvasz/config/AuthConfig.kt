@@ -21,8 +21,19 @@ class AdminAuthConfig {
     @field:NotBlank(message = "Admin password must not be blank")
     @field:Size(min = 12, message = "Admin password must be at least {min} characters")
     var password: String? = null
+}
 
-    @field:NotBlank(message = "Admin API key must not be blank")
-    @field:Size(min = 16, message = "Admin API key must be at least {min} characters")
+@ConfigurationProperties("admin-auth")
+@Context
+@Introspected
+@Requires(property = "micronaut.security.enabled", value = "true")
+class ApiKeyConfig {
+
     var apiKey: String? = null
+
+    var mcpApiKey: String? = null
+
+    fun isApiKeyDisabled() = apiKey.isNullOrBlank()
+
+    fun isMcpApiKeyDisabled() = mcpApiKey.isNullOrBlank()
 }

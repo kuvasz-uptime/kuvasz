@@ -25,7 +25,6 @@ services:
       DATABASE_PASSWORD: YourSuperSecretDbPassword
       ADMIN_USER: YourSuperSecretUsername # change it
       ADMIN_PASSWORD: YourSuperSecretPassword # change it
-      ADMIN_API_KEY: ThisShouldBeVeryVerySecureToo # change it
     volumes:
       - ./kuvasz.yml:/config/kuvasz.yml
     healthcheck:
