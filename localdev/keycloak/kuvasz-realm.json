@@ -1,0 +1,46 @@
+{
+  "realm": "kuvasz",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginTheme": "keycloak",
+  "clients": [
+    {
+      "clientId": "kuvasz",
+      "name": "Kuvasz",
+      "description": "Local development client for Kuvasz",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "kuvasz-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/oauth/callback/oidc"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8080/auth/logout"
+      },
+      "webOrigins": [
+        "http://localhost:8080"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "kuvasz-user",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "kuvasz-user@example.com",
+      "firstName": "Kuvasz",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "kuvasz-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

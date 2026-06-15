@@ -26,6 +26,37 @@ services:
       - ./application-dev.yml:/config/kuvasz.yml
     depends_on:
       - postgres-16
+  keycloak:
+    # A local OIDC provider for exercising Kuvasz's OIDC-based authentication.
+    # Admin console: http://localhost:8083 (admin/admin)
+    # The "kuvasz" realm (a confidential client + a test user) is imported from ./keycloak on the first startup.
+    # To wire it into Kuvasz, enable the OIDC block in application-dev.yml (see the comments there).
+    image: quay.io/keycloak/keycloak:26.6
+    container_name: keycloak
+    command: [ "start-dev", "--import-realm" ]
+    environment:
+      TZ: 'Europe/Vienna'
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Advertise the same URL the browser AND the host-run Kuvasz use, so the issuer stays consistent
+      KC_HOSTNAME: http://localhost:8083
+      # ...or advertise the compose service name instead, for when the "kuvasz" container (rather than a host-run
+      # Kuvasz) talks to Keycloak. The container reaches it at http://keycloak:8083, and to keep the issuer
+      # consistent the browser must resolve the same URL, so add "127.0.0.1 keycloak" to your /etc/hosts and
+      # switch the OIDC issuer in application-dev.yml to http://keycloak:8083/realms/kuvasz.
+      #      KC_HOSTNAME: http://keycloak:8083
+      KC_HTTP_ENABLED: 'true'
+      KC_HTTP_PORT: 8083
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres16:5432/postgres
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+    depends_on:
+      - postgres-16
   http-echo:
     image: mendhak/http-https-echo:40
     ports:

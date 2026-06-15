@@ -8,6 +8,7 @@ i18n4k = "0.11.2"
 jib = "3.5.3"
 jooq = "3.21.6"
 jooqPlugin = "10.2.1"
+keycloakTestcontainers = "4.2.1"
 kotest = "6.1.11"
 kotlin = "2.4.0"
 kotlinCoroutines = "1.11.0"
@@ -46,6 +47,7 @@ pebble = { module = "io.pebbletemplates:pebble", version.ref = "pebble" }
 simplejavamail = { module = "org.simplejavamail:simple-java-mail", version.ref = "simpleJavaMail" }
 simplejavamail-batchmodule = { module = "org.simplejavamail:batch-module", version.ref = "simpleJavaMail" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "keycloakTestcontainers" }
 testcontainers-pg = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
 
 [plugins]

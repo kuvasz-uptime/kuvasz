@@ -65,6 +65,20 @@ micronaut:
         generator:
           refresh-token:
             enabled: false
+    oauth2:
+      openid:
+        end-session:
+          redirect-uri: /auth/logout
+      clients:
+        oidc:
+          enabled: ${ENABLE_OIDC:`false`}
+          client-id: ${OIDC_CLIENT_ID:}
+          client-secret: ${OIDC_CLIENT_SECRET:}
+          authorization-server: ${OIDC_AUTH_SERVER:}
+          openid:
+            issuer: ${OIDC_ISSUER:}
+            end-session:
+              enabled: ${ENABLE_OIDC_END_SESSION:`true`}
     intercept-url-map:
       - pattern: /api/v2/health
         access: isAnonymous()

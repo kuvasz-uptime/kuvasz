@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Size
 @Context
 @Introspected
 @Requires(property = "micronaut.security.enabled", value = "true")
+@Requires(property = "micronaut.security.oauth2.clients.oidc.enabled", notEquals = "true")
 class AdminAuthConfig {
     @field:NotBlank(message = "Admin username must not be blank")
     var username: String? = null

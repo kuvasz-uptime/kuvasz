@@ -15,6 +15,7 @@ import org.reactivestreams.Publisher
 
 @Singleton
 @Requires(property = "micronaut.security.enabled", value = "true")
+@Requires(property = "micronaut.security.oauth2.clients.oidc.enabled", notEquals = "true")
 class WebAuthProvider(private val authConfig: AdminAuthConfig) : HttpRequestReactiveAuthenticationProvider<Any> {
 
     override fun authenticate(
