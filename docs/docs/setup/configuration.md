@@ -67,9 +67,12 @@ The **maximum age of the authentication token** in seconds, default is 24 hours 
 
 ### Credentials
 
+!!! note "When are the admin credentials required?"
+    The admin username and password are only used by the built-in username/password login form. They are **required when authentication is enabled and [OIDC](#oidc-authentication-optional) is _not_ configured**. When OIDC is enabled, the form-based login is disabled, so you don't need to set `ADMIN_USER` / `ADMIN_PASSWORD` at all.
+
 #### Admin username
 
-<!-- md:required_if auth enabled -->
+<!-- md:required_if auth enabled & OIDC not configured -->
 <!-- md:type `string` -->
 
 === "YAML"
@@ -88,7 +91,7 @@ The username for the admin user.
 
 #### Admin password
 
-<!-- md:required_if auth enabled -->
+<!-- md:required_if auth enabled & OIDC not configured -->
 <!-- md:type `string` -->
 
 === "YAML"
@@ -109,7 +112,6 @@ The password for the admin user, **minimum 12 characters long, can't be the same
 #### API key
 
 <!-- md:version 2.0.0 -->
-<!-- md:required_if auth enabled -->
 <!-- md:type `string` -->
 
 === "YAML"
@@ -124,7 +126,158 @@ The password for the admin user, **minimum 12 characters long, can't be the same
     ADMIN_API_KEY=ThisShouldBeVeryVerySecureToo
     ```
 
-The API key for the [REST API](../features/api.md), minimum 16 characters long.
+The API key for the [REST API](../features/api.md). It's **optional**: if you don't set it (or leave it blank), API key-based authentication is simply **disabled**, and the REST API can only be accessed when authenticated through the web UI / OIDC login. When it's set, it must be **at least 16 characters long**, otherwise the application won't start.
+
+!!! note
+    This key grants access to the REST API only. The [MCP server](../features/mcp-server.md) is protected by a separate [MCP API key](#mcp-api-key).
+
+#### MCP API key
+
+<!-- md:version 4.0.0 -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    admin-auth.mcp-api-key: ThisShouldBeVeryVerySecureToo
+    ```
+
+=== "ENV"
+
+    ```bash
+    ADMIN_MCP_API_KEY=ThisShouldBeVeryVerySecureToo
+    ```
+
+The API key dedicated to the [MCP server](../features/mcp-server.md) (the `/mcp` endpoint). It's **optional**: if you don't set it (or leave it blank), the MCP endpoint cannot be accessed via API key authentication at all. When it's set, it must be **at least 16 characters long**, otherwise the application won't start.
+
+This key is **separate** from the [REST API key](#api-key) on purpose: the `/mcp` endpoint can **only** be accessed with this key, and the REST API key (or a web UI / OIDC session) does **not** grant access to it. This lets you hand out MCP access independently from REST API access, and revoke either one without affecting the other.
+
+### OIDC authentication (optional)
+
+As an alternative to the built-in username/password form, you can configure an OpenID Connect (OIDC) provider. When OIDC is enabled, the login page will display a **"Login (OIDC)"** button instead of the username/password form, and the username/password form-based login will be disabled. The API key authentication continues to work regardless.
+
+!!! tip
+    Once OIDC is enabled, the **Settings** page (and the `/settings` endpoint of the [REST API](../features/api.md)) shows the effective OIDC configuration — the issuer, client ID, the exact redirect (callback) URL, the valid post logout redirect URI, and the web origin to register with your provider. The client secret is never exposed.
+
+    When OIDC is enabled, the `ADMIN_USER` and `ADMIN_PASSWORD` properties are **no longer needed** (and are ignored), since the built-in username/password login is disabled. If you still want API key-based programmatic access to the REST API, configure `ADMIN_API_KEY` — it works independently of the chosen interactive login method.
+
+#### Enable OIDC
+
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "ENV"
+
+    ```bash
+    ENABLE_OIDC=true
+    ```
+
+When OIDC is enabled, you **must also provide** the issuer, client ID, and client secret below, otherwise the application won't start.
+
+#### OIDC issuer
+
+<!-- md:required_if OIDC enabled -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    micronaut.security.oauth2.clients.oidc.openid.issuer: https://your-oidc-provider/
+    ```
+
+=== "ENV"
+
+    ```bash
+    OIDC_ISSUER=https://your-oidc-provider/
+    ```
+
+The issuer URL of your OIDC provider. _Kuvasz_ uses it to discover the provider's endpoints via its `/.well-known/openid-configuration` document.
+
+#### OIDC client ID
+
+<!-- md:required_if OIDC enabled -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    micronaut.security.oauth2.clients.oidc.client-id: your-client-id
+    ```
+
+=== "ENV"
+
+    ```bash
+    OIDC_CLIENT_ID=your-client-id
+    ```
+
+#### OIDC client secret
+
+<!-- md:required_if OIDC enabled -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    micronaut.security.oauth2.clients.oidc.client-secret: your-client-secret
+    ```
+
+=== "ENV"
+
+    ```bash
+    OIDC_CLIENT_SECRET=your-client-secret
+    ```
+
+#### OIDC authorization server
+
+<!-- md:default _auto-detected from the issuer URL_ -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    micronaut.security.oauth2.clients.oidc.authorization-server: keycloak
+    ```
+
+=== "ENV"
+
+    ```bash
+    OIDC_AUTH_SERVER=keycloak
+    ```
+
+Identifies the type of your OIDC provider. For most cloud providers _Kuvasz_ infers this automatically from the issuer URL, but in general **it's recommended to explicitly provide it**. 
+
+The value is **case-insensitive**, and the supported providers are:
+
+| Value          | Provider                |
+| -------------- | ----------------------- |
+| `AUTH0`        | Auth0                   |
+| `COGNITO`      | AWS Cognito             |
+| `KEYCLOAK`     | Keycloak                |
+| `MICROSOFT`    | Microsoft (Entra ID)    |
+| `OKTA`         | Okta                    |
+| `ORACLE_CLOUD` | Oracle Cloud (IDCS)     |
+
+#### OIDC end-session
+
+<!-- md:default `true` -->
+<!-- md:type `boolean` -->
+
+When OIDC is enabled, signing out from the web UI also logs you out at the OIDC provider. This behavior is **enabled by default** whenever OIDC is on. If you want to opt out and only clear the local _Kuvasz_ session on logout, **disable the end-session support:**
+
+=== "YAML"
+
+    ```yaml
+    micronaut.security.oauth2.clients.oidc.openid.end-session.enabled: false
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_OIDC_END_SESSION=false
+    ```
+
+!!! warning "Register the post-logout redirect URI"
+    Most providers require the post-logout redirect URI to be explicitly registered on the client. For example, in _Keycloak_ add `https://<your-kuvasz-host>/*` (or the exact `https://<your-kuvasz-host>/auth/logout` URL) to the client's **Valid post logout redirect URIs**. Otherwise the provider will reject the redirect back to _Kuvasz_ after logout.
 
 ## Database
 
@@ -406,7 +559,7 @@ The language to use. If you would like to translate _Kuvasz_ to your desired lan
     ENABLE_MCP_SERVER=true
     ```
 
-Enables the built-in [**MCP server**](../features/mcp-server.md), which exposes your monitors, incidents, configuration, etc. as tools that AI assistants can call. The server is available at `/mcp` once enabled and is protected by the same [API key](../setup/configuration.md#api-key) as the REST API.
+Enables the built-in [**MCP server**](../features/mcp-server.md), which exposes your monitors, incidents, configuration, etc. as tools that AI assistants can call. The server is available at `/mcp` once enabled and is protected by a dedicated [MCP API key](#mcp-api-key), separate from the REST API key.
 
 ### Check for updates
 
@@ -486,6 +639,7 @@ You can find the full configuration example below, which includes all the option
       username: YourSuperSecretUsername
       password: YourSuperSecretPassword
       api-key: ThisShouldBeVeryVerySecureToo
+      mcp-api-key: ThisShouldBeVeryVerySecureToo
     ---
     app-config:
       event-data-retention-days: 365
@@ -511,6 +665,7 @@ You can find the full configuration example below, which includes all the option
     ADMIN_USER=YourSuperSecretUsername
     ADMIN_PASSWORD=YourSuperSecretPassword
     ADMIN_API_KEY=ThisShouldBeVeryVerySecureToo
+    ADMIN_MCP_API_KEY=ThisShouldBeVeryVerySecureToo
     DATABASE_HOST=localhost
     DATABASE_PORT=5432
     DATABASE_NAME=postgres

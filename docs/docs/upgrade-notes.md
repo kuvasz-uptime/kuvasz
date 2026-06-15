@@ -1,3 +1,18 @@
+## Upgrade from v3.x.x to v4.x.x
+
+!!!tip
+
+    This is **not a breaking change** — your existing configuration keeps working as-is, you don't need to change anything to upgrade to version 4.x.x. The notes below describe a significant, but **backwards-compatible** relaxation of the authentication configuration.
+
+### Authentication config <!-- md:config setup/configuration.md#authentication -->
+
+Version 4.x.x introduces [**OIDC authentication**](setup/configuration.md#oidc-authentication-optional) and reworks how the auth-related config properties relate to each other. As a result, several previously mandatory properties are now **conditionally optional**:
+
+- `ADMIN_USER` / `ADMIN_PASSWORD` are only required when authentication is enabled **and OIDC is _not_ configured**. When you enable OIDC, the built-in username/password login is disabled, so these are no longer needed (and are ignored if set).
+- `ADMIN_API_KEY` is now **fully optional**. If you don't set it (or leave it blank), API key-based authentication is simply **disabled**, and the REST API can only be accessed through a web UI / OIDC session. Previously a missing API key was not handled this gracefully — now it's a first-class, supported setup.
+
+None of this requires action on your side: if you keep your existing `ADMIN_USER`, `ADMIN_PASSWORD`, and `ADMIN_API_KEY` values, everything behaves exactly as before. Please refer to the [**Authentication**](setup/configuration.md#authentication) section for the full details.
+
 ## Upgrade from v2.x.x to v3.x.x
 
 !!!tip

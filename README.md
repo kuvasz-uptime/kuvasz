@@ -53,6 +53,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 | Translations                         |       ✅       |        ❌         |        ❌         |
 | Custom data retention                |       ✅       |     3 months     |    12 months     |
 | REST API                             |       ✅       |        ✅         |        ✅         |
+| OIDC                                 |       ✅       |        ❌         |        ❌         |
 | Prometheus & OpenTelemetry exporters |       ✅       |        ❌         |        ❌         |
 | Backups & YAML configuration         |       ✅       |        ❌         |        ❌         |
 | Status pages                         |       ✅       |      only 1      |      only 3      |

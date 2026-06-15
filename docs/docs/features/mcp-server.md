@@ -43,10 +43,10 @@ _Kuvasz_'s MCP server speaks **Streamable HTTP**. Depending on your AI client's 
 
 ### Authentication
 
-The `/mcp` endpoint is protected by the same [**API key**](../setup/configuration.md#api-key) used for the REST API. Pass it in one of the two supported ways:
+The `/mcp` endpoint is protected by a dedicated [**MCP API key**](../setup/configuration.md#mcp-api-key), which is **separate** from the [REST API key](../setup/configuration.md#api-key). The REST API key (or a web UI / OIDC session) does **not** grant access to the MCP endpoint — you must configure the MCP API key to use the server. Pass it in one of the two supported ways:
 
-- **`X-API-KEY` header**: `X-API-KEY: YourApiKey`
-- **Bearer token**: `Authorization: Bearer YourApiKey`
+- **`X-API-KEY` header**: `X-API-KEY: YourMcpApiKey`
+- **Bearer token**: `Authorization: Bearer YourMcpApiKey`
 
 !!! info
 
