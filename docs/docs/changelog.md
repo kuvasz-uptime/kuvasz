@@ -1,10 +1,10 @@
-## 4.0.0 <small>2026-06-xx</small> { id="4.0.0" data-toc-label="4.0.0" }
+## 4.0.0 <small>2026-06-16</small> { id="4.0.0" data-toc-label="4.0.0" }
 
 ### Features
 
-- **OIDC authentication**: as an alternative to the built-in username/password login, you can now authenticate the web UI against any [**OpenID Connect provider**](setup/configuration.md#oidc-authentication-optional) (Keycloak, Auth0, Google, etc.). When enabled, the login page offers an OIDC login button, the form-based login is disabled, and the `ADMIN_USER` / `ADMIN_PASSWORD` credentials are no longer needed.
+- **Built-in MCP server** (experimental): _Kuvasz_ now ships with a [**Model Context Protocol server**](features/mcp-server.md) that exposes your monitors and incidents as tools AI assistants can call directly. Enabled via the `ENABLE_MCP_SERVER` environment variable (disabled by default), the server is available at `/mcp`. Supported tools cover listing, inspecting, creating, deleting and toggling your monitors, as well as querying incidents, status pages, the configured integrations, and other configs. Compatible with practically every MCP client via the `mcp-remote` bridge.
+- **OIDC authentication**: as an alternative to the built-in username/password login, you can now authenticate the web UI against any [**OpenID Connect provider**](setup/configuration.md#oidc-authentication-optional) (Keycloak, Auth0, Okta, etc.). When enabled, the login page offers an OIDC login button, the form-based login is disabled, and the `ADMIN_USER` / `ADMIN_PASSWORD` credentials are no longer needed.
 - **Optional & separated API keys**: API key authentication is now fully **optional** — if you don't configure a key, key-based access is simply disabled and the REST API stays reachable only via a web UI / OIDC session. The [REST API](setup/configuration.md#api-key) and the [MCP server](setup/configuration.md#mcp-api-key) are now protected by **two separate keys**, so you can grant, rotate, or revoke MCP access independently from REST API access.
-- **Built-in MCP server** (experimental): _Kuvasz_ now ships with a [**Model Context Protocol server**](features/mcp-server.md) that exposes your monitors and incidents as tools AI assistants can call directly. Enabled via the `ENABLE_MCP_SERVER` environment variable (disabled by default), the server is available at `/mcp` and secured by a dedicated [MCP API key](setup/configuration.md#mcp-api-key), separate from the REST API key. Supported tools cover listing, inspecting, creating, deleting and toggling your monitors, as well as querying incidents, configured integrations, and other configs. Compatible with practically every MCP client via the `mcp-remote` bridge.
 
 ### Chore
 
