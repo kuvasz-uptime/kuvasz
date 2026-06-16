@@ -14,8 +14,6 @@ _Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or vi
               - /path/to/your/kuvasz.yml:/config/kuvasz.yml
         ```
 
-!!! tip
-
     If you modify your configuration (via _YAML_ or _ENV_, it doesn't matter), you need to restart the _Kuvasz_ container for the changes to take effect. In certain cases if you changed an environment variable, **you might need to rebuild the container** as well.
 
 ## Authentication
@@ -64,6 +62,24 @@ If it's set to `false`, the authentication will be completely disabled, and you 
     ```
 
 The **maximum age of the authentication token** in seconds, default is 24 hours (86400 seconds). After this time, the admin user will need to log in again on the web UI.
+
+### JWT signing secret
+
+<!-- md:default _a random value generated on each startup_ -->
+<!-- md:type `string` -->
+
+=== "YAML"
+
+    ```yaml
+    micronaut.security.token.jwt.signatures.secret.generator.secret: your-very-long-random-secret
+    ```
+
+The secret used to **sign the JWT** that backs the web UI session. By default _Kuvasz_ generates a **new random secret on every startup**, which makes the **sessions don't survive a restart** - every logged in user has to log in again after _Kuvasz_ is restarted.
+
+If you want sessions to survive restarts, you can set a fixed one, but only via YAML.
+
+!!! warning "Keep it secret, keep it strong"
+    Anyone who knows this secret can forge valid sessions. Use a **long, random** value (at least 32 characters / 256 bits is required), keep it out of version control, and rotate it if you suspect it leaked (rotating invalidates all existing sessions, forcing a re-login).
 
 ### Credentials
 
@@ -292,6 +308,11 @@ When OIDC is enabled, signing out from the web UI also logs you out at the OIDC 
 <!-- md:type `string` -->
 
 By default **any user your OIDC provider successfully authenticates is allowed to sign in** and is granted full access. If your provider serves a broader audience than the people who should access _Kuvasz_ (e.g. a shared corporate IdP or a public provider), restrict access with an **allowlist of email addresses**:
+
+!!! warning "Restrict access when no allowlist is configured"
+    Without an email allowlist, **every user the OIDC provider can authenticate gets full access to _Kuvasz_** — including the REST API. If your provider is shared with other applications, backed by a public sign-up, or otherwise authenticates more people than should be able to administer _Kuvasz_, this effectively hands them admin rights.
+
+    If you choose not to configure an allowlist, it's **strongly recommended to use a dedicated, restricted OAuth client** instead — one that only the intended users can obtain tokens for (for example, by limiting the client to a specific group/role assignment in your provider). Otherwise, configure the allowlist below.
 
 === "YAML"
 
@@ -666,7 +687,18 @@ You can find the full configuration example below, which includes all the option
     micronaut:
       security:
         enabled: true
-        token.generator.access-token.expiration: 86400 # 24 hours
+        token:
+          generator.access-token.expiration: 86400 # 24 hours
+          jwt.signatures.secret.generator.secret: your-very-long-random-secret
+        oauth2:
+          clients:
+            oidc:
+              client-id: your-client-id
+              client-secret: your-client-secret
+              authorization-server: keycloak
+              openid:
+                issuer: https://your-oidc-provider/
+                end-session.enabled: true
       mcp.server.enabled: false
       metrics:
         enabled: true
@@ -695,6 +727,11 @@ You can find the full configuration example below, which includes all the option
       password: YourSuperSecretPassword
       api-key: ThisShouldBeVeryVerySecureToo
       mcp-api-key: ThisShouldBeVeryVerySecureToo
+      oidc:
+        allowed-emails:
+          - alice@example.com
+          - bob@example.com
+        require-verified-email: true
     ---
     app-config:
       event-data-retention-days: 365
@@ -721,6 +758,14 @@ You can find the full configuration example below, which includes all the option
     ADMIN_PASSWORD=YourSuperSecretPassword
     ADMIN_API_KEY=ThisShouldBeVeryVerySecureToo
     ADMIN_MCP_API_KEY=ThisShouldBeVeryVerySecureToo
+    ENABLE_OIDC=true
+    OIDC_ISSUER=https://your-oidc-provider/
+    OIDC_CLIENT_ID=your-client-id
+    OIDC_CLIENT_SECRET=your-client-secret
+    OIDC_AUTH_SERVER=keycloak
+    ENABLE_OIDC_END_SESSION=true
+    OIDC_ALLOWED_EMAILS=alice@example.com,bob@example.com
+    OIDC_REQUIRE_VERIFIED_EMAIL=true
     DATABASE_HOST=localhost
     DATABASE_PORT=5432
     DATABASE_NAME=postgres
