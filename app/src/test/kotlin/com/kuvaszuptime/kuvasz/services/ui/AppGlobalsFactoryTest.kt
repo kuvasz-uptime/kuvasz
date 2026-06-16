@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.ui
 
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
+import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -16,6 +17,7 @@ import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.micronaut.security.oauth2.client.OpenIdClient
 import io.micronaut.security.utils.SecurityService
 import io.mockk.every
 import io.mockk.mockk
@@ -55,6 +57,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -78,6 +82,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -101,6 +107,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -125,6 +133,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -143,6 +153,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
@@ -158,6 +170,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -186,6 +200,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correctly hydrated view model with integrations") {
@@ -210,6 +226,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     mockVersionChecker,
                     mockDefaultPageSettings,
                     mockkMonitorActions,
+                    oidcClient = null,
+                    apiKeyConfig = null,
                 )
                 globals.versionInfo() shouldBe VersionInfo(
                     installedVersion = BuildConfig.APP_VERSION,
@@ -227,6 +245,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correct default status page settings") {
@@ -243,6 +263,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
             )
 
             then("it should return the correct list of enabled monitors") {
@@ -250,6 +272,128 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     MonitorID(MonitorType.PUSH, "abcd"),
                     MonitorID(MonitorType.HTTP_SSL, "something")
                 )
+            }
+        }
+
+        `when`("OIDC is disabled") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
+            )
+
+            then("neither OIDC nor OIDC logout is enabled when the OIDC client bean is absent") {
+                globals.isOidcEnabled shouldBe false
+                globals.isOidcLogoutEnabled shouldBe false
+            }
+        }
+
+        `when`("OIDC is enabled and the client supports end-session") {
+            val oidcClient = mockk<OpenIdClient> {
+                every { supportsEndSession() } returns true
+            }
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = oidcClient,
+                apiKeyConfig = null,
+            )
+
+            then("both OIDC and OIDC logout are enabled") {
+                globals.isOidcEnabled shouldBe true
+                globals.isOidcLogoutEnabled shouldBe true
+            }
+        }
+
+        `when`("OIDC is enabled but the client does not support end-session") {
+            val oidcClient = mockk<OpenIdClient> {
+                every { supportsEndSession() } returns false
+            }
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = oidcClient,
+                apiKeyConfig = null,
+            )
+
+            then("OIDC is enabled but OIDC logout is not") {
+                globals.isOidcEnabled shouldBe true
+                globals.isOidcLogoutEnabled shouldBe false
+            }
+        }
+
+        `when`("the ApiKeyConfig bean is absent (security disabled)") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
+            )
+
+            then("API key auth is reported as disabled") {
+                globals.isApiKeyAuthEnabled shouldBe false
+            }
+        }
+
+        `when`("the API key is configured with a non-blank value") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = ApiKeyConfig().apply { apiKey = "some-non-blank-api-key" },
+            )
+
+            then("API key auth is reported as enabled") {
+                globals.isApiKeyAuthEnabled shouldBe true
+            }
+        }
+
+        `when`("the API key is configured but null or blank") {
+            val nullKeyGlobals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = ApiKeyConfig().apply { apiKey = null },
+            )
+            val blankKeyGlobals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = ApiKeyConfig().apply { apiKey = "   " },
+            )
+
+            then("API key auth is reported as disabled") {
+                nullKeyGlobals.isApiKeyAuthEnabled shouldBe false
+                blankKeyGlobals.isApiKeyAuthEnabled shouldBe false
             }
         }
     }

@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
+import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.generateCredentials
 import io.kotest.assertions.throwables.shouldThrow
@@ -22,6 +23,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 
 const val TEST_API_KEY = "Api1234567890123"
+const val TEST_MCP_API_KEY = "Mcp1234567890123"
 const val TEST_USERNAME = "test-user"
 const val TEST_PASSWORD = "test-pass-test-pass-test-pass"
 
@@ -131,6 +133,28 @@ class AuthenticationTest(
 
             `when`("a user provides a wrong API key in the Authorization header") {
                 val request = HttpRequest.GET<Any>("/api/v2/http-monitors").bearerAuth("irrelevant")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides an empty API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/api/v2/http-monitors").header("X-API-KEY", "")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides an empty API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/api/v2/http-monitors").bearerAuth("")
                 val exception = shouldThrow<HttpClientResponseException> {
                     client.exchange(request).awaitFirst()
                 }
@@ -250,6 +274,149 @@ class AuthenticationTest(
 
                 then("it should return 200") {
                     response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+    }
+)
+
+@MicronautTest
+@Property(name = "micronaut.security.enabled", value = "true")
+@Property(name = "admin-auth.username", value = TEST_USERNAME)
+@Property(name = "admin-auth.password", value = TEST_PASSWORD)
+@Property(name = "micronaut.http.client.follow-redirects", value = "false")
+class ApiKeyDisabledAuthenticationTest(
+    @Client("/") client: HttpClient,
+    authConfig: AdminAuthConfig,
+) : BehaviorSpec(
+    {
+        // No admin-auth.api-key is configured, so API key-based authentication is disabled
+        given("a secured API endpoint - without a configured API key") {
+
+            `when`("an anonymous user calls it") {
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v2/http-monitors").awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides any API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/api/v2/http-monitors").header("X-API-KEY", "irrelevant")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides any API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/api/v2/http-monitors").bearerAuth("irrelevant")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides an empty API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/api/v2/http-monitors").header("X-API-KEY", "")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides an empty API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/api/v2/http-monitors").bearerAuth("")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val jwt = getValidJWT(client, authConfig)
+                val request = HttpRequest
+                    .GET<Any>("/api/v2/http-monitors")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200, as the web UI session login still works") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        // No admin-auth.mcp-api-key is configured, so MCP API key-based authentication is disabled
+        given("the MCP endpoint - without a configured MCP API key") {
+
+            `when`("an anonymous user calls it") {
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(HttpRequest.POST(MCP_PATH, emptyMap<String, Any>())).awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides any MCP API key in the X-API-KEY header") {
+                val request = HttpRequest.POST(MCP_PATH, emptyMap<String, Any>()).header("X-API-KEY", "irrelevant")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as MCP API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides any MCP API key in the Authorization header") {
+                val request = HttpRequest.POST(MCP_PATH, emptyMap<String, Any>()).bearerAuth("irrelevant")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as MCP API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides an empty MCP API key in the X-API-KEY header") {
+                val request = HttpRequest.POST(MCP_PATH, emptyMap<String, Any>()).header("X-API-KEY", "")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as MCP API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides an empty MCP API key in the Authorization header") {
+                val request = HttpRequest.POST(MCP_PATH, emptyMap<String, Any>()).bearerAuth("")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 401, as MCP API key auth is disabled") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val jwt = getValidJWT(client, authConfig)
+                val request = HttpRequest
+                    .POST(MCP_PATH, emptyMap<String, Any>())
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+                then("it should return 403, as a web UI session is authenticated but does not grant ROLE_MCP") {
+                    exception.status shouldBe HttpStatus.FORBIDDEN
                 }
             }
         }

@@ -3662,6 +3662,24 @@ components:
           type: integer
           description: The maximum age of the access token in seconds
           format: int64
+        oidc:
+          description: "The OIDC provider settings, present only when OIDC authentication\
+            \ is enabled"
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.AuthenticationSettingsDto.OidcSettingsDto"
+    SettingsDto.AuthenticationSettingsDto.OidcSettingsDto:
+      required:
+      - clientId
+      - issuer
+      type: object
+      properties:
+        issuer:
+          type: string
+          description: The issuer URL of the configured OIDC provider
+        clientId:
+          type: string
+          description: The client ID registered with the OIDC provider
     SettingsDto.McpServerSettingsDto:
       required:
       - enabled

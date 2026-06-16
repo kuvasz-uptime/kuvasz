@@ -361,6 +361,7 @@ admin-auth:
   username: YourSuperSecretUsername
   password: YourSuperSecretPassword
   api-key: ThisShouldBeVeryVerySecureToo
+  mcp-api-key: ThisShouldBeVeryVerySecureToo
 app-config:
   event-data-retention-days: 365
   latency-data-retention-days: 7

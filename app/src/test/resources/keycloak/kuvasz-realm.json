@@ -1,0 +1,74 @@
+{
+  "realm": "kuvasz",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "kuvasz",
+      "name": "Kuvasz",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "kuvasz-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "*"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
+      "webOrigins": [
+        "*"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "kuvasz-user",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "kuvasz-user@example.com",
+      "firstName": "Kuvasz",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "kuvasz-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "stranger-user",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "stranger@example.com",
+      "firstName": "Stranger",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "stranger-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "unverified-user",
+      "enabled": true,
+      "emailVerified": false,
+      "email": "unverified@example.com",
+      "firstName": "Unverified",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "unverified-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

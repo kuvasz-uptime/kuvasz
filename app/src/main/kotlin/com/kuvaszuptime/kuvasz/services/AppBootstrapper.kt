@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
+import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -23,6 +25,7 @@ import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Property
 import jakarta.annotation.Nullable
 import jakarta.annotation.PostConstruct
+import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 
 @Context
@@ -41,6 +44,7 @@ class AppBootstrapper(
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
+    private val apiKeyConfig: ApiKeyConfig?,
 ) {
 
     @Suppress("ProtectedMemberInFinalClass")
@@ -67,6 +71,8 @@ class AppBootstrapper(
 
     @PostConstruct
     fun bootstrap() {
+        // Validate the API keys in case they are set to a non-null value
+        validateApiKeys()
         // Process YAML monitor configs if any are present
         processYamlMonitorConfigs()
         // Sanitize the configured integrations on the monitors
@@ -81,6 +87,18 @@ class AppBootstrapper(
         icmpCheckScheduler.initialize()
 
         logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
+    }
+
+    private fun validateApiKeys() {
+        val config = apiKeyConfig ?: return
+        validateApiKeyLength(config.apiKey?.takeIf { config.isApiKeyDisabled().not() }, "Admin API key")
+        validateApiKeyLength(config.mcpApiKey?.takeIf { config.isMcpApiKeyDisabled().not() }, "MCP API key")
+    }
+
+    private fun validateApiKeyLength(apiKey: String?, name: String) {
+        if (apiKey != null && apiKey.length < API_KEY_MIN_LENGTH) {
+            throw ValidationException("$name must be at least $API_KEY_MIN_LENGTH characters")
+        }
     }
 
     /**

@@ -65,6 +65,20 @@ micronaut:
         generator:
           refresh-token:
             enabled: false
+    oauth2:
+      openid:
+        end-session:
+          redirect-uri: /auth/logout
+      clients:
+        oidc:
+          enabled: ${ENABLE_OIDC:`false`}
+          client-id: ${OIDC_CLIENT_ID:}
+          client-secret: ${OIDC_CLIENT_SECRET:}
+          authorization-server: ${OIDC_AUTH_SERVER:}
+          openid:
+            issuer: ${OIDC_ISSUER:}
+            end-session:
+              enabled: ${ENABLE_OIDC_END_SESSION:`true`}
     intercept-url-map:
       - pattern: /api/v2/health
         access: isAnonymous()
@@ -76,7 +90,7 @@ micronaut:
           - ROLE_API
       - pattern: /mcp
         access:
-          - ROLE_API
+          - ROLE_MCP
       - pattern: /auth/login
         method: POST
         access: isAnonymous()
@@ -152,7 +166,11 @@ app-config:
 admin-auth:
   username: ${ADMIN_USER}
   password: ${ADMIN_PASSWORD}
-  api-key: ${ADMIN_API_KEY}
+  api-key: ${ADMIN_API_KEY:}
+  mcp-api-key: ${ADMIN_MCP_API_KEY:}
+  oidc:
+    allowed-emails: ${OIDC_ALLOWED_EMAILS:}
+    require-verified-email: ${OIDC_REQUIRE_VERIFIED_EMAIL:`true`}
 ---
 metrics-exports:
   http-uptime-status: ${ENABLE_HTTP_UPTIME_STATUS_EXPORT:`false`}

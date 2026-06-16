@@ -22,6 +22,27 @@ micronaut:
             generator:
               # Providing a hard-coded secret to prevent logouts in localdev env
               secret: cd961db8-54a1-4c09-b608-e528db09f74f
+            # Uncomment the block below to authenticate against the local Keycloak instance from docker-compose.yml.
+            # The matching realm (client "kuvasz" / secret "kuvasz-client-secret", user "kuvasz-user"/"kuvasz-password")
+            # is imported from ./keycloak. While OIDC is enabled, the username/password login form is replaced by the
+            # "Login (OIDC)" button, but the admin-auth API key below still works for the REST API.
+  #    oauth2:
+  #      clients:
+  #        oidc:
+  #          enabled: true
+  #          client-id: kuvasz
+  #          client-secret: kuvasz-client-secret
+  #            # Modern Keycloak issuers (/realms/...) aren't auto-detected by Micronaut, so the provider has to be set
+  #          # explicitly for the end-session endpoint (and thus the RP-initiated /oauth/logout route) to be resolved.
+  #          authorization-server: keycloak
+  #          openid:
+  #              # Use this issuer when Kuvasz runs on the host (e.g. ./gradlew app:run).
+  #            issuer: http://localhost:8083/realms/kuvasz
+  #            # ...or use this one when Kuvasz runs as the "kuvasz" container from docker-compose.yml, so it can
+  #            # reach Keycloak over the compose network by its service name. This requires switching KC_HOSTNAME
+  #            # in docker-compose.yml to the same host and adding "127.0.0.1 keycloak" to your /etc/hosts (so the
+  #            # browser resolves the same URL Keycloak redirects to). See the comments in docker-compose.yml.
+  #            issuer: http://keycloak:8083/realms/kuvasz
   mcp:
     server:
       enabled: true
@@ -35,6 +56,7 @@ admin-auth:
   username: user
   password: pass3j4hkhk23hk23k232hk3h232
   api-key: 3hjlkh23k2h3k2h3k2h3k2h3k2h3k2h3
+  mcp-api-key: mcp23k2h3k2h3k2h3k2h3k2h3k2h3k2h3
 ---
 smtp-config:
   host: ${SMTP_HOST:`sandbox.smtp.mailtrap.io`}

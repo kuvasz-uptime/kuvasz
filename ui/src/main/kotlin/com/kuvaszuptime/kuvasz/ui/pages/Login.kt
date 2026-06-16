@@ -8,9 +8,47 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
+private const val OIDC_LOGIN_PATH = "/oauth/login/oidc"
+
 fun renderLoginPage(appGlobals: AppGlobals, loginErrorMessage: String? = null): String {
     return withLayout(appGlobals, "Login") {
-        loginForm(loginErrorMessage)
+        if (appGlobals.isOidcEnabled) {
+            oidcLoginButton()
+        } else {
+            loginForm(loginErrorMessage)
+        }
+    }
+}
+
+internal fun FlowContent.oidcLoginButton() {
+    div {
+        classes(CONTAINER)
+        div {
+            classes(ROW, JUSTIFY_CONTENT_CENTER)
+            div {
+                classes(COL_MD_6, COL_LG_4)
+                div {
+                    classes(LOGIN_CARD)
+                    div {
+                        classes(CARD)
+                        div {
+                            classes(CARD_BODY)
+                            h2 {
+                                classes(CARD_TITLE, TEXT_CENTER, MB_4)
+                                +Messages.signIn()
+                            }
+                            div {
+                                classes(FORM_FOOTER)
+                                a(href = OIDC_LOGIN_PATH) {
+                                    classes(BTN, BTN_PRIMARY, W_100)
+                                    +Messages.loginWithOidc()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

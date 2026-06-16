@@ -97,7 +97,6 @@ services:
       DATABASE_PASSWORD: YourSuperSecretDbPassword # (6)!
       ADMIN_USER: YourSuperSecretUsername # change it
       ADMIN_PASSWORD: YourSuperSecretPassword # change it
-      ADMIN_API_KEY: ThisShouldBeVeryVerySecureToo # change it
     volumes:
       - ./kuvasz.yml:/config/kuvasz.yml # (3)!
     healthcheck:
@@ -120,16 +119,17 @@ volumes:
 8. If you plan to run Kuvasz on an ARM based system, you might need to uncomment this line, depending on your setup
 9. If the port `8080` is already in use on your host machine, you can change the left side of the mapping to any other free port (e.g. `9090:8080`)
 
-!!! important "Credential requirements"
+!!! important "Credential requirements & disabling authentication"
+
+    In case you didn't set up an OIDC provider, you need to set your admin user and password:
 
     - `ADMIN_PASSWORD` must be at least **12 characters** and must **not be equal** to `ADMIN_USER`.
-    - `ADMIN_API_KEY` must be at least **16 characters**.
+    - `ADMIN_API_KEY` is optional. If not provided, then API-key based authentication will be simply disabled. In case you provide one, it must be at least **16 characters**.
+    - `ADMIN_MCP_API_KEY` is optional and only needed if you use the [MCP server](../features/mcp-server.md). It's a **separate** key from `ADMIN_API_KEY` and grants access to the `/mcp` endpoint only. In case you provide one, it must be at least **16 characters**.
 
     See the details in the [Configuration](configuration.md#credentials).
 
-!!! tip "Disabling authentication"
-
-    If you would like to completely **disable authentication**, you should set the `ENABLE_AUTH` environment variable to `false` and then you can just simply omit `ADMIN_USER`, `ADMIN_PASSWORD`, and `ADMIN_API_KEY`.
+     If you would like to completely **disable authentication**, you should set the `ENABLE_AUTH` environment variable to `false` and then you can just simply omit every authentication related configuration.
 
 ### 3. Starting the stack
 

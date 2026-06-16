@@ -52,7 +52,11 @@ internal fun withLayout(
                             )
                             // Navigation - only if logged in
                             if (globals.isAuthenticated()) {
-                                navigation(isAuthEnabled = globals.isAuthEnabled, navbarMenuId = navbarMenuId)
+                                navigation(
+                                    isAuthEnabled = globals.isAuthEnabled,
+                                    isOidcLogoutEnabled = globals.isOidcLogoutEnabled,
+                                    navbarMenuId = navbarMenuId,
+                                )
                             }
                         }
                         div {

@@ -31,11 +31,25 @@ class SettingsRepository(
     @field:Property(name = "micronaut.mcp.server.enabled")
     protected var mcpServerEnabled: Boolean = false
 
+    @field:Property(name = "micronaut.security.oauth2.clients.oidc.openid.issuer")
+    protected var oidcIssuer: String? = null
+
+    @field:Property(name = "micronaut.security.oauth2.clients.oidc.client-id")
+    protected var oidcClientId: String? = null
+
     fun getSettings(): SettingsDto =
         SettingsDto(
             authentication = SettingsDto.AuthenticationSettingsDto(
                 enabled = appGlobals.isAuthEnabled,
-                accessTokenMaxAge = accessTokenMaxAge
+                accessTokenMaxAge = accessTokenMaxAge,
+                oidc = if (appGlobals.isOidcEnabled) {
+                    SettingsDto.AuthenticationSettingsDto.OidcSettingsDto(
+                        issuer = oidcIssuer.orEmpty(),
+                        clientId = oidcClientId.orEmpty(),
+                    )
+                } else {
+                    null
+                },
             ),
             app = SettingsDto.AppSettingsDto(
                 version = appGlobals.appVersion,

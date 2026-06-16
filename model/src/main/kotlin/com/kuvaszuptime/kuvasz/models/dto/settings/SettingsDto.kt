@@ -23,7 +23,21 @@ data class SettingsDto(
         val enabled: Boolean,
         @param:Schema(description = "The maximum age of the access token in seconds", required = true)
         val accessTokenMaxAge: Long,
-    )
+        @param:Schema(
+            description = "The OIDC provider settings, present only when OIDC authentication is enabled",
+            required = false,
+            nullable = true,
+        )
+        val oidc: OidcSettingsDto?,
+    ) {
+        @Introspected
+        data class OidcSettingsDto(
+            @param:Schema(description = "The issuer URL of the configured OIDC provider", required = true)
+            val issuer: String,
+            @param:Schema(description = "The client ID registered with the OIDC provider", required = true)
+            val clientId: String,
+        )
+    }
 
     @Introspected
     data class AppSettingsDto(

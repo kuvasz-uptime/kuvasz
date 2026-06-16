@@ -7,7 +7,11 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String) {
+internal fun FlowContent.navigation(
+    isAuthEnabled: Boolean,
+    isOidcLogoutEnabled: Boolean,
+    navbarMenuId: String,
+) {
     header {
         classes(NAVBAR_EXPAND_MD)
         div {
@@ -87,7 +91,8 @@ internal fun FlowContent.navigation(isAuthEnabled: Boolean, navbarMenuId: String
                                     navItem(
                                         label = Messages.signOut(),
                                         icon = Icon.LOGOUT_OUTLINE,
-                                        link = "/auth/logout",
+                                        // With OIDC end-session enabled, log out through the IdP too
+                                        link = if (isOidcLogoutEnabled) "/oauth/logout" else "/auth/logout",
                                         externalLink = false,
                                     )
                                 }

@@ -15,6 +15,8 @@ import io.kotest.data.row
 import io.kotest.data.table
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
@@ -174,6 +176,20 @@ class WebUIAuthenticationTest(
                 ).awaitFirst()
 
                 response.status shouldBe HttpStatus.OK
+            }
+        }
+
+        "the sign-out link points to the local logout endpoint when OIDC is disabled" {
+            val jwt = getValidJWT(client, authConfig)
+            val response = client.exchange(
+                HttpRequest.GET<Any>("/").header(HttpHeaders.COOKIE, "JWT=$jwt"),
+                String::class.java,
+            ).awaitFirst()
+
+            response.status shouldBe HttpStatus.OK
+            response.body().shouldNotBeNull().let { body ->
+                body shouldContain "/auth/logout"
+                body shouldNotContain "/oauth/logout"
             }
         }
 

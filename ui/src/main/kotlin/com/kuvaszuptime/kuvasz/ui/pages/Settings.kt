@@ -10,6 +10,12 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
+private const val OIDC_CALLBACK_URL_ID = "oidc-callback-url"
+private const val OIDC_POST_LOGOUT_REDIRECT_URI_ID = "oidc-post-logout-redirect-uri"
+private const val OIDC_WEB_ORIGIN_ID = "oidc-web-origin"
+private const val OIDC_POST_LOGOUT_REDIRECT_PATH = "/auth/logout"
+private const val OIDC_CALLBACK_PATH = "/oauth/callback/oidc"
+
 fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
     withLayout(
         globals,
@@ -56,11 +62,6 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         value = Messages.xSeconds(settings.app.httpCheckTimeoutSeconds.toString())
                     )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
-                    settingsToggle(label = Messages.authentication(), checked = settings.authentication.enabled)
-                    settingsLabel(
-                        label = Messages.authenticationMaxAge(),
-                        value = Messages.xSeconds(settings.authentication.accessTokenMaxAge.toString())
-                    )
                     settingsToggle(
                         label = Messages.httpMonitorsReadOnlyMode(),
                         checked = settings.app.editabilityState.areHttpMonitorsReadOnly
@@ -77,6 +78,75 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         label = Messages.statusPagesReadOnlyMode(),
                         checked = settings.app.editabilityState.areStatusPagesReadOnly
                     )
+                }
+            }
+            // Authentication settings
+            settingsCard(
+                title = Messages.authenticationSettings(),
+                icon = Icon.LOCK_CLOSED,
+            ) {
+                div {
+                    classes(DIVIDE_Y)
+                    settingsToggle(label = Messages.authentication(), checked = settings.authentication.enabled)
+                    settingsLabel(
+                        label = Messages.authenticationMaxAge(),
+                        value = Messages.xSeconds(settings.authentication.accessTokenMaxAge.toString())
+                    )
+                    settingsToggle(
+                        label = Messages.apiKeyAuthentication(),
+                        checked = globals.isApiKeyAuthEnabled,
+                    )
+                    // OIDC provider, shown only when OIDC authentication is enabled
+                    settings.authentication.oidc?.let { oidc ->
+                        div {
+                            div {
+                                classes(FORM_LABEL)
+                                icon(Icon.LOCK_COG)
+                                span {
+                                    classes(MS_2)
+                                    +Messages.oidcProvider()
+                                }
+                            }
+                            div {
+                                classes(MT_3)
+                                multiSettingsLabel(label = Messages.oidcIssuer(), value = oidc.issuer)
+                                multiSettingsLabel(label = Messages.oidcClientId(), value = oidc.clientId)
+                            }
+                        }
+                    }
+                    // Details needed to set up the OIDC provider on its side
+                    div {
+                        div {
+                            classes(FORM_LABEL)
+                            icon(Icon.INFO_CIRCLE)
+                            span {
+                                classes(MS_2)
+                                +Messages.oidcProviderSetup()
+                            }
+                        }
+                        div {
+                            classes(MT_3)
+                            p {
+                                classes(TEXT_SECONDARY)
+                                +Messages.oidcSetupHint()
+                            }
+                            oidcSetupUrl(
+                                label = Messages.oidcCallbackUrl(),
+                                elementId = OIDC_CALLBACK_URL_ID,
+                                path = OIDC_CALLBACK_PATH,
+                            )
+                            oidcSetupUrl(
+                                label = Messages.oidcPostLogoutRedirectUri(),
+                                elementId = OIDC_POST_LOGOUT_REDIRECT_URI_ID,
+                                path = OIDC_POST_LOGOUT_REDIRECT_PATH,
+                            )
+                            oidcSetupUrl(
+                                label = Messages.oidcWebOrigins(),
+                                elementId = OIDC_WEB_ORIGIN_ID,
+                                path = "",
+                            )
+                        }
+                    }
                 }
             }
             // Integration settings
@@ -245,6 +315,30 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
             }
         }
     }
+
+/*
+* The externally visible host is not reliably known on the server, so the
+* absolute URLs are assembled on the client side
+*/
+private fun FlowContent.oidcSetupUrl(
+    label: String,
+    elementId: String,
+    path: String,
+) {
+    div {
+        classes(FORM_LABEL, MT_3)
+        +label
+    }
+    code {
+        id = elementId
+        +path
+    }
+    script {
+        unsafe {
+            +("document.getElementById('$elementId').textContent = window.location.origin + '$path';")
+        }
+    }
+}
 
 private fun FlowContent.settingsCard(
     title: String,

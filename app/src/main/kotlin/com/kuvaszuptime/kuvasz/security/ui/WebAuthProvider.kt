@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.security.ui
 
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.security.Role
+import com.kuvaszuptime.kuvasz.util.constantTimeEquals
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpRequest
 import io.micronaut.security.authentication.AuthenticationRequest
@@ -15,6 +16,7 @@ import org.reactivestreams.Publisher
 
 @Singleton
 @Requires(property = "micronaut.security.enabled", value = "true")
+@Requires(property = "micronaut.security.oauth2.clients.oidc.enabled", notEquals = "true")
 class WebAuthProvider(private val authConfig: AdminAuthConfig) : HttpRequestReactiveAuthenticationProvider<Any> {
 
     override fun authenticate(
@@ -23,8 +25,8 @@ class WebAuthProvider(private val authConfig: AdminAuthConfig) : HttpRequestReac
     ): Publisher<AuthenticationResponse> {
         return Flowable.create(
             { emitter: FlowableEmitter<AuthenticationResponse> ->
-                if (authenticationRequest.identity == authConfig.username &&
-                    authenticationRequest.secret == authConfig.password
+                if (authenticationRequest.identity.constantTimeEquals(authConfig.username) &&
+                    authenticationRequest.secret.constantTimeEquals(authConfig.password)
                 ) {
                     emitter.onNext(
                         AuthenticationResponse.success(
