@@ -29,6 +29,16 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
     val clientSecret = "kuvasz-client-secret"
     val username = "kuvasz-user"
     val password = "kuvasz-password"
+    val allowedEmail = "kuvasz-user@example.com"
+
+    // A user with a verified email that is NOT on the allowlist (see kuvasz-realm.json)
+    val strangerUsername = "stranger-user"
+    val strangerPassword = "stranger-password"
+
+    // A user whose email IS on the allowlist, but has not been verified (see kuvasz-realm.json)
+    val unverifiedUsername = "unverified-user"
+    val unverifiedPassword = "unverified-password"
+    val unverifiedEmail = "unverified@example.com"
 
     val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.6")
         .withRealmImportFile("/keycloak/kuvasz-realm.json")
@@ -36,10 +46,14 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
     var server: EmbeddedServer? = null
     lateinit var baseUrl: String
 
+    // A second instance that restricts logins to an email allowlist (with the default verified-email requirement)
+    var allowlistServer: EmbeddedServer? = null
+    lateinit var allowlistBaseUrl: String
+
     beforeSpec {
         keycloak.start()
 
-        val properties = mapOf(
+        val baseProperties = mapOf(
             "micronaut.security.enabled" to true,
             "admin-auth.api-key" to TEST_API_KEY,
             "admin-auth.username" to TEST_USERNAME,
@@ -52,13 +66,23 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
             // for the end-session endpoint (and thus the /oauth/logout route) to be resolved.
             "micronaut.security.oauth2.clients.oidc.authorization-server" to "keycloak",
         )
-        val embeddedServer = ApplicationContext.run(EmbeddedServer::class.java, properties, "test")
+        val embeddedServer = ApplicationContext.run(EmbeddedServer::class.java, baseProperties, "test")
         server = embeddedServer
         baseUrl = "http://localhost:${embeddedServer.port}"
+
+        // The allowlist contains the verified user, plus an address whose user has NOT verified it - the latter must
+        // still be rejected, because the verified-email requirement is on by default.
+        val allowlistProperties = baseProperties + mapOf(
+            "admin-auth.oidc.allowed-emails" to "$allowedEmail,$unverifiedEmail",
+        )
+        val allowlistEmbedded = ApplicationContext.run(EmbeddedServer::class.java, allowlistProperties, "test")
+        allowlistServer = allowlistEmbedded
+        allowlistBaseUrl = "http://localhost:${allowlistEmbedded.port}"
     }
 
     afterSpec {
         server?.stop()
+        allowlistServer?.stop()
         keycloak.stop()
     }
 
@@ -167,7 +191,58 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
             }
         }
     }
+
+    given("an OIDC-enabled Kuvasz instance with an email allowlist") {
+
+        `when`("an allow-listed user with a verified email completes the login flow") {
+            val browser = oidcLogin(allowlistBaseUrl, username, password)
+
+            then("a JWT cookie is set carrying the WEB and API roles") {
+                val jwt = browser.cookie("JWT").shouldNotBeNull()
+                rolesFromJwt(jwt) shouldContainAll listOf(Role.WEB.alias, Role.API.alias)
+            }
+
+            then("the session grants access to a secured API endpoint") {
+                browser.get("$allowlistBaseUrl/api/v2/http-monitors").statusCode() shouldBe 200
+            }
+        }
+
+        `when`("a user with a verified email that is NOT on the allowlist completes the login flow") {
+            val browser = oidcLogin(allowlistBaseUrl, strangerUsername, strangerPassword)
+
+            then("no JWT cookie is set, the login is rejected") {
+                browser.cookie("JWT") shouldBe null
+            }
+
+            then("the user cannot access a secured API endpoint") {
+                browser.get("$allowlistBaseUrl/api/v2/http-monitors").statusCode() shouldBe 401
+            }
+        }
+
+        `when`("an allow-listed user whose email is NOT verified completes the login flow") {
+            val browser = oidcLogin(allowlistBaseUrl, unverifiedUsername, unverifiedPassword)
+
+            then("the login is rejected, because the verified-email requirement is on by default") {
+                browser.cookie("JWT") shouldBe null
+                browser.get("$allowlistBaseUrl/api/v2/http-monitors").statusCode() shouldBe 401
+            }
+        }
+    }
 })
+
+/**
+ * Drives the full OIDC authorization-code flow: hits the OIDC login endpoint, submits the Keycloak login form with the
+ * given credentials, and returns the [TestBrowser] holding whatever cookies ended up being set (a JWT on success,
+ * none on a rejected login).
+ */
+private fun oidcLogin(baseUrl: String, username: String, password: String): TestBrowser {
+    val browser = TestBrowser()
+    val loginPage = browser.get("$baseUrl/oauth/login/oidc")
+    val formAction = extractLoginFormAction(loginPage.body())
+    val formBody = "username=${username.urlEncoded()}&password=${password.urlEncoded()}&credentialId="
+    browser.postForm(formAction, formBody)
+    return browser
+}
 
 /**
  * A minimal stateful HTTP "browser" that keeps a single cookie jar and follows redirects manually, replaying every

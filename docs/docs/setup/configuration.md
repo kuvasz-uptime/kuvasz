@@ -163,6 +163,7 @@ As an alternative to the built-in username/password form, you can configure an O
 
 #### Enable OIDC
 
+<!-- md:version 4.0.0 -->
 <!-- md:default `false` -->
 <!-- md:type `boolean` -->
 
@@ -176,6 +177,7 @@ When OIDC is enabled, you **must also provide** the issuer, client ID, and clien
 
 #### OIDC issuer
 
+<!-- md:version 4.0.0 -->
 <!-- md:required_if OIDC enabled -->
 <!-- md:type `string` -->
 
@@ -195,6 +197,7 @@ The issuer URL of your OIDC provider. _Kuvasz_ uses it to discover the provider'
 
 #### OIDC client ID
 
+<!-- md:version 4.0.0 -->
 <!-- md:required_if OIDC enabled -->
 <!-- md:type `string` -->
 
@@ -212,6 +215,7 @@ The issuer URL of your OIDC provider. _Kuvasz_ uses it to discover the provider'
 
 #### OIDC client secret
 
+<!-- md:version 4.0.0 -->
 <!-- md:required_if OIDC enabled -->
 <!-- md:type `string` -->
 
@@ -229,6 +233,7 @@ The issuer URL of your OIDC provider. _Kuvasz_ uses it to discover the provider'
 
 #### OIDC authorization server
 
+<!-- md:version 4.0.0 -->
 <!-- md:default _auto-detected from the issuer URL_ -->
 <!-- md:type `string` -->
 
@@ -248,17 +253,18 @@ Identifies the type of your OIDC provider. For most cloud providers _Kuvasz_ inf
 
 The value is **case-insensitive**, and the supported providers are:
 
-| Value          | Provider                |
-| -------------- | ----------------------- |
-| `AUTH0`        | Auth0                   |
-| `COGNITO`      | AWS Cognito             |
-| `KEYCLOAK`     | Keycloak                |
-| `MICROSOFT`    | Microsoft (Entra ID)    |
-| `OKTA`         | Okta                    |
-| `ORACLE_CLOUD` | Oracle Cloud (IDCS)     |
+| Value          | Provider             |
+|----------------|----------------------|
+| `AUTH0`        | Auth0                |
+| `COGNITO`      | AWS Cognito          |
+| `KEYCLOAK`     | Keycloak             |
+| `MICROSOFT`    | Microsoft (Entra ID) |
+| `OKTA`         | Okta                 |
+| `ORACLE_CLOUD` | Oracle Cloud (IDCS)  |
 
 #### OIDC end-session
 
+<!-- md:version 4.0.0 -->
 <!-- md:default `true` -->
 <!-- md:type `boolean` -->
 
@@ -278,6 +284,55 @@ When OIDC is enabled, signing out from the web UI also logs you out at the OIDC 
 
 !!! warning "Register the post-logout redirect URI"
     Most providers require the post-logout redirect URI to be explicitly registered on the client. For example, in _Keycloak_ add `https://<your-kuvasz-host>/*` (or the exact `https://<your-kuvasz-host>/auth/logout` URL) to the client's **Valid post logout redirect URIs**. Otherwise the provider will reject the redirect back to _Kuvasz_ after logout.
+
+#### OIDC email allowlist
+
+<!-- md:version 4.0.0 -->
+<!-- md:default _empty (every authenticated user is allowed)_ -->
+<!-- md:type `string` -->
+
+By default **any user your OIDC provider successfully authenticates is allowed to sign in** and is granted full access. If your provider serves a broader audience than the people who should access _Kuvasz_ (e.g. a shared corporate IdP or a public provider), restrict access with an **allowlist of email addresses**:
+
+=== "YAML"
+
+    ```yaml
+    admin-auth.oidc.allowed-emails:
+      - alice@example.com
+      - bob@example.com
+    ```
+
+=== "ENV"
+
+    ```bash
+    OIDC_ALLOWED_EMAILS=alice@example.com,bob@example.com
+    ```
+
+When set, only users whose email matches one of the listed addresses are allowed in; everyone else is rejected at login. Matching is **case-insensitive** and surrounding whitespace is ignored. Provide the list as a **comma-separated** value when using the environment variable.
+
+!!! note
+    The allowlist relies on the `email` claim, so make sure your provider returns it (it's part of the standard `email` scope, which _Kuvasz_ requests by default).
+
+##### Require verified email
+
+<!-- md:version 4.0.0 -->
+<!-- md:default `true` -->
+<!-- md:type `boolean` -->
+
+When the allowlist is in use, an email is only accepted if the provider also reports it as **verified** (the `email_verified` claim). This prevents a user with an unverified — and potentially spoofed — email from satisfying the allowlist. If your provider doesn't supply `email_verified` (or you intentionally want to skip the check), disable it:
+
+=== "YAML"
+
+    ```yaml
+    admin-auth.oidc.require-verified-email: false
+    ```
+
+=== "ENV"
+
+    ```bash
+    OIDC_REQUIRE_VERIFIED_EMAIL=false
+    ```
+
+This setting only has an effect when the [email allowlist](#oidc-email-allowlist) is configured.
 
 ## Database
 

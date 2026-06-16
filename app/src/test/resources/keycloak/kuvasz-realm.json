@@ -39,6 +39,36 @@
           "temporary": false
         }
       ]
+    },
+    {
+      "username": "stranger-user",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "stranger@example.com",
+      "firstName": "Stranger",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "stranger-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "unverified-user",
+      "enabled": true,
+      "emailVerified": false,
+      "email": "unverified@example.com",
+      "firstName": "Unverified",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "unverified-password",
+          "temporary": false
+        }
+      ]
     }
   ]
 }

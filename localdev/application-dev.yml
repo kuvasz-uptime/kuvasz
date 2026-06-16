@@ -26,17 +26,17 @@ micronaut:
             # The matching realm (client "kuvasz" / secret "kuvasz-client-secret", user "kuvasz-user"/"kuvasz-password")
             # is imported from ./keycloak. While OIDC is enabled, the username/password login form is replaced by the
             # "Login (OIDC)" button, but the admin-auth API key below still works for the REST API.
-            #    oauth2:
-            #      clients:
-            #        oidc:
-            #          enabled: true
-            #          client-id: kuvasz
-            #          client-secret: kuvasz-client-secret
-            # Modern Keycloak issuers (/realms/...) aren't auto-detected by Micronaut, so the provider has to be set
-            # explicitly for the end-session endpoint (and thus the RP-initiated /oauth/logout route) to be resolved.
-            #          authorization-server: keycloak
-            #          openid:
-            #            # Use this issuer when Kuvasz runs on the host (e.g. ./gradlew app:run).
+  #    oauth2:
+  #      clients:
+  #        oidc:
+  #          enabled: true
+  #          client-id: kuvasz
+  #          client-secret: kuvasz-client-secret
+  #            # Modern Keycloak issuers (/realms/...) aren't auto-detected by Micronaut, so the provider has to be set
+  #          # explicitly for the end-session endpoint (and thus the RP-initiated /oauth/logout route) to be resolved.
+  #          authorization-server: keycloak
+  #          openid:
+  #              # Use this issuer when Kuvasz runs on the host (e.g. ./gradlew app:run).
   #            issuer: http://localhost:8083/realms/kuvasz
   #            # ...or use this one when Kuvasz runs as the "kuvasz" container from docker-compose.yml, so it can
   #            # reach Keycloak over the compose network by its service name. This requires switching KC_HOSTNAME
