@@ -9,13 +9,13 @@ jib = "3.5.3"
 jooq = "3.21.6"
 jooqPlugin = "10.2.1"
 keycloakTestcontainers = "4.2.1"
-kotest = "6.1.11"
+# @pin Better to move it together with the version that comes from Micronaut's BOM
+kotest = "6.1.9"
 kotlin = "2.4.0"
 kotlinCoroutines = "1.11.0"
 kotlinHtmx = "0.0.1"
 kotlinxHtml = "0.12.0"
 kover = "0.9.8"
-# @keep used by Micronaut Gradle plugin implicitly
 micronaut = "5.0.2"
 micronautGradlePlugin = "5.0.0"
 minify = "2.1.1"
@@ -41,6 +41,8 @@ kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", versi
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinCoroutines" }
 kotlinx-html-jvm = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version.ref = "kotlinxHtml" }
+# @keep used by Micronaut Gradle plugin implicitly, important for automatic version updates
+micronaut-platform = { module = "io.micronaut.platform:micronaut-platform", version.ref = "micronaut" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockserver-netty = { module = "org.mock-server:mockserver-netty-no-dependencies", version.ref = "mockserver" }
 pebble = { module = "io.pebbletemplates:pebble", version.ref = "pebble" }
