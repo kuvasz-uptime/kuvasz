@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import com.kuvaszuptime.kuvasz.security.Role
+import com.kuvaszuptime.kuvasz.util.constantTimeEquals
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.async.publisher.Publishers
 import io.micronaut.http.HttpRequest
@@ -36,11 +37,13 @@ class ApiKeyTokenValidator(
 
         return when {
             // The REST API is protected by the regular API key, granting ROLE_API
-            path.startsWith(API_V2_PREFIX) && !apiKeyConfig.isApiKeyDisabled() && token == apiKeyConfig.apiKey ->
+            path.startsWith(API_V2_PREFIX) && !apiKeyConfig.isApiKeyDisabled() &&
+                token.constantTimeEquals(apiKeyConfig.apiKey) ->
                 Publishers.just(Authentication.build("api-user", listOf(Role.API.alias)))
 
             // The MCP endpoint is protected by a dedicated API key, granting ROLE_MCP exclusively
-            path.startsWith(MCP_PATH) && !apiKeyConfig.isMcpApiKeyDisabled() && token == apiKeyConfig.mcpApiKey ->
+            path.startsWith(MCP_PATH) && !apiKeyConfig.isMcpApiKeyDisabled() &&
+                token.constantTimeEquals(apiKeyConfig.mcpApiKey) ->
                 Publishers.just(Authentication.build("mcp-user", listOf(Role.MCP.alias)))
 
             else -> Publishers.empty()
