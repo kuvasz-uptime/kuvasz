@@ -246,4 +246,33 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
 
         ex.message shouldContain "Non-existing integration ID found: slack:non-existing."
     }
+
+    /**
+     * Regression test for a data-loss bug: a status page YAML config must NOT make the push monitor YAML config
+     * "effective". Previously a copy-paste error treated a non-empty status page config as if push monitors were
+     * configured via YAML too, which disabled external writes and imported an empty push monitor list, deleting
+     * every externally (API/UI) managed push monitor on startup.
+     */
+    "8. step: a status page YAML config must not wipe externally managed push monitors" {
+        // Simulate a user who manages push monitors via the API/UI (DB-backed), without any push-monitors YAML config
+        val seedingContext = testAppContext()
+        createPushMonitor(
+            seedingContext.getBean<PushMonitorRepository>(),
+            monitorName = "db_managed_push_monitor",
+            enabled = true,
+        )
+        seedingContext.stop()
+
+        // Restarting with a status page YAML config present, but without a push-monitors config
+        appContext = testAppContext("status-pages")
+        val monitorRepository = getMonitorRepository()
+
+        // The status page config is effective...
+        getAppConfig().isStatusPageExternalWriteDisabled() shouldBe true
+        // ...but it must leave the externally managed push monitors completely untouched
+        getAppConfig().isPushMonitorExternalWriteDisabled() shouldBe false
+        monitorRepository.fetchAll()
+            .shouldHaveSize(1)
+            .forOne { it.name shouldBe "db_managed_push_monitor" }
+    }
 })

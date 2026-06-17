@@ -181,7 +181,7 @@ class AppBootstrapper(
         // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
         // have zero push monitors, so we should disable external writes and delete all monitors from the
         // DB eventually.
-        val isYamlPushConfigEffective = yamlStatusPageConfigs.isNotEmpty() || pushMonitorYAMLConfigChecker != null
+        val isYamlPushConfigEffective = yamlPushMonitorConfigs.isNotEmpty() || pushMonitorYAMLConfigChecker != null
         if (isYamlPushConfigEffective) {
             // Ensuring that all client secrets are unique
             require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
