@@ -1,3 +1,9 @@
+## 4.0.1 <small>2026-06-17</small> { id="4.0.1" data-toc-label="4.0.1" }
+
+### Fixes
+
+- **Push monitors no longer deleted on startup when a status page YAML config is present**: a copy-paste bug caused the app to treat a non-empty status page YAML config as if push monitors were also configured via YAML. This triggered an import of an empty push monitor list on startup, deleting every externally (API/UI) managed push monitor.
+
 ## 4.0.0 <small>2026-06-16</small> { id="4.0.0" data-toc-label="4.0.0" }
 
 ### Features
