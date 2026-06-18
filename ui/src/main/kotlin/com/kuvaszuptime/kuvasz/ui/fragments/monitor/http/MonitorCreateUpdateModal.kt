@@ -497,6 +497,7 @@ private fun FlowContent.headersTable(
                         classes = setOf(BTN, BTN_SM, TEXT_GREEN),
                         icon = Icon.PLUS,
                     ) {
+                        testId("add-header-button-$xModelName")
                         xOnClick(onAdd)
                         xBindDisabled("!$newHeaderValidator || isRequestLoading || $isReadOnly")
                     }

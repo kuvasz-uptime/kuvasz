@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.security.oidc.OIDC_PROVIDER_NAME
-import dasniko.testcontainers.keycloak.KeycloakContainer
+import com.kuvaszuptime.kuvasz.testutils.KeycloakTestRealm
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -24,24 +24,23 @@ import java.util.Base64
  */
 class OidcAuthenticationE2ETest : BehaviorSpec({
 
-    val realm = "kuvasz"
-    val clientId = "kuvasz"
-    val clientSecret = "kuvasz-client-secret"
-    val username = "kuvasz-user"
-    val password = "kuvasz-password"
-    val allowedEmail = "kuvasz-user@example.com"
+    val realm = KeycloakTestRealm.REALM
+    val clientId = KeycloakTestRealm.CLIENT_ID
+    val clientSecret = KeycloakTestRealm.CLIENT_SECRET
+    val username = KeycloakTestRealm.USERNAME
+    val password = KeycloakTestRealm.PASSWORD
+    val allowedEmail = KeycloakTestRealm.EMAIL
 
     // A user with a verified email that is NOT on the allowlist (see kuvasz-realm.json)
-    val strangerUsername = "stranger-user"
-    val strangerPassword = "stranger-password"
+    val strangerUsername = KeycloakTestRealm.STRANGER_USERNAME
+    val strangerPassword = KeycloakTestRealm.STRANGER_PASSWORD
 
     // A user whose email IS on the allowlist, but has not been verified (see kuvasz-realm.json)
-    val unverifiedUsername = "unverified-user"
-    val unverifiedPassword = "unverified-password"
-    val unverifiedEmail = "unverified@example.com"
+    val unverifiedUsername = KeycloakTestRealm.UNVERIFIED_USERNAME
+    val unverifiedPassword = KeycloakTestRealm.UNVERIFIED_PASSWORD
+    val unverifiedEmail = KeycloakTestRealm.UNVERIFIED_EMAIL
 
-    val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.6")
-        .withRealmImportFile("/keycloak/kuvasz-realm.json")
+    val keycloak = KeycloakTestRealm.newContainer()
 
     var server: EmbeddedServer? = null
     lateinit var baseUrl: String
@@ -53,6 +52,7 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
     beforeSpec {
         keycloak.start()
 
+        val issuer = KeycloakTestRealm.issuerUrl(keycloak.authServerUrl)
         val baseProperties = mapOf(
             "micronaut.security.enabled" to true,
             "admin-auth.api-key" to TEST_API_KEY,
@@ -61,7 +61,7 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
             "micronaut.security.oauth2.clients.oidc.enabled" to true,
             "micronaut.security.oauth2.clients.oidc.client-id" to clientId,
             "micronaut.security.oauth2.clients.oidc.client-secret" to clientSecret,
-            "micronaut.security.oauth2.clients.oidc.openid.issuer" to "${keycloak.authServerUrl}/realms/$realm",
+            "micronaut.security.oauth2.clients.oidc.openid.issuer" to issuer,
             // Modern Keycloak issuers (/realms/...) aren't auto-detected, so the provider has to be set explicitly
             // for the end-session endpoint (and thus the /oauth/logout route) to be resolved.
             "micronaut.security.oauth2.clients.oidc.authorization-server" to "keycloak",

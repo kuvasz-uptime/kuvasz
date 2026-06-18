@@ -46,6 +46,7 @@ internal fun HtmlBlockTag.statusPageDetailsHeader(
                     if (!globals.editabilityState.areStatusPagesReadOnly()) {
                         button {
                             classes(BTN, BTN_ICON)
+                            testId("toggle-visibility-button")
                             xBindDisabled("isRequestLoading")
                             xOnClick("toggleStatusPageVisibility()")
                             template {

@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz
 
-import com.kuvaszuptime.kuvasz.jooq.Kuvasz
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
@@ -14,11 +13,5 @@ abstract class DatabaseBehaviorSpec(body: BehaviorSpec.() -> Unit = {}) : Behavi
 
     override suspend fun afterContainer(testCase: TestCase, result: TestResult) {
         dslContext.resetDatabase()
-    }
-}
-
-fun DSLContext.resetDatabase() {
-    Kuvasz.KUVASZ.tables.forEach { table ->
-        this.deleteFrom(table).execute()
     }
 }
