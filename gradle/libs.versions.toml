@@ -1,6 +1,6 @@
 [versions]
 buildconfig = "6.0.10"
-detekt = "2.0.0-alpha.4"
+detekt = "2.0.0-alpha.5"
 detektFormatting = "1.23.8"
 flywayPlugin = "12.8.1"
 gitVersion = "5.0.0"
