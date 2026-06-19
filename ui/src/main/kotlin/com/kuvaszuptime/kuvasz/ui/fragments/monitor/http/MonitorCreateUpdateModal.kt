@@ -444,6 +444,7 @@ private fun FlowContent.headersTable(
             templateTag {
                 xFor("[key, value] in Object.entries($xModelName)")
                 tr {
+                    testId("header-row-$xModelName")
                     td {
                         classes(TEXT_WRAP)
                         xText("key")
@@ -460,6 +461,7 @@ private fun FlowContent.headersTable(
                                 Icon.TRASH,
                                 classes = setOf(TEXT_RED, BTN_SM),
                             ) {
+                                testId("remove-header-button-$xModelName")
                                 xBindDisabled("isRequestLoading || $isReadOnly")
                                 xOnClick(onRemove)
                             }

@@ -1,20 +1,15 @@
 package com.kuvaszuptime.kuvasz.uitest
 
-import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.uitest.pages.DetailsReadOnlyView
-import com.kuvaszuptime.kuvasz.uitest.pages.ListReadOnlyView
-import com.kuvaszuptime.kuvasz.uitest.pages.UpsertModalReadOnlyView
+import com.kuvaszuptime.kuvasz.uitest.pages.common.DetailsReadOnlyView
+import com.kuvaszuptime.kuvasz.uitest.pages.common.ListReadOnlyView
+import com.kuvaszuptime.kuvasz.uitest.pages.common.UpsertModalReadOnlyView
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 /**
  * Verifies that monitors and status pages configured via YAML are read-only in the UI: the app imports them at startup
- * and flips that type into read-only mode (no create/edit/delete). The fixtures come from
- * `application-ui-test-readonly.yml`.
- *
- * YAML config is imported only once, at startup, so the DB is not reset between tests here
- * ([resetDatabaseAfterEachTest] = false); the base class wipes it once in `afterSpec` instead.
+ * and flips that type into read-only mode (no create/edit/delete)
  */
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV, "ui-test-readonly"])
 class ReadOnlyConfigUiTest : UiTestSpec() {
@@ -24,7 +19,7 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
     init {
         "YAML-configured HTTP monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
-            val list = ListReadOnlyView(page, "/http-monitors", Messages.addNewMonitor())
+            val list = ListReadOnlyView(page, "/http-monitors")
             list.navigate()
             assertListIsReadOnly(list, "yaml-http-monitor")
 
@@ -36,7 +31,7 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
 
         "YAML-configured push monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
-            val list = ListReadOnlyView(page, "/push-monitors", Messages.addNewMonitor())
+            val list = ListReadOnlyView(page, "/push-monitors")
             list.navigate()
             assertListIsReadOnly(list, "yaml-push-monitor")
 
@@ -48,7 +43,7 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
 
         "YAML-configured ICMP monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
-            val list = ListReadOnlyView(page, "/icmp-monitors", Messages.addNewMonitor())
+            val list = ListReadOnlyView(page, "/icmp-monitors")
             list.navigate()
             assertListIsReadOnly(list, "yaml-icmp-monitor")
 
@@ -60,7 +55,7 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
 
         "YAML-configured status pages are read-only on the list, detail page and config modal" {
             val page = newPage()
-            val list = ListReadOnlyView(page, "/status-pages", Messages.addNewStatusPage())
+            val list = ListReadOnlyView(page, "/status-pages")
             list.navigate()
             assertListIsReadOnly(list, "YAML Status Page")
 

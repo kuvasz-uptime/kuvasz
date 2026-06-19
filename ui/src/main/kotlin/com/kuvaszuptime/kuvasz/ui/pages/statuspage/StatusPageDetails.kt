@@ -63,6 +63,7 @@ internal fun HtmlBlockTag.statusPageDetailsHeader(
                     if (!globals.editabilityState.areStatusPagesReadOnly()) {
                         buttonWithIcon(Icon.SETTINGS, Messages.configure()) {
                             modalOpener(updateModalId)
+                            testId("configure-button")
                         }
                         compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
                             xBindDisabled("isRequestLoading")
@@ -73,6 +74,7 @@ internal fun HtmlBlockTag.statusPageDetailsHeader(
                         // View
                         buttonWithIcon(Icon.EYE, Messages.configuration()) {
                             modalOpener(updateModalId)
+                            testId("configuration-button")
                         }
                     }
                     statusPageCreateUpdateModal(updateModalId, statusPage, globals)

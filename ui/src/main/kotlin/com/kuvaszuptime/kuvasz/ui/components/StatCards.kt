@@ -18,6 +18,7 @@ internal fun FlowContent.statCard(
 ) {
     div {
         classes(cssClasses)
+        testId("stat-card")
         div {
             classes(CARD, CARD_SM)
             div {

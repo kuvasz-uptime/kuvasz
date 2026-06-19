@@ -16,6 +16,7 @@ fun FlowContent.upsertModalFooter(
         a(href = "#") {
             classes(BTN, BTN_LINK, LINK_SECONDARY)
             modalCloser()
+            testId("modal-dismiss-button")
             if (isReadOnlyMode) {
                 +Messages.close()
             } else {
@@ -27,6 +28,7 @@ fun FlowContent.upsertModalFooter(
                 classes(BTN, BTN_PRIMARY, MS_AUTO)
                 xBindDisabled(xSaveDisabledIf)
                 xOnClick(xOnSaveClicked)
+                testId("modal-save-button")
                 icon(Icon.FLOPPY)
                 +Messages.save()
             }

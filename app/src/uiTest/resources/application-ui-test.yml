@@ -1,12 +1,9 @@
 ---
-# Configuration for the browser-driven (Playwright) end-to-end suite. Unlike `application-test.yml`, security is
-# left ON here so the specs exercise the real cookie/JWT login flow with known admin credentials.
 micronaut:
   security:
     enabled: true
 admin-auth:
   username: e2e-admin
-  # Must be at least 12 characters (see AdminAuthConfig validation)
   password: e2e-admin-password-123
 datasources:
   default:

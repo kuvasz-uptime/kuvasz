@@ -15,14 +15,9 @@ import org.jooq.DSLContext
 import java.nio.file.Path
 
 /**
- * Base class for the browser-driven specs. Concrete specs are annotated `@MicronautTest`, which boots the real app
- * against the shared Testcontainers Postgres and field-injects the [EmbeddedServer] / [DSLContext] below (the same
- * pattern as `DatabaseStringSpec`).
- *
+ * Base class for the browser-driven specs. Concrete specs are annotated `@MicronautTest`, which boots the real app.
  * Lifecycle: one [Browser] per spec; a fresh [BrowserContext] + [Page] per [newPage] call (tracing on); after each
  * test, failures dump a `trace.zip` + screenshot to `build/uiTest-artifacts/`, contexts are closed and the DB is wiped.
- *
- * The body lambda receiver is [UiTestSpec], so specs can use the [StringSpec] DSL *and* reach [baseUrl] / [newPage].
  */
 abstract class UiTestSpec(body: UiTestSpec.() -> Unit = {}) : StringSpec() {
 
@@ -44,11 +39,6 @@ abstract class UiTestSpec(body: UiTestSpec.() -> Unit = {}) : StringSpec() {
 
     private data class TrackedContext(val context: BrowserContext, val page: Page)
 
-    /**
-     * Whether the database is wiped after each test (the default, for isolation). Specs whose data comes from
-     * YAML config — which the app imports only once at startup, so it can't be re-created between tests — turn this
-     * off and rely on the [afterSpec] cleanup instead.
-     */
     protected open val resetDatabaseAfterEachTest: Boolean = true
 
     init {
@@ -61,7 +51,7 @@ abstract class UiTestSpec(body: UiTestSpec.() -> Unit = {}) : StringSpec() {
             if (::browser.isInitialized) browser.close()
             if (::playwright.isInitialized) playwright.close()
             // Safety net: make sure no spec leaks rows into the shared DB, even one that skipped the per-test reset.
-            runCatching { dslContext.resetDatabase() }
+            dslContext.resetDatabase()
         }
 
         afterTest { (testCase, result) ->
@@ -109,21 +99,17 @@ abstract class UiTestSpec(body: UiTestSpec.() -> Unit = {}) : StringSpec() {
     }
 
     /**
-     * Performs the real form login once and caches the resulting `storageState` (JWT cookie). The cached state stays
-     * valid across the per-test `resetDatabase()` calls because the admin credentials come from config, not the DB,
-     * and the JWT is self-contained.
+     * Performs the real form login once and caches the resulting `storageState` (JWT cookie)
      */
     private fun adminStorageState(): String =
         adminStorageState ?: captureAdminStorageState().also { adminStorageState = it }
 
     private fun captureAdminStorageState(): String {
         val context = browser.newContext(Browser.NewContextOptions().setBaseURL(baseUrl))
-        try {
+        context.use { context ->
             val page = context.newPage()
             LoginPage(page).loginAs(AdminCredentials.USERNAME, AdminCredentials.PASSWORD)
             return context.storageState()
-        } finally {
-            context.close()
         }
     }
 

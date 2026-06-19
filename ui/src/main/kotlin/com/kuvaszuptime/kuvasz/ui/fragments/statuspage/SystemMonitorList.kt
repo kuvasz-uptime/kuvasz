@@ -27,6 +27,7 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                     // Monitor card
                     div {
                         classes(CARD)
+                        testId("status-monitor-card")
                         // Card status indicator
                         div {
                             classes(CARD_STATUS_START, monitor.uptimeStatus.cardStatusClass())

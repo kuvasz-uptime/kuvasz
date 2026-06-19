@@ -90,6 +90,7 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                         }
                         h2 {
                             classes(PAGE_TITLE)
+                            testId("dashboard-title")
                             +Messages.monitoring()
                         }
                     }

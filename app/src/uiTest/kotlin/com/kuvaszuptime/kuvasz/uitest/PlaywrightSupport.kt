@@ -11,16 +11,13 @@ import java.io.File
  */
 object PlaywrightSupport {
 
-    // Micronaut environment that activates `application-ui-test.yml` (security ON, known admin credentials).
     const val UI_TEST_ENV = "ui-test"
-
-    // Collects traces/screenshots for failing tests; uploaded as a CI artifact.
-    val artifactsDir: File = File("build/uiTest-artifacts")
-
     const val VIEWPORT_WIDTH = 1440
     const val VIEWPORT_HEIGHT = 900
 
     private const val SLOW_MO_MS = 150.0
+
+    val artifactsDir: File = File("build/uiTest-artifacts")
 
     // Headless by default; pass `-Dui.headed=true` to watch the run (with a small slow-mo) locally.
     private val headed: Boolean get() = System.getProperty("ui.headed", "false").toBoolean()

@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest
 
-import com.kuvaszuptime.kuvasz.uitest.pages.ModalView
+import com.kuvaszuptime.kuvasz.uitest.pages.common.ModalView
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 
 /**

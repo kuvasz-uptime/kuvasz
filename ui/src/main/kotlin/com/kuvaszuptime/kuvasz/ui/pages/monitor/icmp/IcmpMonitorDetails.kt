@@ -48,6 +48,7 @@ internal fun HtmlBlockTag.icmpMonitorDetailsHeader(
                     if (!globals.editabilityState.areIcmpMonitorsReadOnly()) {
                         button {
                             classes(BTN, BTN_ICON)
+                            testId("toggle-monitor-button")
                             xBindDisabled("isRequestLoading")
                             xOnClick("toggleMonitor()")
                             template {
@@ -63,6 +64,7 @@ internal fun HtmlBlockTag.icmpMonitorDetailsHeader(
                     if (!globals.editabilityState.areIcmpMonitorsReadOnly()) {
                         buttonWithIcon(Icon.SETTINGS, Messages.configure()) {
                             modalOpener(updateModalId)
+                            testId("configure-button")
                         }
                         compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
                             xBindDisabled("isRequestLoading")
@@ -74,6 +76,7 @@ internal fun HtmlBlockTag.icmpMonitorDetailsHeader(
                     } else {
                         buttonWithIcon(Icon.EYE, Messages.configuration()) {
                             modalOpener(updateModalId)
+                            testId("configuration-button")
                         }
                     }
                     icmpMonitorCreateUpdateModal(updateModalId, monitor, globals)

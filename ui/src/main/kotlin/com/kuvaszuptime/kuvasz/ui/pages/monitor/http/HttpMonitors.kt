@@ -81,6 +81,7 @@ internal fun HtmlBlockTag.httpMonitorsHeader(globals: AppGlobals) {
                                     classes = setOf(BTN_PRIMARY, D_NONE, D_MD_BLOCK)
                                 ) {
                                     modalOpener(createHttpModalId)
+                                    testId("add-new-button")
                                 }
                                 compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY, D_MD_NONE)) {
                                     modalOpener(createHttpModalId)

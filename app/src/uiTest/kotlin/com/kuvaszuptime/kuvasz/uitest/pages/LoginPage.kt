@@ -1,19 +1,16 @@
 package com.kuvaszuptime.kuvasz.uitest.pages
 
-import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 
-// The `/login` page with the username/password form (security is ON in the UI-test environment, OIDC off).
+// The `/login` page with the username/password form
 class LoginPage(private val page: Page) {
 
     val usernameInput: Locator get() = page.locator("input[name=username]")
     val passwordInput: Locator get() = page.locator("input[name=password]")
-    val signInButton: Locator get() = page.byRole(AriaRole.BUTTON, Messages.signIn())
+    val signInButton: Locator get() = page.getByTestId("login-submit-button")
 
-    // The dismissible alert shown after a failed login (rendered when `/login?error=true`).
-    val errorAlert: Locator get() = page.locator(".alert-danger")
+    val errorAlert: Locator get() = page.getByTestId("login-error")
 
     fun navigate() {
         page.navigate("/login")

@@ -1,13 +1,10 @@
 ---
-# Activated on top of `ui-test` for the read-only scenario: declaring monitors via YAML makes the app import them at
-# startup AND flips that monitor type into read-only mode in the UI (no create/edit/delete). One monitor of each type.
 http-monitors:
   - name: yaml-http-monitor
     url: https://example.com
     uptime-check-interval: 60
 push-monitors:
   - name: yaml-push-monitor
-    # Client secret must be at least 36 characters long
     client-secret: yaml-push-monitor-secret-0123456789abc
     heartbeat-interval: 300
 icmp-monitors:
