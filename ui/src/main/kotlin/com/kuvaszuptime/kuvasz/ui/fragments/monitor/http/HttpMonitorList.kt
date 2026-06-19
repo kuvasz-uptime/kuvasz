@@ -52,6 +52,7 @@ fun renderHttpMonitorList(
                     tbody {
                         monitors.forEach { monitor ->
                             tr {
+                                testId("http-monitor-row")
                                 xData(
                                     """httpMonitorListItem(
                                     |${monitor.id}, 
@@ -114,10 +115,12 @@ fun renderHttpMonitorList(
                                             classes(FLEX_NOWRAP, BTN_GROUP)
                                             val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
                                             compactIconButton(toggleIcon) {
+                                                testId("http-monitor-toggle-button")
                                                 xBindDisabled("isRequestLoading")
                                                 xOnClick("toggleMonitor()")
                                             }
                                             compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
+                                                testId("http-monitor-delete-button")
                                                 xBindDisabled("isRequestLoading")
                                                 modalOpener(deleteModalId)
                                             }

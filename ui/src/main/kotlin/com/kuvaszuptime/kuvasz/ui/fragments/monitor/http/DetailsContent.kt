@@ -17,7 +17,10 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
     div {
         id = "http-monitor-details-content"
         // Uptime summary
-        h2 { +Messages.uptimeBlockTitle() }
+        h2 {
+            testId("uptime-block-title")
+            +Messages.uptimeBlockTitle()
+        }
         detailsHttpUptimeSummary(monitor, stats)
         // Uptime incidents
         h3 {
@@ -45,6 +48,7 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
         // Latency metrics
         if (monitor.latencyHistoryEnabled) {
             h2 {
+                testId("latency-block-title")
                 +Messages.latencyBlockTitle()
                 span {
                     classes(BADGE)
@@ -55,7 +59,10 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
         }
         // SSL check metrics
         if (monitor.sslCheckEnabled) {
-            h2 { +Messages.sslBlockTitle() }
+            h2 {
+                testId("ssl-block-title")
+                +Messages.sslBlockTitle()
+            }
             detailsSSLSummary(monitor)
             // SSL incidents
             h3 {

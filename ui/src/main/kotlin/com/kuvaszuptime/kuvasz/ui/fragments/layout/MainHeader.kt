@@ -61,12 +61,14 @@ internal fun FlowContent.mainHeader(
                         classes(NAV_LINK, PX_0, HIDE_THEME_DARK)
                         ariaLabel(Messages.enableDarkMode())
                         onClick = "setTheme('dark')"
+                        testId("theme-toggle-dark")
                         icon(Icon.DARK_MODE)
                     }
                     a(href = "#") {
                         classes(NAV_LINK, PX_0, HIDE_THEME_LIGHT)
                         ariaLabel(Messages.enableLightMode())
                         onClick = "setTheme('light')"
+                        testId("theme-toggle-light")
                         icon(Icon.LIGHT_MODE)
                     }
                 }

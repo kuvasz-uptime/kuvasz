@@ -17,7 +17,10 @@ internal fun FlowContent.pushMonitorDetailsContent(monitor: PushMonitorDetailsDt
     div {
         id = "push-monitor-details-content"
         // Uptime summary
-        h2 { +Messages.uptimeBlockTitle() }
+        h2 {
+            testId("uptime-block-title")
+            +Messages.uptimeBlockTitle()
+        }
         detailsPushUptimeSummary(monitor, stats)
         // Uptime incidents
         h3 {

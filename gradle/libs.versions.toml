@@ -1,8 +1,8 @@
 [versions]
 buildconfig = "6.0.10"
-detekt = "2.0.0-alpha.4"
+detekt = "2.0.0-alpha.5"
 detektFormatting = "1.23.8"
-flywayPlugin = "12.8.1"
+flywayPlugin = "12.9.0"
 gitVersion = "5.0.0"
 i18n4k = "0.11.2"
 jib = "3.5.3"
@@ -22,6 +22,7 @@ minify = "2.1.1"
 mockk = "1.14.11"
 mockserver = "7.1.0"
 pebble = "4.1.2"
+playwright = "1.60.0"
 shadow = "9.4.2"
 simpleJavaMail = "8.12.6"
 testcontainers = "2.0.5"
@@ -46,6 +47,7 @@ micronaut-platform = { module = "io.micronaut.platform:micronaut-platform", vers
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockserver-netty = { module = "org.mock-server:mockserver-netty-no-dependencies", version.ref = "mockserver" }
 pebble = { module = "io.pebbletemplates:pebble", version.ref = "pebble" }
+playwright = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }
 simplejavamail = { module = "org.simplejavamail:simple-java-mail", version.ref = "simpleJavaMail" }
 simplejavamail-batchmodule = { module = "org.simplejavamail:batch-module", version.ref = "simpleJavaMail" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }

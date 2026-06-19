@@ -1,0 +1,15 @@
+---
+micronaut:
+  security:
+    enabled: true
+admin-auth:
+  username: e2e-admin
+  password: e2e-admin-password-123
+datasources:
+  default:
+    initialPoolSize: 1
+    maximumPoolSize: 3
+    minimumIdle: 2
+app-config:
+  # No outbound update checks during the E2E run
+  check-updates: false

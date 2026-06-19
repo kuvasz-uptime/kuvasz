@@ -74,6 +74,7 @@ internal fun FlowContent.loginForm(loginErrorMessage: String?) {
                                 div {
                                     classes(ALERT, ALERT_DANGER, ALERT_DISMISSIBLE)
                                     role = "alert"
+                                    testId("login-error")
                                     div {
                                         classes(ALERT_ICON)
                                         icon(Icon.CIRCLE_EXCLAMATION)
@@ -124,6 +125,7 @@ internal fun FlowContent.loginForm(loginErrorMessage: String?) {
                                     classes(FORM_FOOTER)
                                     button(type = ButtonType.submit) {
                                         classes(BTN, BTN_PRIMARY, W_100)
+                                        testId("login-submit-button")
                                         +Messages.signIn()
                                     }
                                 }

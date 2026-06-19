@@ -61,6 +61,7 @@ internal fun FlowContent.deleteModal(
                                     classes(CSSClass.COL)
                                     button {
                                         type = ButtonType.button
+                                        testId("delete-confirm-button")
                                         classes(BTN, BTN_DANGER, W_100)
                                         modalCloser()
                                         xOnClick(xOnApproval)

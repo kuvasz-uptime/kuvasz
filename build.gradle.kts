@@ -1,7 +1,6 @@
 import dev.detekt.gradle.Detekt
-import nl.littlerobots.vcu.plugin.resolver.VersionSelectors
-import nl.littlerobots.vcu.plugin.versionSelector
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
+import nl.littlerobots.vcu.plugin.resolver.VersionSelectors
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 plugins {
@@ -75,7 +74,7 @@ val Project.javaModuleName: String
  *  Groups together all the known Detekt tasks
  */
 tasks.register("detektAll", type = Detekt::class) {
-    val includedTasks = setOf("detekt", "detektMain", "detektTest")
+    val includedTasks = setOf("detekt", "detektMain", "detektTest", "detektUiTest")
     subprojects.forEach { project ->
         project.getAllTasks(true).values.flatten().forEach { task ->
             if (includedTasks.contains(task.name)) {

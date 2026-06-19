@@ -48,6 +48,7 @@ internal fun HtmlBlockTag.pushMonitorDetailsHeader(
                     if (!globals.editabilityState.arePushMonitorsReadOnly()) {
                         button {
                             classes(BTN, BTN_ICON)
+                            testId("toggle-monitor-button")
                             xBindDisabled("isRequestLoading")
                             xOnClick("toggleMonitor()")
                             template {
@@ -63,6 +64,7 @@ internal fun HtmlBlockTag.pushMonitorDetailsHeader(
                     if (!globals.editabilityState.arePushMonitorsReadOnly()) {
                         buttonWithIcon(Icon.SETTINGS, Messages.configure()) {
                             modalOpener(updateModalId)
+                            testId("configure-button")
                         }
                         compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
                             xBindDisabled("isRequestLoading")
@@ -74,6 +76,7 @@ internal fun HtmlBlockTag.pushMonitorDetailsHeader(
                     } else {
                         buttonWithIcon(Icon.EYE, Messages.configuration()) {
                             modalOpener(updateModalId)
+                            testId("configuration-button")
                         }
                     }
                     pushMonitorCreateUpdateModal(updateModalId, monitor, globals)

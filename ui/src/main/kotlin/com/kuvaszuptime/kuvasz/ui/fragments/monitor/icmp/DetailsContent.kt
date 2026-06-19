@@ -16,7 +16,10 @@ import kotlin.time.Duration.Companion.seconds
 internal fun FlowContent.icmpMonitorDetailsContent(monitor: IcmpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) {
     div {
         id = "icmp-monitor-details-content"
-        h2 { +Messages.uptimeBlockTitle() }
+        h2 {
+            testId("uptime-block-title")
+            +Messages.uptimeBlockTitle()
+        }
         detailsIcmpUptimeSummary(monitor, stats)
         h3 {
             +Messages.incidents()

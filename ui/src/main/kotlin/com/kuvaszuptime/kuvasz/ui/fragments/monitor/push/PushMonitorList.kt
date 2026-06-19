@@ -48,6 +48,7 @@ fun renderPushMonitorList(
                     tbody {
                         monitors.forEach { monitor ->
                             tr {
+                                testId("push-monitor-row")
                                 xData(
                                     """pushMonitorListItem(
                                     |${monitor.id}, 
@@ -105,10 +106,12 @@ fun renderPushMonitorList(
                                             classes(FLEX_NOWRAP, BTN_GROUP)
                                             val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
                                             compactIconButton(toggleIcon) {
+                                                testId("push-monitor-toggle-button")
                                                 xBindDisabled("isRequestLoading")
                                                 xOnClick("toggleMonitor()")
                                             }
                                             compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
+                                                testId("push-monitor-delete-button")
                                                 xBindDisabled("isRequestLoading")
                                                 modalOpener(deleteModalId)
                                             }

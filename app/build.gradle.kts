@@ -12,9 +12,9 @@ plugins {
     alias(libs.plugins.micronaut.docker)
     alias(libs.plugins.jib)
     alias(libs.plugins.git.version)
-
     alias(libs.plugins.shadow)
     alias(libs.plugins.buildconfig)
+    `java-test-fixtures`
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra
@@ -108,8 +108,23 @@ dependencies {
     // Templating
     implementation(libs.pebble)
 
+    // Test fixtures: reusable, ProjectConfig-free helpers shared by the `test` and `uiTest` source sets.
+    // Test fixtures only see the main source set's classes, not its `implementation` dependencies, so everything the
+    // helpers reference (the `:model`/`:shared` modules, jOOQ, security credentials, Testcontainers) has to be
+    // re-declared here. They're exposed as `api` so the consuming source sets (`test`, `uiTest`) inherit them too.
+    testFixturesApi(project(":model"))
+    testFixturesApi(project(":shared"))
+    testFixturesImplementation(mn.jackson.module.kotlin)
+    testFixturesImplementation(mn.micronaut.jooq)
+    testFixturesImplementation(libs.jooq.kotlin)
+    testFixturesImplementation(mn.micronaut.security.jwt)
+    testFixturesImplementation(libs.testcontainers)
+    testFixturesImplementation(libs.testcontainers.pg)
+    testFixturesImplementation(libs.testcontainers.keycloak)
+
     // Testing
     kaptTest(mn.micronaut.inject.java)
+    testImplementation(testFixtures(project()))
     testImplementation(libs.mockk)
     testImplementation(mn.micronaut.test.kotest5)
     testImplementation(libs.kotest.data)
@@ -134,6 +149,84 @@ allOpen {
 
 tasks.withType<Test> {
     jvmArgs("-Xmx2048M")
+}
+
+/**
+ * A dedicated `uiTest` source set holding the browser-driven (Playwright) end-to-end suite. It boots the real
+ * Micronaut app in-process against the shared Testcontainers Postgres and drives it through a headless Chromium.
+ * It is intentionally NOT part of `check` (run it explicitly via `./gradlew :app:uiTest`) and is excluded from the
+ * kover coverage gate, since E2E coverage shouldn't contaminate the unit/integration coverage numbers.
+ */
+testing {
+    suites {
+        register<JvmTestSuite>("uiTest") {
+            useJUnitJupiter()
+            dependencies {
+                implementation(project())
+                // The shared/model modules are only `implementation` deps of `:app`, so they aren't visible
+                // transitively. Declare them explicitly so the specs can reference i18n `Messages`, `MonitorID`, etc.
+                implementation(project(":model"))
+                implementation(project(":shared"))
+                implementation(testFixtures(project()))
+                implementation(mn.micronaut.test.kotest5)
+                implementation(mn.kotest.runner.junit5.jvm)
+                implementation(mn.micronaut.jooq)
+                implementation(libs.jooq.kotlin)
+                implementation(libs.testcontainers)
+                implementation(libs.testcontainers.pg)
+                implementation(libs.testcontainers.keycloak)
+                implementation(libs.mockk)
+                implementation(libs.playwright)
+                implementation(libs.i18n4k)
+            }
+            targets.all {
+                testTask.configure {
+                    jvmArgs("-Xmx2048M")
+                    // Always run after the fast unit/integration suite when both are requested
+                    shouldRunAfter(tasks.named("test"))
+                    // Lets local debugging open a headed browser: `./gradlew :app:uiTest -Dui.headed=true`
+                    systemProperty("ui.headed", System.getProperty("ui.headed", "false"))
+                    // Point Kotest straight at this source set's project config (which registers the Micronaut
+                    // extension + boots the Testcontainers Postgres). Unlike the `test` task, this custom JVM Test
+                    // Suite isn't wired up by the Micronaut Gradle plugin, so classpath auto-detection isn't set up.
+                    systemProperty(
+                        "kotest.framework.config.fqn",
+                        "com.kuvaszuptime.kuvasz.uitest.UiTestProjectConfig",
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Micronaut's annotation processor has to run over the `uiTest` source set as well, so that `@MicronautTest` can
+// inject beans (the `EmbeddedServer`, `DSLContext`) into the specs the same way it does for the `test` source set.
+dependencies {
+    add("kaptUiTest", mn.micronaut.inject.java)
+}
+
+kover {
+    currentProject {
+        instrumentation {
+            disabledForTestTasks.add("uiTest")
+        }
+        sources {
+            excludedSourceSets.addAll("uiTest", "testFixtures")
+        }
+    }
+}
+
+/**
+ * Installs the headless Chromium that the Playwright-driven `uiTest` suite drives. Locally Playwright downloads the
+ * browser automatically on first launch, so this is mostly for CI, where `--with-deps` also pulls in the required OS
+ * libraries.
+ */
+val installPlaywrightChromium by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Installs the headless Chromium used by the Playwright-driven uiTest suite."
+    classpath = sourceSets["uiTest"].runtimeClasspath
+    mainClass.set("com.microsoft.playwright.CLI")
+    args("install", "--with-deps", "chromium")
 }
 
 tasks.withType<JavaExec> {

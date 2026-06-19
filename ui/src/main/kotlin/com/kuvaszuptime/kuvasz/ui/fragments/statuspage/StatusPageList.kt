@@ -123,12 +123,14 @@ private fun FlowContent.statusPageVisibilityStatus(isPublic: Boolean) {
 
     span {
         colorClass?.let { classes(it) }
+        testId(if (isPublic) "status-page-public-indicator" else "status-page-private-indicator")
         icon(icon)
     }
 }
 
 private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDto) {
     tr {
+        testId("status-page-row")
         xData("statusPageListItem(${page.id}, ${page.public})")
         // ID
         th {
@@ -213,6 +215,7 @@ private fun FlowContent.toggleVisibilityButton(
     val toggleTooltip = if (isPublic) Messages.unpublish() else Messages.publish()
 
     compactIconButton(toggleIcon) {
+        testId("status-page-toggle-visibility-button")
         xBindDisabled(xDisabledIf)
         xOnClick(xOnClick)
         tooltip(toggleTooltip)

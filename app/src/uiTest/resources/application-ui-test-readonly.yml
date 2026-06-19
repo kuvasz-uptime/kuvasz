@@ -1,0 +1,18 @@
+---
+http-monitors:
+  - name: yaml-http-monitor
+    url: https://example.com
+    uptime-check-interval: 60
+push-monitors:
+  - name: yaml-push-monitor
+    client-secret: yaml-push-monitor-secret-0123456789abc
+    heartbeat-interval: 300
+icmp-monitors:
+  - name: yaml-icmp-monitor
+    host: 127.0.0.1
+    uptime-check-interval: 60
+status-pages:
+  - title: YAML Status Page
+    slug: yaml-status-page
+    monitors:
+      - 'http:yaml-http-monitor'

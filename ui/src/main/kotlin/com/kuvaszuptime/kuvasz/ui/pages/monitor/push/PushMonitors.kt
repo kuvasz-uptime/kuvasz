@@ -81,6 +81,7 @@ internal fun HtmlBlockTag.pushMonitorsHeader(globals: AppGlobals) {
                                     classes = setOf(BTN_PRIMARY, D_NONE, D_MD_BLOCK)
                                 ) {
                                     modalOpener(createPushModalId)
+                                    testId("add-new-button")
                                 }
                                 compactIconButton(Icon.PLUS, classes = setOf(BTN_PRIMARY, D_MD_NONE)) {
                                     modalOpener(createPushModalId)

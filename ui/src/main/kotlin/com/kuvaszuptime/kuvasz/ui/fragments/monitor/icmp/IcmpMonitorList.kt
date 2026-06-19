@@ -48,6 +48,7 @@ fun renderIcmpMonitorList(
                     tbody {
                         monitors.forEach { monitor ->
                             tr {
+                                testId("icmp-monitor-row")
                                 xData(
                                     """icmpMonitorListItem(
                                     |${monitor.id},
@@ -95,10 +96,12 @@ fun renderIcmpMonitorList(
                                             classes(FLEX_NOWRAP, BTN_GROUP)
                                             val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
                                             compactIconButton(toggleIcon) {
+                                                testId("icmp-monitor-toggle-button")
                                                 xBindDisabled("isRequestLoading")
                                                 xOnClick("toggleMonitor()")
                                             }
                                             compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
+                                                testId("icmp-monitor-delete-button")
                                                 xBindDisabled("isRequestLoading")
                                                 modalOpener(deleteModalId)
                                             }

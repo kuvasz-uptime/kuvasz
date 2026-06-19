@@ -173,6 +173,7 @@ internal fun FlowContent.sslStatusOfMonitor(
 
 internal fun FlowContent.readOnlyBadge(tooltipText: String) {
     span {
+        testId("read-only-badge")
         classes(BADGE, TEXT_BLUE_LT_FG, BG_BLUE_LT, MS_2)
         tooltip(tooltipText)
         icon(Icon.LOCK_COG)

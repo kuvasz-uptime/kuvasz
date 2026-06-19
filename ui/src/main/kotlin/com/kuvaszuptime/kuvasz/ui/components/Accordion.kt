@@ -36,6 +36,7 @@ internal fun FlowContent.accordionItem(
                 classes(classes)
                 collapseToggler()
                 dataBsTarget("#$id")
+                testId("accordion-toggle-$id")
                 titleIcon?.let { icon(it) }
                 +title
                 additionalTitleContent()
