@@ -7,7 +7,7 @@ pluginManagement {
 }
 
 plugins {
-    id("io.micronaut.platform.catalog") version "5.0.0"
+    id("io.micronaut.platform.catalog") version "5.0.1"
 }
 
 dependencyResolutionManagement {
