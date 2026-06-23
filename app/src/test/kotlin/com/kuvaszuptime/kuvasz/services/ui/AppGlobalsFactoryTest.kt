@@ -68,6 +68,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
             }
         }
 
@@ -93,6 +94,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
             }
         }
 
@@ -118,6 +120,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
+                globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
             }
         }
 
@@ -126,6 +129,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             appConfig.disableHttpMonitorExternalWrite()
             appConfig.disablePushMonitorExternalWrite()
             appConfig.disableStatusPageExternalWrite()
+            appConfig.disableMaintenanceWindowExternalWrite()
             val globals = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -141,6 +145,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areHttpMonitorsReadOnly() shouldBe true
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe true
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
+                globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe true
             }
         }
 
@@ -159,10 +164,12 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
             globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
+            globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
 
             appConfig.disableHttpMonitorExternalWrite()
             appConfig.disableStatusPageExternalWrite()
             appConfig.disablePushMonitorExternalWrite()
+            appConfig.disableMaintenanceWindowExternalWrite()
             val globalsAfterUpdate = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -178,6 +185,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globalsAfterUpdate.editabilityState.areHttpMonitorsReadOnly() shouldBe true
                 globalsAfterUpdate.editabilityState.areStatusPagesReadOnly() shouldBe true
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
+                globalsAfterUpdate.editabilityState.areMaintenanceWindowsReadOnly() shouldBe true
             }
         }
 

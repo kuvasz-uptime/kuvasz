@@ -1,0 +1,12 @@
+maintenance-windows:
+  - name: Nightly maintenance
+    description: Updated description
+    cron: "0 3 * * *"
+    duration: PT30M
+    show-on-status-pages: false
+    monitors:
+      - "http:test1"
+      - "http:test3"
+  - name: Brand new window
+    enabled: false
+    global: true

@@ -52,6 +52,7 @@ data class EditabilityStateSchema(
     val arePushMonitorsReadOnly: Boolean,
     val areIcmpMonitorsReadOnly: Boolean,
     val areStatusPagesReadOnly: Boolean,
+    val areMaintenanceWindowsReadOnly: Boolean,
 ) {
     companion object {
         fun fromDto(dto: SettingsDto.AppSettingsDto.EditabilityStateDto) = EditabilityStateSchema(
@@ -59,6 +60,7 @@ data class EditabilityStateSchema(
             arePushMonitorsReadOnly = dto.arePushMonitorsReadOnly,
             areIcmpMonitorsReadOnly = dto.areIcmpMonitorsReadOnly,
             areStatusPagesReadOnly = dto.areStatusPagesReadOnly,
+            areMaintenanceWindowsReadOnly = dto.areMaintenanceWindowsReadOnly,
         )
     }
 }

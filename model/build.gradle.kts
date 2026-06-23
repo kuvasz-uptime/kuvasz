@@ -143,14 +143,14 @@ jooq {
                                 isGenericConverter = false
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression =
-                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS"
+                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToMonitorIdArrayConverter"
                                 isGenericConverter = false
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
-                                includeExpression = "STATUS_PAGE.MONITORS"
+                                includeExpression = "STATUS_PAGE.MONITORS|MAINTENANCE_WINDOW.MONITORS"
                             }
                             forcedType {
                                 userType = "tools.jackson.databind.JsonNode"

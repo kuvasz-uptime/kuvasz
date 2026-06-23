@@ -41,6 +41,7 @@ class AppGlobalsFactory {
             arePushMonitorsReadOnly = { appConfig.isPushMonitorExternalWriteDisabled() },
             areIcmpMonitorsReadOnly = { appConfig.isIcmpMonitorExternalWriteDisabled() },
             areStatusPagesReadOnly = { appConfig.isStatusPageExternalWriteDisabled() },
+            areMaintenanceWindowsReadOnly = { appConfig.isMaintenanceWindowExternalWriteDisabled() },
         ),
         isAuthenticated = { securityService?.isAuthenticated ?: true },
         isAuthEnabled = securityService != null,

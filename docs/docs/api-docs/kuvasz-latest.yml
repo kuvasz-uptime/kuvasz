@@ -13,6 +13,7 @@ tags:
 - name: HTTP monitors
 - name: Incidents
 - name: Integrations
+- name: Maintenance windows
 - name: Management
 - name: Monitors
 - name: Push monitors
@@ -675,6 +676,182 @@ paths:
                 $ref: "#/components/schemas/NotificationTestResult"
         "400":
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/maintenance-windows:
+    get:
+      tags:
+      - Maintenance windows
+      summary: Get all maintenance windows
+      operationId: getMaintenanceWindows
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - Maintenance windows
+      summary: Create a maintenance window
+      operationId: createMaintenanceWindow
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaintenanceWindowCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/maintenance-windows/export/yaml:
+    get:
+      tags:
+      - Maintenance windows
+      summary: Download the export of all maintenance windows in YAML format
+      operationId: getYamlMaintenanceWindowsExport
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/maintenance-windows/{maintenanceWindowId}:
+    get:
+      tags:
+      - Maintenance windows
+      summary: Get a maintenance window
+      operationId: getMaintenanceWindow
+      parameters:
+      - name: maintenanceWindowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - Maintenance windows
+      summary: Delete a maintenance window by ID
+      operationId: deleteMaintenanceWindow
+      parameters:
+      - name: maintenanceWindowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - Maintenance windows
+      summary: Update a maintenance window by ID
+      description: Updates the maintenance window with the given ID. Only fields that
+        are present in the request body will be updated. Fields not present in the
+        request body will remain unchanged.
+      operationId: updateMaintenanceWindow
+      parameters:
+      - name: maintenanceWindowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaintenanceWindowUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
           content:
             application/json:
               schema:
@@ -3004,6 +3181,225 @@ components:
           description: The 99th percentile latency in milliseconds for the monitor
           format: int32
           nullable: true
+    MaintenanceWindowCreateDto:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: Unique name of the maintenance window
+          x-size-message: Maintenance window name must not be blank
+        description:
+          type: string
+          description: Optional human-readable description of the maintenance window
+          nullable: true
+        enabled:
+          type: boolean
+          description: "Master on/off switch. For cron and single windows this is\
+            \ necessary but not sufficient: the schedule still decides whether the\
+            \ window is currently active. A manual window (no 'cron' and no 'start')\
+            \ is active whenever this is true."
+          default: true
+        global:
+          type: boolean
+          description: "Whether the window applies to every monitor, regardless of\
+            \ the 'monitors' list"
+          default: false
+        showOnStatusPages:
+          type: boolean
+          description: Whether the window can be displayed on status pages
+          default: false
+        cron:
+          type: string
+          description: "Cron expression for a recurring window (standard cron syntax,\
+            \ but supports extensions like #, L, W). Mutually exclusive with 'start'\
+            \ and requires 'duration'. Evaluated in the server's time zone."
+          nullable: true
+        start:
+          type: string
+          description: "Start timestamp for a single, one-shot window (may be in the\
+            \ past). Mutually exclusive with 'cron' and requires 'duration'."
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          description: ISO-8601 duration of the window (e.g. 'PT1H30M'). Required
+            for cron and single windows.
+          nullable: true
+        monitors:
+          type: array
+          description: Set of monitor IDs the window applies to (ignored when 'global'
+            is true)
+          nullable: true
+          items:
+            type: string
+        integrations:
+          type: array
+          description: Set of integration IDs that receive the window's start and
+            end notifications
+          nullable: true
+          items:
+            type: string
+    MaintenanceWindowDetailsDto:
+      required:
+      - active
+      - createdAt
+      - enabled
+      - global
+      - id
+      - integrations
+      - monitors
+      - name
+      - showOnStatusPages
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the maintenance window
+          format: int64
+        name:
+          type: string
+          description: Unique name of the maintenance window
+        description:
+          type: string
+          description: Optional human-readable description of the maintenance window
+          nullable: true
+        enabled:
+          type: boolean
+          description: "Master on/off switch. For cron and single windows this is\
+            \ necessary but not sufficient: the schedule still decides whether the\
+            \ window is currently active. A manual window (no 'cron' and no 'start')\
+            \ is active whenever this is true."
+        global:
+          type: boolean
+          description: "Whether the window applies to every monitor, regardless of\
+            \ the 'monitors' list"
+        showOnStatusPages:
+          type: boolean
+          description: Whether the window can be displayed on status pages
+        cron:
+          type: string
+          description: "Cron expression for a recurring window (standard cron syntax,\
+            \ but supports extensions like #, L, W). Mutually exclusive with 'start'\
+            \ and requires 'duration'. Evaluated in the server's time zone."
+          nullable: true
+        start:
+          type: string
+          description: "Start timestamp for a single, one-shot window (may be in the\
+            \ past). Mutually exclusive with 'cron' and requires 'duration'."
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          description: ISO-8601 duration of the window (e.g. 'PT1H30M'). Required
+            for cron and single windows.
+          nullable: true
+        monitors:
+          type: array
+          description: Set of monitor IDs the window applies to (ignored when 'global'
+            is true)
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        integrations:
+          type: array
+          description: Set of integration IDs that receive the window's start and
+            end notifications
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        active:
+          type: boolean
+          description: Whether the window is currently active
+        nextStart:
+          type: string
+          description: "Timestamp of the next time the window will start, or null\
+            \ if there is no future occurrence"
+          format: date-time
+          nullable: true
+        endsAt:
+          type: string
+          description: "Timestamp when the currently active window will end, or null\
+            \ if it is not active or is an indefinitely running manual window"
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          description: Timestamp of when the window was created
+          format: date-time
+        updatedAt:
+          type: string
+          description: Timestamp of when the window was last updated
+          format: date-time
+    MaintenanceWindowUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: Unique name of the maintenance window
+          nullable: false
+          x-size-message: Maintenance window name must not be blank
+        description:
+          type: string
+          description: Optional human-readable description of the maintenance window
+          nullable: true
+        enabled:
+          type: boolean
+          description: "Master on/off switch. For cron and single windows this is\
+            \ necessary but not sufficient: the schedule still decides whether the\
+            \ window is currently active. A manual window (no 'cron' and no 'start')\
+            \ is active whenever this is true."
+          nullable: false
+        global:
+          type: boolean
+          description: "Whether the window applies to every monitor, regardless of\
+            \ the 'monitors' list"
+          nullable: false
+        showOnStatusPages:
+          type: boolean
+          description: Whether the window can be displayed on status pages
+          nullable: false
+        cron:
+          type: string
+          description: "Cron expression for a recurring window (standard cron syntax,\
+            \ but supports extensions like #, L, W). Mutually exclusive with 'start'\
+            \ and requires 'duration'. Evaluated in the server's time zone."
+          nullable: true
+        start:
+          type: string
+          description: "Start timestamp for a single, one-shot window (may be in the\
+            \ past). Mutually exclusive with 'cron' and requires 'duration'."
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          description: ISO-8601 duration of the window (e.g. 'PT1H30M'). Required
+            for cron and single windows.
+          nullable: true
+        monitors:
+          type: array
+          description: Set of monitor IDs the window applies to (ignored when 'global'
+            is true)
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        integrations:
+          type: array
+          description: Set of integration IDs that receive the window's start and
+            end notifications
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
     NotificationTestResult:
       required:
       - message
@@ -3633,6 +4029,7 @@ components:
       required:
       - areHttpMonitorsReadOnly
       - areIcmpMonitorsReadOnly
+      - areMaintenanceWindowsReadOnly
       - arePushMonitorsReadOnly
       - areStatusPagesReadOnly
       type: object
@@ -3649,6 +4046,9 @@ components:
         areIcmpMonitorsReadOnly:
           type: boolean
           description: Whether the ICMP monitors are in read-only mode
+        areMaintenanceWindowsReadOnly:
+          type: boolean
+          description: Whether the maintenance windows are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge

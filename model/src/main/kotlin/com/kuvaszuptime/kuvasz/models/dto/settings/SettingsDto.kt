@@ -73,6 +73,9 @@ data class SettingsDto(
 
             @param:Schema(description = "Whether the ICMP monitors are in read-only mode", required = true)
             val areIcmpMonitorsReadOnly: Boolean,
+
+            @param:Schema(description = "Whether the maintenance windows are in read-only mode", required = true)
+            val areMaintenanceWindowsReadOnly: Boolean,
         )
     }
 

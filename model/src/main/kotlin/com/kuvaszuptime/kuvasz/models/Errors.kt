@@ -69,6 +69,15 @@ class StatusPageNotFoundException(
     override val message: String? = "There is no status page with ID/slug: $statusPageId",
 ) : ResourceNotFoundException()
 
+class MaintenanceWindowDuplicatedException(
+    override val message: String? = "There is already a maintenance window with the given name"
+) : DuplicationException()
+
+class MaintenanceWindowNotFoundException(
+    val maintenanceWindowId: String,
+    override val message: String? = "There is no maintenance window with ID: $maintenanceWindowId",
+) : ResourceNotFoundException()
+
 sealed class ReadOnlyResourceException(override val message: String) : Exception()
 
 class ReadOnlyMonitorException : ReadOnlyResourceException(
@@ -78,6 +87,11 @@ class ReadOnlyMonitorException : ReadOnlyResourceException(
 
 class ReadOnlyStatusPageException : ReadOnlyResourceException(
     "The status pages were configured via a YAML file. " +
+        "You cannot modify them via the API. Please change the configuration in the YAML file and restart the server."
+)
+
+class ReadOnlyMaintenanceWindowException : ReadOnlyResourceException(
+    "The maintenance windows were configured via a YAML file. " +
         "You cannot modify them via the API. Please change the configuration in the YAML file and restart the server."
 )
 

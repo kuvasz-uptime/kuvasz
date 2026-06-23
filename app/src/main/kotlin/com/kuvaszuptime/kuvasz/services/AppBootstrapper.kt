@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
+import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
@@ -19,6 +20,7 @@ import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageImporter
 import io.micronaut.context.annotation.Context
@@ -44,6 +46,8 @@ class AppBootstrapper(
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
+    private val yamlMaintenanceWindowConfigs: List<MaintenanceWindowConfig>,
+    private val maintenanceWindowImporter: MaintenanceWindowImporter,
     private val apiKeyConfig: ApiKeyConfig?,
 ) {
 
@@ -67,6 +71,11 @@ class AppBootstrapper(
     @field:Property(name = StatusPageConfig.CONFIG_PREFIX)
     protected var statusPagesYAMLConfigChecker: List<Any>? = null
 
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = MaintenanceWindowConfig.CONFIG_PREFIX)
+    protected var maintenanceWindowsYAMLConfigChecker: List<Any>? = null
+
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
     @PostConstruct
@@ -79,6 +88,8 @@ class AppBootstrapper(
         sanitizeIntegrationsOfMonitors()
         // Importing status pages from config if any are present
         processYamlStatusPageConfigs()
+        // Importing maintenance windows from config if any are present
+        processYamlMaintenanceWindowConfigs()
         // Conditionally initialize the metrics export if enabled
         metricsExportRegistry?.initialize()
         // Scheduling the initial checks (HTTP uptime & SSL)
@@ -242,6 +253,32 @@ class AppBootstrapper(
             logger.info(
                 "No YAML status page config was found. " +
                     "External modifications of status pages are enabled. Loading status pages from DB..."
+            )
+        }
+    }
+
+    /**
+     * Processes the YAML maintenance window configs. If any YAML config is found, it disables external modifications
+     * of maintenance windows
+     */
+    private fun processYamlMaintenanceWindowConfigs() {
+        // The maintenanceWindowsYAMLConfigChecker is a workaround to check if the maintenance-windows config is present
+        // in the YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants
+        // to have zero maintenance windows, so we should disable external writes and delete all windows from the
+        // DB eventually.
+        val isYamlConfigEffective =
+            yamlMaintenanceWindowConfigs.isNotEmpty() || maintenanceWindowsYAMLConfigChecker != null
+        if (isYamlConfigEffective) {
+            appConfig.disableMaintenanceWindowExternalWrite()
+            logger.info(
+                "Disabled external modifications of maintenance windows, because a YAML config was found. " +
+                    "Loading maintenance windows from YAML config..."
+            )
+            maintenanceWindowImporter.importMaintenanceWindowConfigs(yamlMaintenanceWindowConfigs)
+        } else {
+            logger.info(
+                "No YAML maintenance window config was found. " +
+                    "External modifications of maintenance windows are enabled. Loading maintenance windows from DB..."
             )
         }
     }
