@@ -24,8 +24,12 @@
 
 2. Get admin credentials:
 {{- if .Values.auth.enabled }}
+{{- if .Values.auth.oidc.enabled }}
+  OIDC authentication is enabled. Use your OIDC provider to sign in.
+{{- else }}
   echo "Admin Username: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-user}' | base64 -d)"
   echo "Admin Password: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-password}' | base64 -d)"
+{{- end }}
   echo "Admin API Key: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-api-key}' | base64 -d)"
 {{- else }}
   Authentication is disabled. You can access the application directly.
@@ -44,4 +48,3 @@
   Database: {{ include "kuvasz.databaseName" . }}
   Username: {{ include "kuvasz.databaseUser" . }}
 {{- end }}
-

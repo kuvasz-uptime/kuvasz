@@ -179,6 +179,38 @@ config:
         uptime-check-interval: 60
 ```
 
+### OIDC authentication
+
+You can configure OpenID Connect instead of the built-in username/password login form:
+
+```yaml
+auth:
+  enabled: true
+  oidc:
+    enabled: true
+    issuer: "https://keycloak.example.com/realms/kuvasz"
+    clientId: "kuvasz"
+    clientSecret: "your-client-secret"
+    authorizationServer: "KEYCLOAK"
+    allowedEmails:
+      - admin@example.com
+    requireVerifiedEmail: true
+```
+
+When OIDC is enabled, `auth.adminUser` and `auth.adminPassword` are ignored. `auth.adminApiKey` remains independent and can still be used for REST API access.
+
+For production, prefer using an existing Kubernetes Secret for the OIDC client secret:
+
+```yaml
+auth:
+  oidc:
+    enabled: true
+    issuer: "https://keycloak.example.com/realms/kuvasz"
+    clientId: "kuvasz"
+    existingSecret: "kuvasz-oidc"
+    existingSecretClientSecretKey: "client-secret"
+```
+
 ## Upgrading
 
 To upgrade to a new version of Kuvasz:

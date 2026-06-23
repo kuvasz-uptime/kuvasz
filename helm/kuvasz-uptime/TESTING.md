@@ -42,6 +42,18 @@ This uses the `test-values-internal-db.yaml` file which configures:
 - Custom authentication credentials
 - Default service configuration
 
+### 4. Render with OIDC authentication
+
+```bash
+helm template test-release . -f test-values-oidc.yaml > rendered-oidc.yaml
+```
+
+This uses the `test-values-oidc.yaml` file which configures:
+
+- External PostgreSQL database
+- OIDC authentication
+- Existing Secret for the OIDC client secret
+
 ## Validate Chart
 
 ### Lint the chart
@@ -90,6 +102,21 @@ helm template test-release . \
   --set externalDatabase.existingSecretPasswordKey=password
 ```
 
+### Test with OIDC
+
+```bash
+helm template test-release . \
+  --set postgresql.enabled=false \
+  --set externalDatabase.host=postgres.example.com \
+  --set externalDatabase.user=kuvasz \
+  --set externalDatabase.password=secret \
+  --set externalDatabase.database=kuvasz \
+  --set auth.oidc.enabled=true \
+  --set auth.oidc.issuer=https://keycloak.example.com/realms/kuvasz \
+  --set auth.oidc.clientId=kuvasz \
+  --set auth.oidc.clientSecret=oidc-client-secret
+```
+
 ## Verify Generated Resources
 
 ### Check all generated resources
@@ -125,6 +152,9 @@ helm template test-release . -f test-values.yaml | grep "ENABLE_AUTH"
 
 # Check admin credentials secret reference
 helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_USER"
+
+# Check OIDC configuration
+helm template test-release . -f test-values-oidc.yaml | grep -A 20 "ENABLE_OIDC"
 ```
 
 ## Test with Different Namespaces

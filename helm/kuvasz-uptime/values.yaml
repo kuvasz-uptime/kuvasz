@@ -117,6 +117,23 @@ auth:
   adminUser: ""
   adminPassword: ""
   adminApiKey: ""
+  # OIDC authentication configuration
+  # When enabled, the username/password login form is disabled.
+  oidc:
+    enabled: false
+    issuer: ""
+    clientId: ""
+    # Prefer existingSecret in production.
+    clientSecret: ""
+    existingSecret: ""
+    existingSecretClientSecretKey: "oidc-client-secret"
+    # Optional provider hint, for example KEYCLOAK, OKTA, AUTH0.
+    authorizationServer: ""
+    # Also log out from the OIDC provider when logging out of Kuvasz.
+    endSessionEnabled: true
+    # Empty means every authenticated OIDC user is allowed.
+    allowedEmails: []
+    requireVerifiedEmail: true
 
 # Database configuration
 # Two options:

@@ -63,22 +63,32 @@ postgresql:
 
 The following table lists the most important parameters and their default values:
 
-| Parameter            | Description                                                                                                              | Default                   |
-|----------------------|--------------------------------------------------------------------------------------------------------------------------|---------------------------|
-| `image.repository`   | Image repository                                                                                                         | `kuvaszmonitoring/kuvasz` |
-| `image.tag`          | Image tag                                                                                                                | `latest`                  |
-| `image.pullPolicy`   | Image pull policy                                                                                                        | `IfNotPresent`            |
-| `service.type`       | Service type                                                                                                             | `ClusterIP`               |
-| `service.port`       | Service port                                                                                                             | `8080`                    |
-| `ingress.enabled`    | Enable ingress                                                                                                           | `false`                   |
-| `auth.enabled`       | Enable authentication                                                                                                    | `true`                    |
-| `auth.adminUser`     | Admin username (auto-generated if empty)                                                                                 | `""`                      |
-| `auth.adminPassword` | Admin password (auto-generated if empty)                                                                                 | `""`                      |
-| `auth.adminApiKey`   | Admin API key (auto-generated if empty)                                                                                  | `""`                      |
-| `postgresql.enabled` | Deploy PostgreSQL                                                                                                        | `true`                    |
-| `externalDatabase`   | External database configuration, check out `values.yaml` in case you would like to use your existing PostgreSQL instance |                           |
-| `timezone`           | Timezone                                                                                                                 | `UTC`                     |
-| `resources`          | Resource limits/requests                                                                                                 | See `values.yaml`         |
+| Parameter                                      | Description                                                                                                              | Default                   |
+|------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|---------------------------|
+| `image.repository`                             | Image repository                                                                                                         | `kuvaszmonitoring/kuvasz` |
+| `image.tag`                                    | Image tag                                                                                                                | `latest`                  |
+| `image.pullPolicy`                             | Image pull policy                                                                                                        | `IfNotPresent`            |
+| `service.type`                                 | Service type                                                                                                             | `ClusterIP`               |
+| `service.port`                                 | Service port                                                                                                             | `8080`                    |
+| `ingress.enabled`                              | Enable ingress                                                                                                           | `false`                   |
+| `auth.enabled`                                 | Enable authentication                                                                                                    | `true`                    |
+| `auth.adminUser`                               | Admin username (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
+| `auth.adminPassword`                           | Admin password (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
+| `auth.adminApiKey`                             | Admin API key (auto-generated if empty)                                                                                  | `""`                      |
+| `auth.oidc.enabled`                            | Enable OIDC login                                                                                                        | `false`                   |
+| `auth.oidc.issuer`                             | OIDC issuer URL                                                                                                          | `""`                      |
+| `auth.oidc.clientId`                           | OIDC client ID                                                                                                           | `""`                      |
+| `auth.oidc.clientSecret`                       | OIDC client secret, stored in the admin Secret                                                                           | `""`                      |
+| `auth.oidc.existingSecret`                     | Existing Secret containing the OIDC client secret                                                                        | `""`                      |
+| `auth.oidc.existingSecretClientSecretKey`      | Key in the OIDC existing Secret                                                                                          | `oidc-client-secret`      |
+| `auth.oidc.authorizationServer`                | Optional provider hint, for example `KEYCLOAK`, `OKTA`, `AUTH0`                                                          | `""`                      |
+| `auth.oidc.endSessionEnabled`                  | Log out from the OIDC provider when logging out of Kuvasz                                                                | `true`                    |
+| `auth.oidc.allowedEmails`                      | Email allowlist for OIDC users. Empty allows any authenticated OIDC user                                                 | `[]`                      |
+| `auth.oidc.requireVerifiedEmail`               | Require `email_verified=true` when `allowedEmails` is configured                                                         | `true`                    |
+| `postgresql.enabled`                           | Deploy PostgreSQL                                                                                                        | `true`                    |
+| `externalDatabase`                             | External database configuration, check out `values.yaml` in case you would like to use your existing PostgreSQL instance |                           |
+| `timezone`                                     | Timezone                                                                                                                 | `UTC`                     |
+| `resources`                                    | Resource limits/requests                                                                                                 | See `values.yaml`         |
 
 ## Database Options
 
@@ -149,6 +159,38 @@ kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-api-key
 If you want to manage the admin secret externally (e.g. sealed secrets) you can disable the autogeneration with:
 ```yaml
 externalAdminSecret: true
+```
+
+### OIDC authentication
+
+OIDC can be used instead of the built-in username/password login form:
+
+```yaml
+auth:
+  enabled: true
+  oidc:
+    enabled: true
+    issuer: "https://keycloak.example.com/realms/kuvasz"
+    clientId: "kuvasz"
+    clientSecret: "your-client-secret"
+    authorizationServer: "KEYCLOAK"
+    allowedEmails:
+      - admin@example.com
+    requireVerifiedEmail: true
+```
+
+When OIDC is enabled, `auth.adminUser` and `auth.adminPassword` are ignored by the application. `auth.adminApiKey` remains independent and can still be used for REST API access.
+
+For production, prefer storing the OIDC client secret in an existing Kubernetes Secret:
+
+```yaml
+auth:
+  oidc:
+    enabled: true
+    issuer: "https://keycloak.example.com/realms/kuvasz"
+    clientId: "kuvasz"
+    existingSecret: "kuvasz-oidc"
+    existingSecretClientSecretKey: "client-secret"
 ```
 
 ## Upgrading
