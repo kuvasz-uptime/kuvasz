@@ -476,6 +476,12 @@ private fun HtmlBlockTag.settingsPageHeader() {
                                         icon(Icon.DOWNLOAD)
                                         +Messages.downloadStatusPageBackup()
                                     }
+                                    a(href = "/api/v2/maintenance-windows/export/yaml") {
+                                        classes(DROPDOWN_ITEM)
+                                        attributes["download"] = "true"
+                                        icon(Icon.DOWNLOAD)
+                                        +Messages.downloadMaintenanceWindowBackup()
+                                    }
                                 }
                             }
                         }
