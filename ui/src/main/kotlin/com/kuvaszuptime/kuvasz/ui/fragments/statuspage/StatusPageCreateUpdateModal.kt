@@ -164,7 +164,7 @@ internal fun FlowContent.statusPageCreateUpdateModal(
     handleFormResetOnModalClose(modalId = modalId, eventName = modalClosedEvent)
 }
 
-private fun FlowContent.monitorSelector(
+fun FlowContent.monitorSelector(
     xModelName: String,
     monitorsSelectId: String,
     isReadOnly: Boolean,

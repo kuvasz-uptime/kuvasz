@@ -1778,3 +1778,359 @@ const patchStatusPageRequest = (
         alert('An error occurred while toggling the status page.');
     });
 };
+
+// ---------------------------------------------------------------------------
+// Maintenance windows
+// ---------------------------------------------------------------------------
+
+const MAINTENANCE_WINDOW_TYPES = {MANUAL: 'MANUAL', CRON: 'CRON', SINGLE: 'SINGLE'};
+
+// Matches a positive ISO-8601 duration (weeks/days/time components), e.g. PT1H30M, P1DT2H, PT45S
+const isoDurationRegex = /^P(?:\d+W)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$/;
+
+const isValidIsoDuration = (value) => {
+    if (!value || !isoDurationRegex.test(value)) return false;
+    const numbers = value.match(/\d+(?:\.\d+)?/g);
+    return !!numbers && numbers.some(n => parseFloat(n) > 0);
+};
+
+// Validates a cron expression server-side against Micronaut's CronExpression parser (the single source of truth).
+// Returns true when valid and false on a 400; network/other errors fail open so the authoritative submit can decide.
+const isValidCronExpression = async (value) => {
+    try {
+        const response = await fetch('/api/internal/validation/cron?value=' + encodeURIComponent(value));
+        return response.status !== 400;
+    } catch (error) {
+        console.error('Error validating cron expression:', error);
+        return true;
+    }
+};
+
+// Converts an ISO timestamp into the value expected by a datetime-local input (in the browser's local time)
+const toDateTimeLocalValue = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+        `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const resolveMaintenanceWindowType = (window) => {
+    if (!window) return MAINTENANCE_WINDOW_TYPES.MANUAL;
+    if (window.cron) return MAINTENANCE_WINDOW_TYPES.CRON;
+    if (window.start) return MAINTENANCE_WINDOW_TYPES.SINGLE;
+    return MAINTENANCE_WINDOW_TYPES.MANUAL;
+};
+
+const refreshMaintenanceWindowList = () => {
+    sendHtmxEvent('#maintenance-window-list', 'refresh-maintenance-window-list');
+};
+
+const refreshMaintenanceWindowDetailStatus = () => {
+    sendHtmxEvent('#maintenance-window-detail-heading', 'refresh-maintenance-window-detail-status');
+};
+
+const maintenanceWindowListItem = (maintenanceWindowId, isMaintenanceWindowEnabled) => {
+    return {
+        maintenanceWindowId: maintenanceWindowId,
+        isMaintenanceWindowEnabled: isMaintenanceWindowEnabled,
+        isRequestLoading: false,
+        toggleMaintenanceWindow() {
+            patchMaintenanceWindowRequest(
+                this.maintenanceWindowId,
+                {enabled: !this.isMaintenanceWindowEnabled},
+                () => this.isRequestLoading = true,
+                () => refreshMaintenanceWindowList(),
+                () => this.isRequestLoading = false
+            );
+        },
+        deleteMaintenanceWindow() {
+            deleteMaintenanceWindowRequest(
+                this.maintenanceWindowId,
+                () => this.isRequestLoading = true,
+                () => refreshMaintenanceWindowList(),
+                () => this.isRequestLoading = false
+            );
+        }
+    }
+};
+
+const maintenanceWindowDetails = (maintenanceWindowId, isMaintenanceWindowEnabled) => {
+    return {
+        maintenanceWindowId: maintenanceWindowId,
+        isMaintenanceWindowEnabled: isMaintenanceWindowEnabled,
+        isRequestLoading: false,
+        toggleMaintenanceWindow() {
+            patchMaintenanceWindowRequest(
+                this.maintenanceWindowId,
+                {enabled: !this.isMaintenanceWindowEnabled},
+                () => this.isRequestLoading = true,
+                () => {
+                    this.isRequestLoading = false;
+                    this.isMaintenanceWindowEnabled = !this.isMaintenanceWindowEnabled;
+                    console.debug('Maintenance window enabled status changed:', this.isMaintenanceWindowEnabled);
+                    refreshMaintenanceWindowDetailStatus();
+                },
+                () => this.isRequestLoading = false
+            );
+        },
+        deleteMaintenanceWindow() {
+            deleteMaintenanceWindowRequest(
+                this.maintenanceWindowId,
+                () => this.isRequestLoading = true,
+                () => window.location.href = '/maintenance-windows',
+                () => this.isRequestLoading = false
+            );
+        }
+    }
+};
+
+const patchMaintenanceWindowRequest = (
+    maintenanceWindowId,
+    body,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
+) => {
+    beforeRequest();
+    fetch('/api/v2/maintenance-windows/' + maintenanceWindowId, {
+        method: 'PATCH',
+        headers: jsonContentHeaders,
+        body: JSON.stringify(body)
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error toggling maintenance window:', response.statusText);
+            alert('An error occurred while toggling the maintenance window.');
+        }
+    }).catch(error => {
+        onError();
+        console.error('Error toggling maintenance window:', error);
+        alert('An error occurred while toggling the maintenance window.');
+    });
+};
+
+const upsertMaintenanceWindowForm = (
+    maintenanceWindow,
+    errorMessages,
+    monitorSelectId,
+    selectableMonitors,
+) => {
+    const originalWindow = maintenanceWindow || null;
+    return {
+        errorMessages: errorMessages || {},
+        isRequestLoading: false,
+        isUpdate: !!maintenanceWindow,
+        selectableMonitors: selectableMonitors || [],
+        // The integrations accordion expects this; maintenance windows never auto-apply global integrations
+        globalIntegrationCount: 0,
+
+        init() {
+            this.resetState();
+            console.debug('Maintenance window form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
+        },
+
+        resetState() {
+            this.name = originalWindow?.name || '';
+            this.description = originalWindow?.description || null;
+            this.type = resolveMaintenanceWindowType(originalWindow);
+            this.cron = originalWindow?.cron || '';
+            this.start = toDateTimeLocalValue(originalWindow?.start);
+            this.duration = originalWindow?.duration || '';
+            this.enabled = (originalWindow?.enabled != null ? originalWindow.enabled : true);
+            this.global = (originalWindow?.global != null ? originalWindow.global : false);
+            this.showOnStatusPages =
+                (originalWindow?.showOnStatusPages != null ? originalWindow.showOnStatusPages : false);
+            this.selectedMonitors = originalWindow?.monitors || [];
+            this.integrations = originalWindow?.integrations || [];
+            this.errors = {};
+
+            resetTomSelectState(monitorSelectId, (ts) => {
+                this.selectedMonitors.forEach(monitor => {
+                    ts.addItem(monitor, true);
+                });
+            });
+        },
+
+        validate() {
+            this.errors = {};
+            this.validateName();
+            this.validateCronPresence();
+            this.validateStart();
+            this.validateDuration();
+        },
+
+        // Clears the values of fields that don't belong to the freshly selected type, so we never send
+        // non-sense values to the backend and never keep a hidden validation error on an invisible field
+        onTypeChange() {
+            if (this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
+                this.cron = '';
+            }
+            if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
+                this.start = '';
+            }
+            if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
+                this.duration = '';
+            }
+            this.validate();
+        },
+
+        validateName() {
+            this.errors.name = this.name ? null : this.errorMessages.nameRequired;
+        },
+
+        // Synchronous part of the cron validation: clears the error for non-cron windows and flags a blank value
+        validateCronPresence() {
+            if (this.type !== MAINTENANCE_WINDOW_TYPES.CRON || this.cron) {
+                this.errors.cron = null;
+            } else {
+                this.errors.cron = this.errorMessages.cronRequired;
+            }
+        },
+
+        // Full cron validation including the server-side format check; runs when the field is left or on submit
+        async validateCron() {
+            this.validateCronPresence();
+            if (this.errors.cron || this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
+                return;
+            }
+            const valid = await isValidCronExpression(this.cron);
+            this.errors.cron = valid ? null : this.errorMessages.cronInvalid;
+        },
+
+        validateStart() {
+            if (this.type === MAINTENANCE_WINDOW_TYPES.SINGLE && !this.start) {
+                this.errors.start = this.errorMessages.startRequired;
+            } else {
+                this.errors.start = null;
+            }
+        },
+
+        // Fills the duration input with a predefined ISO-8601 value coming from a quick-select button
+        setDuration(value) {
+            this.duration = value;
+            this.validateDuration();
+        },
+
+        validateDuration() {
+            if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
+                this.errors.duration = null;
+            } else if (!this.duration) {
+                this.errors.duration = this.errorMessages.durationRequired;
+            } else if (!isValidIsoDuration(this.duration)) {
+                this.errors.duration = this.errorMessages.durationInvalid;
+            } else {
+                this.errors.duration = null;
+            }
+        },
+
+        async submitForm() {
+            this.errors = {};
+            this.validateName();
+            this.validateStart();
+            this.validateDuration();
+            // The cron format check hits the server, so await it before deciding whether the form is valid
+            await this.validateCron();
+            if (hasNonNullValue(this.errors)) {
+                console.debug('Form validation failed:', this.errors);
+                return;
+            }
+            this.upsertMaintenanceWindow();
+        },
+
+        buildRequestBody() {
+            const isManual = this.type === MAINTENANCE_WINDOW_TYPES.MANUAL;
+            const isCron = this.type === MAINTENANCE_WINDOW_TYPES.CRON;
+            const isSingle = this.type === MAINTENANCE_WINDOW_TYPES.SINGLE;
+            return {
+                name: this.name,
+                description: this.description || null,
+                enabled: this.enabled,
+                global: this.global,
+                showOnStatusPages: this.showOnStatusPages,
+                cron: isCron ? this.cron : null,
+                start: isSingle && this.start ? new Date(this.start).toISOString() : null,
+                duration: isManual ? null : this.duration,
+                monitors: this.selectedMonitors,
+                integrations: this.integrations
+            };
+        },
+
+        async upsertMaintenanceWindow() {
+            try {
+                this.isRequestLoading = true;
+                const body = this.buildRequestBody();
+                console.debug('Submitting maintenance window form with data:', body);
+
+                const url = this.isUpdate
+                    ? '/api/v2/maintenance-windows/' + maintenanceWindow.id
+                    : '/api/v2/maintenance-windows';
+                const method = this.isUpdate ? 'PATCH' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: jsonContentHeaders,
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    this.isRequestLoading = false;
+                    const responseData = await response.json();
+                    console.debug('Maintenance window was created/updated successfully', responseData);
+
+                    if (this.isUpdate) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/maintenance-windows/' + responseData.id;
+                    }
+                } else if (response.status === 409) {
+                    this.isRequestLoading = false;
+                    console.debug('Maintenance window with this name already exists');
+                    this.errors.name = this.errorMessages.nameAlreadyExists;
+                } else {
+                    this.isRequestLoading = false;
+                    console.error('Error creating/updating maintenance window:', response.statusText);
+                    alert('An error occurred while creating/updating the maintenance window, refer to the console for more details');
+                }
+            } catch (error) {
+                this.isRequestLoading = false;
+                console.error('Error creating/updating maintenance window:', error);
+                alert('An error occurred while creating/updating the maintenance window. Please try again.');
+            }
+        }
+    }
+};
+
+const deleteMaintenanceWindowRequest = (
+    maintenanceWindowId,
+    beforeRequest = () => {
+    },
+    onSuccess = () => {
+    },
+    onError = () => {
+    }
+) => {
+    beforeRequest();
+    fetch('/api/v2/maintenance-windows/' + maintenanceWindowId, {
+        method: 'DELETE',
+        headers: jsonContentHeaders
+    }).then(response => {
+        if (response.ok) {
+            onSuccess();
+        } else {
+            onError();
+            console.error('Error deleting maintenance window:', response.statusText);
+            alert('An error occurred while deleting the maintenance window.');
+        }
+    }).catch(error => {
+        onError();
+        console.error('Error deleting maintenance window:', error);
+        alert('An error occurred while deleting the maintenance window.');
+    });
+};

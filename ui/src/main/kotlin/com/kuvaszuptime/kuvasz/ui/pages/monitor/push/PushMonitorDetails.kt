@@ -52,11 +52,11 @@ internal fun HtmlBlockTag.pushMonitorDetailsHeader(
                             xBindDisabled("isRequestLoading")
                             xOnClick("toggleMonitor()")
                             template {
-                                attributes["x-if"] = "isMonitorEnabled"
+                                xIf("isMonitorEnabled")
                                 icon(Icon.PAUSE)
                             }
                             template {
-                                attributes["x-if"] = "!isMonitorEnabled"
+                                xIf("!isMonitorEnabled")
                                 icon(Icon.PLAY)
                             }
                         }

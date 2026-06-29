@@ -191,6 +191,7 @@ internal enum class CSSClass(val className: String) {
     MT_6("mt-6"),
     MT_LG_0("mt-lg-0"),
     M_0("m-0"),
+    NATIVE_DATETIME_INPUT("native-datetime-input"),
     NAVBAR("navbar"),
     NAVBAR_BRAND("navbar-brand"),
     NAVBAR_BRAND_AUTODARK("navbar-brand-autodark"),
@@ -273,5 +274,6 @@ internal enum class CSSClass(val className: String) {
     TOAST_CONTAINER("toast-container"),
     TRACKING("tracking"),
     TRACKING_BLOCK("tracking-block"),
+    W_25("w-25"),
     W_100("w-100"),
 }

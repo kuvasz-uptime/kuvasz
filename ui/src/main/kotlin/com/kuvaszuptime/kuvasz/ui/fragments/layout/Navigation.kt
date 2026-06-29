@@ -75,6 +75,12 @@ internal fun FlowContent.navigation(
                                     externalLink = false
                                 )
                                 navItem(
+                                    label = Messages.maintenance(),
+                                    icon = Icon.TOOL,
+                                    link = "/maintenance-windows",
+                                    externalLink = false
+                                )
+                                navItem(
                                     label = Messages.settings(),
                                     icon = Icon.SETTINGS,
                                     link = "/settings",

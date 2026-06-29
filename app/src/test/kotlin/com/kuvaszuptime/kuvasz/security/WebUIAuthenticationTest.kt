@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -73,6 +74,10 @@ class WebUIAuthenticationTest(
                 row("/status-pages"),
                 row("/status-pages/1"),
                 row("/status-pages/fragments/list"),
+                row("/maintenance-windows"),
+                row("/maintenance-windows/1"),
+                row("/maintenance-windows/fragments/list"),
+                row("/maintenance-windows/fragments/details-heading/1"),
             ).forAll { url ->
                 val response = client.exchange(url).awaitFirst()
 
@@ -113,6 +118,10 @@ class WebUIAuthenticationTest(
                 row("/status-pages"),
                 row("/status-pages/1"),
                 row("/status-pages/fragments/list"),
+                row("/maintenance-windows"),
+                row("/maintenance-windows/1"),
+                row("/maintenance-windows/fragments/list"),
+                row("/maintenance-windows/fragments/details-heading/1"),
             )
             cases.forAll { url ->
                 val request = HttpRequest.GET<Any>(url).header("X-API-KEY", TEST_API_KEY)
@@ -141,6 +150,7 @@ class WebUIAuthenticationTest(
             val pushMonitor = createPushMonitor(pushMonitorRepository)
             val icmpMonitor = createIcmpMonitor(icmpMonitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
+            val maintenanceWindow = createMaintenanceWindow(dslContext, cron = "0 2 * * *", duration = "PT1H")
 
             table(
                 headers("url"),
@@ -170,6 +180,10 @@ class WebUIAuthenticationTest(
                 row("/status-pages"),
                 row("/status-pages/${statusPage.id}"),
                 row("/status-pages/fragments/list"),
+                row("/maintenance-windows"),
+                row("/maintenance-windows/${maintenanceWindow.id}"),
+                row("/maintenance-windows/fragments/list"),
+                row("/maintenance-windows/fragments/details-heading/${maintenanceWindow.id}"),
             ).forAll { url ->
                 val response = client.exchange(
                     HttpRequest.GET<Any>(url).header(HttpHeaders.COOKIE, "JWT=$jwt")

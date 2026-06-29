@@ -16,3 +16,7 @@ status-pages:
     slug: yaml-status-page
     monitors:
       - 'http:yaml-http-monitor'
+maintenance-windows:
+  - name: yaml-maintenance-window
+    cron: "0 2 * * *"
+    duration: PT1H
