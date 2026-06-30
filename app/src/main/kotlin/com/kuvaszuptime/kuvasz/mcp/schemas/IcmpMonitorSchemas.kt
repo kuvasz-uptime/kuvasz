@@ -73,6 +73,8 @@ data class IcmpMonitorDetailsSchema(
     val uptimeError: String?,
     val integrations: Set<String>,
     val statusPages: Set<String>,
+    val inMaintenance: Boolean,
+    val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
 ) {
     companion object {
         fun fromDto(dto: IcmpMonitorDetailsDto) = IcmpMonitorDetailsSchema(
@@ -95,6 +97,8 @@ data class IcmpMonitorDetailsSchema(
             uptimeError = dto.uptimeError,
             integrations = dto.integrations.map { it.toString() }.toSet(),
             statusPages = dto.statusPages,
+            inMaintenance = dto.inMaintenance,
+            maintenanceWindows = dto.maintenanceWindows.map { MaintenanceWindowSummarySchema.fromDto(it) },
         )
     }
 }

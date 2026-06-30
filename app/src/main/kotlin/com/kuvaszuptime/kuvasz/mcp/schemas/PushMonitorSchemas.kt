@@ -71,6 +71,8 @@ data class PushMonitorDetailsSchema(
     val integrations: Set<String>,
     val statusPages: Set<String>,
     val failureCountThreshold: Long,
+    val inMaintenance: Boolean,
+    val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
 ) {
     companion object {
         fun fromDto(dto: PushMonitorDetailsDto) = PushMonitorDetailsSchema(
@@ -91,6 +93,8 @@ data class PushMonitorDetailsSchema(
             integrations = dto.integrations.map { it.toString() }.toSet(),
             statusPages = dto.statusPages,
             failureCountThreshold = dto.failureCountThreshold,
+            inMaintenance = dto.inMaintenance,
+            maintenanceWindows = dto.maintenanceWindows.map { MaintenanceWindowSummarySchema.fromDto(it) },
         )
     }
 }

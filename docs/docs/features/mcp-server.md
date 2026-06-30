@@ -56,7 +56,7 @@ The `/mcp` endpoint is protected by a dedicated [**MCP API key**](../setup/confi
 
 !!! note "Read-only mode"
 
-    If you have configured your monitors via YAML, the corresponding `create-*`, `toggle-*`, and `delete-*` tools will return an error when called. Additionally, `delete-*` tools will fail if the monitor is referenced by a read-only status page. The `list-*`, `get-*-details`, `get-*-stats`, `list-incidents`, and `list-integrations` tools are always available regardless of read-only mode.
+    If you have configured your monitors via YAML, the corresponding `create-*`, `toggle-*`, and `delete-*` tools will return an error when called. The same applies to the `create-maintenance-window`, `toggle-maintenance-window`, and `delete-maintenance-window` tools when maintenance windows are configured via YAML. Additionally, `delete-*` tools will fail if the monitor is referenced by a read-only status page. The `list-*`, `get-*-details`, `get-*-stats`, `list-incidents`, and `list-integrations` tools are always available regardless of read-only mode.
     
     This is the **expected behavior**, and works exactly the same as if you were to perform these operations via the REST API or dashboard.
 
@@ -101,6 +101,18 @@ The MCP server exposes the following tools to connected clients:
 |---------------------------|-------------------------------------------------------------------------------------------------------------------------|
 | `list-status-pages`       | List all status pages with their basic configuration (title, slug, visibility, monitor count)                           |
 | `get-status-page-details` | Get full details of a specific status page including per-monitor uptime status, uptime ratio, and 30-day uptime history |
+
+### Maintenance windows
+
+| Tool                             | Description                                                                                                                          |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `list-maintenance-windows`       | List all maintenance windows with their schedule (manual, recurring or one-off) and current active state                             |
+| `get-maintenance-window-details` | Get full details of a specific maintenance window, including affected monitors, notified integrations, and resolved next start / end |
+| `create-maintenance-window`      | Create a new maintenance window (manual, `cron` + `duration` recurring, or `start` + `duration` one-off)                             |
+| `toggle-maintenance-window`      | Enable or disable a maintenance window via its master `enabled` switch                                                               |
+| `delete-maintenance-window`      | Permanently delete a maintenance window by ID                                                                                        |
+
+The `maintenanceWindows` affecting a monitor (and whether it is currently `inMaintenance`) are also surfaced on the `get-*-monitor-details` tool outputs.
 
 ### Integrations
 

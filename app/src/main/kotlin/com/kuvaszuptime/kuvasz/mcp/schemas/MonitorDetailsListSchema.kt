@@ -67,6 +67,8 @@ data class HttpMonitorDetailsSchema(
     val expectedHeaders: Map<String, String>,
     val requestBody: String?,
     val statusPages: Set<String>,
+    val inMaintenance: Boolean,
+    val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
 ) {
     companion object {
         fun fromDto(dto: HttpMonitorDetailsDto) =
@@ -107,6 +109,8 @@ data class HttpMonitorDetailsSchema(
                 expectedHeaders = dto.expectedHeaders,
                 requestBody = dto.requestBody,
                 statusPages = dto.statusPages,
+                inMaintenance = dto.inMaintenance,
+                maintenanceWindows = dto.maintenanceWindows.map { MaintenanceWindowSummarySchema.fromDto(it) },
             )
     }
 }
