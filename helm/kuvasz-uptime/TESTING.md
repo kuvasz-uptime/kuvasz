@@ -54,6 +54,18 @@ This uses the `test-values-oidc.yaml` file which configures:
 - OIDC authentication
 - Existing Secret for the OIDC client secret
 
+### 5. Render with Gateway API HTTPRoute
+
+```bash
+helm template test-release . -f test-values-httproute.yaml > rendered-httproute.yaml
+```
+
+This uses the `test-values-httproute.yaml` file which configures:
+
+- External PostgreSQL database
+- Gateway API HTTPRoute
+- Existing Gateway parent reference
+
 ## Validate Chart
 
 ### Lint the chart
@@ -118,6 +130,16 @@ helm template test-release . \
   --set auth.oidc.clientSecret=oidc-client-secret
 ```
 
+### Test with Gateway API HTTPRoute
+
+```bash
+helm template test-release . \
+  --set httpRoute.enabled=true \
+  --set httpRoute.parentRefs[0].name=gateway \
+  --set httpRoute.parentRefs[0].namespace=gateway-system \
+  --set httpRoute.hostnames[0]=kuvasz.example.com
+```
+
 ## Verify Generated Resources
 
 ### Check all generated resources
@@ -134,6 +156,7 @@ Expected output should include:
 - Service
 - Deployment
 - Ingress (if enabled)
+- HTTPRoute (if enabled)
 
 ### Verify database configuration
 
@@ -160,6 +183,9 @@ helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_MCP_API_KEY"
 
 # Check OIDC configuration
 helm template test-release . -f test-values-oidc.yaml | grep -A 20 "ENABLE_OIDC"
+
+# Check Gateway API HTTPRoute configuration
+helm template test-release . -f test-values-httproute.yaml | grep -A 20 "kind: HTTPRoute"
 ```
 
 ## Test with Different Namespaces

@@ -6,6 +6,13 @@
   {{- end }}
 {{- end }}
 
+{{- else if .Values.httpRoute.enabled }}
+  HTTPRoute is enabled. Use the listener address of the configured Gateway with these hostnames:
+  {{- range .Values.httpRoute.hostnames }}
+  - {{ . }}
+  {{- end }}
+  kubectl get httproute --namespace {{ .Release.Namespace }} {{ include "kuvasz.fullname" . }}
+
 {{- else if contains "NodePort" .Values.service.type }}
   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "kuvasz.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")

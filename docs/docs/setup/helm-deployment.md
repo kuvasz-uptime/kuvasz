@@ -162,6 +162,27 @@ ingress:
         - kuvasz-uptime.example.com
 ```
 
+### Gateway API HTTPRoute
+
+You can expose Kuvasz with a Gateway API `HTTPRoute` instead of, or alongside, an Ingress. The chart creates the `HTTPRoute`; the target `Gateway` must already exist in the cluster:
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - kuvasz-uptime.example.com
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+```
+
+If `httpRoute.parentRefs` is empty, the route attaches to a Gateway named `gateway` in the release namespace. `httpRoute.filters`, `httpRoute.timeouts`, and `httpRoute.extraRules` are rendered directly into the `HTTPRoute` spec for advanced Gateway API use cases.
+
 ### Configuring Kuvasz
 
 You can provide a custom [YAML configuration](configuration.md) by including it in your values file:

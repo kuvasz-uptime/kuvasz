@@ -1,0 +1,25 @@
+# Test values file for Kuvasz Helm chart with Gateway API HTTPRoute
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: "postgres.example.com"
+  port: 5432
+  database: "kuvasz"
+  user: "kuvasz"
+  password: "external-db-password"
+
+auth:
+  enabled: true
+  adminUser: "admin"
+  adminPassword: "admin-password-12345"
+
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: "gateway"
+      namespace: "gateway-system"
+      sectionName: "https"
+  hostnames:
+    - "kuvasz.example.com"

@@ -66,6 +66,27 @@ ingress:
   #    hosts:
   #      - kuvasz.local
 
+# Gateway API HTTPRoute configuration
+httpRoute:
+  enabled: false
+  annotations: {}
+  labels: {}
+  # Gateways the HTTPRoute is attached to. If empty, it attaches to a Gateway
+  # named "gateway" in the release namespace.
+  parentRefs: []
+  #  - name: gateway
+  #    namespace: default
+  #    sectionName: http
+  hostnames:
+    - kuvasz.local
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  filters: []
+  timeouts: {}
+  extraRules: []
+
 # Resource limits and requests
 resources:
   limits:

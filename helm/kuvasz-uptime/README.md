@@ -71,6 +71,13 @@ The following table lists the most important parameters and their default values
 | `service.type`                                 | Service type                                                                                                             | `ClusterIP`               |
 | `service.port`                                 | Service port                                                                                                             | `8080`                    |
 | `ingress.enabled`                              | Enable ingress                                                                                                           | `false`                   |
+| `httpRoute.enabled`                            | Enable Gateway API HTTPRoute                                                                                             | `false`                   |
+| `httpRoute.parentRefs`                         | Gateway parent references. Defaults to a Gateway named `gateway` in the release namespace                                | `[]`                      |
+| `httpRoute.hostnames`                          | Hostnames matching the HTTPRoute                                                                                         | `[kuvasz.local]`          |
+| `httpRoute.matches`                            | Match rules applied to the default service backend                                                                       | See `values.yaml`         |
+| `httpRoute.filters`                            | HTTPRoute filters for request/response manipulation                                                                      | `[]`                      |
+| `httpRoute.timeouts`                           | HTTPRoute timeout configuration                                                                                          | `{}`                      |
+| `httpRoute.extraRules`                         | Additional HTTPRoute rules to append                                                                                     | `[]`                      |
 | `auth.enabled`                                 | Enable authentication                                                                                                    | `true`                    |
 | `auth.adminUser`                               | Admin username (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
 | `auth.adminPassword`                           | Admin password (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
@@ -139,6 +146,27 @@ config:
           global: true
     # ...
 ```
+
+## Gateway API HTTPRoute
+
+The chart can expose Kuvasz through a Gateway API `HTTPRoute` instead of, or alongside, an Ingress. The chart creates the `HTTPRoute`; the target `Gateway` must already exist in the cluster.
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - kuvasz.example.com
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+```
+
+If `httpRoute.parentRefs` is empty, the route attaches to a Gateway named `gateway` in the release namespace. `httpRoute.filters`, `httpRoute.timeouts`, and `httpRoute.extraRules` are rendered directly into the `HTTPRoute` spec for advanced Gateway API use cases.
 
 ## Authentication
 
