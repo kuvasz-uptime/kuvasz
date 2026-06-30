@@ -2,7 +2,7 @@
 buildconfig = "6.0.10"
 detekt = "2.0.0-alpha.5"
 detektFormatting = "1.23.8"
-flywayPlugin = "12.9.0"
+flywayPlugin = "12.10.0"
 gitVersion = "5.0.0"
 i18n4k = "0.11.2"
 jib = "3.5.3"
