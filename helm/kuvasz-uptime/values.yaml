@@ -112,11 +112,13 @@ externalAdminSecret: false
 # Authentication configuration
 auth:
   enabled: true
-  # Admin user credentials
-  # If not provided, will be auto-generated and stored in secret
+  # Admin user credentials.
+  # If not provided, will be auto-generated and stored in secret.
   adminUser: ""
   adminPassword: ""
+  # API keys are optional. Leave empty to disable API key access.
   adminApiKey: ""
+  adminMcpApiKey: ""
   # OIDC authentication configuration
   # When enabled, the username/password login form is disabled.
   oidc:
@@ -127,7 +129,8 @@ auth:
     clientSecret: ""
     existingSecret: ""
     existingSecretClientSecretKey: "oidc-client-secret"
-    # Optional provider hint, for example KEYCLOAK, OKTA, AUTH0.
+    # Optional provider hint. Supported values: AUTH0, COGNITO, KEYCLOAK,
+    # MICROSOFT, OKTA, ORACLE_CLOUD.
     authorizationServer: ""
     # Also log out from the OIDC provider when logging out of Kuvasz.
     endSessionEnabled: true

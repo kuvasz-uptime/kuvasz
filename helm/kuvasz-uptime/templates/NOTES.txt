@@ -30,7 +30,12 @@
   echo "Admin Username: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-user}' | base64 -d)"
   echo "Admin Password: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-password}' | base64 -d)"
 {{- end }}
+{{- if .Values.auth.adminApiKey }}
   echo "Admin API Key: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-api-key}' | base64 -d)"
+{{- end }}
+{{- if .Values.auth.adminMcpApiKey }}
+  echo "Admin MCP API Key: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-mcp-api-key}' | base64 -d)"
+{{- end }}
 {{- else }}
   Authentication is disabled. You can access the application directly.
 {{- end }}

@@ -161,7 +161,11 @@ Determine the OIDC client secret name
 Determine the OIDC client secret key
 */}}
 {{- define "kuvasz.oidcClientSecretKey" -}}
+{{- if .Values.auth.oidc.existingSecret -}}
 {{- default "oidc-client-secret" .Values.auth.oidc.existingSecretClientSecretKey -}}
+{{- else -}}
+oidc-client-secret
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -174,6 +178,9 @@ Validate OIDC configuration
 {{- end -}}
 {{- if not .Values.auth.oidc.clientId -}}
 {{- fail "auth.oidc.clientId is required when auth.oidc.enabled=true" -}}
+{{- end -}}
+{{- if and .Values.externalAdminSecret .Values.auth.oidc.clientSecret -}}
+{{- fail "auth.oidc.clientSecret cannot be used when externalAdminSecret=true because the chart will not create or update the admin Secret; use auth.oidc.existingSecret or put oidc-client-secret in the external admin Secret" -}}
 {{- end -}}
 {{- if and (not .Values.auth.oidc.clientSecret) (not .Values.auth.oidc.existingSecret) (not .Values.externalAdminSecret) -}}
 {{- fail "auth.oidc.clientSecret, auth.oidc.existingSecret, or externalAdminSecret=true with an oidc-client-secret key in the admin secret is required when auth.oidc.enabled=true" -}}

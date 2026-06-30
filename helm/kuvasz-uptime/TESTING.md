@@ -82,13 +82,14 @@ helm template test-release . \
   --set externalDatabase.database=kuvasz
 ```
 
-### Test with auto-generated credentials
+### Test with auto-generated user/password and disabled API keys
 
 ```bash
 helm template test-release . \
   --set auth.adminUser="" \
   --set auth.adminPassword="" \
   --set auth.adminApiKey="" \
+  --set auth.adminMcpApiKey="" \
   --set postgresql.enabled=true \
   --set postgresql.auth.password=""
 ```
@@ -152,6 +153,10 @@ helm template test-release . -f test-values.yaml | grep "ENABLE_AUTH"
 
 # Check admin credentials secret reference
 helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_USER"
+
+# Check optional API key configuration
+helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_API_KEY"
+helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_MCP_API_KEY"
 
 # Check OIDC configuration
 helm template test-release . -f test-values-oidc.yaml | grep -A 20 "ENABLE_OIDC"

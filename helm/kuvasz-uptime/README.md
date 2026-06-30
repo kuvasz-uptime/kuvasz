@@ -74,14 +74,15 @@ The following table lists the most important parameters and their default values
 | `auth.enabled`                                 | Enable authentication                                                                                                    | `true`                    |
 | `auth.adminUser`                               | Admin username (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
 | `auth.adminPassword`                           | Admin password (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
-| `auth.adminApiKey`                             | Admin API key (auto-generated if empty)                                                                                  | `""`                      |
+| `auth.adminApiKey`                             | Optional REST API key. Leave empty to disable REST API key access                                                        | `""`                      |
+| `auth.adminMcpApiKey`                          | Optional MCP server API key. Leave empty to disable MCP API key access                                                   | `""`                      |
 | `auth.oidc.enabled`                            | Enable OIDC login                                                                                                        | `false`                   |
 | `auth.oidc.issuer`                             | OIDC issuer URL                                                                                                          | `""`                      |
 | `auth.oidc.clientId`                           | OIDC client ID                                                                                                           | `""`                      |
 | `auth.oidc.clientSecret`                       | OIDC client secret, stored in the admin Secret                                                                           | `""`                      |
 | `auth.oidc.existingSecret`                     | Existing Secret containing the OIDC client secret                                                                        | `""`                      |
 | `auth.oidc.existingSecretClientSecretKey`      | Key in the OIDC existing Secret                                                                                          | `oidc-client-secret`      |
-| `auth.oidc.authorizationServer`                | Optional provider hint, for example `KEYCLOAK`, `OKTA`, `AUTH0`                                                          | `""`                      |
+| `auth.oidc.authorizationServer`                | Optional provider hint. Supported values: `AUTH0`, `COGNITO`, `KEYCLOAK`, `MICROSOFT`, `OKTA`, `ORACLE_CLOUD`            | `""`                      |
 | `auth.oidc.endSessionEnabled`                  | Log out from the OIDC provider when logging out of Kuvasz                                                                | `true`                    |
 | `auth.oidc.allowedEmails`                      | Email allowlist for OIDC users. Empty allows any authenticated OIDC user                                                 | `[]`                      |
 | `auth.oidc.requireVerifiedEmail`               | Require `email_verified=true` when `allowedEmails` is configured                                                         | `true`                    |
@@ -148,12 +149,26 @@ auth:
   enabled: false
 ```
 
-If enabled, credentials are stored in a Kubernetes Secret. You can retrieve them:
+If enabled, credentials are stored in a Kubernetes Secret. You can retrieve the username and password:
 
 ```bash
 kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-user}' | base64 -d
 kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-password}' | base64 -d
+```
+
+REST API key and MCP API key authentication are disabled by default. To enable them, configure `auth.adminApiKey` and/or `auth.adminMcpApiKey`:
+
+```yaml
+auth:
+  adminApiKey: "ThisShouldBeVeryVerySecureToo"
+  adminMcpApiKey: "ThisShouldBeVeryVerySecureToo"
+```
+
+You can retrieve configured API keys from the admin Secret:
+
+```bash
 kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-api-key}' | base64 -d
+kubectl get secret <release-name>-kuvasz-admin -o jsonpath='{.data.admin-mcp-api-key}' | base64 -d
 ```
 
 If you want to manage the admin secret externally (e.g. sealed secrets) you can disable the autogeneration with:
@@ -181,6 +196,8 @@ auth:
 
 When OIDC is enabled, `auth.adminUser` and `auth.adminPassword` are ignored by the application. `auth.adminApiKey` remains independent and can still be used for REST API access.
 
+Supported `auth.oidc.authorizationServer` values are `AUTH0`, `COGNITO`, `KEYCLOAK`, `MICROSOFT`, `OKTA`, and `ORACLE_CLOUD`.
+
 For production, prefer storing the OIDC client secret in an existing Kubernetes Secret:
 
 ```yaml
@@ -192,6 +209,8 @@ auth:
     existingSecret: "kuvasz-oidc"
     existingSecretClientSecretKey: "client-secret"
 ```
+
+When `externalAdminSecret=true`, `auth.oidc.clientSecret` cannot be used because the chart does not create or update the admin Secret. In that mode, either put an `oidc-client-secret` key in the external admin Secret or use `auth.oidc.existingSecret`.
 
 ## Upgrading
 

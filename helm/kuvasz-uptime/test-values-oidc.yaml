@@ -13,6 +13,7 @@ externalDatabase:
 auth:
   enabled: true
   adminApiKey: "api-key-must-be-16-chars-min"
+  adminMcpApiKey: "mcp-key-must-be-16-chars-min"
   oidc:
     enabled: true
     issuer: "https://keycloak.example.com/realms/kuvasz"

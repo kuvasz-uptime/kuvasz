@@ -14,6 +14,7 @@ auth:
   adminUser: "admin"
   adminPassword: "admin-password-12345"
   adminApiKey: "api-key-must-be-16-chars-min"
+  adminMcpApiKey: "mcp-key-must-be-16-chars-min"
 
 # Service
 service:
@@ -22,4 +23,3 @@ service:
 
 # Timezone
 timezone: "UTC"
-

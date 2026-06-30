@@ -75,11 +75,20 @@ spec:
                 secretKeyRef:
                   name: {{ include "kuvasz.adminSecretName" . }}
                   key: admin-password
+            {{- if .Values.auth.adminApiKey }}
             - name: ADMIN_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "kuvasz.adminSecretName" . }}
                   key: admin-api-key
+            {{- end }}
+            {{- if .Values.auth.adminMcpApiKey }}
+            - name: ADMIN_MCP_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kuvasz.adminSecretName" . }}
+                  key: admin-mcp-api-key
+            {{- end }}
             {{- if .Values.auth.oidc.enabled }}
             - name: ENABLE_OIDC
               value: "true"

@@ -41,7 +41,9 @@ postgresql:
 auth:
   adminUser: "YourSuperSecretUsername"      # Change this!
   adminPassword: "YourSuperSecretPassword"  # Change this!
-  adminApiKey: "ThisShouldBeVeryVerySecureToo"  # Change this!
+  # Optional API keys. Leave empty to disable API-key access.
+  adminApiKey: ""
+  adminMcpApiKey: ""
 
 # Ingress configuration (optional)
 ingress:
@@ -57,7 +59,7 @@ ingress:
 
 !!! note "Credential Requirements"
     - `adminPassword` must be at least 12 characters and must not be equal to `adminUser`
-    - `adminApiKey` must be at least 16 characters
+    - `adminApiKey` and `adminMcpApiKey` are optional; when set, they must be at least 16 characters
 
 ### 3. Install the Chart
 
@@ -199,6 +201,8 @@ auth:
 
 When OIDC is enabled, `auth.adminUser` and `auth.adminPassword` are ignored. `auth.adminApiKey` remains independent and can still be used for REST API access.
 
+Supported `auth.oidc.authorizationServer` values are `AUTH0`, `COGNITO`, `KEYCLOAK`, `MICROSOFT`, `OKTA`, and `ORACLE_CLOUD`.
+
 For production, prefer using an existing Kubernetes Secret for the OIDC client secret:
 
 ```yaml
@@ -210,6 +214,8 @@ auth:
     existingSecret: "kuvasz-oidc"
     existingSecretClientSecretKey: "client-secret"
 ```
+
+When `externalAdminSecret=true`, `auth.oidc.clientSecret` cannot be used because the chart does not create or update the admin Secret. In that mode, either put an `oidc-client-secret` key in the external admin Secret or use `auth.oidc.existingSecret`.
 
 ## Upgrading
 
