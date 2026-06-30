@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
@@ -19,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
@@ -588,6 +590,12 @@ class HttpMonitorControllerTest(
                     dslContext,
                     monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
                 )
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "active-window",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+                )
 
                 then("it should return it") {
                     val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
@@ -629,6 +637,11 @@ class HttpMonitorControllerTest(
                         statusPage1.slug,
                         statusPage2.slug,
                     )
+
+                    // Maintenance windows
+                    response.maintenanceWindows.map { it.name } shouldContainExactlyInAnyOrder listOf("active-window")
+                    response.maintenanceWindows.single().active shouldBe true
+                    response.inMaintenance shouldBe true
 
                     // Integrations
                     response.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -2375,12 +2388,13 @@ class HttpMonitorControllerTest(
 
             val monitoringStatsDtoStub = HttpMonitoringStatsDto(
                 actual = HttpMonitoringStatsDto.ActualMonitoringStats(
-                    uptimeStats = HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                    uptimeStats = ActualUptimeStats(
                         total = 10000,
                         down = 8185,
                         up = 3535,
                         paused = 7157,
                         inProgress = 6139,
+                        inMaintenance = 2914,
                         lastIncident = getCurrentTimestamp()
                     ),
                     sslStats = HttpMonitoringStatsDto.ActualMonitoringStats.SslStats(

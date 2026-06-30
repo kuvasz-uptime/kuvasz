@@ -4,10 +4,12 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.CheckType
+import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -23,6 +25,7 @@ import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.delay
@@ -36,6 +39,7 @@ class HttpCheckSchedulerTest(
     private val monitorRepository: HttpMonitorRepository,
     private val uptimeChecker: HttpUptimeChecker,
     private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
+    private val maintenanceWindowService: MaintenanceWindowService,
 ) : DatabaseBehaviorSpec() {
     init {
         given("the CheckScheduler service") {
@@ -130,6 +134,25 @@ class HttpCheckSchedulerTest(
                         uptimeCheckerMock.check(monitor, any(), any(), any())
                         lockRegistryMock.release(monitor.id)
                     }
+                }
+            }
+
+            `when`("a monitor is under maintenance") {
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+                val maintenanceServiceMock = getMock(maintenanceWindowService)
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns true
+
+                checkScheduler.initialize()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("it should skip the check but still acquire and release the lock") {
+                    coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
+                    coVerify(inverse = true) { uptimeCheckerMock.check(any(), any(), any(), any()) }
+                    coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) }
                 }
             }
 
@@ -241,4 +264,9 @@ class HttpCheckSchedulerTest(
 
     @MockBean(UptimeCheckLockRegistry::class)
     fun uptimeCheckLockRegistryMock(): UptimeCheckLockRegistry = mockk()
+
+    @MockBean(MaintenanceWindowService::class)
+    fun maintenanceWindowServiceMock(): MaintenanceWindowService = mockk {
+        every { isUnderMaintenance(any()) } returns false
+    }
 }

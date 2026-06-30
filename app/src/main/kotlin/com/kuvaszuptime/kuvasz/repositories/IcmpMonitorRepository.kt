@@ -163,6 +163,9 @@ class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             ICMP_MONITOR.INTEGRATIONS.`as`(IcmpMonitorDetailsDto::integrations.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(IcmpMonitorDetailsDto::statusPages.name),
+            // Placeholders for fields populated by the actions layer, not by SQL
+            DSL.array(arrayOf<String>()).`as`(IcmpMonitorDetailsDto::maintenanceWindows.name),
+            DSL.inline(false).`as`(IcmpMonitorDetailsDto::inMaintenance.name),
         )
         .from(ICMP_MONITOR)
         .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())

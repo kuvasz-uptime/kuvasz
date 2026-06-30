@@ -29,6 +29,7 @@ import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.isDownNow
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
@@ -56,6 +57,7 @@ class PushMonitorActions(
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
     private val statCalculator: StatCalculator,
+    private val maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
     private val databaseEventHandler: DatabaseEventHandler,
@@ -70,10 +72,13 @@ class PushMonitorActions(
     fun getMonitorDetails(monitorId: Long): PushMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
+        val windows = maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.PUSH, monitorFromRepo.name))
         return monitorFromRepo.copy(
             effectiveIntegrations = integrationRepository
                 .getEffectiveIntegrations(monitorFromRepo.integrations)
-                .toSet()
+                .toSet(),
+            maintenanceWindows = windows,
+            inMaintenance = windows.any { it.active },
         )
     }
 
@@ -105,10 +110,14 @@ class PushMonitorActions(
     ): List<PushMonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
             .map { detailsDto ->
+                val windows =
+                    maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.PUSH, detailsDto.name))
                 detailsDto.copy(
                     effectiveIntegrations = integrationRepository
                         .getEffectiveIntegrations(detailsDto.integrations)
-                        .toSet()
+                        .toSet(),
+                    maintenanceWindows = windows,
+                    inMaintenance = windows.any { it.active },
                 )
             }
 

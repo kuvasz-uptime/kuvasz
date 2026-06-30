@@ -179,6 +179,9 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(PushMonitorDetailsDto::statusPages.name),
             nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeat.name),
+            // Placeholders for fields populated by the actions layer, not by SQL
+            DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::maintenanceWindows.name),
+            DSL.inline(false).`as`(PushMonitorDetailsDto::inMaintenance.name),
         )
         .from(PUSH_MONITOR)
         .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())

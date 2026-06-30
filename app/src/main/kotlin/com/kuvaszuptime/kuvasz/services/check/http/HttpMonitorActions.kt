@@ -29,6 +29,7 @@ import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
@@ -58,6 +59,7 @@ class HttpMonitorActions(
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
     private val statCalculator: StatCalculator,
+    private val maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
 ) : StatusPageMonitorDataProvider,
@@ -70,10 +72,15 @@ class HttpMonitorActions(
     fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
+        val windows =
+            maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.HTTP_SSL, monitorFromRepo.name))
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
             nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
-            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo.integrations).toSet()
+            effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo.integrations)
+                .toSet(),
+            maintenanceWindows = windows,
+            inMaintenance = windows.any { it.active },
         )
     }
 
@@ -86,11 +93,15 @@ class HttpMonitorActions(
     ): List<HttpMonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sslCheckEnabled, sortedBy)
             .map { detailsDto ->
+                val windows =
+                    maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.HTTP_SSL, detailsDto.name))
                 detailsDto.copy(
                     nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
                     nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
                     effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
-                        .toSet()
+                        .toSet(),
+                    maintenanceWindows = windows,
+                    inMaintenance = windows.any { it.active },
                 )
             }
 

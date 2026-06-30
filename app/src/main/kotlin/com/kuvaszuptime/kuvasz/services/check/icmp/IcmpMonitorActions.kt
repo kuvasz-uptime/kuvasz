@@ -26,6 +26,7 @@ import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
@@ -54,6 +55,7 @@ class IcmpMonitorActions(
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
     private val statCalculator: StatCalculator,
+    private val maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
 ) : StatusPageMonitorDataProvider,
@@ -66,11 +68,14 @@ class IcmpMonitorActions(
     fun getMonitorDetails(monitorId: Long): IcmpMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
+        val windows = maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.ICMP, monitorFromRepo.name))
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(monitorId),
             effectiveIntegrations = integrationRepository
                 .getEffectiveIntegrations(monitorFromRepo.integrations)
-                .toSet()
+                .toSet(),
+            maintenanceWindows = windows,
+            inMaintenance = windows.any { it.active },
         )
     }
 
@@ -81,11 +86,15 @@ class IcmpMonitorActions(
     ): List<IcmpMonitorDetailsDto> =
         monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
             .map { detailsDto ->
+                val windows =
+                    maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.ICMP, detailsDto.name))
                 detailsDto.copy(
                     nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
                     effectiveIntegrations = integrationRepository
                         .getEffectiveIntegrations(detailsDto.integrations)
-                        .toSet()
+                        .toSet(),
+                    maintenanceWindows = windows,
+                    inMaintenance = windows.any { it.active },
                 )
             }
 

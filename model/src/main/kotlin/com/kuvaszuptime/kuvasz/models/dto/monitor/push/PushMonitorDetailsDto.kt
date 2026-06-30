@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.push
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
@@ -47,4 +48,8 @@ data class PushMonitorDetailsDto(
     val statusPages: Set<String>,
     @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
     val failureCountThreshold: Long,
+    @param:Schema(description = MonitorDocs.MAINTENANCE_WINDOWS, required = true)
+    val maintenanceWindows: List<MaintenanceWindowDetailsDto>,
+    @param:Schema(description = MonitorDocs.UNDER_MAINTENANCE, required = true)
+    val inMaintenance: Boolean,
 ) : MonitorDetailsDto

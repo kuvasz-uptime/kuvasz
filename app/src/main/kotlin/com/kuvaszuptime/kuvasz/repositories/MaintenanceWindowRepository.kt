@@ -34,11 +34,6 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
         .where(MAINTENANCE_WINDOW.ENABLED.eq(enabled))
         .fetch()
 
-    /**
-     * Returns the enabled windows that could affect the given monitor: either global ones or ones that explicitly
-     * list the monitor. Whether such a window is *currently* active (for cron/single ones) is decided afterwards by
-     * the [com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowCalculator].
-     */
     fun findActiveCandidatesForMonitor(monitorId: MonitorID): List<MaintenanceWindowRecord> = dslContext
         .selectFrom(MAINTENANCE_WINDOW)
         .where(MAINTENANCE_WINDOW.ENABLED.eq(true))

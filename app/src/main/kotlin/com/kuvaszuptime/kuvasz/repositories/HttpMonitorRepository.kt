@@ -205,6 +205,9 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(HttpMonitorDetailsDto::statusPages.name),
+            // Placeholders for fields populated by the actions layer, not by SQL
+            DSL.array(arrayOf<String>()).`as`(HttpMonitorDetailsDto::maintenanceWindows.name),
+            DSL.inline(false).`as`(HttpMonitorDetailsDto::inMaintenance.name),
         )
         .from(HTTP_MONITOR)
         .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())

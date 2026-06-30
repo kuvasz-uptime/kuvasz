@@ -38,12 +38,12 @@ class MaintenanceWindowActions(
         .build()
 
     fun getMaintenanceWindows(sortedBy: SortField<*>? = null): List<MaintenanceWindowDetailsDto> =
-        maintenanceWindowRepository.fetchAll(sortedBy).map { it.toDetailsDto() }
+        maintenanceWindowRepository.fetchAll(sortedBy).map { it.toDetailsDto(calculator) }
 
     fun getMaintenanceWindowById(maintenanceWindowId: Long): MaintenanceWindowDetailsDto =
         maintenanceWindowRepository.findById(maintenanceWindowId)
             .orThrowNotFound(maintenanceWindowId.toString())
-            .toDetailsDto()
+            .toDetailsDto(calculator)
 
     fun createMaintenanceWindow(createDto: MaintenanceWindowCreateDto): MaintenanceWindowDetailsDto {
         createDto.validateScheduleConsistency()
@@ -53,7 +53,7 @@ class MaintenanceWindowActions(
 
         return maintenanceWindowRepository
             .returningInsert(createDto.toMaintenanceWindowRecord(validatedMonitors, validatedIntegrations))
-            .toDetailsDto()
+            .toDetailsDto(calculator)
     }
 
     fun deleteMaintenanceWindowById(maintenanceWindowId: Long): Unit =
@@ -86,17 +86,9 @@ class MaintenanceWindowActions(
             }
 
             maintenanceWindowRepository.returningUpdate(MaintenanceWindowRecord(updatedWindow), txCtx)
-        }.toDetailsDto()
+        }.toDetailsDto(calculator)
 
     fun getMaintenanceWindowsExport(): List<MaintenanceWindowRecord> = maintenanceWindowRepository.fetchAll()
-
-    private fun MaintenanceWindowRecord.toDetailsDto(): MaintenanceWindowDetailsDto =
-        MaintenanceWindowDetailsDto.fromRecord(
-            record = this,
-            active = calculator.isActive(this),
-            nextStart = calculator.nextInterval(this)?.start,
-            endsAt = calculator.currentInterval(this)?.end,
-        )
 
     private fun MaintenanceWindowRecord?.orThrowNotFound(maintenanceWindowId: String): MaintenanceWindowRecord =
         this ?: throw MaintenanceWindowNotFoundException(maintenanceWindowId)

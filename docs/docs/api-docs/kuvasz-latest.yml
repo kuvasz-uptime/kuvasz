@@ -1476,6 +1476,47 @@ paths:
       - bearerAuth: []
 components:
   schemas:
+    ActualUptimeStats:
+      required:
+      - down
+      - inMaintenance
+      - inProgress
+      - lastIncident
+      - paused
+      - total
+      - up
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of monitors currently being monitored.
+          format: int32
+        down:
+          type: integer
+          description: Number of monitors currently down.
+          format: int32
+        up:
+          type: integer
+          description: Number of monitors currently up.
+          format: int32
+        paused:
+          type: integer
+          description: Number of monitors currently paused.
+          format: int32
+        inProgress:
+          type: integer
+          description: "Number of monitors currently in progress (e.g., waiting for\
+            \ first check/heartbeat)."
+          format: int32
+        inMaintenance:
+          type: integer
+          description: Number of monitors currently under maintenance.
+          format: int32
+        lastIncident:
+          type: string
+          description: The timestamp of the last incident detected across all monitors.
+          format: date-time
+          nullable: true
     ApiErrorCode:
       type: string
       enum:
@@ -1789,10 +1830,12 @@ components:
       - followRedirects
       - forceNoCache
       - id
+      - inMaintenance
       - integrations
       - lastSSLCheck
       - lastUptimeCheck
       - latencyHistoryEnabled
+      - maintenanceWindows
       - name
       - nextSSLCheck
       - nextUptimeCheck
@@ -1999,6 +2042,16 @@ components:
             assigned to
           items:
             type: string
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
     HttpMonitorDto:
       required:
       - createdAt
@@ -2340,48 +2393,12 @@ components:
         uptimeStats:
           description: Statistics about the current state of uptime for all monitors.
           allOf:
-          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
+          - $ref: "#/components/schemas/ActualUptimeStats"
         sslStats:
           description: Statistics about the current state of SSL certificates for
             all monitors.
           allOf:
           - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.SslStats"
-    HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
-      required:
-      - down
-      - inProgress
-      - lastIncident
-      - paused
-      - total
-      - up
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of monitors currently being monitored.
-          format: int32
-        down:
-          type: integer
-          description: Number of monitors currently down.
-          format: int32
-        up:
-          type: integer
-          description: Number of monitors currently up.
-          format: int32
-        paused:
-          type: integer
-          description: Number of monitors currently paused.
-          format: int32
-        inProgress:
-          type: integer
-          description: "Number of monitors currently in progress (e.g., waiting for\
-            \ first check)."
-          format: int32
-        lastIncident:
-          type: string
-          description: The timestamp of the last incident detected across all monitors.
-          format: date-time
-          nullable: true
     HttpMonitoringStatsDto.ActualMonitoringStats.SslStats:
       required:
       - inProgress
@@ -2569,8 +2586,10 @@ components:
       - failureCountThreshold
       - host
       - id
+      - inMaintenance
       - integrations
       - lastUptimeCheck
+      - maintenanceWindows
       - metricsHistoryEnabled
       - name
       - nextUptimeCheck
@@ -2678,6 +2697,16 @@ components:
             assigned to
           items:
             type: string
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
     IcmpMonitorDto:
       required:
       - createdAt
@@ -2895,43 +2924,7 @@ components:
         uptimeStats:
           description: Statistics about the current state of uptime for all monitors.
           allOf:
-          - $ref: "#/components/schemas/IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
-    IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
-      required:
-      - down
-      - inProgress
-      - lastIncident
-      - paused
-      - total
-      - up
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of monitors currently being monitored.
-          format: int32
-        down:
-          type: integer
-          description: Number of monitors currently down.
-          format: int32
-        up:
-          type: integer
-          description: Number of monitors currently up.
-          format: int32
-        paused:
-          type: integer
-          description: Number of monitors currently paused.
-          format: int32
-        inProgress:
-          type: integer
-          description: "Number of monitors currently in progress (e.g., waiting for\
-            \ first check)."
-          format: int32
-        lastIncident:
-          type: string
-          description: The timestamp of the last incident detected across all monitors.
-          format: date-time
-          nullable: true
+          - $ref: "#/components/schemas/ActualUptimeStats"
     IcmpMonitoringStatsDto.HistoricalMonitoringStats:
       required:
       - uptimeStats
@@ -3551,9 +3544,11 @@ components:
       - gracePeriod
       - heartbeatInterval
       - id
+      - inMaintenance
       - integrations
       - lastHeartbeat
       - lastUptimeCheck
+      - maintenanceWindows
       - name
       - nextExpectedHeartbeat
       - statusPages
@@ -3651,6 +3646,16 @@ components:
           description: The threshold for consecutive failures before the monitor is
             marked as DOWN
           format: int64
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
     PushMonitorDto:
       required:
       - clientSecret
@@ -3820,43 +3825,7 @@ components:
         uptimeStats:
           description: Statistics about the current state of uptime for all monitors.
           allOf:
-          - $ref: "#/components/schemas/PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
-    PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
-      required:
-      - down
-      - inProgress
-      - lastIncident
-      - paused
-      - total
-      - up
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of monitors currently being monitored.
-          format: int32
-        down:
-          type: integer
-          description: Number of monitors currently down.
-          format: int32
-        up:
-          type: integer
-          description: Number of monitors currently up.
-          format: int32
-        paused:
-          type: integer
-          description: Number of monitors currently paused.
-          format: int32
-        inProgress:
-          type: integer
-          description: "Number of monitors currently in progress (e.g., waiting for\
-            \ first heartbeat)."
-          format: int32
-        lastIncident:
-          type: string
-          description: The timestamp of the last incident detected across all monitors.
-          format: date-time
-          nullable: true
+          - $ref: "#/components/schemas/ActualUptimeStats"
     PushMonitoringStatsDto.HistoricalMonitoringStats:
       required:
       - uptimeStats

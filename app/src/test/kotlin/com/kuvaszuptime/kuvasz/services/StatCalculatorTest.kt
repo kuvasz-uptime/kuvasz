@@ -7,9 +7,12 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -106,6 +109,7 @@ class StatCalculatorTest(
                 stats.actual.uptimeStats.up shouldBe 1
                 stats.actual.uptimeStats.paused shouldBe 1
                 stats.actual.uptimeStats.inProgress shouldBe 0
+                stats.actual.uptimeStats.inMaintenance shouldBe 0
 
                 stats.actual.sslStats.valid shouldBe 1
                 stats.actual.sslStats.invalid shouldBe 1
@@ -190,6 +194,7 @@ class StatCalculatorTest(
                 stats.actual.uptimeStats.up shouldBe 1
                 stats.actual.uptimeStats.paused shouldBe 1
                 stats.actual.uptimeStats.inProgress shouldBe 0
+                stats.actual.uptimeStats.inMaintenance shouldBe 0
 
                 stats.actual.sslStats.valid shouldBe 1
                 stats.actual.sslStats.invalid shouldBe 1
@@ -504,6 +509,24 @@ class StatCalculatorTest(
                 stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
             }
         }
+
+        `when`("there is a monitor under an active maintenance window") {
+
+            val maintainedMonitor = createHttpMonitor(httpMonitorRepository, enabled = true)
+            createHttpMonitor(httpMonitorRepository, enabled = true)
+            createMaintenanceWindow(
+                dslContext = dslContext,
+                name = "active-http-window",
+                enabled = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, maintainedMonitor.name)),
+            )
+
+            then("it should count it as under maintenance") {
+                val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
+                stats.actual.uptimeStats.total shouldBe 2
+                stats.actual.uptimeStats.inMaintenance shouldBe 1
+            }
+        }
     }
 
     given("the calculateOverallPushStats method") {
@@ -555,6 +578,7 @@ class StatCalculatorTest(
                 stats.actual.uptimeStats.up shouldBe 1
                 stats.actual.uptimeStats.paused shouldBe 1
                 stats.actual.uptimeStats.inProgress shouldBe 0
+                stats.actual.uptimeStats.inMaintenance shouldBe 0
 
                 stats.history.uptimeStats.incidents shouldBe 3
                 stats.history.uptimeStats.affectedMonitors shouldBe 3
@@ -613,6 +637,7 @@ class StatCalculatorTest(
                 stats.actual.uptimeStats.up shouldBe 1
                 stats.actual.uptimeStats.paused shouldBe 1
                 stats.actual.uptimeStats.inProgress shouldBe 0
+                stats.actual.uptimeStats.inMaintenance shouldBe 0
 
                 stats.history.uptimeStats.incidents shouldBe 2
                 stats.history.uptimeStats.affectedMonitors shouldBe 2
@@ -1052,6 +1077,24 @@ class StatCalculatorTest(
                 statsOfPausedMonitor2.uptimeRatio shouldBe null
             }
         }
+
+        `when`("there is a monitor under an active maintenance window") {
+
+            val maintainedMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+            createPushMonitor(pushMonitorRepository, enabled = true)
+            createMaintenanceWindow(
+                dslContext = dslContext,
+                name = "active-push-window",
+                enabled = true,
+                monitors = listOf(MonitorID(MonitorType.PUSH, maintainedMonitor.name)),
+            )
+
+            then("it should count it as under maintenance") {
+                val stats = statCalculator.calculateOverallPushStats(Duration.ofDays(6))
+                stats.actual.uptimeStats.total shouldBe 2
+                stats.actual.uptimeStats.inMaintenance shouldBe 1
+            }
+        }
     }
 
     given("the calculateOverallIcmpStats method") {
@@ -1103,6 +1146,7 @@ class StatCalculatorTest(
                 stats.actual.uptimeStats.up shouldBe 1
                 stats.actual.uptimeStats.paused shouldBe 1
                 stats.actual.uptimeStats.inProgress shouldBe 0
+                stats.actual.uptimeStats.inMaintenance shouldBe 0
 
                 stats.history.uptimeStats.incidents shouldBe 3
                 stats.history.uptimeStats.affectedMonitors shouldBe 3
@@ -1160,6 +1204,7 @@ class StatCalculatorTest(
                 stats.actual.uptimeStats.up shouldBe 1
                 stats.actual.uptimeStats.paused shouldBe 1
                 stats.actual.uptimeStats.inProgress shouldBe 0
+                stats.actual.uptimeStats.inMaintenance shouldBe 0
 
                 stats.history.uptimeStats.incidents shouldBe 2
                 stats.history.uptimeStats.affectedMonitors shouldBe 2
@@ -1615,6 +1660,24 @@ class StatCalculatorTest(
                 // The last day is today, but the event was updated yesterday, so it should have null as outageCnt
                 result.last().date shouldBe today
                 result.last().outageCnt shouldBe null
+            }
+        }
+
+        `when`("there is a monitor under an active maintenance window") {
+
+            val maintainedMonitor = createIcmpMonitor(icmpMonitorRepository, enabled = true)
+            createIcmpMonitor(icmpMonitorRepository, enabled = true)
+            createMaintenanceWindow(
+                dslContext = dslContext,
+                name = "active-icmp-window",
+                enabled = true,
+                monitors = listOf(MonitorID(MonitorType.ICMP, maintainedMonitor.name)),
+            )
+
+            then("it should count it as under maintenance") {
+                val stats = statCalculator.calculateOverallIcmpStats(Duration.ofDays(6))
+                stats.actual.uptimeStats.total shouldBe 2
+                stats.actual.uptimeStats.inMaintenance shouldBe 1
             }
         }
     }

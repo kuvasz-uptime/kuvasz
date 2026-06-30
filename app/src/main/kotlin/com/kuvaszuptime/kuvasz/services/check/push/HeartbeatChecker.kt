@@ -3,11 +3,13 @@ package com.kuvaszuptime.kuvasz.services.check.push
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.isDownNow
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.micronaut.scheduling.annotation.Scheduled
@@ -23,6 +25,7 @@ class HeartbeatChecker(
     private val uptimeEventRepository: PushUptimeEventRepository,
     private val databaseEventHandler: DatabaseEventHandler,
     private val pendingFailureRepository: PendingFailureRepository,
+    private val maintenanceWindowService: MaintenanceWindowService,
 ) {
     /**
      * Checks every enabled push monitors to see if their expected heartbeats are on time,
@@ -32,6 +35,8 @@ class HeartbeatChecker(
         dslCtx.transactionResult { config ->
             val txCtx = config.dsl()
             pushMonitorRepository.fetchWithMissedHeartbeats(txCtx).forEach { monitor ->
+                // Skip monitors that are under maintenance
+                if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId())) return@forEach
                 PushMonitorDownEvent(
                     monitor,
                     error = Messages.missedHeartbeat(),

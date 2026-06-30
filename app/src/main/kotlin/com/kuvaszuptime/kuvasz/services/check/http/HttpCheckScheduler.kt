@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.check.http
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.SchedulingException
+import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
@@ -10,6 +11,7 @@ import com.kuvaszuptime.kuvasz.services.check.getNextCheck
 import com.kuvaszuptime.kuvasz.services.check.gracefulCancel
 import com.kuvaszuptime.kuvasz.services.check.initiateShutdown
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -35,6 +37,7 @@ class HttpCheckScheduler(
     private val sslChecker: SSLChecker,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
+    private val maintenanceWindowService: MaintenanceWindowService,
 ) : AutoCloseable {
     private val coroutineExHandler = CoroutineExceptionHandler { _, ex ->
         logger.warn("Coroutine failed with ${ex::class.simpleName}: ${ex.message}")
@@ -185,6 +188,11 @@ class HttpCheckScheduler(
 
                     @Suppress("TooGenericExceptionCaught")
                     try {
+                        // Skip the check entirely while the monitor is under maintenance
+                        if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId())) {
+                            logger.debug("Skipping uptime check for \"${monitor.name}\": it is under maintenance")
+                            return@launch
+                        }
                         uptimeChecker.check(monitor) { checkedMonitor ->
                             // Re-applying the original check interval which acts like kind of a synchronization to
                             // minimize the chance of overlapping requests

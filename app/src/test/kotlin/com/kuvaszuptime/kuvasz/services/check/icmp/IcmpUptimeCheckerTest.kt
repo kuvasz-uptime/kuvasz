@@ -2,9 +2,13 @@ package com.kuvaszuptime.kuvasz.services.check.icmp
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
@@ -18,7 +22,10 @@ import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest(startApplication = false)
 class IcmpUptimeCheckerTest(
@@ -28,12 +35,16 @@ class IcmpUptimeCheckerTest(
     private val latencyLogRepository: IcmpMetricsLogRepository,
     private val eventDispatcher: EventDispatcher,
     private val pingExecutor: PingExecutor,
+    private val checkScheduler: IcmpCheckScheduler,
 ) : DatabaseBehaviorSpec() {
 
     @MockBean(PingExecutor::class)
     fun pingExecutorMock(): PingExecutor = mockk()
 
     init {
+        // Stop any scheduled checks set up by a test so they don't bleed into the next one
+        afterTest { checkScheduler.removeAllChecks() }
+
         given("IcmpUptimeChecker") {
 
             `when`("all packets are received") {
@@ -304,6 +315,57 @@ class IcmpUptimeCheckerTest(
 
                 then("no metrics log should be inserted") {
                     latencyLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
+                }
+            }
+
+            `when`("a monitor's maintenance window is active and then becomes inactive") {
+                val monitor = createIcmpMonitor(
+                    monitorRepository,
+                    packetCount = 3,
+                    packetLossThreshold = 100,
+                    uptimeCheckInterval = 1,
+                )
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    name = "maintenance-${monitor.id}",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.ICMP, monitor.name)),
+                )
+                val pingExecutorMock = getMock(pingExecutor)
+                every {
+                    pingExecutorMock.execute(monitor.host, monitor.packetCount, monitor.timeoutSeconds)
+                } returns PingResult(
+                    packetsSent = 3,
+                    packetsReceived = 3,
+                    packetLossPercentage = 0,
+                    avgLatencyMs = 10,
+                    rawOutput = "",
+                    isOutputRecognized = true,
+                )
+                val upSubscriber = TestSubscriber<IcmpMonitorUpEvent>()
+                eventDispatcher.subscribeToIcmpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+
+                checkScheduler.initialize()
+
+                // then("no ping runs while the window is active, but checks resume once it becomes inactive")
+                // Not using a real "then" block here because mocks are resetted inside, so we can't test this sequence
+
+                // While the window is active, the scheduled checks are skipped: no ping is executed
+                delay(2000.milliseconds)
+                verify(exactly = 0) { pingExecutorMock.execute(monitor.host, any(), any()) }
+                upSubscriber.assertNoValues()
+
+                // Deactivate the window -> the monitor is no longer under maintenance
+                dslContext.update(MAINTENANCE_WINDOW)
+                    .set(MAINTENANCE_WINDOW.ENABLED, false)
+                    .where(MAINTENANCE_WINDOW.ID.eq(window.id))
+                    .execute()
+
+                // The checks run again and a ping is executed
+                val upEvent = upSubscriber.awaitCount(1).values().first()
+                upEvent.monitor.id shouldBe monitor.id
+                verify(atLeast = 1) {
+                    pingExecutorMock.execute(monitor.host, monitor.packetCount, monitor.timeoutSeconds)
                 }
             }
         }

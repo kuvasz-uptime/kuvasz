@@ -2,17 +2,21 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import jakarta.inject.Singleton
@@ -28,6 +32,7 @@ class StatCalculator(
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
+    private val maintenanceWindowService: MaintenanceWindowService,
 ) {
     @Suppress("NestedBlockDepth")
     fun calculateOverallHttpStats(period: Duration): HttpMonitoringStatsDto {
@@ -37,6 +42,7 @@ class StatCalculator(
         var upMonitors = 0
         var pausedMonitors = 0
         var uptimeInProgressMonitors = 0
+        var inMaintenanceMonitors = 0
         var sslValidMonitors = 0
         var sslInvalidMonitors = 0
         var sslWillExpireMonitors = 0
@@ -49,6 +55,9 @@ class StatCalculator(
                     UptimeStatus.DOWN -> downMonitors++
                     UptimeStatus.UP -> upMonitors++
                     null -> uptimeInProgressMonitors++
+                }
+                if (maintenanceWindowService.isUnderMaintenance(MonitorID(MonitorType.HTTP_SSL, monitor.name))) {
+                    inMaintenanceMonitors++
                 }
 
                 // SSL calculations
@@ -67,12 +76,13 @@ class StatCalculator(
 
         return HttpMonitoringStatsDto(
             actual = HttpMonitoringStatsDto.ActualMonitoringStats(
-                uptimeStats = HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                uptimeStats = ActualUptimeStats(
                     total = monitors.size,
                     down = downMonitors,
                     up = upMonitors,
                     paused = pausedMonitors,
                     inProgress = uptimeInProgressMonitors,
+                    inMaintenance = inMaintenanceMonitors,
                     lastIncident = httpUptimeEventRepository.fetchLatestIncidentTimestamp(),
                 ),
                 sslStats = HttpMonitoringStatsDto.ActualMonitoringStats.SslStats(
@@ -95,6 +105,7 @@ class StatCalculator(
         var upMonitors = 0
         var pausedMonitors = 0
         var uptimeInProgressMonitors = 0
+        var inMaintenanceMonitors = 0
 
         monitors.forEach { monitor ->
             if (monitor.enabled) {
@@ -104,6 +115,9 @@ class StatCalculator(
                     UptimeStatus.UP -> upMonitors++
                     null -> uptimeInProgressMonitors++
                 }
+                if (maintenanceWindowService.isUnderMaintenance(MonitorID(MonitorType.PUSH, monitor.name))) {
+                    inMaintenanceMonitors++
+                }
             } else {
                 pausedMonitors++
             }
@@ -111,12 +125,13 @@ class StatCalculator(
 
         return PushMonitoringStatsDto(
             actual = PushMonitoringStatsDto.ActualMonitoringStats(
-                uptimeStats = PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                uptimeStats = ActualUptimeStats(
                     total = monitors.size,
                     down = downMonitors,
                     up = upMonitors,
                     paused = pausedMonitors,
                     inProgress = uptimeInProgressMonitors,
+                    inMaintenance = inMaintenanceMonitors,
                     lastIncident = pushUptimeEventRepository.fetchLatestIncidentTimestamp(),
                 ),
             ),
@@ -157,6 +172,7 @@ class StatCalculator(
         var upMonitors = 0
         var pausedMonitors = 0
         var uptimeInProgressMonitors = 0
+        var inMaintenanceMonitors = 0
 
         monitors.forEach { monitor ->
             if (monitor.enabled) {
@@ -165,6 +181,9 @@ class StatCalculator(
                     UptimeStatus.UP -> upMonitors++
                     null -> uptimeInProgressMonitors++
                 }
+                if (maintenanceWindowService.isUnderMaintenance(MonitorID(MonitorType.ICMP, monitor.name))) {
+                    inMaintenanceMonitors++
+                }
             } else {
                 pausedMonitors++
             }
@@ -172,12 +191,13 @@ class StatCalculator(
 
         return IcmpMonitoringStatsDto(
             actual = IcmpMonitoringStatsDto.ActualMonitoringStats(
-                uptimeStats = IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                uptimeStats = ActualUptimeStats(
                     total = monitors.size,
                     down = downMonitors,
                     up = upMonitors,
                     paused = pausedMonitors,
                     inProgress = uptimeInProgressMonitors,
+                    inMaintenance = inMaintenanceMonitors,
                     lastIncident = icmpUptimeEventRepository.fetchLatestIncidentTimestamp(),
                 ),
             ),
