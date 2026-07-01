@@ -6,7 +6,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.NotifiableEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
@@ -26,7 +28,7 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
     companion object {
         private const val CONTEXT_TEMPLATE_KEY = "ctx"
     }
-    
+
     private fun MonitorRecord.urn(): MonitorID = when (this) {
         is HttpMonitorRecord -> this.monitorId()
         is PushMonitorRecord -> this.monitorId()
@@ -34,7 +36,12 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
         else -> throw IllegalArgumentException("Invalid monitor type: $this")
     }
 
-    fun fromMonitorEvent(event: MonitorEvent<out MonitorRecord>): GenericWebhookMessage =
+    fun fromEvent(event: NotifiableEvent): GenericWebhookMessage = when (event) {
+        is MonitorEvent<*> -> fromMonitorEvent(event)
+        is MaintenanceWindowEvent -> fromMaintenanceEvent(event)
+    }
+
+    private fun fromMonitorEvent(event: MonitorEvent<out MonitorRecord>): GenericWebhookMessage =
         GenericWebhookMessage(
             monitorId = event.monitor.id,
             monitorUrn = event.monitor.urn().toString(),
@@ -45,13 +52,24 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
             eventDetails = event.toFormattedMessage(),
         )
 
-    fun fromMonitorEvent(event: MonitorEvent<*>, literalTemplate: String): String {
+    fun fromEvent(event: NotifiableEvent, literalTemplate: String): String {
         val compiledTemplate = templateEngine.getTemplate(literalTemplate)
         val writer = StringWriter()
-        compiledTemplate.evaluate(writer, mapOf(CONTEXT_TEMPLATE_KEY to fromMonitorEvent(event)))
+        compiledTemplate.evaluate(writer, mapOf(CONTEXT_TEMPLATE_KEY to fromEvent(event)))
 
         return writer.toString()
     }
+
+    private fun fromMaintenanceEvent(event: MaintenanceWindowEvent): GenericWebhookMessage =
+        GenericWebhookMessage(
+            monitorId = 0,
+            monitorUrn = "",
+            monitorName = "",
+            monitorDetailsUrl = "",
+            timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
+            type = event.toIntegrationEventType(),
+            eventDetails = PlainTextMessageFormatter.toFormattedMessage(event),
+        )
 
     @Suppress("NotImplementedDeclaration")
     private fun MonitorEvent<*>.toFormattedMessage() = when (this) {

@@ -6,15 +6,12 @@ import io.micronaut.scheduling.cron.CronExpression
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
 import jakarta.validation.Constraint
-import org.slf4j.LoggerFactory
 
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [])
 annotation class ValidCron(
     val message: String = MaintenanceWindowValidationMessages.CRON_INVALID,
 )
-
-private val cronLogger = LoggerFactory.getLogger("com.kuvaszuptime.kuvasz.validation.CronValidation")
 
 /**
  * Whether the given expression is a valid (Micronaut) cron expression. Single source of truth used both by the
@@ -24,8 +21,7 @@ fun isValidCron(expression: String): Boolean =
     try {
         CronExpression.create(expression)
         true
-    } catch (ex: IllegalArgumentException) {
-        cronLogger.debug("Invalid cron expression: $expression", ex)
+    } catch (_: IllegalArgumentException) {
         false
     }
 

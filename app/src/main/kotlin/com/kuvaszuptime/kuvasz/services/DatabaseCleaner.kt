@@ -8,11 +8,11 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.micronaut.scheduling.annotation.Scheduled
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 
 @Singleton
 class DatabaseCleaner(
@@ -26,7 +26,7 @@ class DatabaseCleaner(
 ) {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(DatabaseCleaner::class.java)
+        private val logger = loggerFor<DatabaseCleaner>()
     }
 
     @Scheduled(cron = "0 2 * * *")

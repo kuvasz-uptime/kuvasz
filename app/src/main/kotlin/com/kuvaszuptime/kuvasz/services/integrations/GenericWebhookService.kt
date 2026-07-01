@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.NotifiableEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -21,6 +22,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.io.buffer.ByteBuffer
@@ -34,7 +36,6 @@ import io.micronaut.http.client.annotation.Client
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 import java.net.URI
 
 @Singleton
@@ -74,7 +75,9 @@ class GenericWebhookService(
     private val messageFactory: WebhookMessageFactory,
 ) : TestableNotificationService<WebhookNotificationConfig> {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<GenericWebhookService>()
+    }
 
     private val testHttpMonitorRecord = HttpMonitorRecord().apply {
         id = 1
@@ -145,31 +148,37 @@ class GenericWebhookService(
         ),
     )
 
-    @Suppress("TooGenericExceptionCaught")
-    fun sendWebhookEvent(target: WebhookNotificationConfig, event: MonitorEvent<out MonitorRecord>): Single<out Any> {
-        val template = target.payloadTemplate
-        val webhookUrl = messageFactory.fromMonitorEvent(event, target.url).toUri()
-        val preparedHeaders = target.requestHeaders.orEmpty().mapValues { (_, value) ->
-            messageFactory.fromMonitorEvent(event, value)
-        }
-        val payload = if (template.isNullOrBlank()) {
-            messageFactory.fromMonitorEvent(event)
-        } else {
-            try {
-                messageFactory.fromMonitorEvent(event, template)
-            } catch (ex: Exception) {
-                logger.error("Failed to parse webhook template: ${ex.message}")
-                return Single.error(ex)
-            }
-        }
-
-        return client.sendMessage(
-            url = webhookUrl,
-            payload = payload,
-            headers = preparedHeaders,
+    fun sendWebhookEvent(target: WebhookNotificationConfig, event: NotifiableEvent): Single<out Any> =
+        client.sendMessage(
+            url = prepareUrl(target, event),
+            payload = preparePayload(target, event),
+            headers = prepareHeaders(target, event),
             httpMethod = target.httpMethod,
         )
+
+    private fun prepareHeaders(target: WebhookNotificationConfig, event: NotifiableEvent): Map<String, String> =
+        target.requestHeaders.orEmpty().mapValues { (_, value) ->
+            messageFactory.fromEvent(event, value)
+        }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun preparePayload(target: WebhookNotificationConfig, event: NotifiableEvent): Any {
+        val template = target.payloadTemplate
+
+        return if (template.isNullOrBlank()) {
+            messageFactory.fromEvent(event)
+        } else {
+            try {
+                messageFactory.fromEvent(event, template)
+            } catch (ex: Exception) {
+                logger.error("Failed to parse webhook template: ${ex.message}")
+                throw ex
+            }
+        }
     }
+
+    private fun prepareUrl(target: WebhookNotificationConfig, event: NotifiableEvent) =
+        messageFactory.fromEvent(event, target.url).toUri()
 
     override fun sendTestMessage(integrationConfig: WebhookNotificationConfig): Single<NotificationTestResult> {
         val ignoredEventTypes = integrationConfig.excludedEvents.orEmpty()

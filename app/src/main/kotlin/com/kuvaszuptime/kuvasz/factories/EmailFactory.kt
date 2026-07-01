@@ -2,6 +2,9 @@ package com.kuvaszuptime.kuvasz.factories
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
@@ -26,6 +29,12 @@ class EmailFactory(private val config: EmailNotificationConfig) {
             .withPlainText(formatter.toFormattedMessage(event))
             .buildEmail()
 
+    fun fromMaintenanceEvent(event: MaintenanceWindowEvent): Email =
+        createEmailBase()
+            .withSubject(event.getSubject())
+            .withPlainText(formatter.toFormattedMessage(event))
+            .buildEmail()
+
     private fun UptimeMonitorEvent.getSubject(): String =
         "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] is $uptimeStatus"
 
@@ -37,6 +46,15 @@ class EmailFactory(private val config: EmailNotificationConfig) {
         }
 
         return "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] $statusString"
+    }
+
+    private fun MaintenanceWindowEvent.getSubject(): String {
+        val statusString = when (this) {
+            is MaintenanceWindowStartEvent -> Messages.maintenanceWindowStarted(window.name)
+            is MaintenanceWindowEndEvent -> Messages.maintenanceWindowEnded(window.name)
+        }
+
+        return "[kuvasz-uptime] - ${getEmoji()} $statusString"
     }
 
     private fun createEmailBase() =

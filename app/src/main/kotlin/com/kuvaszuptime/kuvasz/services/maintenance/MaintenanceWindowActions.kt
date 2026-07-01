@@ -29,6 +29,7 @@ class MaintenanceWindowActions(
     private val monitorIdValidator: MonitorIdValidator,
     private val integrationIdValidator: IntegrationIdValidator,
     private val calculator: MaintenanceWindowCalculator,
+    private val scheduler: MaintenanceWindowScheduler,
     private val dslContext: DSLContext,
     private val validator: Validator,
 ) {
@@ -53,16 +54,23 @@ class MaintenanceWindowActions(
 
         return maintenanceWindowRepository
             .returningInsert(createDto.toMaintenanceWindowRecord(validatedMonitors, validatedIntegrations))
+            .also { scheduler.scheduleWindow(it) }
             .toDetailsDto(calculator)
     }
 
     fun deleteMaintenanceWindowById(maintenanceWindowId: Long): Unit =
         maintenanceWindowRepository.findById(maintenanceWindowId)
             .orThrowNotFound(maintenanceWindowId.toString())
-            .let { maintenanceWindowRepository.deleteById(it.id) }
+            .let { window ->
+                maintenanceWindowRepository.deleteById(window.id)
+                scheduler.cancelWindow(window.id)
+            }
 
-    fun updateMaintenanceWindow(maintenanceWindowId: Long, updates: ObjectNode): MaintenanceWindowDetailsDto =
-        dslContext.transactionResultWithError { config ->
+    fun updateMaintenanceWindow(maintenanceWindowId: Long, updates: ObjectNode): MaintenanceWindowDetailsDto {
+        val previous = maintenanceWindowRepository.findById(maintenanceWindowId)
+            .orThrowNotFound(maintenanceWindowId.toString())
+
+        val updated = dslContext.transactionResultWithError { config ->
             val txCtx = config.dsl()
             val existing = maintenanceWindowRepository.findById(maintenanceWindowId, txCtx)
                 .orThrowNotFound(maintenanceWindowId.toString())
@@ -86,7 +94,12 @@ class MaintenanceWindowActions(
             }
 
             maintenanceWindowRepository.returningUpdate(MaintenanceWindowRecord(updatedWindow), txCtx)
-        }.toDetailsDto(calculator)
+        }
+
+        scheduler.onWindowUpdated(previous, updated)
+
+        return updated.toDetailsDto(calculator)
+    }
 
     fun getMaintenanceWindowsExport(): List<MaintenanceWindowRecord> = maintenanceWindowRepository.fetchAll()
 

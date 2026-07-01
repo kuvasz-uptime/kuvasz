@@ -3,12 +3,15 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -857,6 +860,56 @@ class SMTPEventHandlerTest(
                     emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
                     emailSent.captured.subject shouldContain "will expire soon"
                     emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                }
+            }
+        }
+
+        given("the SMTPEventHandler - maintenance window events") {
+            `when`("it receives a MaintenanceWindowStartEvent with explicitly assigned integrations") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    description = "Planned upgrade",
+                    integrations = listOf(otherEmailConfig.id, disabledEmailConfig.id),
+                )
+                val startEvent = MaintenanceWindowStartEvent(window)
+                val expectedEmail = EmailFactory(otherEmailConfig).fromMaintenanceEvent(startEvent)
+
+                eventDispatcher.dispatch(startEvent)
+
+                then("it emails only assigned & enabled integrations, ignoring global ones") {
+                    val sentEmails = mutableListOf<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "has started"
+                    }
+                    sentEmails.forOne { email ->
+                        email.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                    }
+                    sentEmails.forNone { email ->
+                        email.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
+                    }
+                    sentEmails.forNone { email ->
+                        email.fromRecipient.shouldNotBeNull().address shouldBe disabledEmailConfig.fromAddress
+                    }
+                }
+            }
+
+            `when`("it receives a MaintenanceWindowEndEvent with explicitly assigned integrations") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    integrations = listOf(otherEmailConfig.id),
+                )
+                val endEvent = MaintenanceWindowEndEvent(window)
+
+                eventDispatcher.dispatch(endEvent)
+
+                then("it emails the assigned integration about the window ending") {
+                    val emailSent = slot<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
+                    emailSent.captured.subject shouldContain "has ended"
                 }
             }
         }

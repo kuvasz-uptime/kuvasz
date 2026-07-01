@@ -3,12 +3,16 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -16,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -34,6 +39,9 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpResponseFactory
@@ -60,13 +68,15 @@ class WebhookEventHandlerTest(
     integrationRepository: IntegrationRepository,
     webhookConfigs: List<WebhookNotificationConfig>,
     databaseEventHandler: DatabaseEventHandler,
-    messageFactory: WebhookMessageFactory,
+    private val messageFactory: WebhookMessageFactory,
 ) : EventHandlerTest(databaseEventHandler) {
     private val mockClient = mockk<GenericWebhookClient>()
 
     private val globalWebhookConfig = webhookConfigs.first { it.enabled && it.global }
     private val otherWebhookConfig =
         webhookConfigs.first { it.enabled && !it.global && !it.excludedEvents.isNullOrEmpty() }
+    private val noTemplateWebhookConfig =
+        webhookConfigs.first { it.enabled && !it.global && it.payloadTemplate.isNullOrBlank() }
     private val disabledWebhookConfig = webhookConfigs.first { !it.enabled }
 
     init {
@@ -794,6 +804,69 @@ class WebhookEventHandlerTest(
                         )
                     }
                     notificationSent.captured.shouldBeInstanceOf<SSLWillExpireEvent>()
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - maintenance window events") {
+            `when`("it receives a MaintenanceWindowStartEvent with explicitly assigned integrations") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    description = "Planned upgrade",
+                    integrations = listOf(
+                        otherWebhookConfig.id,
+                        noTemplateWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    ),
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.dispatch(MaintenanceWindowStartEvent(window))
+
+                then("it sends to assigned & enabled integrations only, with blanked monitor fields") {
+                    val captured = slot<MaintenanceWindowEvent>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, capture(captured))
+                    }
+                    // A config without a payload template exercises the default GenericWebhookMessage payload path
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendWebhookEvent(noTemplateWebhookConfig, any())
+                    }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(inverse = true) {
+                        webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any())
+                    }
+
+                    val message = messageFactory.fromEvent(captured.captured)
+                    message.monitorId shouldBe 0
+                    message.monitorUrn shouldBe ""
+                    message.monitorName shouldBe ""
+                    message.monitorDetailsUrl shouldBe ""
+                    message.type shouldBe IntegrationEventType.MAINTENANCE_START
+                    message.eventDetails shouldContain "Maintenance window \"${window.name}\" has started"
+                }
+            }
+
+            `when`("the assigned integration has a pre-existing monitor payloadTemplate") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    integrations = listOf(otherWebhookConfig.id),
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.dispatch(MaintenanceWindowEndEvent(window))
+
+                then("the template still renders (the blank monitor vars resolve to empty) without error") {
+                    val captured = slot<MaintenanceWindowEvent>()
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, capture(captured))
+                    }
+                    val rendered = messageFactory.fromEvent(
+                        captured.captured,
+                        otherWebhookConfig.payloadTemplate.shouldNotBeNull(),
+                    )
+                    rendered shouldContain "MAINTENANCE_END"
                 }
             }
         }

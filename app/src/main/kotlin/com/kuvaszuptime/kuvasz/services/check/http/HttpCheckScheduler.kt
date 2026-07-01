@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.services.check.gracefulCancel
 import com.kuvaszuptime.kuvasz.services.check.initiateShutdown
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -23,7 +24,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
@@ -257,6 +257,6 @@ class HttpCheckScheduler(
         private const val SSL_CHECK_INITIAL_DELAY_MIN_SECONDS = 60L
         private const val SSL_CHECK_INITIAL_DELAY_MAX_SECONDS = 300L
         private const val SSL_CHECK_PERIOD_DAYS = 1L
-        private val logger = LoggerFactory.getLogger(HttpCheckScheduler::class.java)
+        private val logger = loggerFor<HttpCheckScheduler>()
     }
 }

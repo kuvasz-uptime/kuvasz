@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.services.check.getNextCheck
 import com.kuvaszuptime.kuvasz.services.check.gracefulCancel
 import com.kuvaszuptime.kuvasz.services.check.initiateShutdown
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -20,7 +21,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
 import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
@@ -140,6 +140,6 @@ class IcmpCheckScheduler(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(IcmpCheckScheduler::class.java)
+        private val logger = loggerFor<IcmpCheckScheduler>()
     }
 }

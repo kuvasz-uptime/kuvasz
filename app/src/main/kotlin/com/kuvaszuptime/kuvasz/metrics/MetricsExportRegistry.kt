@@ -28,7 +28,7 @@ class MetricsExportRegistry(
 ) {
 
     companion object {
-        private val logger: Logger = LoggerFactory.getLogger(this::class.java)
+        private val logger: Logger = LoggerFactory.getLogger(MetricsExportRegistry::class.java)
     }
 
     /**

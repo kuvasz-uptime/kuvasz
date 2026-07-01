@@ -3,9 +3,9 @@ package com.kuvaszuptime.kuvasz.services.check.ssl
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toOffsetDateTime
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 import java.net.URI
 import java.security.cert.X509Certificate
 import javax.net.SocketFactory
@@ -16,7 +16,6 @@ import javax.net.ssl.SSLSocketFactory
 @Singleton
 class SSLValidator {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
     private val socketFactory: SocketFactory = SSLSocketFactory.getDefault()
     private val sslParameters = SSLParameters().apply {
         // Enable host verification
@@ -26,6 +25,7 @@ class SSLValidator {
     companion object {
         private const val SOCKET_TIMEOUT_MS = 5000
         private const val DEFAULT_SSL_PORT = 443
+        private val logger = loggerFor<SSLValidator>()
     }
 
     /**

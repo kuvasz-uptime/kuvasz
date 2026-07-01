@@ -10,12 +10,12 @@ import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.isDownNow
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.micronaut.scheduling.annotation.Scheduled
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.slf4j.LoggerFactory
 
 @Singleton
 class HeartbeatChecker(
@@ -60,7 +60,9 @@ class HeartbeatChecker(
 class HeartbeatCheckScheduler(
     private val heartbeatChecker: HeartbeatChecker,
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<HeartbeatCheckScheduler>()
+    }
 
     /**
      * The minimum heartbeat interval is 10 seconds currently, so the initial delay is set to

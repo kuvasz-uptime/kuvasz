@@ -2,9 +2,9 @@ package com.kuvaszuptime.kuvasz.services.maintenance
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.scheduling.cron.CronExpression
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -172,6 +172,6 @@ class MaintenanceWindowCalculator {
     private fun OffsetDateTime.toSchedulingZone() = atZoneSameInstant(ZoneId.systemDefault())
 
     companion object {
-        private val logger = LoggerFactory.getLogger(MaintenanceWindowCalculator::class.java)
+        private val logger = loggerFor<MaintenanceWindowCalculator>()
     }
 }

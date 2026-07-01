@@ -2,12 +2,15 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -915,6 +918,53 @@ class PagerdutyEventHandlerTest(
                     slot.captured.payload.severity shouldBe PagerdutySeverity.WARNING
                     slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
                     slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+        }
+
+        given("the PagerdutyEventHandler - maintenance window events") {
+            `when`("it receives a MaintenanceWindowStartEvent with explicitly assigned integrations") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    description = "Planned upgrade",
+                    integrations = listOf(otherPagerdutyConfig.id, disabledPagerdutyConfig.id),
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.dispatch(MaintenanceWindowStartEvent(window))
+
+                then("it triggers a WARNING alert only for assigned & enabled integrations, ignoring global ones") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_maintenance_${window.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.WARNING
+                        request.payload.source shouldBe window.name
+                    }
+                    slot.forOne { it.routingKey shouldBe otherPagerdutyConfig.integrationKey }
+                    slot.forNone { it.routingKey shouldBe globalPagerdutyConfig.integrationKey }
+                    slot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MaintenanceWindowEndEvent with explicitly assigned integrations") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    integrations = listOf(otherPagerdutyConfig.id),
+                )
+                mockSuccessfulResolveResponse()
+
+                eventDispatcher.dispatch(MaintenanceWindowEndEvent(window))
+
+                then("it resolves the alert with the matching deduplication key") {
+                    val slot = slot<PagerdutyResolveRequest>()
+
+                    verify(exactly = 1) { mockClient.resolveAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.RESOLVE
+                    slot.captured.dedupKey shouldBe "kuvasz_maintenance_${window.id}"
+                    slot.captured.routingKey shouldBe otherPagerdutyConfig.integrationKey
                 }
             }
         }

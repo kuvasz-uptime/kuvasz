@@ -23,6 +23,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyTestService
 import com.kuvaszuptime.kuvasz.services.integrations.SlackWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.TelegramAPIService
 import com.kuvaszuptime.kuvasz.services.integrations.TestableNotificationService
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.validation.Validated
@@ -34,7 +35,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 
 @Controller("${API_V2_PREFIX}/integrations", produces = [MediaType.APPLICATION_JSON])
 @Validated
@@ -48,7 +48,9 @@ class IntegrationController(
     private val integrationRepository: IntegrationRepository,
 ) : IntegrationOperations {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<IntegrationController>()
+    }
 
     @ApiResponses(
         ApiResponse(

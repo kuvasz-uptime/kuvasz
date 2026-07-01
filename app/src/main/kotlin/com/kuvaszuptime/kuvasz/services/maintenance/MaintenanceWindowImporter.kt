@@ -8,10 +8,10 @@ import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.slf4j.LoggerFactory
 
 /**
  * Imports maintenance windows from the provided configurations, which are typically coming from a YAML file.
@@ -27,7 +27,9 @@ class MaintenanceWindowImporter(
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
     private val dslContext: DSLContext,
 ) {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    companion object {
+        private val logger = loggerFor<MaintenanceWindowImporter>()
+    }
 
     fun importMaintenanceWindowConfigs(
         maintenanceWindowConfigs: List<MaintenanceWindowConfig>,

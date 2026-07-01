@@ -21,14 +21,15 @@ import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowScheduler
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageImporter
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Property
 import jakarta.annotation.Nullable
 import jakarta.annotation.PostConstruct
 import jakarta.validation.ValidationException
-import org.slf4j.LoggerFactory
 
 @Context
 class AppBootstrapper(
@@ -48,6 +49,7 @@ class AppBootstrapper(
     private val statusPageImporter: StatusPageImporter,
     private val yamlMaintenanceWindowConfigs: List<MaintenanceWindowConfig>,
     private val maintenanceWindowImporter: MaintenanceWindowImporter,
+    private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
     private val apiKeyConfig: ApiKeyConfig?,
 ) {
 
@@ -76,7 +78,9 @@ class AppBootstrapper(
     @field:Property(name = MaintenanceWindowConfig.CONFIG_PREFIX)
     protected var maintenanceWindowsYAMLConfigChecker: List<Any>? = null
 
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    companion object {
+        private val logger = loggerFor<AppBootstrapper>()
+    }
 
     @PostConstruct
     fun bootstrap() {
@@ -96,6 +100,8 @@ class AppBootstrapper(
         httpCheckScheduler.initialize()
         // Scheduling the initial ICMP uptime checks
         icmpCheckScheduler.initialize()
+        // Scheduling the start/end notifications of the enabled maintenance windows
+        maintenanceWindowScheduler.initialize()
 
         logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
     }

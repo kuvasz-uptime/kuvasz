@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import com.kuvaszuptime.kuvasz.util.getBodyAs
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -41,7 +42,7 @@ abstract class McpToolTest(
         return try {
             client.retrieve(request, McpToolCallResponse::class.java).awaitFirst()
         } catch (e: HttpClientResponseException) {
-            e.response.getBodyAs<McpToolCallResponse>()!!
+            e.response.getBodyAs<McpToolCallResponse>().shouldNotBeNull()
         }
     }
 

@@ -87,8 +87,8 @@ class MaintenanceWindowCalculatorTest : StringSpec({
     "currentOrNextInterval returns the current interval when active, otherwise the next one" {
         val window = cronWindow()
 
-        calculator.currentOrNextInterval(window, at(day, 2, 30))!!.start shouldBe at(day, 2)
-        calculator.currentOrNextInterval(window, at(day, 5))!!.start shouldBe at(day.plusDays(1), 2)
+        calculator.currentOrNextInterval(window, at(day, 2, 30)).shouldNotBeNull().start shouldBe at(day, 2)
+        calculator.currentOrNextInterval(window, at(day, 5)).shouldNotBeNull().start shouldBe at(day.plusDays(1), 2)
     }
 
     "occurrencesBetween returns all cron occurrences overlapping the range" {

@@ -2,10 +2,10 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.reactivex.rxjava3.core.Single
-import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger(TestableNotificationService::class.java)
+private val logger = loggerFor<TestableNotificationService<*>>()
 
 interface TestableNotificationService<T : IntegrationConfig> {
     fun sendTestMessage(integrationConfig: T): Single<NotificationTestResult>
