@@ -245,6 +245,9 @@ class HttpMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
+                inMaintenance = maintenanceWindowService.isUnderMaintenance(
+                    MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                ),
             )
         }
     }

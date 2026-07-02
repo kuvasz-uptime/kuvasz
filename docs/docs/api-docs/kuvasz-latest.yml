@@ -4266,6 +4266,7 @@ components:
             type: string
     StatusPageDetailsDto:
       required:
+      - activeMaintenanceWindows
       - customFaviconUrl
       - customLogoUrl
       - generatedAt
@@ -4275,6 +4276,7 @@ components:
       - slug
       - systemStatus
       - title
+      - upcomingMaintenanceWindows
       type: object
       properties:
         id:
@@ -4316,6 +4318,18 @@ components:
             \ as their uptime status and uptime ratio"
           items:
             $ref: "#/components/schemas/StatusPageMonitorDetailsDto"
+        activeMaintenanceWindows:
+          type: array
+          description: The maintenance windows that are shown on the status page and
+            currently active for at least one of its monitors
+          items:
+            $ref: "#/components/schemas/StatusPageMaintenanceWindowDto"
+        upcomingMaintenanceWindows:
+          type: array
+          description: The maintenance windows that are shown on the status page and
+            going to start within the next 24 hours for at least one of its monitors
+          items:
+            $ref: "#/components/schemas/StatusPageMaintenanceWindowDto"
     StatusPageDto:
       required:
       - createdAt
@@ -4369,6 +4383,7 @@ components:
           format: date-time
     StatusPageHttpMonitorDetailsDto:
       required:
+      - inMaintenance
       - name
       - type
       - uptimeStatusHistory
@@ -4398,8 +4413,11 @@ components:
           type: integer
           format: int32
           nullable: true
+        inMaintenance:
+          type: boolean
     StatusPageIcmpMonitorDetailsDto:
       required:
+      - inMaintenance
       - name
       - type
       - uptimeStatusHistory
@@ -4433,6 +4451,26 @@ components:
           type: integer
           format: int32
           nullable: true
+        inMaintenance:
+          type: boolean
+    StatusPageMaintenanceWindowDto:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
     StatusPageMonitorDetailsDto:
       required:
       - name
@@ -4460,12 +4498,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        inMaintenance:
+          type: boolean
       oneOf:
       - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageIcmpMonitorDetailsDto"
     StatusPagePushMonitorDetailsDto:
       required:
+      - inMaintenance
       - name
       - type
       - uptimeStatusHistory
@@ -4491,6 +4532,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        inMaintenance:
+          type: boolean
         lastHeartbeat:
           type: string
           format: date-time
@@ -4541,6 +4584,8 @@ components:
       - OPERATIONAL
       - PARTIAL_OUTAGE
       - MAJOR_OUTAGE
+      - PARTIAL_MAINTENANCE
+      - MAINTENANCE
       - PENDING
     TelegramNotificationConfigDto:
       required:

@@ -8,4 +8,5 @@ interface MonitorDetailsDto {
     val enabled: Boolean
     val uptimeStatus: UptimeStatus?
     val uptimeError: String?
+    val inMaintenance: Boolean
 }

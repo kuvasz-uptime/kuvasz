@@ -17,5 +17,13 @@ class PublicStatusPage(private val page: Page) {
     fun monitorCardBody(name: String): Locator =
         page.getByTestId("status-monitor-card").filter(Locator.FilterOptions().setHasText(name))
 
+    fun maintenanceBanner(): Locator = page.getByTestId("status-page-maintenance-banner")
+
+    // The "start → end" timeframe pill rendered for scheduled maintenance windows (absent for manual ones).
+    fun maintenanceTimeframe(): Locator = maintenanceBanner().getByTestId("maintenance-window-timeframe")
+
+    // The grayed-out uptime badge (with a tool icon) that is rendered while a monitor is under maintenance.
+    fun monitorMaintenanceBadge(name: String): Locator = monitorCardBody(name).locator(".status.status-gray")
+
     fun title(title: String): Locator = page.getByText(title)
 }

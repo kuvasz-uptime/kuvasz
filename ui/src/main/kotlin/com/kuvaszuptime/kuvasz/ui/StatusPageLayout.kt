@@ -51,6 +51,8 @@ internal fun withStatusPageLayout(
                             // Page body
                             div {
                                 classes(PAGE_BODY)
+                                // Maintenance info block above the monitors
+                                maintenanceBanner(pageData)
                                 div {
                                     classes(CONTAINER_XL)
                                     systemStatusMonitorList(pageData)

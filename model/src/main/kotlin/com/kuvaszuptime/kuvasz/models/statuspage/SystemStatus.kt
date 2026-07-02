@@ -4,5 +4,7 @@ enum class SystemStatus {
     OPERATIONAL,
     PARTIAL_OUTAGE,
     MAJOR_OUTAGE,
+    PARTIAL_MAINTENANCE,
+    MAINTENANCE,
     PENDING,
 }

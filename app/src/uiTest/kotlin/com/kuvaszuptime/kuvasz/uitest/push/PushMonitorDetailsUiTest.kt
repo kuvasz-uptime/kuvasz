@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.uitest.push
 
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -37,6 +40,22 @@ class PushMonitorDetailsUiTest(private val pushMonitorRepository: PushMonitorRep
 
             details.toggleButton.click()
             assertThat(details.pauseControl).isVisible()
+        }
+
+        "a monitor under an active maintenance window shows the maintenance indicator in its heading" {
+            val monitor = createPushMonitor(pushMonitorRepository, monitorName = "Maintained Push Detail Monitor")
+            createMaintenanceWindow(
+                dslContext,
+                name = "Push detail maintenance",
+                enabled = true,
+                monitors = listOf(MonitorID(MonitorType.PUSH, monitor.name)),
+            )
+
+            val page = newPage()
+            val details = PushMonitorDetailsPage(page)
+            details.navigate(monitor.id)
+
+            assertThat(details.maintenanceIndicator).isVisible()
         }
     }
 }

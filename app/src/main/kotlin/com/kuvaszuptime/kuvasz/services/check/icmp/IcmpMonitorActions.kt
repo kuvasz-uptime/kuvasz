@@ -237,6 +237,9 @@ class IcmpMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
+                inMaintenance = maintenanceWindowService.isUnderMaintenance(
+                    MonitorID(MonitorType.ICMP, monitor.name)
+                ),
             )
         }
     }

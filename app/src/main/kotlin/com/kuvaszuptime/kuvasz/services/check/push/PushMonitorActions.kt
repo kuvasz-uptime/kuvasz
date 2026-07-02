@@ -204,6 +204,9 @@ class PushMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
+                inMaintenance = maintenanceWindowService.isUnderMaintenance(
+                    MonitorID(MonitorType.PUSH, monitor.name)
+                ),
                 lastHeartbeat = monitor.lastHeartbeat,
             )
         }

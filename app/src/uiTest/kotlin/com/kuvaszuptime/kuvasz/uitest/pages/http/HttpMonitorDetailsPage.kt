@@ -21,6 +21,9 @@ class HttpMonitorDetailsPage(private val page: Page) {
     val latencySection: Locator get() = page.getByTestId("latency-block-title")
     val sslSection: Locator get() = page.getByTestId("ssl-block-title")
 
+    // The maintenance indicator (a tool icon) rendered in the header while the monitor is under maintenance.
+    val maintenanceIndicator: Locator get() = page.locator("#http-monitor-detail-heading .icon-tabler-tool")
+
     // The ApexCharts container; once rendered it holds an `<svg>`.
     val latencyChartSvg: Locator get() = page.locator("#monitor-details-latency-chart svg")
 

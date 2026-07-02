@@ -34,6 +34,12 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
         .where(MAINTENANCE_WINDOW.ENABLED.eq(enabled))
         .fetch()
 
+    fun fetchEnabledOnStatusPages(): List<MaintenanceWindowRecord> = dslContext
+        .selectFrom(MAINTENANCE_WINDOW)
+        .where(MAINTENANCE_WINDOW.ENABLED.eq(true))
+        .and(MAINTENANCE_WINDOW.SHOW_ON_STATUS_PAGES.eq(true))
+        .fetch()
+
     fun findActiveCandidatesForMonitor(monitorId: MonitorID): List<MaintenanceWindowRecord> = dslContext
         .selectFrom(MAINTENANCE_WINDOW)
         .where(MAINTENANCE_WINDOW.ENABLED.eq(true))

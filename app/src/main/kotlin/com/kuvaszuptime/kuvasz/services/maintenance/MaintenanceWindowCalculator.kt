@@ -153,7 +153,6 @@ class MaintenanceWindowCalculator {
 
     private fun MaintenanceWindowRecord.isManual(): Boolean = cron == null && start == null
 
-    /** The parsed, positive duration of an *enabled* window, or `null` if the window is disabled or has no duration. */
     private fun MaintenanceWindowRecord.activeDuration(): Duration? =
         parseDuration()?.takeIf { enabled == true }
 

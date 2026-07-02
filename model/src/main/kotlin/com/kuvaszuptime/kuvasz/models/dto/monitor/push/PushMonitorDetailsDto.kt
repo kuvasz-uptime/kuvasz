@@ -51,5 +51,5 @@ data class PushMonitorDetailsDto(
     @param:Schema(description = MonitorDocs.MAINTENANCE_WINDOWS, required = true)
     val maintenanceWindows: List<MaintenanceWindowDetailsDto>,
     @param:Schema(description = MonitorDocs.UNDER_MAINTENANCE, required = true)
-    val inMaintenance: Boolean,
+    override val inMaintenance: Boolean,
 ) : MonitorDetailsDto

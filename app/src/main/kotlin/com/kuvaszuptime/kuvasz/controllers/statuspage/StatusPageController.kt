@@ -110,6 +110,8 @@ class StatusPageController(
                 systemStatus = dataDto.systemStatus,
                 generatedAt = dataDto.generatedAt,
                 monitors = dataDto.monitors,
+                activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
+                upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
             )
         } else {
             val pageDto = statusPageActions.getStatusPageById(statusPageId)
@@ -128,6 +130,8 @@ class StatusPageController(
                 systemStatus = dataDto.systemStatus,
                 generatedAt = dataDto.generatedAt,
                 monitors = dataDto.monitors,
+                activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
+                upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
             )
         }
 

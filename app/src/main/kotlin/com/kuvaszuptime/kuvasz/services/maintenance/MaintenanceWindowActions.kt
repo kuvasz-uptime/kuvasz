@@ -9,10 +9,13 @@ import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowUpdateDto
 import com.kuvaszuptime.kuvasz.models.maintenance.toMaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.DEFAULT_PAGE_CACHE_NAME
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.STATUS_PAGES_CACHE_NAME
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
+import io.micronaut.cache.annotation.CacheInvalidate
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -46,6 +49,8 @@ class MaintenanceWindowActions(
             .orThrowNotFound(maintenanceWindowId.toString())
             .toDetailsDto(calculator)
 
+    @CacheInvalidate(DEFAULT_PAGE_CACHE_NAME, all = true)
+    @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = true)
     fun createMaintenanceWindow(createDto: MaintenanceWindowCreateDto): MaintenanceWindowDetailsDto {
         createDto.validateScheduleConsistency()
         // Non-existing monitors are silently dropped, but integrations must exist
@@ -58,6 +63,8 @@ class MaintenanceWindowActions(
             .toDetailsDto(calculator)
     }
 
+    @CacheInvalidate(DEFAULT_PAGE_CACHE_NAME, all = true)
+    @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = true)
     fun deleteMaintenanceWindowById(maintenanceWindowId: Long): Unit =
         maintenanceWindowRepository.findById(maintenanceWindowId)
             .orThrowNotFound(maintenanceWindowId.toString())
@@ -66,6 +73,8 @@ class MaintenanceWindowActions(
                 scheduler.cancelWindow(window.id)
             }
 
+    @CacheInvalidate(DEFAULT_PAGE_CACHE_NAME, all = true)
+    @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = true)
     fun updateMaintenanceWindow(maintenanceWindowId: Long, updates: ObjectNode): MaintenanceWindowDetailsDto {
         val previous = maintenanceWindowRepository.findById(maintenanceWindowId)
             .orThrowNotFound(maintenanceWindowId.toString())

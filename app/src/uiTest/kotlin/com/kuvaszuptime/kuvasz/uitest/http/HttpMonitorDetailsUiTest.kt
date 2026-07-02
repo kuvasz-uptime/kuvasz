@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.uitest.http
 
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -40,6 +43,22 @@ class HttpMonitorDetailsUiTest(private val httpMonitorRepository: HttpMonitorRep
 
             details.toggleButton.click()
             assertThat(details.pauseControl).isVisible()
+        }
+
+        "a monitor under an active maintenance window shows the maintenance indicator in its heading" {
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Maintained Detail Monitor")
+            createMaintenanceWindow(
+                dslContext,
+                name = "HTTP detail maintenance",
+                enabled = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+            )
+
+            val page = newPage()
+            val details = HttpMonitorDetailsPage(page)
+            details.navigate(monitor.id)
+
+            assertThat(details.maintenanceIndicator).isVisible()
         }
     }
 }
