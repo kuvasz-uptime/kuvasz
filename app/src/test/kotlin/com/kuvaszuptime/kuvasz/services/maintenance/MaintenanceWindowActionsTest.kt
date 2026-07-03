@@ -14,7 +14,6 @@ import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import org.jooq.DSLContext
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -22,149 +21,150 @@ import java.util.concurrent.CopyOnWriteArrayList
 class MaintenanceWindowActionsTest(
     private val actions: MaintenanceWindowActions,
     private val scheduler: MaintenanceWindowScheduler,
-    private val dsl: DSLContext,
     eventDispatcher: EventDispatcher,
-) : DatabaseBehaviorSpec({
+) : DatabaseBehaviorSpec() {
+    init {
 
-    val mapper = jacksonObjectMapper()
+        val mapper = jacksonObjectMapper()
 
-    val received = CopyOnWriteArrayList<MaintenanceWindowEvent>()
-    eventDispatcher.subscribeToMaintenanceStartEvents { received.add(it) }
-    eventDispatcher.subscribeToMaintenanceEndEvents { received.add(it) }
-    beforeContainer { received.clear() }
+        val received = CopyOnWriteArrayList<MaintenanceWindowEvent>()
+        eventDispatcher.subscribeToMaintenanceStartEvents { received.add(it) }
+        eventDispatcher.subscribeToMaintenanceEndEvents { received.add(it) }
+        beforeContainer { received.clear() }
 
-    given("the MaintenanceWindowActions - manual toggle") {
+        given("the MaintenanceWindowActions - manual toggle") {
 
-        `when`("a disabled manual window is enabled") {
-            val window = createMaintenanceWindow(dsl, enabled = false)
+            `when`("a disabled manual window is enabled") {
+                val window = createMaintenanceWindow(dslContext, enabled = false)
 
-            actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", true))
+                actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", true))
 
-            then("a start event is emitted for the window") {
-                received.single().let { event ->
-                    event.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
-                    event.window.id shouldBe window.id
+                then("a start event is emitted for the window") {
+                    received.single().let { event ->
+                        event.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
+                        event.window.id shouldBe window.id
+                    }
                 }
             }
-        }
 
-        `when`("an enabled manual window is disabled") {
-            val window = createMaintenanceWindow(dsl, enabled = true)
+            `when`("an enabled manual window is disabled") {
+                val window = createMaintenanceWindow(dslContext, enabled = true)
 
-            actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", false))
+                actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", false))
 
-            then("an end event is emitted for the window") {
-                received.single().let { event ->
-                    event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
-                    event.window.id shouldBe window.id
+                then("an end event is emitted for the window") {
+                    received.single().let { event ->
+                        event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+                        event.window.id shouldBe window.id
+                    }
                 }
             }
-        }
 
-        `when`("a time-based (single) window is toggled") {
-            val window = createMaintenanceWindow(
-                dsl,
-                enabled = false,
-                start = getCurrentTimestamp().plusHours(1),
-                duration = "PT1H",
-            )
-
-            actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", true))
-
-            then("no manual event is emitted, but the window gets (re)scheduled") {
-                received.shouldBeEmpty()
-                scheduler.getScheduledWindows() shouldContainKey window.id
-            }
-        }
-
-        `when`("an active time-based window is disabled") {
-            val window = createMaintenanceWindow(
-                dsl,
-                enabled = true,
-                start = getCurrentTimestamp().minusMinutes(10),
-                duration = "PT1H",
-            )
-
-            actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", false))
-
-            then("an end event is emitted so the maintenance state is closed") {
-                received.single().let { event ->
-                    event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
-                    event.window.id shouldBe window.id
-                }
-                scheduler.getScheduledWindows() shouldNotContainKey window.id
-            }
-        }
-    }
-
-    given("the MaintenanceWindowActions - create & delete") {
-
-        `when`("a future single window is created") {
-            val created = actions.createMaintenanceWindow(
-                MaintenanceWindowCreateDto(
-                    name = "Created window",
+            `when`("a time-based (single) window is toggled") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    enabled = false,
                     start = getCurrentTimestamp().plusHours(1),
                     duration = "PT1H",
                 )
-            )
 
-            then("it is scheduled and no start event is emitted yet") {
-                scheduler.getScheduledWindows() shouldContainKey created.id
-                received.shouldBeEmpty()
+                actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", true))
+
+                then("no manual event is emitted, but the window gets (re)scheduled") {
+                    received.shouldBeEmpty()
+                    scheduler.getScheduledWindows() shouldContainKey window.id
+                }
             }
-        }
 
-        `when`("an enabled manual window is created") {
-            val created = actions.createMaintenanceWindow(
-                MaintenanceWindowCreateDto(
-                    name = "Active on creation",
+            `when`("an active time-based window is disabled") {
+                val window = createMaintenanceWindow(
+                    dslContext,
                     enabled = true,
-                    global = true,
-                )
-            )
-
-            then("a start event is emitted so consumers learn maintenance has begun") {
-                received.single().let { event ->
-                    event.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
-                    event.window.id shouldBe created.id
-                }
-            }
-        }
-
-        `when`("a scheduled window is deleted") {
-            val created = actions.createMaintenanceWindow(
-                MaintenanceWindowCreateDto(
-                    name = "To be deleted",
-                    start = getCurrentTimestamp().plusHours(1),
+                    start = getCurrentTimestamp().minusMinutes(10),
                     duration = "PT1H",
                 )
-            )
-            scheduler.getScheduledWindows() shouldContainKey created.id
 
-            actions.deleteMaintenanceWindowById(created.id)
+                actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", false))
 
-            then("its scheduled tasks are cancelled") {
-                scheduler.getScheduledWindows() shouldNotContainKey created.id
+                then("an end event is emitted so the maintenance state is closed") {
+                    received.single().let { event ->
+                        event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+                        event.window.id shouldBe window.id
+                    }
+                    scheduler.getScheduledWindows() shouldNotContainKey window.id
+                }
             }
         }
 
-        `when`("an active window is deleted") {
-            val window = createMaintenanceWindow(
-                dsl,
-                enabled = true,
-                start = getCurrentTimestamp().minusMinutes(10),
-                duration = "PT1H",
-            )
+        given("the MaintenanceWindowActions - create & delete") {
 
-            actions.deleteMaintenanceWindowById(window.id)
+            `when`("a future single window is created") {
+                val created = actions.createMaintenanceWindow(
+                    MaintenanceWindowCreateDto(
+                        name = "Created window",
+                        start = getCurrentTimestamp().plusHours(1),
+                        duration = "PT1H",
+                    )
+                )
 
-            then("an end event is emitted so the maintenance state is closed") {
-                received.single().let { event ->
-                    event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
-                    event.window.id shouldBe window.id
+                then("it is scheduled and no start event is emitted yet") {
+                    scheduler.getScheduledWindows() shouldContainKey created.id
+                    received.shouldBeEmpty()
                 }
-                scheduler.getScheduledWindows() shouldNotContainKey window.id
+            }
+
+            `when`("an enabled manual window is created") {
+                val created = actions.createMaintenanceWindow(
+                    MaintenanceWindowCreateDto(
+                        name = "Active on creation",
+                        enabled = true,
+                        global = true,
+                    )
+                )
+
+                then("a start event is emitted so consumers learn maintenance has begun") {
+                    received.single().let { event ->
+                        event.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
+                        event.window.id shouldBe created.id
+                    }
+                }
+            }
+
+            `when`("a scheduled window is deleted") {
+                val created = actions.createMaintenanceWindow(
+                    MaintenanceWindowCreateDto(
+                        name = "To be deleted",
+                        start = getCurrentTimestamp().plusHours(1),
+                        duration = "PT1H",
+                    )
+                )
+                scheduler.getScheduledWindows() shouldContainKey created.id
+
+                actions.deleteMaintenanceWindowById(created.id)
+
+                then("its scheduled tasks are cancelled") {
+                    scheduler.getScheduledWindows() shouldNotContainKey created.id
+                }
+            }
+
+            `when`("an active window is deleted") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    enabled = true,
+                    start = getCurrentTimestamp().minusMinutes(10),
+                    duration = "PT1H",
+                )
+
+                actions.deleteMaintenanceWindowById(window.id)
+
+                then("an end event is emitted so the maintenance state is closed") {
+                    received.single().let { event ->
+                        event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+                        event.window.id shouldBe window.id
+                    }
+                    scheduler.getScheduledWindows() shouldNotContainKey window.id
+                }
             }
         }
     }
-})
+}
