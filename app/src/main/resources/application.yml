@@ -116,6 +116,8 @@ micronaut:
     status-pages:
       expire-after-write: ${STATUS_PAGE_CACHE_EXPIRES_AFTER:`PT5M`}
       maximum-size: ${STATUS_PAGE_CACHE_MAX_SIZE:`20`}
+    compiled-cron:
+      maximum-size: 100
 endpoints:
   all.path: /api/v2/
   health:

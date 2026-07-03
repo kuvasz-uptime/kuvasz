@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.maintenance
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.loggerFor
+import io.micronaut.cache.annotation.Cacheable
 import io.micronaut.scheduling.cron.CronExpression
 import jakarta.inject.Singleton
 import java.time.Duration
@@ -161,7 +162,8 @@ class MaintenanceWindowCalculator {
                 .getOrNull()
         }
 
-    private fun parseCron(rawCron: String, windowName: String): CronExpression? =
+    @Cacheable(cacheNames = [COMPILED_CRON_CACHE_NAME], parameters = ["rawCron"])
+    fun parseCron(rawCron: String, windowName: String): CronExpression? =
         runCatching { CronExpression.create(rawCron) }
             .onFailure { ex -> logger.warn("Invalid cron '$rawCron' on window '$windowName': ${ex.message}") }
             .getOrNull()
@@ -169,6 +171,7 @@ class MaintenanceWindowCalculator {
     private fun OffsetDateTime.toSchedulingZone() = atZoneSameInstant(ZoneId.systemDefault())
 
     companion object {
+        const val COMPILED_CRON_CACHE_NAME = "compiled-cron"
         private val logger = loggerFor<MaintenanceWindowCalculator>()
     }
 }
