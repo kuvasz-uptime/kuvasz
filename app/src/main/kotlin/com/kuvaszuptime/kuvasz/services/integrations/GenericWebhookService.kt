@@ -149,12 +149,14 @@ class GenericWebhookService(
     )
 
     fun sendWebhookEvent(target: WebhookNotificationConfig, event: NotifiableEvent): Single<out Any> =
-        client.sendMessage(
-            url = prepareUrl(target, event),
-            payload = preparePayload(target, event),
-            headers = prepareHeaders(target, event),
-            httpMethod = target.httpMethod,
-        )
+        Single.defer {
+            client.sendMessage(
+                url = prepareUrl(target, event),
+                payload = preparePayload(target, event),
+                headers = prepareHeaders(target, event),
+                httpMethod = target.httpMethod,
+            )
+        }
 
     private fun prepareHeaders(target: WebhookNotificationConfig, event: NotifiableEvent): Map<String, String> =
         target.requestHeaders.orEmpty().mapValues { (_, value) ->
