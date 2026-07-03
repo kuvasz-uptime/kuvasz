@@ -35,6 +35,7 @@ class MonitorImporter(
      * the external YAML config bootstrap path; they are the reason this class still
      * injects the three repositories and IntegrationIdValidator.
      */
+    @Suppress("TooGenericExceptionCaught")
     fun importMonitorConfigs(validatedImport: ValidatedMonitorImport, dryRun: Boolean = false): MonitorImportResultDto =
         try {
             dslContext.transactionResultWithError { txCtx ->

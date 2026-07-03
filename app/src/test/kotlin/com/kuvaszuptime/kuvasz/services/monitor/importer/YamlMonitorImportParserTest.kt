@@ -2,8 +2,6 @@ package com.kuvaszuptime.kuvasz.services.monitor.importer
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

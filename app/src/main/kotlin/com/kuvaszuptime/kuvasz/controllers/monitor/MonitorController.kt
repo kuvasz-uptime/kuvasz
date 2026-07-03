@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
@@ -36,6 +37,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.ValidationException
+import java.io.IOException
 
 @Controller("${API_V2_PREFIX}/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
@@ -82,6 +84,15 @@ class MonitorController(
         @Part file: CompletedFileUpload,
         @QueryValue(defaultValue = "false") dryRun: Boolean,
     ): MonitorImportResultDto {
+        val content = validateUploadedFile(file)
+        ensureMonitorsAreWritable()
+        val importDto = parseImportYaml(content)
+        ensureImportContainsMonitors(importDto)
+
+        return monitorImportService.importMonitors(importDto, dryRun)
+    }
+
+    private fun validateUploadedFile(file: CompletedFileUpload): ByteArray {
         val content = file.bytes
         if (content.isEmpty()) {
             throw ValidationException("The uploaded file is empty")
@@ -89,28 +100,32 @@ class MonitorController(
         if (content.size > MAX_UPLOAD_SIZE_BYTES) {
             throw ValidationException("The uploaded file exceeds the maximum allowed size of 10 MB")
         }
+        return content
+    }
 
+    private fun ensureMonitorsAreWritable() {
         if (appConfig.isHttpMonitorExternalWriteDisabled() ||
             appConfig.isPushMonitorExternalWriteDisabled() ||
             appConfig.isIcmpMonitorExternalWriteDisabled()
         ) {
             throw ReadOnlyMonitorException()
         }
+    }
 
-        val importDto = try {
+    private fun parseImportYaml(content: ByteArray): MonitorImportDto =
+        try {
             monitorImportParser.parse(content)
-        } catch (e: Exception) {
-            throw ValidationException("Failed to parse the uploaded YAML file: ${e.message}")
+        } catch (e: IOException) {
+            throw ValidationException("Failed to parse the uploaded YAML file: ${e.message}", e)
         }
 
+    private fun ensureImportContainsMonitors(importDto: MonitorImportDto) {
         if (importDto.httpMonitors.isNullOrEmpty() &&
             importDto.pushMonitors.isNullOrEmpty() &&
             importDto.icmpMonitors.isNullOrEmpty()
         ) {
             throw ValidationException("The uploaded YAML file does not contain any monitors")
         }
-
-        return monitorImportService.importMonitors(importDto, dryRun)
     }
 
     companion object {

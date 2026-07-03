@@ -8,6 +8,7 @@ import io.micronaut.core.annotation.Introspected
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 
+@Suppress("TooManyFunctions")
 @ConfigurationProperties("app-config")
 @Context
 @Introspected

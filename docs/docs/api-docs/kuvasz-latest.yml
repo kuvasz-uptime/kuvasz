@@ -696,6 +696,60 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/monitors/import/yaml:
+    post:
+      tags:
+      - Monitors
+      summary: Import monitors from a YAML backup file
+      description: "Upload a YAML monitor backup. Existing monitors with the same\
+        \ name will be updated, and monitors not present in the backup will be deleted.\
+        \ Use dryRun=true to preview the outcome without making any changes."
+      operationId: importYamlMonitors
+      parameters:
+      - name: dryRun
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: application/octet-stream
+                explode: false
+        required: true
+      responses:
+        "200":
+          description: Successful import or dry-run preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitorImportResultDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: Monitor type is managed via external YAML config (read-only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/push-monitors:
     get:
       tags:
@@ -3004,6 +3058,55 @@ components:
           description: The 99th percentile latency in milliseconds for the monitor
           format: int32
           nullable: true
+    MonitorImportResultDto:
+      required:
+      - deletedMonitorCount
+      - dryRun
+      - importedMonitorCnt
+      - perTypeResults
+      - receivedMonitorCnt
+      type: object
+      properties:
+        receivedMonitorCnt:
+          type: integer
+          format: int32
+        importedMonitorCnt:
+          type: integer
+          format: int32
+        deletedMonitorCount:
+          type: integer
+          format: int32
+        dryRun:
+          type: boolean
+        perTypeResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonitorTypeImportResult"
+    MonitorType:
+      type: string
+      enum:
+      - HTTP_SSL
+      - PUSH
+      - ICMP
+    MonitorTypeImportResult:
+      required:
+      - deletedMonitorCount
+      - importedMonitorCnt
+      - monitorType
+      - receivedMonitorCnt
+      type: object
+      properties:
+        monitorType:
+          $ref: "#/components/schemas/MonitorType"
+        receivedMonitorCnt:
+          type: integer
+          format: int32
+        importedMonitorCnt:
+          type: integer
+          format: int32
+        deletedMonitorCount:
+          type: integer
+          format: int32
     NotificationTestResult:
       required:
       - message
