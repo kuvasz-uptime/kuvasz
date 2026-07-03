@@ -6,10 +6,12 @@ import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.monitorImportModal
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
+private const val MONITOR_IMPORT_MODAL_ID = "monitor-import-modal"
 private const val OIDC_CALLBACK_URL_ID = "oidc-callback-url"
 private const val OIDC_POST_LOGOUT_REDIRECT_URI_ID = "oidc-post-logout-redirect-uri"
 private const val OIDC_WEB_ORIGIN_ID = "oidc-web-origin"
@@ -314,6 +316,20 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                 }
             }
         }
+
+        val labelsJson = objectMapper.writeValueAsString(
+            mapOf(
+                "previewButton" to Messages.monitorImportPreviewButton(),
+                "importButton" to Messages.monitorImportImportButton(),
+                "fileRequired" to Messages.monitorImportFileRequired(),
+                "importFailed" to Messages.monitorImportFailed(),
+                "perTypeLabel" to Messages.monitorImportResultPerType(),
+                "typeHttpLabel" to Messages.monitorImportResultTypeHttp(),
+                "typePushLabel" to Messages.monitorImportResultTypePush(),
+                "typeIcmpLabel" to Messages.monitorImportResultTypeIcmp(),
+            )
+        )
+        monitorImportModal(MONITOR_IMPORT_MODAL_ID, labelsJson)
     }
 
 /*
@@ -465,6 +481,12 @@ private fun HtmlBlockTag.settingsPageHeader() {
                                         attributes["download"] = "true"
                                         icon(Icon.DOWNLOAD)
                                         +Messages.downloadMonitorBackup()
+                                    }
+                                    a(href = "#") {
+                                        classes(DROPDOWN_ITEM)
+                                        modalOpener(MONITOR_IMPORT_MODAL_ID)
+                                        icon(Icon.UPLOAD)
+                                        +Messages.importMonitorBackup()
                                     }
                                     a(href = "/api/v2/status-pages/export/yaml") {
                                         classes(DROPDOWN_ITEM)
