@@ -10,6 +10,9 @@ import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.services.monitor.import.ImportStrategy
+import com.kuvaszuptime.kuvasz.services.monitor.import.ValidatedMonitorImport
+import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -22,24 +25,50 @@ class MonitorImporter(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val dslContext: DSLContext,
+    private val importStrategy: ImportStrategy,
 ) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
+
+    /**
+     * New orchestrated import path. The legacy per-type methods below are kept for
+     * the external YAML config bootstrap path; they are the reason this class still
+     * injects the three repositories and IntegrationIdValidator.
+     */
+    fun importMonitorConfigs(validatedImport: ValidatedMonitorImport, dryRun: Boolean = false): MonitorImportResultDto =
+        try {
+            dslContext.transactionResultWithError { txCtx ->
+                val perTypeResults = importStrategy.execute(validatedImport, txCtx)
+                val result = MonitorImportResultDto(
+                    receivedMonitorCnt = perTypeResults.sumOf { it.receivedMonitorCnt },
+                    importedMonitorCnt = perTypeResults.sumOf { it.importedMonitorCnt },
+                    deletedMonitorCount = perTypeResults.sumOf { it.deletedMonitorCount },
+                    dryRun = dryRun,
+                    perTypeResults = perTypeResults,
+                )
+
+                if (dryRun) throw DryRunRollbackException(result)
+                result
+            }
+        } catch (e: DryRunRollbackException) {
+            e.result
+        } catch (e: RuntimeException) {
+            // Defensive: some transaction providers wrap the rollback marker in a RuntimeException.
+            // A wrapped dry-run marker returns the result; any other RuntimeException is rethrown.
+            val cause = e.cause
+            if (cause is DryRunRollbackException) cause.result else throw e
+        }
 
     fun importHttpMonitorConfigs(monitorConfigs: List<HttpMonitorConfig>): MonitorImportResultDto =
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
             val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
-                // Validating the monitor's integrations to ensure they are configured correctly
                 val validatedIntegrations =
                     integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
-
-                // Upserting the monitor from the provided configs
                 httpMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
             }
             logger.info("Loaded ${monitorConfigs.size} HTTP monitors from external config")
 
-            // Removing all monitors that are not in the provided configs
             val deletedCnt = httpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
             if (deletedCnt > 0) {
                 logger.info("Deleted $deletedCnt HTTP monitors that were not in the external config")
@@ -55,18 +84,13 @@ class MonitorImporter(
     fun importPushMonitorConfigs(monitorConfigs: List<PushMonitorConfig>): MonitorImportResultDto =
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
-
             val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
-                // Validating the monitor's integrations to ensure they are configured correctly
                 val validatedIntegrations =
                     integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
-
-                // Upserting the monitor from the provided configs
                 pushMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
             }
             logger.info("Loaded ${monitorConfigs.size} push monitors from external config")
 
-            // Removing all monitors that are not in the provided configs
             val deletedCnt = pushMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
             if (deletedCnt > 0) {
                 logger.info("Deleted $deletedCnt push monitors that were not in the external config")
@@ -82,11 +106,9 @@ class MonitorImporter(
     fun importIcmpMonitorConfigs(monitorConfigs: List<IcmpMonitorConfig>): MonitorImportResultDto =
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
-
             val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
                 val validatedIntegrations =
                     integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
-
                 icmpMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
             }
             logger.info("Loaded ${monitorConfigs.size} ICMP monitors from external config")
@@ -102,4 +124,6 @@ class MonitorImporter(
                 deletedMonitorCount = deletedCnt,
             )
         }
+
+    private class DryRunRollbackException(val result: MonitorImportResultDto) : RuntimeException()
 }
