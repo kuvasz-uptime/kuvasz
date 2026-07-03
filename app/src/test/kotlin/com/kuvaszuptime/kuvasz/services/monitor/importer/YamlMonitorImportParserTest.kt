@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services.monitor.import
+package com.kuvaszuptime.kuvasz.services.monitor.importer
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto

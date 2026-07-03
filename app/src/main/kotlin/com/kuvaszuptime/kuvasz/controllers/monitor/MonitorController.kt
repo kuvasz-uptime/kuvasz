@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
-import com.kuvaszuptime.kuvasz.models.dto.import.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -16,8 +16,8 @@ import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
-import com.kuvaszuptime.kuvasz.services.monitor.import.MonitorImportParser
-import com.kuvaszuptime.kuvasz.services.monitor.import.MonitorImportService
+import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportParser
+import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportService
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Consumes
 import io.micronaut.http.annotation.Controller

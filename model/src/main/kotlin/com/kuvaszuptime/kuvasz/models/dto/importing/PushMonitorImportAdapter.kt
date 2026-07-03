@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.dto.import
+package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator

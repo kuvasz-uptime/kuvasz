@@ -1,6 +1,6 @@
-package com.kuvaszuptime.kuvasz.services.monitor.import
+package com.kuvaszuptime.kuvasz.services.monitor.importer
 
-import com.kuvaszuptime.kuvasz.models.dto.import.MonitorImportDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportDto
 import jakarta.inject.Singleton
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.PropertyNamingStrategies

@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
-import com.kuvaszuptime.kuvasz.models.dto.import.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Part

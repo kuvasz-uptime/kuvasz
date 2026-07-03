@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.dto.import
+package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator

@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
-import com.kuvaszuptime.kuvasz.models.dto.import.StatusPageImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.statuspage.toStatusPageRecord
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator

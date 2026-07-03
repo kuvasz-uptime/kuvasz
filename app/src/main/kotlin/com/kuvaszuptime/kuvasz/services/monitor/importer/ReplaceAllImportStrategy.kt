@@ -1,10 +1,10 @@
-package com.kuvaszuptime.kuvasz.services.monitor.import
+package com.kuvaszuptime.kuvasz.services.monitor.importer
 
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.dto.import.HttpMonitorImportAdapter
-import com.kuvaszuptime.kuvasz.models.dto.import.IcmpMonitorImportAdapter
-import com.kuvaszuptime.kuvasz.models.dto.import.MonitorTypeImportResult
-import com.kuvaszuptime.kuvasz.models.dto.import.PushMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorTypeImportResult
+import com.kuvaszuptime.kuvasz.models.dto.importing.PushMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.monitor.http.toMonitorRecord
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.toMonitorRecord
 import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
