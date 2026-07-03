@@ -1778,3 +1778,99 @@ const patchStatusPageRequest = (
         alert('An error occurred while toggling the status page.');
     });
 };
+
+
+const monitorImportForm = (labels) => {
+    return {
+        file: null,
+        dryRun: true,
+        isRequestLoading: false,
+        error: null,
+        result: null,
+        errors: {},
+        labels: labels || {},
+
+        resetState() {
+            this.file = null;
+            this.dryRun = true;
+            this.isRequestLoading = false;
+            this.error = null;
+            this.result = null;
+            this.errors = {};
+            const fileInput = document.getElementById('monitor-import-file-input');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        },
+
+        handleFileChange(event) {
+            this.file = event.target.files[0] || null;
+            this.errors = {};
+            this.error = null;
+        },
+
+        get submitButtonLabel() {
+            return this.dryRun ? this.labels.previewButton : this.labels.importButton;
+        },
+
+        formatTypeResult(typeResult) {
+            let typeLabel;
+            switch (typeResult.monitorType) {
+                case 'HTTP_SSL':
+                    typeLabel = this.labels.typeHttpLabel;
+                    break;
+                case 'PUSH':
+                    typeLabel = this.labels.typePushLabel;
+                    break;
+                case 'ICMP':
+                    typeLabel = this.labels.typeIcmpLabel;
+                    break;
+                default:
+                    typeLabel = typeResult.monitorType;
+            }
+            return typeLabel + ': ' +
+                typeResult.receivedMonitorCnt + ' in backup / ' +
+                typeResult.importedMonitorCnt + ' imported / ' +
+                typeResult.deletedMonitorCount + ' deleted';
+        },
+
+        async submitForm() {
+            this.errors = {};
+
+            if (!this.file) {
+                this.errors.file = this.labels.fileRequired;
+                return;
+            }
+
+            this.isRequestLoading = true;
+            this.error = null;
+            this.result = null;
+
+            const formData = new FormData();
+            formData.append('file', this.file);
+
+            try {
+                const response = await fetch('/api/v2/monitors/import/yaml?dryRun=' + this.dryRun, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    this.result = data;
+                    if (!this.dryRun) {
+                        setTimeout(() => window.location.reload(), 1500);
+                    }
+                } else {
+                    this.error = data.message || this.labels.importFailed;
+                }
+            } catch (err) {
+                console.error('Monitor import failed:', err);
+                this.error = this.labels.importFailed;
+            } finally {
+                this.isRequestLoading = false;
+            }
+        }
+    };
+};
