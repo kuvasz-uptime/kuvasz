@@ -190,6 +190,7 @@ class PushMonitorActions(
     ): List<StatusPagePushMonitorDetailsDto> {
         val pushMonitorNames = monitorIds?.filter { it.type == MonitorType.PUSH }?.map { it.name }
         val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = pushMonitorNames)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
 
         return enabledMonitors.map { monitor ->
             val uptimeHistory = statCalculator.calculateHistoricalPushUptimeStats(period, monitor.id)
@@ -206,7 +207,7 @@ class PushMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
-                inMaintenance = maintenanceWindowService.isUnderMaintenance(monitor.monitorId()),
+                inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
                 lastHeartbeat = monitor.lastHeartbeat,
             )
         }

@@ -227,6 +227,7 @@ class HttpMonitorActions(
     ): List<StatusPageHttpMonitorDetailsDto> {
         val httpMonitorNames = monitorIds?.filter { it.type == MonitorType.HTTP_SSL }?.map { it.name }
         val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = httpMonitorNames)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
 
         return enabledMonitors.map { monitor ->
             val uptimeHistory = statCalculator.calculateHistoricalHttpUptimeStats(period, monitor.id)
@@ -249,7 +250,7 @@ class HttpMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
-                inMaintenance = maintenanceWindowService.isUnderMaintenance(monitor.monitorId()),
+                inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
             )
         }
     }

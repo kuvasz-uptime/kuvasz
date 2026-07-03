@@ -218,6 +218,7 @@ class IcmpMonitorActions(
     ): List<StatusPageIcmpMonitorDetailsDto> {
         val icmpMonitorNames = monitorIds?.filter { it.type == MonitorType.ICMP }?.map { it.name }
         val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = icmpMonitorNames)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
 
         return enabledMonitors.map { monitor ->
             val uptimeHistory = statCalculator.calculateHistoricalIcmpUptimeStats(period, monitor.id)
@@ -241,7 +242,7 @@ class IcmpMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
-                inMaintenance = maintenanceWindowService.isUnderMaintenance(monitor.monitorId()),
+                inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
             )
         }
     }
