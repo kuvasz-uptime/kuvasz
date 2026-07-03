@@ -30,6 +30,12 @@ import java.util.concurrent.ScheduledFuture
  * - **mid-interval at scheduling time** (e.g. after a restart, or when a window is created/updated while it is already
  *   running): no start event is re-emitted, only the remaining end task (and, for cron, the subsequent occurrences)
  *   are scheduled.
+ *
+ * Creates, edits and deletes can move a window between "active" and "inactive" out of band of its schedule (e.g.
+ * creating an already-active window, or disabling a currently running one which discards its pending end task).
+ * [onWindowCreated], [onWindowUpdated] and [onWindowDeleted] therefore emit the matching start/end event synchronously
+ * whenever the window's active state flips, so consumers never get stranded (e.g. a PagerDuty incident opened on start
+ * would otherwise never be resolved).
  */
 @Singleton
 class MaintenanceWindowScheduler(
@@ -67,23 +73,51 @@ class MaintenanceWindowScheduler(
         }
     }
 
+    /**
+     * Schedules a freshly created window and, if it is already active (e.g. a manual window created enabled, or a
+     * time-based one created mid-interval), emits its start event synchronously. Without this, creating an active
+     * window would silently put monitors into maintenance with no start notification — unlike creating it disabled and
+     * then toggling it on.
+     */
+    fun onWindowCreated(window: MaintenanceWindowRecord) {
+        scheduleWindow(window)
+        if (calculator.isActive(window)) {
+            eventDispatcher.dispatch(MaintenanceWindowStartEvent(window))
+        }
+    }
+
     fun onWindowUpdated(previous: MaintenanceWindowRecord, updated: MaintenanceWindowRecord) {
         scheduleWindow(updated)
-        emitManualToggleEvents(previous, updated)
+        emitActiveStateTransition(previous, updated)
+    }
+
+    /**
+     * Cancels a deleted window's scheduled tasks and, if it was active, emits its end event synchronously so the
+     * maintenance state is closed for consumers (its pending end task is gone with the window).
+     */
+    fun onWindowDeleted(window: MaintenanceWindowRecord) {
+        cancelWindow(window.id)
+        if (calculator.isActive(window)) {
+            eventDispatcher.dispatch(MaintenanceWindowEndEvent(window))
+        }
     }
 
     fun cancelWindow(windowId: Long) {
         scheduledTasks.remove(windowId)?.forEach { it.gracefulCancel() }
     }
 
-    private fun emitManualToggleEvents(previous: MaintenanceWindowRecord, updated: MaintenanceWindowRecord) {
-        if (!updated.isManual()) return
-
-        val wasEnabled = previous.enabled == true
-        val isEnabled = updated.enabled == true
+    /**
+     * Emits the start/end event for an edit that flips the window's active state out of band of its schedule
+     * (e.g. disabling a running window, or converting one to a manual window). Edits that leave the active state
+     * unchanged emit nothing: the schedule keeps driving the matching event for time-based windows.
+     */
+    private fun emitActiveStateTransition(previous: MaintenanceWindowRecord, updated: MaintenanceWindowRecord) {
+        val now = getCurrentTimestamp()
+        val wasActive = calculator.isActive(previous, now)
+        val isActive = calculator.isActive(updated, now)
         when {
-            !wasEnabled && isEnabled -> eventDispatcher.dispatch(MaintenanceWindowStartEvent(updated))
-            wasEnabled && !isEnabled -> eventDispatcher.dispatch(MaintenanceWindowEndEvent(updated))
+            !wasActive && isActive -> eventDispatcher.dispatch(MaintenanceWindowStartEvent(updated))
+            wasActive && !isActive -> eventDispatcher.dispatch(MaintenanceWindowEndEvent(updated))
         }
     }
 
@@ -105,13 +139,14 @@ class MaintenanceWindowScheduler(
     }
 
     private fun register(windowId: Long, task: ScheduledFuture<*>) {
-        scheduledTasks.computeIfAbsent(windowId) { CopyOnWriteArrayList() }.add(task)
+        scheduledTasks.computeIfAbsent(windowId) { CopyOnWriteArrayList() }.apply {
+            removeIf { it.isDone }
+            add(task)
+        }
     }
 
     private fun delayUntil(target: OffsetDateTime): Duration =
         Duration.between(getCurrentTimestamp(), target).let { if (it.isNegative) Duration.ZERO else it }
-
-    private fun MaintenanceWindowRecord.isManual(): Boolean = cron == null && start == null
 
     @PreDestroy
     override fun close() {

@@ -2,14 +2,13 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -38,6 +37,9 @@ class StatCalculator(
     fun calculateOverallHttpStats(period: Duration): HttpMonitoringStatsDto {
         val monitors = httpMonitorRepository.getMonitorsWithDetails()
         val uptimeEvents = httpUptimeEventRepository.fetchAllInPeriod(period)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(
+            monitorIds = monitors.filter { it.enabled }.map { it.monitorId() }
+        )
         var downMonitors = 0
         var upMonitors = 0
         var pausedMonitors = 0
@@ -56,7 +58,7 @@ class StatCalculator(
                     UptimeStatus.UP -> upMonitors++
                     null -> uptimeInProgressMonitors++
                 }
-                if (maintenanceWindowService.isUnderMaintenance(MonitorID(MonitorType.HTTP_SSL, monitor.name))) {
+                if (windowsByMonitor[monitor.monitorId()]?.any { it.active } == true) {
                     inMaintenanceMonitors++
                 }
 
@@ -101,6 +103,9 @@ class StatCalculator(
     fun calculateOverallPushStats(period: Duration): PushMonitoringStatsDto {
         val monitors = pushMonitorRepository.getMonitorsWithDetails()
         val uptimeEvents = pushUptimeEventRepository.fetchAllInPeriod(period)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(
+            monitorIds = monitors.filter { it.enabled }.map { it.monitorId() }
+        )
         var downMonitors = 0
         var upMonitors = 0
         var pausedMonitors = 0
@@ -115,7 +120,7 @@ class StatCalculator(
                     UptimeStatus.UP -> upMonitors++
                     null -> uptimeInProgressMonitors++
                 }
-                if (maintenanceWindowService.isUnderMaintenance(MonitorID(MonitorType.PUSH, monitor.name))) {
+                if (windowsByMonitor[monitor.monitorId()]?.any { it.active } == true) {
                     inMaintenanceMonitors++
                 }
             } else {
@@ -168,6 +173,9 @@ class StatCalculator(
     fun calculateOverallIcmpStats(period: Duration): IcmpMonitoringStatsDto {
         val monitors = icmpMonitorRepository.getMonitorsWithDetails()
         val uptimeEvents = icmpUptimeEventRepository.fetchAllInPeriod(period)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(
+            monitorIds = monitors.filter { it.enabled }.map { it.monitorId() }
+        )
         var downMonitors = 0
         var upMonitors = 0
         var pausedMonitors = 0
@@ -181,7 +189,7 @@ class StatCalculator(
                     UptimeStatus.UP -> upMonitors++
                     null -> uptimeInProgressMonitors++
                 }
-                if (maintenanceWindowService.isUnderMaintenance(MonitorID(MonitorType.ICMP, monitor.name))) {
+                if (windowsByMonitor[monitor.monitorId()]?.any { it.active } == true) {
                     inMaintenanceMonitors++
                 }
             } else {

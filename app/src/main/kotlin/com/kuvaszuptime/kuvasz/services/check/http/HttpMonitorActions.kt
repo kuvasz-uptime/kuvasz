@@ -11,11 +11,12 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -72,8 +73,8 @@ class HttpMonitorActions(
     fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
-        val windows =
-            maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.HTTP_SSL, monitorFromRepo.name))
+        val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
+
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
             nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
@@ -90,20 +91,23 @@ class HttpMonitorActions(
         sslStatus: List<SslStatus> = emptyList(),
         sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
-    ): List<HttpMonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sslCheckEnabled, sortedBy)
-            .map { detailsDto ->
-                val windows =
-                    maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.HTTP_SSL, detailsDto.name))
-                detailsDto.copy(
-                    nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
-                    nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
-                    effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
-                        .toSet(),
-                    maintenanceWindows = windows,
-                    inMaintenance = windows.any { it.active },
-                )
-            }
+    ): List<HttpMonitorDetailsDto> {
+        val monitors =
+            monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sslCheckEnabled, sortedBy)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.map { it.monitorId() })
+
+        return monitors.map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
+                nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
+                effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
+    }
 
     fun createMonitor(monitorCreateDto: HttpMonitorCreateDto): HttpMonitorRecord {
         // Validate the raw integrations from the DTO
@@ -245,9 +249,7 @@ class HttpMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
-                inMaintenance = maintenanceWindowService.isUnderMaintenance(
-                    MonitorID(MonitorType.HTTP_SSL, monitor.name)
-                ),
+                inMaintenance = maintenanceWindowService.isUnderMaintenance(monitor.monitorId()),
             )
         }
     }

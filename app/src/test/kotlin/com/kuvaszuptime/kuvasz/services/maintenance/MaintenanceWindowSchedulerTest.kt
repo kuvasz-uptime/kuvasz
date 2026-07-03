@@ -162,6 +162,49 @@ class MaintenanceWindowSchedulerTest : StringSpec({
         verify { f.future.cancel(false) }
     }
 
+    "onWindowCreated emits a START when an enabled manual window is created" {
+        val f = setup()
+        f.scheduler.onWindowCreated(manualWindow(id = 1, enabled = true))
+
+        val dispatched = slot<MaintenanceWindowEvent>()
+        verify(exactly = 1) { f.dispatcher.dispatch(capture(dispatched)) }
+        dispatched.captured.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
+        // A manual window is never scheduled
+        verify(inverse = true) { f.taskScheduler.schedule(any<Duration>(), any<Runnable>()) }
+    }
+
+    "onWindowCreated emits a START and schedules the END for a time-based window created mid-interval" {
+        val f = setup()
+        f.scheduler.onWindowCreated(
+            singleWindow(id = 1, start = getCurrentTimestamp().minusMinutes(10), duration = "PT1H")
+        )
+
+        val dispatched = slot<MaintenanceWindowEvent>()
+        verify(exactly = 1) { f.dispatcher.dispatch(capture(dispatched)) }
+        dispatched.captured.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
+        // Only the remaining END task is scheduled (the START was emitted synchronously, not scheduled)
+        f.scheduler.getScheduledWindows() shouldContainKey 1L
+        f.runnables shouldHaveSize 1
+    }
+
+    "onWindowCreated emits nothing for a disabled manual window" {
+        val f = setup()
+        f.scheduler.onWindowCreated(manualWindow(id = 1, enabled = false))
+
+        verify(inverse = true) { f.dispatcher.dispatch(any<MaintenanceWindowEvent>()) }
+        f.scheduler.getScheduledWindows().shouldBeEmpty()
+    }
+
+    "onWindowCreated schedules a future window without emitting a START" {
+        val f = setup()
+        f.scheduler.onWindowCreated(singleWindow(id = 1, start = getCurrentTimestamp().plusHours(1)))
+
+        verify(inverse = true) { f.dispatcher.dispatch(any<MaintenanceWindowEvent>()) }
+        // The upcoming START task is scheduled; the event fires only when it runs
+        verify(exactly = 1) { f.taskScheduler.schedule(any<Duration>(), any<Runnable>()) }
+        f.scheduler.getScheduledWindows() shouldContainKey 1L
+    }
+
     "onWindowUpdated emits a START when a manual window becomes enabled" {
         val f = setup()
         f.scheduler.onWindowUpdated(
@@ -210,6 +253,85 @@ class MaintenanceWindowSchedulerTest : StringSpec({
         verify(exactly = 1) { f.taskScheduler.schedule(any<Duration>(), any<Runnable>()) }
         f.scheduler.getScheduledWindows() shouldContainKey 1L
         verify(inverse = true) { f.dispatcher.dispatch(any<MaintenanceWindowEvent>()) }
+    }
+
+    "onWindowUpdated emits an END when an active time-based window is disabled" {
+        val f = setup()
+        val active = singleWindow(id = 1, start = getCurrentTimestamp().minusMinutes(10), duration = "PT1H")
+
+        f.scheduler.onWindowUpdated(
+            previous = active,
+            updated = singleWindow(id = 1, start = active.start, duration = "PT1H", enabled = false),
+        )
+
+        val dispatched = slot<MaintenanceWindowEvent>()
+        verify(exactly = 1) { f.dispatcher.dispatch(capture(dispatched)) }
+        dispatched.captured.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+        // A disabled window has no scheduled tasks left to emit the END itself
+        f.scheduler.getScheduledWindows().shouldBeEmpty()
+    }
+
+    "onWindowUpdated emits an END when an active window is converted to a disabled manual window" {
+        val f = setup()
+        val active = singleWindow(id = 1, start = getCurrentTimestamp().minusMinutes(10), duration = "PT1H")
+
+        f.scheduler.onWindowUpdated(previous = active, updated = manualWindow(id = 1, enabled = false))
+
+        val dispatched = slot<MaintenanceWindowEvent>()
+        verify(exactly = 1) { f.dispatcher.dispatch(capture(dispatched)) }
+        dispatched.captured.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+    }
+
+    "onWindowUpdated emits nothing when an active window stays active (still enabled and running)" {
+        val f = setup()
+        val active = singleWindow(id = 1, start = getCurrentTimestamp().minusMinutes(10), duration = "PT1H")
+
+        f.scheduler.onWindowUpdated(previous = active, updated = active)
+
+        // No synchronous event: the remaining END task keeps driving the maintenance state
+        verify(inverse = true) { f.dispatcher.dispatch(any<MaintenanceWindowEvent>()) }
+        f.scheduler.getScheduledWindows() shouldContainKey 1L
+    }
+
+    "onWindowUpdated emits a START when a time-based window is edited into an active state" {
+        val f = setup()
+        val start = getCurrentTimestamp().minusMinutes(10)
+
+        f.scheduler.onWindowUpdated(
+            previous = singleWindow(id = 1, start = start, duration = "PT1H", enabled = false),
+            updated = singleWindow(id = 1, start = start, duration = "PT1H", enabled = true),
+        )
+
+        val dispatched = slot<MaintenanceWindowEvent>()
+        verify(exactly = 1) { f.dispatcher.dispatch(capture(dispatched)) }
+        dispatched.captured.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
+        // The window is now active, so only its remaining END task is scheduled
+        f.scheduler.getScheduledWindows() shouldContainKey 1L
+    }
+
+    "onWindowDeleted emits an END and cancels the tasks of an active window" {
+        val f = setup()
+        val active = singleWindow(id = 1, start = getCurrentTimestamp().minusMinutes(10), duration = "PT1H")
+        f.scheduler.scheduleWindow(active)
+
+        f.scheduler.onWindowDeleted(active)
+
+        val dispatched = slot<MaintenanceWindowEvent>()
+        verify(exactly = 1) { f.dispatcher.dispatch(capture(dispatched)) }
+        dispatched.captured.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+        verify { f.future.cancel(false) }
+        f.scheduler.getScheduledWindows().shouldBeEmpty()
+    }
+
+    "onWindowDeleted emits nothing when the deleted window was not active" {
+        val f = setup()
+        val upcoming = singleWindow(id = 1, start = getCurrentTimestamp().plusHours(1), duration = "PT1H")
+        f.scheduler.scheduleWindow(upcoming)
+
+        f.scheduler.onWindowDeleted(upcoming)
+
+        verify(inverse = true) { f.dispatcher.dispatch(any<MaintenanceWindowEvent>()) }
+        f.scheduler.getScheduledWindows().shouldBeEmpty()
     }
 
     "a single window that is entirely in the past is not scheduled" {
@@ -275,6 +397,30 @@ class MaintenanceWindowSchedulerTest : StringSpec({
         f.runnables.single().run() // START fires -> schedules its END under the same id
 
         f.scheduler.getScheduledWindows().getValue(1) shouldHaveSize 2
+    }
+
+    "completed futures are pruned so a cron window's task list stays bounded" {
+        val runnables = mutableListOf<Runnable>()
+        val futures = mutableListOf<ScheduledFuture<*>>()
+        val taskScheduler = mockk<TaskScheduler>()
+        val dispatcher = mockk<EventDispatcher>(relaxed = true)
+        val repository = mockk<MaintenanceWindowRepository>(relaxed = true)
+        val scheduler = MaintenanceWindowScheduler(taskScheduler, dispatcher, repository, MaintenanceWindowCalculator())
+
+        // Each scheduled task gets its own future that only reports "done" once we mark it so
+        every { taskScheduler.schedule(any<Duration>(), capture(runnables)) } answers {
+            mockk<ScheduledFuture<*>>(relaxed = true).also { future -> futures.add(future) }
+        }
+
+        scheduler.scheduleWindow(cronWindow(id = 1, cron = "* * * * *", duration = "PT30M"))
+
+        // Drive the self-perpetuating cron chain many times, marking each fired task done afterwards
+        repeat(50) { i ->
+            runnables[i].run()
+            every { futures[i].isDone } returns true
+        }
+
+        scheduler.getScheduledWindows().getValue(1) shouldHaveSize 2
     }
 
     "multiple windows are scheduled and cancelled independently" {

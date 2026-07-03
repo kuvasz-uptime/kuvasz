@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.push
 
 import com.iodesystems.htmx.Htmx.Companion.hx
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*

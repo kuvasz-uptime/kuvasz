@@ -59,7 +59,7 @@ class MaintenanceWindowActions(
 
         return maintenanceWindowRepository
             .returningInsert(createDto.toMaintenanceWindowRecord(validatedMonitors, validatedIntegrations))
-            .also { scheduler.scheduleWindow(it) }
+            .also { scheduler.onWindowCreated(it) }
             .toDetailsDto(calculator)
     }
 
@@ -70,7 +70,7 @@ class MaintenanceWindowActions(
             .orThrowNotFound(maintenanceWindowId.toString())
             .let { window ->
                 maintenanceWindowRepository.deleteById(window.id)
-                scheduler.cancelWindow(window.id)
+                scheduler.onWindowDeleted(window)
             }
 
     @CacheInvalidate(DEFAULT_PAGE_CACHE_NAME, all = true)

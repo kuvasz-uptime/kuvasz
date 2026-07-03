@@ -14,6 +14,8 @@ import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
+import org.jooq.impl.DSL
+import org.jooq.impl.SQLDataType
 
 @Singleton
 class MaintenanceWindowRepository(private val dslContext: DSLContext) {
@@ -48,6 +50,35 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
                 .or(MAINTENANCE_WINDOW.MONITORS.contains(arrayOf(monitorId)))
         )
         .fetch()
+
+    /**
+     * Batch variant of [findActiveCandidatesForMonitor]: for the given monitors, returns the enabled windows that
+     * affect each of them (global, or explicitly assigned) in a single query, keyed by monitor. Every requested monitor
+     * gets an entry, even if no window affects it.
+     */
+    fun findActiveCandidatesForMonitors(
+        monitorIds: List<MonitorID>,
+    ): Map<MonitorID, List<MaintenanceWindowRecord>> {
+        if (monitorIds.isEmpty()) return emptyMap()
+
+        val requestedIds = monitorIds.mapTo(mutableSetOf()) { it.toString() }.toTypedArray()
+        val monitorIdField = DSL.field("m.monitor_id", SQLDataType.CLOB)
+
+        val windowsByMonitorId = dslContext
+            .select(listOf(monitorIdField) + MAINTENANCE_WINDOW.fields().toList())
+            .from(MAINTENANCE_WINDOW)
+            .crossJoin(
+                DSL.unnest(DSL.`val`(requestedIds, SQLDataType.CLOB.array())).`as`("m", "monitor_id")
+            )
+            .where(MAINTENANCE_WINDOW.ENABLED.eq(true))
+            .and(
+                MAINTENANCE_WINDOW.GLOBAL.eq(true)
+                    .or(DSL.condition("{0} @> array[{1}]", MAINTENANCE_WINDOW.MONITORS, monitorIdField))
+            )
+            .fetchGroups({ it.get(monitorIdField) }, { it.into(MAINTENANCE_WINDOW) })
+
+        return monitorIds.associateWith { windowsByMonitorId[it.toString()].orEmpty() }
+    }
 
     fun deleteById(id: Long, ctx: DSLContext = dslContext): Int = ctx
         .deleteFrom(MAINTENANCE_WINDOW)

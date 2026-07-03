@@ -76,6 +76,25 @@ class MaintenanceWindowActionsTest(
                 scheduler.getScheduledWindows() shouldContainKey window.id
             }
         }
+
+        `when`("an active time-based window is disabled") {
+            val window = createMaintenanceWindow(
+                dsl,
+                enabled = true,
+                start = getCurrentTimestamp().minusMinutes(10),
+                duration = "PT1H",
+            )
+
+            actions.updateMaintenanceWindow(window.id, mapper.createObjectNode().put("enabled", false))
+
+            then("an end event is emitted so the maintenance state is closed") {
+                received.single().let { event ->
+                    event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+                    event.window.id shouldBe window.id
+                }
+                scheduler.getScheduledWindows() shouldNotContainKey window.id
+            }
+        }
     }
 
     given("the MaintenanceWindowActions - create & delete") {
@@ -89,8 +108,26 @@ class MaintenanceWindowActionsTest(
                 )
             )
 
-            then("it is scheduled") {
+            then("it is scheduled and no start event is emitted yet") {
                 scheduler.getScheduledWindows() shouldContainKey created.id
+                received.shouldBeEmpty()
+            }
+        }
+
+        `when`("an enabled manual window is created") {
+            val created = actions.createMaintenanceWindow(
+                MaintenanceWindowCreateDto(
+                    name = "Active on creation",
+                    enabled = true,
+                    global = true,
+                )
+            )
+
+            then("a start event is emitted so consumers learn maintenance has begun") {
+                received.single().let { event ->
+                    event.shouldBeInstanceOf<MaintenanceWindowStartEvent>()
+                    event.window.id shouldBe created.id
+                }
             }
         }
 
@@ -108,6 +145,25 @@ class MaintenanceWindowActionsTest(
 
             then("its scheduled tasks are cancelled") {
                 scheduler.getScheduledWindows() shouldNotContainKey created.id
+            }
+        }
+
+        `when`("an active window is deleted") {
+            val window = createMaintenanceWindow(
+                dsl,
+                enabled = true,
+                start = getCurrentTimestamp().minusMinutes(10),
+                duration = "PT1H",
+            )
+
+            actions.deleteMaintenanceWindowById(window.id)
+
+            then("an end event is emitted so the maintenance state is closed") {
+                received.single().let { event ->
+                    event.shouldBeInstanceOf<MaintenanceWindowEndEvent>()
+                    event.window.id shouldBe window.id
+                }
+                scheduler.getScheduledWindows() shouldNotContainKey window.id
             }
         }
     }

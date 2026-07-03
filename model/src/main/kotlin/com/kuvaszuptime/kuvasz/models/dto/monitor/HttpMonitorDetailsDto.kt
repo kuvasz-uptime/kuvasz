@@ -1,12 +1,10 @@
-package com.kuvaszuptime.kuvasz.models.dto.monitor.http
+package com.kuvaszuptime.kuvasz.models.dto.monitor
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.IntegrationDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema

@@ -7,8 +7,10 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.maps.shouldBeEmpty as shouldBeEmptyMap
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -52,6 +54,43 @@ class MaintenanceWindowRepositoryTest(
             then("it returns the enabled global and explicitly-assigned windows only") {
                 repository.findActiveCandidatesForMonitor(coveredMonitor).map { it.name } shouldContainExactlyInAnyOrder
                     listOf("global", "assigned")
+            }
+        }
+    }
+
+    given("findActiveCandidatesForMonitors") {
+        `when`("resolving several monitors against global, assigned, unrelated and disabled windows") {
+            createMaintenanceWindow(dsl, name = "global", enabled = true, global = true)
+            createMaintenanceWindow(dsl, name = "assigned", enabled = true, monitors = listOf(coveredMonitor))
+            createMaintenanceWindow(dsl, name = "unrelated", enabled = true, monitors = listOf(otherMonitor))
+            createMaintenanceWindow(dsl, name = "disabled-global", enabled = false, global = true)
+
+            then("each monitor is keyed to only the enabled windows affecting it, in a single query") {
+                val result = repository.findActiveCandidatesForMonitors(listOf(coveredMonitor, otherMonitor))
+
+                result.getValue(coveredMonitor).map { it.name } shouldContainExactlyInAnyOrder
+                    listOf("global", "assigned")
+                result.getValue(otherMonitor).map { it.name } shouldContainExactlyInAnyOrder
+                    listOf("global", "unrelated")
+            }
+        }
+
+        `when`("a requested monitor is affected by no window") {
+            createMaintenanceWindow(dsl, name = "assigned", enabled = true, monitors = listOf(coveredMonitor))
+
+            then("it still gets an (empty) entry") {
+                val result = repository.findActiveCandidatesForMonitors(listOf(coveredMonitor, otherMonitor))
+
+                result.getValue(coveredMonitor).map { it.name } shouldContainExactly listOf("assigned")
+                result.getValue(otherMonitor).shouldBeEmpty()
+            }
+        }
+
+        `when`("no monitors are requested") {
+            createMaintenanceWindow(dsl, name = "global", enabled = true, global = true)
+
+            then("it returns an empty map without querying") {
+                repository.findActiveCandidatesForMonitors(emptyList()).shouldBeEmptyMap()
             }
         }
     }

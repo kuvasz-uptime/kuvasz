@@ -151,8 +151,6 @@ class MaintenanceWindowCalculator {
         }
     }
 
-    private fun MaintenanceWindowRecord.isManual(): Boolean = cron == null && start == null
-
     private fun MaintenanceWindowRecord.activeDuration(): Duration? =
         parseDuration()?.takeIf { enabled == true }
 

@@ -10,8 +10,9 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
@@ -72,7 +73,7 @@ class PushMonitorActions(
     fun getMonitorDetails(monitorId: Long): PushMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
-        val windows = maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.PUSH, monitorFromRepo.name))
+        val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
         return monitorFromRepo.copy(
             effectiveIntegrations = integrationRepository
                 .getEffectiveIntegrations(monitorFromRepo.integrations)
@@ -107,19 +108,20 @@ class PushMonitorActions(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
-    ): List<PushMonitorDetailsDto> =
-        monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
-            .map { detailsDto ->
-                val windows =
-                    maintenanceWindowService.getWindowsForMonitor(MonitorID(MonitorType.PUSH, detailsDto.name))
-                detailsDto.copy(
-                    effectiveIntegrations = integrationRepository
-                        .getEffectiveIntegrations(detailsDto.integrations)
-                        .toSet(),
-                    maintenanceWindows = windows,
-                    inMaintenance = windows.any { it.active },
-                )
-            }
+    ): List<PushMonitorDetailsDto> {
+        val monitors = monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.map { it.monitorId() })
+        return monitors.map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                effectiveIntegrations = integrationRepository
+                    .getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
+    }
 
     fun createMonitor(monitorCreateDto: PushMonitorCreateDto): PushMonitorRecord {
         // Validate the raw integrations from the DTO
@@ -204,9 +206,7 @@ class PushMonitorActions(
                 uptimeRatio = uptimeHistory.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = statusHistory,
-                inMaintenance = maintenanceWindowService.isUnderMaintenance(
-                    MonitorID(MonitorType.PUSH, monitor.name)
-                ),
+                inMaintenance = maintenanceWindowService.isUnderMaintenance(monitor.monitorId()),
                 lastHeartbeat = monitor.lastHeartbeat,
             )
         }
