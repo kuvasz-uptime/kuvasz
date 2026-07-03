@@ -63,6 +63,18 @@ class AppConfig {
     /**
      * INTENDED TO BE USED IN TESTS ONLY (not nice ofc) to revert the manually toggled disabled state
      */
+    fun enableHttpMonitorExternalWrite() {
+        isHttpMonitorExternalWriteDisabled = false
+    }
+
+    fun enablePushMonitorExternalWrite() {
+        isPushMonitorExternalWriteDisabled = false
+    }
+
+    fun enableIcmpMonitorExternalWrite() {
+        isIcmpMonitorExternalWriteDisabled = false
+    }
+
     fun enableStatusPageExternalWrite() {
         isStatusPageExternalWriteDisabled = false
     }

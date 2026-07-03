@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
+import io.micronaut.core.annotation.Introspected
 
+@Introspected
 class IcmpMonitorImportAdapter(private val dto: IcmpMonitorExportDto) : IcmpMonitorCreator {
     override val name: String get() = dto.name
     override val host: String get() = dto.host

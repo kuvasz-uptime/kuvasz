@@ -1,9 +1,12 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -15,12 +18,15 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getBodyAs
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
@@ -28,6 +34,8 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 import tools.jackson.databind.PropertyNamingStrategies
@@ -44,6 +52,25 @@ class MonitorControllerTest(
 ) : DatabaseBehaviorSpec() {
 
     init {
+        fun buildYamlImportContent(
+            httpMonitors: List<HttpMonitorExportDto> = emptyList(),
+            pushMonitors: List<PushMonitorExportDto> = emptyList(),
+            icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
+        ): ByteArray {
+            val importMapper = YAMLMapper.builder()
+                .addModules(kotlinModule())
+                .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+                .build()
+
+            val content = mapOf(
+                "http-monitors" to httpMonitors,
+                "push-monitors" to pushMonitors,
+                "icmp-monitors" to icmpMonitors,
+            )
+
+            return importMapper.writeValueAsBytes(content)
+        }
+
         given("MonitorController's getMonitorsExport() endpoint") {
             val mapper = YAMLMapper.builder()
                 .addModules(kotlinModule())
@@ -270,6 +297,307 @@ class MonitorControllerTest(
                     mapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldBeEmpty()
                 }
             }
+        }
+
+        given("MonitorController's importYamlMonitors() endpoint") {
+
+            `when`("a valid YAML file is uploaded") {
+                val existingMonitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    monitorName = "to-be-deleted",
+                )
+
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "imported-http",
+                            url = "https://example.com",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = true,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = emptySet(),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                        )
+                    )
+                )
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should import the monitors and delete missing ones") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 1
+                    response.body()!!.importedMonitorCnt shouldBe 1
+                    response.body()!!.deletedMonitorCount shouldBe 1
+                    response.body()!!.dryRun shouldBe false
+                    response.body()!!.perTypeResults shouldHaveSize 1
+                    response.body()!!.perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
+                    response.body()!!.perTypeResults.first().receivedMonitorCnt shouldBe 1
+                    response.body()!!.perTypeResults.first().importedMonitorCnt shouldBe 1
+                    response.body()!!.perTypeResults.first().deletedMonitorCount shouldBe 1
+
+                    httpMonitorRepository.findById(existingMonitor.id, null) shouldBe null
+                    httpMonitorRepository.findByName("imported-http") shouldNotBe null
+                }
+            }
+
+            `when`("dryRun is true") {
+                val existingMonitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    monitorName = "kept-monitor",
+                )
+
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "dry-run-http",
+                            url = "https://example.com/dry-run",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = true,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = emptySet(),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                        )
+                    )
+                )
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=true", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return the result without changing the database") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 1
+                    response.body()!!.importedMonitorCnt shouldBe 1
+                    response.body()!!.deletedMonitorCount shouldBe 1
+                    response.body()!!.dryRun shouldBe true
+                    response.body()!!.perTypeResults shouldHaveSize 1
+                    response.body()!!.perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
+                    response.body()!!.perTypeResults.first().receivedMonitorCnt shouldBe 1
+                    response.body()!!.perTypeResults.first().importedMonitorCnt shouldBe 1
+                    response.body()!!.perTypeResults.first().deletedMonitorCount shouldBe 1
+
+                    httpMonitorRepository.findById(existingMonitor.id, null)?.name shouldBe existingMonitor.name
+                    httpMonitorRepository.findByName("dry-run-http") shouldBe null
+                }
+            }
+
+            `when`("a valid YAML file contains multiple monitor types") {
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "multi-http",
+                            url = "https://example.com",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = true,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = emptySet(),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                        )
+                    ),
+                    pushMonitors = listOf(
+                        PushMonitorExportDto(
+                            name = "multi-push",
+                            heartbeatInterval = 60,
+                            gracePeriod = 30,
+                            clientSecret = "ab".repeat(18),
+                            enabled = true,
+                            integrations = emptySet(),
+                            failureCountThreshold = 1,
+                        )
+                    ),
+                    icmpMonitors = listOf(
+                        IcmpMonitorExportDto(
+                            name = "multi-icmp",
+                            host = "1.2.3.4",
+                            uptimeCheckInterval = 60,
+                            packetCount = 4,
+                            timeoutSeconds = 5,
+                            packetLossThreshold = 50,
+                            failureCountThreshold = 1,
+                            enabled = true,
+                            integrations = emptySet(),
+                            metricsHistoryEnabled = true,
+                        )
+                    ),
+                )
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should import all monitor types") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 3
+                    response.body()!!.importedMonitorCnt shouldBe 3
+                    response.body()!!.perTypeResults shouldHaveSize 3
+                    response.body()!!.perTypeResults.map { it.monitorType }.toSet() shouldBe setOf(
+                        MonitorType.HTTP_SSL,
+                        MonitorType.PUSH,
+                        MonitorType.ICMP,
+                    )
+                }
+            }
+
+            `when`("the uploaded file is empty") {
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "empty.yml", MediaType.APPLICATION_YAML_TYPE, ByteArray(0))
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 400 bad request") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+
+            `when`("the uploaded YAML is malformed") {
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "broken.yml", MediaType.APPLICATION_YAML_TYPE, "not: valid: [".toByteArray())
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 400 bad request") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+
+            `when`("the uploaded YAML does not contain any monitors") {
+                val yamlContent = buildYamlImportContent()
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "empty-monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 400 bad request") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+
+            `when`("the uploaded YAML contains an invalid monitor") {
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "",
+                            url = "https://example.com",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = true,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = emptySet(),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                        )
+                    )
+                )
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "invalid-monitor.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 400 bad request") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+
         }
     }
 }

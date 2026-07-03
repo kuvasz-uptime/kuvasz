@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
+import io.micronaut.core.annotation.Introspected
 
+@Introspected
 class PushMonitorImportAdapter(private val dto: PushMonitorExportDto) : PushMonitorCreator {
     override val name: String get() = dto.name
     override val heartbeatInterval: Long get() = dto.heartbeatInterval

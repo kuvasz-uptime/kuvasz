@@ -3,7 +3,9 @@ package com.kuvaszuptime.kuvasz.models.dto.importing
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
+import io.micronaut.core.annotation.Introspected
 
+@Introspected
 class HttpMonitorImportAdapter(private val dto: HttpMonitorExportDto) : HttpMonitorCreator {
     override val name: String get() = dto.name
     override val url: String get() = dto.url
