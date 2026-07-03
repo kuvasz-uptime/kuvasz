@@ -24,9 +24,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import org.jooq.DSLContext
 
 @MicronautTest(startApplication = false)
-class HeartbeatCheckerTest : DatabaseBehaviorSpec() {
+class HeartbeatCheckerTest(
+    dslContext: DSLContext,
+) : DatabaseBehaviorSpec() {
     init {
 
         val dispatcher = EventDispatcher()
