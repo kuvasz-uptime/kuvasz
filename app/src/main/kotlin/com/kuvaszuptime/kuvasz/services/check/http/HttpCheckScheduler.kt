@@ -214,18 +214,36 @@ class HttpCheckScheduler(
         }
 
     /**
-     * Takes care of the actual scheduling of the SSL check
+     * Takes care of the actual scheduling of the SSL check. When [initialDelay] is not provided, the first check is
+     * spread out randomly to prevent flooding right after startup.
      */
-    private fun scheduleSSLCheck(monitor: HttpMonitorRecord): Result<ScheduledFuture<*>> =
+    private fun scheduleSSLCheck(
+        monitor: HttpMonitorRecord,
+        initialDelay: Duration = Duration.ofSeconds(
+            (SSL_CHECK_INITIAL_DELAY_MIN_SECONDS..SSL_CHECK_INITIAL_DELAY_MAX_SECONDS).random()
+        ),
+    ): Result<ScheduledFuture<*>> =
         runCatching {
-            val initialDelay = Duration.ofSeconds(
-                (SSL_CHECK_INITIAL_DELAY_MIN_SECONDS..SSL_CHECK_INITIAL_DELAY_MAX_SECONDS).random()
-            )
             val period = Duration.ofDays(SSL_CHECK_PERIOD_DAYS)
             taskScheduler.scheduleWithFixedDelay(initialDelay, period) {
-                sslChecker.check(monitor)
+                runSSLCheck(monitor)
             }
         }
+
+    internal fun runSSLCheck(monitor: HttpMonitorRecord) {
+        if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId())) {
+            // SSL checks only run once a day, so simply skipping them under maintenance could delay a check until the
+            // next day (or indefinitely for daily recurring maintenance). Instead, we re-schedule the check with a
+            // short initial delay, effectively retrying until the maintenance window is over.
+            logger.debug(
+                "Postponing SSL check for \"${monitor.name}\" by $SSL_CHECK_POSTPONE_MINUTES minutes: " +
+                    "it is under maintenance"
+            )
+            reScheduleSSLCheckForMonitor(monitor, initialDelay = Duration.ofMinutes(SSL_CHECK_POSTPONE_MINUTES))
+        } else {
+            sslChecker.check(monitor)
+        }
+    }
 
     /**
      * Re-schedules the uptime check for a monitor, removing the previous one and scheduling a new one with an initial
@@ -235,6 +253,16 @@ class HttpCheckScheduler(
         scheduleUptimeCheck(monitor, resync = true).fold(
             onSuccess = scheduledUptimeCheckSuccessHandler(monitor),
             onFailure = scheduledUptimeCheckErrorHandler(monitor),
+        )
+
+    /**
+     * Re-schedules the SSL check for a monitor, cancelling the previous one and scheduling a new one with a new
+     * initial delay.
+     */
+    private fun reScheduleSSLCheckForMonitor(monitor: HttpMonitorRecord, initialDelay: Duration): SchedulingException? =
+        scheduleSSLCheck(monitor, initialDelay).fold(
+            onSuccess = scheduledSSLCheckSuccessHandler(monitor),
+            onFailure = scheduledSSLCheckErrorHandler(monitor),
         )
 
     /**
@@ -257,6 +285,7 @@ class HttpCheckScheduler(
         private const val SSL_CHECK_INITIAL_DELAY_MIN_SECONDS = 60L
         private const val SSL_CHECK_INITIAL_DELAY_MAX_SECONDS = 300L
         private const val SSL_CHECK_PERIOD_DAYS = 1L
+        private const val SSL_CHECK_POSTPONE_MINUTES = 30L
         private val logger = loggerFor<HttpCheckScheduler>()
     }
 }

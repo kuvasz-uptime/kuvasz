@@ -14,3 +14,4 @@ out/
 tmp
 .kotlin
 .tool-versions
+.claude

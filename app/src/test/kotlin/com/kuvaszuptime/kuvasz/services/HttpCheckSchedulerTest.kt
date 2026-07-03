@@ -9,12 +9,15 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
+import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.maps.shouldContainKey
+import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldNotBe
@@ -28,6 +31,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -40,6 +44,7 @@ class HttpCheckSchedulerTest(
     private val uptimeChecker: HttpUptimeChecker,
     private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
     private val maintenanceWindowService: MaintenanceWindowService,
+    private val sslChecker: SSLChecker,
 ) : DatabaseBehaviorSpec() {
     init {
         given("the CheckScheduler service") {
@@ -156,6 +161,71 @@ class HttpCheckSchedulerTest(
                 }
             }
 
+            `when`("an SSL check is executed while the monitor is not under maintenance") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                val sslCheckerMock = getMock(sslChecker)
+                every { sslCheckerMock.check(monitor) } just Runs
+                val maintenanceServiceMock = getMock(maintenanceWindowService)
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns false
+
+                checkScheduler.runSSLCheck(monitor)
+
+                then("it should run the SSL check without re-scheduling it") {
+                    verify(exactly = 1) { sslCheckerMock.check(monitor) }
+                    checkScheduler.getScheduledSSLChecks().shouldNotContainKey(monitor.id)
+                }
+            }
+
+            `when`("an SSL check is executed while the monitor is under maintenance") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                val sslCheckerMock = getMock(sslChecker)
+                val maintenanceServiceMock = getMock(maintenanceWindowService)
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns true
+
+                checkScheduler.runSSLCheck(monitor)
+
+                then("it should skip the check and re-schedule it with a ~30 minutes initial delay") {
+                    verify(exactly = 1) { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) }
+                    verify(inverse = true) { sslCheckerMock.check(any()) }
+                    with(checkScheduler.getScheduledSSLChecks()[monitor.id].shouldNotBeNull()) {
+                        // 30 minutes = 1800 seconds, allowing a small margin for scheduling overhead
+                        getDelay(TimeUnit.SECONDS) shouldBeInRange 1790L..1800L
+                    }
+                }
+            }
+
+            `when`("a re-scheduled SSL check runs after the maintenance is over") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                val sslCheckerMock = getMock(sslChecker)
+                every { sslCheckerMock.check(monitor) } just Runs
+                val maintenanceServiceMock = getMock(maintenanceWindowService)
+                // The check is due while under maintenance, so it gets re-scheduled first
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns true
+                checkScheduler.runSSLCheck(monitor)
+                // By the time the re-scheduled check fires, the maintenance is over
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns false
+
+                checkScheduler.runSSLCheck(monitor)
+
+                then("it should run the SSL check") {
+                    verify(exactly = 1) { sslCheckerMock.check(monitor) }
+                }
+            }
+
+            `when`("the checks of a monitor with a re-scheduled SSL check are removed") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                val maintenanceServiceMock = getMock(maintenanceWindowService)
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns true
+                checkScheduler.runSSLCheck(monitor)
+                checkScheduler.getScheduledSSLChecks().shouldContainKey(monitor.id)
+
+                checkScheduler.removeChecksOfMonitor(monitor)
+
+                then("the re-scheduled SSL check should be cancelled and removed") {
+                    checkScheduler.getScheduledSSLChecks().shouldNotContainKey(monitor.id)
+                }
+            }
+
             `when`("a lock can't be acquired for an uptime check") {
                 val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
@@ -269,4 +339,7 @@ class HttpCheckSchedulerTest(
     fun maintenanceWindowServiceMock(): MaintenanceWindowService = mockk {
         every { isUnderMaintenance(any()) } returns false
     }
+
+    @MockBean(SSLChecker::class)
+    fun sslCheckerMock(): SSLChecker = mockk()
 }
