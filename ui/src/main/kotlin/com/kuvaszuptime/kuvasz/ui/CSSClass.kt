@@ -18,6 +18,8 @@ internal enum class CSSClass(val className: String) {
     ALERT_ICON("alert-icon"),
     ALERT_IMPORTANT("alert-important"),
     ALERT_INFO("alert-info"),
+    ALERT_SUCCESS("alert-success"),
+    ALERT_WARNING("alert-warning"),
     ALIGN_ITEMS_BASELINE("align-items-baseline"),
     ALIGN_ITEMS_CENTER("align-items-center"),
     ALIGN_MIDDLE("align-middle"),

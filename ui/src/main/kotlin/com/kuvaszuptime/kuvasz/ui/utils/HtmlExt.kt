@@ -92,6 +92,16 @@ inline fun FlowContent.optionTag(classes: String? = null, crossinline block: OPT
 }
 
 /**
+ * Needed only because kotlinx.html doesn't support `li` tags inside `template` tags
+ */
+@HtmlTagMarker
+@OptIn(ExperimentalContracts::class)
+inline fun FlowContent.liTag(classes: String? = null, crossinline block: LI.() -> Unit = {}) {
+    contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+    LI(attributesMapOf("class", classes), consumer).visit(block)
+}
+
+/**
  * Needed only because kotlinx.html doesn't support `options` tags inside `template` tags
  */
 @HtmlTagMarker
