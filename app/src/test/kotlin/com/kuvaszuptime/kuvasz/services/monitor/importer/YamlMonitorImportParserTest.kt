@@ -124,7 +124,7 @@ class YamlMonitorImportParserTest : ShouldSpec({
         should("throw when the YAML is malformed") {
             val malformedYaml = "not: valid: [".toByteArray()
 
-            shouldThrow<Exception> {
+            shouldThrow<MonitorImportParseException> {
                 parser.parse(malformedYaml)
             }
         }
@@ -134,7 +134,7 @@ class YamlMonitorImportParserTest : ShouldSpec({
                 http-monitors: not-a-list
             """.trimIndent().toByteArray()
 
-            shouldThrow<Exception> {
+            shouldThrow<MonitorImportParseException> {
                 parser.parse(wrongTypeYaml)
             }
         }

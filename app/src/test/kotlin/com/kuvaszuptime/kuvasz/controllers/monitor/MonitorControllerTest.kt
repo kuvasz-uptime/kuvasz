@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
@@ -511,7 +512,7 @@ class MonitorControllerTest(
 
                 then("it should return 400 bad request") {
                     val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
                     }
                     response.status shouldBe HttpStatus.BAD_REQUEST
                 }
@@ -528,7 +529,7 @@ class MonitorControllerTest(
 
                 then("it should return 400 bad request") {
                     val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
                     }
                     response.status shouldBe HttpStatus.BAD_REQUEST
                 }
@@ -547,7 +548,7 @@ class MonitorControllerTest(
 
                 then("it should return 400 bad request") {
                     val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
                     }
                     response.status shouldBe HttpStatus.BAD_REQUEST
                 }
@@ -592,7 +593,7 @@ class MonitorControllerTest(
 
                 then("it should return 400 bad request") {
                     val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
                     }
                     response.status shouldBe HttpStatus.BAD_REQUEST
                 }

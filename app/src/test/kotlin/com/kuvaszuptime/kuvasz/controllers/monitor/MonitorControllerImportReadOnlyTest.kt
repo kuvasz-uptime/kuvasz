@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -40,49 +41,49 @@ class MonitorControllerImportReadOnlyTest(
             `when`("monitors are in read-only mode") {
                 appConfig.disableHttpMonitorExternalWrite()
 
-            val yamlContent = buildYamlImportContent(
-                httpMonitors = listOf(
-                    HttpMonitorExportDto(
-                        name = "read-only-http",
-                        url = "https://example.com",
-                        sensitiveUrl = false,
-                        uptimeCheckInterval = 60,
-                        enabled = true,
-                        sslCheckEnabled = true,
-                        latencyHistoryEnabled = true,
-                        requestMethod = HttpMethod.GET,
-                        followRedirects = true,
-                        forceNoCache = true,
-                        sslExpiryThreshold = 30,
-                        failureCountThreshold = 1,
-                        integrations = emptySet(),
-                        expectedStatusCodes = emptySet(),
-                        responseTimeThresholdMillis = null,
-                        expectedKeyword = null,
-                        expectedKeywordCaseSensitive = false,
-                        expectedKeywordNegated = false,
-                        requestHeaders = emptyMap(),
-                        expectedHeaders = emptyMap(),
-                        requestBody = null,
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "read-only-http",
+                            url = "https://example.com",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = true,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = emptySet(),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                        )
                     )
                 )
-            )
 
-            val multipartBody = MultipartBody.builder()
-                .addPart("file", "read-only.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
-                .build()
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "read-only.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
 
-            val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
-                .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
-                .accept(MediaType.APPLICATION_JSON_TYPE)
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
 
-            then("it should return 405 method not allowed") {
-                val response = shouldThrow<HttpClientResponseException> {
-                    client.exchange(request, com.kuvaszuptime.kuvasz.models.ServiceError::class.java).awaitFirst()
+                then("it should return 405 method not allowed") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.METHOD_NOT_ALLOWED
                 }
-                response.status shouldBe HttpStatus.METHOD_NOT_ALLOWED
             }
-        }
         }
     }
 

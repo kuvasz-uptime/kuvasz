@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
+import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportParseException
 import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportParser
 import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportService
 import io.micronaut.http.MediaType
@@ -37,7 +38,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.ValidationException
-import java.io.IOException
 
 @Controller("${API_V2_PREFIX}/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
@@ -115,8 +115,8 @@ class MonitorController(
     private fun parseImportYaml(content: ByteArray): MonitorImportDto =
         try {
             monitorImportParser.parse(content)
-        } catch (e: IOException) {
-            throw ValidationException("Failed to parse the uploaded YAML file: ${e.message}", e)
+        } catch (e: MonitorImportParseException) {
+            throw ValidationException(e.message, e.cause)
         }
 
     private fun ensureImportContainsMonitors(importDto: MonitorImportDto) {

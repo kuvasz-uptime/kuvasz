@@ -1,7 +1,9 @@
 package com.kuvaszuptime.kuvasz.services.monitor.importer
 
+import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -44,7 +46,7 @@ class DefaultMonitorImportServiceTest(
         should("throw ValidationException when an adapter is invalid") {
             val importDto = MonitorImportDto(
                 httpMonitors = listOf(
-                    com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto(
+                    HttpMonitorExportDto(
                         name = "",
                         url = "https://example.com",
                         sensitiveUrl = false,
@@ -52,7 +54,7 @@ class DefaultMonitorImportServiceTest(
                         enabled = true,
                         sslCheckEnabled = true,
                         latencyHistoryEnabled = true,
-                        requestMethod = com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod.GET,
+                        requestMethod = HttpMethod.GET,
                         followRedirects = true,
                         forceNoCache = true,
                         sslExpiryThreshold = 30,

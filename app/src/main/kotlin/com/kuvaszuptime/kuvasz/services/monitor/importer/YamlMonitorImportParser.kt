@@ -16,6 +16,13 @@ class YamlMonitorImportParser : MonitorImportParser {
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .build()
 
+    @Suppress("TooGenericExceptionCaught")
     override fun parse(content: ByteArray): MonitorImportDto =
-        yamlMapper.readValue(content, MonitorImportDto::class.java)
+        try {
+            yamlMapper.readValue(content, MonitorImportDto::class.java)
+        } catch (e: Exception) {
+            // Jackson 3 throws RuntimeException-based exceptions (e.g. JacksonYAMLParseException,
+            // MismatchedInputException); wrap every parse-time failure into a format-agnostic exception.
+            throw MonitorImportParseException("Failed to parse the uploaded YAML file: ${e.message}", e)
+        }
 }
