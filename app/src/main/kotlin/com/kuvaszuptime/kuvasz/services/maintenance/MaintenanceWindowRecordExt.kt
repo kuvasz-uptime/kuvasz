@@ -13,7 +13,7 @@ fun MaintenanceWindowRecord.toDetailsDto(calculator: MaintenanceWindowCalculator
 
     return MaintenanceWindowDetailsDto.fromRecord(
         record = this,
-        active = if (isManual()) enabled == true else currentInterval != null,
+        active = calculator.isActive(this, now),
         nextStart = nextInterval?.start,
         endsAt = currentInterval?.end,
     )
