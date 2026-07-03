@@ -23,6 +23,22 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     
         The same applies if you **used the UI or the API before** to manage your monitors, and you decide to switch to YAML: unless your YAML definition matches the existing monitors by their name, existing monitors **could be deleted or modified**.
 
+    **Restoring from a YAML backup**
+
+    You can export your monitors from the UI under **Settings → Backup & Restore → Export monitors (YAML)**, or via `GET /api/v2/monitors/export/yaml`. To restore that backup later, use **Settings → Backup & Restore → Import monitors (YAML)** or the `POST /api/v2/monitors/import/yaml` API endpoint.
+
+    !!!warning "Restoring a backup is destructive"
+
+        The import follows the same semantics as YAML configuration on startup:
+
+        - Monitors with the same name and type will be **updated** with the values from the backup.
+        - Monitors that exist in the database but are **not in the backup** will be **deleted**.
+        - Monitors in the backup that do not exist will be **created**.
+        - The import **does not** switch the monitors to read-only mode; you can keep managing them through the UI and API afterwards.
+        - If any monitor type is currently managed via YAML (read-only mode), the import **will be rejected** with a `405 Method Not Allowed` response until you remove that type from your YAML configuration.
+
+        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of monitors that would be received, imported/updated, and deleted.
+
     **What happens if you add one or more monitor to your YAML file?**
 
     - If there is a monitor in the database that is not in the YAML file, **it will be deleted**.
