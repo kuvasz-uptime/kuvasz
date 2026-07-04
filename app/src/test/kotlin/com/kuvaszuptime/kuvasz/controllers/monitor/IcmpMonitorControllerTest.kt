@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.randomClientSecret
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
@@ -15,6 +16,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -162,6 +164,12 @@ class IcmpMonitorControllerTest(
         given("GET /api/v2/icmp-monitors/{id}") {
             `when`("the monitor exists") {
                 val monitor = createIcmpMonitor(monitorRepository)
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "active-window",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.ICMP, monitor.name)),
+                )
 
                 val response = monitorClient.getMonitorDetails(monitor.id)
 
@@ -170,6 +178,9 @@ class IcmpMonitorControllerTest(
                     response.name shouldBe monitor.name
                     response.host shouldBe monitor.host
                     response.uptimeStatus.shouldBeNull()
+                    response.maintenanceWindows.map { it.name } shouldBe listOf("active-window")
+                    response.maintenanceWindows.single().active shouldBe true
+                    response.inMaintenance shouldBe true
                 }
             }
 
@@ -775,12 +786,13 @@ class IcmpMonitorControllerTest(
 
             val monitoringStatsDtoStub = IcmpMonitoringStatsDto(
                 actual = IcmpMonitoringStatsDto.ActualMonitoringStats(
-                    uptimeStats = IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                    uptimeStats = ActualUptimeStats(
                         total = 10000,
                         down = 8185,
                         up = 3535,
                         paused = 7157,
                         inProgress = 6139,
+                        inMaintenance = 2914,
                         lastIncident = getCurrentTimestamp()
                     )
                 ),

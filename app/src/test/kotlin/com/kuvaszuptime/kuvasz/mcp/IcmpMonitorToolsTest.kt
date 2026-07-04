@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.mcp
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_ICMP_MONITOR_DETAILS
@@ -11,9 +12,9 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorStatsSchema
-import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -68,6 +69,29 @@ class IcmpMonitorToolsTest(
                     details.name shouldBe monitor.name
 
                     response.contentAs<IcmpMonitorDetailsSchema>() shouldBe details
+                }
+            }
+
+            `when`("get-icmp-monitor-details is called for a monitor under an active maintenance window") {
+                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    name = "icmp-maintenance",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.ICMP, monitor.name)),
+                )
+                val response = callToolWithMcpClient(GET_ICMP_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
+
+                then("it should expose inMaintenance=true and the affecting maintenance window") {
+                    response.isError shouldBe false
+
+                    val details = response.structuredContentAs<IcmpMonitorDetailsSchema>().shouldNotBeNull()
+                    details.inMaintenance shouldBe true
+                    details.maintenanceWindows.forOne { expectedWindow ->
+                        expectedWindow.id shouldBe window.id
+                        expectedWindow.name shouldBe window.name
+                        expectedWindow.active shouldBe true
+                    }
                 }
             }
 

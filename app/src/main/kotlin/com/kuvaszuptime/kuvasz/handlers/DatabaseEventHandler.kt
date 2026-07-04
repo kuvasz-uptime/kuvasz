@@ -10,9 +10,9 @@ import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.slf4j.LoggerFactory
 
 @Singleton
 class DatabaseEventHandler(
@@ -23,7 +23,7 @@ class DatabaseEventHandler(
     private val dslContext: DSLContext,
 ) {
     companion object {
-        private val logger = LoggerFactory.getLogger(DatabaseEventHandler::class.java)
+        private val logger = loggerFor<DatabaseEventHandler>()
     }
 
     fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {

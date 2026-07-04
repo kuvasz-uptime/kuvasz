@@ -12,6 +12,9 @@ class IcmpMonitorDetailsPage(private val page: Page) {
 
     val uptimeSection: Locator get() = page.getByTestId("uptime-block-title")
 
+    // The maintenance indicator (a tool icon) rendered in the header while the monitor is under maintenance.
+    val maintenanceIndicator: Locator get() = page.locator("#icmp-monitor-detail-heading .icon-tabler-tool")
+
     // ApexCharts containers; once rendered each holds an `<svg>`.
     val latencyChartSvg: Locator get() = page.locator("#icmp-monitor-details-latency-chart svg")
     val packetLossChartSvg: Locator get() = page.locator("#icmp-monitor-details-packet-loss-chart svg")

@@ -47,6 +47,14 @@ internal fun HTMLTag.xOnInput(action: String) {
     xOn("input", action)
 }
 
+internal fun HTMLTag.xOnBlur(action: String) {
+    xOn("blur", action)
+}
+
+internal fun HTMLTag.xOnChange(action: String) {
+    xOn("change", action)
+}
+
 internal fun HTMLTag.xOnLoad(action: String) {
     xOn("load", action)
 }

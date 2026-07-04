@@ -2,11 +2,14 @@ package com.kuvaszuptime.kuvasz.services.check.icmp
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.SchedulingException
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.getNextCheck
 import com.kuvaszuptime.kuvasz.services.check.gracefulCancel
 import com.kuvaszuptime.kuvasz.services.check.initiateShutdown
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -18,7 +21,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
 import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
@@ -30,6 +32,7 @@ class IcmpCheckScheduler(
     private val uptimeChecker: IcmpUptimeChecker,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
+    private val maintenanceWindowService: MaintenanceWindowService,
 ) : AutoCloseable {
     private val coroutineExHandler = CoroutineExceptionHandler { _, ex ->
         logger.warn("Coroutine failed with ${ex::class.simpleName}: ${ex.message}")
@@ -90,6 +93,11 @@ class IcmpCheckScheduler(
 
                     @Suppress("TooGenericExceptionCaught")
                     try {
+                        // Skip the check entirely while the monitor is under maintenance.
+                        if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId())) {
+                            logger.debug("Skipping ICMP check for \"${monitor.name}\": it is under maintenance")
+                            return@launch
+                        }
                         uptimeChecker.check(monitor) { checkedMonitor ->
                             // Re-applying the original check interval which acts like kind of a synchronization to
                             // minimize the chance of overlapping requests
@@ -132,6 +140,6 @@ class IcmpCheckScheduler(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(IcmpCheckScheduler::class.java)
+        private val logger = loggerFor<IcmpCheckScheduler>()
     }
 }

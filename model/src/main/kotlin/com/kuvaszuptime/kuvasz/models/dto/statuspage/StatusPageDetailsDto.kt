@@ -25,4 +25,8 @@ data class StatusPageDetailsDto(
     val generatedAt: OffsetDateTime,
     @param:Schema(description = StatusPageDocs.MONITOR_DETAILS, required = true)
     val monitors: List<StatusPageMonitorDetailsDto>,
+    @param:Schema(description = StatusPageDocs.ACTIVE_MAINTENANCE_WINDOWS, required = true)
+    val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
+    @param:Schema(description = StatusPageDocs.UPCOMING_MAINTENANCE_WINDOWS, required = true)
+    val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
 )

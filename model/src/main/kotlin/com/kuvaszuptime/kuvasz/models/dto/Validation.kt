@@ -75,3 +75,12 @@ object StatusPageValidationMessages {
     const val SLUG_PATTERN = "Status page slug must be 1-50 characters long and can only contain " +
         "letters, numbers, hyphens, and underscores"
 }
+
+object MaintenanceWindowValidationMessages {
+    const val NAME_NOT_BLANK = "Maintenance window name must not be blank"
+    const val CRON_INVALID = "The cron expression is invalid"
+    const val DURATION_INVALID = "The duration must be a positive ISO-8601 duration string (e.g. 'PT1H30M')"
+    const val SCHEDULE_INVALID = "A maintenance window must be either manual (no 'cron' and no 'start'), " +
+        "cron-based ('cron' + 'duration'), or single ('start' + 'duration'). " +
+        "'cron' and 'start' are mutually exclusive, and both 'cron' and 'start' require a 'duration'."
+}

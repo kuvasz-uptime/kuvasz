@@ -15,6 +15,11 @@ object StatusPageDocs {
     const val STATUS_GENERATED_AT = "Timestamp of when the status page was generated"
     const val MONITOR_DETAILS =
         "The details of the monitors included in the status page, such as their uptime status and uptime ratio"
+    const val ACTIVE_MAINTENANCE_WINDOWS =
+        "The maintenance windows that are shown on the status page and currently active for at least one of its monitors"
+    const val UPCOMING_MAINTENANCE_WINDOWS =
+        "The maintenance windows that are shown on the status page and going to start within the next 24 hours for " +
+            "at least one of its monitors"
     const val STATUS_PAGES_405_REASON =
         "Status pages are in read-only mode, because they are loaded from a YAML config file"
 }

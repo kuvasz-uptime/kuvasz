@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
@@ -13,6 +14,8 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -405,6 +408,32 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                         "Your SSL certificate for \"test_monitor\" will expire soon\n" +
                             "Expiry date: ${event.certInfo.validTo}"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("toFormattedMaintenanceMessage(event: MaintenanceWindowEvent)") {
+
+            val window = MaintenanceWindowRecord()
+                .setId(99)
+                .setName("test_window")
+                .setEnabled(true)
+
+            `when`("it gets a start event with a description") {
+                val event = MaintenanceWindowStartEvent(window.copy().apply { setDescription("Scheduled DB upgrade") })
+
+                then("it should return the plain summary followed by the description") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "Maintenance \"test_window\" has started\nScheduled DB upgrade"
+                }
+            }
+
+            `when`("it gets an end event without a description") {
+                val event = MaintenanceWindowEndEvent(window)
+
+                then("it should return only the plain summary") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "Maintenance \"test_window\" has ended"
                 }
             }
         }

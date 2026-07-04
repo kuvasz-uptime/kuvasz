@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
@@ -37,6 +38,8 @@ public class Indexes {
     public static final Index ICMP_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("icmp_uptime_event_monitor_idx"), IcmpUptimeEvent.ICMP_UPTIME_EVENT, new OrderField[] { IcmpUptimeEvent.ICMP_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index LATENCY_LOG_LATENCY_IDX = Internal.createIndex(DSL.name("latency_log_latency_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.LATENCY }, false);
     public static final Index LATENCY_LOG_MONITOR_IDX = Internal.createIndex(DSL.name("latency_log_monitor_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.MONITOR_ID }, false);
+    public static final Index MAINTENANCE_ENABLED_IDX = Internal.createIndex(DSL.name("maintenance_enabled_idx"), MaintenanceWindow.MAINTENANCE_WINDOW, new OrderField[] { MaintenanceWindow.MAINTENANCE_WINDOW.ENABLED }, false);
+    public static final Index MAINTENANCE_MONITORS_IDX = Internal.createIndex(DSL.name("maintenance_monitors_idx"), MaintenanceWindow.MAINTENANCE_WINDOW, new OrderField[] { MaintenanceWindow.MAINTENANCE_WINDOW.MONITORS }, false);
     public static final Index PUSH_MONITOR_EFFECTIVE_MONITORS_IDX = Internal.createIndex(DSL.name("push_monitor_effective_monitors_idx"), PushMonitor.PUSH_MONITOR, new OrderField[] { PushMonitor.PUSH_MONITOR.LAST_HEARTBEAT, PushMonitor.PUSH_MONITOR.ENABLED }, false);
     public static final Index PUSH_UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("push_uptime_event_ended_at_idx"), PushUptimeEvent.PUSH_UPTIME_EVENT, new OrderField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.ENDED_AT }, false);
     public static final Index PUSH_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("push_uptime_event_monitor_idx"), PushUptimeEvent.PUSH_UPTIME_EVENT, new OrderField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.MONITOR_ID }, false);

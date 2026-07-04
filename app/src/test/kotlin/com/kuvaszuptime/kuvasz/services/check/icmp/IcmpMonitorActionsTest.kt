@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
@@ -110,6 +111,7 @@ class IcmpMonitorActionsTest(
                 )
 
                 createIcmpMonitor(icmpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
+                createMaintenanceWindow(dslContext, global = true)
                 val enabledMonitorsUptimeEvent = createIcmpUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor.id,
@@ -160,6 +162,7 @@ class IcmpMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.inMaintenance shouldBe true
                     }
                     result.forOne { downMonitor ->
                         downMonitor.name shouldBe enabledMonitor2.name
@@ -171,6 +174,7 @@ class IcmpMonitorActionsTest(
                         downMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 34)
                         )
+                        downMonitor.inMaintenance shouldBe true
                     }
                 }
             }
@@ -270,6 +274,7 @@ class IcmpMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.inMaintenance shouldBe false
                     }
                 }
             }

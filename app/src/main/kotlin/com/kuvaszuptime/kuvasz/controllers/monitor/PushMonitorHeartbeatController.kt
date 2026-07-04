@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.push.heartbeat.PushMonitorFail
 import com.kuvaszuptime.kuvasz.models.events.sanitizeAsError
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
@@ -18,7 +19,6 @@ import io.micronaut.validation.Validated
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 
 @Controller("${API_V2_PREFIX}/push-monitors/heartbeats", produces = [MediaType.APPLICATION_JSON])
 @Validated
@@ -27,7 +27,9 @@ class PushMonitorHeartbeatController(
     private val monitorActions: PushMonitorActions,
 ) : PushMonitorHeartbeatOperations {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<PushMonitorHeartbeatController>()
+    }
 
     @ApiResponses(
         ApiResponse(

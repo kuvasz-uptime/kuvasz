@@ -6,11 +6,14 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
@@ -301,6 +304,41 @@ class SlackTextFormatterTest : BehaviorSpec(
                         "⚠️ *Your SSL certificate for \"test_monitor\" will expire soon*\n" +
                             "_Expiry date: ${event.certInfo.validTo}_"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("toFormattedMaintenanceMessage(event: MaintenanceWindowEvent)") {
+
+            val window = MaintenanceWindowRecord()
+                .setId(99)
+                .setName("test_window")
+                .setEnabled(true)
+
+            `when`("it gets a start event with a description") {
+                val event = MaintenanceWindowStartEvent(window.copy().apply { setDescription("Scheduled DB upgrade") })
+
+                then("it should return the correctly formatted, bolded message with an italic description") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "🔧 *Maintenance \"test_window\" has started*\n_Scheduled DB upgrade_"
+                }
+            }
+
+            `when`("it gets a start event without a description") {
+                val event = MaintenanceWindowStartEvent(window)
+
+                then("it should omit the description line") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "🔧 *Maintenance \"test_window\" has started*"
+                }
+            }
+
+            `when`("it gets an end event") {
+                val event = MaintenanceWindowEndEvent(window)
+
+                then("it should return the correctly formatted end message") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "✅ *Maintenance \"test_window\" has ended*"
                 }
             }
         }

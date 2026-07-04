@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
@@ -367,7 +368,23 @@ class StatusPageControllerTest(
                             uptimeStatusHistory = emptyList(),
                             averageLatencyInMs = 123,
                         )
-                    )
+                    ),
+                    activeMaintenanceWindows = listOf(
+                        StatusPageMaintenanceWindowDto(
+                            name = "Ongoing maintenance",
+                            description = "Some work",
+                            start = null,
+                            end = null,
+                        )
+                    ),
+                    upcomingMaintenanceWindows = listOf(
+                        StatusPageMaintenanceWindowDto(
+                            name = "Upcoming maintenance",
+                            description = null,
+                            start = getCurrentTimestamp().plusHours(2),
+                            end = getCurrentTimestamp().plusHours(3),
+                        )
+                    ),
                 )
                 every { dataMock.getCachedStatusPageData(statusPage.id) } returns mockDataResponse
 
@@ -393,6 +410,20 @@ class StatusPageControllerTest(
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt
+                    response.activeMaintenanceWindows.forOne { window ->
+                        val expected = mockDataResponse.activeMaintenanceWindows.single()
+                        window.name shouldBe expected.name
+                        window.description shouldBe expected.description
+                        window.start shouldBe expected.start
+                        window.end shouldBe expected.end
+                    }
+                    response.upcomingMaintenanceWindows.forOne { window ->
+                        val expected = mockDataResponse.upcomingMaintenanceWindows.single()
+                        window.name shouldBe expected.name
+                        window.description shouldBe expected.description
+                        window.start.shouldNotBeNull() shouldBe expected.start.shouldNotBeNull()
+                        window.end.shouldNotBeNull() shouldBe expected.end.shouldNotBeNull()
+                    }
                 }
             }
 
@@ -413,7 +444,23 @@ class StatusPageControllerTest(
                             uptimeStatusHistory = emptyList(),
                             averageLatencyInMs = 123,
                         )
-                    )
+                    ),
+                    activeMaintenanceWindows = listOf(
+                        StatusPageMaintenanceWindowDto(
+                            name = "Ongoing maintenance",
+                            description = "Some work",
+                            start = null,
+                            end = null,
+                        )
+                    ),
+                    upcomingMaintenanceWindows = listOf(
+                        StatusPageMaintenanceWindowDto(
+                            name = "Upcoming maintenance",
+                            description = null,
+                            start = getCurrentTimestamp().plusHours(2),
+                            end = getCurrentTimestamp().plusHours(3),
+                        )
+                    ),
                 )
                 every { dataMock.getCachedDefaultStatusPageData() } returns mockDataResponse
 
@@ -439,6 +486,20 @@ class StatusPageControllerTest(
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt
+                    response.activeMaintenanceWindows.forOne { window ->
+                        val expected = mockDataResponse.activeMaintenanceWindows.single()
+                        window.name shouldBe expected.name
+                        window.description shouldBe expected.description
+                        window.start shouldBe expected.start
+                        window.end shouldBe expected.end
+                    }
+                    response.upcomingMaintenanceWindows.forOne { window ->
+                        val expected = mockDataResponse.upcomingMaintenanceWindows.single()
+                        window.name shouldBe expected.name
+                        window.description shouldBe expected.description
+                        window.start.shouldNotBeNull() shouldBe expected.start.shouldNotBeNull()
+                        window.end.shouldNotBeNull() shouldBe expected.end.shouldNotBeNull()
+                    }
                 }
             }
 

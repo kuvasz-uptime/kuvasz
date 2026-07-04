@@ -20,7 +20,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             val template =
                 """{"id": "{{ctx.monitorUrn}}","status": {% if ctx.type == 'HTTP_UP' %}"OK"{% else %}"{{ctx.type}}"{% endif %}}"""
 
-            val resultFromUpEvent = factory.fromMonitorEvent(
+            val resultFromUpEvent = factory.fromEvent(
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
@@ -34,7 +34,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 ),
                 literalTemplate = template,
             )
-            val resultFromDownMonitor = factory.fromMonitorEvent(
+            val resultFromDownMonitor = factory.fromEvent(
                 event = HttpMonitorDownEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
@@ -71,8 +71,8 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 previousEvent = null,
             )
 
-            val defaultResult = factory.fromMonitorEvent(testEvent, defaultEscapedTemplate)
-            val jsEscapedResult = factory.fromMonitorEvent(testEvent, jsEscapedTemplate)
+            val defaultResult = factory.fromEvent(testEvent, defaultEscapedTemplate)
+            val jsEscapedResult = factory.fromEvent(testEvent, jsEscapedTemplate)
 
             defaultResult shouldContain "Your monitor &quot;something&quot;"
             jsEscapedResult shouldContain """Your monitor \"something\""""
@@ -85,7 +85,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
         val template = """{"request_id": "342342","status": {% if ctx.type == 'UP' endif %}}"""
 
         shouldThrowAny {
-            factory.fromMonitorEvent(
+            factory.fromEvent(
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
@@ -107,7 +107,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
         val template = """{"status": {% if context.type == 'HTTP_UP' %}"OK"{% else %}"{{ctx.type}}"{% endif %}}"""
 
         shouldThrowAny {
-            factory.fromMonitorEvent(
+            factory.fromEvent(
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423

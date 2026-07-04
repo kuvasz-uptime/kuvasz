@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
@@ -8,8 +9,10 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
+import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
@@ -18,6 +21,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
@@ -25,6 +29,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @MicronautTest(environments = ["full-default-status-page-config"])
 class StatusPageDataActionsTest(
@@ -33,7 +38,32 @@ class StatusPageDataActionsTest(
     private val pushMonitorActions: PushMonitorActions,
     private val icmpMonitorActions: IcmpMonitorActions,
     private val statusPageRepository: StatusPageRepository,
+    private val maintenanceWindowRepository: MaintenanceWindowRepository,
 ) : BehaviorSpec({
+
+    fun maintenanceWindowRecord(
+        name: String,
+        description: String? = null,
+        global: Boolean = true,
+        monitors: Array<MonitorID> = emptyArray(),
+        cron: String? = null,
+        start: OffsetDateTime? = null,
+        duration: String? = null,
+    ) = MaintenanceWindowRecord().apply {
+        this.id = 1L
+        this.name = name
+        this.description = description
+        this.enabled = true
+        this.global = global
+        this.showOnStatusPages = true
+        this.cron = cron
+        this.start = start
+        this.duration = duration
+        this.monitors = monitors
+        this.integrations = emptyArray<IntegrationID>()
+        this.createdAt = getCurrentTimestamp()
+        this.updatedAt = getCurrentTimestamp()
+    }
 
     given("the getDefaultStatusPageData() method") {
 
@@ -442,6 +472,212 @@ class StatusPageDataActionsTest(
 
                 result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockIcmpMonitorList
                 result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
+            }
+        }
+
+        `when`("some healthy monitors are under maintenance and there is an active window to show") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Josh Snow",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                    inMaintenance = true,
+                ),
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Arya Stark",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9234,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                ),
+            )
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            val mwRepoMock = getMock(maintenanceWindowRepository)
+            every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
+                maintenanceWindowRecord(name = "Global manual window", description = "Some maintenance")
+            )
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("it should return PARTIAL_MAINTENANCE and expose the active window in the banner") {
+                result.systemStatus shouldBe SystemStatus.PARTIAL_MAINTENANCE
+                result.activeMaintenanceWindows shouldHaveSize 1
+                result.activeMaintenanceWindows.first().name shouldBe "Global manual window"
+                result.activeMaintenanceWindows.first().description shouldBe "Some maintenance"
+                // Manual windows have no concrete interval
+                result.activeMaintenanceWindows.first().start shouldBe null
+                result.activeMaintenanceWindows.first().end shouldBe null
+                result.upcomingMaintenanceWindows shouldBe emptyList()
+            }
+        }
+
+        `when`("every monitor is under maintenance") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Josh Snow",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                    inMaintenance = true,
+                ),
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Arya Stark",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9234,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                    inMaintenance = true,
+                ),
+            )
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("it should return MAINTENANCE as system status") {
+                result.systemStatus shouldBe SystemStatus.MAINTENANCE
+            }
+        }
+
+        `when`("a monitor is DOWN while another is under maintenance") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Josh Snow",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = emptyList(),
+                ),
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Arya Stark",
+                    lastCheck = getCurrentTimestamp().minusSeconds(3),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9234,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                    inMaintenance = true,
+                ),
+            )
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("the outage should take precedence over the maintenance state") {
+                result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
+            }
+        }
+
+        `when`("there are upcoming windows within and beyond the 24h lookahead") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Josh Snow",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                ),
+            )
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            val mwRepoMock = getMock(maintenanceWindowRepository)
+            every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
+                maintenanceWindowRecord(
+                    name = "Starting soon",
+                    start = getCurrentTimestamp().plusHours(1),
+                    duration = "PT1H",
+                ),
+                maintenanceWindowRecord(
+                    name = "Starting later",
+                    start = getCurrentTimestamp().plusHours(48),
+                    duration = "PT1H",
+                ),
+            )
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("only the window within the next 24h should be surfaced as upcoming") {
+                result.systemStatus shouldBe SystemStatus.OPERATIONAL
+                result.activeMaintenanceWindows shouldBe emptyList()
+                result.upcomingMaintenanceWindows shouldHaveSize 1
+                result.upcomingMaintenanceWindows.first().name shouldBe "Starting soon"
+            }
+        }
+
+        `when`("a window is scoped to a monitor that is not on the page") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Josh Snow",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                    inMaintenance = true,
+                ),
+            )
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            val mwRepoMock = getMock(maintenanceWindowRepository)
+            every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
+                maintenanceWindowRecord(name = "Visible", global = true),
+                maintenanceWindowRecord(
+                    name = "Hidden",
+                    global = false,
+                    monitors = arrayOf(MonitorID(MonitorType.HTTP_SSL, "Not on the page")),
+                ),
+            )
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("only the affecting window should be surfaced") {
+                result.activeMaintenanceWindows shouldHaveSize 1
+                result.activeMaintenanceWindows.first().name shouldBe "Visible"
             }
         }
     }
@@ -936,4 +1172,11 @@ class StatusPageDataActionsTest(
 
     @MockBean(StatusPageRepository::class)
     fun statusPageRepository(): StatusPageRepository = mockk()
+
+    @MockBean(MaintenanceWindowRepository::class)
+    fun maintenanceWindowRepository(): MaintenanceWindowRepository = mockk {
+        every { fetchEnabledOnStatusPages() } returns emptyList()
+        every { fetchByEnabled(any()) } returns emptyList()
+        every { fetchAll(any()) } returns emptyList()
+    }
 }

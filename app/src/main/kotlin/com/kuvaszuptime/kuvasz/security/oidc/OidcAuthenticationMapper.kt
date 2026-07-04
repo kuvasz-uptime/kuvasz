@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.security.oidc
 
 import com.kuvaszuptime.kuvasz.config.OidcConfig
 import com.kuvaszuptime.kuvasz.security.Role
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.async.publisher.Publishers
 import io.micronaut.security.authentication.AuthenticationResponse
@@ -12,7 +13,6 @@ import io.micronaut.security.oauth2.endpoint.token.response.OpenIdTokenResponse
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import org.reactivestreams.Publisher
-import org.slf4j.LoggerFactory
 
 const val OIDC_PROVIDER_NAME = "oidc"
 
@@ -23,7 +23,9 @@ class OidcAuthenticationMapper(
     private val oidcConfig: OidcConfig,
 ) : OpenIdAuthenticationMapper {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<OidcAuthenticationMapper>()
+    }
 
     override fun createAuthenticationResponse(
         providerName: String,

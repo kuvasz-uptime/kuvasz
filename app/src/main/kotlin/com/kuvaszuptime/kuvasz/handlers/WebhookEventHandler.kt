@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -17,13 +18,13 @@ import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.getBodyAs
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
-import org.slf4j.LoggerFactory
 
 @Context
 @Requires(bean = WebhookNotificationConfig::class)
@@ -33,7 +34,7 @@ class WebhookEventHandler(
     integrationRepository: IntegrationRepository,
 ) : AbstractIntegrationProvider(integrationRepository) {
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val logger = loggerFor<WebhookEventHandler>()
     }
 
     init {
@@ -78,6 +79,20 @@ class WebhookEventHandler(
         eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
             logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
+        }
+        eventDispatcher.subscribeToMaintenanceStartEvents { event ->
+            logger.debug("A MaintenanceWindowStartEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToMaintenanceEndEvents { event ->
+            logger.debug("A MaintenanceWindowEndEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
+    }
+
+    private fun MaintenanceWindowEvent.handle() {
+        filterMaintenanceTargets(this).forEach { target ->
+            webhookService.sendWebhookEvent(target as WebhookNotificationConfig, this).handleResponse()
         }
     }
 

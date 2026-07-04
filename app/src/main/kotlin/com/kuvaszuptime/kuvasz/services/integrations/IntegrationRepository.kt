@@ -21,10 +21,10 @@ import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.pebbletemplates.pebble.PebbleEngine
 import jakarta.annotation.PostConstruct
-import org.slf4j.LoggerFactory
 
 @Context
 class IntegrationRepository(
@@ -33,7 +33,9 @@ class IntegrationRepository(
     private val templateEngine: PebbleEngine?,
 ) {
 
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    companion object {
+        private val logger = loggerFor<IntegrationRepository>()
+    }
 
     val configuredIntegrations: IntegrationMap by lazy {
         val result = mutableMapOf<IntegrationID, IntegrationConfig>()
@@ -127,10 +129,20 @@ class IntegrationRepository(
      * The use case is pretty much when a monitor has multiple integrations, and we want to get the enabled ones to send
      * notifications via them.
      */
-    fun getEnabledIntegrations(ids: Array<IntegrationID>, type: IntegrationType): Set<IntegrationConfig> =
-        ids
-            .mapNotNull { id -> enabledIntegrations[id]?.takeIf { it.type == type } }
+    fun getEffectiveIntegrations(ids: Array<IntegrationID>, type: IntegrationType): Set<IntegrationConfig> =
+        enabledIntegrationsByType[type].orEmpty()
+            .filter { it.id in ids }
             .let { filtered -> globallyEnabledIntegrationsByType[type]?.let { filtered.plus(it) } ?: filtered }
+            .toSet()
+
+    /**
+     * Resolves the given integration IDs to their enabled configurations of the specified type. Unlike
+     * [getEffectiveIntegrations], this does NOT include globally-enabled integrations: only the explicitly listed ones
+     * are returned. It's intentional, see MaintenanceWindow notifications
+     */
+    fun getExplicitlyAssignedIntegrations(ids: Array<IntegrationID>, type: IntegrationType): Set<IntegrationConfig> =
+        enabledIntegrationsByType[type].orEmpty()
+            .filter { it.id in ids }
             .toSet()
 
     /**
@@ -141,17 +153,16 @@ class IntegrationRepository(
             (config.global && config.enabled) || rawIntegrations.contains(id)
         }.values.map { IntegrationDetailsDto.fromConfig(it) }
 
-    fun getConfiguredIntegrationDtos(): List<IntegrationConfigDto> = configuredIntegrations.values
-        .map { config ->
-            when (config) {
-                is SlackNotificationConfig -> SlackNotificationConfigDto(config.id, config)
-                is DiscordNotificationConfig -> DiscordNotificationConfigDto(config.id, config)
-                is PagerdutyConfig -> PagerdutyConfigDto(config.id, config)
-                is EmailNotificationConfig -> EmailNotificationConfigDto(config.id, config)
-                is TelegramNotificationConfig -> TelegramNotificationConfigDto(config.id, config)
-                is WebhookNotificationConfig -> WebhookNotificationConfigDto(config.id, config)
-            }
+    fun getConfiguredIntegrationDtos(): List<IntegrationConfigDto> = configuredIntegrations.values.map { config ->
+        when (config) {
+            is SlackNotificationConfig -> SlackNotificationConfigDto(config.id, config)
+            is DiscordNotificationConfig -> DiscordNotificationConfigDto(config.id, config)
+            is PagerdutyConfig -> PagerdutyConfigDto(config.id, config)
+            is EmailNotificationConfig -> EmailNotificationConfigDto(config.id, config)
+            is TelegramNotificationConfig -> TelegramNotificationConfigDto(config.id, config)
+            is WebhookNotificationConfig -> WebhookNotificationConfigDto(config.id, config)
         }
+    }
 }
 
 class IntegrationConfigException(message: String) : Exception(message)

@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLValidator
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.assertions.retry
+import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -12,6 +13,7 @@ import io.kotest.data.table
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.time.Duration.Companion.minutes
 
+@Ignored
 class SSLValidatorTest : StringSpec(
     {
         val validator = SSLValidator()

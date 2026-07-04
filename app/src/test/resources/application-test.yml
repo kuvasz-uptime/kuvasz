@@ -21,8 +21,8 @@ micronaut:
 datasources:
   default:
     initialPoolSize: 1
-    maximumPoolSize: 3
-    minimumIdle: 2
+    maximumPoolSize: 2
+    minimumIdle: 0
 ---
 logger:
   levels:

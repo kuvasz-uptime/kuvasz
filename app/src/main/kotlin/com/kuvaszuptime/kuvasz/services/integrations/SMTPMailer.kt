@@ -1,17 +1,17 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.mailer.MailerBuilder
-import org.slf4j.LoggerFactory
 import java.util.concurrent.CompletableFuture
 
 @Singleton
 class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(SMTPMailer::class.java)
+        private val logger = loggerFor<SMTPMailer>()
     }
 
     private val mailerClient = run {

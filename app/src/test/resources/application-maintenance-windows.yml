@@ -1,0 +1,14 @@
+maintenance-windows:
+  - name: Nightly maintenance
+    description: Recurring nightly maintenance
+    cron: "0 2 * * *"
+    duration: PT1H
+    show-on-status-pages: true
+    monitors:
+      - "http:test1"
+    integrations:
+      - "slack:test_implicitly_enabled"
+  - name: One-off maintenance
+    start: "2026-01-01T10:00:00Z"
+    duration: PT2H
+    global: true

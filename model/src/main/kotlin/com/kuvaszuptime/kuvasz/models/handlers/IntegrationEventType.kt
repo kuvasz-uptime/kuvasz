@@ -10,4 +10,6 @@ enum class IntegrationEventType {
     SSL_VALID,
     SSL_INVALID,
     SSL_WILL_EXPIRE,
+    MAINTENANCE_START,
+    MAINTENANCE_END,
 }

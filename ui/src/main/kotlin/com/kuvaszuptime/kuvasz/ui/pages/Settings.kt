@@ -80,6 +80,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         label = Messages.statusPagesReadOnlyMode(),
                         checked = settings.app.editabilityState.areStatusPagesReadOnly
                     )
+                    settingsToggle(
+                        label = Messages.maintenanceWindowsReadOnlyMode(),
+                        checked = settings.app.editabilityState.areMaintenanceWindowsReadOnly
+                    )
                 }
             }
             // Authentication settings
@@ -493,6 +497,12 @@ private fun HtmlBlockTag.settingsPageHeader() {
                                         attributes["download"] = "true"
                                         icon(Icon.DOWNLOAD)
                                         +Messages.downloadStatusPageBackup()
+                                    }
+                                    a(href = "/api/v2/maintenance-windows/export/yaml") {
+                                        classes(DROPDOWN_ITEM)
+                                        attributes["download"] = "true"
+                                        icon(Icon.DOWNLOAD)
+                                        +Messages.downloadMaintenanceWindowBackup()
                                     }
                                 }
                             }

@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.mcp
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_DETAILS
@@ -11,7 +12,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorStatsSchema
-import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -66,6 +67,29 @@ class PushMonitorToolsTest(
                     details.name shouldBe monitor.name
 
                     response.contentAs<PushMonitorDetailsSchema>() shouldBe details
+                }
+            }
+
+            `when`("get-push-monitor-details is called for a monitor under an active maintenance window") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    name = "push-maintenance",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.PUSH, monitor.name)),
+                )
+                val response = callToolWithMcpClient(GET_PUSH_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
+
+                then("it should expose inMaintenance=true and the affecting maintenance window") {
+                    response.isError shouldBe false
+
+                    val details = response.structuredContentAs<PushMonitorDetailsSchema>().shouldNotBeNull()
+                    details.inMaintenance shouldBe true
+                    details.maintenanceWindows.forOne { expectedWindow ->
+                        expectedWindow.id shouldBe window.id
+                        expectedWindow.name shouldBe window.name
+                        expectedWindow.active shouldBe true
+                    }
                 }
             }
 

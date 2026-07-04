@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.dashboard
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -50,10 +50,10 @@ fun renderPushMonitoringStats(
             )
             statCard(
                 cssClasses = setOf(COL_6, COL_MD_3),
-                icon = Icon.HEART_QUESTION,
-                iconBackground = BG_YELLOW_LT,
-                text = monitoringStats.actual.uptimeStats.inProgress.toString(),
-                secondaryText = Messages.inProgress(),
+                icon = Icon.TOOL,
+                iconBackground = BG_GRAY_300,
+                text = monitoringStats.actual.uptimeStats.inMaintenance.toString(),
+                secondaryText = Messages.maintenance(),
             )
             // Historical stats
             h3 {

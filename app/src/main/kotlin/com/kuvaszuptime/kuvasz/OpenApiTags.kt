@@ -5,6 +5,7 @@ object OpenApiTags {
     const val ICMP_MONITORS = "ICMP monitors"
     const val INCIDENTS = "Incidents"
     const val INTEGRATIONS = "Integrations"
+    const val MAINTENANCE_WINDOWS = "Maintenance windows"
     const val MANAGEMENT = "Management"
     const val MONITORS = "Monitors"
     const val PUSH_MONITORS = "Push monitors"

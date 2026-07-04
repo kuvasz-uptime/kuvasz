@@ -30,7 +30,7 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                         testId("status-monitor-card")
                         // Card status indicator
                         div {
-                            classes(CARD_STATUS_START, monitor.uptimeStatus.cardStatusClass())
+                            classes(CARD_STATUS_START, monitor.uptimeStatus.cardStatusClass(monitor.inMaintenance))
                         }
                         div {
                             classes(CARD_BODY)
@@ -44,7 +44,7 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                                 // Monitor status on the right side
                                 div {
                                     classes(MS_AUTO)
-                                    uptimeBadgeOfStatus(monitor.uptimeStatus)
+                                    uptimeBadgeOfStatus(monitor.uptimeStatus, monitor.inMaintenance)
                                 }
                             }
                             // Uptime percentage and average response time row

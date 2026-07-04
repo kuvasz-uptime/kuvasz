@@ -6,9 +6,9 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
-import org.slf4j.LoggerFactory
 
 @Context
 @Requires(bean = DiscordNotificationConfig::class)
@@ -17,7 +17,7 @@ class DiscordEventHandler(
     eventDispatcher: EventDispatcher,
     integrationRepository: IntegrationRepository,
 ) : RTCMessageEventHandler(eventDispatcher, discordWebhookService, integrationRepository) {
-    override val logger = LoggerFactory.getLogger(DiscordEventHandler::class.java)
+    override val logger = loggerFor<DiscordEventHandler>()
 
     override val formatter = DiscordTextFormatter
 

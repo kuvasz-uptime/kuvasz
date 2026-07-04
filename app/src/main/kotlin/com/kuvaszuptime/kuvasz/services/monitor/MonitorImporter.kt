@@ -12,11 +12,11 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.services.monitor.importer.ImportStrategy
 import com.kuvaszuptime.kuvasz.services.monitor.importer.ValidatedMonitorImport
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.slf4j.LoggerFactory
 
 @Singleton
 class MonitorImporter(
@@ -28,7 +28,9 @@ class MonitorImporter(
     private val importStrategy: ImportStrategy,
 ) {
 
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    companion object {
+        private val logger = loggerFor<MonitorImporter>()
+    }
 
     /**
      * New orchestrated import path. The legacy per-type methods below are kept for

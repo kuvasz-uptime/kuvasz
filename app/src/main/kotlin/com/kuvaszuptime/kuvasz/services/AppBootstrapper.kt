@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
+import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
@@ -14,19 +15,22 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowScheduler
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageImporter
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Property
 import jakarta.annotation.Nullable
 import jakarta.annotation.PostConstruct
 import jakarta.validation.ValidationException
-import org.slf4j.LoggerFactory
 
 @Context
 class AppBootstrapper(
@@ -44,6 +48,10 @@ class AppBootstrapper(
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
+    private val yamlMaintenanceWindowConfigs: List<MaintenanceWindowConfig>,
+    private val maintenanceWindowImporter: MaintenanceWindowImporter,
+    private val maintenanceWindowRepository: MaintenanceWindowRepository,
+    private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
     private val apiKeyConfig: ApiKeyConfig?,
 ) {
 
@@ -67,7 +75,14 @@ class AppBootstrapper(
     @field:Property(name = StatusPageConfig.CONFIG_PREFIX)
     protected var statusPagesYAMLConfigChecker: List<Any>? = null
 
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = MaintenanceWindowConfig.CONFIG_PREFIX)
+    protected var maintenanceWindowsYAMLConfigChecker: List<Any>? = null
+
+    companion object {
+        private val logger = loggerFor<AppBootstrapper>()
+    }
 
     @PostConstruct
     fun bootstrap() {
@@ -79,12 +94,18 @@ class AppBootstrapper(
         sanitizeIntegrationsOfMonitors()
         // Importing status pages from config if any are present
         processYamlStatusPageConfigs()
+        // Importing maintenance windows from config if any are present
+        processYamlMaintenanceWindowConfigs()
+        // Sanitize the configured integrations on the maintenance windows
+        sanitizeIntegrationsOfMaintenanceWindows()
         // Conditionally initialize the metrics export if enabled
         metricsExportRegistry?.initialize()
         // Scheduling the initial checks (HTTP uptime & SSL)
         httpCheckScheduler.initialize()
         // Scheduling the initial ICMP uptime checks
         icmpCheckScheduler.initialize()
+        // Scheduling the start/end notifications of the enabled maintenance windows
+        maintenanceWindowScheduler.initialize()
 
         logger.info("Kuvasz was successfully bootstrapped. Version: ${BuildConfig.APP_VERSION}")
     }
@@ -150,6 +171,31 @@ class AppBootstrapper(
         // Only sanitize integrations if ICMP monitors were not configured via YAML
         if (!appConfig.isIcmpMonitorExternalWriteDisabled()) {
             icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+        }
+    }
+
+    /**
+     * Sanitizes the integrations of all maintenance windows in the database.
+     * If an integration is found on a window that is not configured, it will be removed from that window.
+     */
+    private fun sanitizeIntegrationsOfMaintenanceWindows() {
+        // Only sanitize integrations if maintenance windows were not configured via YAML
+        if (appConfig.isMaintenanceWindowExternalWriteDisabled()) return
+
+        val configuredIntegrations = integrationRepository.configuredIntegrations.keys
+
+        maintenanceWindowRepository.fetchAll().forEach { window ->
+            val originalIntegrations = window.integrations.toSet()
+            val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
+            if (!matchedIntegrations.containsAll(originalIntegrations)) {
+                // There are integrations on the window that are not configured, update them
+                logger.warn(
+                    "Maintenance window with ID ${window.id} has integrations that are not configured: " +
+                        "${originalIntegrations - matchedIntegrations}. " +
+                        "Updating window integrations to only include configured ones."
+                )
+                maintenanceWindowRepository.updateIntegrations(window.id, matchedIntegrations.toTypedArray())
+            }
         }
     }
 
@@ -242,6 +288,32 @@ class AppBootstrapper(
             logger.info(
                 "No YAML status page config was found. " +
                     "External modifications of status pages are enabled. Loading status pages from DB..."
+            )
+        }
+    }
+
+    /**
+     * Processes the YAML maintenance window configs. If any YAML config is found, it disables external modifications
+     * of maintenance windows
+     */
+    private fun processYamlMaintenanceWindowConfigs() {
+        // The maintenanceWindowsYAMLConfigChecker is a workaround to check if the maintenance-windows config is present
+        // in the YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants
+        // to have zero maintenance windows, so we should disable external writes and delete all windows from the
+        // DB eventually.
+        val isYamlConfigEffective =
+            yamlMaintenanceWindowConfigs.isNotEmpty() || maintenanceWindowsYAMLConfigChecker != null
+        if (isYamlConfigEffective) {
+            appConfig.disableMaintenanceWindowExternalWrite()
+            logger.info(
+                "Disabled external modifications of maintenance windows, because a YAML config was found. " +
+                    "Loading maintenance windows from YAML config..."
+            )
+            maintenanceWindowImporter.importMaintenanceWindowConfigs(yamlMaintenanceWindowConfigs)
+        } else {
+            logger.info(
+                "No YAML maintenance window config was found. " +
+                    "External modifications of maintenance windows are enabled. Loading maintenance windows from DB..."
             )
         }
     }

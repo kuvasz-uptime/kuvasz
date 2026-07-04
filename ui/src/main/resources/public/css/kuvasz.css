@@ -58,6 +58,15 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
     background-color: var(--tblr-gray-100) !important;
 }
 
+/* Native date/time inputs: hide the browser's calendar icon and open the picker on a click anywhere in the field */
+.native-datetime-input::-webkit-calendar-picker-indicator {
+    display: none;
+}
+
+.native-datetime-input:not(:disabled) {
+    cursor: pointer;
+}
+
 /* Image preview form element */
 .img-preview {
     border: var(--tblr-border-width) solid var(--tblr-border-color);

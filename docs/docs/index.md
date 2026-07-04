@@ -102,6 +102,14 @@ title: The developer- and cloud-friendly uptime monitor
 
     [:octicons-arrow-right-24: Status Pages](features/status-pages.md)
 
+-   :calendar:{ .lg .card-header-icon } __Maintenance Windows__
+
+    ---
+
+    Schedule planned downtime so Kuvasz pauses the affected checks and suppresses false alerts — manually, on a recurring cron schedule, or as a one-off event.
+
+    [:octicons-arrow-right-24: Maintenance Windows](features/maintenance-windows.md)
+
 -   :woman_cartwheeling:{ .lg .card-header-icon } __Flexible Configuration__
 
     ---
@@ -143,7 +151,7 @@ title: The developer- and cloud-friendly uptime monitor
 | Prometheus & OpenTelemetry exporters |       ✅       |        ❌         |        ❌         |
 | Backups & YAML configuration         |       ✅       |        ❌         |        ❌         |
 | Status pages                         |       ✅       |      only 1      |      only 3      |
-| Maintenance windows                  |      📆       |        ❌         |        ✅         |
+| Maintenance windows                  |       ✅       |        ❌         |        ✅         |
 | **HTTPs monitoring**                 |               |                  |                  |
 | Keyword matching                     |       ✅       |        ✅         |        ✅         |
 | Header matching                      |       ✅       |        ❌         |        ❌         |

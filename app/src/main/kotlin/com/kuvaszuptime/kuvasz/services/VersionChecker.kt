@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.annotation.Introspected
@@ -17,14 +18,15 @@ import io.micronaut.retry.annotation.Retryable
 import io.micronaut.scheduling.annotation.Scheduled
 import jakarta.inject.Singleton
 import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
 import java.net.URI
 
 @Singleton
 @Requires(property = "app-config.check-updates", value = StringUtils.TRUE)
 class VersionCheckScheduler(private val versionChecker: VersionChecker) {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<VersionCheckScheduler>()
+    }
 
     @Scheduled(fixedDelay = "12h", initialDelay = "2s")
     fun scheduleVersionCheck() {
@@ -43,7 +45,6 @@ class VersionCheckScheduler(private val versionChecker: VersionChecker) {
 @Singleton
 class VersionChecker(private val gitHubClient: GitHubClient) {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
     private val installedVersion = BuildConfig.APP_VERSION
     private var latestVersion: String? = null
     private var latestVersionDetails: URI? = null
@@ -73,6 +74,7 @@ class VersionChecker(private val gitHubClient: GitHubClient) {
     }
 
     companion object {
+        private val logger = loggerFor<VersionChecker>()
         private const val CHANGELOG_BASE_URL = "https://kuvasz-uptime.dev/changelog#"
     }
 }

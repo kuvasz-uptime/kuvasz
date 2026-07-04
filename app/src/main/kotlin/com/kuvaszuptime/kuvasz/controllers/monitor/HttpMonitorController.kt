@@ -8,8 +8,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDocs.MONITORS_405_REASON
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto

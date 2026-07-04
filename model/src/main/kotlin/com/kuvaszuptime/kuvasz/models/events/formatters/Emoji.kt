@@ -5,6 +5,9 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -18,6 +21,7 @@ object Emoji {
     const val WARNING = "⚠️"
     const val INFO = "ℹ️"
     const val LOCK = "🔒️"
+    const val TOOL = "🔧"
 }
 
 fun MonitorEvent<*>.getEmoji(): String =
@@ -28,4 +32,10 @@ fun MonitorEvent<*>.getEmoji(): String =
         is SSLValidEvent -> Emoji.LOCK
         is SSLInvalidEvent -> Emoji.ALERT
         is SSLWillExpireEvent -> Emoji.WARNING
+    }
+
+fun MaintenanceWindowEvent.getEmoji(): String =
+    when (this) {
+        is MaintenanceWindowStartEvent -> Emoji.TOOL
+        is MaintenanceWindowEndEvent -> Emoji.CHECK_OK
     }

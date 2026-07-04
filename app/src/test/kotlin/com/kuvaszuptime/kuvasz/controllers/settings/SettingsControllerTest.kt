@@ -32,6 +32,7 @@ import kotlinx.coroutines.reactive.awaitFirst
         "enabled-metrics-prometheus",
         "enabled-mcp-server",
         "status-pages",
+        "maintenance-windows-readonly",
     ]
 )
 @SMTPTest
@@ -74,6 +75,7 @@ class SettingsControllerTest(
                 result.app.editabilityState.arePushMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areIcmpMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areStatusPagesReadOnly shouldBe true
+                result.app.editabilityState.areMaintenanceWindowsReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false
                 result.app.httpCheckTimeoutSeconds shouldBe 10
 

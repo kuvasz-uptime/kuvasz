@@ -5,6 +5,9 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -26,15 +29,22 @@ abstract class AbstractIntegrationProvider(
     private val integrationRepository: IntegrationRepository,
 ) : IntegrationProvider {
 
-    override fun filterTargetConfigs(event: MonitorEvent<*>): Set<IntegrationConfig> {
-        return integrationRepository
-            .getEnabledIntegrations(event.monitor.integrations, integrationType)
-            .filter { config ->
-                val excludedEvents = config.excludedEvents.orEmpty()
-                !excludedEvents.contains(event.toIntegrationEventType())
-            }.toSet()
-    }
+    override fun filterTargetConfigs(event: MonitorEvent<*>): Set<IntegrationConfig> =
+        integrationRepository
+            .getEffectiveIntegrations(event.monitor.integrations, integrationType)
+            .filterByEventType(event.toIntegrationEventType())
+
+    fun filterMaintenanceTargets(event: MaintenanceWindowEvent): Set<IntegrationConfig> =
+        integrationRepository
+            .getExplicitlyAssignedIntegrations(event.window.integrations, integrationType)
+            .filterByEventType(event.toIntegrationEventType())
 }
+
+private fun Set<IntegrationConfig>.filterByEventType(type: IntegrationEventType): Set<IntegrationConfig> =
+    filter { config ->
+        val excludedEvents = config.excludedEvents.orEmpty()
+        !excludedEvents.contains(type)
+    }.toSet()
 
 @Suppress("NotImplementedDeclaration")
 fun MonitorEvent<*>.toIntegrationEventType() = when (this) {
@@ -49,4 +59,9 @@ fun MonitorEvent<*>.toIntegrationEventType() = when (this) {
     is IcmpMonitorUpEvent -> IntegrationEventType.ICMP_UP
     is HttpRedirectEvent ->
         throw NotImplementedError("Redirect events are not supported in integrations")
+}
+
+fun MaintenanceWindowEvent.toIntegrationEventType() = when (this) {
+    is MaintenanceWindowStartEvent -> IntegrationEventType.MAINTENANCE_START
+    is MaintenanceWindowEndEvent -> IntegrationEventType.MAINTENANCE_END
 }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.jsonschema.JsonSchema
 import java.time.OffsetDateTime
@@ -67,6 +67,8 @@ data class HttpMonitorDetailsSchema(
     val expectedHeaders: Map<String, String>,
     val requestBody: String?,
     val statusPages: Set<String>,
+    val inMaintenance: Boolean,
+    val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
 ) {
     companion object {
         fun fromDto(dto: HttpMonitorDetailsDto) =
@@ -107,6 +109,8 @@ data class HttpMonitorDetailsSchema(
                 expectedHeaders = dto.expectedHeaders,
                 requestBody = dto.requestBody,
                 statusPages = dto.statusPages,
+                inMaintenance = dto.inMaintenance,
+                maintenanceWindows = dto.maintenanceWindows.map { MaintenanceWindowSummarySchema.fromDto(it) },
             )
     }
 }

@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
@@ -98,6 +99,7 @@ class HttpMonitorActionsTest(
                 )
 
                 createHttpMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
+                createMaintenanceWindow(dslContext, global = true)
                 val enabledMonitorsUptimeEvent = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor.id,
@@ -147,6 +149,7 @@ class HttpMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.inMaintenance shouldBe true
                     }
                     result.forOne { downMonitor ->
                         downMonitor.name shouldBe enabledMonitor2.name
@@ -157,6 +160,7 @@ class HttpMonitorActionsTest(
                         downMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 34)
                         )
+                        downMonitor.inMaintenance shouldBe true
                     }
                 }
             }
@@ -244,6 +248,7 @@ class HttpMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.inMaintenance shouldBe false
                     }
                 }
             }

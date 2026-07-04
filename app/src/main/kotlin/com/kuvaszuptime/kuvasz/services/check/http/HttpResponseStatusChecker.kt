@@ -12,12 +12,12 @@ import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.isSuccess
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 import java.net.URI
 
 @Singleton
@@ -28,7 +28,9 @@ class HttpResponseStatusChecker(
     pendingFailureRepository: PendingFailureRepository,
 ) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler, pendingFailureRepository) {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<HttpResponseStatusChecker>()
+    }
 
     /**
      * Checks the HTTP response status and handles redirection if necessary.

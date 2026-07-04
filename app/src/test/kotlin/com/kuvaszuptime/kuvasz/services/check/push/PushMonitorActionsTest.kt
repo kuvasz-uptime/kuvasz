@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PendingFailureRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
@@ -82,6 +83,7 @@ class PushMonitorActionsTest(
                 )
 
                 createPushMonitor(pushMonitorRepository, enabled = false, monitorName = "disabled-monitor")
+                createMaintenanceWindow(dslContext, global = true)
                 val enabledMonitorsUptimeEvent = createPushUptimeEventRecord(
                     dslContext,
                     monitorId = enabledMonitor.id,
@@ -117,6 +119,7 @@ class PushMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.inMaintenance shouldBe true
                     }
                 }
             }
@@ -192,6 +195,7 @@ class PushMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.inMaintenance shouldBe false
                     }
                 }
             }

@@ -3,9 +3,9 @@ package com.kuvaszuptime.kuvasz.mcp.schemas
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDefaults
-import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorStatsDto
 import io.micronaut.core.annotation.Introspected
@@ -73,6 +73,8 @@ data class IcmpMonitorDetailsSchema(
     val uptimeError: String?,
     val integrations: Set<String>,
     val statusPages: Set<String>,
+    val inMaintenance: Boolean,
+    val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
 ) {
     companion object {
         fun fromDto(dto: IcmpMonitorDetailsDto) = IcmpMonitorDetailsSchema(
@@ -95,6 +97,8 @@ data class IcmpMonitorDetailsSchema(
             uptimeError = dto.uptimeError,
             integrations = dto.integrations.map { it.toString() }.toSet(),
             statusPages = dto.statusPages,
+            inMaintenance = dto.inMaintenance,
+            maintenanceWindows = dto.maintenanceWindows.map { MaintenanceWindowSummarySchema.fromDto(it) },
         )
     }
 }

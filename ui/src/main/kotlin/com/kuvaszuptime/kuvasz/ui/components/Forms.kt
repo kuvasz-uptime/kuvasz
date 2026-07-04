@@ -41,6 +41,7 @@ internal fun FlowContent.validatedInput(
     placeholder: String? = propName,
     required: Boolean = false,
     onInput: String? = null,
+    onBlur: String? = null,
     disabledIf: String? = null,
     isNumber: Boolean = false,
     dataListItems: Set<String> = emptySet(),
@@ -64,6 +65,7 @@ internal fun FlowContent.validatedInput(
         placeholder?.let { this.placeholder = it }
         xBindErrorClass(propName)
         onInput?.let { xOnInput(it) }
+        onBlur?.let { xOnBlur(it) }
         disabledIf?.let { xBindDisabled(it) }
         if (isNumber) xModelNumber(propName) else xModel(propName)
         if (dataListItems.isNotEmpty()) list = dataListId
@@ -159,6 +161,7 @@ internal fun FlowContent.integrationsAccordionItem(
     parentAccordionId: String,
     configuredIntegrationsByType: Map<IntegrationType, Set<IntegrationConfig>>,
     isReadOnlyMode: Boolean,
+    renderGlobalIcon: Boolean = true,
 ) =
     // Integration Settings
     accordionItem(
@@ -215,7 +218,7 @@ internal fun FlowContent.integrationsAccordionItem(
                             }
                             span {
                                 classes(FORM_CHECK_LABEL)
-                                if (integration.global) {
+                                if (integration.global && renderGlobalIcon) {
                                     span {
                                         classes(ME_2, TEXT_GREEN)
                                         tooltip(
