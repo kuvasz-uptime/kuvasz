@@ -844,7 +844,7 @@ class WebhookEventHandlerTest(
                     message.monitorName shouldBe ""
                     message.monitorDetailsUrl shouldBe ""
                     message.type shouldBe IntegrationEventType.MAINTENANCE_START
-                    message.eventDetails shouldContain "Maintenance window \"${window.name}\" has started"
+                    message.eventDetails shouldContain "Maintenance \"${window.name}\" has started"
                 }
             }
 

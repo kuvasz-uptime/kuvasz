@@ -1177,5 +1177,6 @@ class StatusPageDataActionsTest(
     fun maintenanceWindowRepository(): MaintenanceWindowRepository = mockk {
         every { fetchEnabledOnStatusPages() } returns emptyList()
         every { fetchByEnabled(any()) } returns emptyList()
+        every { fetchAll(any()) } returns emptyList()
     }
 }

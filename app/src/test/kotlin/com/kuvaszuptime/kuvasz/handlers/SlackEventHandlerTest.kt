@@ -782,7 +782,7 @@ class SlackEventHandlerTest(
                     verify(inverse = true) { webhookServiceSpy.sendMessage(globalSlackConfig, any()) }
                     verify(inverse = true) { webhookServiceSpy.sendMessage(disabledSlackConfig, any()) }
 
-                    slot.captured shouldContain "Maintenance window \"${window.name}\" has started"
+                    slot.captured shouldContain "Maintenance \"${window.name}\" has started"
                     slot.captured shouldContain "Planned upgrade"
                 }
             }
@@ -800,7 +800,7 @@ class SlackEventHandlerTest(
                     val slot = slot<String>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(otherSlackConfig, capture(slot)) }
-                    slot.captured shouldContain "Maintenance window \"${window.name}\" has ended"
+                    slot.captured shouldContain "Maintenance \"${window.name}\" has ended"
                 }
             }
         }
