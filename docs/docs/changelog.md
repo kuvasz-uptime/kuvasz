@@ -1,3 +1,15 @@
+## 4.1.0-beta <small>2026-07-xx</small> { id="4.1.0-beta" data-toc-label="4.1.0-beta" }
+
+### Features
+
+The long-awaited **maintenance window support** is finally here! 🎉
+
+![Maintenance windows](images/maintenance/maintenance_list.webp)
+
+You can now schedule [**planned downtime**](features/maintenance-windows.md) so _Kuvasz_ pauses the affected checks and suppresses false alerts while you do scheduled work. A window can be **manual** (toggled on and off by hand), **recurring** (a `cron` expression + `duration`), or a **one-off** (a `start` timestamp + `duration`), and can be scoped to specific monitors or made global. Assigned integrations receive dedicated **start and end notifications**, and windows can optionally be shown on your status pages. Manageable via the [**Web UI, REST API, or YAML**](management/maintenance-windows.md), and exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
+
+Under the hood a lot of stuff was refactored (especially around notifications and status pages) to make this possible, and while the regression tests are extensive, it's still a huge change, so **a beta release seemed like a better fit**. Please give it a try and report any issues you find, so we can make the final 4.1.0 release as stable as possible!
+
 ## 4.0.1 <small>2026-06-17</small> { id="4.0.1" data-toc-label="4.0.1" }
 
 ### Fixes

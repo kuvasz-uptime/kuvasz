@@ -96,6 +96,7 @@ nav:
       - Push monitoring: features/push-monitoring.md
       - Ping (ICMP) monitoring: features/icmp-monitoring.md
       - Status pages: features/status-pages.md
+      - Maintenance windows: features/maintenance-windows.md
       - Notifications: features/notifications.md
       - MCP server: features/mcp-server.md
       - Web UI: features/ui.md
@@ -113,6 +114,7 @@ nav:
           - Push monitors: management/push-monitors.md
           - ICMP monitors: management/icmp-monitors.md
       - Status pages: management/status-pages.md
+      - Maintenance windows: management/maintenance-windows.md
       - Metrics exporters: management/metrics-exporters.md
       - Recipes & examples: management/examples.md
   - Home Assistant: home-assistant.md

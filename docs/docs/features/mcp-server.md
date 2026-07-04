@@ -64,6 +64,8 @@ The MCP server exposes the following tools to connected clients:
 
 ### HTTP monitors
 
+<!-- md:version 4.0.0 -->
+
 | Tool                       | Description                                                                                       |
 |----------------------------|---------------------------------------------------------------------------------------------------|
 | `list-http-monitors`       | List all HTTP monitors with their current uptime and SSL status                                   |
@@ -74,6 +76,8 @@ The MCP server exposes the following tools to connected clients:
 | `delete-http-monitor`      | Permanently delete an HTTP monitor by ID, including all its history and events                    |
 
 ### ICMP (ping) monitors
+
+<!-- md:version 4.0.0 -->
 
 | Tool                       | Description                                                                    |
 |----------------------------|--------------------------------------------------------------------------------|
@@ -86,6 +90,8 @@ The MCP server exposes the following tools to connected clients:
 
 ### Push (heartbeat) monitors
 
+<!-- md:version 4.0.0 -->
+
 | Tool                       | Description                                                                         |
 |----------------------------|-------------------------------------------------------------------------------------|
 | `list-push-monitors`       | List all push monitors with their current uptime status                             |
@@ -97,12 +103,16 @@ The MCP server exposes the following tools to connected clients:
 
 ### Status pages
 
+<!-- md:version 4.0.0 -->
+
 | Tool                      | Description                                                                                                             |
 |---------------------------|-------------------------------------------------------------------------------------------------------------------------|
 | `list-status-pages`       | List all status pages with their basic configuration (title, slug, visibility, monitor count)                           |
 | `get-status-page-details` | Get full details of a specific status page including per-monitor uptime status, uptime ratio, and 30-day uptime history |
 
 ### Maintenance windows
+
+<!-- md:version 4.1.0-beta -->
 
 | Tool                             | Description                                                                                                                          |
 |----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
@@ -116,17 +126,23 @@ The `maintenanceWindows` affecting a monitor (and whether it is currently `inMai
 
 ### Integrations
 
+<!-- md:version 4.0.0 -->
+
 | Tool                | Description                                                                                                         |
 |---------------------|---------------------------------------------------------------------------------------------------------------------|
 | `list-integrations` | List all configured integrations (Slack, Discord, Email, PagerDuty, Telegram, Webhook) with their type and settings |
 
 ### Application settings
 
+<!-- md:version 4.0.0 -->
+
 | Tool               | Description                                                                                                                   |
 |--------------------|-------------------------------------------------------------------------------------------------------------------------------|
 | `get-app-settings` | Get the current application settings (authentication, data retention, language, metrics export, MCP server, and version info) |
 
 ### Incidents
+
+<!-- md:version 4.0.0 -->
 
 | Tool             | Description                                                                                                                               |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------|

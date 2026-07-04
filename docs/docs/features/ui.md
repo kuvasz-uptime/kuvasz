@@ -21,7 +21,7 @@ Just a **clean and responsive interface** that works well on both desktop and mo
 ![Settings](../images/ui/settings.webp)
 ![Integrations](../images/ui/integrations.webp)
 
-## Indidents
+## Incidents
 
 ![Incident list](../images/ui/incident_list.webp)
 
@@ -30,3 +30,11 @@ Just a **clean and responsive interface** that works well on both desktop and mo
 ![Status page list](../images/ui/status_page_list.webp)
 ![Status page](../images/ui/status_page.webp)
 ![Edit status page](../images/ui/create_status_page.webp)
+
+## Maintenance windows
+
+![Maintenance windows](../images/maintenance/maintenance_list.webp)
+![Manual maintenance](../images/maintenance/manual_maintenance.webp)
+![Cron maintenance](../images/maintenance/cron_maintenance.webp)
+![Single maintenance](../images/maintenance/single_maintenance.webp)
+![Maintenance on status pages](../images/maintenance/statuspage_maintenance.webp)
