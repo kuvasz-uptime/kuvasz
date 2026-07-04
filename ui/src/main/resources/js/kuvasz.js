@@ -233,7 +233,6 @@ const httpMonitorDetails = (monitorId, isMonitorEnabled) => {
                     this.isRequestLoading = false;
                     this.isMonitorEnabled = !this.isMonitorEnabled;
                     this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
-                    console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
                     refreshHttpMonitorDetailStatus();
                 },
                 () => this.isRequestLoading = false
@@ -267,7 +266,6 @@ const pushMonitorDetails = (monitorId, isMonitorEnabled) => {
                     this.isRequestLoading = false;
                     this.isMonitorEnabled = !this.isMonitorEnabled;
                     this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
-                    console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
                     refreshPushMonitorDetailStatus();
                 },
                 () => this.isRequestLoading = false
@@ -301,7 +299,6 @@ const icmpMonitorDetails = (monitorId, isMonitorEnabled) => {
                     this.isRequestLoading = false;
                     this.isMonitorEnabled = !this.isMonitorEnabled;
                     this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
-                    console.debug('Monitor enabled status changed:', this.isMonitorEnabled);
                     refreshIcmpMonitorDetailStatus();
                 },
                 () => this.isRequestLoading = false
@@ -408,7 +405,6 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
                 this.stopPolling();
             }
             this.$watch('isAutoRefreshEnabled', (value) => {
-                console.debug('Auto-refresh setting changed:', value);
                 if (value) {
                     this.startPolling();
                 } else {
@@ -549,7 +545,6 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
         },
 
         updateChart(newData) {
-            console.debug('Updating chart with new data:', newData);
             this.chart.updateOptions({
                 labels: newData.labels,
                 series: newData.series,
@@ -578,7 +573,6 @@ const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
                 this.stopPolling();
             }
             this.$watch('isAutoRefreshEnabled', (value) => {
-                console.debug('Auto-refresh setting changed:', value);
                 if (value) {
                     this.startPolling();
                 } else {
@@ -742,7 +736,6 @@ const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
         },
 
         updateCharts(newData) {
-            console.debug('Updating charts with new data:', newData);
             this.latencyChart.updateOptions({
                 labels: newData.latency.labels,
                 series: newData.latency.series,
@@ -784,7 +777,6 @@ const upsertHttpMonitorForm = (
 
         init() {
             this.resetState();
-            console.debug('Monitor form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
         },
 
         resetState() {
@@ -950,7 +942,6 @@ const upsertHttpMonitorForm = (
         submitForm() {
             this.validate();
             if (hasNonNullValue(this.errors)) {
-                console.debug('Form validation failed:', this.errors);
                 return;
             }
 
@@ -986,8 +977,6 @@ const upsertHttpMonitorForm = (
                     body.enabled = true; // Default enabled, can be paused later
                 }
 
-                console.debug('Submitting monitor form with data:', body);
-
                 const url = this.isUpdate ? '/api/v2/http-monitors/' + monitor.id : '/api/v2/http-monitors';
                 const method = this.isUpdate ? 'PATCH' : 'POST';
 
@@ -1000,7 +989,6 @@ const upsertHttpMonitorForm = (
                 if (response.ok) {
                     this.isRequestLoading = false;
                     const responseData = await response.json();
-                    console.debug('Monitor was created/updated successfully, redirecting to monitor', responseData);
 
                     if (this.isUpdate) {
                         window.location.reload();
@@ -1010,7 +998,6 @@ const upsertHttpMonitorForm = (
                 } else {
                     if (response.status === 409) {
                         this.isRequestLoading = false;
-                        console.debug('Monitor with this name already exists');
                         this.errors.name = this.errorMessages.nameAlreadyExists;
                     } else if (response.status === 400) {
                         const errorData = await response.json();
@@ -1047,7 +1034,6 @@ const upsertPushMonitorForm = (
 
         init() {
             this.resetState();
-            console.debug('Monitor form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
         },
 
         resetState() {
@@ -1124,7 +1110,6 @@ const upsertPushMonitorForm = (
         submitForm() {
             this.validate();
             if (hasNonNullValue(this.errors)) {
-                console.debug('Form validation failed:', this.errors);
                 return;
             }
 
@@ -1146,8 +1131,6 @@ const upsertPushMonitorForm = (
                     body.enabled = true; // Default enabled, can be paused later
                 }
 
-                console.debug('Submitting monitor form with data:', body);
-
                 const url = this.isUpdate ? '/api/v2/push-monitors/' + monitor.id : '/api/v2/push-monitors';
                 const method = this.isUpdate ? 'PATCH' : 'POST';
 
@@ -1160,7 +1143,6 @@ const upsertPushMonitorForm = (
                 if (response.ok) {
                     this.isRequestLoading = false;
                     const responseData = await response.json();
-                    console.debug('Monitor was created/updated successfully, redirecting to monitor', responseData);
 
                     if (this.isUpdate) {
                         window.location.reload();
@@ -1170,7 +1152,6 @@ const upsertPushMonitorForm = (
                 } else {
                     if (response.status === 409) {
                         this.isRequestLoading = false;
-                        console.debug('Monitor with this name/client secret already exists');
                         this.errors.name = this.errorMessages.nameOrClientSecretAlreadyExists;
                         this.errors.clientSecret = this.errorMessages.nameOrClientSecretAlreadyExists;
                     } else if (response.status === 400) {
@@ -1208,7 +1189,6 @@ const upsertIcmpMonitorForm = (
 
         init() {
             this.resetState();
-            console.debug('ICMP monitor form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
         },
 
         resetState() {
@@ -1295,7 +1275,6 @@ const upsertIcmpMonitorForm = (
         submitForm() {
             this.validate();
             if (hasNonNullValue(this.errors)) {
-                console.debug('Form validation failed:', this.errors);
                 return;
             }
             this.upsertMonitor();
@@ -1319,8 +1298,6 @@ const upsertIcmpMonitorForm = (
                     body.enabled = true;
                 }
 
-                console.debug('Submitting ICMP monitor form with data:', body);
-
                 const url = this.isUpdate ? '/api/v2/icmp-monitors/' + monitor.id : '/api/v2/icmp-monitors';
                 const method = this.isUpdate ? 'PATCH' : 'POST';
 
@@ -1333,7 +1310,6 @@ const upsertIcmpMonitorForm = (
                 if (response.ok) {
                     this.isRequestLoading = false;
                     const responseData = await response.json();
-                    console.debug('ICMP monitor was created/updated successfully, redirecting to monitor', responseData);
 
                     if (this.isUpdate) {
                         window.location.reload();
@@ -1343,7 +1319,6 @@ const upsertIcmpMonitorForm = (
                 } else {
                     if (response.status === 409) {
                         this.isRequestLoading = false;
-                        console.debug('Monitor with this name already exists');
                         this.errors.name = this.errorMessages.nameAlreadyExists;
                     } else if (response.status === 400) {
                         const errorData = await response.json();
@@ -1382,7 +1357,6 @@ const upsertStatusPageForm = (
 
         init() {
             this.resetState();
-            console.debug('Status page form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
         },
 
         resetState() {
@@ -1399,7 +1373,6 @@ const upsertStatusPageForm = (
                     ts.addItem(monitor, true);
                 });
             });
-            console.log(this.customFaviconUrl, this.customLogoUrl, this.imagePreviewState);
         },
 
         validate() {
@@ -1429,7 +1402,6 @@ const upsertStatusPageForm = (
         submitForm() {
             this.validate();
             if (hasNonNullValue(this.errors)) {
-                console.debug('Form validation failed:', this.errors);
                 return;
             }
 
@@ -1448,8 +1420,6 @@ const upsertStatusPageForm = (
                     public: this.public
                 };
 
-                console.debug('Submitting status page form with data:', body);
-
                 const url = this.isUpdate ? '/api/v2/status-pages/' + statusPage.id : '/api/v2/status-pages';
                 const method = this.isUpdate ? 'PATCH' : 'POST';
 
@@ -1462,7 +1432,6 @@ const upsertStatusPageForm = (
                 if (response.ok) {
                     this.isRequestLoading = false;
                     const responseData = await response.json();
-                    console.debug('Status page was created/updated successfully, redirecting to the details', responseData);
 
                     if (this.isUpdate) {
                         window.location.reload();
@@ -1472,7 +1441,6 @@ const upsertStatusPageForm = (
                 } else {
                     if (response.status === 409) {
                         this.isRequestLoading = false;
-                        console.debug('Status page with this name already exists');
                         this.errors.slug = this.errorMessages.slugAlreadyExists;
                     } else {
                         this.isRequestLoading = false;
@@ -1869,7 +1837,6 @@ const maintenanceWindowDetails = (maintenanceWindowId, isMaintenanceWindowEnable
                 () => {
                     this.isRequestLoading = false;
                     this.isMaintenanceWindowEnabled = !this.isMaintenanceWindowEnabled;
-                    console.debug('Maintenance window enabled status changed:', this.isMaintenanceWindowEnabled);
                     refreshMaintenanceWindowDetailStatus();
                 },
                 () => this.isRequestLoading = false
@@ -1933,7 +1900,6 @@ const upsertMaintenanceWindowForm = (
 
         init() {
             this.resetState();
-            console.debug('Maintenance window form initialized:', this.isUpdate ? 'Update mode' : 'Create mode');
         },
 
         resetState() {
@@ -2038,7 +2004,6 @@ const upsertMaintenanceWindowForm = (
             // The cron format check hits the server, so await it before deciding whether the form is valid
             await this.validateCron();
             if (hasNonNullValue(this.errors)) {
-                console.debug('Form validation failed:', this.errors);
                 return;
             }
             this.upsertMaintenanceWindow();
@@ -2066,8 +2031,6 @@ const upsertMaintenanceWindowForm = (
             try {
                 this.isRequestLoading = true;
                 const body = this.buildRequestBody();
-                console.debug('Submitting maintenance window form with data:', body);
-
                 const url = this.isUpdate
                     ? '/api/v2/maintenance-windows/' + maintenanceWindow.id
                     : '/api/v2/maintenance-windows';
@@ -2082,7 +2045,6 @@ const upsertMaintenanceWindowForm = (
                 if (response.ok) {
                     this.isRequestLoading = false;
                     const responseData = await response.json();
-                    console.debug('Maintenance window was created/updated successfully', responseData);
 
                     if (this.isUpdate) {
                         window.location.reload();
@@ -2091,7 +2053,6 @@ const upsertMaintenanceWindowForm = (
                     }
                 } else if (response.status === 409) {
                     this.isRequestLoading = false;
-                    console.debug('Maintenance window with this name already exists');
                     this.errors.name = this.errorMessages.nameAlreadyExists;
                 } else {
                     this.isRequestLoading = false;
