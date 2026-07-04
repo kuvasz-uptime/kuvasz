@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
@@ -49,6 +50,7 @@ class AppBootstrapper(
     private val statusPageImporter: StatusPageImporter,
     private val yamlMaintenanceWindowConfigs: List<MaintenanceWindowConfig>,
     private val maintenanceWindowImporter: MaintenanceWindowImporter,
+    private val maintenanceWindowRepository: MaintenanceWindowRepository,
     private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
     private val apiKeyConfig: ApiKeyConfig?,
 ) {
@@ -94,6 +96,8 @@ class AppBootstrapper(
         processYamlStatusPageConfigs()
         // Importing maintenance windows from config if any are present
         processYamlMaintenanceWindowConfigs()
+        // Sanitize the configured integrations on the maintenance windows
+        sanitizeIntegrationsOfMaintenanceWindows()
         // Conditionally initialize the metrics export if enabled
         metricsExportRegistry?.initialize()
         // Scheduling the initial checks (HTTP uptime & SSL)
@@ -167,6 +171,31 @@ class AppBootstrapper(
         // Only sanitize integrations if ICMP monitors were not configured via YAML
         if (!appConfig.isIcmpMonitorExternalWriteDisabled()) {
             icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+        }
+    }
+
+    /**
+     * Sanitizes the integrations of all maintenance windows in the database.
+     * If an integration is found on a window that is not configured, it will be removed from that window.
+     */
+    private fun sanitizeIntegrationsOfMaintenanceWindows() {
+        // Only sanitize integrations if maintenance windows were not configured via YAML
+        if (appConfig.isMaintenanceWindowExternalWriteDisabled()) return
+
+        val configuredIntegrations = integrationRepository.configuredIntegrations.keys
+
+        maintenanceWindowRepository.fetchAll().forEach { window ->
+            val originalIntegrations = window.integrations.toSet()
+            val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
+            if (!matchedIntegrations.containsAll(originalIntegrations)) {
+                // There are integrations on the window that are not configured, update them
+                logger.warn(
+                    "Maintenance window with ID ${window.id} has integrations that are not configured: " +
+                        "${originalIntegrations - matchedIntegrations}. " +
+                        "Updating window integrations to only include configured ones."
+                )
+                maintenanceWindowRepository.updateIntegrations(window.id, matchedIntegrations.toTypedArray())
+            }
         }
     }
 

@@ -6,11 +6,13 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -24,6 +26,7 @@ class AppBootstrappingSanitizationTest(
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
+    maintenanceWindowRepository: MaintenanceWindowRepository,
 ) : DatabaseStringSpec() {
     init {
 
@@ -129,6 +132,37 @@ class AppBootstrappingSanitizationTest(
             sanitizedMonitor.integrations shouldContainExactlyInAnyOrder arrayOf(
                 IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
                 IntegrationID(IntegrationType.EMAIL, "disabled"),
+            )
+        }
+
+        "non-existing integrations should be removed from maintenance windows upon startup, disabled kept" {
+            val window = createMaintenanceWindow(
+                dslContext = dslContext,
+                integrations = listOf(
+                    IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                    IntegrationID(IntegrationType.EMAIL, "disabled"),
+                    IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
+                    IntegrationID(IntegrationType.WEBHOOK, "disabled"),
+                ),
+            )
+
+            val persistedWindow = maintenanceWindowRepository.findById(window.id).shouldNotBeNull()
+            persistedWindow.integrations shouldContainExactlyInAnyOrder arrayOf(
+                IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                IntegrationID(IntegrationType.EMAIL, "disabled"),
+                IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
+                IntegrationID(IntegrationType.WEBHOOK, "disabled"),
+            )
+
+            // Simulating the restart of the application
+            shouldNotThrowAny { testAppContext("full-integrations-setup") }
+            val sanitizedWindow = maintenanceWindowRepository.findById(window.id).shouldNotBeNull()
+
+            // The configured ones should be kept, even the disabled one
+            sanitizedWindow.integrations shouldContainExactlyInAnyOrder arrayOf(
+                IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"),
+                IntegrationID(IntegrationType.EMAIL, "disabled"),
+                IntegrationID(IntegrationType.WEBHOOK, "disabled"),
             )
         }
     }

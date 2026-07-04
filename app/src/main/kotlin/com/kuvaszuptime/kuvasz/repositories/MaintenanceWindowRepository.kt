@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.Keys.MAINTENANCE_WINDOW_NAME_KEY
 import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.MaintenanceWindowDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -18,6 +19,7 @@ import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
 
 @Singleton
+@Suppress("TooManyFunctions")
 class MaintenanceWindowRepository(private val dslContext: DSLContext) {
 
     fun findById(id: Long, txCtx: DSLContext = dslContext): MaintenanceWindowRecord? = txCtx
@@ -136,6 +138,14 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
         .set(MAINTENANCE_WINDOW.UPDATED_AT, getCurrentTimestamp())
         .returning(MAINTENANCE_WINDOW.asterisk())
         .fetchOneOrThrow()
+
+    fun updateIntegrations(windowId: Long, newIntegrations: Array<IntegrationID>) {
+        dslContext
+            .update(MAINTENANCE_WINDOW)
+            .set(MAINTENANCE_WINDOW.INTEGRATIONS, newIntegrations)
+            .where(MAINTENANCE_WINDOW.ID.eq(windowId))
+            .execute()
+    }
 
     /**
      * Deletes all maintenance windows except the ones with the given IDs.
