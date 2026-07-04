@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.security
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -35,6 +36,7 @@ class DisabledWebUIAuthenticationTest(
             val pushMonitor = createPushMonitor(pushMonitorRepository)
             val icmpMonitor = createIcmpMonitor(icmpMonitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
+            val maintenanceWindow = createMaintenanceWindow(dslContext, cron = "0 2 * * *", duration = "PT1H")
 
             table(
                 headers("url"),
@@ -64,6 +66,10 @@ class DisabledWebUIAuthenticationTest(
                 row("/status-pages"),
                 row("/status-pages/${statusPage.id}"),
                 row("/status-pages/fragments/list"),
+                row("/maintenance-windows"),
+                row("/maintenance-windows/${maintenanceWindow.id}"),
+                row("/maintenance-windows/fragments/list"),
+                row("/maintenance-windows/fragments/details-heading/${maintenanceWindow.id}"),
             ).forAll { url ->
                 val response = client.exchange(url).awaitFirst()
 

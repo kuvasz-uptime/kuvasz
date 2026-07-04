@@ -13,6 +13,7 @@ tags:
 - name: HTTP monitors
 - name: Incidents
 - name: Integrations
+- name: Maintenance windows
 - name: Management
 - name: Monitors
 - name: Push monitors
@@ -682,6 +683,182 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/maintenance-windows:
+    get:
+      tags:
+      - Maintenance windows
+      summary: Get all maintenance windows
+      operationId: getMaintenanceWindows
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - Maintenance windows
+      summary: Create a maintenance window
+      operationId: createMaintenanceWindow
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaintenanceWindowCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/maintenance-windows/export/yaml:
+    get:
+      tags:
+      - Maintenance windows
+      summary: Download the export of all maintenance windows in YAML format
+      operationId: getYamlMaintenanceWindowsExport
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/maintenance-windows/{maintenanceWindowId}:
+    get:
+      tags:
+      - Maintenance windows
+      summary: Get a maintenance window
+      operationId: getMaintenanceWindow
+      parameters:
+      - name: maintenanceWindowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - Maintenance windows
+      summary: Delete a maintenance window by ID
+      operationId: deleteMaintenanceWindow
+      parameters:
+      - name: maintenanceWindowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - Maintenance windows
+      summary: Update a maintenance window by ID
+      description: Updates the maintenance window with the given ID. Only fields that
+        are present in the request body will be updated. Fields not present in the
+        request body will remain unchanged.
+      operationId: updateMaintenanceWindow
+      parameters:
+      - name: maintenanceWindowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaintenanceWindowUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/monitors/export/yaml:
     get:
       tags:
@@ -1299,6 +1476,47 @@ paths:
       - bearerAuth: []
 components:
   schemas:
+    ActualUptimeStats:
+      required:
+      - down
+      - inMaintenance
+      - inProgress
+      - lastIncident
+      - paused
+      - total
+      - up
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of monitors currently being monitored.
+          format: int32
+        down:
+          type: integer
+          description: Number of monitors currently down.
+          format: int32
+        up:
+          type: integer
+          description: Number of monitors currently up.
+          format: int32
+        paused:
+          type: integer
+          description: Number of monitors currently paused.
+          format: int32
+        inProgress:
+          type: integer
+          description: "Number of monitors currently in progress (e.g., waiting for\
+            \ first check/heartbeat)."
+          format: int32
+        inMaintenance:
+          type: integer
+          description: Number of monitors currently under maintenance.
+          format: int32
+        lastIncident:
+          type: string
+          description: The timestamp of the last incident detected across all monitors.
+          format: date-time
+          nullable: true
     ApiErrorCode:
       type: string
       enum:
@@ -1612,10 +1830,12 @@ components:
       - followRedirects
       - forceNoCache
       - id
+      - inMaintenance
       - integrations
       - lastSSLCheck
       - lastUptimeCheck
       - latencyHistoryEnabled
+      - maintenanceWindows
       - name
       - nextSSLCheck
       - nextUptimeCheck
@@ -1822,6 +2042,16 @@ components:
             assigned to
           items:
             type: string
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
     HttpMonitorDto:
       required:
       - createdAt
@@ -2163,48 +2393,12 @@ components:
         uptimeStats:
           description: Statistics about the current state of uptime for all monitors.
           allOf:
-          - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
+          - $ref: "#/components/schemas/ActualUptimeStats"
         sslStats:
           description: Statistics about the current state of SSL certificates for
             all monitors.
           allOf:
           - $ref: "#/components/schemas/HttpMonitoringStatsDto.ActualMonitoringStats.SslStats"
-    HttpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
-      required:
-      - down
-      - inProgress
-      - lastIncident
-      - paused
-      - total
-      - up
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of monitors currently being monitored.
-          format: int32
-        down:
-          type: integer
-          description: Number of monitors currently down.
-          format: int32
-        up:
-          type: integer
-          description: Number of monitors currently up.
-          format: int32
-        paused:
-          type: integer
-          description: Number of monitors currently paused.
-          format: int32
-        inProgress:
-          type: integer
-          description: "Number of monitors currently in progress (e.g., waiting for\
-            \ first check)."
-          format: int32
-        lastIncident:
-          type: string
-          description: The timestamp of the last incident detected across all monitors.
-          format: date-time
-          nullable: true
     HttpMonitoringStatsDto.ActualMonitoringStats.SslStats:
       required:
       - inProgress
@@ -2392,8 +2586,10 @@ components:
       - failureCountThreshold
       - host
       - id
+      - inMaintenance
       - integrations
       - lastUptimeCheck
+      - maintenanceWindows
       - metricsHistoryEnabled
       - name
       - nextUptimeCheck
@@ -2501,6 +2697,16 @@ components:
             assigned to
           items:
             type: string
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
     IcmpMonitorDto:
       required:
       - createdAt
@@ -2718,43 +2924,7 @@ components:
         uptimeStats:
           description: Statistics about the current state of uptime for all monitors.
           allOf:
-          - $ref: "#/components/schemas/IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
-    IcmpMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
-      required:
-      - down
-      - inProgress
-      - lastIncident
-      - paused
-      - total
-      - up
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of monitors currently being monitored.
-          format: int32
-        down:
-          type: integer
-          description: Number of monitors currently down.
-          format: int32
-        up:
-          type: integer
-          description: Number of monitors currently up.
-          format: int32
-        paused:
-          type: integer
-          description: Number of monitors currently paused.
-          format: int32
-        inProgress:
-          type: integer
-          description: "Number of monitors currently in progress (e.g., waiting for\
-            \ first check)."
-          format: int32
-        lastIncident:
-          type: string
-          description: The timestamp of the last incident detected across all monitors.
-          format: date-time
-          nullable: true
+          - $ref: "#/components/schemas/ActualUptimeStats"
     IcmpMonitoringStatsDto.HistoricalMonitoringStats:
       required:
       - uptimeStats
@@ -2936,6 +3106,8 @@ components:
       - SSL_VALID
       - SSL_INVALID
       - SSL_WILL_EXPIRE
+      - MAINTENANCE_START
+      - MAINTENANCE_END
     IntegrationType:
       type: string
       enum:
@@ -3004,6 +3176,225 @@ components:
           description: The 99th percentile latency in milliseconds for the monitor
           format: int32
           nullable: true
+    MaintenanceWindowCreateDto:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: Unique name of the maintenance window
+          x-size-message: Maintenance window name must not be blank
+        description:
+          type: string
+          description: Optional human-readable description of the maintenance window
+          nullable: true
+        enabled:
+          type: boolean
+          description: "Master on/off switch. For cron and single windows this is\
+            \ necessary but not sufficient: the schedule still decides whether the\
+            \ window is currently active. A manual window (no 'cron' and no 'start')\
+            \ is active whenever this is true."
+          default: true
+        global:
+          type: boolean
+          description: "Whether the window applies to every monitor, regardless of\
+            \ the 'monitors' list"
+          default: false
+        showOnStatusPages:
+          type: boolean
+          description: Whether the window can be displayed on status pages
+          default: false
+        cron:
+          type: string
+          description: "Cron expression for a recurring window (standard cron syntax,\
+            \ but supports extensions like #, L, W). Mutually exclusive with 'start'\
+            \ and requires 'duration'. Evaluated in the server's time zone."
+          nullable: true
+        start:
+          type: string
+          description: "Start timestamp for a single, one-shot window (may be in the\
+            \ past). Mutually exclusive with 'cron' and requires 'duration'."
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          description: ISO-8601 duration of the window (e.g. 'PT1H30M'). Required
+            for cron and single windows.
+          nullable: true
+        monitors:
+          type: array
+          description: Set of monitor IDs the window applies to (ignored when 'global'
+            is true)
+          nullable: true
+          items:
+            type: string
+        integrations:
+          type: array
+          description: Set of integration IDs that receive the window's start and
+            end notifications
+          nullable: true
+          items:
+            type: string
+    MaintenanceWindowDetailsDto:
+      required:
+      - active
+      - createdAt
+      - enabled
+      - global
+      - id
+      - integrations
+      - monitors
+      - name
+      - showOnStatusPages
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the maintenance window
+          format: int64
+        name:
+          type: string
+          description: Unique name of the maintenance window
+        description:
+          type: string
+          description: Optional human-readable description of the maintenance window
+          nullable: true
+        enabled:
+          type: boolean
+          description: "Master on/off switch. For cron and single windows this is\
+            \ necessary but not sufficient: the schedule still decides whether the\
+            \ window is currently active. A manual window (no 'cron' and no 'start')\
+            \ is active whenever this is true."
+        global:
+          type: boolean
+          description: "Whether the window applies to every monitor, regardless of\
+            \ the 'monitors' list"
+        showOnStatusPages:
+          type: boolean
+          description: Whether the window can be displayed on status pages
+        cron:
+          type: string
+          description: "Cron expression for a recurring window (standard cron syntax,\
+            \ but supports extensions like #, L, W). Mutually exclusive with 'start'\
+            \ and requires 'duration'. Evaluated in the server's time zone."
+          nullable: true
+        start:
+          type: string
+          description: "Start timestamp for a single, one-shot window (may be in the\
+            \ past). Mutually exclusive with 'cron' and requires 'duration'."
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          description: ISO-8601 duration of the window (e.g. 'PT1H30M'). Required
+            for cron and single windows.
+          nullable: true
+        monitors:
+          type: array
+          description: Set of monitor IDs the window applies to (ignored when 'global'
+            is true)
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        integrations:
+          type: array
+          description: Set of integration IDs that receive the window's start and
+            end notifications
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        active:
+          type: boolean
+          description: Whether the window is currently active
+        nextStart:
+          type: string
+          description: "Timestamp of the next time the window will start, or null\
+            \ if there is no future occurrence"
+          format: date-time
+          nullable: true
+        endsAt:
+          type: string
+          description: "Timestamp when the currently active window will end, or null\
+            \ if it is not active or is an indefinitely running manual window"
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          description: Timestamp of when the window was created
+          format: date-time
+        updatedAt:
+          type: string
+          description: Timestamp of when the window was last updated
+          format: date-time
+    MaintenanceWindowUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: Unique name of the maintenance window
+          nullable: false
+          x-size-message: Maintenance window name must not be blank
+        description:
+          type: string
+          description: Optional human-readable description of the maintenance window
+          nullable: true
+        enabled:
+          type: boolean
+          description: "Master on/off switch. For cron and single windows this is\
+            \ necessary but not sufficient: the schedule still decides whether the\
+            \ window is currently active. A manual window (no 'cron' and no 'start')\
+            \ is active whenever this is true."
+          nullable: false
+        global:
+          type: boolean
+          description: "Whether the window applies to every monitor, regardless of\
+            \ the 'monitors' list"
+          nullable: false
+        showOnStatusPages:
+          type: boolean
+          description: Whether the window can be displayed on status pages
+          nullable: false
+        cron:
+          type: string
+          description: "Cron expression for a recurring window (standard cron syntax,\
+            \ but supports extensions like #, L, W). Mutually exclusive with 'start'\
+            \ and requires 'duration'. Evaluated in the server's time zone."
+          nullable: true
+        start:
+          type: string
+          description: "Start timestamp for a single, one-shot window (may be in the\
+            \ past). Mutually exclusive with 'cron' and requires 'duration'."
+          format: date-time
+          nullable: true
+        duration:
+          type: string
+          description: ISO-8601 duration of the window (e.g. 'PT1H30M'). Required
+            for cron and single windows.
+          nullable: true
+        monitors:
+          type: array
+          description: Set of monitor IDs the window applies to (ignored when 'global'
+            is true)
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        integrations:
+          type: array
+          description: Set of integration IDs that receive the window's start and
+            end notifications
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
     NotificationTestResult:
       required:
       - message
@@ -3155,9 +3546,11 @@ components:
       - gracePeriod
       - heartbeatInterval
       - id
+      - inMaintenance
       - integrations
       - lastHeartbeat
       - lastUptimeCheck
+      - maintenanceWindows
       - name
       - nextExpectedHeartbeat
       - statusPages
@@ -3255,6 +3648,16 @@ components:
           description: The threshold for consecutive failures before the monitor is
             marked as DOWN
           format: int64
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
     PushMonitorDto:
       required:
       - clientSecret
@@ -3424,43 +3827,7 @@ components:
         uptimeStats:
           description: Statistics about the current state of uptime for all monitors.
           allOf:
-          - $ref: "#/components/schemas/PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats"
-    PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats:
-      required:
-      - down
-      - inProgress
-      - lastIncident
-      - paused
-      - total
-      - up
-      type: object
-      properties:
-        total:
-          type: integer
-          description: Total number of monitors currently being monitored.
-          format: int32
-        down:
-          type: integer
-          description: Number of monitors currently down.
-          format: int32
-        up:
-          type: integer
-          description: Number of monitors currently up.
-          format: int32
-        paused:
-          type: integer
-          description: Number of monitors currently paused.
-          format: int32
-        inProgress:
-          type: integer
-          description: "Number of monitors currently in progress (e.g., waiting for\
-            \ first heartbeat)."
-          format: int32
-        lastIncident:
-          type: string
-          description: The timestamp of the last incident detected across all monitors.
-          format: date-time
-          nullable: true
+          - $ref: "#/components/schemas/ActualUptimeStats"
     PushMonitoringStatsDto.HistoricalMonitoringStats:
       required:
       - uptimeStats
@@ -3633,6 +4000,7 @@ components:
       required:
       - areHttpMonitorsReadOnly
       - areIcmpMonitorsReadOnly
+      - areMaintenanceWindowsReadOnly
       - arePushMonitorsReadOnly
       - areStatusPagesReadOnly
       type: object
@@ -3649,6 +4017,9 @@ components:
         areIcmpMonitorsReadOnly:
           type: boolean
           description: Whether the ICMP monitors are in read-only mode
+        areMaintenanceWindowsReadOnly:
+          type: boolean
+          description: Whether the maintenance windows are in read-only mode
     SettingsDto.AuthenticationSettingsDto:
       required:
       - accessTokenMaxAge
@@ -3895,6 +4266,7 @@ components:
             type: string
     StatusPageDetailsDto:
       required:
+      - activeMaintenanceWindows
       - customFaviconUrl
       - customLogoUrl
       - generatedAt
@@ -3904,6 +4276,7 @@ components:
       - slug
       - systemStatus
       - title
+      - upcomingMaintenanceWindows
       type: object
       properties:
         id:
@@ -3945,6 +4318,18 @@ components:
             \ as their uptime status and uptime ratio"
           items:
             $ref: "#/components/schemas/StatusPageMonitorDetailsDto"
+        activeMaintenanceWindows:
+          type: array
+          description: The maintenance windows that are shown on the status page and
+            currently active for at least one of its monitors
+          items:
+            $ref: "#/components/schemas/StatusPageMaintenanceWindowDto"
+        upcomingMaintenanceWindows:
+          type: array
+          description: The maintenance windows that are shown on the status page and
+            going to start within the next 24 hours for at least one of its monitors
+          items:
+            $ref: "#/components/schemas/StatusPageMaintenanceWindowDto"
     StatusPageDto:
       required:
       - createdAt
@@ -3998,6 +4383,7 @@ components:
           format: date-time
     StatusPageHttpMonitorDetailsDto:
       required:
+      - inMaintenance
       - name
       - type
       - uptimeStatusHistory
@@ -4027,8 +4413,11 @@ components:
           type: integer
           format: int32
           nullable: true
+        inMaintenance:
+          type: boolean
     StatusPageIcmpMonitorDetailsDto:
       required:
+      - inMaintenance
       - name
       - type
       - uptimeStatusHistory
@@ -4062,6 +4451,26 @@ components:
           type: integer
           format: int32
           nullable: true
+        inMaintenance:
+          type: boolean
+    StatusPageMaintenanceWindowDto:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
     StatusPageMonitorDetailsDto:
       required:
       - name
@@ -4089,12 +4498,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        inMaintenance:
+          type: boolean
       oneOf:
       - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageIcmpMonitorDetailsDto"
     StatusPagePushMonitorDetailsDto:
       required:
+      - inMaintenance
       - name
       - type
       - uptimeStatusHistory
@@ -4120,6 +4532,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        inMaintenance:
+          type: boolean
         lastHeartbeat:
           type: string
           format: date-time
@@ -4170,6 +4584,8 @@ components:
       - OPERATIONAL
       - PARTIAL_OUTAGE
       - MAJOR_OUTAGE
+      - PARTIAL_MAINTENANCE
+      - MAINTENANCE
       - PENDING
     TelegramNotificationConfigDto:
       required:

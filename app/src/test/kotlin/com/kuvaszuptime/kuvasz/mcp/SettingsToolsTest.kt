@@ -48,6 +48,7 @@ class SettingsToolsTest(
                             arePushMonitorsReadOnly shouldBe false
                             areIcmpMonitorsReadOnly shouldBe false
                             areStatusPagesReadOnly shouldBe false
+                            areMaintenanceWindowsReadOnly shouldBe false
                         }
                     }
 

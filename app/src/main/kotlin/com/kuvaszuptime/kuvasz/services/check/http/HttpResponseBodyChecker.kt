@@ -7,8 +7,8 @@ import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.getBodyAs
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 
 @Singleton
 class HttpResponseBodyChecker(
@@ -18,7 +18,9 @@ class HttpResponseBodyChecker(
     pendingFailureRepository: PendingFailureRepository,
 ) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler, pendingFailureRepository) {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    companion object {
+        private val logger = loggerFor<HttpResponseBodyChecker>()
+    }
 
     /**
      * Checks the response body for the expected keyword.

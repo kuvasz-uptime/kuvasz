@@ -7,7 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -163,6 +163,9 @@ class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             ICMP_MONITOR.INTEGRATIONS.`as`(IcmpMonitorDetailsDto::integrations.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(IcmpMonitorDetailsDto::statusPages.name),
+            // Placeholders for fields populated by the actions layer, not by SQL
+            DSL.array(arrayOf<String>()).`as`(IcmpMonitorDetailsDto::maintenanceWindows.name),
+            DSL.inline(false).`as`(IcmpMonitorDetailsDto::inMaintenance.name),
         )
         .from(ICMP_MONITOR)
         .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())

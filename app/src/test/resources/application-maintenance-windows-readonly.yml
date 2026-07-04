@@ -1,0 +1,4 @@
+maintenance-windows:
+  - name: Read-only manual maintenance
+    description: A global, manual window used to put maintenance windows into read-only mode
+    global: true

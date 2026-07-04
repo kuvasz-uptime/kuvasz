@@ -1,10 +1,14 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -97,6 +101,18 @@ object LogMessageFormatter : TextMessageFormatter {
     }
 
     fun toFormattedMessage(event: HttpRedirectEvent) = "${event.getEmoji()} ${event.toStructuredMessage().summary}"
+
+    override fun toFormattedMessage(event: MaintenanceWindowEvent): String {
+        val window = event.window
+        val summary = when (event) {
+            is MaintenanceWindowStartEvent -> Messages.maintenanceWindowStarted(window.name)
+            is MaintenanceWindowEndEvent -> Messages.maintenanceWindowEnded(window.name)
+        }
+        return listOfNotNull(
+            event.getEmoji() + " " + summary,
+            window.description?.takeIf { it.isNotBlank() },
+        ).assemble()
+    }
 
     private fun List<String>.assemble(): String = joinToString(". ")
 }

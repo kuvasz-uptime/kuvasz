@@ -10,6 +10,8 @@ import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.PublicStatusPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
+private const val DATA_ATTRIBUTE = "data-bs-theme"
+
 // Exercises the dark/light theme switcher, which flips `data-bs-theme` and persists the choice in localStorage.
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class ThemeToggleUiTest(private val httpMonitorRepository: HttpMonitorRepository) : UiTestSpec() {
@@ -20,21 +22,21 @@ class ThemeToggleUiTest(private val httpMonitorRepository: HttpMonitorRepository
             dashboard.navigate()
 
             // Default = dark
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "dark")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "dark")
 
             page.lightThemeToggle.click()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "light")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "light")
 
             // Change to light
             page.reload()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "light")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "light")
 
             page.darkThemeToggle.click()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "dark")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "dark")
 
             // Change it back to dark
             page.reload()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "dark")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "dark")
         }
 
         "toggling the theme switches the color scheme and persists it across reloads - status page" {
@@ -54,21 +56,21 @@ class ThemeToggleUiTest(private val httpMonitorRepository: HttpMonitorRepository
             statusPage.navigate(slug)
 
             // Default = dark
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "dark")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "dark")
 
             page.lightThemeToggle.click()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "light")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "light")
 
             // Change to light
             page.reload()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "light")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "light")
 
             page.darkThemeToggle.click()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "dark")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "dark")
 
             // Change it back to dark
             page.reload()
-            assertThat(page.htmlRoot).hasAttribute("data-bs-theme", "dark")
+            assertThat(page.htmlRoot).hasAttribute(DATA_ATTRIBUTE, "dark")
         }
     }
 }

@@ -19,6 +19,10 @@ class HttpMonitorListPage(private val page: Page) {
 
     fun rowByName(name: String): Locator = rows.filter(Locator.FilterOptions().setHasText(name))
 
+    // The grayed-out uptime badge (with a tool icon) shown in a row while its monitor is under maintenance.
+    fun maintenanceBadge(name: String): Locator =
+        rowByName(name).locator(".status.status-gray:has(.icon-tabler-tool)")
+
     fun openCreateModal(): HttpMonitorFormModal {
         newMonitorButton.click()
         return HttpMonitorFormModal(page)

@@ -12,6 +12,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import io.kotest.assertions.fail
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forExactly
@@ -443,6 +445,23 @@ class GenericWebhookServiceTest(
             then("it should return a failed result") {}
             result.success shouldBe false
             result.message shouldBe Messages.failedTestResultMessage("error")
+        }
+    }
+
+    given("sendWebhookEvent()") {
+
+        `when`("the payload template of the target is malformed") {
+            val config = buildConfig(template = "{{ ctx.type ")
+            val event = webhookService.testEvents.first()
+
+            then("it should not throw synchronously but contain the error in the returned Single") {
+                // Building the Single must not throw, otherwise a single bad target would abort delivery
+                // to all the remaining targets
+                val result = shouldNotThrowAny { webhookService.sendWebhookEvent(config, event) }
+
+                shouldThrowAny { result.blockingGet() }
+                verify(inverse = true) { mockClient.sendMessage(any(), any(), any(), any()) }
+            }
         }
     }
 

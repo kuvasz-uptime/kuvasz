@@ -1,0 +1,4 @@
+maintenance-windows:
+  - name: Bad cron
+    cron: "not a cron"
+    duration: PT1H

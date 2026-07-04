@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -63,6 +64,21 @@ abstract class RTCMessageEventHandler(
         eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
             logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
+        }
+        eventDispatcher.subscribeToMaintenanceStartEvents { event ->
+            logger.debug("A MaintenanceWindowStartEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToMaintenanceEndEvents { event ->
+            logger.debug("A MaintenanceWindowEndEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
+    }
+
+    private fun MaintenanceWindowEvent.handle() {
+        val message = formatter.toFormattedMessage(this)
+        filterMaintenanceTargets(this).forEach { target ->
+            messageService.sendMessage(target, message).handleResponse()
         }
     }
 

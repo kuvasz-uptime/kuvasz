@@ -3,9 +3,9 @@ package com.kuvaszuptime.kuvasz.mcp.schemas
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDefaults
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorStatsDto
 import io.micronaut.core.annotation.Introspected
@@ -71,6 +71,8 @@ data class PushMonitorDetailsSchema(
     val integrations: Set<String>,
     val statusPages: Set<String>,
     val failureCountThreshold: Long,
+    val inMaintenance: Boolean,
+    val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
 ) {
     companion object {
         fun fromDto(dto: PushMonitorDetailsDto) = PushMonitorDetailsSchema(
@@ -91,6 +93,8 @@ data class PushMonitorDetailsSchema(
             integrations = dto.integrations.map { it.toString() }.toSet(),
             statusPages = dto.statusPages,
             failureCountThreshold = dto.failureCountThreshold,
+            inMaintenance = dto.inMaintenance,
+            maintenanceWindows = dto.maintenanceWindows.map { MaintenanceWindowSummarySchema.fromDto(it) },
         )
     }
 }

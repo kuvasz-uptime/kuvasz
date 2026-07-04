@@ -5,6 +5,9 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
@@ -13,27 +16,29 @@ import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.PublishSubject
 import io.reactivex.rxjava3.subjects.Subject
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 
 @Singleton
 @Suppress("TooManyFunctions")
 class EventDispatcher {
 
-    private val httpUpEvents = PublishSubject.create<HttpMonitorUpEvent>().toSerialized()
-    private val httpDownEvents = PublishSubject.create<HttpMonitorDownEvent>().toSerialized()
-    private val pushUptimeEvents = PublishSubject.create<PushUptimeMonitorEvent>().toSerialized()
-    private val icmpUpEvents = PublishSubject.create<IcmpMonitorUpEvent>().toSerialized()
-    private val icmpDownEvents = PublishSubject.create<IcmpMonitorDownEvent>().toSerialized()
-    private val httpRedirectEvents = PublishSubject.create<HttpRedirectEvent>().toSerialized()
-    private val sslValidEvents = PublishSubject.create<SSLValidEvent>().toSerialized()
-    private val sslWillExpireEvents = PublishSubject.create<SSLWillExpireEvent>().toSerialized()
-    private val sslInvalidEvents = PublishSubject.create<SSLInvalidEvent>().toSerialized()
-    private val monitorLifecycleEvents = PublishSubject.create<MonitorLifecycleEvent>().toSerialized()
+    private val httpUpEvents = serializedSubject<HttpMonitorUpEvent>()
+    private val httpDownEvents = serializedSubject<HttpMonitorDownEvent>()
+    private val pushUptimeEvents = serializedSubject<PushUptimeMonitorEvent>()
+    private val icmpUpEvents = serializedSubject<IcmpMonitorUpEvent>()
+    private val icmpDownEvents = serializedSubject<IcmpMonitorDownEvent>()
+    private val httpRedirectEvents = serializedSubject<HttpRedirectEvent>()
+    private val sslValidEvents = serializedSubject<SSLValidEvent>()
+    private val sslWillExpireEvents = serializedSubject<SSLWillExpireEvent>()
+    private val sslInvalidEvents = serializedSubject<SSLInvalidEvent>()
+    private val monitorLifecycleEvents = serializedSubject<MonitorLifecycleEvent>()
+    private val maintenanceStartEvents = serializedSubject<MaintenanceWindowStartEvent>()
+    private val maintenanceEndEvents = serializedSubject<MaintenanceWindowEndEvent>()
 
     fun dispatch(event: MonitorEvent<*>) =
         when (event) {
@@ -51,6 +56,12 @@ class EventDispatcher {
     fun dispatch(event: MonitorLifecycleEvent) {
         monitorLifecycleEvents.onNext(event)
     }
+
+    fun dispatch(event: MaintenanceWindowEvent) =
+        when (event) {
+            is MaintenanceWindowStartEvent -> maintenanceStartEvents.onNext(event)
+            is MaintenanceWindowEndEvent -> maintenanceEndEvents.onNext(event)
+        }
 
     private inline fun <reified T : Any> Subject<T>.safeSubscribeOnIo(
         crossinline consumer: (T) -> Unit
@@ -92,7 +103,15 @@ class EventDispatcher {
     fun subscribeToMonitorLifecycleEvents(consumer: (MonitorLifecycleEvent) -> Unit): Disposable =
         monitorLifecycleEvents.safeSubscribeOnIo(consumer)
 
+    fun subscribeToMaintenanceStartEvents(consumer: (MaintenanceWindowStartEvent) -> Unit): Disposable =
+        maintenanceStartEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToMaintenanceEndEvents(consumer: (MaintenanceWindowEndEvent) -> Unit): Disposable =
+        maintenanceEndEvents.safeSubscribeOnIo(consumer)
+
     companion object {
-        private val logger = LoggerFactory.getLogger(EventDispatcher::class.java)
+        private val logger = loggerFor<EventDispatcher>()
     }
 }
+
+private fun <T : Any> serializedSubject(): Subject<T> = PublishSubject.create<T>().toSerialized()

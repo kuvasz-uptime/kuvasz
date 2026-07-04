@@ -5,15 +5,15 @@ import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.LogMessageFormatter
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
-import org.slf4j.LoggerFactory
 
 @Context
 @Requires(property = "app-config.log-event-handler", value = "true")
 class LogEventHandler(eventDispatcher: EventDispatcher) {
     companion object {
-        private val logger = LoggerFactory.getLogger(LogEventHandler::class.java)
+        private val logger = loggerFor<LogEventHandler>()
     }
 
     private val formatter = LogMessageFormatter

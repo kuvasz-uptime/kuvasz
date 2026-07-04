@@ -12,6 +12,9 @@ class PushMonitorDetailsPage(private val page: Page) {
 
     val uptimeSection: Locator get() = page.getByTestId("uptime-block-title")
 
+    // The maintenance indicator (a tool icon) rendered in the header while the monitor is under maintenance.
+    val maintenanceIndicator: Locator get() = page.locator("#push-monitor-detail-heading .icon-tabler-tool")
+
     val content: Locator get() = page.locator("#push-monitor-details-content")
 
     val configureButton: Locator get() = page.getByTestId("configure-button")

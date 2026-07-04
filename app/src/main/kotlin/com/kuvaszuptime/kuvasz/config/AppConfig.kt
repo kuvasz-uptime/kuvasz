@@ -39,6 +39,8 @@ class AppConfig {
 
     private var isStatusPageExternalWriteDisabled = false
 
+    private var isMaintenanceWindowExternalWriteDisabled = false
+
     var httpCheckLockTimeoutMillis: Long = UPTIME_CHECK_LOCK_TIMEOUT_MS
 
     @Max(DEFAULT_READ_TIMEOUT_SECONDS, message = ValidationMessages.APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX)
@@ -60,6 +62,10 @@ class AppConfig {
         isStatusPageExternalWriteDisabled = true
     }
 
+    fun disableMaintenanceWindowExternalWrite() {
+        isMaintenanceWindowExternalWriteDisabled = true
+    }
+
     /**
      * INTENDED TO BE USED IN TESTS ONLY (not nice ofc) to revert the manually toggled disabled state
      */
@@ -74,4 +80,6 @@ class AppConfig {
     fun isStatusPageExternalWriteDisabled() = isStatusPageExternalWriteDisabled
 
     fun isIcmpMonitorExternalWriteDisabled() = isIcmpMonitorExternalWriteDisabled
+
+    fun isMaintenanceWindowExternalWriteDisabled() = isMaintenanceWindowExternalWriteDisabled
 }

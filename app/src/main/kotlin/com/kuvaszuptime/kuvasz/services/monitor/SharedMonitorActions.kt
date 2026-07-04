@@ -19,4 +19,9 @@ class SharedMonitorActions(
         httpMonitorRepository.fetchAll().map { it.monitorId() }
             .plus(pushMonitorRepository.fetchAll().map { it.monitorId() })
             .plus(icmpMonitorRepository.fetchAll().map { it.monitorId() })
+
+    fun getConfiguredMonitorIds(): Map<MonitorID, Long> =
+        httpMonitorRepository.fetchAll().associate { it.monitorId() to it.id }
+            .plus(pushMonitorRepository.fetchAll().associate { it.monitorId() to it.id })
+            .plus(icmpMonitorRepository.fetchAll().associate { it.monitorId() to it.id })
 }

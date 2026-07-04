@@ -32,9 +32,22 @@ Every integration **watches a set of events
 | `SSL_INVALID`     | Fired, when an SSL certificate is **invalid or expired** now                                           |
 | `SSL_WILL_EXPIRE` | Fired, when an SSL certificate **will expire in the next X days** (`X` is configurable per monitor)    |
 
+### Maintenance events
+
+| Event               | Description                                 |
+|---------------------|---------------------------------------------|
+| `MAINTENANCE_START` | Fired, when a **maintenance window starts** |
+| `MAINTENANCE_END`   | Fired, when a **maintenance window ends**   |
+
+Maintenance notifications behave differently from monitor events:
+
+- They are sent **only to the integrations explicitly assigned to the maintenance window**. Unlike monitor events, **globally-enabled integrations are intentionally ignored** here, so a global integration only receives maintenance notifications when it is explicitly assigned to the window.
+- All integration types are supported (Slack, Discord, Email, PagerDuty, Telegram and custom webhooks). On PagerDuty a start event triggers a `warning` alert and the end event resolves it.
+- For **custom webhooks**, maintenance events reuse the same payload contract as monitor events, but the monitor-specific fields are blank, because a maintenance window is not tied to a single monitor: `monitorId` is `0` and `monitorUrn`, `monitorName` and `monitorDetailsUrl` are empty strings. The `type`, `timestamp` and `eventDetails` fields are populated as usual, and any existing `payloadTemplate` keeps working (the blank monitor variables simply render as empty).
+
 !!! tip "Excluding certain events"
 
-    You can [exclude certain events](../management/integrations.md#excluded-events) from triggering notifications on a per-integration basis. This allows you to, for example, only receive notifications about downtime, but not about SSL certificate issues.
+    You can [exclude certain events](../management/integrations.md#excluded-events) from triggering notifications on a per-integration basis. This allows you to, for example, only receive notifications about downtime, but not about SSL certificate issues. This works for maintenance events too.
 
 ## Slack <!-- md:config ../management/integrations.md#slack -->
 

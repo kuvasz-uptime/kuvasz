@@ -10,7 +10,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -205,6 +205,9 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(HttpMonitorDetailsDto::statusPages.name),
+            // Placeholders for fields populated by the actions layer, not by SQL
+            DSL.array(arrayOf<String>()).`as`(HttpMonitorDetailsDto::maintenanceWindows.name),
+            DSL.inline(false).`as`(HttpMonitorDetailsDto::inMaintenance.name),
         )
         .from(HTTP_MONITOR)
         .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())

@@ -3,8 +3,8 @@ package com.kuvaszuptime.kuvasz.ui.components
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -12,8 +12,20 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTooltip: Boolean) {
-    return when {
+internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTooltip: Boolean): Unit =
+    when {
+        monitor.enabled && monitor.inMaintenance -> {
+            span {
+                classes(STATUS, STATUS_GRAY)
+                tooltip(Messages.statusPageSystemStatusMaintenance())
+                icon(Icon.TOOL)
+                span {
+                    classes(D_NONE, D_MD_INLINE)
+                    +(monitor.uptimeStatus?.literal ?: Messages.inProgress())
+                }
+            }
+        }
+
         monitor.enabled && monitor.uptimeStatus != null -> {
             span {
                 val classes = mutableSetOf(STATUS)
@@ -22,40 +34,50 @@ internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTo
                 if (withTooltip && monitor.uptimeStatus == UptimeStatus.DOWN) {
                     tooltip(title = monitor.uptimeError ?: Messages.unknownError())
                 }
-                uptimeStatusLabel(withBadge = true, monitor.uptimeStatus?.literal.orEmpty())
+                uptimeStatusDot(withBadge = true, monitor.uptimeStatus?.literal.orEmpty())
             }
         }
 
         monitor.enabled && monitor.uptimeStatus == null -> {
             span {
                 classes(STATUS, STATUS_YELLOW)
-                uptimeStatusLabel(withBadge = true, Messages.inProgress())
+                uptimeStatusDot(withBadge = true, Messages.inProgress())
             }
         }
 
         !monitor.enabled -> {
             span {
                 classes(setOf(STATUS, STATUS_CYAN))
-                uptimeStatusLabel(withBadge = true, Messages.paused(), animated = false)
+                uptimeStatusDot(withBadge = true, Messages.paused(), animated = false)
             }
         }
 
         else -> {}
     }
-}
 
-internal fun FlowContent.uptimeBadgeOfStatus(uptimeStatus: UptimeStatus?): Unit =
-    if (uptimeStatus != null) {
-        span {
+internal fun FlowContent.uptimeBadgeOfStatus(uptimeStatus: UptimeStatus?, inMaintenance: Boolean): Unit =
+    when {
+        // During an active maintenance window the status is frozen, so we keep the UP/DOWN (or in-progress) label
+        inMaintenance -> span {
+            classes(STATUS, STATUS_GRAY)
+            tooltip(Messages.statusPageSystemStatusMaintenance())
+            icon(Icon.TOOL)
+            span {
+                classes(D_NONE, D_MD_INLINE)
+                +(uptimeStatus?.literal ?: Messages.inProgress())
+            }
+        }
+
+        uptimeStatus != null -> span {
             val classes = mutableSetOf(STATUS)
                 .addIf(uptimeStatus == UptimeStatus.UP, STATUS_GREEN, STATUS_RED)
             classes(classes)
-            uptimeStatusLabel(withBadge = true, uptimeStatus.literal)
+            uptimeStatusDot(withBadge = true, uptimeStatus.literal)
         }
-    } else {
-        span {
+
+        else -> span {
             classes(STATUS, STATUS_YELLOW)
-            uptimeStatusLabel(withBadge = true, Messages.inProgress())
+            uptimeStatusDot(withBadge = true, Messages.inProgress())
         }
     }
 
@@ -64,6 +86,14 @@ internal fun FlowContent.uptimeStatusOfMonitor(
     withTooltip: Boolean
 ) {
     return when {
+        monitor.enabled && monitor.inMaintenance -> {
+            span {
+                classes(TEXT_SECONDARY)
+                tooltip(Messages.statusPageSystemStatusMaintenance())
+                icon(Icon.TOOL)
+            }
+        }
+
         monitor.enabled && monitor.uptimeStatus != null -> {
             span {
                 val classes = mutableSetOf(STATUS_INDICATOR, STATUS_INDICATOR_ANIMATED)
@@ -72,21 +102,21 @@ internal fun FlowContent.uptimeStatusOfMonitor(
                 if (withTooltip && monitor.uptimeStatus == UptimeStatus.DOWN) {
                     tooltip(title = monitor.uptimeError ?: Messages.unknownError())
                 }
-                uptimeStatusLabel(withBadge = false, monitor.uptimeStatus?.literal.orEmpty())
+                uptimeStatusDot(withBadge = false, monitor.uptimeStatus?.literal.orEmpty())
             }
         }
 
         monitor.enabled && monitor.uptimeStatus == null -> {
             span {
                 classes(STATUS_INDICATOR, STATUS_YELLOW, STATUS_INDICATOR_ANIMATED)
-                uptimeStatusLabel(withBadge = false, Messages.inProgress())
+                uptimeStatusDot(withBadge = false, Messages.inProgress())
             }
         }
 
         !monitor.enabled -> {
             span {
                 classes(STATUS_INDICATOR, STATUS_CYAN)
-                uptimeStatusLabel(withBadge = false, Messages.paused(), animated = false)
+                uptimeStatusDot(withBadge = false, Messages.paused(), animated = false)
             }
         }
 
@@ -94,7 +124,7 @@ internal fun FlowContent.uptimeStatusOfMonitor(
     }
 }
 
-private fun FlowContent.uptimeStatusLabel(
+private fun FlowContent.uptimeStatusDot(
     withBadge: Boolean,
     label: String,
     animated: Boolean = true

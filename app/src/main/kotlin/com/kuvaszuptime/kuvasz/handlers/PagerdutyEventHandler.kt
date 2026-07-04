@@ -4,6 +4,9 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -12,6 +15,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
@@ -22,12 +26,12 @@ import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient
 import com.kuvaszuptime.kuvasz.util.getBodyAs
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
-import org.slf4j.LoggerFactory
 
 @Context
 @Requires(bean = PagerdutyConfig::class)
@@ -37,7 +41,7 @@ class PagerdutyEventHandler(
     integrationRepository: IntegrationRepository,
 ) : AbstractIntegrationProvider(integrationRepository) {
     companion object {
-        private val logger = LoggerFactory.getLogger(PagerdutyEventHandler::class.java)
+        private val logger = loggerFor<PagerdutyEventHandler>()
     }
 
     init {
@@ -83,6 +87,14 @@ class PagerdutyEventHandler(
             logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
         }
+        eventDispatcher.subscribeToMaintenanceStartEvents { event ->
+            logger.debug("A MaintenanceWindowStartEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToMaintenanceEndEvents { event ->
+            logger.debug("A MaintenanceWindowEndEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
     }
 
     private fun Single<String>.handleResponse(): Disposable =
@@ -96,6 +108,48 @@ class PagerdutyEventHandler(
                     logger.error("The event cannot be sent to Pagerduty: $responseBody")
                 }
             }
+        )
+
+    private val MaintenanceWindowEvent.deduplicationKey: String
+        get() = "kuvasz_maintenance_${window.id}"
+
+    private fun MaintenanceWindowEvent.handle() {
+        val integrationKeys = filterMaintenanceTargets(this).map { (it as PagerdutyConfig).integrationKey }
+        when (this) {
+            is MaintenanceWindowStartEvent ->
+                integrationKeys.forEach { integrationKey ->
+                    val request = toTriggerRequest(
+                        serviceKey = integrationKey,
+                        deduplicationKey = deduplicationKey,
+                        severity = PagerdutySeverity.WARNING,
+                    )
+                    apiClient.triggerAlert(request).handleResponse()
+                }
+
+            is MaintenanceWindowEndEvent ->
+                integrationKeys.forEach { integrationKey ->
+                    val request = createResolveRequest(
+                        serviceKey = integrationKey,
+                        deduplicationKey = deduplicationKey,
+                    )
+                    apiClient.resolveAlert(request).handleResponse()
+                }
+        }
+    }
+
+    private fun MaintenanceWindowEvent.toTriggerRequest(
+        serviceKey: String,
+        deduplicationKey: String,
+        severity: PagerdutySeverity,
+    ) =
+        PagerdutyTriggerRequest(
+            routingKey = serviceKey,
+            dedupKey = deduplicationKey,
+            payload = PagerdutyTriggerPayload(
+                summary = PlainTextMessageFormatter.toFormattedMessage(this),
+                source = window.name,
+                severity = severity
+            )
         )
 
     private val UptimeMonitorEvent.deduplicationKey: String

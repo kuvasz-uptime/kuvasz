@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.dashboard
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -52,10 +52,10 @@ fun renderHttpMonitoringStats(
             )
             statCard(
                 cssClasses = setOf(COL_6, COL_MD_3),
-                icon = Icon.HEART_QUESTION,
-                iconBackground = BG_YELLOW_LT,
-                text = monitoringStats.actual.uptimeStats.inProgress.toString(),
-                secondaryText = Messages.inProgress(),
+                icon = Icon.TOOL,
+                iconBackground = BG_GRAY_300,
+                text = monitoringStats.actual.uptimeStats.inMaintenance.toString(),
+                secondaryText = Messages.maintenance(),
             )
             // Historical stats
             h3 {

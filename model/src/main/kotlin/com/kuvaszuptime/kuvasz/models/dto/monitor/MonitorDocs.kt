@@ -19,4 +19,8 @@ object MonitorDocs {
     const val NEXT_UPTIME_CHECK = "The timestamp when the next uptime check is scheduled"
     const val UPTIME_ERROR = "The error message if the last uptime check failed"
     const val STATUS_PAGES = "List of slugs of the status pages the monitor is explicitly assigned to"
+    const val MAINTENANCE_WINDOWS =
+        "List of enabled maintenance windows affecting the monitor, including their current activity status"
+    const val UNDER_MAINTENANCE =
+        "Whether the monitor is currently affected by an active maintenance window"
 }

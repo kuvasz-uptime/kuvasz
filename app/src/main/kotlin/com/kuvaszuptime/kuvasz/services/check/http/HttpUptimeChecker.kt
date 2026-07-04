@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.isServerRelatedError
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.core.type.Argument
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -19,7 +20,6 @@ import io.micronaut.retry.annotation.Retryable
 import io.micronaut.runtime.ApplicationConfiguration
 import jakarta.inject.Singleton
 import kotlinx.coroutines.reactive.awaitSingle
-import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
 import java.util.Optional
@@ -37,7 +37,7 @@ class HttpUptimeChecker(
         private const val RETRY_COUNT = 2L
         private const val RETRY_INITIAL_DELAY = "500ms"
         private const val RETRY_BACKOFF_MULTIPLIER = 3L
-        private val logger = LoggerFactory.getLogger(HttpUptimeChecker::class.java)
+        private val logger = loggerFor<HttpUptimeChecker>()
     }
 
     suspend fun check(

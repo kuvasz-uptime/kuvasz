@@ -4,10 +4,10 @@ import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.models.dto.import.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.statuspage.toStatusPageRecord
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.slf4j.LoggerFactory
 
 /**
  * Imports the status pages from the provided configurations, which are typically coming from a YAML file.
@@ -18,7 +18,9 @@ class StatusPageImporter(
     private val statusPageRepository: StatusPageRepository,
     private val dslContext: DSLContext,
 ) {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    companion object {
+        private val logger = loggerFor<StatusPageImporter>()
+    }
 
     fun importStatusPageConfigs(statusPageConfigs: List<StatusPageConfig>): StatusPageImportResultDto =
         dslContext.transactionResult { config ->

@@ -10,6 +10,7 @@ plugins {
 
 dependencies {
     implementation(libs.i18n4k)
+    implementation(mn.slf4j.api)
 
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(mn.kotest.assertions.core.jvm)

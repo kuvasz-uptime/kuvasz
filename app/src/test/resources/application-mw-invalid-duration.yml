@@ -1,0 +1,4 @@
+maintenance-windows:
+  - name: Bad duration
+    cron: "0 2 * * *"
+    duration: "not a duration"

@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.uitest.icmp
 
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -39,6 +42,22 @@ class IcmpMonitorDetailsUiTest(private val icmpMonitorRepository: IcmpMonitorRep
 
             details.toggleButton.click()
             assertThat(details.pauseControl).isVisible()
+        }
+
+        "a monitor under an active maintenance window shows the maintenance indicator in its heading" {
+            val monitor = createIcmpMonitor(icmpMonitorRepository, monitorName = "Maintained ICMP Detail Monitor")
+            createMaintenanceWindow(
+                dslContext,
+                name = "ICMP detail maintenance",
+                enabled = true,
+                monitors = listOf(MonitorID(MonitorType.ICMP, monitor.name)),
+            )
+
+            val page = newPage()
+            val details = IcmpMonitorDetailsPage(page)
+            details.navigate(monitor.id)
+
+            assertThat(details.maintenanceIndicator).isVisible()
         }
     }
 }

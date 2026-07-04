@@ -7,7 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -179,6 +179,9 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(PushMonitorDetailsDto::statusPages.name),
             nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeat.name),
+            // Placeholders for fields populated by the actions layer, not by SQL
+            DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::maintenanceWindows.name),
+            DSL.inline(false).`as`(PushMonitorDetailsDto::inMaintenance.name),
         )
         .from(PUSH_MONITOR)
         .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())

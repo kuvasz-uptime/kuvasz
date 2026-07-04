@@ -217,3 +217,8 @@ status-pages:
     public: false
     monitors:
       - http:test2
+---
+#maintenance-windows:
+#  - name: yaml-maintenance-window
+#    cron: "0 2 * * *"
+#    duration: PT1H

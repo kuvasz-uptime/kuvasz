@@ -50,11 +50,11 @@ internal fun HtmlBlockTag.statusPageDetailsHeader(
                             xBindDisabled("isRequestLoading")
                             xOnClick("toggleStatusPageVisibility()")
                             template {
-                                attributes["x-if"] = "isStatusPagePublic"
+                                xIf("isStatusPagePublic")
                                 icon(Icon.SCREEN_SHARE_OFF)
                             }
                             template {
-                                attributes["x-if"] = "!isStatusPagePublic"
+                                xIf("!isStatusPagePublic")
                                 icon(Icon.SCREEN_SHARE)
                             }
                         }

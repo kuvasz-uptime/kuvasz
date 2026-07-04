@@ -11,8 +11,8 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.isDownNow
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 
 @Singleton
 class IcmpUptimeChecker(
@@ -101,6 +101,6 @@ class IcmpUptimeChecker(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(IcmpUptimeChecker::class.java)
+        private val logger = loggerFor<IcmpUptimeChecker>()
     }
 }

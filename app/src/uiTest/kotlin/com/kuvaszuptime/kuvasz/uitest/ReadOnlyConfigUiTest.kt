@@ -8,8 +8,8 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 /**
- * Verifies that monitors and status pages configured via YAML are read-only in the UI: the app imports them at startup
- * and flips that type into read-only mode (no create/edit/delete)
+ * Verifies that monitors, status pages and maintenance windows configured via YAML are read-only in the UI: the app
+ * imports them at startup and flips that type into read-only mode (no create/edit/delete)
  */
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV, "ui-test-readonly"])
 class ReadOnlyConfigUiTest : UiTestSpec() {
@@ -62,6 +62,19 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val modal = openConfigModalFrom(page, list, "YAML Status Page")
             assertReadOnlyField(modal, "title", "YAML Status Page")
             assertReadOnlyField(modal, "slug", "yaml-status-page")
+            assertCannotBeSaved(modal)
+        }
+
+        "YAML-configured maintenance windows are read-only on the list, detail page and config modal" {
+            val page = newPage()
+            val list = ListReadOnlyView(page, "/maintenance-windows")
+            list.navigate()
+            assertListIsReadOnly(list, "yaml-maintenance-window")
+
+            val modal = openConfigModalFrom(page, list, "yaml-maintenance-window")
+            assertReadOnlyField(modal, "name", "yaml-maintenance-window")
+            assertReadOnlyField(modal, "cron", "0 2 * * *")
+            assertReadOnlyField(modal, "duration", "PT1H")
             assertCannotBeSaved(modal)
         }
     }

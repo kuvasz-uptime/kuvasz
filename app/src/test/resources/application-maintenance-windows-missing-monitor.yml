@@ -1,0 +1,6 @@
+maintenance-windows:
+  - name: Window with a missing monitor
+    enabled: true
+    monitors:
+      - "http:test1"
+      - "http:non-existing-monitor"

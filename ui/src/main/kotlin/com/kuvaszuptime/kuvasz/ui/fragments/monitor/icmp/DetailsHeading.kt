@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.icmp
 
 import com.iodesystems.htmx.Htmx.Companion.hx
-import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*

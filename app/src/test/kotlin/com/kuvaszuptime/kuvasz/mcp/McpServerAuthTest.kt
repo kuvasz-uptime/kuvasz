@@ -5,11 +5,14 @@ import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_MAINTENANCE_WINDOW_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_STATS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_ICMP_MONITOR_DETAILS
@@ -21,10 +24,12 @@ import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_HTTP_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_ICMP_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INCIDENTS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_MAINTENANCE_WINDOWS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PUSH_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_STATUS_PAGES
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.TOGGLE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.security.TEST_API_KEY
 import com.kuvaszuptime.kuvasz.security.TEST_MCP_API_KEY
@@ -154,6 +159,11 @@ class McpServerAuthTest(
                         TOGGLE_HTTP_MONITOR,
                         TOGGLE_ICMP_MONITOR,
                         TOGGLE_PUSH_MONITOR,
+                        LIST_MAINTENANCE_WINDOWS,
+                        GET_MAINTENANCE_WINDOW_DETAILS,
+                        CREATE_MAINTENANCE_WINDOW,
+                        TOGGLE_MAINTENANCE_WINDOW,
+                        DELETE_MAINTENANCE_WINDOW,
                     )
                 }
             }

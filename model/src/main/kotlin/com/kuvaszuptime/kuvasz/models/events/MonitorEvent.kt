@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import java.net.URI
 
-sealed class MonitorEvent<M : MonitorRecord> {
+sealed class MonitorEvent<M : MonitorRecord> : NotifiableEvent {
     abstract val monitor: M
 
     abstract fun toStructuredMessage(): StructuredMessage

@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services.check
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
-import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
@@ -31,6 +31,6 @@ class UptimeCheckLockRegistry(private val appConfig: AppConfig) {
     fun hasLocks() = activeChecks.isNotEmpty()
 
     companion object {
-        private val logger = LoggerFactory.getLogger(UptimeCheckLockRegistry::class.java)
+        private val logger = loggerFor<UptimeCheckLockRegistry>()
     }
 }

@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -10,9 +11,9 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.SMTPMailer
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
-import org.slf4j.LoggerFactory
 
 @Context
 @Requires(beans = [SMTPMailerConfig::class, EmailNotificationConfig::class])
@@ -22,7 +23,7 @@ class SMTPEventHandler(
     integrationRepository: IntegrationRepository,
 ) : AbstractIntegrationProvider(integrationRepository) {
     companion object {
-        private val logger = LoggerFactory.getLogger(SMTPEventHandler::class.java)
+        private val logger = loggerFor<SMTPEventHandler>()
     }
 
     override val integrationType = IntegrationType.EMAIL
@@ -67,6 +68,21 @@ class SMTPEventHandler(
         eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
             logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
             event.handle()
+        }
+        eventDispatcher.subscribeToMaintenanceStartEvents { event ->
+            logger.debug("A MaintenanceWindowStartEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
+        eventDispatcher.subscribeToMaintenanceEndEvents { event ->
+            logger.debug("A MaintenanceWindowEndEvent has been received for window with ID: ${event.window.id}")
+            event.handle()
+        }
+    }
+
+    private fun MaintenanceWindowEvent.handle() {
+        filterMaintenanceTargets(this).forEach { target ->
+            val emailFactory = EmailFactory(target as EmailNotificationConfig)
+            smtpMailer.sendAsync(emailFactory.fromMaintenanceEvent(this))
         }
     }
 

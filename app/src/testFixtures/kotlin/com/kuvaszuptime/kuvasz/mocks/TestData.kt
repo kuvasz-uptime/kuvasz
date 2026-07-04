@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog.ICMP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
@@ -199,6 +201,37 @@ fun createStatusPage(
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()
+
+@Suppress("LongParameterList")
+fun createMaintenanceWindow(
+    dslContext: DSLContext,
+    name: String = randomClientSecret(),
+    description: String? = null,
+    enabled: Boolean = true,
+    global: Boolean = false,
+    showOnStatusPages: Boolean = false,
+    cron: String? = null,
+    start: OffsetDateTime? = null,
+    duration: String? = null,
+    monitors: List<MonitorID> = emptyList(),
+    integrations: List<IntegrationID> = emptyList(),
+): MaintenanceWindowRecord = dslContext
+    .insertInto(MAINTENANCE_WINDOW)
+    .set(
+        MaintenanceWindowRecord()
+            .setName(name)
+            .setDescription(description)
+            .setEnabled(enabled)
+            .setGlobal(global)
+            .setShowOnStatusPages(showOnStatusPages)
+            .setCron(cron)
+            .setStart(start)
+            .setDuration(duration)
+            .setMonitors(monitors.toTypedArray())
+            .setIntegrations(integrations.toTypedArray())
+    )
+    .returning(MAINTENANCE_WINDOW.asterisk())
+    .fetchOneOrThrow<MaintenanceWindowRecord>()
 
 fun createIcmpMonitor(
     repository: IcmpMonitorRepository,

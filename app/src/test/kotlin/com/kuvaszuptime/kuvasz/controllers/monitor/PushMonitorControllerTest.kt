@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
@@ -15,6 +16,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.IntegrationDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
@@ -340,6 +342,12 @@ class PushMonitorControllerTest(
                     dslContext,
                     monitors = listOf(MonitorID(MonitorType.PUSH, monitor.name))
                 )
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "active-window",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.PUSH, monitor.name)),
+                )
 
                 then("it should return it") {
                     val response = monitorClient.getMonitorDetails(monitorId = monitor.id)
@@ -358,6 +366,11 @@ class PushMonitorControllerTest(
                     response.uptimeError shouldBe null
                     response.lastHeartbeat shouldBe monitor.lastHeartbeat
                     response.nextExpectedHeartbeat shouldBe monitor.lastHeartbeat.plusSeconds(18)
+
+                    // Maintenance windows
+                    response.maintenanceWindows.map { it.name } shouldContainExactlyInAnyOrder listOf("active-window")
+                    response.maintenanceWindows.single().active shouldBe true
+                    response.inMaintenance shouldBe true
 
                     // Integrations
                     response.integrations shouldContainExactlyInAnyOrder setUpIntegrations
@@ -1551,12 +1564,13 @@ class PushMonitorControllerTest(
 
             val monitoringStatsDtoStub = PushMonitoringStatsDto(
                 actual = PushMonitoringStatsDto.ActualMonitoringStats(
-                    uptimeStats = PushMonitoringStatsDto.ActualMonitoringStats.ActualUptimeStats(
+                    uptimeStats = ActualUptimeStats(
                         total = 10000,
                         down = 8185,
                         up = 3535,
                         paused = 7157,
                         inProgress = 6139,
+                        inMaintenance = 2914,
                         lastIncident = getCurrentTimestamp()
                     ),
                 ),

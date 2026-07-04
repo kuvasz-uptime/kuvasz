@@ -2,12 +2,15 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -757,6 +760,47 @@ class SlackEventHandlerTest(
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(globalSlackConfig, capture(notificationSent)) }
                     notificationSent.captured shouldContain
                         "Your SSL certificate for \"${monitor.name}\" will expire soon"
+                }
+            }
+        }
+
+        given("the SlackEventHandler - maintenance window events") {
+            `when`("it receives a MaintenanceWindowStartEvent with explicitly assigned integrations") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    description = "Planned upgrade",
+                    integrations = listOf(otherSlackConfig.id, disabledSlackConfig.id),
+                )
+                mockSuccessfulHttpResponse()
+
+                eventDispatcher.dispatch(MaintenanceWindowStartEvent(window))
+
+                then("it should notify only the assigned & enabled integrations, ignoring global ones") {
+                    val slot = slot<String>()
+
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(otherSlackConfig, capture(slot)) }
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(globalSlackConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(disabledSlackConfig, any()) }
+
+                    slot.captured shouldContain "Maintenance \"${window.name}\" has started"
+                    slot.captured shouldContain "Planned upgrade"
+                }
+            }
+
+            `when`("it receives a MaintenanceWindowEndEvent with explicitly assigned integrations") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    integrations = listOf(otherSlackConfig.id),
+                )
+                mockSuccessfulHttpResponse()
+
+                eventDispatcher.dispatch(MaintenanceWindowEndEvent(window))
+
+                then("it should notify the assigned integration with an end message") {
+                    val slot = slot<String>()
+
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(otherSlackConfig, capture(slot)) }
+                    slot.captured shouldContain "Maintenance \"${window.name}\" has ended"
                 }
             }
         }

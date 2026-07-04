@@ -1,0 +1,7 @@
+maintenance-windows:
+  - name: Window with bad integrations
+    enabled: true
+    integrations:
+      - "slack:test_implicitly_enabled"
+      - "slack:does-not-exist"
+      - "nonsense"
