@@ -518,6 +518,24 @@ class MonitorControllerTest(
                 }
             }
 
+            `when`("the uploaded file exceeds the maximum allowed size of 10 MB") {
+                val oversizedContent = ByteArray(10 * 1024 * 1024 + 1)
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "oversized.yml", MediaType.APPLICATION_YAML_TYPE, oversizedContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 400 bad request") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+
             `when`("the uploaded YAML is malformed") {
                 val multipartBody = MultipartBody.builder()
                     .addPart("file", "broken.yml", MediaType.APPLICATION_YAML_TYPE, "not: valid: [".toByteArray())

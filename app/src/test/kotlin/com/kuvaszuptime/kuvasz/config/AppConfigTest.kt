@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.config
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.BeanInstantiationException
@@ -73,6 +74,38 @@ class AppConfigTest : BehaviorSpec(
                         testAppContext(properties)
                     }
                     exception.message shouldContain "Latency data retention must be at least 1 days"
+                }
+            }
+        }
+
+        given("an AppConfig's monitor external-write toggles") {
+            `when`("push and ICMP external writes are disabled and re-enabled") {
+                val appConfig = AppConfig()
+                appConfig.disablePushMonitorExternalWrite()
+                appConfig.disableIcmpMonitorExternalWrite()
+
+                then("the disabled flags should be set, then cleared by the enable methods") {
+                    appConfig.isPushMonitorExternalWriteDisabled() shouldBe true
+                    appConfig.isIcmpMonitorExternalWriteDisabled() shouldBe true
+
+                    appConfig.enablePushMonitorExternalWrite()
+                    appConfig.enableIcmpMonitorExternalWrite()
+
+                    appConfig.isPushMonitorExternalWriteDisabled() shouldBe false
+                    appConfig.isIcmpMonitorExternalWriteDisabled() shouldBe false
+                }
+            }
+
+            `when`("HTTP external write is disabled and re-enabled") {
+                val appConfig = AppConfig()
+                appConfig.disableHttpMonitorExternalWrite()
+
+                then("the flag should be set, then cleared by the enable method") {
+                    appConfig.isHttpMonitorExternalWriteDisabled() shouldBe true
+
+                    appConfig.enableHttpMonitorExternalWrite()
+
+                    appConfig.isHttpMonitorExternalWriteDisabled() shouldBe false
                 }
             }
         }

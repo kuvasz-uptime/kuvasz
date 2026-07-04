@@ -30,15 +30,17 @@ class MonitorControllerImportReadOnlyTest(
 ) : DatabaseBehaviorSpec() {
 
     override suspend fun afterSpec(spec: Spec) {
-        // Re-enable HTTP monitor writes so this spec does not leak disabled state into later specs
+        // Re-enable every monitor write toggle so this spec does not leak disabled state into later specs
         appConfig.enableHttpMonitorExternalWrite()
+        appConfig.enablePushMonitorExternalWrite()
+        appConfig.enableIcmpMonitorExternalWrite()
     }
 
     init {
 
         given("MonitorController's importYamlMonitors() endpoint in read-only mode") {
 
-            `when`("monitors are in read-only mode") {
+            `when`("HTTP monitor writes are disabled") {
                 appConfig.disableHttpMonitorExternalWrite()
 
                 val yamlContent = buildYamlImportContent(
@@ -69,26 +71,79 @@ class MonitorControllerImportReadOnlyTest(
                     )
                 )
 
-                val multipartBody = MultipartBody.builder()
-                    .addPart("file", "read-only.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
-                    .build()
+                then("it should return 405 method not allowed") {
+                    postImportExpectingMethodNotAllowed(yamlContent)
+                }
+            }
 
-                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
-                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
-                    .accept(MediaType.APPLICATION_JSON_TYPE)
+            `when`("push monitor writes are disabled") {
+                appConfig.disablePushMonitorExternalWrite()
+
+                val yamlContent = buildYamlImportContent(
+                    pushMonitors = listOf(
+                        PushMonitorExportDto(
+                            name = "read-only-push",
+                            heartbeatInterval = 60,
+                            gracePeriod = 30,
+                            clientSecret = "ab".repeat(18),
+                            enabled = true,
+                            integrations = emptySet(),
+                            failureCountThreshold = 1,
+                        )
+                    )
+                )
 
                 then("it should return 405 method not allowed") {
-                    val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, ServiceError::class.java).awaitFirst()
-                    }
-                    response.status shouldBe HttpStatus.METHOD_NOT_ALLOWED
+                    postImportExpectingMethodNotAllowed(yamlContent)
+                }
+            }
+
+            `when`("ICMP monitor writes are disabled") {
+                appConfig.disableIcmpMonitorExternalWrite()
+
+                val yamlContent = buildYamlImportContent(
+                    icmpMonitors = listOf(
+                        IcmpMonitorExportDto(
+                            name = "read-only-icmp",
+                            host = "1.2.3.4",
+                            uptimeCheckInterval = 60,
+                            packetCount = 4,
+                            timeoutSeconds = 5,
+                            packetLossThreshold = 50,
+                            failureCountThreshold = 1,
+                            enabled = true,
+                            integrations = emptySet(),
+                            metricsHistoryEnabled = true,
+                        )
+                    )
+                )
+
+                then("it should return 405 method not allowed") {
+                    postImportExpectingMethodNotAllowed(yamlContent)
                 }
             }
         }
     }
 
+    private suspend fun postImportExpectingMethodNotAllowed(yamlContent: ByteArray) {
+        val multipartBody = MultipartBody.builder()
+            .addPart("file", "read-only.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+            .build()
+
+        val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+            .accept(MediaType.APPLICATION_JSON_TYPE)
+
+        val response = shouldThrow<HttpClientResponseException> {
+            client.exchange(request, ServiceError::class.java).awaitFirst()
+        }
+        response.status shouldBe HttpStatus.METHOD_NOT_ALLOWED
+    }
+
     private fun buildYamlImportContent(
         httpMonitors: List<HttpMonitorExportDto> = emptyList(),
+        pushMonitors: List<PushMonitorExportDto> = emptyList(),
+        icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
     ): ByteArray {
         val importMapper = YAMLMapper.builder()
             .addModules(kotlinModule())
@@ -97,8 +152,8 @@ class MonitorControllerImportReadOnlyTest(
 
         val content = mapOf(
             "http-monitors" to httpMonitors,
-            "push-monitors" to emptyList<PushMonitorExportDto>(),
-            "icmp-monitors" to emptyList<IcmpMonitorExportDto>(),
+            "push-monitors" to pushMonitors,
+            "icmp-monitors" to icmpMonitors,
         )
 
         return importMapper.writeValueAsBytes(content)
