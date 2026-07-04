@@ -221,7 +221,7 @@ kover {
  * browser automatically on first launch, so this is mostly for CI, where `--with-deps` also pulls in the required OS
  * libraries.
  */
-val installPlaywrightChromium by tasks.registering(JavaExec::class) {
+tasks.register<JavaExec>("installPlaywrightChromium") {
     group = "verification"
     description = "Installs the headless Chromium used by the Playwright-driven uiTest suite."
     classpath = sourceSets["uiTest"].runtimeClasspath
@@ -287,12 +287,13 @@ jib {
     }
 }
 
-val updateApiDoc by tasks.registering {
+tasks.register("updateApiDoc") {
+    group = "documentation"
     description = "Implicitly generates the OpenAPI docs (by depending on the kaptKotlin task)"
     dependsOn("kaptKotlin")
 }
 
-val validateJsonSchemas by tasks.registering {
+tasks.register("validateJsonSchemas") {
     dependsOn("kaptKotlin")
     group = "Verification"
     description =

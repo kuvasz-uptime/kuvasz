@@ -176,7 +176,9 @@ jooq {
     }
 }
 
-val migrateAndGenerate by tasks.registering {
+tasks.register("migrateAndGenerate") {
+    group = "jooq"
+    description = "Runs the DB migrations via Flyway & then runs the jOOQ generator"
     dependsOn("flywayMigrate")
     dependsOn("generateJooq")
 }
