@@ -479,6 +479,24 @@ icmp-monitors:
     host: "192.168.1.1"
     uptime-check-interval: 30
     enabled: true
+maintenance-windows:
+  - name: "Nightly DB maintenance"
+    description: "Recurring nightly database maintenance"
+    enabled: true
+    global: false
+    show-on-status-pages: true
+    cron: "0 2 * * *"
+    duration: "PT1H"
+    monitors:
+      - "http:full configuration example"
+      - "icmp:My ICMP Monitor"
+    integrations:
+      - "slack:slack_default"
+  - name: "Datacenter migration"
+    description: "One-off, all monitors are paused during the migration"
+    start: "2026-08-01T22:00:00Z"
+    duration: "PT2H"
+    global: true
 ---
 default-status-page:
   public: true
