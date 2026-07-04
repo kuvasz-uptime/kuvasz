@@ -55,8 +55,9 @@ class AppBootstrappingSanitizationTest(
                 IntegrationID(IntegrationType.WEBHOOK, "disabled"),
             )
 
-            // Simulating the restart of the application
-            shouldNotThrowAny { testAppContext("full-integrations-setup") }
+            // Simulating the restart of the application, closing the ephemeral context right away to release its
+            // connection pool and avoid exhausting the shared DB when multiple contexts are spun up in the same spec
+            shouldNotThrowAny { testAppContext("full-integrations-setup") }.close()
             val sanitizedMonitor = httpMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
             // The configured ones should be kept, even the disabled one
@@ -90,8 +91,9 @@ class AppBootstrappingSanitizationTest(
                 IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
             )
 
-            // Simulating the restart of the application
-            shouldNotThrowAny { testAppContext("full-integrations-setup") }
+            // Simulating the restart of the application, closing the ephemeral context right away to release its
+            // connection pool and avoid exhausting the shared DB when multiple contexts are spun up in the same spec
+            shouldNotThrowAny { testAppContext("full-integrations-setup") }.close()
             val sanitizedMonitor = pushMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
             // The configured ones should be kept, even the disabled one
@@ -124,8 +126,9 @@ class AppBootstrappingSanitizationTest(
                 IntegrationID(IntegrationType.TELEGRAM, "that_does_not_exist"),
             )
 
-            // Simulating the restart of the application
-            shouldNotThrowAny { testAppContext("full-integrations-setup") }
+            // Simulating the restart of the application, closing the ephemeral context right away to release its
+            // connection pool and avoid exhausting the shared DB when multiple contexts are spun up in the same spec
+            shouldNotThrowAny { testAppContext("full-integrations-setup") }.close()
             val sanitizedMonitor = icmpMonitorRepository.findById(monitor.id, null).shouldNotBeNull()
 
             // The configured ones should be kept, even the disabled one
@@ -154,8 +157,9 @@ class AppBootstrappingSanitizationTest(
                 IntegrationID(IntegrationType.WEBHOOK, "disabled"),
             )
 
-            // Simulating the restart of the application
-            shouldNotThrowAny { testAppContext("full-integrations-setup") }
+            // Simulating the restart of the application, closing the ephemeral context right away to release its
+            // connection pool and avoid exhausting the shared DB when multiple contexts are spun up in the same spec
+            shouldNotThrowAny { testAppContext("full-integrations-setup") }.close()
             val sanitizedWindow = maintenanceWindowRepository.findById(window.id).shouldNotBeNull()
 
             // The configured ones should be kept, even the disabled one
