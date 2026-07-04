@@ -66,6 +66,27 @@ ingress:
   #    hosts:
   #      - kuvasz.local
 
+# Gateway API HTTPRoute configuration
+httpRoute:
+  enabled: false
+  annotations: {}
+  labels: {}
+  # Gateways the HTTPRoute is attached to. If empty, it attaches to a Gateway
+  # named "gateway" in the release namespace.
+  parentRefs: []
+  #  - name: gateway
+  #    namespace: default
+  #    sectionName: http
+  hostnames:
+    - kuvasz.local
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  filters: []
+  timeouts: {}
+  extraRules: []
+
 # Resource limits and requests
 resources:
   limits:
@@ -112,11 +133,31 @@ externalAdminSecret: false
 # Authentication configuration
 auth:
   enabled: true
-  # Admin user credentials
-  # If not provided, will be auto-generated and stored in secret
+  # Admin user credentials.
+  # If not provided, will be auto-generated and stored in secret.
   adminUser: ""
   adminPassword: ""
+  # API keys are optional. Leave empty to disable API key access.
   adminApiKey: ""
+  adminMcpApiKey: ""
+  # OIDC authentication configuration
+  # When enabled, the username/password login form is disabled.
+  oidc:
+    enabled: false
+    issuer: ""
+    clientId: ""
+    # Prefer existingSecret in production.
+    clientSecret: ""
+    existingSecret: ""
+    existingSecretClientSecretKey: "oidc-client-secret"
+    # Optional provider hint. Supported values: AUTH0, COGNITO, KEYCLOAK,
+    # MICROSOFT, OKTA, ORACLE_CLOUD.
+    authorizationServer: ""
+    # Also log out from the OIDC provider when logging out of Kuvasz.
+    endSessionEnabled: true
+    # Empty means every authenticated OIDC user is allowed.
+    allowedEmails: []
+    requireVerifiedEmail: true
 
 # Database configuration
 # Two options:

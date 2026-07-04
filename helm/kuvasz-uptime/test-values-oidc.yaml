@@ -1,0 +1,36 @@
+# Test values file for Kuvasz Helm chart with OIDC authentication
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: "postgres.example.com"
+  port: 5432
+  database: "kuvasz"
+  user: "kuvasz"
+  password: "external-db-password"
+
+auth:
+  enabled: true
+  adminApiKey: "api-key-must-be-16-chars-min"
+  adminMcpApiKey: "mcp-key-must-be-16-chars-min"
+  oidc:
+    enabled: true
+    issuer: "https://keycloak.example.com/realms/kuvasz"
+    clientId: "kuvasz"
+    existingSecret: "kuvasz-oidc"
+    existingSecretClientSecretKey: "client-secret"
+    authorizationServer: "KEYCLOAK"
+    endSessionEnabled: true
+    allowedEmails:
+      - "admin@example.com"
+    requireVerifiedEmail: true
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: kuvasz.example.com
+      paths:
+        - path: /
+          pathType: Prefix

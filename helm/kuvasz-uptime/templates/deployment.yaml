@@ -1,5 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
+{{- include "kuvasz.validateOidc" . }}
 metadata:
   name: {{ include "kuvasz.fullname" . }}
   labels:
@@ -74,11 +75,45 @@ spec:
                 secretKeyRef:
                   name: {{ include "kuvasz.adminSecretName" . }}
                   key: admin-password
+            {{- if .Values.auth.adminApiKey }}
             - name: ADMIN_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "kuvasz.adminSecretName" . }}
                   key: admin-api-key
+            {{- end }}
+            {{- if .Values.auth.adminMcpApiKey }}
+            - name: ADMIN_MCP_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kuvasz.adminSecretName" . }}
+                  key: admin-mcp-api-key
+            {{- end }}
+            {{- if .Values.auth.oidc.enabled }}
+            - name: ENABLE_OIDC
+              value: "true"
+            - name: OIDC_ISSUER
+              value: {{ .Values.auth.oidc.issuer | quote }}
+            - name: OIDC_CLIENT_ID
+              value: {{ .Values.auth.oidc.clientId | quote }}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kuvasz.oidcClientSecretName" . }}
+                  key: {{ include "kuvasz.oidcClientSecretKey" . }}
+            {{- if .Values.auth.oidc.authorizationServer }}
+            - name: OIDC_AUTH_SERVER
+              value: {{ .Values.auth.oidc.authorizationServer | quote }}
+            {{- end }}
+            - name: ENABLE_OIDC_END_SESSION
+              value: {{ .Values.auth.oidc.endSessionEnabled | quote }}
+            {{- if .Values.auth.oidc.allowedEmails }}
+            - name: OIDC_ALLOWED_EMAILS
+              value: {{ join "," .Values.auth.oidc.allowedEmails | quote }}
+            {{- end }}
+            - name: OIDC_REQUIRE_VERIFIED_EMAIL
+              value: {{ .Values.auth.oidc.requireVerifiedEmail | quote }}
+            {{- end }}
             {{- else }}
             - name: ENABLE_AUTH
               value: "false"
@@ -119,4 +154,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
