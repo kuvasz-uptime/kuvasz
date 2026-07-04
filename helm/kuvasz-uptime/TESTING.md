@@ -42,6 +42,30 @@ This uses the `test-values-internal-db.yaml` file which configures:
 - Custom authentication credentials
 - Default service configuration
 
+### 4. Render with OIDC authentication
+
+```bash
+helm template test-release . -f test-values-oidc.yaml > rendered-oidc.yaml
+```
+
+This uses the `test-values-oidc.yaml` file which configures:
+
+- External PostgreSQL database
+- OIDC authentication
+- Existing Secret for the OIDC client secret
+
+### 5. Render with Gateway API HTTPRoute
+
+```bash
+helm template test-release . -f test-values-httproute.yaml > rendered-httproute.yaml
+```
+
+This uses the `test-values-httproute.yaml` file which configures:
+
+- External PostgreSQL database
+- Gateway API HTTPRoute
+- Existing Gateway parent reference
+
 ## Validate Chart
 
 ### Lint the chart
@@ -70,13 +94,14 @@ helm template test-release . \
   --set externalDatabase.database=kuvasz
 ```
 
-### Test with auto-generated credentials
+### Test with auto-generated user/password and disabled API keys
 
 ```bash
 helm template test-release . \
   --set auth.adminUser="" \
   --set auth.adminPassword="" \
   --set auth.adminApiKey="" \
+  --set auth.adminMcpApiKey="" \
   --set postgresql.enabled=true \
   --set postgresql.auth.password=""
 ```
@@ -88,6 +113,31 @@ helm template test-release . \
   --set postgresql.enabled=false \
   --set externalDatabase.existingSecret=my-postgres-secret \
   --set externalDatabase.existingSecretPasswordKey=password
+```
+
+### Test with OIDC
+
+```bash
+helm template test-release . \
+  --set postgresql.enabled=false \
+  --set externalDatabase.host=postgres.example.com \
+  --set externalDatabase.user=kuvasz \
+  --set externalDatabase.password=secret \
+  --set externalDatabase.database=kuvasz \
+  --set auth.oidc.enabled=true \
+  --set auth.oidc.issuer=https://keycloak.example.com/realms/kuvasz \
+  --set auth.oidc.clientId=kuvasz \
+  --set auth.oidc.clientSecret=oidc-client-secret
+```
+
+### Test with Gateway API HTTPRoute
+
+```bash
+helm template test-release . \
+  --set httpRoute.enabled=true \
+  --set httpRoute.parentRefs[0].name=gateway \
+  --set httpRoute.parentRefs[0].namespace=gateway-system \
+  --set httpRoute.hostnames[0]=kuvasz.example.com
 ```
 
 ## Verify Generated Resources
@@ -106,6 +156,7 @@ Expected output should include:
 - Service
 - Deployment
 - Ingress (if enabled)
+- HTTPRoute (if enabled)
 
 ### Verify database configuration
 
@@ -125,6 +176,16 @@ helm template test-release . -f test-values.yaml | grep "ENABLE_AUTH"
 
 # Check admin credentials secret reference
 helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_USER"
+
+# Check optional API key configuration
+helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_API_KEY"
+helm template test-release . -f test-values.yaml | grep -A 2 "ADMIN_MCP_API_KEY"
+
+# Check OIDC configuration
+helm template test-release . -f test-values-oidc.yaml | grep -A 20 "ENABLE_OIDC"
+
+# Check Gateway API HTTPRoute configuration
+helm template test-release . -f test-values-httproute.yaml | grep -A 20 "kind: HTTPRoute"
 ```
 
 ## Test with Different Namespaces

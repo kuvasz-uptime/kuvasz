@@ -26,6 +26,7 @@ auth:
   adminUser: "admin"
   adminPassword: "admin-password-12345"  # Must be at least 12 chars
   adminApiKey: "api-key-must-be-16-chars-min"
+  adminMcpApiKey: "mcp-key-must-be-16-chars-min"
 
 # Ingress
 ingress:
@@ -61,4 +62,3 @@ resources:
 
 # Timezone
 timezone: "America/New_York"
-

@@ -6,6 +6,13 @@
   {{- end }}
 {{- end }}
 
+{{- else if .Values.httpRoute.enabled }}
+  HTTPRoute is enabled. Use the listener address of the configured Gateway with these hostnames:
+  {{- range .Values.httpRoute.hostnames }}
+  - {{ . }}
+  {{- end }}
+  kubectl get httproute --namespace {{ .Release.Namespace }} {{ include "kuvasz.fullname" . }}
+
 {{- else if contains "NodePort" .Values.service.type }}
   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "kuvasz.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
@@ -24,9 +31,18 @@
 
 2. Get admin credentials:
 {{- if .Values.auth.enabled }}
+{{- if .Values.auth.oidc.enabled }}
+  OIDC authentication is enabled. Use your OIDC provider to sign in.
+{{- else }}
   echo "Admin Username: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-user}' | base64 -d)"
   echo "Admin Password: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-password}' | base64 -d)"
+{{- end }}
+{{- if .Values.auth.adminApiKey }}
   echo "Admin API Key: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-api-key}' | base64 -d)"
+{{- end }}
+{{- if .Values.auth.adminMcpApiKey }}
+  echo "Admin MCP API Key: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "kuvasz.adminSecretName" . }} -o jsonpath='{.data.admin-mcp-api-key}' | base64 -d)"
+{{- end }}
 {{- else }}
   Authentication is disabled. You can access the application directly.
 {{- end }}
@@ -44,4 +60,3 @@
   Database: {{ include "kuvasz.databaseName" . }}
   Username: {{ include "kuvasz.databaseUser" . }}
 {{- end }}
-

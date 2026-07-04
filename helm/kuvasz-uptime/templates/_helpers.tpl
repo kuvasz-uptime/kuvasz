@@ -146,3 +146,44 @@ Determine the admin credentials secret name
 {{- printf "%s-%s" (include "kuvasz.fullname" .) "admin" -}}
 {{- end -}}
 
+{{/*
+Determine the OIDC client secret name
+*/}}
+{{- define "kuvasz.oidcClientSecretName" -}}
+{{- if .Values.auth.oidc.existingSecret -}}
+{{- .Values.auth.oidc.existingSecret -}}
+{{- else -}}
+{{- include "kuvasz.adminSecretName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Determine the OIDC client secret key
+*/}}
+{{- define "kuvasz.oidcClientSecretKey" -}}
+{{- if .Values.auth.oidc.existingSecret -}}
+{{- default "oidc-client-secret" .Values.auth.oidc.existingSecretClientSecretKey -}}
+{{- else -}}
+oidc-client-secret
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate OIDC configuration
+*/}}
+{{- define "kuvasz.validateOidc" -}}
+{{- if and .Values.auth.enabled .Values.auth.oidc.enabled -}}
+{{- if not .Values.auth.oidc.issuer -}}
+{{- fail "auth.oidc.issuer is required when auth.oidc.enabled=true" -}}
+{{- end -}}
+{{- if not .Values.auth.oidc.clientId -}}
+{{- fail "auth.oidc.clientId is required when auth.oidc.enabled=true" -}}
+{{- end -}}
+{{- if and .Values.externalAdminSecret .Values.auth.oidc.clientSecret -}}
+{{- fail "auth.oidc.clientSecret cannot be used when externalAdminSecret=true because the chart will not create or update the admin Secret; use auth.oidc.existingSecret or put oidc-client-secret in the external admin Secret" -}}
+{{- end -}}
+{{- if and (not .Values.auth.oidc.clientSecret) (not .Values.auth.oidc.existingSecret) (not .Values.externalAdminSecret) -}}
+{{- fail "auth.oidc.clientSecret, auth.oidc.existingSecret, or externalAdminSecret=true with an oidc-client-secret key in the admin secret is required when auth.oidc.enabled=true" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

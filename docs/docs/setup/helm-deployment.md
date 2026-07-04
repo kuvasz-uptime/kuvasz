@@ -41,7 +41,9 @@ postgresql:
 auth:
   adminUser: "YourSuperSecretUsername"      # Change this!
   adminPassword: "YourSuperSecretPassword"  # Change this!
-  adminApiKey: "ThisShouldBeVeryVerySecureToo"  # Change this!
+  # Optional API keys. Leave empty to disable API-key access.
+  adminApiKey: ""
+  adminMcpApiKey: ""
 
 # Ingress configuration (optional)
 ingress:
@@ -57,7 +59,7 @@ ingress:
 
 !!! note "Credential Requirements"
     - `adminPassword` must be at least 12 characters and must not be equal to `adminUser`
-    - `adminApiKey` must be at least 16 characters
+    - `adminApiKey` and `adminMcpApiKey` are optional; when set, they must be at least 16 characters
 
 ### 3. Install the Chart
 
@@ -160,6 +162,27 @@ ingress:
         - kuvasz-uptime.example.com
 ```
 
+### Gateway API HTTPRoute
+
+You can expose Kuvasz with a Gateway API `HTTPRoute` instead of, or alongside, an Ingress. The chart creates the `HTTPRoute`; the target `Gateway` must already exist in the cluster:
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - kuvasz-uptime.example.com
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+```
+
+If `httpRoute.parentRefs` is empty, the route attaches to a Gateway named `gateway` in the release namespace. `httpRoute.filters`, `httpRoute.timeouts`, and `httpRoute.extraRules` are rendered directly into the `HTTPRoute` spec for advanced Gateway API use cases.
+
 ### Configuring Kuvasz
 
 You can provide a custom [YAML configuration](configuration.md) by including it in your values file:
@@ -178,6 +201,42 @@ config:
         url: https://example.com
         uptime-check-interval: 60
 ```
+
+### OIDC authentication
+
+You can configure OpenID Connect instead of the built-in username/password login form:
+
+```yaml
+auth:
+  enabled: true
+  oidc:
+    enabled: true
+    issuer: "https://keycloak.example.com/realms/kuvasz"
+    clientId: "kuvasz"
+    clientSecret: "your-client-secret"
+    authorizationServer: "KEYCLOAK"
+    allowedEmails:
+      - admin@example.com
+    requireVerifiedEmail: true
+```
+
+When OIDC is enabled, `auth.adminUser` and `auth.adminPassword` are ignored. `auth.adminApiKey` remains independent and can still be used for REST API access.
+
+Supported `auth.oidc.authorizationServer` values are `AUTH0`, `COGNITO`, `KEYCLOAK`, `MICROSOFT`, `OKTA`, and `ORACLE_CLOUD`.
+
+For production, prefer using an existing Kubernetes Secret for the OIDC client secret:
+
+```yaml
+auth:
+  oidc:
+    enabled: true
+    issuer: "https://keycloak.example.com/realms/kuvasz"
+    clientId: "kuvasz"
+    existingSecret: "kuvasz-oidc"
+    existingSecretClientSecretKey: "client-secret"
+```
+
+When `externalAdminSecret=true`, `auth.oidc.clientSecret` cannot be used because the chart does not create or update the admin Secret. In that mode, either put an `oidc-client-secret` key in the external admin Secret or use `auth.oidc.existingSecret`.
 
 ## Upgrading
 
