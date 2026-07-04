@@ -424,7 +424,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
                 then("it should return the plain summary followed by the description") {
                     formatter.toFormattedMessage(event) shouldBe
-                        "Maintenance window \"test_window\" has started\nScheduled DB upgrade"
+                        "Maintenance \"test_window\" has started\nScheduled DB upgrade"
                 }
             }
 
@@ -433,7 +433,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
                 then("it should return only the plain summary") {
                     formatter.toFormattedMessage(event) shouldBe
-                        "Maintenance window \"test_window\" has ended"
+                        "Maintenance \"test_window\" has ended"
                 }
             }
         }

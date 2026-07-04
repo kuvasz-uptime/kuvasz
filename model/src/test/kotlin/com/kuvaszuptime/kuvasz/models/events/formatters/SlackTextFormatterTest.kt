@@ -320,7 +320,7 @@ class SlackTextFormatterTest : BehaviorSpec(
 
                 then("it should return the correctly formatted, bolded message with an italic description") {
                     formatter.toFormattedMessage(event) shouldBe
-                        "🔧 *Maintenance window \"test_window\" has started*\n_Scheduled DB upgrade_"
+                        "🔧 *Maintenance \"test_window\" has started*\n_Scheduled DB upgrade_"
                 }
             }
 
@@ -329,7 +329,7 @@ class SlackTextFormatterTest : BehaviorSpec(
 
                 then("it should omit the description line") {
                     formatter.toFormattedMessage(event) shouldBe
-                        "🔧 *Maintenance window \"test_window\" has started*"
+                        "🔧 *Maintenance \"test_window\" has started*"
                 }
             }
 
@@ -338,7 +338,7 @@ class SlackTextFormatterTest : BehaviorSpec(
 
                 then("it should return the correctly formatted end message") {
                     formatter.toFormattedMessage(event) shouldBe
-                        "✅ *Maintenance window \"test_window\" has ended*"
+                        "✅ *Maintenance \"test_window\" has ended*"
                 }
             }
         }

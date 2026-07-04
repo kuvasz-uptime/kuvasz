@@ -423,29 +423,29 @@ class LogMessageFormatterTest : BehaviorSpec({
                 formatter.toFormattedMessage(event) shouldBe expectedMessage
             }
         }
+    }
 
-        given("toFormattedMaintenanceMessage(event: MaintenanceWindowEvent)") {
-            val window = MaintenanceWindowRecord()
-                .setId(7)
-                .setName("test_window")
-                .setEnabled(true)
+    given("toFormattedMaintenanceMessage(event: MaintenanceWindowEvent)") {
+        val window = MaintenanceWindowRecord()
+            .setId(7)
+            .setName("test_window")
+            .setEnabled(true)
 
-            `when`("it gets a start event with a description") {
-                val event = MaintenanceWindowStartEvent(window.copy().apply { setDescription("DB upgrade") })
+        `when`("it gets a start event with a description") {
+            val event = MaintenanceWindowStartEvent(window.copy().apply { setDescription("DB upgrade") })
 
-                then("it should join the summary and description with a dot separator") {
-                    formatter.toFormattedMessage(event) shouldBe
-                        "🔧 Maintenance window \"test_window\" has started. DB upgrade"
-                }
+            then("it should join the summary and description with a dot separator") {
+                formatter.toFormattedMessage(event) shouldBe
+                    "🔧 Maintenance \"test_window\" has started. DB upgrade"
             }
+        }
 
-            `when`("it gets an end event without a description") {
-                val event = MaintenanceWindowEndEvent(window)
+        `when`("it gets an end event without a description") {
+            val event = MaintenanceWindowEndEvent(window)
 
-                then("it should return only the summary") {
-                    formatter.toFormattedMessage(event) shouldBe
-                        "✅ Maintenance window \"test_window\" has ended"
-                }
+            then("it should return only the summary") {
+                formatter.toFormattedMessage(event) shouldBe
+                    "✅ Maintenance \"test_window\" has ended"
             }
         }
     }
