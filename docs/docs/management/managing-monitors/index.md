@@ -29,13 +29,12 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 
     !!!warning "Restoring a backup is destructive"
 
-        The import follows the same semantics as YAML configuration on startup:
+        The import reconciles **per monitor type that is present in the backup with at least one entry**:
 
-        - Monitors with the same name and type will be **updated** with the values from the backup.
-        - Monitors that exist in the database but are **not in the backup** will be **deleted**.
-        - Monitors in the backup that do not exist will be **created**.
+        - For each monitor type that has at least one entry in the backup, monitors with the same name will be **updated** with the values from the backup, monitors that exist in the database but are **not in the backup** will be **deleted**, and monitors in the backup that do not exist will be **created**.
+        - Monitor types that are **missing from the backup entirely** (no key, or no entries) are **left untouched**. To delete every monitor of a given type, use the YAML bootstrap config with an explicit empty array (`http-monitors: []`) for that type instead.
         - The import **does not** switch the monitors to read-only mode; you can keep managing them through the UI and API afterwards.
-        - If a monitor type that's present in the backup is currently managed via YAML (read-only mode), the import **will be rejected** with a `405 Method Not Allowed` response until you remove that type from your YAML configuration. Monitor types that are not externally managed are still imported as usual.
+        - Monitor types currently managed via YAML (read-only mode) are **silently skipped** during the import. The remaining writable types are still imported as usual.
 
         Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of monitors that would be received, imported/updated, and deleted.
 

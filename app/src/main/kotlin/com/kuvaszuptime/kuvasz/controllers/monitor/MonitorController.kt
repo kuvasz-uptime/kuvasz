@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
-import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
@@ -98,11 +97,6 @@ class MonitorController(
             responseCode = "400",
             description = "Bad request",
             content = [Content(schema = Schema(implementation = ServiceError::class))]
-        ),
-        ApiResponse(
-            responseCode = "405",
-            description = "Monitor type is managed via external YAML config (read-only)",
-            content = [Content(schema = Schema(implementation = ServiceError::class))]
         )
     )
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -116,7 +110,7 @@ class MonitorController(
             yamlMapper.readValue(file.bytes, MonitorImportDto::class.java)
         } catch (e: Exception) {
             throw ValidationException("Failed to parse the uploaded YAML file: ${e.message}", e)
-        }
+        } ?: MonitorImportDto()
         val httpMonitors: List<HttpMonitorCreator> =
             importDto.httpMonitors.orEmpty().map { HttpMonitorImportAdapter(it) }
         val pushMonitors: List<PushMonitorCreator> =
@@ -124,17 +118,16 @@ class MonitorController(
         val icmpMonitors: List<IcmpMonitorCreator> =
             importDto.icmpMonitors.orEmpty().map { IcmpMonitorImportAdapter(it) }
 
-        ensureTypesAreWritable(httpMonitors.isNotEmpty(), pushMonitors.isNotEmpty(), icmpMonitors.isNotEmpty())
         validateMonitors(httpMonitors, pushMonitors, icmpMonitors)
 
         val perTypeResults = buildList {
-            if (httpMonitors.isNotEmpty()) {
+            if (httpMonitors.isNotEmpty() && !appConfig.isHttpMonitorExternalWriteDisabled()) {
                 add(monitorImporter.importHttpMonitorConfigs(httpMonitors, dryRun))
             }
-            if (pushMonitors.isNotEmpty()) {
+            if (pushMonitors.isNotEmpty() && !appConfig.isPushMonitorExternalWriteDisabled()) {
                 add(monitorImporter.importPushMonitorConfigs(pushMonitors, dryRun))
             }
-            if (icmpMonitors.isNotEmpty()) {
+            if (icmpMonitors.isNotEmpty() && !appConfig.isIcmpMonitorExternalWriteDisabled()) {
                 add(monitorImporter.importIcmpMonitorConfigs(icmpMonitors, dryRun))
             }
         }
@@ -156,20 +149,6 @@ class MonitorController(
         httpMonitors.forEach { validator.validate(it).throwIfNotEmpty() }
         pushMonitors.forEach { validator.validate(it).throwIfNotEmpty() }
         icmpMonitors.forEach { validator.validate(it).throwIfNotEmpty() }
-    }
-
-    /**
-     * A given monitor type can only be imported when it is not externally managed via YAML config.
-     */
-    private fun ensureTypesAreWritable(http: Boolean, push: Boolean, icmp: Boolean) {
-        val typesToCheck = listOf(
-            http to appConfig.isHttpMonitorExternalWriteDisabled(),
-            push to appConfig.isPushMonitorExternalWriteDisabled(),
-            icmp to appConfig.isIcmpMonitorExternalWriteDisabled(),
-        )
-        if (typesToCheck.any { (present, blocked) -> present && blocked }) {
-            throw ReadOnlyMonitorException()
-        }
     }
 
     companion object {

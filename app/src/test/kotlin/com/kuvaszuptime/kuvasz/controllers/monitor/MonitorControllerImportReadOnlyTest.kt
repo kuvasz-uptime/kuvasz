@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.Spec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
@@ -38,140 +39,175 @@ class MonitorControllerImportReadOnlyTest(
 
     init {
 
-        given("MonitorController's importYamlMonitors() endpoint in read-only mode") {
+        given("MonitorController's importYamlMonitors() endpoint with a yaml-managed monitor type") {
 
-            `when`("HTTP monitor writes are disabled and the backup contains HTTP monitors") {
+            `when`("the backup only contains monitors of the yaml-managed type") {
                 appConfig.disableHttpMonitorExternalWrite()
+                appConfig.enablePushMonitorExternalWrite()
+                appConfig.enableIcmpMonitorExternalWrite()
 
                 val yamlContent = buildYamlImportContent(
-                    httpMonitors = listOf(
-                        HttpMonitorExportDto(
-                            name = "read-only-http",
-                            url = "https://example.com",
-                            sensitiveUrl = false,
-                            uptimeCheckInterval = 60,
-                            enabled = true,
-                            sslCheckEnabled = true,
-                            latencyHistoryEnabled = true,
-                            requestMethod = HttpMethod.GET,
-                            followRedirects = true,
-                            forceNoCache = true,
-                            sslExpiryThreshold = 30,
-                            failureCountThreshold = 1,
-                            integrations = emptySet(),
-                            expectedStatusCodes = emptySet(),
-                            responseTimeThresholdMillis = null,
-                            expectedKeyword = null,
-                            expectedKeywordCaseSensitive = false,
-                            expectedKeywordNegated = false,
-                            requestHeaders = emptyMap(),
-                            expectedHeaders = emptyMap(),
-                            requestBody = null,
-                        )
-                    )
+                    httpMonitors = listOf(httpMonitor("skipped-http"))
                 )
 
-                then("it should return 405 method not allowed") {
-                    postImportExpectingMethodNotAllowed(yamlContent)
+                then("it should silently skip the yaml-managed type and return 200 with zero counts") {
+                    val response = client.exchange(
+                        HttpRequest.POST("/api/v2/monitors/import/yaml", multipartOf(yamlContent))
+                            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                            .accept(MediaType.APPLICATION_JSON_TYPE),
+                        MonitorImportResultDto::class.java,
+                    ).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 0
+                    response.body()!!.importedMonitorCnt shouldBe 0
+                    response.body()!!.deletedMonitorCount shouldBe 0
+                    response.body()!!.perTypeResults.shouldBeEmpty()
                 }
             }
 
-            `when`("push monitor writes are disabled and the backup contains push monitors") {
+            `when`("the backup contains a mix of yaml-managed and writable types") {
+                appConfig.disableHttpMonitorExternalWrite()
+                appConfig.enablePushMonitorExternalWrite()
+                appConfig.enableIcmpMonitorExternalWrite()
+
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(httpMonitor("skipped-http")),
+                    pushMonitors = listOf(pushMonitor("imported-push")),
+                )
+
+                then("it should import only the writable types and return 200") {
+                    val response = client.exchange(
+                        HttpRequest.POST(
+                            "/api/v2/monitors/import/yaml?dryRun=true",
+                            multipartOf(yamlContent),
+                        ).contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                            .accept(MediaType.APPLICATION_JSON_TYPE),
+                        MonitorImportResultDto::class.java,
+                    ).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 1
+                    response.body()!!.importedMonitorCnt shouldBe 1
+                    response.body()!!.perTypeResults.map { it.monitorType } shouldBe listOf(
+                        com.kuvaszuptime.kuvasz.models.MonitorType.PUSH,
+                    )
+                }
+            }
+
+            `when`("push monitor writes are yaml-managed and the backup only contains push monitors") {
+                appConfig.enableHttpMonitorExternalWrite()
                 appConfig.disablePushMonitorExternalWrite()
+                appConfig.enableIcmpMonitorExternalWrite()
 
                 val yamlContent = buildYamlImportContent(
-                    pushMonitors = listOf(
-                        PushMonitorExportDto(
-                            name = "read-only-push",
-                            heartbeatInterval = 60,
-                            gracePeriod = 30,
-                            clientSecret = "ab".repeat(18),
-                            enabled = true,
-                            integrations = emptySet(),
-                            failureCountThreshold = 1,
-                        )
-                    )
+                    pushMonitors = listOf(pushMonitor("skipped-push"))
                 )
 
-                then("it should return 405 method not allowed") {
-                    postImportExpectingMethodNotAllowed(yamlContent)
+                then("it should silently skip push and return 200 with zero counts") {
+                    val response = client.exchange(
+                        HttpRequest.POST("/api/v2/monitors/import/yaml", multipartOf(yamlContent))
+                            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                            .accept(MediaType.APPLICATION_JSON_TYPE),
+                        MonitorImportResultDto::class.java,
+                    ).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 0
                 }
             }
 
-            `when`("ICMP monitor writes are disabled and the backup contains ICMP monitors") {
+            `when`("ICMP monitor writes are yaml-managed and the backup only contains ICMP monitors") {
+                appConfig.enableHttpMonitorExternalWrite()
+                appConfig.enablePushMonitorExternalWrite()
                 appConfig.disableIcmpMonitorExternalWrite()
 
                 val yamlContent = buildYamlImportContent(
-                    icmpMonitors = listOf(
-                        IcmpMonitorExportDto(
-                            name = "read-only-icmp",
-                            host = "1.2.3.4",
-                            uptimeCheckInterval = 60,
-                            packetCount = 4,
-                            timeoutSeconds = 5,
-                            packetLossThreshold = 50,
-                            failureCountThreshold = 1,
-                            enabled = true,
-                            integrations = emptySet(),
-                            metricsHistoryEnabled = true,
-                        )
-                    )
+                    icmpMonitors = listOf(icmpMonitor("skipped-icmp"))
                 )
 
-                then("it should return 405 method not allowed") {
-                    postImportExpectingMethodNotAllowed(yamlContent)
+                then("it should silently skip ICMP and return 200 with zero counts") {
+                    val response = client.exchange(
+                        HttpRequest.POST("/api/v2/monitors/import/yaml", multipartOf(yamlContent))
+                            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                            .accept(MediaType.APPLICATION_JSON_TYPE),
+                        MonitorImportResultDto::class.java,
+                    ).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 0
                 }
             }
 
-            `when`("HTTP monitor writes are disabled but the backup only contains push monitors") {
-                appConfig.enablePushMonitorExternalWrite()
-                appConfig.enableIcmpMonitorExternalWrite()
-                appConfig.disableHttpMonitorExternalWrite()
-
-                val yamlContent = buildYamlImportContent(
-                    pushMonitors = listOf(
-                        PushMonitorExportDto(
-                            name = "writable-push",
-                            heartbeatInterval = 60,
-                            gracePeriod = 30,
-                            clientSecret = "ab".repeat(18),
-                            enabled = true,
-                            integrations = emptySet(),
-                            failureCountThreshold = 1,
-                        )
-                    )
-                )
-
-                then("it should still import the writable types") {
-                    val multipartBody = MultipartBody.builder()
-                        .addPart("file", "mixed.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
-                        .build()
-                    val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=true", multipartBody)
-                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
-                        .accept(MediaType.APPLICATION_JSON_TYPE)
-
-                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
-                    response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 1
+            `when`("the response is an error") {
+                then("ServiceError should be returned for non-import related failures") {
+                    val unused = shouldThrow<HttpClientResponseException> {
+                        client.exchange(
+                            HttpRequest.POST(
+                                "/api/v2/monitors/import/yaml",
+                                multipartOf("not: valid: [".toByteArray()),
+                            ).contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                                .accept(MediaType.APPLICATION_JSON_TYPE),
+                            ServiceError::class.java,
+                        ).awaitFirst()
+                    }
+                    unused.status shouldBe HttpStatus.BAD_REQUEST
                 }
             }
         }
     }
 
-    private suspend fun postImportExpectingMethodNotAllowed(yamlContent: ByteArray) {
-        val multipartBody = MultipartBody.builder()
-            .addPart("file", "read-only.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+    private fun multipartOf(content: ByteArray): MultipartBody =
+        MultipartBody.builder()
+            .addPart("file", "content.yml", MediaType.APPLICATION_YAML_TYPE, content)
             .build()
 
-        val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
-            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
-            .accept(MediaType.APPLICATION_JSON_TYPE)
+    private fun httpMonitor(name: String) = HttpMonitorExportDto(
+        name = name,
+        url = "https://example.com",
+        sensitiveUrl = false,
+        uptimeCheckInterval = 60,
+        enabled = true,
+        sslCheckEnabled = true,
+        latencyHistoryEnabled = true,
+        requestMethod = HttpMethod.GET,
+        followRedirects = true,
+        forceNoCache = true,
+        sslExpiryThreshold = 30,
+        failureCountThreshold = 1,
+        integrations = emptySet(),
+        expectedStatusCodes = emptySet(),
+        responseTimeThresholdMillis = null,
+        expectedKeyword = null,
+        expectedKeywordCaseSensitive = false,
+        expectedKeywordNegated = false,
+        requestHeaders = emptyMap(),
+        expectedHeaders = emptyMap(),
+        requestBody = null,
+    )
 
-        val response = shouldThrow<HttpClientResponseException> {
-            client.exchange(request, ServiceError::class.java).awaitFirst()
-        }
-        response.status shouldBe HttpStatus.METHOD_NOT_ALLOWED
-    }
+    private fun pushMonitor(name: String) = PushMonitorExportDto(
+        name = name,
+        heartbeatInterval = 60,
+        gracePeriod = 30,
+        clientSecret = "ab".repeat(18),
+        enabled = true,
+        integrations = emptySet(),
+        failureCountThreshold = 1,
+    )
+
+    private fun icmpMonitor(name: String) = IcmpMonitorExportDto(
+        name = name,
+        host = "1.2.3.4",
+        uptimeCheckInterval = 60,
+        packetCount = 4,
+        timeoutSeconds = 5,
+        packetLossThreshold = 50,
+        failureCountThreshold = 1,
+        enabled = true,
+        integrations = emptySet(),
+        metricsHistoryEnabled = true,
+    )
 
     private fun buildYamlImportContent(
         httpMonitors: List<HttpMonitorExportDto> = emptyList(),

@@ -918,12 +918,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
-        "405":
-          description: Monitor type is managed via external YAML config (read-only)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
       - bearerAuth: []
