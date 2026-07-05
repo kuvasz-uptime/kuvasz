@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.ServiceError
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -19,14 +20,13 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
-import tools.jackson.databind.PropertyNamingStrategies
 import tools.jackson.dataformat.yaml.YAMLMapper
-import tools.jackson.module.kotlin.kotlinModule
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class MonitorControllerImportReadOnlyTest(
     @param:Client("/") private val client: HttpClient,
     private val appConfig: AppConfig,
+    private val yamlMapper: YAMLMapper,
 ) : DatabaseBehaviorSpec() {
 
     override suspend fun afterSpec(spec: Spec) {
@@ -40,7 +40,7 @@ class MonitorControllerImportReadOnlyTest(
 
         given("MonitorController's importYamlMonitors() endpoint in read-only mode") {
 
-            `when`("HTTP monitor writes are disabled") {
+            `when`("HTTP monitor writes are disabled and the backup contains HTTP monitors") {
                 appConfig.disableHttpMonitorExternalWrite()
 
                 val yamlContent = buildYamlImportContent(
@@ -76,7 +76,7 @@ class MonitorControllerImportReadOnlyTest(
                 }
             }
 
-            `when`("push monitor writes are disabled") {
+            `when`("push monitor writes are disabled and the backup contains push monitors") {
                 appConfig.disablePushMonitorExternalWrite()
 
                 val yamlContent = buildYamlImportContent(
@@ -98,7 +98,7 @@ class MonitorControllerImportReadOnlyTest(
                 }
             }
 
-            `when`("ICMP monitor writes are disabled") {
+            `when`("ICMP monitor writes are disabled and the backup contains ICMP monitors") {
                 appConfig.disableIcmpMonitorExternalWrite()
 
                 val yamlContent = buildYamlImportContent(
@@ -120,6 +120,39 @@ class MonitorControllerImportReadOnlyTest(
 
                 then("it should return 405 method not allowed") {
                     postImportExpectingMethodNotAllowed(yamlContent)
+                }
+            }
+
+            `when`("HTTP monitor writes are disabled but the backup only contains push monitors") {
+                appConfig.enablePushMonitorExternalWrite()
+                appConfig.enableIcmpMonitorExternalWrite()
+                appConfig.disableHttpMonitorExternalWrite()
+
+                val yamlContent = buildYamlImportContent(
+                    pushMonitors = listOf(
+                        PushMonitorExportDto(
+                            name = "writable-push",
+                            heartbeatInterval = 60,
+                            gracePeriod = 30,
+                            clientSecret = "ab".repeat(18),
+                            enabled = true,
+                            integrations = emptySet(),
+                            failureCountThreshold = 1,
+                        )
+                    )
+                )
+
+                then("it should still import the writable types") {
+                    val multipartBody = MultipartBody.builder()
+                        .addPart("file", "mixed.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                        .build()
+                    val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=true", multipartBody)
+                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                        .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 1
                 }
             }
         }
@@ -145,17 +178,12 @@ class MonitorControllerImportReadOnlyTest(
         pushMonitors: List<PushMonitorExportDto> = emptyList(),
         icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
     ): ByteArray {
-        val importMapper = YAMLMapper.builder()
-            .addModules(kotlinModule())
-            .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
-            .build()
-
         val content = mapOf(
             "http-monitors" to httpMonitors,
             "push-monitors" to pushMonitors,
             "icmp-monitors" to icmpMonitors,
         )
 
-        return importMapper.writeValueAsBytes(content)
+        return yamlMapper.writeValueAsBytes(content)
     }
 }

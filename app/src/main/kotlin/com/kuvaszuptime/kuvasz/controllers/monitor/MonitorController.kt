@@ -8,18 +8,24 @@ import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorException
+import com.kuvaszuptime.kuvasz.models.ServiceError
+import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.PushMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
-import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportParseException
-import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportParser
-import com.kuvaszuptime.kuvasz.services.monitor.importer.MonitorImportService
+import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
+import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Consumes
 import io.micronaut.http.annotation.Controller
@@ -31,13 +37,16 @@ import io.micronaut.http.server.types.files.SystemFile
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.micronaut.validation.Validated
+import io.micronaut.validation.validator.Validator
 import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.ValidationException
+import tools.jackson.dataformat.yaml.YAMLMapper
 
 @Controller("${API_V2_PREFIX}/monitors", produces = [MediaType.APPLICATION_JSON])
 @Validated
@@ -51,8 +60,9 @@ class MonitorController(
     private val pushMonitorActions: PushMonitorActions,
     private val icmpMonitorActions: IcmpMonitorActions,
     private val exportHandler: ExportHandler,
-    private val monitorImportParser: MonitorImportParser,
-    private val monitorImportService: MonitorImportService,
+    private val monitorImporter: MonitorImporter,
+    private val yamlMapper: YAMLMapper,
+    private val validator: Validator,
     private val appConfig: AppConfig,
 ) : MonitorOperations {
 
@@ -78,58 +88,91 @@ class MonitorController(
         return exportHandler.createYamlFileFrom(fileNamePrefix = EXPORT_FILE_NAME_PREFIX, content = export)
     }
 
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful import or dry-run preview",
+            content = [Content(schema = Schema(implementation = MonitorImportResultDto::class))]
+        ),
+        ApiResponse(
+            responseCode = "400",
+            description = "Bad request",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        ),
+        ApiResponse(
+            responseCode = "405",
+            description = "Monitor type is managed via external YAML config (read-only)",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @ExecuteOn(TaskExecutors.BLOCKING)
+    @Suppress("TooGenericExceptionCaught")
     override fun importYamlMonitors(
         @Part file: CompletedFileUpload,
         @QueryValue(defaultValue = "false") dryRun: Boolean,
     ): MonitorImportResultDto {
-        val content = validateUploadedFile(file)
-        ensureMonitorsAreWritable()
-        val importDto = parseImportYaml(content)
-        ensureImportContainsMonitors(importDto)
+        val importDto = try {
+            yamlMapper.readValue(file.bytes, MonitorImportDto::class.java)
+        } catch (e: Exception) {
+            throw ValidationException("Failed to parse the uploaded YAML file: ${e.message}", e)
+        }
+        val httpMonitors: List<HttpMonitorCreator> =
+            importDto.httpMonitors.orEmpty().map { HttpMonitorImportAdapter(it) }
+        val pushMonitors: List<PushMonitorCreator> =
+            importDto.pushMonitors.orEmpty().map { PushMonitorImportAdapter(it) }
+        val icmpMonitors: List<IcmpMonitorCreator> =
+            importDto.icmpMonitors.orEmpty().map { IcmpMonitorImportAdapter(it) }
 
-        return monitorImportService.importMonitors(importDto, dryRun)
+        ensureTypesAreWritable(httpMonitors.isNotEmpty(), pushMonitors.isNotEmpty(), icmpMonitors.isNotEmpty())
+        validateMonitors(httpMonitors, pushMonitors, icmpMonitors)
+
+        val perTypeResults = buildList {
+            if (httpMonitors.isNotEmpty()) {
+                add(monitorImporter.importHttpMonitorConfigs(httpMonitors, dryRun))
+            }
+            if (pushMonitors.isNotEmpty()) {
+                add(monitorImporter.importPushMonitorConfigs(pushMonitors, dryRun))
+            }
+            if (icmpMonitors.isNotEmpty()) {
+                add(monitorImporter.importIcmpMonitorConfigs(icmpMonitors, dryRun))
+            }
+        }
+
+        return MonitorImportResultDto(
+            receivedMonitorCnt = perTypeResults.sumOf { it.receivedMonitorCnt },
+            importedMonitorCnt = perTypeResults.sumOf { it.importedMonitorCnt },
+            deletedMonitorCount = perTypeResults.sumOf { it.deletedMonitorCount },
+            dryRun = dryRun,
+            perTypeResults = perTypeResults,
+        )
     }
 
-    private fun validateUploadedFile(file: CompletedFileUpload): ByteArray {
-        val content = file.bytes
-        if (content.isEmpty()) {
-            throw ValidationException("The uploaded file is empty")
-        }
-        if (content.size > MAX_UPLOAD_SIZE_BYTES) {
-            throw ValidationException("The uploaded file exceeds the maximum allowed size of 10 MB")
-        }
-        return content
+    private fun validateMonitors(
+        httpMonitors: List<HttpMonitorCreator>,
+        pushMonitors: List<PushMonitorCreator>,
+        icmpMonitors: List<IcmpMonitorCreator>,
+    ) {
+        httpMonitors.forEach { validator.validate(it).throwIfNotEmpty() }
+        pushMonitors.forEach { validator.validate(it).throwIfNotEmpty() }
+        icmpMonitors.forEach { validator.validate(it).throwIfNotEmpty() }
     }
 
-    private fun ensureMonitorsAreWritable() {
-        if (appConfig.isHttpMonitorExternalWriteDisabled() ||
-            appConfig.isPushMonitorExternalWriteDisabled() ||
-            appConfig.isIcmpMonitorExternalWriteDisabled()
-        ) {
+    /**
+     * A given monitor type can only be imported when it is not externally managed via YAML config.
+     */
+    private fun ensureTypesAreWritable(http: Boolean, push: Boolean, icmp: Boolean) {
+        val typesToCheck = listOf(
+            http to appConfig.isHttpMonitorExternalWriteDisabled(),
+            push to appConfig.isPushMonitorExternalWriteDisabled(),
+            icmp to appConfig.isIcmpMonitorExternalWriteDisabled(),
+        )
+        if (typesToCheck.any { (present, blocked) -> present && blocked }) {
             throw ReadOnlyMonitorException()
-        }
-    }
-
-    private fun parseImportYaml(content: ByteArray): MonitorImportDto =
-        try {
-            monitorImportParser.parse(content)
-        } catch (e: MonitorImportParseException) {
-            throw ValidationException(e.message, e.cause)
-        }
-
-    private fun ensureImportContainsMonitors(importDto: MonitorImportDto) {
-        if (importDto.httpMonitors.isNullOrEmpty() &&
-            importDto.pushMonitors.isNullOrEmpty() &&
-            importDto.icmpMonitors.isNullOrEmpty()
-        ) {
-            throw ValidationException("The uploaded YAML file does not contain any monitors")
         }
     }
 
     companion object {
         private const val EXPORT_FILE_NAME_PREFIX = "kuvasz-monitors-export-"
-        private const val MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
     }
 }

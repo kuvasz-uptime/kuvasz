@@ -3230,55 +3230,6 @@ components:
           description: The 99th percentile latency in milliseconds for the monitor
           format: int32
           nullable: true
-    MonitorImportResultDto:
-      required:
-      - deletedMonitorCount
-      - dryRun
-      - importedMonitorCnt
-      - perTypeResults
-      - receivedMonitorCnt
-      type: object
-      properties:
-        receivedMonitorCnt:
-          type: integer
-          format: int32
-        importedMonitorCnt:
-          type: integer
-          format: int32
-        deletedMonitorCount:
-          type: integer
-          format: int32
-        dryRun:
-          type: boolean
-        perTypeResults:
-          type: array
-          items:
-            $ref: "#/components/schemas/MonitorTypeImportResult"
-    MonitorType:
-      type: string
-      enum:
-      - HTTP_SSL
-      - PUSH
-      - ICMP
-    MonitorTypeImportResult:
-      required:
-      - deletedMonitorCount
-      - importedMonitorCnt
-      - monitorType
-      - receivedMonitorCnt
-      type: object
-      properties:
-        monitorType:
-          $ref: "#/components/schemas/MonitorType"
-        receivedMonitorCnt:
-          type: integer
-          format: int32
-        importedMonitorCnt:
-          type: integer
-          format: int32
-        deletedMonitorCount:
-          type: integer
-          format: int32
     MaintenanceWindowCreateDto:
       required:
       - name
@@ -3498,6 +3449,55 @@ components:
             type: string
             description: "A unique identifier for an integration, formatted as 'type:name'."
             example: email:my-email-integration
+    MonitorImportResultDto:
+      required:
+      - deletedMonitorCount
+      - dryRun
+      - importedMonitorCnt
+      - perTypeResults
+      - receivedMonitorCnt
+      type: object
+      properties:
+        receivedMonitorCnt:
+          type: integer
+          format: int32
+        importedMonitorCnt:
+          type: integer
+          format: int32
+        deletedMonitorCount:
+          type: integer
+          format: int32
+        dryRun:
+          type: boolean
+        perTypeResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonitorTypeImportResult"
+    MonitorType:
+      type: string
+      enum:
+      - HTTP_SSL
+      - PUSH
+      - ICMP
+    MonitorTypeImportResult:
+      required:
+      - deletedMonitorCount
+      - importedMonitorCnt
+      - monitorType
+      - receivedMonitorCnt
+      type: object
+      properties:
+        monitorType:
+          $ref: "#/components/schemas/MonitorType"
+        receivedMonitorCnt:
+          type: integer
+          format: int32
+        importedMonitorCnt:
+          type: integer
+          format: int32
+        deletedMonitorCount:
+          type: integer
+          format: int32
     NotificationTestResult:
       required:
       - message

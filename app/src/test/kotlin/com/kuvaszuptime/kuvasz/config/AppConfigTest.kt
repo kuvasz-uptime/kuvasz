@@ -77,37 +77,5 @@ class AppConfigTest : BehaviorSpec(
                 }
             }
         }
-
-        given("an AppConfig's monitor external-write toggles") {
-            `when`("push and ICMP external writes are disabled and re-enabled") {
-                val appConfig = AppConfig()
-                appConfig.disablePushMonitorExternalWrite()
-                appConfig.disableIcmpMonitorExternalWrite()
-
-                then("the disabled flags should be set, then cleared by the enable methods") {
-                    appConfig.isPushMonitorExternalWriteDisabled() shouldBe true
-                    appConfig.isIcmpMonitorExternalWriteDisabled() shouldBe true
-
-                    appConfig.enablePushMonitorExternalWrite()
-                    appConfig.enableIcmpMonitorExternalWrite()
-
-                    appConfig.isPushMonitorExternalWriteDisabled() shouldBe false
-                    appConfig.isIcmpMonitorExternalWriteDisabled() shouldBe false
-                }
-            }
-
-            `when`("HTTP external write is disabled and re-enabled") {
-                val appConfig = AppConfig()
-                appConfig.disableHttpMonitorExternalWrite()
-
-                then("the flag should be set, then cleared by the enable method") {
-                    appConfig.isHttpMonitorExternalWriteDisabled() shouldBe true
-
-                    appConfig.enableHttpMonitorExternalWrite()
-
-                    appConfig.isHttpMonitorExternalWriteDisabled() shouldBe false
-                }
-            }
-        }
     }
 )

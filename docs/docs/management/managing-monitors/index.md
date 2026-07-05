@@ -35,7 +35,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
         - Monitors that exist in the database but are **not in the backup** will be **deleted**.
         - Monitors in the backup that do not exist will be **created**.
         - The import **does not** switch the monitors to read-only mode; you can keep managing them through the UI and API afterwards.
-        - If any monitor type is currently managed via YAML (read-only mode), the import **will be rejected** with a `405 Method Not Allowed` response until you remove that type from your YAML configuration.
+        - If a monitor type that's present in the backup is currently managed via YAML (read-only mode), the import **will be rejected** with a `405 Method Not Allowed` response until you remove that type from your YAML configuration. Monitor types that are not externally managed are still imported as usual.
 
         Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of monitors that would be received, imported/updated, and deleted.
 

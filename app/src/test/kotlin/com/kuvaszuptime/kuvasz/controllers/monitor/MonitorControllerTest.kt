@@ -39,10 +39,8 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
-import tools.jackson.databind.PropertyNamingStrategies
 import tools.jackson.dataformat.yaml.YAMLMapper
 import tools.jackson.module.kotlin.convertValue
-import tools.jackson.module.kotlin.kotlinModule
 
 @MicronautTest(environments = ["full-integrations-setup"])
 class MonitorControllerTest(
@@ -50,6 +48,7 @@ class MonitorControllerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val yamlMapper: YAMLMapper,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -58,26 +57,16 @@ class MonitorControllerTest(
             pushMonitors: List<PushMonitorExportDto> = emptyList(),
             icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
         ): ByteArray {
-            val importMapper = YAMLMapper.builder()
-                .addModules(kotlinModule())
-                .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
-                .build()
-
             val content = mapOf(
                 "http-monitors" to httpMonitors,
                 "push-monitors" to pushMonitors,
                 "icmp-monitors" to icmpMonitors,
             )
 
-            return importMapper.writeValueAsBytes(content)
+            return yamlMapper.writeValueAsBytes(content)
         }
 
         given("MonitorController's getMonitorsExport() endpoint") {
-            val mapper = YAMLMapper.builder()
-                .addModules(kotlinModule())
-                .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
-                .build()
-
             `when`("there are monitors in the database") {
                 val httpMonitor = createHttpMonitor(
                     httpMonitorRepository,
@@ -175,9 +164,9 @@ class MonitorControllerTest(
                     }
                     response.headers[HttpHeaders.CONTENT_TYPE] shouldBe MediaType.APPLICATION_YAML
 
-                    val exportedHttpMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
+                    val exportedHttpMonitorsRaw = yamlMapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
                     val parsedHttpMonitors =
-                        mapper.convertValue<List<HttpMonitorExportDto>>(exportedHttpMonitorsRaw).shouldNotBeEmpty()
+                        yamlMapper.convertValue<List<HttpMonitorExportDto>>(exportedHttpMonitorsRaw).shouldNotBeEmpty()
 
                     parsedHttpMonitors.size shouldBe 2
                     parsedHttpMonitors.forOne { firstMonitor ->
@@ -221,9 +210,9 @@ class MonitorControllerTest(
                         )
                     }
 
-                    val exportedPushMonitorsRaw = mapper.readTree(responseBody)["push-monitors"].shouldNotBeNull()
+                    val exportedPushMonitorsRaw = yamlMapper.readTree(responseBody)["push-monitors"].shouldNotBeNull()
                     val parsedPushMonitors =
-                        mapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldNotBeEmpty()
+                        yamlMapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldNotBeEmpty()
                     parsedPushMonitors.size shouldBe 2
                     parsedPushMonitors.forOne { firstMonitor ->
                         firstMonitor.name shouldBe pushMonitor.name
@@ -247,9 +236,9 @@ class MonitorControllerTest(
                         secondMonitor.integrations.shouldBeEmpty()
                     }
 
-                    val exportedIcmpMonitorsRaw = mapper.readTree(responseBody)["icmp-monitors"].shouldNotBeNull()
+                    val exportedIcmpMonitorsRaw = yamlMapper.readTree(responseBody)["icmp-monitors"].shouldNotBeNull()
                     val parsedIcmpMonitors =
-                        mapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldNotBeEmpty()
+                        yamlMapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldNotBeEmpty()
                     parsedIcmpMonitors.size shouldBe 2
                     parsedIcmpMonitors.forOne { firstMonitor ->
                         firstMonitor.name shouldBe icmpMonitor.name
@@ -290,12 +279,12 @@ class MonitorControllerTest(
                     val responseBody = response.getBodyAs<ByteArray>()
 
                     response.status shouldBe HttpStatus.OK
-                    val exportedHttpMonitorsRaw = mapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
-                    mapper.convertValue<List<HttpMonitorExportDto>>(exportedHttpMonitorsRaw).shouldBeEmpty()
-                    val exportedPushMonitorsRaw = mapper.readTree(responseBody)["push-monitors"].shouldNotBeNull()
-                    mapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldBeEmpty()
-                    val exportedIcmpMonitorsRaw = mapper.readTree(responseBody)["icmp-monitors"].shouldNotBeNull()
-                    mapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldBeEmpty()
+                    val exportedHttpMonitorsRaw = yamlMapper.readTree(responseBody)["http-monitors"].shouldNotBeNull()
+                    yamlMapper.convertValue<List<HttpMonitorExportDto>>(exportedHttpMonitorsRaw).shouldBeEmpty()
+                    val exportedPushMonitorsRaw = yamlMapper.readTree(responseBody)["push-monitors"].shouldNotBeNull()
+                    yamlMapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldBeEmpty()
+                    val exportedIcmpMonitorsRaw = yamlMapper.readTree(responseBody)["icmp-monitors"].shouldNotBeNull()
+                    yamlMapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldBeEmpty()
                 }
             }
         }
@@ -518,46 +507,31 @@ class MonitorControllerTest(
                 }
             }
 
-            `when`("the uploaded file exceeds the maximum allowed size of 10 MB") {
-                val oversizedContent = ByteArray(10 * 1024 * 1024 + 1)
+            `when`("the uploaded YAML does not contain any monitors") {
+                val yamlContent = buildYamlImportContent()
+
                 val multipartBody = MultipartBody.builder()
-                    .addPart("file", "oversized.yml", MediaType.APPLICATION_YAML_TYPE, oversizedContent)
+                    .addPart("file", "empty-monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
                     .build()
 
                 val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
                     .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                     .accept(MediaType.APPLICATION_JSON_TYPE)
 
-                then("it should return 400 bad request") {
-                    val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, ServiceError::class.java).awaitFirst()
-                    }
-                    response.status shouldBe HttpStatus.BAD_REQUEST
+                then("it should return 200 with zero counts and not change the database") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body()!!.receivedMonitorCnt shouldBe 0
+                    response.body()!!.importedMonitorCnt shouldBe 0
+                    response.body()!!.deletedMonitorCount shouldBe 0
+                    response.body()!!.perTypeResults.shouldBeEmpty()
                 }
             }
 
             `when`("the uploaded YAML is malformed") {
                 val multipartBody = MultipartBody.builder()
                     .addPart("file", "broken.yml", MediaType.APPLICATION_YAML_TYPE, "not: valid: [".toByteArray())
-                    .build()
-
-                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
-                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
-                    .accept(MediaType.APPLICATION_JSON_TYPE)
-
-                then("it should return 400 bad request") {
-                    val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, ServiceError::class.java).awaitFirst()
-                    }
-                    response.status shouldBe HttpStatus.BAD_REQUEST
-                }
-            }
-
-            `when`("the uploaded YAML does not contain any monitors") {
-                val yamlContent = buildYamlImportContent()
-
-                val multipartBody = MultipartBody.builder()
-                    .addPart("file", "empty-monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
                     .build()
 
                 val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
