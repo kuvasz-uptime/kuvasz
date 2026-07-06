@@ -118,19 +118,18 @@ class MonitorController(
         val icmpMonitors: List<IcmpMonitorCreator> =
             importDto.icmpMonitors.orEmpty().map { IcmpMonitorImportAdapter(it) }
 
-        validateMonitors(httpMonitors, pushMonitors, icmpMonitors)
+        val writableHttpMonitors = httpMonitors.takeUnless { appConfig.isHttpMonitorExternalWriteDisabled() }.orEmpty()
+        val writablePushMonitors = pushMonitors.takeUnless { appConfig.isPushMonitorExternalWriteDisabled() }.orEmpty()
+        val writableIcmpMonitors = icmpMonitors.takeUnless { appConfig.isIcmpMonitorExternalWriteDisabled() }.orEmpty()
 
-        val perTypeResults = buildList {
-            if (httpMonitors.isNotEmpty() && !appConfig.isHttpMonitorExternalWriteDisabled()) {
-                add(monitorImporter.importHttpMonitorConfigs(httpMonitors, dryRun))
-            }
-            if (pushMonitors.isNotEmpty() && !appConfig.isPushMonitorExternalWriteDisabled()) {
-                add(monitorImporter.importPushMonitorConfigs(pushMonitors, dryRun))
-            }
-            if (icmpMonitors.isNotEmpty() && !appConfig.isIcmpMonitorExternalWriteDisabled()) {
-                add(monitorImporter.importIcmpMonitorConfigs(icmpMonitors, dryRun))
-            }
-        }
+        validateMonitors(writableHttpMonitors, writablePushMonitors, writableIcmpMonitors)
+
+        val perTypeResults = monitorImporter.importAllMonitorConfigs(
+            writableHttpMonitors,
+            writablePushMonitors,
+            writableIcmpMonitors,
+            dryRun,
+        )
 
         return MonitorImportResultDto(
             receivedMonitorCnt = perTypeResults.sumOf { it.receivedMonitorCnt },

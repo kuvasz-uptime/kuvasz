@@ -120,6 +120,8 @@ micronaut:
       maximum-size: 100
   server:
     max-request-size: 10485760 # 10 MB
+    multipart:
+      max-file-size: 10485760 # 10 MB
 endpoints:
   all.path: /api/v2/
   health:

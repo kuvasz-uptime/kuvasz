@@ -68,6 +68,7 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                             classes(FORM_CONTROL)
                             accept = ".yaml,.yml"
                             xOn("change", "handleFileChange(\$event)")
+                            xBindDisabled("importCompleted")
                         }
                         templateTag {
                             xIf("errors.file")
@@ -83,7 +84,8 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                         toggleSwitch(
                             propName = "dryRun",
                             label = Messages.monitorImportDryRunLabel(),
-                            description = Messages.monitorImportDryRunDescription()
+                            description = Messages.monitorImportDryRunDescription(),
+                            disabledIf = "importCompleted"
                         )
                     }
 
@@ -146,18 +148,29 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
 
                 div {
                     classes(MODAL_FOOTER)
-                    a(href = "#") {
-                        classes(BTN, BTN_LINK, LINK_SECONDARY)
-                        modalCloser()
-                        +Messages.cancel()
+                    templateTag {
+                        xIf("!importCompleted")
+                        a(href = "#") {
+                            classes(BTN, BTN_LINK, LINK_SECONDARY)
+                            modalCloser()
+                            +Messages.cancel()
+                        }
+                        button {
+                            classes(BTN, BTN_PRIMARY, MS_AUTO)
+                            xBindDisabled("!file || isRequestLoading")
+                            xOnClick("submitForm()")
+                            icon(Icon.UPLOAD)
+                            span {
+                                xText("submitButtonLabel")
+                            }
+                        }
                     }
-                    button {
-                        classes(BTN, BTN_PRIMARY, MS_AUTO)
-                        xBindDisabled("!file || isRequestLoading")
-                        xOnClick("submitForm()")
-                        icon(Icon.UPLOAD)
-                        span {
-                            xText("submitButtonLabel")
+                    templateTag {
+                        xIf("importCompleted")
+                        a(href = "#") {
+                            classes(BTN, BTN_PRIMARY, MS_AUTO)
+                            modalCloser()
+                            +Messages.close()
                         }
                     }
                 }

@@ -1754,6 +1754,7 @@ const monitorImportForm = (labels) => {
         isRequestLoading: false,
         error: null,
         result: null,
+        importCompleted: false,
         errors: {},
         labels: labels || {},
 
@@ -1763,6 +1764,7 @@ const monitorImportForm = (labels) => {
             this.isRequestLoading = false;
             this.error = null;
             this.result = null;
+            this.importCompleted = false;
             this.errors = {};
             const fileInput = document.getElementById('monitor-import-file-input');
             if (fileInput) {
@@ -1827,7 +1829,7 @@ const monitorImportForm = (labels) => {
                 if (response.ok) {
                     this.result = data;
                     if (!this.dryRun) {
-                        setTimeout(() => window.location.reload(), 1500);
+                        this.importCompleted = true;
                     }
                 } else {
                     this.error = data.message || this.labels.importFailed;

@@ -1,8 +1,5 @@
 package com.kuvaszuptime.kuvasz.services.monitor
 
-import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
-import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
-import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorTypeImportResult
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
@@ -32,11 +29,49 @@ class MonitorImporter(
         private val logger = loggerFor<MonitorImporter>()
     }
 
+    fun importAllMonitorConfigs(
+        httpMonitorConfigs: List<HttpMonitorCreator>,
+        pushMonitorConfigs: List<PushMonitorCreator>,
+        icmpMonitorConfigs: List<IcmpMonitorCreator>,
+        dryRun: Boolean = false,
+    ): List<MonitorTypeImportResult> = dslContext.transactionResult { config ->
+        val txCtx = config.dsl()
+        listOfNotNull(
+            importHttpMonitorConfigs(httpMonitorConfigs, dryRun, txCtx)
+                .takeIf { httpMonitorConfigs.isNotEmpty() },
+            importPushMonitorConfigs(pushMonitorConfigs, dryRun, txCtx)
+                .takeIf { pushMonitorConfigs.isNotEmpty() },
+            importIcmpMonitorConfigs(icmpMonitorConfigs, dryRun, txCtx)
+                .takeIf { icmpMonitorConfigs.isNotEmpty() },
+        )
+    }
+
     fun importHttpMonitorConfigs(
         monitorConfigs: List<HttpMonitorCreator>,
         dryRun: Boolean = false,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
-        val txCtx = config.dsl()
+        importHttpMonitorConfigs(monitorConfigs, dryRun, config.dsl())
+    }
+
+    fun importPushMonitorConfigs(
+        monitorConfigs: List<PushMonitorCreator>,
+        dryRun: Boolean = false,
+    ): MonitorTypeImportResult = dslContext.transactionResult { config ->
+        importPushMonitorConfigs(monitorConfigs, dryRun, config.dsl())
+    }
+
+    fun importIcmpMonitorConfigs(
+        monitorConfigs: List<IcmpMonitorCreator>,
+        dryRun: Boolean = false,
+    ): MonitorTypeImportResult = dslContext.transactionResult { config ->
+        importIcmpMonitorConfigs(monitorConfigs, dryRun, config.dsl())
+    }
+
+    private fun importHttpMonitorConfigs(
+        monitorConfigs: List<HttpMonitorCreator>,
+        dryRun: Boolean,
+        txCtx: DSLContext,
+    ): MonitorTypeImportResult {
         val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
             val validatedIntegrations =
                 integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
@@ -51,7 +86,7 @@ class MonitorImporter(
 
         if (dryRun) txCtx.connection { it.rollback() }
 
-        MonitorTypeImportResult(
+        return MonitorTypeImportResult(
             monitorType = MonitorType.HTTP_SSL,
             receivedMonitorCnt = monitorConfigs.size,
             importedMonitorCnt = upsertedMonitorIds.size,
@@ -59,11 +94,11 @@ class MonitorImporter(
         )
     }
 
-    fun importPushMonitorConfigs(
+    private fun importPushMonitorConfigs(
         monitorConfigs: List<PushMonitorCreator>,
-        dryRun: Boolean = false,
-    ): MonitorTypeImportResult = dslContext.transactionResult { config ->
-        val txCtx = config.dsl()
+        dryRun: Boolean,
+        txCtx: DSLContext,
+    ): MonitorTypeImportResult {
         val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
             val validatedIntegrations =
                 integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
@@ -78,7 +113,7 @@ class MonitorImporter(
 
         if (dryRun) txCtx.connection { it.rollback() }
 
-        MonitorTypeImportResult(
+        return MonitorTypeImportResult(
             monitorType = MonitorType.PUSH,
             receivedMonitorCnt = monitorConfigs.size,
             importedMonitorCnt = upsertedMonitorIds.size,
@@ -86,11 +121,11 @@ class MonitorImporter(
         )
     }
 
-    fun importIcmpMonitorConfigs(
+    private fun importIcmpMonitorConfigs(
         monitorConfigs: List<IcmpMonitorCreator>,
-        dryRun: Boolean = false,
-    ): MonitorTypeImportResult = dslContext.transactionResult { config ->
-        val txCtx = config.dsl()
+        dryRun: Boolean,
+        txCtx: DSLContext,
+    ): MonitorTypeImportResult {
         val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
             val validatedIntegrations =
                 integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
@@ -105,7 +140,7 @@ class MonitorImporter(
 
         if (dryRun) txCtx.connection { it.rollback() }
 
-        MonitorTypeImportResult(
+        return MonitorTypeImportResult(
             monitorType = MonitorType.ICMP,
             receivedMonitorCnt = monitorConfigs.size,
             importedMonitorCnt = upsertedMonitorIds.size,

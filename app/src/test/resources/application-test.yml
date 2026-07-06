@@ -11,12 +11,6 @@ micronaut:
   mcp:
     server:
       enabled: true
-  # Allow oversized uploads so MonitorController's own 10 MB limit is the binding one in tests.
-  # The framework defaults (10 MB request / 1 MB per file) would otherwise reject first.
-  server:
-    max-request-size: 20971520
-    multipart:
-      max-file-size: 20971520
 ---
 datasources:
   default:

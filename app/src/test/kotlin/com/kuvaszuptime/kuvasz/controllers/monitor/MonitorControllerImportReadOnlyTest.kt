@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.Spec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
@@ -59,10 +60,12 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 0
-                    response.body()!!.importedMonitorCnt shouldBe 0
-                    response.body()!!.deletedMonitorCount shouldBe 0
-                    response.body()!!.perTypeResults.shouldBeEmpty()
+                    response.body().shouldNotBeNull().apply {
+                        receivedMonitorCnt shouldBe 0
+                        importedMonitorCnt shouldBe 0
+                        deletedMonitorCount shouldBe 0
+                        perTypeResults.shouldBeEmpty()
+                    }
                 }
             }
 
@@ -87,11 +90,13 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 1
-                    response.body()!!.importedMonitorCnt shouldBe 1
-                    response.body()!!.perTypeResults.map { it.monitorType } shouldBe listOf(
-                        com.kuvaszuptime.kuvasz.models.MonitorType.PUSH,
-                    )
+                    response.body().shouldNotBeNull().apply {
+                        receivedMonitorCnt shouldBe 1
+                        importedMonitorCnt shouldBe 1
+                        perTypeResults.map { it.monitorType } shouldBe listOf(
+                            com.kuvaszuptime.kuvasz.models.MonitorType.PUSH,
+                        )
+                    }
                 }
             }
 
@@ -113,7 +118,7 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 0
+                    response.body().shouldNotBeNull().receivedMonitorCnt shouldBe 0
                 }
             }
 
@@ -135,7 +140,7 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 0
+                    response.body().shouldNotBeNull().receivedMonitorCnt shouldBe 0
                 }
             }
 
