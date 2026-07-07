@@ -60,12 +60,7 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body().shouldNotBeNull().apply {
-                        receivedMonitorCnt shouldBe 0
-                        importedMonitorCnt shouldBe 0
-                        deletedMonitorCount shouldBe 0
-                        perTypeResults.shouldBeEmpty()
-                    }
+                    response.body().shouldNotBeNull().perTypeResults.shouldBeEmpty()
                 }
             }
 
@@ -90,13 +85,12 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body().shouldNotBeNull().apply {
-                        receivedMonitorCnt shouldBe 1
-                        importedMonitorCnt shouldBe 1
-                        perTypeResults.map { it.monitorType } shouldBe listOf(
-                            com.kuvaszuptime.kuvasz.models.MonitorType.PUSH,
-                        )
-                    }
+                    val perTypeResults = response.body().shouldNotBeNull().perTypeResults
+                    perTypeResults.map { it.monitorType } shouldBe listOf(
+                        com.kuvaszuptime.kuvasz.models.MonitorType.PUSH,
+                    )
+                    perTypeResults.single().receivedMonitorCnt shouldBe 1
+                    perTypeResults.single().importedMonitorCnt shouldBe 1
                 }
             }
 
@@ -118,7 +112,7 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body().shouldNotBeNull().receivedMonitorCnt shouldBe 0
+                    response.body().shouldNotBeNull().perTypeResults.shouldBeEmpty()
                 }
             }
 
@@ -140,7 +134,7 @@ class MonitorControllerImportReadOnlyTest(
                     ).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body().shouldNotBeNull().receivedMonitorCnt shouldBe 0
+                    response.body().shouldNotBeNull().perTypeResults.shouldBeEmpty()
                 }
             }
 

@@ -1,12 +1,9 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.ui.CSSClass
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
-import com.kuvaszuptime.kuvasz.ui.components.formLabel
-import com.kuvaszuptime.kuvasz.ui.components.toggleSwitch
-import com.kuvaszuptime.kuvasz.ui.icons.Icon
-import com.kuvaszuptime.kuvasz.ui.icons.icon
+import com.kuvaszuptime.kuvasz.ui.components.*
+import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
@@ -92,38 +89,27 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                     div {
                         xShow("result !== null")
                         classes(ALERT, MT_3)
+                        testId("monitor-import-result")
                         xBindClass(
                             "result?.dryRun === true " +
-                                "? '${CSSClass.ALERT_INFO.className}' " +
-                                ": '${CSSClass.ALERT_SUCCESS.className}'"
+                                "? '${ALERT_INFO.className}' " +
+                                ": '${ALERT_SUCCESS.className}'"
                         )
                         role = "alert"
                         div {
                             classes(ALERT_DESCRIPTION)
                             p {
-                                strong { +Messages.monitorImportResultReceived() }
-                                +" "
-                                span { xText("result.receivedMonitorCnt") }
-                            }
-                            p {
-                                strong { +Messages.monitorImportResultImported() }
-                                +" "
-                                span { xText("result.importedMonitorCnt") }
-                            }
-                            p {
-                                strong { +Messages.monitorImportResultDeleted() }
-                                +" "
-                                span { xText("result.deletedMonitorCount") }
+                                xShow("result && result.perTypeResults.length === 0")
+                                +Messages.monitorImportResultEmpty()
                             }
                             div {
-                                classes(MT_2)
                                 xShow("result && result.perTypeResults.length > 0")
                                 p {
                                     strong { +Messages.monitorImportResultPerType() }
                                 }
                                 ul {
                                     templateTag {
-                                        xFor("typeResult in result.perTypeResults")
+                                        xFor("typeResult in (result?.perTypeResults || [])")
                                         liTag {
                                             xText("formatTypeResult(typeResult)")
                                         }
@@ -137,6 +123,7 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                         xIf("error")
                         div {
                             classes(ALERT, ALERT_DANGER, MT_3)
+                            testId("monitor-import-error")
                             role = "alert"
                             div {
                                 classes(ALERT_DESCRIPTION)
@@ -148,30 +135,28 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
 
                 div {
                     classes(MODAL_FOOTER)
-                    templateTag {
-                        xIf("!importCompleted")
-                        a(href = "#") {
-                            classes(BTN, BTN_LINK, LINK_SECONDARY)
-                            modalCloser()
-                            +Messages.cancel()
-                        }
-                        button {
-                            classes(BTN, BTN_PRIMARY, MS_AUTO)
-                            xBindDisabled("!file || isRequestLoading")
-                            xOnClick("submitForm()")
-                            icon(Icon.UPLOAD)
-                            span {
-                                xText("submitButtonLabel")
-                            }
+                    a(href = "#") {
+                        xShow("!importCompleted")
+                        classes(BTN, BTN_LINK, LINK_SECONDARY)
+                        modalCloser()
+                        +Messages.cancel()
+                    }
+                    button {
+                        xShow("!importCompleted")
+                        classes(BTN, BTN_PRIMARY, MS_AUTO)
+                        testId("monitor-import-submit-button")
+                        xBindDisabled("!file || isRequestLoading")
+                        xOnClick("submitForm()")
+                        icon(Icon.UPLOAD)
+                        span {
+                            xText("submitButtonLabel")
                         }
                     }
-                    templateTag {
-                        xIf("importCompleted")
-                        a(href = "#") {
-                            classes(BTN, BTN_PRIMARY, MS_AUTO)
-                            modalCloser()
-                            +Messages.close()
-                        }
+                    a(href = "#") {
+                        xShow("importCompleted")
+                        classes(BTN, BTN_PRIMARY, MS_AUTO)
+                        modalCloser()
+                        +Messages.close()
                     }
                 }
             }

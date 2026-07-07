@@ -3445,22 +3445,10 @@ components:
             example: email:my-email-integration
     MonitorImportResultDto:
       required:
-      - deletedMonitorCount
       - dryRun
-      - importedMonitorCnt
       - perTypeResults
-      - receivedMonitorCnt
       type: object
       properties:
-        receivedMonitorCnt:
-          type: integer
-          format: int32
-        importedMonitorCnt:
-          type: integer
-          format: int32
-        deletedMonitorCount:
-          type: integer
-          format: int32
         dryRun:
           type: boolean
         perTypeResults:

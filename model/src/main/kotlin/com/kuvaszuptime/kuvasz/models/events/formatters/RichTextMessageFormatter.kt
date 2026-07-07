@@ -103,14 +103,16 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
 
     override fun toFormattedMessage(event: MaintenanceWindowEvent): String {
         val window = event.window
-        val summary = when (event) {
-            is MaintenanceWindowStartEvent -> Messages.maintenanceWindowStarted(window.name)
-            is MaintenanceWindowEndEvent -> Messages.maintenanceWindowEnded(window.name)
-        }
-        return listOfNotNull(
-            event.getEmoji() + " " + bold(summary),
-            window.description?.takeIf { it.isNotBlank() }?.let { italic(it) },
-        ).assemble()
+        return when (event) {
+            is MaintenanceWindowStartEvent -> listOfNotNull(
+                event.getEmoji() + " " + bold(Messages.maintenanceWindowStarted(window.name)),
+                window.description?.takeIf { it.isNotBlank() }?.let { italic(it) },
+            )
+
+            is MaintenanceWindowEndEvent -> listOf(
+                event.getEmoji() + " " + bold(Messages.maintenanceWindowEnded(window.name)),
+            )
+        }.assemble()
     }
 
     private fun List<String>.assemble(): String = joinToString("\n")

@@ -1798,9 +1798,9 @@ const monitorImportForm = (labels) => {
                     typeLabel = typeResult.monitorType;
             }
             return typeLabel + ': ' +
-                typeResult.receivedMonitorCnt + ' in backup / ' +
-                typeResult.importedMonitorCnt + ' imported / ' +
-                typeResult.deletedMonitorCount + ' deleted';
+                typeResult.receivedMonitorCnt + ' ' + this.labels.countReceivedLabel + ' / ' +
+                typeResult.importedMonitorCnt + ' ' + this.labels.countImportedLabel + ' / ' +
+                typeResult.deletedMonitorCount + ' ' + this.labels.countDeletedLabel;
         },
 
         async submitForm() {

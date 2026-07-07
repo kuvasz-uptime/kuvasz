@@ -103,14 +103,14 @@ object PlainTextMessageFormatter : TextMessageFormatter {
 
     override fun toFormattedMessage(event: MaintenanceWindowEvent): String {
         val window = event.window
-        val summary = when (event) {
-            is MaintenanceWindowStartEvent -> Messages.maintenanceWindowStarted(window.name)
-            is MaintenanceWindowEndEvent -> Messages.maintenanceWindowEnded(window.name)
-        }
-        return listOfNotNull(
-            summary,
-            window.description?.takeIf { it.isNotBlank() },
-        ).assemble()
+        return when (event) {
+            is MaintenanceWindowStartEvent -> listOfNotNull(
+                Messages.maintenanceWindowStarted(window.name),
+                window.description?.takeIf { it.isNotBlank() },
+            )
+
+            is MaintenanceWindowEndEvent -> listOf(Messages.maintenanceWindowEnded(window.name))
+        }.assemble()
     }
 
     private fun List<String>.assemble(): String = joinToString("\n")

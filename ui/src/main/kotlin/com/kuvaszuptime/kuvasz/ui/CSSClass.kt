@@ -101,6 +101,7 @@ internal enum class CSSClass(val className: String) {
     CONTAINER_XL("container-xl"),
     DIVIDE_Y("divide-y"),
     DROPDOWN("dropdown"),
+    DROPDOWN_DIVIDER("dropdown-divider"),
     DROPDOWN_ITEM("dropdown-item"),
     DROPDOWN_MENU("dropdown-menu"),
     DROPDOWN_TOGGLE("dropdown-toggle"),
