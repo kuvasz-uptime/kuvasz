@@ -51,12 +51,10 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
-import tools.jackson.databind.PropertyNamingStrategies
 import tools.jackson.databind.node.JsonNodeFactory
 import tools.jackson.dataformat.yaml.YAMLMapper
 import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.kotlinModule
 import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest
@@ -69,16 +67,13 @@ class StatusPageControllerTest(
     private val statusPageRepository: StatusPageRepository,
     private val statusPageDataActions: StatusPageDataActions,
     private val defaultStatusPageConfig: DefaultStatusPageConfig,
+    private val yamlMapper: YAMLMapper,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
 
     init {
         given("StatusPageController's getStatusPagesExport() endpoint") {
-            val mapper = YAMLMapper.builder()
-                .addModules(kotlinModule())
-                .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
-                .build()
 
             `when`("there are status pages in the database") {
                 val monitor = createHttpMonitor(
@@ -134,9 +129,9 @@ class StatusPageControllerTest(
                     }
                     response.headers[HttpHeaders.CONTENT_TYPE] shouldBe MediaType.APPLICATION_YAML
 
-                    val exportedPagesRaw = mapper.readTree(responseBody)["status-pages"].shouldNotBeNull()
+                    val exportedPagesRaw = yamlMapper.readTree(responseBody)["status-pages"].shouldNotBeNull()
                     val parsedPages =
-                        mapper.convertValue<List<StatusPageExportDto>>(exportedPagesRaw).shouldNotBeEmpty()
+                        yamlMapper.convertValue<List<StatusPageExportDto>>(exportedPagesRaw).shouldNotBeEmpty()
 
                     parsedPages.size shouldBe 3
                     parsedPages.forOne { page1 ->
@@ -185,8 +180,8 @@ class StatusPageControllerTest(
                     val responseBody = response.getBodyAs<ByteArray>()
 
                     response.status shouldBe HttpStatus.OK
-                    val exportedPagesRaw = mapper.readTree(responseBody)["status-pages"].shouldNotBeNull()
-                    mapper.convertValue<List<StatusPageExportDto>>(exportedPagesRaw).shouldBeEmpty()
+                    val exportedPagesRaw = yamlMapper.readTree(responseBody)["status-pages"].shouldNotBeNull()
+                    yamlMapper.convertValue<List<StatusPageExportDto>>(exportedPagesRaw).shouldBeEmpty()
                 }
             }
         }

@@ -6,7 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.monitorImportModal
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -331,6 +331,9 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                 "typeHttpLabel" to Messages.monitorImportResultTypeHttp(),
                 "typePushLabel" to Messages.monitorImportResultTypePush(),
                 "typeIcmpLabel" to Messages.monitorImportResultTypeIcmp(),
+                "countReceivedLabel" to Messages.monitorImportResultCountReceived(),
+                "countImportedLabel" to Messages.monitorImportResultCountImported(),
+                "countDeletedLabel" to Messages.monitorImportResultCountDeleted(),
             )
         )
         monitorImportModal(MONITOR_IMPORT_MODAL_ID, labelsJson)
@@ -483,21 +486,25 @@ private fun HtmlBlockTag.settingsPageHeader() {
                                     a(href = "/api/v2/monitors/export/yaml") {
                                         classes(DROPDOWN_ITEM)
                                         attributes["download"] = "true"
+                                        testId("export-monitors-item")
                                         icon(Icon.DOWNLOAD)
                                         +Messages.downloadMonitorBackup()
                                     }
                                     a(href = "#") {
                                         classes(DROPDOWN_ITEM)
                                         modalOpener(MONITOR_IMPORT_MODAL_ID)
+                                        testId("import-monitors-item")
                                         icon(Icon.UPLOAD)
                                         +Messages.importMonitorBackup()
                                     }
+                                    div { classes(DROPDOWN_DIVIDER) }
                                     a(href = "/api/v2/status-pages/export/yaml") {
                                         classes(DROPDOWN_ITEM)
                                         attributes["download"] = "true"
                                         icon(Icon.DOWNLOAD)
                                         +Messages.downloadStatusPageBackup()
                                     }
+                                    div { classes(DROPDOWN_DIVIDER) }
                                     a(href = "/api/v2/maintenance-windows/export/yaml") {
                                         classes(DROPDOWN_ITEM)
                                         attributes["download"] = "true"

@@ -39,12 +39,10 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
-import tools.jackson.databind.PropertyNamingStrategies
 import tools.jackson.databind.node.JsonNodeFactory
 import tools.jackson.dataformat.yaml.YAMLMapper
 import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.kotlinModule
 import java.time.OffsetDateTime
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -54,6 +52,7 @@ class MaintenanceWindowControllerTest(
     @param:Client("/") private val rawClient: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
+    private val yamlMapper: YAMLMapper,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -471,10 +470,6 @@ class MaintenanceWindowControllerTest(
         }
 
         given("the getYamlMaintenanceWindowsExport endpoint") {
-            val yamlMapper = YAMLMapper.builder()
-                .addModules(kotlinModule())
-                .propertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
-                .build()
 
             `when`("there are windows in the database") {
                 val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "covered")

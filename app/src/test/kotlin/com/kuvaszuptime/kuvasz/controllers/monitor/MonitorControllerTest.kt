@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forOne
@@ -27,7 +28,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
@@ -49,6 +49,7 @@ class MonitorControllerTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val yamlMapper: YAMLMapper,
+    private val httpCheckScheduler: HttpCheckScheduler,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -337,18 +338,17 @@ class MonitorControllerTest(
                     val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 1
-                    response.body()!!.importedMonitorCnt shouldBe 1
-                    response.body()!!.deletedMonitorCount shouldBe 1
-                    response.body()!!.dryRun shouldBe false
-                    response.body()!!.perTypeResults shouldHaveSize 1
-                    response.body()!!.perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
-                    response.body()!!.perTypeResults.first().receivedMonitorCnt shouldBe 1
-                    response.body()!!.perTypeResults.first().importedMonitorCnt shouldBe 1
-                    response.body()!!.perTypeResults.first().deletedMonitorCount shouldBe 1
+                    response.body().shouldNotBeNull().dryRun shouldBe false
+                    response.body().shouldNotBeNull().perTypeResults shouldHaveSize 1
+                    response.body().shouldNotBeNull().perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
+                    response.body().shouldNotBeNull().perTypeResults.first().receivedMonitorCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().importedMonitorCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().deletedMonitorCount shouldBe 1
 
                     httpMonitorRepository.findById(existingMonitor.id, null) shouldBe null
-                    httpMonitorRepository.findByName("imported-http") shouldNotBe null
+                    val importedMonitor = httpMonitorRepository.findByName("imported-http").shouldNotBeNull()
+                    // The imported monitor must be scheduled for checks immediately, not only after the next restart
+                    httpCheckScheduler.getScheduledUptimeChecks()[importedMonitor.id].shouldNotBeNull()
                 }
             }
 
@@ -398,15 +398,12 @@ class MonitorControllerTest(
                     val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 1
-                    response.body()!!.importedMonitorCnt shouldBe 1
-                    response.body()!!.deletedMonitorCount shouldBe 1
-                    response.body()!!.dryRun shouldBe true
-                    response.body()!!.perTypeResults shouldHaveSize 1
-                    response.body()!!.perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
-                    response.body()!!.perTypeResults.first().receivedMonitorCnt shouldBe 1
-                    response.body()!!.perTypeResults.first().importedMonitorCnt shouldBe 1
-                    response.body()!!.perTypeResults.first().deletedMonitorCount shouldBe 1
+                    response.body().shouldNotBeNull().dryRun shouldBe true
+                    response.body().shouldNotBeNull().perTypeResults shouldHaveSize 1
+                    response.body().shouldNotBeNull().perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
+                    response.body().shouldNotBeNull().perTypeResults.first().receivedMonitorCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().importedMonitorCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().deletedMonitorCount shouldBe 1
 
                     httpMonitorRepository.findById(existingMonitor.id, null)?.name shouldBe existingMonitor.name
                     httpMonitorRepository.findByName("dry-run-http") shouldBe null
@@ -479,10 +476,11 @@ class MonitorControllerTest(
                     val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 3
-                    response.body()!!.importedMonitorCnt shouldBe 3
-                    response.body()!!.perTypeResults shouldHaveSize 3
-                    response.body()!!.perTypeResults.map { it.monitorType }.toSet() shouldBe setOf(
+                    val perTypeResults = response.body().shouldNotBeNull().perTypeResults
+                    perTypeResults shouldHaveSize 3
+                    perTypeResults.sumOf { it.receivedMonitorCnt } shouldBe 3
+                    perTypeResults.sumOf { it.importedMonitorCnt } shouldBe 3
+                    perTypeResults.map { it.monitorType }.toSet() shouldBe setOf(
                         MonitorType.HTTP_SSL,
                         MonitorType.PUSH,
                         MonitorType.ICMP,
@@ -522,10 +520,24 @@ class MonitorControllerTest(
                     val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    response.body()!!.receivedMonitorCnt shouldBe 0
-                    response.body()!!.importedMonitorCnt shouldBe 0
-                    response.body()!!.deletedMonitorCount shouldBe 0
-                    response.body()!!.perTypeResults.shouldBeEmpty()
+                    response.body().shouldNotBeNull().perTypeResults.shouldBeEmpty()
+                }
+            }
+
+            `when`("the uploaded YAML is a null document") {
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "null.yml", MediaType.APPLICATION_YAML_TYPE, "null".toByteArray())
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 200 with an empty result and not change the database") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body().shouldNotBeNull().perTypeResults.shouldBeEmpty()
                 }
             }
 
@@ -588,6 +600,57 @@ class MonitorControllerTest(
                         client.exchange(request, ServiceError::class.java).awaitFirst()
                     }
                     response.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+
+            `when`("the uploaded YAML references a non-existing integration") {
+                val existingMonitor = createHttpMonitor(httpMonitorRepository, monitorName = "should-survive")
+
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "with-bad-integration",
+                            url = "https://example.com",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = true,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = setOf(IntegrationID(IntegrationType.SLACK, "does-not-exist")),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                        )
+                    )
+                )
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "bad-integration.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 400 and roll back the whole import, leaving existing monitors untouched") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+
+                    // The transaction must roll back: the pre-existing monitor is not deleted
+                    httpMonitorRepository.findById(existingMonitor.id, null).shouldNotBeNull()
+                    httpMonitorRepository.findByName("with-bad-integration") shouldBe null
                 }
             }
 

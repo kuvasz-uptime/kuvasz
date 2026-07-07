@@ -36,7 +36,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
         - The import **does not** switch the monitors to read-only mode; you can keep managing them through the UI and API afterwards.
         - Monitor types currently managed via YAML (read-only mode) are **silently skipped** during the import. The remaining writable types are still imported as usual.
 
-        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of monitors that would be received, imported/updated, and deleted.
+        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return, **for each monitor type in the backup**, the number of monitors that would be received, imported/updated, and deleted.
 
     **What happens if you add one or more monitor to your YAML file?**
 
