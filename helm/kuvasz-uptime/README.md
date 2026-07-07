@@ -66,7 +66,7 @@ The following table lists the most important parameters and their default values
 | Parameter                                      | Description                                                                                                              | Default                   |
 |------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|---------------------------|
 | `image.repository`                             | Image repository                                                                                                         | `kuvaszmonitoring/kuvasz` |
-| `image.tag`                                    | Image tag                                                                                                                | `latest`                  |
+| `image.tag`                                    | Image tag (defaults to the chart's `appVersion`)                                                                         | `""`                      |
 | `image.pullPolicy`                             | Image pull policy                                                                                                        | `IfNotPresent`            |
 | `service.type`                                 | Service type                                                                                                             | `ClusterIP`               |
 | `service.port`                                 | Service port                                                                                                             | `8080`                    |
