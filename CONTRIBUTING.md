@@ -52,3 +52,26 @@ Once you are satisfied with your changes:
 - Commit your changes in your local branch
 - Push your changes to your remote branch on GitHub
 - Send a [pull request](https://help.github.com/articles/creating-a-pull-request)
+
+## On the use of AI
+
+AI-assisted development is a reality, and we are not against it. You are welcome to use AI tools to help you write code, as long as **you** remain the author of the contribution in every sense that matters. That means you understand what the code does, you can explain the decisions behind it, and you can maintain and defend it during review.
+
+What we do care about is that there is a real, engaged human on the other side of every pull request. AI can help you write code, but it cannot own the contribution, participate in a discussion, or take responsibility for the result - that part is on you.
+
+To keep the review process healthy and respectful of everyone's time, please keep the following in mind:
+
+- **Write your own PR description.** The description should be written by you and genuinely explain what the change does and why. AI-generated descriptions tend to be verbose, generic, and add noise instead of signal.
+- **Understand what you submit.** Even if AI helped you produce the changes, you should fully understand them and be able to answer questions about them on your own during the review.
+- **Do your own reviewing.** The code review is a conversation between humans. Please participate in it personally - do not delegate writing review comments or replies to an AI agent.
+
+### When a PR might be rejected without a review
+
+To set clear expectations, a pull request may be closed or rejected **without a detailed review** if any of the following apply:
+
+- The PR description is clearly AI-generated, missing, or does not meaningfully explain the change.
+- The author is unable or unwilling to answer questions about their own changes during the review.
+- Review comments or replies are written by an AI agent instead of the author.
+- The changes appear to be an unreviewed AI dump: large, unfocused, or with no evidence that the author understands or has tested them.
+
+None of this is meant to discourage you from contributing - quite the opposite. We simply want every contribution to come from, and be backed by, a real person who cares about the project.
