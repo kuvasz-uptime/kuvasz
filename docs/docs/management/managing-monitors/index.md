@@ -23,6 +23,21 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     
         The same applies if you **used the UI or the API before** to manage your monitors, and you decide to switch to YAML: unless your YAML definition matches the existing monitors by their name, existing monitors **could be deleted or modified**.
 
+    **Restoring from a YAML backup**
+
+    You can export your monitors from the UI under **Settings → Backup & Restore → Export monitors (YAML)**, or via `GET /api/v2/monitors/export/yaml`. To restore that backup later, use **Settings → Backup & Restore → Import monitors (YAML)** or the `POST /api/v2/monitors/import/yaml` API endpoint.
+
+    !!!warning "Restoring a backup is destructive"
+
+        The import reconciles **per monitor type that is present in the backup with at least one entry**:
+
+        - For each monitor type that has at least one entry in the backup, monitors with the same name will be **updated** with the values from the backup, monitors that exist in the database but are **not in the backup** will be **deleted**, and monitors in the backup that do not exist will be **created**.
+        - Monitor types that are **missing from the backup entirely** (no key, or no entries) are **left untouched**. To delete every monitor of a given type, use the YAML bootstrap config with an explicit empty array (`http-monitors: []`) for that type instead.
+        - The import **does not** switch the monitors to read-only mode; you can keep managing them through the UI and API afterwards.
+        - Monitor types currently managed via YAML (read-only mode) are **silently skipped** during the import. The remaining writable types are still imported as usual.
+
+        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of monitors that would be received, imported/updated, and deleted.
+
     **What happens if you add one or more monitor to your YAML file?**
 
     - If there is a monitor in the database that is not in the YAML file, **it will be deleted**.

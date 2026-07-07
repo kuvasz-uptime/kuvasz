@@ -131,6 +131,7 @@ internal fun FlowContent.toggleSwitch(
     label: String,
     description: String? = null,
     isDisabled: Boolean = false,
+    disabledIf: String? = null,
 ) {
     label {
         classes(FORM_CHECK, FORM_SWITCH)
@@ -138,6 +139,7 @@ internal fun FlowContent.toggleSwitch(
             classes(FORM_CHECK_INPUT)
             xModel(propName)
             if (isDisabled) disabled = true
+            disabledIf?.let { xBindDisabled(it) }
         }
         span {
             classes(FORM_CHECK_LABEL)

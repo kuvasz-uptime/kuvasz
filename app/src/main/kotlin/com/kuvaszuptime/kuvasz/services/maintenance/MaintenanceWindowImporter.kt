@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.maintenance
 
 import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
-import com.kuvaszuptime.kuvasz.models.dto.import.MaintenanceWindowImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.maintenance.toMaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency

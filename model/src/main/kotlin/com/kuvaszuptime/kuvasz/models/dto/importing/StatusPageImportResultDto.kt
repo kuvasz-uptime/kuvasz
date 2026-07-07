@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.dto.import
+package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import io.micronaut.core.annotation.Introspected
 
