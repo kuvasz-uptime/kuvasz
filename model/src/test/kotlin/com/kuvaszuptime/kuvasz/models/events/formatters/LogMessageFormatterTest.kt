@@ -448,6 +448,15 @@ class LogMessageFormatterTest : BehaviorSpec({
                     "✅ Maintenance \"test_window\" has ended"
             }
         }
+
+        `when`("it gets an end event with a description") {
+            val event = MaintenanceWindowEndEvent(window.copy().apply { setDescription("DB upgrade") })
+
+            then("it should return only the summary, omitting the description") {
+                formatter.toFormattedMessage(event) shouldBe
+                    "✅ Maintenance \"test_window\" has ended"
+            }
+        }
     }
 })
 

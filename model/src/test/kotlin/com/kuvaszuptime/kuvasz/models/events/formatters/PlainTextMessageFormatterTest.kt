@@ -436,6 +436,15 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                         "Maintenance \"test_window\" has ended"
                 }
             }
+
+            `when`("it gets an end event with a description") {
+                val event = MaintenanceWindowEndEvent(window.copy().apply { setDescription("Scheduled DB upgrade") })
+
+                then("it should return only the plain summary, omitting the description") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "Maintenance \"test_window\" has ended"
+                }
+            }
         }
     }
 )
