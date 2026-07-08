@@ -325,22 +325,24 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
             }
         }
 
-        monitorImportModal(
-            MONITOR_IMPORT_MODAL_ID,
-            labelsJson = mapOf(
-                "previewButton" to Messages.monitorImportPreviewButton(),
-                "importButton" to Messages.monitorImportImportButton(),
-                "fileRequired" to Messages.monitorImportFileRequired(),
-                "importFailed" to Messages.monitorImportFailed(),
-                "perTypeLabel" to Messages.monitorImportResultPerType(),
-                "typeHttpLabel" to Messages.monitorImportResultTypeHttp(),
-                "typePushLabel" to Messages.monitorImportResultTypePush(),
-                "typeIcmpLabel" to Messages.monitorImportResultTypeIcmp(),
-                "countReceivedLabel" to Messages.monitorImportResultCountReceived(),
-                "countImportedLabel" to Messages.monitorImportResultCountImported(),
-                "countDeletedLabel" to Messages.monitorImportResultCountDeleted(),
-            ).asJsonString()
-        )
+        if (!globals.editabilityState.areAllMonitorsReadOnly()) {
+            monitorImportModal(
+                MONITOR_IMPORT_MODAL_ID,
+                labelsJson = mapOf(
+                    "previewButton" to Messages.monitorImportPreviewButton(),
+                    "importButton" to Messages.monitorImportImportButton(),
+                    "fileRequired" to Messages.monitorImportFileRequired(),
+                    "importFailed" to Messages.monitorImportFailed(),
+                    "perTypeLabel" to Messages.monitorImportResultPerType(),
+                    "typeHttpLabel" to Messages.monitorImportResultTypeHttp(),
+                    "typePushLabel" to Messages.monitorImportResultTypePush(),
+                    "typeIcmpLabel" to Messages.monitorImportResultTypeIcmp(),
+                    "countReceivedLabel" to Messages.monitorImportResultCountReceived(),
+                    "countImportedLabel" to Messages.monitorImportResultCountImported(),
+                    "countDeletedLabel" to Messages.monitorImportResultCountDeleted(),
+                ).asJsonString()
+            )
+        }
 
         if (!globals.editabilityState.areStatusPagesReadOnly()) {
             statusPageImportModal(
@@ -484,11 +486,6 @@ private fun FlowContent.multiSettingsLabel(label: String, value: String) =
     settingsLabel(label, value, multi = true)
 
 private fun HtmlBlockTag.settingsPageHeader(editabilityState: AppGlobals.EditabilityState) {
-    val areMonitorsReadOnly =
-        editabilityState.areHttpMonitorsReadOnly()
-            && editabilityState.arePushMonitorsReadOnly()
-            && editabilityState.areIcmpMonitorsReadOnly()
-
     div {
         classes(CONTAINER_XL)
         div {
@@ -528,7 +525,7 @@ private fun HtmlBlockTag.settingsPageHeader(editabilityState: AppGlobals.Editabi
                                         testId = "export-monitors-item",
                                     )
                                     importDropdownItem(
-                                        readOnly = areMonitorsReadOnly,
+                                        readOnly = editabilityState.areAllMonitorsReadOnly(),
                                         modalId = MONITOR_IMPORT_MODAL_ID,
                                         label = Messages.importMonitorBackup(),
                                         testId = "import-monitors-item",
