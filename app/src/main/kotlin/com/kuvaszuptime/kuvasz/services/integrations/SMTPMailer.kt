@@ -25,7 +25,9 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
                     withSMTPServerUsername(smtpMailerConfig.username)
                         .withSMTPServerPassword(smtpMailerConfig.password)
                 }
-            }.buildMailer()
+            }
+            .buildMailer()
+            .also { it.testConnection(false) }
     }
 
     init {

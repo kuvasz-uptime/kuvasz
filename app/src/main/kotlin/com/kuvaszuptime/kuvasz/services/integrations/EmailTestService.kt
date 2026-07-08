@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
+import com.kuvaszuptime.kuvasz.factories.recipient
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import io.micronaut.context.annotation.Requires
@@ -16,7 +17,7 @@ class EmailTestService(private val smtpMailer: SMTPMailer) : TestableNotificatio
     override fun sendTestMessage(integrationConfig: EmailNotificationConfig): Single<NotificationTestResult> {
         val testEmail = EmailBuilder
             .startingBlank()
-            .to(integrationConfig.toAddress, integrationConfig.toAddress)
+            .withRecipients(integrationConfig.recipient())
             .from(integrationConfig.fromAddress, integrationConfig.fromAddress)
             .withSubject(Messages.integrationTestMessage())
             .withPlainText(Messages.integrationTestMessage())
