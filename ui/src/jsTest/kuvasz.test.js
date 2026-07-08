@@ -15,7 +15,10 @@ const {
     isValidIsoDuration,
     toDateTimeLocalValue,
     resolveMaintenanceWindowType,
+    createRandomSecret,
 } = require('../main/resources/js/kuvasz.js');
+
+const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 test('sanitizeTextInput', () => {
     assert.equal(sanitizeTextInput(null), null);
@@ -104,4 +107,22 @@ test('resolveMaintenanceWindowType', () => {
     // cron takes precedence over start
     assert.equal(resolveMaintenanceWindowType({cron: '0 0 * * *', start: '2024-01-01T00:00:00Z'}),
         MAINTENANCE_WINDOW_TYPES.CRON);
+});
+
+test('createRandomSecret uses crypto.randomUUID when available', () => {
+    assert.match(createRandomSecret(), UUID_V4_PATTERN);
+});
+
+test('createRandomSecret falls back to getRandomValues in non-secure contexts', () => {
+    // crypto.randomUUID is undefined outside secure contexts (plain-HTTP LAN deployments)
+    const original = crypto.randomUUID;
+    try {
+        crypto.randomUUID = undefined;
+        const secret = createRandomSecret();
+        assert.match(secret, UUID_V4_PATTERN);
+        // Two consecutive calls must not collide
+        assert.notEqual(secret, createRandomSecret());
+    } finally {
+        crypto.randomUUID = original;
+    }
 });

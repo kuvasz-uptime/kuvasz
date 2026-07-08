@@ -121,18 +121,21 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                                                 label = Messages.monitorImportResultImportedLabel(),
                                                 color = Color.GREEN_LT,
                                                 testId = "monitor-import-result-imported",
+                                                testIdSuffixExpr = "typeResult.monitorType",
                                             )
                                             importResultBadgeList(
                                                 itemsExpr = "typeResult.deleted",
                                                 label = Messages.monitorImportResultDeletedLabel(),
                                                 color = Color.RED_LT,
                                                 testId = "monitor-import-result-deleted",
+                                                testIdSuffixExpr = "typeResult.monitorType",
                                             )
                                             importResultBadgeList(
                                                 itemsExpr = "typeResult.ignoredIntegrations",
                                                 label = Messages.monitorImportResultIgnoredIntegrationsLabel(),
                                                 color = Color.YELLOW_LT,
                                                 testId = "monitor-import-result-ignored-integrations",
+                                                testIdSuffixExpr = "typeResult.monitorType",
                                             )
                                         }
                                     }

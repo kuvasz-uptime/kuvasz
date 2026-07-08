@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.uitest.settings
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -119,9 +120,9 @@ class MonitorBackupUiTest(private val httpMonitorRepository: HttpMonitorReposito
                 .setDryRun(true)
                 .submit()
 
-            assertThat(modal.importedBadges).containsText("http:Ghost Integration Monitor")
-            assertThat(modal.ignoredIntegrationBadges).isVisible()
-            assertThat(modal.ignoredIntegrationBadges).containsText("slack:ghost")
+            assertThat(modal.importedBadges(MonitorType.HTTP_SSL)).containsText("http:Ghost Integration Monitor")
+            assertThat(modal.ignoredIntegrationBadges(MonitorType.HTTP_SSL)).isVisible()
+            assertThat(modal.ignoredIntegrationBadges(MonitorType.HTTP_SSL)).containsText("slack:ghost")
         }
 
         "the per-type breakdown lists the imported type with its counts" {
