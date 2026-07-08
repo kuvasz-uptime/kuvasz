@@ -341,9 +341,9 @@ class MonitorControllerTest(
                     response.body().shouldNotBeNull().dryRun shouldBe false
                     response.body().shouldNotBeNull().perTypeResults shouldHaveSize 1
                     response.body().shouldNotBeNull().perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
-                    response.body().shouldNotBeNull().perTypeResults.first().receivedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().importedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().deletedMonitorCount shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().receivedCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().importedCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().deletedCnt shouldBe 1
 
                     httpMonitorRepository.findById(existingMonitor.id, null) shouldBe null
                     val importedMonitor = httpMonitorRepository.findByName("imported-http").shouldNotBeNull()
@@ -401,9 +401,9 @@ class MonitorControllerTest(
                     response.body().shouldNotBeNull().dryRun shouldBe true
                     response.body().shouldNotBeNull().perTypeResults shouldHaveSize 1
                     response.body().shouldNotBeNull().perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
-                    response.body().shouldNotBeNull().perTypeResults.first().receivedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().importedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().deletedMonitorCount shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().receivedCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().importedCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().deletedCnt shouldBe 1
 
                     httpMonitorRepository.findById(existingMonitor.id, null)?.name shouldBe existingMonitor.name
                     httpMonitorRepository.findByName("dry-run-http") shouldBe null
@@ -478,8 +478,8 @@ class MonitorControllerTest(
                     response.status shouldBe HttpStatus.OK
                     val perTypeResults = response.body().shouldNotBeNull().perTypeResults
                     perTypeResults shouldHaveSize 3
-                    perTypeResults.sumOf { it.receivedMonitorCnt } shouldBe 3
-                    perTypeResults.sumOf { it.importedMonitorCnt } shouldBe 3
+                    perTypeResults.sumOf { it.receivedCnt } shouldBe 3
+                    perTypeResults.sumOf { it.importedCnt } shouldBe 3
                     perTypeResults.map { it.monitorType }.toSet() shouldBe setOf(
                         MonitorType.HTTP_SSL,
                         MonitorType.PUSH,

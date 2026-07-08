@@ -1,13 +1,18 @@
 package com.kuvaszuptime.kuvasz.controllers.maintenance
 
+import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowUpdateDto
+import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Get
+import io.micronaut.http.annotation.Part
 import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.QueryValue
+import io.micronaut.http.multipart.CompletedFileUpload
 import io.micronaut.http.server.types.files.SystemFile
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -47,4 +52,16 @@ interface MaintenanceWindowOperations {
     @Operation(summary = "Download the export of all maintenance windows in YAML format")
     @Get("/export/yaml")
     fun getYamlMaintenanceWindowsExport(): SystemFile
+
+    @Operation(
+        summary = "Import maintenance windows from a YAML backup file",
+        description = "Upload a YAML maintenance window backup. Existing windows with the same name will be updated, " +
+            "and windows not present in the backup will be deleted. Use dryRun=true to preview the outcome " +
+            "without making any changes.",
+    )
+    @Post("/import/yaml", consumes = [MediaType.MULTIPART_FORM_DATA])
+    fun importYamlMaintenanceWindows(
+        @Part file: CompletedFileUpload,
+        @QueryValue(defaultValue = "false") dryRun: Boolean,
+    ): ImportResultDto
 }

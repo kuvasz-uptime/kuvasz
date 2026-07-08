@@ -215,7 +215,7 @@ class AppBootstrapper(
                 "Disabled external modifications of HTTP monitors, because a YAML monitor config was found. " +
                     "Loading HTTP monitors from YAML config..."
             )
-            monitorImporter.importHttpMonitorConfigs(yamlHttpMonitorConfigs)
+            monitorImporter.importHttpMonitorConfigs(yamlHttpMonitorConfigs, dryRun = false)
         } else {
             logger.info(
                 "No YAML HTTP monitor config was found. " +
@@ -239,7 +239,7 @@ class AppBootstrapper(
                 "Disabled external modifications of push monitors, because a YAML monitor config was found. " +
                     "Loading push monitors from YAML config..."
             )
-            monitorImporter.importPushMonitorConfigs(yamlPushMonitorConfigs)
+            monitorImporter.importPushMonitorConfigs(yamlPushMonitorConfigs, dryRun = false)
         } else {
             logger.info(
                 "No YAML push monitor config was found. " +
@@ -258,7 +258,7 @@ class AppBootstrapper(
                 "Disabled external modifications of ICMP monitors, because a YAML monitor config was found. " +
                     "Loading ICMP monitors from YAML config..."
             )
-            monitorImporter.importIcmpMonitorConfigs(yamlIcmpMonitorConfigs)
+            monitorImporter.importIcmpMonitorConfigs(yamlIcmpMonitorConfigs, dryRun = false)
         } else {
             logger.info(
                 "No YAML ICMP monitor config was found. " +
@@ -283,7 +283,7 @@ class AppBootstrapper(
                 "Disabled external modifications of status pages, because a YAML status page config was found. " +
                     "Loading status pages from YAML config..."
             )
-            statusPageImporter.importStatusPageConfigs(yamlStatusPageConfigs)
+            statusPageImporter.importStatusPageConfigs(yamlStatusPageConfigs, dryRun = false)
         } else {
             logger.info(
                 "No YAML status page config was found. " +
@@ -309,7 +309,7 @@ class AppBootstrapper(
                 "Disabled external modifications of maintenance windows, because a YAML config was found. " +
                     "Loading maintenance windows from YAML config..."
             )
-            maintenanceWindowImporter.importMaintenanceWindowConfigs(yamlMaintenanceWindowConfigs)
+            maintenanceWindowImporter.importMaintenanceWindowConfigs(yamlMaintenanceWindowConfigs, dryRun = false)
         } else {
             logger.info(
                 "No YAML maintenance window config was found. " +

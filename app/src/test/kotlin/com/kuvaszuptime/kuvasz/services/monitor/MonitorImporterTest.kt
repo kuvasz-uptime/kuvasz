@@ -64,9 +64,9 @@ class MonitorImporterTest(
 
                 then("it should return the result without persisting changes") {
                     result.monitorType shouldBe MonitorType.HTTP_SSL
-                    result.receivedMonitorCnt shouldBe 1
-                    result.importedMonitorCnt shouldBe 1
-                    result.deletedMonitorCount shouldBe 1
+                    result.receivedCnt shouldBe 1
+                    result.importedCnt shouldBe 1
+                    result.deletedCnt shouldBe 1
                     httpMonitorRepository.findById(existingMonitor.id, null).shouldNotBeNull()
                     httpMonitorRepository.findByName("dry-run-http").shouldBeNull()
                 }
@@ -103,7 +103,7 @@ class MonitorImporterTest(
 
                 then("it should persist the imported monitor") {
                     result.monitorType shouldBe MonitorType.HTTP_SSL
-                    result.receivedMonitorCnt shouldBe 1
+                    result.receivedCnt shouldBe 1
                     httpMonitorRepository.findByName("persisted-http").shouldNotBeNull()
                 }
             }
@@ -131,7 +131,7 @@ class MonitorImporterTest(
 
                 then("it should persist the ICMP monitor") {
                     result.monitorType shouldBe MonitorType.ICMP
-                    result.receivedMonitorCnt shouldBe 1
+                    result.receivedCnt shouldBe 1
                     icmpMonitorRepository.findByName("persisted-icmp").shouldNotBeNull()
                 }
             }
@@ -173,6 +173,7 @@ class MonitorImporterTest(
                     httpMonitorConfigs = listOf(importedHttp),
                     pushMonitorConfigs = emptyList(),
                     icmpMonitorConfigs = emptyList(),
+                    dryRun = false,
                 )
 
                 then("it should reconcile only the present type and leave the absent types untouched") {
@@ -192,6 +193,7 @@ class MonitorImporterTest(
                     httpMonitorConfigs = listOf(httpAdapter("scheduled-http")),
                     pushMonitorConfigs = emptyList(),
                     icmpMonitorConfigs = listOf(icmpAdapter("scheduled-icmp")),
+                    dryRun = false,
                 )
 
                 then("the imported monitors are scheduled for checks right away, not only after a restart") {

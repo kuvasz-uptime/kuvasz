@@ -89,8 +89,8 @@ class MonitorControllerImportReadOnlyTest(
                     perTypeResults.map { it.monitorType } shouldBe listOf(
                         com.kuvaszuptime.kuvasz.models.MonitorType.PUSH,
                     )
-                    perTypeResults.single().receivedMonitorCnt shouldBe 1
-                    perTypeResults.single().importedMonitorCnt shouldBe 1
+                    perTypeResults.single().receivedCnt shouldBe 1
+                    perTypeResults.single().importedCnt shouldBe 1
                 }
             }
 

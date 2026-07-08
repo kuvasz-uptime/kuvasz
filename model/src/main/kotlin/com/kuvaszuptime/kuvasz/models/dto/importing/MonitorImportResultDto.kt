@@ -5,14 +5,14 @@ import io.micronaut.core.annotation.Introspected
 
 @Introspected
 data class MonitorImportResultDto(
-    val dryRun: Boolean = false,
+    val dryRun: Boolean,
     val perTypeResults: List<MonitorTypeImportResult> = emptyList(),
 )
 
 @Introspected
 data class MonitorTypeImportResult(
     val monitorType: MonitorType,
-    val receivedMonitorCnt: Int,
-    val importedMonitorCnt: Int,
-    val deletedMonitorCount: Int,
+    val receivedCnt: Int,
+    val importedCnt: Int,
+    val deletedCnt: Int,
 )

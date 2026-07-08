@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
@@ -32,6 +33,7 @@ import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.date.shouldBeAfter
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -44,10 +46,13 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
@@ -73,6 +78,71 @@ class StatusPageControllerTest(
     private val mapper = jacksonObjectMapper()
 
     init {
+        given("StatusPageController's importYamlStatusPages() endpoint") {
+
+            `when`("a valid backup is imported as a dry-run") {
+                createHttpMonitor(httpMonitorRepository, monitorName = "imported-monitor")
+                val existing = createStatusPage(dslContext, slug = "existing-page")
+                val yaml = buildStatusPageYaml(
+                    exportDto(slug = "imported", monitors = setOf(MonitorID(MonitorType.HTTP_SSL, "imported-monitor")))
+                )
+
+                val response = client.exchange(
+                    HttpRequest.POST("/api/v2/status-pages/import/yaml?dryRun=true", multipartOf(yaml))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                        .accept(MediaType.APPLICATION_JSON_TYPE),
+                    ImportResultDto::class.java,
+                ).awaitFirst()
+
+                then("it returns the preview and does not change the database") {
+                    response.status shouldBe HttpStatus.OK
+                    val body = response.body().shouldNotBeNull()
+                    body.dryRun shouldBe true
+                    body.receivedCnt shouldBe 1
+                    body.importedCnt shouldBe 1
+                    body.deletedCnt shouldBe 1
+                    statusPageRepository.findById(existing.id).shouldNotBeNull()
+                    statusPageRepository.findBySlug("imported").shouldBeNull()
+                }
+            }
+
+            `when`("a valid backup is imported for real") {
+                every { getMock(statusPageDataActions).invalidateAllCaches() } just Runs
+                val existing = createStatusPage(dslContext, slug = "existing-page")
+                val yaml = buildStatusPageYaml(exportDto(slug = "imported"))
+
+                val response = client.exchange(
+                    HttpRequest.POST("/api/v2/status-pages/import/yaml?dryRun=false", multipartOf(yaml))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                        .accept(MediaType.APPLICATION_JSON_TYPE),
+                    ImportResultDto::class.java,
+                ).awaitFirst()
+
+                then("the backup is persisted and the pages not in it are deleted") {
+                    response.status shouldBe HttpStatus.OK
+                    response.body().shouldNotBeNull().dryRun shouldBe false
+                    statusPageRepository.findById(existing.id).shouldBeNull()
+                    statusPageRepository.findBySlug("imported").shouldNotBeNull()
+                }
+            }
+
+            `when`("the uploaded file is not valid YAML") {
+                then("it returns a 400 with a ServiceError") {
+                    val ex = shouldThrow<HttpClientResponseException> {
+                        client.exchange(
+                            HttpRequest.POST(
+                                "/api/v2/status-pages/import/yaml",
+                                multipartOf("not: valid: [".toByteArray()),
+                            ).contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                                .accept(MediaType.APPLICATION_JSON_TYPE),
+                            ImportResultDto::class.java,
+                        ).awaitFirst()
+                    }
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+        }
+
         given("StatusPageController's getStatusPagesExport() endpoint") {
 
             `when`("there are status pages in the database") {
@@ -988,6 +1058,27 @@ class StatusPageControllerTest(
             }
         }
     }
+
+    private fun exportDto(
+        slug: String,
+        title: String = "Title",
+        monitors: Set<MonitorID> = emptySet(),
+    ) = StatusPageExportDto(
+        title = title,
+        slug = slug,
+        customLogoUrl = null,
+        customFaviconUrl = null,
+        public = true,
+        monitors = monitors,
+    )
+
+    private fun buildStatusPageYaml(vararg statusPages: StatusPageExportDto): ByteArray =
+        yamlMapper.writeValueAsBytes(mapOf("status-pages" to statusPages.toList()))
+
+    private fun multipartOf(content: ByteArray): MultipartBody =
+        MultipartBody.builder()
+            .addPart("file", "content.yml", MediaType.APPLICATION_YAML_TYPE, content)
+            .build()
 
     @MockBean(StatusPageDataActions::class)
     fun mockStatusPageDataActions(): StatusPageDataActions = mockk()

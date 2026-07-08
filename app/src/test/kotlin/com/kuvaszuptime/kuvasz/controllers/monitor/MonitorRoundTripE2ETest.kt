@@ -103,9 +103,9 @@ class MonitorRoundTripE2ETest(
 
                 then("the imported monitors should match the originals field-by-field") {
                     response.status shouldBe HttpStatus.OK
-                    result.perTypeResults.sumOf { it.receivedMonitorCnt } shouldBe 3
-                    result.perTypeResults.sumOf { it.importedMonitorCnt } shouldBe 3
-                    result.perTypeResults.sumOf { it.deletedMonitorCount } shouldBe 0
+                    result.perTypeResults.sumOf { it.receivedCnt } shouldBe 3
+                    result.perTypeResults.sumOf { it.importedCnt } shouldBe 3
+                    result.perTypeResults.sumOf { it.deletedCnt } shouldBe 0
                     result.dryRun shouldBe false
 
                     val restoredHttp = httpMonitorRepository.findByName("roundtrip-http").shouldNotBeNull()

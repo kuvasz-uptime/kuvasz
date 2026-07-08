@@ -24,7 +24,7 @@ import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
-import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
+import com.kuvaszuptime.kuvasz.validation.validated
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Consumes
 import io.micronaut.http.annotation.Controller
@@ -45,6 +45,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.ValidationException
+import tools.jackson.core.JacksonException
 import tools.jackson.dataformat.yaml.YAMLMapper
 import tools.jackson.module.kotlin.readValue
 
@@ -102,27 +103,26 @@ class MonitorController(
     )
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    @Suppress("TooGenericExceptionCaught")
     override fun importYamlMonitors(
         @Part file: CompletedFileUpload,
         @QueryValue(defaultValue = "false") dryRun: Boolean,
     ): MonitorImportResultDto {
         val importDto = try {
             yamlMapper.readValue<MonitorImportDto?>(file.bytes)
-        } catch (e: Exception) {
+        } catch (e: JacksonException) {
             throw ValidationException("Failed to parse the uploaded YAML file: ${e.message}", e)
         } ?: MonitorImportDto()
         val httpMonitors: List<HttpMonitorCreator> = importDto.httpMonitors
             ?.takeUnless { appConfig.isHttpMonitorExternalWriteDisabled() }
-            ?.map { HttpMonitorImportAdapter(it).validated() }
+            ?.map { validator.validated(HttpMonitorImportAdapter(it)) }
             .orEmpty()
         val pushMonitors: List<PushMonitorCreator> = importDto.pushMonitors
             ?.takeUnless { appConfig.isPushMonitorExternalWriteDisabled() }
-            ?.map { PushMonitorImportAdapter(it).validated() }
+            ?.map { validator.validated(PushMonitorImportAdapter(it)) }
             .orEmpty()
         val icmpMonitors: List<IcmpMonitorCreator> = importDto.icmpMonitors
             ?.takeUnless { appConfig.isIcmpMonitorExternalWriteDisabled() }
-            ?.map { IcmpMonitorImportAdapter(it).validated() }
+            ?.map { validator.validated(IcmpMonitorImportAdapter(it)) }
             .orEmpty()
 
         val perTypeResults = monitorImporter.batchImportMonitors(
@@ -136,11 +136,6 @@ class MonitorController(
             dryRun = dryRun,
             perTypeResults = perTypeResults,
         )
-    }
-
-    private fun <T : Any> T.validated(): T {
-        validator.validate(this).throwIfNotEmpty()
-        return this
     }
 
     companion object {

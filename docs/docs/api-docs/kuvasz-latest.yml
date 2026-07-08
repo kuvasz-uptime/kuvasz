@@ -749,6 +749,61 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/maintenance-windows/import/yaml:
+    post:
+      tags:
+      - Maintenance windows
+      summary: Import maintenance windows from a YAML backup file
+      description: "Upload a YAML maintenance window backup. Existing windows with\
+        \ the same name will be updated, and windows not present in the backup will\
+        \ be deleted. Use dryRun=true to preview the outcome without making any changes."
+      operationId: importYamlMaintenanceWindows
+      parameters:
+      - name: dryRun
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: application/octet-stream
+                explode: false
+        required: true
+      responses:
+        "200":
+          description: Successful import or dry-run preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResultDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/maintenance-windows/{maintenanceWindowId}:
     get:
       tags:
@@ -1339,6 +1394,61 @@ paths:
           description: Successful query
           content:
             application/yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/status-pages/import/yaml:
+    post:
+      tags:
+      - Status pages
+      summary: Import status pages from a YAML backup file
+      description: "Upload a YAML status page backup. Existing status pages with the\
+        \ same slug will be updated, and status pages not present in the backup will\
+        \ be deleted. Use dryRun=true to preview the outcome without making any changes."
+      operationId: importYamlStatusPages
+      parameters:
+      - name: dryRun
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: application/octet-stream
+                explode: false
+        required: true
+      responses:
+        "200":
+          description: Successful import or dry-run preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResultDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -3017,6 +3127,25 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
+    ImportResultDto:
+      required:
+      - deletedCnt
+      - dryRun
+      - importedCnt
+      - receivedCnt
+      type: object
+      properties:
+        receivedCnt:
+          type: integer
+          format: int32
+        importedCnt:
+          type: integer
+          format: int32
+        deletedCnt:
+          type: integer
+          format: int32
+        dryRun:
+          type: boolean
     IncidentDto:
       required:
       - details
@@ -3463,21 +3592,21 @@ components:
       - ICMP
     MonitorTypeImportResult:
       required:
-      - deletedMonitorCount
-      - importedMonitorCnt
+      - deletedCnt
+      - importedCnt
       - monitorType
-      - receivedMonitorCnt
+      - receivedCnt
       type: object
       properties:
         monitorType:
           $ref: "#/components/schemas/MonitorType"
-        receivedMonitorCnt:
+        receivedCnt:
           type: integer
           format: int32
-        importedMonitorCnt:
+        importedCnt:
           type: integer
           format: int32
-        deletedMonitorCount:
+        deletedCnt:
           type: integer
           format: int32
     NotificationTestResult:

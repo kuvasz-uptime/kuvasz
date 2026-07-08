@@ -52,6 +52,11 @@ class MaintenanceWindowScheduler(
         logger.info("Maintenance window scheduler has been initialized with ${scheduledTasks.size} scheduled window(s)")
     }
 
+    fun reschedule() {
+        scheduledTasks.keys.toList().forEach { cancelWindow(it) }
+        initialize()
+    }
+
     fun getScheduledWindows(): Map<Long, List<ScheduledFuture<*>>> = scheduledTasks.toMap()
 
     /**

@@ -37,7 +37,7 @@ class MonitorImporter(
         httpMonitorConfigs: List<HttpMonitorCreator>,
         pushMonitorConfigs: List<PushMonitorCreator>,
         icmpMonitorConfigs: List<IcmpMonitorCreator>,
-        dryRun: Boolean = false,
+        dryRun: Boolean,
     ): List<MonitorTypeImportResult> {
         val results = dslContext.transactionResult { config ->
             val txCtx = config.dsl()
@@ -72,21 +72,21 @@ class MonitorImporter(
 
     fun importHttpMonitorConfigs(
         monitorConfigs: List<HttpMonitorCreator>,
-        dryRun: Boolean = false,
+        dryRun: Boolean,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
         importHttpMonitorConfigs(monitorConfigs, dryRun, config.dsl())
     }
 
     fun importPushMonitorConfigs(
         monitorConfigs: List<PushMonitorCreator>,
-        dryRun: Boolean = false,
+        dryRun: Boolean,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
         importPushMonitorConfigs(monitorConfigs, dryRun, config.dsl())
     }
 
     fun importIcmpMonitorConfigs(
         monitorConfigs: List<IcmpMonitorCreator>,
-        dryRun: Boolean = false,
+        dryRun: Boolean,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
         importIcmpMonitorConfigs(monitorConfigs, dryRun, config.dsl())
     }
@@ -112,9 +112,9 @@ class MonitorImporter(
 
         return MonitorTypeImportResult(
             monitorType = MonitorType.HTTP_SSL,
-            receivedMonitorCnt = monitorConfigs.size,
-            importedMonitorCnt = upsertedMonitorIds.size,
-            deletedMonitorCount = deletedCnt,
+            receivedCnt = monitorConfigs.size,
+            importedCnt = upsertedMonitorIds.size,
+            deletedCnt = deletedCnt,
         )
     }
 
@@ -139,9 +139,9 @@ class MonitorImporter(
 
         return MonitorTypeImportResult(
             monitorType = MonitorType.PUSH,
-            receivedMonitorCnt = monitorConfigs.size,
-            importedMonitorCnt = upsertedMonitorIds.size,
-            deletedMonitorCount = deletedCnt,
+            receivedCnt = monitorConfigs.size,
+            importedCnt = upsertedMonitorIds.size,
+            deletedCnt = deletedCnt,
         )
     }
 
@@ -166,9 +166,9 @@ class MonitorImporter(
 
         return MonitorTypeImportResult(
             monitorType = MonitorType.ICMP,
-            receivedMonitorCnt = monitorConfigs.size,
-            importedMonitorCnt = upsertedMonitorIds.size,
-            deletedMonitorCount = deletedCnt,
+            receivedCnt = monitorConfigs.size,
+            importedCnt = upsertedMonitorIds.size,
+            deletedCnt = deletedCnt,
         )
     }
 }

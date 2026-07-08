@@ -1,13 +1,14 @@
 package com.kuvaszuptime.kuvasz.services.maintenance
 
-import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
-import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.maintenance.MaintenanceWindowCreator
 import com.kuvaszuptime.kuvasz.models.maintenance.toMaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import jakarta.inject.Singleton
@@ -25,6 +26,8 @@ class MaintenanceWindowImporter(
     private val monitorIdValidator: MonitorIdValidator,
     private val integrationRepository: IntegrationRepository,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
+    private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
+    private val statusPageDataActions: StatusPageDataActions,
     private val dslContext: DSLContext,
 ) {
     companion object {
@@ -32,8 +35,9 @@ class MaintenanceWindowImporter(
     }
 
     fun importMaintenanceWindowConfigs(
-        maintenanceWindowConfigs: List<MaintenanceWindowConfig>,
-    ): MaintenanceWindowImportResultDto =
+        maintenanceWindowConfigs: List<MaintenanceWindowCreator>,
+        dryRun: Boolean,
+    ): ImportResultDto =
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
             val configuredIntegrations = integrationRepository.configuredIntegrations.keys
@@ -47,21 +51,39 @@ class MaintenanceWindowImporter(
                     .upsert(windowToImport.toMaintenanceWindowRecord(validatedMonitors, validatedIntegrations), txCtx)
                     .id
             }
-            logger.info("Loaded ${maintenanceWindowConfigs.size} maintenance windows from external config")
+            logger.info("Loaded ${maintenanceWindowConfigs.size} maintenance windows from config, dryRun: $dryRun")
 
             val deletedCnt = maintenanceWindowRepository.deleteAllExcept(ignoredIds = upsertedIds, txCtx)
             if (deletedCnt > 0) {
-                logger.info("Deleted $deletedCnt maintenance windows that were not in the external config")
+                logger.info("Deleted $deletedCnt maintenance windows not in the external config, dryRun: $dryRun")
             }
 
-            MaintenanceWindowImportResultDto(
-                receivedMaintenanceWindowCnt = maintenanceWindowConfigs.size,
-                importedMaintenanceWindowCnt = upsertedIds.size,
-                deletedMaintenanceWindowCnt = deletedCnt,
+            if (dryRun) txCtx.connection { it.rollback() }
+
+            ImportResultDto(
+                receivedCnt = maintenanceWindowConfigs.size,
+                importedCnt = upsertedIds.size,
+                deletedCnt = deletedCnt,
+                dryRun = dryRun,
             )
         }
 
-    private fun MaintenanceWindowConfig.resolveMonitors(): Set<MonitorID> {
+    fun importMaintenanceWindowsFromBackup(
+        maintenanceWindowConfigs: List<MaintenanceWindowCreator>,
+        dryRun: Boolean,
+    ): ImportResultDto {
+        if (maintenanceWindowConfigs.isEmpty()) {
+            return ImportResultDto(receivedCnt = 0, importedCnt = 0, deletedCnt = 0, dryRun = dryRun)
+        }
+        val result = importMaintenanceWindowConfigs(maintenanceWindowConfigs, dryRun)
+        if (!dryRun) {
+            maintenanceWindowScheduler.reschedule()
+            statusPageDataActions.invalidateAllCaches()
+        }
+        return result
+    }
+
+    private fun MaintenanceWindowCreator.resolveMonitors(): Set<MonitorID> {
         val rawMonitors = monitors.orEmpty()
         val validated = monitorIdValidator.validateMonitorIds(rawMonitors)
         val validatedAsStrings = validated.map { it.toString() }.toSet()
@@ -74,7 +96,7 @@ class MaintenanceWindowImporter(
         return validated
     }
 
-    private fun MaintenanceWindowConfig.resolveIntegrations(
+    private fun MaintenanceWindowCreator.resolveIntegrations(
         configuredIntegrations: Set<IntegrationID>,
     ): Set<IntegrationID> {
         val rawIntegrations = integrations.orEmpty()
