@@ -14,17 +14,15 @@ internal fun FlowContent.statusPageCreateUpdateModal(
     statusPage: StatusPageDto?,
     globals: AppGlobals,
 ) {
-    val serializedStatusPage: String? = statusPage?.let { objectMapper.writeValueAsString(it) }
-    val serializedErrorMessages = objectMapper.writeValueAsString(
-        mapOf(
-            "titleRequired" to Messages.errorTitleRequired(),
-            "slugRequired" to Messages.errorSlugRequired(),
-            "slugInvalid" to Messages.errorSlugInvalid(),
-            "slugAlreadyExists" to Messages.errorSlugAlreadyExists(),
-        )
-    )
+    val serializedStatusPage: String? = statusPage?.asJsonString()
+    val serializedErrorMessages = mapOf(
+        "titleRequired" to Messages.errorTitleRequired(),
+        "slugRequired" to Messages.errorSlugRequired(),
+        "slugInvalid" to Messages.errorSlugInvalid(),
+        "slugAlreadyExists" to Messages.errorSlugAlreadyExists(),
+    ).asJsonString()
     val configuredMonitors = globals.configuredMonitors()
-    val serializedMonitors = objectMapper.writeValueAsString(configuredMonitors)
+    val serializedMonitors = configuredMonitors.asJsonString()
     val modalClosedEvent = "status-page-upsert-modal-closed"
     val monitorsSelectId = "status-page-monitors-select"
     val isReadOnlyMode = globals.editabilityState.areStatusPagesReadOnly()

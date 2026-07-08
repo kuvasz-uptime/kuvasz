@@ -37,3 +37,10 @@ minification {
 tasks.processResources {
     dependsOn(tasks.named("jsMinify"))
 }
+
+tasks.register<Exec>("jsTest") {
+    group = "verification"
+    description = "Runs the Node unit tests for the frontend JS helpers, requires Node.js on PATH."
+    workingDir = project.file("src/jsTest")
+    commandLine("node", "--test")
+}

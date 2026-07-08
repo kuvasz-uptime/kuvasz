@@ -6,12 +6,16 @@ import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
+import com.kuvaszuptime.kuvasz.ui.fragments.maintenance.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
+import com.kuvaszuptime.kuvasz.ui.fragments.statuspage.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
 private const val MONITOR_IMPORT_MODAL_ID = "monitor-import-modal"
+private const val STATUS_PAGE_IMPORT_MODAL_ID = "status-page-import-modal"
+private const val MAINTENANCE_WINDOW_IMPORT_MODAL_ID = "maintenance-window-import-modal"
 private const val OIDC_CALLBACK_URL_ID = "oidc-callback-url"
 private const val OIDC_POST_LOGOUT_REDIRECT_URI_ID = "oidc-post-logout-redirect-uri"
 private const val OIDC_WEB_ORIGIN_ID = "oidc-web-origin"
@@ -22,7 +26,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
     withLayout(
         globals,
         title = Messages.settings(),
-        pageTitle = { settingsPageHeader() }
+        pageTitle = { settingsPageHeader(globals.editabilityState) }
     ) {
         div {
             classes(ROW)
@@ -321,8 +325,9 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
             }
         }
 
-        val labelsJson = objectMapper.writeValueAsString(
-            mapOf(
+        monitorImportModal(
+            MONITOR_IMPORT_MODAL_ID,
+            labelsJson = mapOf(
                 "previewButton" to Messages.monitorImportPreviewButton(),
                 "importButton" to Messages.monitorImportImportButton(),
                 "fileRequired" to Messages.monitorImportFileRequired(),
@@ -334,9 +339,38 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                 "countReceivedLabel" to Messages.monitorImportResultCountReceived(),
                 "countImportedLabel" to Messages.monitorImportResultCountImported(),
                 "countDeletedLabel" to Messages.monitorImportResultCountDeleted(),
-            )
+            ).asJsonString()
         )
-        monitorImportModal(MONITOR_IMPORT_MODAL_ID, labelsJson)
+
+        if (!globals.editabilityState.areStatusPagesReadOnly()) {
+            statusPageImportModal(
+                STATUS_PAGE_IMPORT_MODAL_ID,
+                labelsJson = mapOf(
+                    "previewButton" to Messages.statusPageImportPreviewButton(),
+                    "importButton" to Messages.statusPageImportImportButton(),
+                    "fileRequired" to Messages.statusPageImportFileRequired(),
+                    "importFailed" to Messages.statusPageImportFailed(),
+                    "countReceivedLabel" to Messages.statusPageImportResultCountReceived(),
+                    "countImportedLabel" to Messages.statusPageImportResultCountImported(),
+                    "countDeletedLabel" to Messages.statusPageImportResultCountDeleted(),
+                ).asJsonString()
+            )
+        }
+
+        if (!globals.editabilityState.areMaintenanceWindowsReadOnly()) {
+            maintenanceWindowImportModal(
+                MAINTENANCE_WINDOW_IMPORT_MODAL_ID,
+                labelsJson = mapOf(
+                    "previewButton" to Messages.maintenanceWindowImportPreviewButton(),
+                    "importButton" to Messages.maintenanceWindowImportImportButton(),
+                    "fileRequired" to Messages.maintenanceWindowImportFileRequired(),
+                    "importFailed" to Messages.maintenanceWindowImportFailed(),
+                    "countReceivedLabel" to Messages.maintenanceWindowImportResultCountReceived(),
+                    "countImportedLabel" to Messages.maintenanceWindowImportResultCountImported(),
+                    "countDeletedLabel" to Messages.maintenanceWindowImportResultCountDeleted(),
+                ).asJsonString()
+            )
+        }
     }
 
 /*
@@ -449,7 +483,12 @@ private fun FlowContent.multiSettingsToggle(label: String, checked: Boolean) =
 private fun FlowContent.multiSettingsLabel(label: String, value: String) =
     settingsLabel(label, value, multi = true)
 
-private fun HtmlBlockTag.settingsPageHeader() {
+private fun HtmlBlockTag.settingsPageHeader(editabilityState: AppGlobals.EditabilityState) {
+    val areMonitorsReadOnly =
+        editabilityState.areHttpMonitorsReadOnly()
+            && editabilityState.arePushMonitorsReadOnly()
+            && editabilityState.areIcmpMonitorsReadOnly()
+
     div {
         classes(CONTAINER_XL)
         div {
@@ -483,40 +522,79 @@ private fun HtmlBlockTag.settingsPageHeader() {
                                 }
                                 div {
                                     classes(DROPDOWN_MENU)
-                                    a(href = "/api/v2/monitors/export/yaml") {
-                                        classes(DROPDOWN_ITEM)
-                                        attributes["download"] = "true"
-                                        testId("export-monitors-item")
-                                        icon(Icon.DOWNLOAD)
-                                        +Messages.downloadMonitorBackup()
-                                    }
-                                    a(href = "#") {
-                                        classes(DROPDOWN_ITEM)
-                                        modalOpener(MONITOR_IMPORT_MODAL_ID)
-                                        testId("import-monitors-item")
-                                        icon(Icon.UPLOAD)
-                                        +Messages.importMonitorBackup()
-                                    }
+                                    exportDropdownItem(
+                                        href = "/api/v2/monitors/export/yaml",
+                                        label = Messages.downloadMonitorBackup(),
+                                        testId = "export-monitors-item",
+                                    )
+                                    importDropdownItem(
+                                        readOnly = areMonitorsReadOnly,
+                                        modalId = MONITOR_IMPORT_MODAL_ID,
+                                        label = Messages.importMonitorBackup(),
+                                        testId = "import-monitors-item",
+                                    )
                                     div { classes(DROPDOWN_DIVIDER) }
-                                    a(href = "/api/v2/status-pages/export/yaml") {
-                                        classes(DROPDOWN_ITEM)
-                                        attributes["download"] = "true"
-                                        icon(Icon.DOWNLOAD)
-                                        +Messages.downloadStatusPageBackup()
-                                    }
+                                    exportDropdownItem(
+                                        href = "/api/v2/status-pages/export/yaml",
+                                        label = Messages.downloadStatusPageBackup(),
+                                        testId = "export-status-pages-item",
+                                    )
+                                    importDropdownItem(
+                                        readOnly = editabilityState.areStatusPagesReadOnly(),
+                                        modalId = STATUS_PAGE_IMPORT_MODAL_ID,
+                                        label = Messages.importStatusPageBackup(),
+                                        testId = "import-status-pages-item",
+                                    )
                                     div { classes(DROPDOWN_DIVIDER) }
-                                    a(href = "/api/v2/maintenance-windows/export/yaml") {
-                                        classes(DROPDOWN_ITEM)
-                                        attributes["download"] = "true"
-                                        icon(Icon.DOWNLOAD)
-                                        +Messages.downloadMaintenanceWindowBackup()
-                                    }
+                                    exportDropdownItem(
+                                        href = "/api/v2/maintenance-windows/export/yaml",
+                                        label = Messages.downloadMaintenanceWindowBackup(),
+                                        testId = "export-maintenance-windows-item",
+                                    )
+                                    importDropdownItem(
+                                        readOnly = editabilityState.areMaintenanceWindowsReadOnly(),
+                                        modalId = MAINTENANCE_WINDOW_IMPORT_MODAL_ID,
+                                        label = Messages.importMaintenanceWindowBackup(),
+                                        testId = "import-maintenance-windows-item",
+                                    )
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+private fun FlowContent.exportDropdownItem(href: String, label: String, testId: String) {
+    a(href = href) {
+        classes(DROPDOWN_ITEM)
+        attributes["download"] = "true"
+        testId(testId)
+        icon(Icon.DOWNLOAD)
+        +label
+    }
+}
+
+private fun FlowContent.importDropdownItem(
+    readOnly: Boolean,
+    modalId: String,
+    label: String,
+    testId: String,
+) {
+    a(href = "#") {
+        testId(testId)
+        if (readOnly) {
+            attributes["aria-disabled"] = "true"
+        } else {
+            modalOpener(modalId)
+        }
+        classes(mutableSetOf(DROPDOWN_ITEM).addIf(readOnly, DISABLED))
+        icon(Icon.UPLOAD)
+        +label
+        if (readOnly) {
+            readOnlyBadge()
         }
     }
 }

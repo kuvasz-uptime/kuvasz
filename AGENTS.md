@@ -7,6 +7,7 @@
 - Gradle
 - Tests & static code analysis: Kotest, Testcontainers, Mockk, Detekt, kover
 - UI tests: Playwright (under `app/src/uiTest`)
+- JS tests (to test the most error-prone JS code): `ui/src/jsTest` -> run with `node --test`
 - Documentation: mkdocs-material under /docs
 
 # Key rules for contributing to the project

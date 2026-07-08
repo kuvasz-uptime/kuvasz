@@ -13,20 +13,18 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
     monitor: IcmpMonitorDetailsDto?,
     globals: AppGlobals,
 ) {
-    val serializedMonitor: String? = monitor?.let { objectMapper.writeValueAsString(it) }
-    val serializedErrorMessages = objectMapper.writeValueAsString(
-        mapOf(
-            "nameRequired" to Messages.errorNameRequired(),
-            "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
-            "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
-            "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
-            "hostRequired" to Messages.errorHostRequired(),
-            "packetCountInvalid" to Messages.errorPacketCountInvalid(),
-            "timeoutSecondsInvalid" to Messages.errorTimeoutSecondsInvalid(),
-            "packetLossThresholdInvalid" to Messages.errorPacketLossThresholdInvalid(),
-            "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
-        )
-    )
+    val serializedMonitor: String? = monitor?.asJsonString()
+    val serializedErrorMessages = mapOf(
+        "nameRequired" to Messages.errorNameRequired(),
+        "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
+        "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
+        "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
+        "hostRequired" to Messages.errorHostRequired(),
+        "packetCountInvalid" to Messages.errorPacketCountInvalid(),
+        "timeoutSecondsInvalid" to Messages.errorTimeoutSecondsInvalid(),
+        "packetLossThresholdInvalid" to Messages.errorPacketLossThresholdInvalid(),
+        "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
+    ).asJsonString()
     val modalClosedEvent = "icmp-monitor-upsert-modal-closed"
     val isReadOnlyMode = globals.editabilityState.areIcmpMonitorsReadOnly()
     val isMonitorNameReadOnly = monitor?.statusPages?.isNotEmpty() == true &&

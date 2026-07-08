@@ -201,11 +201,11 @@ internal fun FlowContent.sslStatusOfMonitor(
     }
 }
 
-internal fun FlowContent.readOnlyBadge(tooltipText: String) {
+internal fun FlowContent.readOnlyBadge(tooltipText: String? = null) {
     span {
         testId("read-only-badge")
         classes(BADGE, TEXT_BLUE_LT_FG, BG_BLUE_LT, MS_2)
-        tooltip(tooltipText)
+        tooltipText?.let { tooltip(it) }
         icon(Icon.LOCK_COG)
     }
 }
