@@ -3501,23 +3501,33 @@ components:
       properties:
         receivedCnt:
           type: integer
+          description: Number of items found in the uploaded backup file
           format: int32
         dryRun:
           type: boolean
+          description: "Whether the import was a dry run. When true, no changes were\
+            \ applied and the lists below only describe what would have happened."
         imported:
           type: array
+          description: Names of the maintenance windows that were (or would be) imported
           items:
             type: string
         deleted:
           type: array
+          description: "Names of the maintenance windows that were (or would be) deleted,\
+            \ because they are absent from the backup file"
           items:
             type: string
         ignoredMonitors:
           type: array
+          description: "Referenced monitors that were dropped during validation, because\
+            \ they do not exist"
           items:
             type: string
         ignoredIntegrations:
           type: array
+          description: "Referenced integrations that were dropped during validation,\
+            \ because they are not configured"
           items:
             type: string
     MaintenanceWindowUpdateDto:
@@ -3592,8 +3602,11 @@ components:
       properties:
         dryRun:
           type: boolean
+          description: "Whether the import was a dry run. When true, no changes were\
+            \ applied and the lists below only describe what would have happened."
         perTypeResults:
           type: array
+          description: Import results broken down by monitor type
           items:
             $ref: "#/components/schemas/MonitorTypeImportResult"
     MonitorType:
@@ -3612,24 +3625,32 @@ components:
       type: object
       properties:
         monitorType:
-          $ref: "#/components/schemas/MonitorType"
+          description: The monitor type this result belongs to
+          allOf:
+          - $ref: "#/components/schemas/MonitorType"
         receivedCnt:
           type: integer
+          description: Number of items found in the uploaded backup file
           format: int32
         imported:
           type: array
+          description: Identifiers of the monitors that were (or would be) imported
           items:
             type: string
             description: "A unique identifier for a monitor, formatted as 'type:name'."
             example: http:My precious monitor
         deleted:
           type: array
+          description: "Identifiers of the monitors that were (or would be) deleted,\
+            \ because they are absent from the backup file"
           items:
             type: string
             description: "A unique identifier for a monitor, formatted as 'type:name'."
             example: http:My precious monitor
         ignoredIntegrations:
           type: array
+          description: "Referenced integrations that were dropped during validation,\
+            \ because they are not configured"
           items:
             type: string
     NotificationTestResult:
@@ -4701,19 +4722,27 @@ components:
       properties:
         receivedCnt:
           type: integer
+          description: Number of items found in the uploaded backup file
           format: int32
         dryRun:
           type: boolean
+          description: "Whether the import was a dry run. When true, no changes were\
+            \ applied and the lists below only describe what would have happened."
         imported:
           type: array
+          description: Titles of the status pages that were (or would be) imported
           items:
             type: string
         deleted:
           type: array
+          description: "Titles of the status pages that were (or would be) deleted,\
+            \ because they are absent from the backup file"
           items:
             type: string
         ignoredMonitors:
           type: array
+          description: "Referenced monitors that were dropped during validation, because\
+            \ they do not exist"
           items:
             type: string
     StatusPageMaintenanceWindowDto:
