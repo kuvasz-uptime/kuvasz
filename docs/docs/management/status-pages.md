@@ -54,7 +54,7 @@
 
         The import reconciles your status pages: pages with the same **slug** will be **updated** with the values from the backup, pages that exist in the database but are **not in the backup** will be **deleted**, and pages in the backup that do not exist will be **created**.
 
-        - Referenced monitors that no longer exist are **skipped** (with a warning) instead of failing the import, so import your monitors **before** your status pages when restoring everything.
+        - Referenced monitors that no longer exist are **skipped** (with a warning) instead of failing the import, so import your monitors **before** your status pages when restoring everything. A reference that is **malformed** (not in the `<type>:<name>` format) is a different case and **fails** the whole import, so you can catch typos instead of silently dropping them.
         - An **empty backup** (no `status-pages`, or an empty list) is treated as a **no-op**: it will **not** delete your existing status pages, guarding against accidentally uploading a truncated or wrong file. To remove the last status page, use the regular delete operation instead.
         - The import **does not** switch the status pages to read-only mode; you can keep managing them through the UI and API afterwards.
         - If your status pages are currently managed via YAML (read-only mode), the import is **disabled**: the endpoint returns **HTTP 405** and the dropdown item is greyed out. Manage them through your YAML configuration instead.
