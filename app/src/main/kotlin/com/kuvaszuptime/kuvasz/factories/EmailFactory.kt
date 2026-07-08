@@ -10,8 +10,10 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import jakarta.mail.Message
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.email.EmailBuilder
+import org.simplejavamail.recipient.RecipientBuilder
 
 class EmailFactory(private val config: EmailNotificationConfig) {
 
@@ -60,6 +62,11 @@ class EmailFactory(private val config: EmailNotificationConfig) {
     private fun createEmailBase() =
         EmailBuilder
             .startingBlank()
-            .to(config.toAddress, config.toAddress)
+            .withRecipients(config.recipient())
             .from(config.fromAddress, config.fromAddress)
 }
+
+fun EmailNotificationConfig.recipient() = RecipientBuilder()
+    .withAddress(toAddress)
+    .withType(Message.RecipientType.TO)
+    .build()

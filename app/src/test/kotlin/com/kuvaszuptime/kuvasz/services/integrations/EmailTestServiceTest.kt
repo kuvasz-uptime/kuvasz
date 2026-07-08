@@ -11,7 +11,9 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import jakarta.mail.Message
 import org.simplejavamail.email.EmailBuilder
+import org.simplejavamail.recipient.RecipientBuilder
 import java.util.concurrent.CompletableFuture
 
 @SMTPTest
@@ -26,9 +28,14 @@ class EmailTestServiceTest(
         should("call the mailer to send the message") {
             val testToAddress = "fdaf@fjdsfkd.com"
             val testFromAddress = "fl78fds@fdzs7809fd.com"
+            val recipient = RecipientBuilder()
+                .withAddress(testToAddress)
+                .withType(Message.RecipientType.TO)
+                .build()
+
             val expectedMessage = EmailBuilder
                 .startingBlank()
-                .to(testToAddress, testToAddress)
+                .withRecipients(recipient)
                 .from(testFromAddress, testFromAddress)
                 .withSubject(Messages.integrationTestMessage())
                 .withPlainText(Messages.integrationTestMessage())
@@ -50,9 +57,13 @@ class EmailTestServiceTest(
         should("return a failed result when the mailer call fails") {
             val testToAddress = "fdaf@fjdsfkd.com"
             val testFromAddress = "fl78fds@fdzs7809fd.com"
+            val recipient = RecipientBuilder()
+                .withAddress(testToAddress)
+                .withType(Message.RecipientType.TO)
+                .build()
             val expectedMessage = EmailBuilder
                 .startingBlank()
-                .to(testToAddress, testToAddress)
+                .withRecipients(recipient)
                 .from(testFromAddress, testFromAddress)
                 .withSubject(Messages.integrationTestMessage())
                 .withPlainText(Messages.integrationTestMessage())

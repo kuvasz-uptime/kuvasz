@@ -25,13 +25,14 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
                     withSMTPServerUsername(smtpMailerConfig.username)
                         .withSMTPServerPassword(smtpMailerConfig.password)
                 }
-            }.buildMailer()
+            }
+            .buildMailer()
     }
 
     init {
         @Suppress("TooGenericExceptionCaught")
         try {
-            mailerClient.testConnection()
+            mailerClient.testConnection(false)
             logger.info("SMTP connection to ${smtpMailerConfig.host} has been set up successfully")
         } catch (ex: Exception) {
             logger.error("Connection to ${smtpMailerConfig.host} cannot be set up", ex)
