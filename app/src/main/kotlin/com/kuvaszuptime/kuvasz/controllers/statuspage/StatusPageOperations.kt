@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
@@ -75,5 +75,5 @@ interface StatusPageOperations {
     fun importYamlStatusPages(
         @Part file: CompletedFileUpload,
         @QueryValue(defaultValue = "false") dryRun: Boolean,
-    ): ImportResultDto
+    ): StatusPageImportResultDto
 }

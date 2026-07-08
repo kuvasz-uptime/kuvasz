@@ -148,12 +148,14 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
     }
 
     /**
-     * Deletes all maintenance windows except the ones with the given IDs.
+     * Deletes all maintenance windows except the ones with the given IDs and returns the deleted windows' names.
      */
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): Int = txCtx
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<String> = txCtx
         .deleteFrom(MAINTENANCE_WINDOW)
         .where(MAINTENANCE_WINDOW.ID.notIn(ignoredIds))
-        .execute()
+        .returning(MAINTENANCE_WINDOW.NAME)
+        .fetch()
+        .map { it.name }
 
     private fun DataAccessException.checkForDuplication(): PersistenceException =
         when (val persistenceException = toPersistenceException()) {

@@ -90,7 +90,6 @@ class MonitorControllerImportReadOnlyTest(
                         com.kuvaszuptime.kuvasz.models.MonitorType.PUSH,
                     )
                     perTypeResults.single().receivedCnt shouldBe 1
-                    perTypeResults.single().importedCnt shouldBe 1
                 }
             }
 

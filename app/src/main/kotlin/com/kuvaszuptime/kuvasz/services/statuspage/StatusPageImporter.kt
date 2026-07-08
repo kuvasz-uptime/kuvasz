@@ -1,12 +1,12 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.statuspage.StatusPageCreator
 import com.kuvaszuptime.kuvasz.models.statuspage.toStatusPageRecord
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
+import com.kuvaszuptime.kuvasz.validation.ResolvedMonitorIds
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 
@@ -27,40 +27,43 @@ class StatusPageImporter(
     fun importStatusPageConfigs(
         statusPageConfigs: List<StatusPageCreator>,
         dryRun: Boolean,
-    ): ImportResultDto =
+    ): StatusPageImportResultDto =
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
-            val upsertedStatusPageIds = statusPageConfigs.map { pageToImport ->
+            val ignoredMonitors = mutableSetOf<String>()
+            val upsertedStatusPages = statusPageConfigs.map { pageToImport ->
                 // Validating the status page's monitors, dropping (with a warning) the ones that don't exist
-                val validatedMonitors = pageToImport.resolveMonitors()
+                val resolvedMonitors = pageToImport.resolveMonitors()
+                ignoredMonitors.addAll(resolvedMonitors.ignored)
 
                 // Upserting the status page from the provided configs
-                statusPageRepository.upsert(pageToImport.toStatusPageRecord(validatedMonitors), txCtx).id
+                statusPageRepository.upsert(pageToImport.toStatusPageRecord(resolvedMonitors.valid), txCtx)
             }
             logger.info("Loaded ${statusPageConfigs.size} status pages from external config, dryrun: $dryRun")
 
             // Removing all status pages that are not in the provided configs
-            val deletedCnt = statusPageRepository.deleteAllExcept(ignoredIds = upsertedStatusPageIds, txCtx)
-            if (deletedCnt > 0) {
-                logger.info("Deleted $deletedCnt status pages that were not in the external config, dryrun: $dryRun")
+            val deleted = statusPageRepository.deleteAllExcept(ignoredIds = upsertedStatusPages.map { it.id }, txCtx)
+            if (deleted.isNotEmpty()) {
+                logger.info("Deleted ${deleted.size} status pages that were not in the config, dryrun: $dryRun")
             }
 
             if (dryRun) txCtx.connection { it.rollback() }
 
-            ImportResultDto(
+            StatusPageImportResultDto(
                 receivedCnt = statusPageConfigs.size,
-                importedCnt = upsertedStatusPageIds.size,
-                deletedCnt = deletedCnt,
                 dryRun = dryRun,
+                imported = upsertedStatusPages.map { it.title },
+                deleted = deleted,
+                ignoredMonitors = ignoredMonitors.toList(),
             )
         }
 
     fun importStatusPagesFromBackup(
         statusPageConfigs: List<StatusPageCreator>,
         dryRun: Boolean,
-    ): ImportResultDto {
+    ): StatusPageImportResultDto {
         if (statusPageConfigs.isEmpty()) {
-            return ImportResultDto(receivedCnt = 0, importedCnt = 0, deletedCnt = 0, dryRun = dryRun)
+            return StatusPageImportResultDto(receivedCnt = 0, dryRun = dryRun)
         }
         val result = importStatusPageConfigs(statusPageConfigs, dryRun)
         if (!dryRun) {
@@ -69,14 +72,16 @@ class StatusPageImporter(
         return result
     }
 
-    private fun StatusPageCreator.resolveMonitors(): Set<MonitorID> {
+    private fun StatusPageCreator.resolveMonitors(): ResolvedMonitorIds {
         val rawMonitors = monitors.orEmpty()
-        val validated = monitorIdValidator.validateMonitorIds(rawMonitors)
-        val validatedAsStrings = validated.map { it.toString() }.toSet()
-        val dropped = rawMonitors.filterNot { validatedAsStrings.contains(it) }
-        if (dropped.isNotEmpty()) {
-            logger.warn("Ignoring non-existing monitors $dropped referenced by status page '$title'")
+        // Validates the format strictly (throws on a malformed ID), but drops well-formed references to
+        // non-existing monitors and reports them as ignored.
+        val valid = monitorIdValidator.validateMonitorIds(rawMonitors)
+        val validAsStrings = valid.map { it.toString() }.toSet()
+        val ignored = rawMonitors.filterNot { validAsStrings.contains(it) }
+        if (ignored.isNotEmpty()) {
+            logger.warn("Ignoring non-existing monitors $ignored referenced by status page '$title'")
         }
-        return validated
+        return ResolvedMonitorIds(valid = valid, ignored = ignored)
     }
 }

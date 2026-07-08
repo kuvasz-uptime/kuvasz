@@ -6,7 +6,7 @@ import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDetailsDto
@@ -252,7 +252,7 @@ class StatusPageController(
         ApiResponse(
             responseCode = "200",
             description = "Successful import or dry-run preview",
-            content = [Content(schema = Schema(implementation = ImportResultDto::class))]
+            content = [Content(schema = Schema(implementation = StatusPageImportResultDto::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -271,7 +271,7 @@ class StatusPageController(
     override fun importYamlStatusPages(
         @Part file: CompletedFileUpload,
         @QueryValue(defaultValue = "false") dryRun: Boolean,
-    ): ImportResultDto {
+    ): StatusPageImportResultDto {
         val statusPages = try {
             yamlMapper.readValue<Map<String, List<StatusPageExportDto>>?>(file.bytes)
         } catch (e: JacksonException) {

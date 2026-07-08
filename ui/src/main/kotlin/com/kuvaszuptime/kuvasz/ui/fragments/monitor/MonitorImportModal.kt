@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
@@ -111,7 +112,28 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                                     templateTag {
                                         xFor("typeResult in (result?.perTypeResults || [])")
                                         liTag {
-                                            xText("formatTypeResult(typeResult)")
+                                            classes(MB_3)
+                                            div {
+                                                xText("formatTypeResult(typeResult)")
+                                            }
+                                            importResultBadgeList(
+                                                itemsExpr = "typeResult.imported",
+                                                label = Messages.monitorImportResultImportedLabel(),
+                                                color = Color.GREEN_LT,
+                                                testId = "monitor-import-result-imported",
+                                            )
+                                            importResultBadgeList(
+                                                itemsExpr = "typeResult.deleted",
+                                                label = Messages.monitorImportResultDeletedLabel(),
+                                                color = Color.RED_LT,
+                                                testId = "monitor-import-result-deleted",
+                                            )
+                                            importResultBadgeList(
+                                                itemsExpr = "typeResult.ignoredIntegrations",
+                                                label = Messages.monitorImportResultIgnoredIntegrationsLabel(),
+                                                color = Color.YELLOW_LT,
+                                                testId = "monitor-import-result-ignored-integrations",
+                                            )
                                         }
                                     }
                                 }

@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers.maintenance
 
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowUpdateDto
@@ -63,5 +63,5 @@ interface MaintenanceWindowOperations {
     fun importYamlMaintenanceWindows(
         @Part file: CompletedFileUpload,
         @QueryValue(defaultValue = "false") dryRun: Boolean,
-    ): ImportResultDto
+    ): MaintenanceWindowImportResultDto
 }

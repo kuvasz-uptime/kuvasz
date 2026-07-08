@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
@@ -91,7 +91,7 @@ class StatusPageControllerTest(
                     HttpRequest.POST("/api/v2/status-pages/import/yaml?dryRun=true", multipartOf(yaml))
                         .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                         .accept(MediaType.APPLICATION_JSON_TYPE),
-                    ImportResultDto::class.java,
+                    StatusPageImportResultDto::class.java,
                 ).awaitFirst()
 
                 then("it returns the preview and does not change the database") {
@@ -99,8 +99,8 @@ class StatusPageControllerTest(
                     val body = response.body().shouldNotBeNull()
                     body.dryRun shouldBe true
                     body.receivedCnt shouldBe 1
-                    body.importedCnt shouldBe 1
-                    body.deletedCnt shouldBe 1
+                    body.imported shouldContainExactly listOf("Title")
+                    body.deleted shouldContainExactly listOf("Status Page")
                     statusPageRepository.findById(existing.id).shouldNotBeNull()
                     statusPageRepository.findBySlug("imported").shouldBeNull()
                 }
@@ -115,7 +115,7 @@ class StatusPageControllerTest(
                     HttpRequest.POST("/api/v2/status-pages/import/yaml?dryRun=false", multipartOf(yaml))
                         .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                         .accept(MediaType.APPLICATION_JSON_TYPE),
-                    ImportResultDto::class.java,
+                    StatusPageImportResultDto::class.java,
                 ).awaitFirst()
 
                 then("the backup is persisted and the pages not in it are deleted") {
@@ -135,7 +135,7 @@ class StatusPageControllerTest(
                                 multipartOf("not: valid: [".toByteArray()),
                             ).contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                                 .accept(MediaType.APPLICATION_JSON_TYPE),
-                            ImportResultDto::class.java,
+                            StatusPageImportResultDto::class.java,
                         ).awaitFirst()
                     }
                     ex.status shouldBe HttpStatus.BAD_REQUEST

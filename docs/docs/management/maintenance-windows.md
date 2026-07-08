@@ -90,7 +90,7 @@ There are three ways to manage your maintenance windows in _Kuvasz_: through the
         - The import **does not** switch the maintenance windows to read-only mode; you can keep managing them through the UI and API afterwards.
         - If your maintenance windows are currently managed via YAML (read-only mode), the import is **disabled**: the endpoint returns **HTTP 405** and the dropdown item is greyed out. Manage them through your YAML configuration instead.
 
-        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of maintenance windows that would be received, imported/updated, and deleted.
+        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This runs the import without persisting anything and reports exactly which maintenance windows would be imported, which would be deleted, and which referenced monitors and integrations would be skipped, so you can review everything before committing to the import.
 
     **What happens if you add one or more maintenance window to your YAML file?**
 

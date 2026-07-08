@@ -35,8 +35,9 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
         - Monitor types that are **missing from the backup entirely** (no key, or no entries) are **left untouched**. To delete every monitor of a given type, use the YAML bootstrap config with an explicit empty array (`http-monitors: []`) for that type instead.
         - The import **does not** switch the monitors to read-only mode; you can keep managing them through the UI and API afterwards.
         - Monitor types currently managed via YAML (read-only mode) are **silently skipped** during the import. The remaining writable types are still imported as usual.
+        - Referenced integrations that are **not configured** are **skipped** (with a warning) instead of failing the import, so the monitor is still imported without the missing integration. Configure your integrations **before** restoring your monitors to keep every reference intact.
 
-        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return, **for each monitor type in the backup**, the number of monitors that would be received, imported/updated, and deleted.
+        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This runs the import without persisting anything and reports exactly which monitors would be imported, which would be deleted, and which referenced integrations would be skipped, so you can review everything before committing to the import.
 
     **What happens if you add one or more monitor to your YAML file?**
 

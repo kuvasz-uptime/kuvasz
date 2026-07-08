@@ -5,8 +5,8 @@ import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDocs.MAINTENANCE_WINDOWS_405_REASON
@@ -186,7 +186,7 @@ class MaintenanceWindowController(
         ApiResponse(
             responseCode = "200",
             description = "Successful import or dry-run preview",
-            content = [Content(schema = Schema(implementation = ImportResultDto::class))]
+            content = [Content(schema = Schema(implementation = MaintenanceWindowImportResultDto::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -205,7 +205,7 @@ class MaintenanceWindowController(
     override fun importYamlMaintenanceWindows(
         @Part file: CompletedFileUpload,
         @QueryValue(defaultValue = "false") dryRun: Boolean,
-    ): ImportResultDto {
+    ): MaintenanceWindowImportResultDto {
         val windows = try {
             yamlMapper.readValue<Map<String, List<MaintenanceWindowExportDto>>?>(file.bytes)
         } catch (e: JacksonException) {

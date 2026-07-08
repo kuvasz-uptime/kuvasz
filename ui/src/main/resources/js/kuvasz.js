@@ -1384,8 +1384,8 @@ const importForm = (config) => {
         // Flat single-entity result
         formatResult(result) {
             return result.receivedCnt + ' ' + this.labels.countReceivedLabel + ' / ' +
-                result.importedCnt + ' ' + this.labels.countImportedLabel + ' / ' +
-                result.deletedCnt + ' ' + this.labels.countDeletedLabel;
+                result.imported.length + ' ' + this.labels.countImportedLabel + ' / ' +
+                result.deleted.length + ' ' + this.labels.countDeletedLabel;
         },
 
         // Per-monitor-type result (monitors)
@@ -1406,8 +1406,8 @@ const importForm = (config) => {
             }
             return typeLabel + ': ' +
                 typeResult.receivedCnt + ' ' + this.labels.countReceivedLabel + ' / ' +
-                typeResult.importedCnt + ' ' + this.labels.countImportedLabel + ' / ' +
-                typeResult.deletedCnt + ' ' + this.labels.countDeletedLabel;
+                typeResult.imported.length + ' ' + this.labels.countImportedLabel + ' / ' +
+                typeResult.deleted.length + ' ' + this.labels.countDeletedLabel;
         },
 
         async submitForm() {

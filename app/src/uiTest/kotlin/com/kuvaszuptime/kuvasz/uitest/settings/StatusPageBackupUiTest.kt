@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.uitest.settings
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -93,6 +95,39 @@ class StatusPageBackupUiTest(private val statusPageRepository: StatusPageReposit
             assertThat(modal.result).containsText(Messages.statusPageImportResultEmpty())
         }
 
+        "a dry-run lists the pages to import/delete and the ignored monitor references as badges" {
+            // A page referencing a non-existing monitor: the reference is dropped and reported during validation
+            createStatusPage(
+                dslContext,
+                title = "With Ghost",
+                slug = "with-ghost",
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "ghost")),
+            )
+
+            val page = newPage()
+            val settings = SettingsBackupPage(page)
+            settings.navigate()
+            val backupBytes = Files.readAllBytes(settings.exportStatusPages().path())
+
+            // Add a page that is absent from the backup, so the preview also has a deletion to show
+            createStatusPage(dslContext, title = "Stale", slug = "stale")
+
+            settings.navigate()
+            val modal = settings.openStatusPageImportModal()
+            modal.selectFile("backup.yml", backupBytes)
+                .setDryRun(true)
+                .submit()
+
+            assertThat(modal.importedBadges).containsText("With Ghost")
+            assertThat(modal.deletedBadges).containsText("Stale")
+            assertThat(modal.ignoredMonitorBadges).isVisible()
+            assertThat(modal.ignoredMonitorBadges).containsText("http:ghost")
+
+            // A dry-run must not change anything
+            statusPageRepository.findBySlug("with-ghost").shouldNotBeNull()
+            statusPageRepository.findBySlug("stale").shouldNotBeNull()
+        }
+
         // Full round trip through the UI: export the current state, diverge the DB, then restore it via the modal.
         "a status page backup can be dry-run previewed and then imported from the Settings page" {
             createStatusPage(dslContext, title = "Backed Up", slug = "backed-up")
@@ -113,6 +148,11 @@ class StatusPageBackupUiTest(private val statusPageRepository: StatusPageReposit
                 .submit()
             assertThat(modal.result).isVisible()
             assertThat(modal.result).containsText(Messages.statusPageImportResultCountReceived())
+            // The exact pages that would be imported/deleted are listed as badges
+            assertThat(modal.result).containsText(Messages.statusPageImportResultImportedLabel())
+            assertThat(modal.result).containsText("Backed Up")
+            assertThat(modal.result).containsText(Messages.statusPageImportResultDeletedLabel())
+            assertThat(modal.result).containsText("Stale")
             statusPageRepository.findBySlug("backed-up").shouldBeNull()
             statusPageRepository.findBySlug("stale").shouldNotBeNull()
 

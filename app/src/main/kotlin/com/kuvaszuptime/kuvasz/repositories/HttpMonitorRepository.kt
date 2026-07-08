@@ -10,6 +10,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -147,12 +149,14 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
     }
 
     /**
-     * Deletes all monitors except the ones with the given IDs.
+     * Deletes all monitors except the ones with the given IDs and returns the deleted monitors' IDs.
      */
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): Int = txCtx
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
         .deleteFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.ID.notIn(ignoredIds))
-        .execute()
+        .returning(HTTP_MONITOR.NAME)
+        .fetch()
+        .map { it.monitorId() }
 
     val latestUptimeEventSelect: Table<HttpUptimeEventRecord?> = DSL.table(
         DSL.selectFrom(HTTP_UPTIME_EVENT)

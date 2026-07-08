@@ -787,7 +787,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ImportResultDto"
+                $ref: "#/components/schemas/MaintenanceWindowImportResultDto"
         "400":
           description: Bad request
           content:
@@ -1435,7 +1435,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ImportResultDto"
+                $ref: "#/components/schemas/StatusPageImportResultDto"
         "400":
           description: Bad request
           content:
@@ -3127,25 +3127,6 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
-    ImportResultDto:
-      required:
-      - deletedCnt
-      - dryRun
-      - importedCnt
-      - receivedCnt
-      type: object
-      properties:
-        receivedCnt:
-          type: integer
-          format: int32
-        importedCnt:
-          type: integer
-          format: int32
-        deletedCnt:
-          type: integer
-          format: int32
-        dryRun:
-          type: boolean
     IncidentDto:
       required:
       - details
@@ -3508,6 +3489,37 @@ components:
           type: string
           description: Timestamp of when the window was last updated
           format: date-time
+    MaintenanceWindowImportResultDto:
+      required:
+      - deleted
+      - dryRun
+      - ignoredIntegrations
+      - ignoredMonitors
+      - imported
+      - receivedCnt
+      type: object
+      properties:
+        receivedCnt:
+          type: integer
+          format: int32
+        dryRun:
+          type: boolean
+        imported:
+          type: array
+          items:
+            type: string
+        deleted:
+          type: array
+          items:
+            type: string
+        ignoredMonitors:
+          type: array
+          items:
+            type: string
+        ignoredIntegrations:
+          type: array
+          items:
+            type: string
     MaintenanceWindowUpdateDto:
       type: object
       properties:
@@ -3592,8 +3604,9 @@ components:
       - ICMP
     MonitorTypeImportResult:
       required:
-      - deletedCnt
-      - importedCnt
+      - deleted
+      - ignoredIntegrations
+      - imported
       - monitorType
       - receivedCnt
       type: object
@@ -3603,12 +3616,22 @@ components:
         receivedCnt:
           type: integer
           format: int32
-        importedCnt:
-          type: integer
-          format: int32
-        deletedCnt:
-          type: integer
-          format: int32
+        imported:
+          type: array
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        deleted:
+          type: array
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        ignoredIntegrations:
+          type: array
+          items:
+            type: string
     NotificationTestResult:
       required:
       - message
@@ -4667,6 +4690,32 @@ components:
           nullable: true
         inMaintenance:
           type: boolean
+    StatusPageImportResultDto:
+      required:
+      - deleted
+      - dryRun
+      - ignoredMonitors
+      - imported
+      - receivedCnt
+      type: object
+      properties:
+        receivedCnt:
+          type: integer
+          format: int32
+        dryRun:
+          type: boolean
+        imported:
+          type: array
+          items:
+            type: string
+        deleted:
+          type: array
+          items:
+            type: string
+        ignoredMonitors:
+          type: array
+          items:
+            type: string
     StatusPageMaintenanceWindowDto:
       required:
       - name

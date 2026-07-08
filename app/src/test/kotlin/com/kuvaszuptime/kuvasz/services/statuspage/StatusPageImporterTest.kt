@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -41,11 +42,12 @@ class StatusPageImporterTest(
                     dryRun = true,
                 )
 
-                then("it returns the counts without persisting anything") {
+                then("it returns the counts and the affected pages without persisting anything") {
                     result.receivedCnt shouldBe 1
-                    result.importedCnt shouldBe 1
-                    result.deletedCnt shouldBe 1
                     result.dryRun shouldBe true
+                    result.imported shouldContainExactly listOf("Title")
+                    result.deleted shouldContainExactly listOf("Status Page")
+                    result.ignoredMonitors.shouldBeEmpty()
                     statusPageRepository.findById(existing.id).shouldNotBeNull()
                     statusPageRepository.findBySlug("imported").shouldBeNull()
                 }
@@ -60,9 +62,10 @@ class StatusPageImporterTest(
                 )
 
                 then("it persists the backup and deletes the pages not present in it") {
-                    result.importedCnt shouldBe 1
-                    result.deletedCnt shouldBe 1
+                    result.receivedCnt shouldBe 1
                     result.dryRun shouldBe false
+                    result.imported shouldContainExactly listOf("Title")
+                    result.deleted shouldContainExactly listOf("Status Page")
                     statusPageRepository.findById(existing.id).shouldBeNull()
                     statusPageRepository.findBySlug("imported").shouldNotBeNull()
                 }
@@ -74,14 +77,15 @@ class StatusPageImporterTest(
                 val ghostId = MonitorID(MonitorType.HTTP_SSL, "ghost")
 
                 val withRefs = exportDto(slug = "with-refs", monitors = setOf(existingId, ghostId))
-                statusPageImporter.importStatusPageConfigs(
+                val result = statusPageImporter.importStatusPageConfigs(
                     listOf(StatusPageImportAdapter(withRefs)),
                     dryRun = false,
                 )
 
-                then("the non-existing monitor is dropped and the existing one is kept") {
+                then("the non-existing monitor is dropped, reported as ignored, and the existing one is kept") {
                     val persisted = statusPageRepository.findBySlug("with-refs").shouldNotBeNull()
                     persisted.monitors.toList() shouldContainExactly listOf(existingId)
+                    result.ignoredMonitors shouldContainExactly listOf(ghostId.toString())
                 }
             }
         }
@@ -112,8 +116,8 @@ class StatusPageImporterTest(
 
                 then("it is a no-op: nothing is deleted and the caches are left untouched") {
                     result.receivedCnt shouldBe 0
-                    result.importedCnt shouldBe 0
-                    result.deletedCnt shouldBe 0
+                    result.imported.shouldBeEmpty()
+                    result.deleted.shouldBeEmpty()
                     statusPageRepository.findById(existing.id).shouldNotBeNull()
                     verify(exactly = 0) { getMock(statusPageDataActions).invalidateAllCaches() }
                 }

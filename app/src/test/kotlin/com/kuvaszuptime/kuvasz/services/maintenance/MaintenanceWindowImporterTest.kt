@@ -38,11 +38,13 @@ class MaintenanceWindowImporterTest(
                     dryRun = true,
                 )
 
-                then("it returns the counts without persisting anything") {
+                then("it returns the counts and the affected windows without persisting anything") {
                     result.receivedCnt shouldBe 1
-                    result.importedCnt shouldBe 1
-                    result.deletedCnt shouldBe 1
                     result.dryRun shouldBe true
+                    result.imported shouldContainExactly listOf("imported")
+                    result.deleted shouldContainExactly listOf("existing")
+                    result.ignoredMonitors.shouldBeEmpty()
+                    result.ignoredIntegrations.shouldBeEmpty()
                     maintenanceWindowRepository.findById(existing.id).shouldNotBeNull()
                     windowByName("imported").shouldBeNull()
                 }
@@ -57,9 +59,10 @@ class MaintenanceWindowImporterTest(
                 )
 
                 then("it persists the backup and deletes the windows not present in it") {
-                    result.importedCnt shouldBe 1
-                    result.deletedCnt shouldBe 1
+                    result.receivedCnt shouldBe 1
                     result.dryRun shouldBe false
+                    result.imported shouldContainExactly listOf("imported")
+                    result.deleted shouldContainExactly listOf("to-be-deleted")
                     maintenanceWindowRepository.findById(existing.id).shouldBeNull()
                     windowByName("imported").shouldNotBeNull()
                 }
@@ -71,7 +74,7 @@ class MaintenanceWindowImporterTest(
                 val ghostMonitor = MonitorID(MonitorType.HTTP_SSL, "ghost")
                 val ghostIntegration = IntegrationID(IntegrationType.SLACK, "ghost")
 
-                maintenanceWindowImporter.importMaintenanceWindowConfigs(
+                val result = maintenanceWindowImporter.importMaintenanceWindowConfigs(
                     listOf(
                         MaintenanceWindowImportAdapter(
                             exportDto(
@@ -84,10 +87,12 @@ class MaintenanceWindowImporterTest(
                     dryRun = false,
                 )
 
-                then("the stale references are dropped and the valid monitor is kept") {
+                then("the stale references are dropped, reported as ignored, and the valid monitor is kept") {
                     val persisted = windowByName("with-refs").shouldNotBeNull()
                     persisted.monitors.toList() shouldContainExactly listOf(existingMonitor)
                     persisted.integrations.toList().shouldBeEmpty()
+                    result.ignoredMonitors shouldContainExactly listOf(ghostMonitor.toString())
+                    result.ignoredIntegrations shouldContainExactly listOf(ghostIntegration.toString())
                 }
             }
         }
@@ -118,8 +123,8 @@ class MaintenanceWindowImporterTest(
 
                 then("it is a no-op: nothing is deleted") {
                     result.receivedCnt shouldBe 0
-                    result.importedCnt shouldBe 0
-                    result.deletedCnt shouldBe 0
+                    result.imported.shouldBeEmpty()
+                    result.deleted.shouldBeEmpty()
                     windowByName("keep-me").shouldNotBeNull()
                 }
             }

@@ -1,16 +1,16 @@
 package com.kuvaszuptime.kuvasz.services.maintenance
 
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
 import com.kuvaszuptime.kuvasz.models.maintenance.MaintenanceWindowCreator
 import com.kuvaszuptime.kuvasz.models.maintenance.toMaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
-import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.util.loggerFor
+import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
+import com.kuvaszuptime.kuvasz.validation.ResolvedIntegrationIds
+import com.kuvaszuptime.kuvasz.validation.ResolvedMonitorIds
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 
@@ -24,7 +24,7 @@ import org.jooq.DSLContext
 @Singleton
 class MaintenanceWindowImporter(
     private val monitorIdValidator: MonitorIdValidator,
-    private val integrationRepository: IntegrationRepository,
+    private val integrationIdValidator: IntegrationIdValidator,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
     private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
     private val statusPageDataActions: StatusPageDataActions,
@@ -37,43 +37,49 @@ class MaintenanceWindowImporter(
     fun importMaintenanceWindowConfigs(
         maintenanceWindowConfigs: List<MaintenanceWindowCreator>,
         dryRun: Boolean,
-    ): ImportResultDto =
+    ): MaintenanceWindowImportResultDto =
         dslContext.transactionResult { config ->
             val txCtx = config.dsl()
-            val configuredIntegrations = integrationRepository.configuredIntegrations.keys
+            val ignoredMonitors = mutableSetOf<String>()
+            val ignoredIntegrations = mutableSetOf<String>()
 
-            val upsertedIds = maintenanceWindowConfigs.map { windowToImport ->
+            val upsertedWindows = maintenanceWindowConfigs.map { windowToImport ->
                 windowToImport.validateScheduleConsistency()
-                val validatedMonitors = windowToImport.resolveMonitors()
-                val validatedIntegrations = windowToImport.resolveIntegrations(configuredIntegrations)
+                val resolvedMonitors = windowToImport.resolveMonitors()
+                val resolvedIntegrations = windowToImport.resolveIntegrations()
+                ignoredMonitors.addAll(resolvedMonitors.ignored)
+                ignoredIntegrations.addAll(resolvedIntegrations.ignored)
 
-                maintenanceWindowRepository
-                    .upsert(windowToImport.toMaintenanceWindowRecord(validatedMonitors, validatedIntegrations), txCtx)
-                    .id
+                maintenanceWindowRepository.upsert(
+                    windowToImport.toMaintenanceWindowRecord(resolvedMonitors.valid, resolvedIntegrations.valid),
+                    txCtx,
+                )
             }
             logger.info("Loaded ${maintenanceWindowConfigs.size} maintenance windows from config, dryRun: $dryRun")
 
-            val deletedCnt = maintenanceWindowRepository.deleteAllExcept(ignoredIds = upsertedIds, txCtx)
-            if (deletedCnt > 0) {
-                logger.info("Deleted $deletedCnt maintenance windows not in the external config, dryRun: $dryRun")
+            val deleted = maintenanceWindowRepository.deleteAllExcept(ignoredIds = upsertedWindows.map { it.id }, txCtx)
+            if (deleted.isNotEmpty()) {
+                logger.info("Deleted ${deleted.size} maintenance windows not in the external config, dryRun: $dryRun")
             }
 
             if (dryRun) txCtx.connection { it.rollback() }
 
-            ImportResultDto(
+            MaintenanceWindowImportResultDto(
                 receivedCnt = maintenanceWindowConfigs.size,
-                importedCnt = upsertedIds.size,
-                deletedCnt = deletedCnt,
                 dryRun = dryRun,
+                imported = upsertedWindows.map { it.name },
+                deleted = deleted,
+                ignoredMonitors = ignoredMonitors.toList(),
+                ignoredIntegrations = ignoredIntegrations.toList(),
             )
         }
 
     fun importMaintenanceWindowsFromBackup(
         maintenanceWindowConfigs: List<MaintenanceWindowCreator>,
         dryRun: Boolean,
-    ): ImportResultDto {
+    ): MaintenanceWindowImportResultDto {
         if (maintenanceWindowConfigs.isEmpty()) {
-            return ImportResultDto(receivedCnt = 0, importedCnt = 0, deletedCnt = 0, dryRun = dryRun)
+            return MaintenanceWindowImportResultDto(receivedCnt = 0, dryRun = dryRun)
         }
         val result = importMaintenanceWindowConfigs(maintenanceWindowConfigs, dryRun)
         if (!dryRun) {
@@ -83,34 +89,28 @@ class MaintenanceWindowImporter(
         return result
     }
 
-    private fun MaintenanceWindowCreator.resolveMonitors(): Set<MonitorID> {
+    private fun MaintenanceWindowCreator.resolveMonitors(): ResolvedMonitorIds {
         val rawMonitors = monitors.orEmpty()
-        val validated = monitorIdValidator.validateMonitorIds(rawMonitors)
-        val validatedAsStrings = validated.map { it.toString() }.toSet()
-        val dropped = rawMonitors.filterNot { validatedAsStrings.contains(it) }
-        if (dropped.isNotEmpty()) {
+        // Validates the format strictly (throws on a malformed ID), but drops well-formed references to
+        // non-existing monitors and reports them as ignored.
+        val valid = monitorIdValidator.validateMonitorIds(rawMonitors)
+        val validAsStrings = valid.map { it.toString() }.toSet()
+        val ignored = rawMonitors.filterNot { validAsStrings.contains(it) }
+        if (ignored.isNotEmpty()) {
             logger.warn(
-                "Ignoring non-existing monitors $dropped referenced by maintenance window '$name'"
+                "Ignoring non-existing monitors $ignored referenced by maintenance window '$name'"
             )
         }
-        return validated
+        return ResolvedMonitorIds(valid = valid, ignored = ignored)
     }
 
-    private fun MaintenanceWindowCreator.resolveIntegrations(
-        configuredIntegrations: Set<IntegrationID>,
-    ): Set<IntegrationID> {
-        val rawIntegrations = integrations.orEmpty()
-        val validated = rawIntegrations
-            .mapNotNull { IntegrationID.fromString(it) }
-            .filter { configuredIntegrations.contains(it) }
-            .toSet()
-        if (validated.size != rawIntegrations.size) {
-            val validatedAsStrings = validated.map { it.toString() }.toSet()
-            val dropped = rawIntegrations.filterNot { validatedAsStrings.contains(it) }
+    private fun MaintenanceWindowCreator.resolveIntegrations(): ResolvedIntegrationIds {
+        val resolved = integrationIdValidator.resolveIntegrationIds(integrations.orEmpty())
+        if (resolved.ignored.isNotEmpty()) {
             logger.warn(
-                "Ignoring non-configured integrations $dropped referenced by maintenance window '$name'"
+                "Ignoring non-configured integrations ${resolved.ignored} referenced by maintenance window '$name'"
             )
         }
-        return validated
+        return resolved
     }
 }

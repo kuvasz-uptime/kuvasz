@@ -9,10 +9,15 @@ import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -62,11 +67,12 @@ class MonitorImporterTest(
 
                 val result = monitorImporter.importHttpMonitorConfigs(listOf(httpMonitor), dryRun = true)
 
-                then("it should return the result without persisting changes") {
+                then("it should return the result with the affected monitors without persisting changes") {
                     result.monitorType shouldBe MonitorType.HTTP_SSL
                     result.receivedCnt shouldBe 1
-                    result.importedCnt shouldBe 1
-                    result.deletedCnt shouldBe 1
+                    result.imported shouldContainExactly listOf(MonitorID(MonitorType.HTTP_SSL, "dry-run-http"))
+                    result.deleted shouldContainExactly listOf(MonitorID(MonitorType.HTTP_SSL, "existing"))
+                    result.ignoredIntegrations.shouldBeEmpty()
                     httpMonitorRepository.findById(existingMonitor.id, null).shouldNotBeNull()
                     httpMonitorRepository.findByName("dry-run-http").shouldBeNull()
                 }
@@ -105,6 +111,50 @@ class MonitorImporterTest(
                     result.monitorType shouldBe MonitorType.HTTP_SSL
                     result.receivedCnt shouldBe 1
                     httpMonitorRepository.findByName("persisted-http").shouldNotBeNull()
+                }
+            }
+
+            `when`("a monitor references a non-configured integration") {
+                val ghostIntegration = IntegrationID(IntegrationType.SLACK, "ghost")
+                val httpMonitor = HttpMonitorImportAdapter(
+                    HttpMonitorExportDto(
+                        name = "with-ghost-integration",
+                        url = "https://example.com",
+                        sensitiveUrl = false,
+                        uptimeCheckInterval = 60,
+                        enabled = true,
+                        sslCheckEnabled = true,
+                        latencyHistoryEnabled = true,
+                        requestMethod = HttpMethod.GET,
+                        followRedirects = true,
+                        forceNoCache = true,
+                        sslExpiryThreshold = 30,
+                        failureCountThreshold = 1,
+                        integrations = setOf(ghostIntegration),
+                        expectedStatusCodes = emptySet(),
+                        responseTimeThresholdMillis = null,
+                        expectedKeyword = null,
+                        expectedKeywordCaseSensitive = false,
+                        expectedKeywordNegated = false,
+                        requestHeaders = emptyMap(),
+                        expectedHeaders = emptyMap(),
+                        requestBody = null,
+                    )
+                )
+
+                val results = monitorImporter.batchImportMonitors(
+                    httpMonitorConfigs = listOf(httpMonitor),
+                    pushMonitorConfigs = emptyList(),
+                    icmpMonitorConfigs = emptyList(),
+                    dryRun = false,
+                )
+
+                then("the non-configured integration is dropped, reported as ignored, and the monitor is imported") {
+                    val result = results.single()
+                    result.receivedCnt shouldBe 1
+                    result.ignoredIntegrations shouldContainExactly listOf(ghostIntegration.toString())
+                    val persisted = httpMonitorRepository.findByName("with-ghost-integration").shouldNotBeNull()
+                    persisted.integrations.toList().shouldBeEmpty()
                 }
             }
         }

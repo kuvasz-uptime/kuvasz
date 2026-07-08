@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
@@ -104,8 +105,28 @@ internal fun FlowContent.statusPageImportModal(modalId: String, labelsJson: Stri
                             }
                             templateTag {
                                 xIf("result && result.receivedCnt > 0")
-                                p {
-                                    xText("formatResult(result)")
+                                div {
+                                    p {
+                                        xText("formatResult(result)")
+                                    }
+                                    importResultBadgeList(
+                                        itemsExpr = "result.imported",
+                                        label = Messages.statusPageImportResultImportedLabel(),
+                                        color = Color.GREEN_LT,
+                                        testId = "status-page-import-result-imported",
+                                    )
+                                    importResultBadgeList(
+                                        itemsExpr = "result.deleted",
+                                        label = Messages.statusPageImportResultDeletedLabel(),
+                                        color = Color.RED_LT,
+                                        testId = "status-page-import-result-deleted",
+                                    )
+                                    importResultBadgeList(
+                                        itemsExpr = "result.ignoredMonitors",
+                                        label = Messages.statusPageImportResultIgnoredMonitorsLabel(),
+                                        color = Color.YELLOW_LT,
+                                        testId = "status-page-import-result-ignored-monitors",
+                                    )
                                 }
                             }
                         }

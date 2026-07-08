@@ -5,7 +5,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.MaintenanceWindowValidationMessages
-import com.kuvaszuptime.kuvasz.models.dto.importing.ImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowExportDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowUpdateDto
@@ -78,7 +78,7 @@ class MaintenanceWindowControllerTest(
                     HttpRequest.POST("/api/v2/maintenance-windows/import/yaml?dryRun=true", multipartOf(yaml))
                         .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                         .accept(MediaType.APPLICATION_JSON_TYPE),
-                    ImportResultDto::class.java,
+                    MaintenanceWindowImportResultDto::class.java,
                 ).awaitFirst()
 
                 then("it returns the preview and does not change the database") {
@@ -86,8 +86,8 @@ class MaintenanceWindowControllerTest(
                     val body = response.body().shouldNotBeNull()
                     body.dryRun shouldBe true
                     body.receivedCnt shouldBe 1
-                    body.importedCnt shouldBe 1
-                    body.deletedCnt shouldBe 1
+                    body.imported shouldContainExactly listOf("imported-window")
+                    body.deleted shouldContainExactly listOf("existing-window")
                     maintenanceWindowRepository.findById(existing.id).shouldNotBeNull()
                     maintenanceWindowRepository.fetchAll().none { it.name == "imported-window" } shouldBe true
                 }
@@ -101,7 +101,7 @@ class MaintenanceWindowControllerTest(
                     HttpRequest.POST("/api/v2/maintenance-windows/import/yaml?dryRun=false", multipartOf(yaml))
                         .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                         .accept(MediaType.APPLICATION_JSON_TYPE),
-                    ImportResultDto::class.java,
+                    MaintenanceWindowImportResultDto::class.java,
                 ).awaitFirst()
 
                 then("the backup is persisted and the windows not in it are deleted") {
@@ -121,7 +121,7 @@ class MaintenanceWindowControllerTest(
                                 multipartOf("not: valid: [".toByteArray()),
                             ).contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                                 .accept(MediaType.APPLICATION_JSON_TYPE),
-                            ImportResultDto::class.java,
+                            MaintenanceWindowImportResultDto::class.java,
                         ).awaitFirst()
                     }
                     ex.status shouldBe HttpStatus.BAD_REQUEST

@@ -3,6 +3,10 @@ package com.kuvaszuptime.kuvasz.uitest.settings
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -99,6 +103,44 @@ class MaintenanceWindowBackupUiTest(
             assertThat(modal.result).containsText(Messages.maintenanceWindowImportResultEmpty())
         }
 
+        "a dry-run lists the windows to import/delete and the ignored monitor and integration references as badges" {
+            // A window referencing a non-existing monitor and a non-configured integration: both are dropped and
+            // reported during validation
+            createMaintenanceWindow(
+                dslContext,
+                name = "With Ghosts",
+                cron = "0 2 * * *",
+                duration = "PT1H",
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "ghost")),
+                integrations = listOf(IntegrationID(IntegrationType.SLACK, "ghost")),
+            )
+
+            val page = newPage()
+            val settings = SettingsBackupPage(page)
+            settings.navigate()
+            val backupBytes = Files.readAllBytes(settings.exportMaintenanceWindows().path())
+
+            // Add a window that is absent from the backup, so the preview also has a deletion to show
+            createMaintenanceWindow(dslContext, name = "Stale")
+
+            settings.navigate()
+            val modal = settings.openMaintenanceWindowImportModal()
+            modal.selectFile("backup.yml", backupBytes)
+                .setDryRun(true)
+                .submit()
+
+            assertThat(modal.importedBadges).containsText("With Ghosts")
+            assertThat(modal.deletedBadges).containsText("Stale")
+            assertThat(modal.ignoredMonitorBadges).isVisible()
+            assertThat(modal.ignoredMonitorBadges).containsText("http:ghost")
+            assertThat(modal.ignoredIntegrationBadges).isVisible()
+            assertThat(modal.ignoredIntegrationBadges).containsText("slack:ghost")
+
+            // A dry-run must not change anything
+            windowByName("With Ghosts").shouldNotBeNull()
+            windowByName("Stale").shouldNotBeNull()
+        }
+
         // Full round trip through the UI: export the current state, diverge the DB, then restore it via the modal.
         "a maintenance window backup can be dry-run previewed and then imported from the Settings page" {
             createMaintenanceWindow(dslContext, name = "Backed Up", cron = "0 2 * * *", duration = "PT1H")
@@ -119,6 +161,11 @@ class MaintenanceWindowBackupUiTest(
                 .submit()
             assertThat(modal.result).isVisible()
             assertThat(modal.result).containsText(Messages.maintenanceWindowImportResultCountReceived())
+            // The exact windows that would be imported/deleted are listed as badges
+            assertThat(modal.result).containsText(Messages.maintenanceWindowImportResultImportedLabel())
+            assertThat(modal.result).containsText("Backed Up")
+            assertThat(modal.result).containsText(Messages.maintenanceWindowImportResultDeletedLabel())
+            assertThat(modal.result).containsText("Stale")
             windowByName("Backed Up").shouldBeNull()
             windowByName("Stale").shouldNotBeNull()
 

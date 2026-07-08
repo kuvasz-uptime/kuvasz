@@ -3,10 +3,13 @@ package com.kuvaszuptime.kuvasz.services.monitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorTypeImportResult
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.toMonitorRecord
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.toMonitorRecord
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -15,6 +18,7 @@ import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
+import com.kuvaszuptime.kuvasz.validation.ResolvedIntegrationIds
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 
@@ -42,9 +46,12 @@ class MonitorImporter(
         val results = dslContext.transactionResult { config ->
             val txCtx = config.dsl()
             listOfNotNull(
-                httpMonitorConfigs.takeIf { it.isNotEmpty() }?.let { importHttpMonitorConfigs(it, dryRun, txCtx) },
-                pushMonitorConfigs.takeIf { it.isNotEmpty() }?.let { importPushMonitorConfigs(it, dryRun, txCtx) },
-                icmpMonitorConfigs.takeIf { it.isNotEmpty() }?.let { importIcmpMonitorConfigs(it, dryRun, txCtx) },
+                httpMonitorConfigs.takeIf { it.isNotEmpty() }
+                    ?.let { importHttpMonitorConfigs(it, dryRun, txCtx, lenientIntegrations = true) },
+                pushMonitorConfigs.takeIf { it.isNotEmpty() }
+                    ?.let { importPushMonitorConfigs(it, dryRun, txCtx, lenientIntegrations = true) },
+                icmpMonitorConfigs.takeIf { it.isNotEmpty() }
+                    ?.let { importIcmpMonitorConfigs(it, dryRun, txCtx, lenientIntegrations = true) },
             )
         }
         if (!dryRun) {
@@ -70,42 +77,56 @@ class MonitorImporter(
         }
     }
 
+    /**
+     * Entry point for loading monitors from the startup YAML config. Integration references are validated strictly:
+     * a non-existing integration fails the import, so a misconfigured YAML is caught at startup instead of silently
+     * dropping references.
+     */
     fun importHttpMonitorConfigs(
         monitorConfigs: List<HttpMonitorCreator>,
         dryRun: Boolean,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
-        importHttpMonitorConfigs(monitorConfigs, dryRun, config.dsl())
+        importHttpMonitorConfigs(monitorConfigs, dryRun, config.dsl(), lenientIntegrations = false)
     }
 
     fun importPushMonitorConfigs(
         monitorConfigs: List<PushMonitorCreator>,
         dryRun: Boolean,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
-        importPushMonitorConfigs(monitorConfigs, dryRun, config.dsl())
+        importPushMonitorConfigs(monitorConfigs, dryRun, config.dsl(), lenientIntegrations = false)
     }
 
     fun importIcmpMonitorConfigs(
         monitorConfigs: List<IcmpMonitorCreator>,
         dryRun: Boolean,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
-        importIcmpMonitorConfigs(monitorConfigs, dryRun, config.dsl())
+        importIcmpMonitorConfigs(monitorConfigs, dryRun, config.dsl(), lenientIntegrations = false)
     }
+
+    private fun resolveIntegrations(rawIds: List<String>, lenient: Boolean): ResolvedIntegrationIds =
+        if (lenient) {
+            integrationIdValidator.resolveIntegrationIds(rawIds)
+        } else {
+            ResolvedIntegrationIds(valid = integrationIdValidator.validateIntegrationIds(rawIds), ignored = emptyList())
+        }
 
     private fun importHttpMonitorConfigs(
         monitorConfigs: List<HttpMonitorCreator>,
         dryRun: Boolean,
         txCtx: DSLContext,
+        lenientIntegrations: Boolean,
     ): MonitorTypeImportResult {
-        val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
-            val validatedIntegrations =
-                integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
-            httpMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
+        val ignoredIntegrations = mutableSetOf<String>()
+        val upsertedMonitors = monitorConfigs.map { importedMonitor ->
+            val resolved = resolveIntegrations(importedMonitor.integrations.orEmpty(), lenientIntegrations)
+            ignoredIntegrations.addAll(resolved.ignored)
+            httpMonitorRepository.upsert(importedMonitor.toMonitorRecord(resolved.valid), txCtx)
         }
         logger.info("Loaded ${monitorConfigs.size} HTTP monitors from external config, dryrun: $dryRun")
 
-        val deletedCnt = httpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
-        if (deletedCnt > 0) {
-            logger.info("Deleted $deletedCnt HTTP monitors that were not in the external config, dryrun: $dryRun")
+        val deleted = httpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitors.map { it.id }, txCtx)
+        if (deleted.isNotEmpty()) {
+            logger.info("Deleted ${deleted.size} HTTP monitors that were not in the external config, dryrun: $dryRun")
         }
 
         if (dryRun) txCtx.connection { it.rollback() }
@@ -113,8 +134,9 @@ class MonitorImporter(
         return MonitorTypeImportResult(
             monitorType = MonitorType.HTTP_SSL,
             receivedCnt = monitorConfigs.size,
-            importedCnt = upsertedMonitorIds.size,
-            deletedCnt = deletedCnt,
+            imported = upsertedMonitors.map { it.monitorId() },
+            deleted = deleted,
+            ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }
 
@@ -122,17 +144,19 @@ class MonitorImporter(
         monitorConfigs: List<PushMonitorCreator>,
         dryRun: Boolean,
         txCtx: DSLContext,
+        lenientIntegrations: Boolean,
     ): MonitorTypeImportResult {
-        val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
-            val validatedIntegrations =
-                integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
-            pushMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
+        val ignoredIntegrations = mutableSetOf<String>()
+        val upsertedMonitors = monitorConfigs.map { importedMonitor ->
+            val resolved = resolveIntegrations(importedMonitor.integrations.orEmpty(), lenientIntegrations)
+            ignoredIntegrations.addAll(resolved.ignored)
+            pushMonitorRepository.upsert(importedMonitor.toMonitorRecord(resolved.valid), txCtx)
         }
         logger.info("Loaded ${monitorConfigs.size} push monitors from external config, dryrun: $dryRun")
 
-        val deletedCnt = pushMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
-        if (deletedCnt > 0) {
-            logger.info("Deleted $deletedCnt push monitors that were not in the external config, dryrun: $dryRun")
+        val deleted = pushMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitors.map { it.id }, txCtx)
+        if (deleted.isNotEmpty()) {
+            logger.info("Deleted ${deleted.size} push monitors that were not in the external config, dryrun: $dryRun")
         }
 
         if (dryRun) txCtx.connection { it.rollback() }
@@ -140,8 +164,9 @@ class MonitorImporter(
         return MonitorTypeImportResult(
             monitorType = MonitorType.PUSH,
             receivedCnt = monitorConfigs.size,
-            importedCnt = upsertedMonitorIds.size,
-            deletedCnt = deletedCnt,
+            imported = upsertedMonitors.map { it.monitorId() },
+            deleted = deleted,
+            ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }
 
@@ -149,17 +174,19 @@ class MonitorImporter(
         monitorConfigs: List<IcmpMonitorCreator>,
         dryRun: Boolean,
         txCtx: DSLContext,
+        lenientIntegrations: Boolean,
     ): MonitorTypeImportResult {
-        val upsertedMonitorIds = monitorConfigs.map { importedMonitor ->
-            val validatedIntegrations =
-                integrationIdValidator.validateIntegrationIds(importedMonitor.integrations.orEmpty())
-            icmpMonitorRepository.upsert(importedMonitor.toMonitorRecord(validatedIntegrations), txCtx).id
+        val ignoredIntegrations = mutableSetOf<String>()
+        val upsertedMonitors = monitorConfigs.map { importedMonitor ->
+            val resolved = resolveIntegrations(importedMonitor.integrations.orEmpty(), lenientIntegrations)
+            ignoredIntegrations.addAll(resolved.ignored)
+            icmpMonitorRepository.upsert(importedMonitor.toMonitorRecord(resolved.valid), txCtx)
         }
         logger.info("Loaded ${monitorConfigs.size} ICMP monitors from external config, dryrun: $dryRun")
 
-        val deletedCnt = icmpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitorIds, txCtx)
-        if (deletedCnt > 0) {
-            logger.info("Deleted $deletedCnt ICMP monitors that were not in the external config, dryrun: $dryRun")
+        val deleted = icmpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitors.map { it.id }, txCtx)
+        if (deleted.isNotEmpty()) {
+            logger.info("Deleted ${deleted.size} ICMP monitors that were not in the external config, dryrun: $dryRun")
         }
 
         if (dryRun) txCtx.connection { it.rollback() }
@@ -167,8 +194,9 @@ class MonitorImporter(
         return MonitorTypeImportResult(
             monitorType = MonitorType.ICMP,
             receivedCnt = monitorConfigs.size,
-            importedCnt = upsertedMonitorIds.size,
-            deletedCnt = deletedCnt,
+            imported = upsertedMonitors.map { it.monitorId() },
+            deleted = deleted,
+            ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }
 }
