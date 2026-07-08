@@ -27,13 +27,12 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
                 }
             }
             .buildMailer()
-            .also { it.testConnection(false) }
     }
 
     init {
         @Suppress("TooGenericExceptionCaught")
         try {
-            mailerClient.testConnection()
+            mailerClient.testConnection(false)
             logger.info("SMTP connection to ${smtpMailerConfig.host} has been set up successfully")
         } catch (ex: Exception) {
             logger.error("Connection to ${smtpMailerConfig.host} cannot be set up", ex)
