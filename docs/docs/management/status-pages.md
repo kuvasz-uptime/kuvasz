@@ -46,6 +46,21 @@
     
         The same applies if you **used the UI or the API before** to manage your status pages, and you decide to switch to YAML: unless your YAML definition matches the existing status by their name, existing status pages **could be deleted or modified**.
 
+    **Restoring from a YAML backup**
+
+    You can export your status pages from the UI under **Settings → Backup & Restore → Export status pages (YAML)**, or via `GET /api/v2/status-pages/export/yaml`. To restore that backup later, use **Settings → Backup & Restore → Import status pages (YAML)** or the `POST /api/v2/status-pages/import/yaml` API endpoint.
+
+    !!!warning "Restoring a backup is destructive"
+
+        The import reconciles your status pages: pages with the same **slug** will be **updated** with the values from the backup, pages that exist in the database but are **not in the backup** will be **deleted**, and pages in the backup that do not exist will be **created**.
+
+        - Referenced monitors that no longer exist are **skipped** (with a warning) instead of failing the import, so import your monitors **before** your status pages when restoring everything.
+        - An **empty backup** (no `status-pages`, or an empty list) is treated as a **no-op**: it will **not** delete your existing status pages, guarding against accidentally uploading a truncated or wrong file. To remove the last status page, use the regular delete operation instead.
+        - The import **does not** switch the status pages to read-only mode; you can keep managing them through the UI and API afterwards.
+        - If your status pages are currently managed via YAML (read-only mode), the import is **disabled**: the endpoint returns **HTTP 405** and the dropdown item is greyed out. Manage them through your YAML configuration instead.
+
+        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of status pages that would be received, imported/updated, and deleted.
+
     **What happens if you add one or more status page to your YAML file?**
 
     - If there is a status page in the database that is not in the YAML file, **it will be deleted**.

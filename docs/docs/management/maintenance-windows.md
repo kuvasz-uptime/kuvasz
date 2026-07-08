@@ -77,6 +77,21 @@ There are three ways to manage your maintenance windows in _Kuvasz_: through the
 
         The same applies if you **used the UI or the API before** to manage your maintenance windows, and you decide to switch to YAML: unless your YAML definition matches the existing windows by their name, existing windows **could be deleted or modified**.
 
+    **Restoring from a YAML backup**
+
+    You can export your maintenance windows from the UI under **Settings → Backup & Restore → Export maintenance windows (YAML)**, or via `GET /api/v2/maintenance-windows/export/yaml`. To restore that backup later, use **Settings → Backup & Restore → Import maintenance windows (YAML)** or the `POST /api/v2/maintenance-windows/import/yaml` API endpoint.
+
+    !!!warning "Restoring a backup is destructive"
+
+        The import reconciles your maintenance windows: windows with the same **name** will be **updated** with the values from the backup, windows that exist in the database but are **not in the backup** will be **deleted**, and windows in the backup that do not exist will be **created**. Imported windows are (re)scheduled immediately, without a restart.
+
+        - Referenced monitors and integrations that no longer exist are **skipped** (with a warning) instead of failing the import, so import your monitors and configure your integrations **before** restoring your maintenance windows.
+        - An **empty backup** (no `maintenance-windows`, or an empty list) is treated as a **no-op**: it will **not** delete your existing maintenance windows, guarding against accidentally uploading a truncated or wrong file. To remove the last maintenance window, use the regular delete operation instead.
+        - The import **does not** switch the maintenance windows to read-only mode; you can keep managing them through the UI and API afterwards.
+        - If your maintenance windows are currently managed via YAML (read-only mode), the import is **disabled**: the endpoint returns **HTTP 405** and the dropdown item is greyed out. Manage them through your YAML configuration instead.
+
+        Before importing, you can enable **Simulate only (dry run)** in the UI or pass `dryRun=true` to the API. This will run the import in a rolled-back transaction and return the number of maintenance windows that would be received, imported/updated, and deleted.
+
     **What happens if you add one or more maintenance window to your YAML file?**
 
     - If there is a window in the database that is not in the YAML file, **it will be deleted**.
