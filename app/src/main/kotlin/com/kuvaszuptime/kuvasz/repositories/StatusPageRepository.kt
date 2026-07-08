@@ -93,12 +93,14 @@ class StatusPageRepository(private val dslContext: DSLContext) {
         .fetchOneOrThrow()
 
     /**
-     * Deletes all status pages except the ones with the given IDs.
+     * Deletes all status pages except the ones with the given IDs and returns the deleted pages' titles.
      */
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): Int = txCtx
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<String> = txCtx
         .deleteFrom(STATUS_PAGE)
         .where(STATUS_PAGE.ID.notIn(ignoredIds))
-        .execute()
+        .returning(STATUS_PAGE.TITLE)
+        .fetch()
+        .map { it.title }
 
     /**
      * Converts a DataAccessException to a PersistenceException by matching duplication errors.

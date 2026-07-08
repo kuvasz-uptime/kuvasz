@@ -99,6 +99,7 @@ internal enum class CSSClass(val className: String) {
     COL_XL_4("col-xl-4"),
     CONTAINER("container"),
     CONTAINER_XL("container-xl"),
+    DISABLED("disabled"),
     DIVIDE_Y("divide-y"),
     DROPDOWN("dropdown"),
     DROPDOWN_DIVIDER("dropdown-divider"),

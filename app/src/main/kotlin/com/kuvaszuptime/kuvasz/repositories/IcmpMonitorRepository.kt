@@ -7,6 +7,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -117,10 +119,12 @@ class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .returning(ICMP_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): Int = txCtx
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
         .deleteFrom(ICMP_MONITOR)
         .where(ICMP_MONITOR.ID.notIn(ignoredIds))
-        .execute()
+        .returning(ICMP_MONITOR.NAME)
+        .fetch()
+        .map { it.monitorId() }
 
     fun updateIntegrations(monitorId: Long, newIntegrations: Array<IntegrationID>) {
         dslContext

@@ -32,6 +32,23 @@ class IntegrationIdValidator(private val integrationRepository: IntegrationRepos
     fun validateIntegrationIds(rawIds: List<String>): Set<IntegrationID> = rawIds.map { id ->
         IntegrationID.fromString(id)?.checkIfConfigured() ?: throw InvalidIntegrationIDException(id)
     }.toSet()
+
+    fun resolveIntegrationIds(rawIds: List<String>): ResolvedIntegrationIds {
+        val configured = integrationRepository.configuredIntegrations
+        val valid = mutableSetOf<IntegrationID>()
+        val ignored = mutableListOf<String>()
+        rawIds.forEach { rawId ->
+            val parsed = IntegrationID.fromString(rawId)
+            if (parsed != null && configured.contains(parsed)) {
+                valid.add(parsed)
+            } else {
+                ignored.add(rawId)
+            }
+        }
+        return ResolvedIntegrationIds(valid = valid, ignored = ignored)
+    }
 }
+
+data class ResolvedIntegrationIds(val valid: Set<IntegrationID>, val ignored: List<String>)
 
 class NonExistingIntegrationIdException(message: String) : RuntimeException(message)

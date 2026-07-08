@@ -2,6 +2,9 @@ package com.kuvaszuptime.kuvasz.uitest.settings
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -98,6 +101,30 @@ class MonitorBackupUiTest(private val httpMonitorRepository: HttpMonitorReposito
             assertThat(modal.result).containsText(Messages.monitorImportResultEmpty())
         }
 
+        "a dry-run lists the imported monitors and the ignored integration references as badges" {
+            // A monitor referencing a non-configured integration: the reference is dropped and reported on import
+            createHttpMonitor(
+                httpMonitorRepository,
+                monitorName = "Ghost Integration Monitor",
+                integrations = listOf(IntegrationID(IntegrationType.SLACK, "ghost")),
+            )
+
+            val page = newPage()
+            val settings = SettingsBackupPage(page)
+            settings.navigate()
+            val backupBytes = Files.readAllBytes(settings.exportMonitors().path())
+
+            settings.navigate()
+            val modal = settings.openImportModal()
+            modal.selectFile("backup.yml", backupBytes)
+                .setDryRun(true)
+                .submit()
+
+            assertThat(modal.importedBadges(MonitorType.HTTP_SSL)).containsText("http:Ghost Integration Monitor")
+            assertThat(modal.ignoredIntegrationBadges(MonitorType.HTTP_SSL)).isVisible()
+            assertThat(modal.ignoredIntegrationBadges(MonitorType.HTTP_SSL)).containsText("slack:ghost")
+        }
+
         "the per-type breakdown lists the imported type with its counts" {
             // Export a real backup, then add a stale monitor so the preview has both an import and a deletion to show.
             createHttpMonitor(httpMonitorRepository, monitorName = "From Backup")
@@ -140,6 +167,11 @@ class MonitorBackupUiTest(private val httpMonitorRepository: HttpMonitorReposito
                 .submit()
             assertThat(modal.result).isVisible()
             assertThat(modal.result).containsText(Messages.monitorImportResultTypeHttp())
+            // The exact monitors that would be imported/deleted are listed as badges
+            assertThat(modal.result).containsText(Messages.monitorImportResultImportedLabel())
+            assertThat(modal.result).containsText("Backed Up")
+            assertThat(modal.result).containsText(Messages.monitorImportResultDeletedLabel())
+            assertThat(modal.result).containsText("Stale")
             httpMonitorRepository.findByName("Backed Up").shouldBeNull()
             httpMonitorRepository.findByName("Stale").shouldNotBeNull()
 

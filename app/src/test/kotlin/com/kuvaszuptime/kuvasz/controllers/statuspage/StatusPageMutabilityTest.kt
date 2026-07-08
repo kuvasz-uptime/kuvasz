@@ -14,9 +14,11 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpMethod
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
 import tools.jackson.databind.node.JsonNodeFactory
@@ -48,5 +50,16 @@ class StatusPageMutabilityTest(
 
             ex.response.status shouldBe HttpStatus.METHOD_NOT_ALLOWED
         }
+    }
+
+    "the YAML import endpoint should return a 405 if the pages are configured via YAML" {
+        val body = MultipartBody.builder()
+            .addPart("file", "content.yml", MediaType.APPLICATION_YAML_TYPE, "status-pages: []".toByteArray())
+            .build()
+        val request = HttpRequest.POST("/api/v2/status-pages/import/yaml", body)
+            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+        val ex = shouldThrow<HttpClientResponseException> { client.exchange(request).awaitFirst() }
+
+        ex.response.status shouldBe HttpStatus.METHOD_NOT_ALLOWED
     }
 })

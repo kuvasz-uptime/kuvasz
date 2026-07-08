@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.ui.fragments.monitor
+package com.kuvaszuptime.kuvasz.ui.fragments.maintenance
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
@@ -8,12 +8,12 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String) {
+internal fun FlowContent.maintenanceWindowImportModal(modalId: String, labelsJson: String) {
     div {
         id = modalId
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
-        xData("monitorImportForm($labelsJson)")
-        attributes["@monitor-import-modal-closed.window"] = "resetState()"
+        xData("maintenanceWindowImportForm($labelsJson)")
+        attributes["@maintenance-window-import-modal-closed.window"] = "resetState()"
         tabIndex = "-1"
         role = "dialog"
 
@@ -28,7 +28,7 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                     classes(MODAL_HEADER)
                     h5 {
                         classes(MODAL_TITLE)
-                        +Messages.importMonitorBackup()
+                        +Messages.importMaintenanceWindowBackup()
                     }
                     button(type = ButtonType.button) {
                         classes(BTN_CLOSE)
@@ -48,19 +48,19 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                         }
                         div {
                             classes(ALERT_DESCRIPTION)
-                            +Messages.monitorImportWarning()
+                            +Messages.maintenanceWindowImportWarning()
                         }
                     }
 
                     div {
                         classes(MB_3, MT_3)
                         formLabel(
-                            label = Messages.monitorImportFileLabel(),
+                            label = Messages.maintenanceWindowImportFileLabel(),
                             required = true,
-                            inputName = "monitor-import-file-input"
+                            inputName = "maintenance-window-import-file-input"
                         )
                         input {
-                            id = "monitor-import-file-input"
+                            id = "maintenance-window-import-file-input"
                             type = InputType.file
                             name = "file"
                             classes(FORM_CONTROL)
@@ -81,8 +81,8 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                         classes(MB_3)
                         toggleSwitch(
                             propName = "dryRun",
-                            label = Messages.monitorImportDryRunLabel(),
-                            description = Messages.monitorImportDryRunDescription(),
+                            label = Messages.maintenanceWindowImportDryRunLabel(),
+                            description = Messages.maintenanceWindowImportDryRunDescription(),
                             disabledIf = "importCompleted"
                         )
                     }
@@ -90,7 +90,7 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                     div {
                         xShow("result !== null")
                         classes(ALERT, MT_3)
-                        testId("monitor-import-result")
+                        testId("maintenance-window-import-result")
                         xBindClass(
                             "result?.dryRun === true " +
                                 "? '${ALERT_INFO.className}' " +
@@ -100,45 +100,39 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                         div {
                             classes(ALERT_DESCRIPTION)
                             p {
-                                xShow("result && result.perTypeResults.length === 0")
-                                +Messages.monitorImportResultEmpty()
+                                xShow("result && result.receivedCnt === 0")
+                                +Messages.maintenanceWindowImportResultEmpty()
                             }
-                            div {
-                                xShow("result && result.perTypeResults.length > 0")
-                                p {
-                                    strong { +Messages.monitorImportResultPerType() }
-                                }
-                                ul {
-                                    templateTag {
-                                        xFor("typeResult in (result?.perTypeResults || [])")
-                                        liTag {
-                                            classes(MB_3)
-                                            div {
-                                                xText("formatTypeResult(typeResult)")
-                                            }
-                                            importResultBadgeList(
-                                                itemsExpr = "typeResult.imported",
-                                                label = Messages.monitorImportResultImportedLabel(),
-                                                color = Color.GREEN_LT,
-                                                testId = "monitor-import-result-imported",
-                                                testIdSuffixExpr = "typeResult.monitorType",
-                                            )
-                                            importResultBadgeList(
-                                                itemsExpr = "typeResult.deleted",
-                                                label = Messages.monitorImportResultDeletedLabel(),
-                                                color = Color.RED_LT,
-                                                testId = "monitor-import-result-deleted",
-                                                testIdSuffixExpr = "typeResult.monitorType",
-                                            )
-                                            importResultBadgeList(
-                                                itemsExpr = "typeResult.ignoredIntegrations",
-                                                label = Messages.monitorImportResultIgnoredIntegrationsLabel(),
-                                                color = Color.YELLOW_LT,
-                                                testId = "monitor-import-result-ignored-integrations",
-                                                testIdSuffixExpr = "typeResult.monitorType",
-                                            )
-                                        }
+                            templateTag {
+                                xIf("result && result.receivedCnt > 0")
+                                div {
+                                    p {
+                                        xText("formatResult(result)")
                                     }
+                                    importResultBadgeList(
+                                        itemsExpr = "result.imported",
+                                        label = Messages.maintenanceWindowImportResultImportedLabel(),
+                                        color = Color.GREEN_LT,
+                                        testId = "maintenance-window-import-result-imported",
+                                    )
+                                    importResultBadgeList(
+                                        itemsExpr = "result.deleted",
+                                        label = Messages.maintenanceWindowImportResultDeletedLabel(),
+                                        color = Color.RED_LT,
+                                        testId = "maintenance-window-import-result-deleted",
+                                    )
+                                    importResultBadgeList(
+                                        itemsExpr = "result.ignoredMonitors",
+                                        label = Messages.maintenanceWindowImportResultIgnoredMonitorsLabel(),
+                                        color = Color.YELLOW_LT,
+                                        testId = "maintenance-window-import-result-ignored-monitors",
+                                    )
+                                    importResultBadgeList(
+                                        itemsExpr = "result.ignoredIntegrations",
+                                        label = Messages.maintenanceWindowImportResultIgnoredIntegrationsLabel(),
+                                        color = Color.YELLOW_LT,
+                                        testId = "maintenance-window-import-result-ignored-integrations",
+                                    )
                                 }
                             }
                         }
@@ -148,7 +142,7 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                         xIf("error")
                         div {
                             classes(ALERT, ALERT_DANGER, MT_3)
-                            testId("monitor-import-error")
+                            testId("maintenance-window-import-error")
                             role = "alert"
                             div {
                                 classes(ALERT_DESCRIPTION)
@@ -169,7 +163,7 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                     button {
                         xShow("!importCompleted")
                         classes(BTN, BTN_PRIMARY, MS_AUTO)
-                        testId("monitor-import-submit-button")
+                        testId("maintenance-window-import-submit-button")
                         xBindDisabled("!file || isRequestLoading")
                         xOnClick("submitForm()")
                         icon(Icon.UPLOAD)
@@ -187,5 +181,5 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
             }
         }
     }
-    handleFormResetOnModalClose(modalId = modalId, eventName = "monitor-import-modal-closed")
+    handleFormResetOnModalClose(modalId = modalId, eventName = "maintenance-window-import-modal-closed")
 }

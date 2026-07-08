@@ -41,3 +41,5 @@ class MonitorIdValidator(
         (MonitorID.fromString(id) ?: throw InvalidMonitorIdException(id)).checkIfConfigured()
     }.toSet()
 }
+
+data class ResolvedMonitorIds(val valid: Set<MonitorID>, val ignored: List<String>)

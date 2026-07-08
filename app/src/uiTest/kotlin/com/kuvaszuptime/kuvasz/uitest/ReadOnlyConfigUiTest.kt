@@ -3,9 +3,11 @@ package com.kuvaszuptime.kuvasz.uitest
 import com.kuvaszuptime.kuvasz.uitest.pages.common.DetailsReadOnlyView
 import com.kuvaszuptime.kuvasz.uitest.pages.common.ListReadOnlyView
 import com.kuvaszuptime.kuvasz.uitest.pages.common.UpsertModalReadOnlyView
+import com.kuvaszuptime.kuvasz.uitest.pages.settings.SettingsBackupPage
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.util.regex.Pattern
 
 /**
  * Verifies that monitors, status pages and maintenance windows configured via YAML are read-only in the UI: the app
@@ -76,6 +78,21 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             assertReadOnlyField(modal, "cron", "0 2 * * *")
             assertReadOnlyField(modal, "duration", "PT1H")
             assertCannotBeSaved(modal)
+        }
+
+        "the backup dropdown disables the status page and maintenance window import items when read-only" {
+            val page = newPage()
+            val settings = SettingsBackupPage(page)
+            settings.navigate()
+            settings.openBackupMenu()
+
+            val disabled = Pattern.compile(".*\\bdisabled\\b.*")
+            assertThat(settings.importStatusPagesItem).hasClass(disabled)
+            assertThat(settings.importStatusPagesItem.getByTestId("read-only-badge")).isVisible()
+            assertThat(settings.importMaintenanceWindowsItem).hasClass(disabled)
+            assertThat(settings.importMaintenanceWindowsItem.getByTestId("read-only-badge")).isVisible()
+            assertThat(settings.importMonitorsItem).hasClass(disabled)
+            assertThat(settings.importMonitorsItem.getByTestId("read-only-badge")).isVisible()
         }
     }
 

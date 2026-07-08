@@ -6,20 +6,29 @@ import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ServiceError
+import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDocs.STATUS_PAGES_405_REASON
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
+import com.kuvaszuptime.kuvasz.models.statuspage.StatusPageCreator
 import com.kuvaszuptime.kuvasz.security.Role
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageImporter
+import com.kuvaszuptime.kuvasz.validation.validated
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
+import io.micronaut.http.annotation.Consumes
 import io.micronaut.http.annotation.Controller
+import io.micronaut.http.annotation.Part
 import io.micronaut.http.annotation.Produces
+import io.micronaut.http.annotation.QueryValue
 import io.micronaut.http.annotation.Status
+import io.micronaut.http.multipart.CompletedFileUpload
 import io.micronaut.http.server.types.files.SystemFile
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
@@ -28,6 +37,7 @@ import io.micronaut.security.authentication.AuthorizationException
 import io.micronaut.security.rules.SecurityRule
 import io.micronaut.security.utils.SecurityService
 import io.micronaut.validation.Validated
+import io.micronaut.validation.validator.Validator
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -37,7 +47,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.ValidationException
+import tools.jackson.core.JacksonException
 import tools.jackson.databind.node.ObjectNode
+import tools.jackson.dataformat.yaml.YAMLMapper
+import tools.jackson.module.kotlin.readValue
 
 @Controller("${API_V2_PREFIX}/status-pages", produces = [MediaType.APPLICATION_JSON])
 @Validated
@@ -50,6 +64,9 @@ class StatusPageController(
     private val statusPageActions: StatusPageActions,
     private val statusPageDataActions: StatusPageDataActions,
     private val exportHandler: ExportHandler,
+    private val statusPageImporter: StatusPageImporter,
+    private val yamlMapper: YAMLMapper,
+    private val validator: Validator,
     private val defaultStatusPageConfig: DefaultStatusPageConfig,
     private val securityService: SecurityService?,
 ) : StatusPageOperations {
@@ -229,6 +246,41 @@ class StatusPageController(
         )
 
         return exportHandler.createYamlFileFrom(fileNamePrefix = EXPORT_FILE_NAME_PREFIX, content = export)
+    }
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful import or dry-run preview",
+            content = [Content(schema = Schema(implementation = StatusPageImportResultDto::class))]
+        ),
+        ApiResponse(
+            responseCode = "400",
+            description = "Bad request",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        ),
+        ApiResponse(
+            responseCode = "405",
+            description = STATUS_PAGES_405_REASON,
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @ExecuteOn(TaskExecutors.BLOCKING)
+    @CheckStatusPagesWritable
+    override fun importYamlStatusPages(
+        @Part file: CompletedFileUpload,
+        @QueryValue(defaultValue = "false") dryRun: Boolean,
+    ): StatusPageImportResultDto {
+        val statusPages = try {
+            yamlMapper.readValue<Map<String, List<StatusPageExportDto>>?>(file.bytes)
+        } catch (e: JacksonException) {
+            throw ValidationException("Failed to parse the uploaded YAML file: ${e.message}", e)
+        }?.get(StatusPageConfig.CONFIG_PREFIX).orEmpty()
+
+        val toImport: List<StatusPageCreator> = statusPages.map { validator.validated(StatusPageImportAdapter(it)) }
+
+        return statusPageImporter.importStatusPagesFromBackup(toImport, dryRun)
     }
 
     companion object {

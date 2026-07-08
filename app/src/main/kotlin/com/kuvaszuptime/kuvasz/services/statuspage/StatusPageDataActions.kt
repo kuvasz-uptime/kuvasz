@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceInterval
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowCalculator
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.micronaut.cache.annotation.CacheInvalidate
 import io.micronaut.cache.annotation.Cacheable
 import jakarta.inject.Singleton
 import java.time.Duration
@@ -33,6 +34,10 @@ class StatusPageDataActions(
         private const val DEFAULT_METRICS_PERIOD = "P30D"
         private val UPCOMING_LOOKAHEAD: Duration = Duration.ofHours(24)
     }
+
+    @CacheInvalidate(DEFAULT_PAGE_CACHE_NAME, all = true)
+    @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = true)
+    fun invalidateAllCaches() = Unit
 
     @Cacheable(DEFAULT_PAGE_CACHE_NAME)
     fun getCachedDefaultStatusPageData() = getDefaultStatusPageData()

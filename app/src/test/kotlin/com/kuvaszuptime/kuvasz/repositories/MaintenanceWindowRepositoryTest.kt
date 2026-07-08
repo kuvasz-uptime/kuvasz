@@ -159,10 +159,10 @@ class MaintenanceWindowRepositoryTest(
                 createMaintenanceWindow(dslContext, name = "remove-1")
                 createMaintenanceWindow(dslContext, name = "remove-2")
 
-                then("it deletes every window except the given IDs") {
+                then("it deletes every window except the given IDs and returns their names") {
                     val deleted = repository.deleteAllExcept(listOf(keep.id))
 
-                    deleted shouldBe 2
+                    deleted shouldContainExactlyInAnyOrder listOf("remove-1", "remove-2")
                     repository.fetchAll().map { it.name } shouldContainExactly listOf("keep")
                 }
             }

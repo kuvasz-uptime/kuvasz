@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -23,9 +24,11 @@ import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -341,9 +344,11 @@ class MonitorControllerTest(
                     response.body().shouldNotBeNull().dryRun shouldBe false
                     response.body().shouldNotBeNull().perTypeResults shouldHaveSize 1
                     response.body().shouldNotBeNull().perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
-                    response.body().shouldNotBeNull().perTypeResults.first().receivedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().importedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().deletedMonitorCount shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().receivedCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().imported shouldContainExactly
+                        listOf(MonitorID(MonitorType.HTTP_SSL, "imported-http"))
+                    response.body().shouldNotBeNull().perTypeResults.first().deleted shouldContainExactly
+                        listOf(MonitorID(MonitorType.HTTP_SSL, "to-be-deleted"))
 
                     httpMonitorRepository.findById(existingMonitor.id, null) shouldBe null
                     val importedMonitor = httpMonitorRepository.findByName("imported-http").shouldNotBeNull()
@@ -401,9 +406,8 @@ class MonitorControllerTest(
                     response.body().shouldNotBeNull().dryRun shouldBe true
                     response.body().shouldNotBeNull().perTypeResults shouldHaveSize 1
                     response.body().shouldNotBeNull().perTypeResults.first().monitorType shouldBe MonitorType.HTTP_SSL
-                    response.body().shouldNotBeNull().perTypeResults.first().receivedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().importedMonitorCnt shouldBe 1
-                    response.body().shouldNotBeNull().perTypeResults.first().deletedMonitorCount shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().receivedCnt shouldBe 1
+                    response.body().shouldNotBeNull().perTypeResults.first().deleted.size shouldBe 1
 
                     httpMonitorRepository.findById(existingMonitor.id, null)?.name shouldBe existingMonitor.name
                     httpMonitorRepository.findByName("dry-run-http") shouldBe null
@@ -478,8 +482,7 @@ class MonitorControllerTest(
                     response.status shouldBe HttpStatus.OK
                     val perTypeResults = response.body().shouldNotBeNull().perTypeResults
                     perTypeResults shouldHaveSize 3
-                    perTypeResults.sumOf { it.receivedMonitorCnt } shouldBe 3
-                    perTypeResults.sumOf { it.importedMonitorCnt } shouldBe 3
+                    perTypeResults.sumOf { it.receivedCnt } shouldBe 3
                     perTypeResults.map { it.monitorType }.toSet() shouldBe setOf(
                         MonitorType.HTTP_SSL,
                         MonitorType.PUSH,
@@ -603,8 +606,9 @@ class MonitorControllerTest(
                 }
             }
 
-            `when`("the uploaded YAML references a non-existing integration") {
-                val existingMonitor = createHttpMonitor(httpMonitorRepository, monitorName = "should-survive")
+            `when`("the uploaded YAML references a non-configured integration") {
+                createHttpMonitor(httpMonitorRepository, monitorName = "should-not-survive")
+                val ghostIntegration = IntegrationID(IntegrationType.SLACK, "does-not-exist")
 
                 val yamlContent = buildYamlImportContent(
                     httpMonitors = listOf(
@@ -621,7 +625,7 @@ class MonitorControllerTest(
                             forceNoCache = true,
                             sslExpiryThreshold = 30,
                             failureCountThreshold = 1,
-                            integrations = setOf(IntegrationID(IntegrationType.SLACK, "does-not-exist")),
+                            integrations = setOf(ghostIntegration),
                             expectedStatusCodes = emptySet(),
                             responseTimeThresholdMillis = null,
                             expectedKeyword = null,
@@ -642,15 +646,18 @@ class MonitorControllerTest(
                     .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                     .accept(MediaType.APPLICATION_JSON_TYPE)
 
-                then("it should return 400 and roll back the whole import, leaving existing monitors untouched") {
-                    val response = shouldThrow<HttpClientResponseException> {
-                        client.exchange(request, ServiceError::class.java).awaitFirst()
-                    }
-                    response.status shouldBe HttpStatus.BAD_REQUEST
+                then("it drops the non-configured integration, reports it as ignored, and imports the monitor") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+                    response.status shouldBe HttpStatus.OK
 
-                    // The transaction must roll back: the pre-existing monitor is not deleted
-                    httpMonitorRepository.findById(existingMonitor.id, null).shouldNotBeNull()
-                    httpMonitorRepository.findByName("with-bad-integration") shouldBe null
+                    val httpResult = response.body().shouldNotBeNull().perTypeResults
+                        .first { it.monitorType == MonitorType.HTTP_SSL }
+                    httpResult.imported.size shouldBe 1
+                    httpResult.ignoredIntegrations shouldContainExactly listOf(ghostIntegration.toString())
+
+                    httpMonitorRepository.findByName("should-not-survive").shouldBeNull()
+                    val imported = httpMonitorRepository.findByName("with-bad-integration").shouldNotBeNull()
+                    imported.integrations.toList().shouldBeEmpty()
                 }
             }
 

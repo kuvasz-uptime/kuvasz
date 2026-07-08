@@ -60,8 +60,8 @@ jobs:
           files: ./build/reports/kover/report.xml
           fail_ci_if_error: false
 
-  ui-e2e:
-    name: Run browser-driven UI E2E tests
+  ui-tests:
+    name: Run UI test suite (unit + E2E)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -70,6 +70,11 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Run JS unit tests
+        run: ./gradlew :ui:jsTest
       - name: Install Playwright Chromium
         run: ./gradlew :app:installPlaywrightChromium
       - name: Run UI E2E suite
@@ -78,6 +83,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ui-e2e-artifacts
+          name: ui-test-artifacts
           path: app/build/uiTest-artifacts/
           if-no-files-found: ignore

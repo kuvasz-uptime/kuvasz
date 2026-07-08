@@ -14,18 +14,16 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
     monitor: PushMonitorDetailsDto?,
     globals: AppGlobals,
 ) {
-    val serializedMonitor: String? = monitor?.let { objectMapper.writeValueAsString(it) }
-    val serializedErrorMessages = objectMapper.writeValueAsString(
-        mapOf(
-            "nameRequired" to Messages.errorNameRequired(),
-            "nameOrClientSecretAlreadyExists" to Messages.errorNameOrClientSecretAlreadyExists(),
-            "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
-            "heartbeatIntervalInvalid" to Messages.errorHeartbeatIntervalInvalid(),
-            "gracePeriodInvalid" to Messages.errorGracePeriodInvalid(),
-            "clientSecretInvalid" to Messages.errorClientSecretInvalid(),
-            "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
-        )
-    )
+    val serializedMonitor: String? = monitor?.asJsonString()
+    val serializedErrorMessages = mapOf(
+        "nameRequired" to Messages.errorNameRequired(),
+        "nameOrClientSecretAlreadyExists" to Messages.errorNameOrClientSecretAlreadyExists(),
+        "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
+        "heartbeatIntervalInvalid" to Messages.errorHeartbeatIntervalInvalid(),
+        "gracePeriodInvalid" to Messages.errorGracePeriodInvalid(),
+        "clientSecretInvalid" to Messages.errorClientSecretInvalid(),
+        "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
+    ).asJsonString()
     val modalClosedEvent = "push-monitor-upsert-modal-closed"
     val isReadOnlyMode = globals.editabilityState.arePushMonitorsReadOnly()
     val isMonitorNameReadOnly = monitor?.statusPages?.isNotEmpty() == true &&

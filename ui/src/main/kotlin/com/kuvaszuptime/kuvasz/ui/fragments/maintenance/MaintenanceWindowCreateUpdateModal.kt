@@ -17,20 +17,18 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
     maintenanceWindow: MaintenanceWindowDetailsDto?,
     globals: AppGlobals,
 ) {
-    val serializedWindow: String? = maintenanceWindow?.let { objectMapper.writeValueAsString(it) }
-    val serializedErrorMessages = objectMapper.writeValueAsString(
-        mapOf(
-            "nameRequired" to Messages.errorMaintenanceWindowNameRequired(),
-            "nameAlreadyExists" to Messages.errorMaintenanceWindowNameAlreadyExists(),
-            "cronRequired" to Messages.errorMaintenanceWindowCronRequired(),
-            "cronInvalid" to Messages.errorMaintenanceWindowCronInvalid(),
-            "startRequired" to Messages.errorMaintenanceWindowStartRequired(),
-            "durationRequired" to Messages.errorMaintenanceWindowDurationRequired(),
-            "durationInvalid" to Messages.errorMaintenanceWindowDurationInvalid(),
-        )
-    )
+    val serializedWindow: String? = maintenanceWindow?.asJsonString()
+    val serializedErrorMessages = mapOf(
+        "nameRequired" to Messages.errorMaintenanceWindowNameRequired(),
+        "nameAlreadyExists" to Messages.errorMaintenanceWindowNameAlreadyExists(),
+        "cronRequired" to Messages.errorMaintenanceWindowCronRequired(),
+        "cronInvalid" to Messages.errorMaintenanceWindowCronInvalid(),
+        "startRequired" to Messages.errorMaintenanceWindowStartRequired(),
+        "durationRequired" to Messages.errorMaintenanceWindowDurationRequired(),
+        "durationInvalid" to Messages.errorMaintenanceWindowDurationInvalid(),
+    ).asJsonString()
     val configuredMonitors = globals.configuredMonitors()
-    val serializedMonitors = objectMapper.writeValueAsString(configuredMonitors)
+    val serializedMonitors = configuredMonitors.asJsonString()
     val modalClosedEvent = "maintenance-window-upsert-modal-closed"
     val monitorsSelectId = "maintenance-window-monitors-select"
     val isReadOnlyMode = globals.editabilityState.areMaintenanceWindowsReadOnly()

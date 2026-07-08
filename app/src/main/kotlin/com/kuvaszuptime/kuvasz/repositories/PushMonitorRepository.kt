@@ -7,6 +7,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -142,10 +144,12 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
     /**
      * Deletes all monitors except the ones with the given IDs.
      */
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): Int = txCtx
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
         .deleteFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.ID.notIn(ignoredIds))
-        .execute()
+        .returning(PUSH_MONITOR.NAME)
+        .fetch()
+        .map { it.monitorId() }
 
     val latestUptimeEventSelect: Table<PushUptimeEventRecord?> = DSL.table(
         DSL.selectFrom(PUSH_UPTIME_EVENT)

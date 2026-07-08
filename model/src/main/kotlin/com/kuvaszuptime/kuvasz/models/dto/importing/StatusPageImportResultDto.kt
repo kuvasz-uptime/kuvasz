@@ -1,10 +1,18 @@
 package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import io.micronaut.core.annotation.Introspected
+import io.swagger.v3.oas.annotations.media.Schema
 
 @Introspected
 data class StatusPageImportResultDto(
-    val receivedStatusPageCnt: Int,
-    val importedStatusPageCnt: Int,
-    val deletedStatusPageCount: Int,
+    @param:Schema(description = ImportDocs.RECEIVED_CNT, required = true)
+    val receivedCnt: Int,
+    @param:Schema(description = ImportDocs.DRY_RUN, required = true)
+    val dryRun: Boolean,
+    @param:Schema(description = ImportDocs.IMPORTED_STATUS_PAGES, required = true)
+    val imported: List<String> = emptyList(),
+    @param:Schema(description = ImportDocs.DELETED_STATUS_PAGES, required = true)
+    val deleted: List<String> = emptyList(),
+    @param:Schema(description = ImportDocs.IGNORED_MONITORS, required = true)
+    val ignoredMonitors: List<String> = emptyList(),
 )

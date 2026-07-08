@@ -52,7 +52,7 @@ const reInitTooltips = () => {
         }
         let options = {
             delay: {show: 50, hide: 50},
-            html: tooltipTriggerEl.getAttribute("data-bs-html") === "true" ?? false,
+            html: tooltipTriggerEl.getAttribute("data-bs-html") === "true",
             placement: tooltipTriggerEl.getAttribute('data-bs-placement') ?? 'auto'
         };
         return new tabler.Tooltip(tooltipTriggerEl, options);
@@ -107,277 +107,80 @@ const showToast = (header, content, backgroundClass, autoHide) => {
     new tabler.Toast(toastContainer.lastElementChild).show();
 };
 
-// Generates a UUID-like 36 characters long secret
+// Generates a random UUIDv4. Prefers crypto.randomUUID, but that is only exposed in secure contexts (HTTPS or
+// localhost), so we fall back to crypto.getRandomValues - which is always available - for plain-HTTP deployments.
 const createRandomSecret = () => {
-    let dt = new Date().getTime()
-    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = (dt + Math.random() * 16) % 16 | 0
-        dt = Math.floor(dt / 16)
-        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    if (typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = [...bytes].map(b => b.toString(16).padStart(2, '0'));
+    return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-` +
+        `${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
+};
+
+// --------- API layer ---------
+const jsonContentHeaders = {'Content-Type': 'application/json'};
+
+// Generic JSON request wrapper with shared success/error handling used by every entity's CRUD calls
+const apiRequest = (
+    method,
+    url,
+    {body = null, beforeRequest = () => {}, onSuccess = () => {}, onError = () => {}, errorMessage} = {}
+) => {
+    beforeRequest();
+    const init = {method, headers: jsonContentHeaders};
+    if (body != null) {
+        init.body = JSON.stringify(body);
+    }
+    return fetch(url, init).then(response => {
+        if (response.ok) {
+            onSuccess(response);
+        } else {
+            onError();
+            console.error(errorMessage, response.statusText);
+            alert(errorMessage);
+        }
+    }).catch(error => {
+        onError();
+        console.error(errorMessage, error);
+        alert(errorMessage);
     });
-    return uuid;
 };
 
-// --------- Alpine.js x-data ---------
-const httpMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) => {
-    return {
-        monitorId: monitorId,
-        isMonitorEnabled: isMonitorEnabled,
-        assignedToStatusPage: assignedToStatusPage,
-        isRequestLoading: false,
-        toggleMonitor() {
-            patchHttpMonitorRequest(
-                this.monitorId,
-                {enabled: !this.isMonitorEnabled},
-                () => this.isRequestLoading = true,
-                () => refreshHttpMonitorList(),
-                () => this.isRequestLoading = false
-            );
-        },
-        deleteMonitor() {
-            deleteHttpMonitorRequest(
-                this.monitorId,
-                () => this.isRequestLoading = true,
-                () => refreshHttpMonitorList(),
-            );
-        }
-    }
-};
+// Builds the PATCH/DELETE helpers for a given entity, keeping the URL and user-facing labels in one place
+const crudRequests = (basePath, entityLabel) => ({
+    patch: (id, body, beforeRequest, onSuccess, onError) => apiRequest('PATCH', `${basePath}/${id}`, {
+        body, beforeRequest, onSuccess, onError,
+        errorMessage: `An error occurred while toggling the ${entityLabel}.`,
+    }),
+    remove: (id, beforeRequest, onSuccess, onError) => apiRequest('DELETE', `${basePath}/${id}`, {
+        beforeRequest, onSuccess, onError,
+        errorMessage: `An error occurred while deleting the ${entityLabel}.`,
+    }),
+});
 
-const icmpMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) => {
-    return {
-        monitorId: monitorId,
-        isMonitorEnabled: isMonitorEnabled,
-        assignedToStatusPage: assignedToStatusPage,
-        isRequestLoading: false,
-        toggleMonitor() {
-            patchIcmpMonitorRequest(
-                this.monitorId,
-                {enabled: !this.isMonitorEnabled},
-                () => this.isRequestLoading = true,
-                () => refreshIcmpMonitorList(),
-                () => this.isRequestLoading = false
-            );
-        },
-        deleteMonitor() {
-            deleteIcmpMonitorRequest(
-                this.monitorId,
-                () => this.isRequestLoading = true,
-                () => refreshIcmpMonitorList(),
-            );
-        }
-    }
-};
+const httpMonitorApi = crudRequests('/api/v2/http-monitors', 'monitor');
+const pushMonitorApi = crudRequests('/api/v2/push-monitors', 'monitor');
+const icmpMonitorApi = crudRequests('/api/v2/icmp-monitors', 'monitor');
+const statusPageApi = crudRequests('/api/v2/status-pages', 'status page');
+const maintenanceWindowApi = crudRequests('/api/v2/maintenance-windows', 'maintenance window');
 
-const pushMonitorListItem = (monitorId, isMonitorEnabled, assignedToStatusPage) => {
-    return {
-        monitorId: monitorId,
-        isMonitorEnabled: isMonitorEnabled,
-        assignedToStatusPage: assignedToStatusPage,
-        isRequestLoading: false,
-        toggleMonitor() {
-            patchPushMonitorRequest(
-                this.monitorId,
-                {enabled: !this.isMonitorEnabled},
-                () => this.isRequestLoading = true,
-                () => refreshPushMonitorList(),
-                () => this.isRequestLoading = false
-            );
-        },
-        deleteMonitor() {
-            deletePushMonitorRequest(
-                this.monitorId,
-                () => this.isRequestLoading = true,
-                () => refreshPushMonitorList(),
-            );
-        }
-    }
-};
+// --------- HTMX refresh triggers ---------
+// Refreshes a monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
+const refreshHttpMonitorDetailStatus = () => sendHtmxEvent('#http-monitor-detail-heading', 'refresh-monitor-detail-status');
+const refreshPushMonitorDetailStatus = () => sendHtmxEvent('#push-monitor-detail-heading', 'refresh-monitor-detail-status');
+const refreshIcmpMonitorDetailStatus = () => sendHtmxEvent('#icmp-monitor-detail-heading', 'refresh-monitor-detail-status');
 
-const statusPageListItem = (statusPageId, isStatusPagePublic) => {
-    return {
-        statusPageId: statusPageId,
-        isStatusPagePublic: isStatusPagePublic,
-        isRequestLoading: false,
-        toggleStatusPageVisibility() {
-            patchStatusPageRequest(
-                this.statusPageId,
-                {public: !this.isStatusPagePublic},
-                () => this.isRequestLoading = true,
-                () => refreshStatusPageList(),
-                () => this.isRequestLoading = false
-            );
-        },
-        deleteStatusPage() {
-            deleteStatusPageRequest(
-                this.statusPageId,
-                () => this.isRequestLoading = true,
-                () => refreshStatusPageList(),
-            );
-        }
-    }
-};
-
-const httpMonitorDetails = (monitorId, isMonitorEnabled) => {
-    return {
-        monitorId,
-        isMonitorEnabled,
-        isRequestLoading: false,
-
-        toggleMonitor() {
-            patchHttpMonitorRequest(
-                this.monitorId,
-                {enabled: !this.isMonitorEnabled},
-                () => this.isRequestLoading = true,
-                () => {
-                    this.isRequestLoading = false;
-                    this.isMonitorEnabled = !this.isMonitorEnabled;
-                    this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
-                    refreshHttpMonitorDetailStatus();
-                },
-                () => this.isRequestLoading = false
-            );
-        },
-
-        deleteMonitor() {
-            deleteHttpMonitorRequest(
-                this.monitorId,
-                () => this.isRequestLoading = true,
-                () => window.location.href = '/http-monitors',
-                () => this.isRequestLoading = false
-            );
-            this.isRequestLoading = true;
-        }
-    }
-};
-
-const pushMonitorDetails = (monitorId, isMonitorEnabled) => {
-    return {
-        monitorId,
-        isMonitorEnabled,
-        isRequestLoading: false,
-
-        toggleMonitor() {
-            patchPushMonitorRequest(
-                this.monitorId,
-                {enabled: !this.isMonitorEnabled},
-                () => this.isRequestLoading = true,
-                () => {
-                    this.isRequestLoading = false;
-                    this.isMonitorEnabled = !this.isMonitorEnabled;
-                    this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
-                    refreshPushMonitorDetailStatus();
-                },
-                () => this.isRequestLoading = false
-            );
-        },
-
-        deleteMonitor() {
-            deletePushMonitorRequest(
-                this.monitorId,
-                () => this.isRequestLoading = true,
-                () => window.location.href = '/push-monitors',
-                () => this.isRequestLoading = false
-            );
-            this.isRequestLoading = true;
-        }
-    }
-};
-
-const icmpMonitorDetails = (monitorId, isMonitorEnabled) => {
-    return {
-        monitorId,
-        isMonitorEnabled,
-        isRequestLoading: false,
-
-        toggleMonitor() {
-            patchIcmpMonitorRequest(
-                this.monitorId,
-                {enabled: !this.isMonitorEnabled},
-                () => this.isRequestLoading = true,
-                () => {
-                    this.isRequestLoading = false;
-                    this.isMonitorEnabled = !this.isMonitorEnabled;
-                    this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
-                    refreshIcmpMonitorDetailStatus();
-                },
-                () => this.isRequestLoading = false
-            );
-        },
-
-        deleteMonitor() {
-            deleteIcmpMonitorRequest(
-                this.monitorId,
-                () => this.isRequestLoading = true,
-                () => window.location.href = '/icmp-monitors',
-                () => this.isRequestLoading = false
-            );
-            this.isRequestLoading = true;
-        }
-    }
-};
-
-const statusPageDetails = (statusPageId, isStatusPagePublic) => {
-    return {
-        statusPageId,
-        isStatusPagePublic,
-        isRequestLoading: false,
-
-        toggleStatusPageVisibility() {
-            patchStatusPageRequest(
-                this.statusPageId,
-                {public: !this.isStatusPagePublic},
-                () => this.isRequestLoading = true,
-                () => window.location.reload(),
-                () => this.isRequestLoading = false
-            );
-        },
-
-        deleteStatusPage() {
-            deleteStatusPageRequest(
-                this.statusPageId,
-                () => this.isRequestLoading = true,
-                () => window.location.href = '/status-pages',
-                () => this.isRequestLoading = false
-            );
-        }
-    }
-};
-
-// Refreshes the HTTP monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
-const refreshHttpMonitorDetailStatus = () => {
-    sendHtmxEvent('#http-monitor-detail-heading', 'refresh-monitor-detail-status');
-};
-
-// Refreshes the HTTP monitor list by triggering an HTMX event
-const refreshHttpMonitorList = () => {
-    sendHtmxEvent('#http-monitors-list', 'refresh-monitor-list');
-};
-
-// Refreshes the push monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
-const refreshPushMonitorDetailStatus = () => {
-    sendHtmxEvent('#push-monitor-detail-heading', 'refresh-monitor-detail-status');
-};
-
-// Refreshes the push monitor list by triggering an HTMX event
-const refreshPushMonitorList = () => {
-    sendHtmxEvent('#push-monitors-list', 'refresh-monitor-list');
-};
-
-// Refreshes the ICMP monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
-const refreshIcmpMonitorDetailStatus = () => {
-    sendHtmxEvent('#icmp-monitor-detail-heading', 'refresh-monitor-detail-status');
-};
-
-// Refreshes the ICMP monitor list by triggering an HTMX event
-const refreshIcmpMonitorList = () => {
-    sendHtmxEvent('#icmp-monitors-list', 'refresh-monitor-list');
-};
+// Refreshes a monitor list by triggering an HTMX event
+const refreshHttpMonitorList = () => sendHtmxEvent('#http-monitors-list', 'refresh-monitor-list');
+const refreshPushMonitorList = () => sendHtmxEvent('#push-monitors-list', 'refresh-monitor-list');
+const refreshIcmpMonitorList = () => sendHtmxEvent('#icmp-monitors-list', 'refresh-monitor-list');
 
 // Refreshes the status page list by triggering an HTMX event
-const refreshStatusPageList = () => {
-    sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
-};
+const refreshStatusPageList = () => sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
 
 // Refreshes the dashboard by triggering an HTMX event
 const refreshDashboard = () => {
@@ -385,6 +188,194 @@ const refreshDashboard = () => {
     sendHtmxEvent('#push-monitoring-dashboard', 'refresh-dashboard');
     sendHtmxEvent('#icmp-monitoring-dashboard', 'refresh-dashboard');
 };
+
+// --------- Alpine.js x-data ---------
+
+// Shared list-row component for every monitor type; only the API binding and list refresh differ
+const monitorListItem = (api, refreshList) => (monitorId, isMonitorEnabled, assignedToStatusPage) => ({
+    monitorId,
+    isMonitorEnabled,
+    assignedToStatusPage,
+    isRequestLoading: false,
+    toggleMonitor() {
+        api.patch(
+            this.monitorId,
+            {enabled: !this.isMonitorEnabled},
+            () => this.isRequestLoading = true,
+            () => refreshList(),
+            () => this.isRequestLoading = false
+        );
+    },
+    deleteMonitor() {
+        api.remove(
+            this.monitorId,
+            () => this.isRequestLoading = true,
+            () => refreshList()
+        );
+    }
+});
+
+const httpMonitorListItem = monitorListItem(httpMonitorApi, refreshHttpMonitorList);
+const icmpMonitorListItem = monitorListItem(icmpMonitorApi, refreshIcmpMonitorList);
+const pushMonitorListItem = monitorListItem(pushMonitorApi, refreshPushMonitorList);
+
+const statusPageListItem = (statusPageId, isStatusPagePublic) => ({
+    statusPageId,
+    isStatusPagePublic,
+    isRequestLoading: false,
+    toggleStatusPageVisibility() {
+        statusPageApi.patch(
+            this.statusPageId,
+            {public: !this.isStatusPagePublic},
+            () => this.isRequestLoading = true,
+            () => refreshStatusPageList(),
+            () => this.isRequestLoading = false
+        );
+    },
+    deleteStatusPage() {
+        statusPageApi.remove(
+            this.statusPageId,
+            () => this.isRequestLoading = true,
+            () => refreshStatusPageList()
+        );
+    }
+});
+
+// Shared detail-page component for every monitor type; the API binding, status refresh and list path differ
+const monitorDetails = (api, refreshDetailStatus, listPath) => (monitorId, isMonitorEnabled) => ({
+    monitorId,
+    isMonitorEnabled,
+    isRequestLoading: false,
+
+    toggleMonitor() {
+        api.patch(
+            this.monitorId,
+            {enabled: !this.isMonitorEnabled},
+            () => this.isRequestLoading = true,
+            () => {
+                this.isRequestLoading = false;
+                this.isMonitorEnabled = !this.isMonitorEnabled;
+                this.$dispatch(this.isMonitorEnabled ? 'monitor-enabled' : 'monitor-disabled');
+                refreshDetailStatus();
+            },
+            () => this.isRequestLoading = false
+        );
+    },
+
+    deleteMonitor() {
+        api.remove(
+            this.monitorId,
+            () => this.isRequestLoading = true,
+            () => window.location.href = listPath,
+            () => this.isRequestLoading = false
+        );
+    }
+});
+
+const httpMonitorDetails = monitorDetails(httpMonitorApi, refreshHttpMonitorDetailStatus, '/http-monitors');
+const pushMonitorDetails = monitorDetails(pushMonitorApi, refreshPushMonitorDetailStatus, '/push-monitors');
+const icmpMonitorDetails = monitorDetails(icmpMonitorApi, refreshIcmpMonitorDetailStatus, '/icmp-monitors');
+
+const statusPageDetails = (statusPageId, isStatusPagePublic) => ({
+    statusPageId,
+    isStatusPagePublic,
+    isRequestLoading: false,
+
+    toggleStatusPageVisibility() {
+        statusPageApi.patch(
+            this.statusPageId,
+            {public: !this.isStatusPagePublic},
+            () => this.isRequestLoading = true,
+            () => window.location.reload(),
+            () => this.isRequestLoading = false
+        );
+    },
+
+    deleteStatusPage() {
+        statusPageApi.remove(
+            this.statusPageId,
+            () => this.isRequestLoading = true,
+            () => window.location.href = '/status-pages',
+            () => this.isRequestLoading = false
+        );
+    }
+});
+
+// Shared ApexCharts config for the latency/packet-loss area charts on the monitor detail pages
+const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
+    chart: {
+        type: "area",
+        fontFamily: "inherit",
+        height: 240,
+        parentHeightOffset: 0,
+        toolbar: {
+            show: false,
+        },
+        animations: {
+            enabled: false,
+        },
+    },
+    dataLabels: {
+        enabled: false,
+    },
+    fill: {
+        colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 16%)", "color-mix(in srgb, transparent, var(--tblr-primary) 16%)"],
+        type: "solid",
+    },
+    stroke: {
+        width: 2,
+        lineCap: "round",
+        curve: "smooth",
+    },
+    noData: {
+        text: noDataLabel,
+        align: "center",
+        verticalAlign: "middle",
+    },
+    series: [],
+    tooltip: {
+        enabled: true,
+        x: {
+            format: "yyyy/MM/dd HH:mm:ss",
+        },
+        y: {
+            formatter: tooltipFormatter,
+        },
+        theme: "dark",
+    },
+    grid: {
+        padding: {
+            top: -20,
+            right: 0,
+            left: -4,
+            bottom: -4,
+        },
+        strokeDashArray: 4,
+    },
+    xaxis: {
+        labels: {
+            padding: 0,
+            datetimeUTC: false
+        },
+        tooltip: {
+            enabled: false,
+        },
+        axisBorder: {
+            show: false,
+        },
+        type: "datetime",
+    },
+    yaxis: {
+        labels: {
+            padding: 4,
+        },
+    },
+    labels: [],
+    colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 100%)"],
+    legend: {
+        show: false,
+    },
+});
 
 const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
     return {
@@ -426,82 +417,7 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
         },
 
         initializeChart() {
-            const options = {
-                chart: {
-                    type: "area",
-                    fontFamily: "inherit",
-                    height: 240,
-                    parentHeightOffset: 0,
-                    toolbar: {
-                        show: false,
-                    },
-                    animations: {
-                        enabled: false,
-                    },
-                },
-                dataLabels: {
-                    enabled: false,
-                },
-                fill: {
-                    colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 16%)", "color-mix(in srgb, transparent, var(--tblr-primary) 16%)"],
-                    type: "solid",
-                },
-                stroke: {
-                    width: 2,
-                    lineCap: "round",
-                    curve: "smooth",
-                },
-                noData: {
-                    text: this.noDataLabel,
-                    align: "center",
-                    verticalAlign: "middle",
-                },
-                series: [],
-                tooltip: {
-                    enabled: true,
-                    x: {
-                        format: "yyyy/MM/dd HH:mm:ss",
-                    },
-                    y: {
-                        formatter: function (val) {
-                            return val + " ms";
-                        },
-                    },
-                    theme: "dark",
-                },
-                grid: {
-                    padding: {
-                        top: -20,
-                        right: 0,
-                        left: -4,
-                        bottom: -4,
-                    },
-                    strokeDashArray: 4,
-                },
-                xaxis: {
-                    labels: {
-                        padding: 0,
-                        datetimeUTC: false
-                    },
-                    tooltip: {
-                        enabled: false,
-                    },
-                    axisBorder: {
-                        show: false,
-                    },
-                    type: "datetime",
-                },
-                yaxis: {
-                    labels: {
-                        padding: 4,
-                    },
-                },
-                labels: [],
-                colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 100%)"],
-                legend: {
-                    show: false,
-                },
-            };
+            const options = baseAreaChartOptions(this.noDataLabel, (val) => val + " ms");
             this.chart = new ApexCharts(document.getElementById("monitor-details-latency-chart"), options);
             this.chart.render();
         },
@@ -593,98 +509,12 @@ const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
             }
         },
 
-        buildChartOptions(elementId, tooltipFormatter) {
-            return {
-                chart: {
-                    type: "area",
-                    fontFamily: "inherit",
-                    height: 240,
-                    parentHeightOffset: 0,
-                    toolbar: {
-                        show: false,
-                    },
-                    animations: {
-                        enabled: false,
-                    },
-                },
-                dataLabels: {
-                    enabled: false,
-                },
-                fill: {
-                    colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 16%)", "color-mix(in srgb, transparent, var(--tblr-primary) 16%)"],
-                    type: "solid",
-                },
-                stroke: {
-                    width: 2,
-                    lineCap: "round",
-                    curve: "smooth",
-                },
-                noData: {
-                    text: this.noDataLabel,
-                    align: "center",
-                    verticalAlign: "middle",
-                },
-                series: [],
-                tooltip: {
-                    enabled: true,
-                    x: {
-                        format: "yyyy/MM/dd HH:mm:ss",
-                    },
-                    y: {
-                        formatter: tooltipFormatter,
-                    },
-                    theme: "dark",
-                },
-                grid: {
-                    padding: {
-                        top: -20,
-                        right: 0,
-                        left: -4,
-                        bottom: -4,
-                    },
-                    strokeDashArray: 4,
-                },
-                xaxis: {
-                    labels: {
-                        padding: 0,
-                        datetimeUTC: false
-                    },
-                    tooltip: {
-                        enabled: false,
-                    },
-                    axisBorder: {
-                        show: false,
-                    },
-                    type: "datetime",
-                },
-                yaxis: {
-                    labels: {
-                        padding: 4,
-                    },
-                },
-                labels: [],
-                colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 100%)"],
-                legend: {
-                    show: false,
-                },
-                el: document.getElementById(elementId),
-            };
-        },
-
         initializeCharts() {
-            const latencyOptions = this.buildChartOptions(
-                "icmp-monitor-details-latency-chart",
-                (val) => val + " ms"
-            );
-            delete latencyOptions.el;
+            const latencyOptions = baseAreaChartOptions(this.noDataLabel, (val) => val + " ms");
             this.latencyChart = new ApexCharts(document.getElementById("icmp-monitor-details-latency-chart"), latencyOptions);
             this.latencyChart.render();
 
-            const packetLossOptions = this.buildChartOptions(
-                "icmp-monitor-details-packet-loss-chart",
-                (val) => val + "%"
-            );
-            delete packetLossOptions.el;
+            const packetLossOptions = baseAreaChartOptions(this.noDataLabel, (val) => val + "%");
             this.packetLossChart = new ApexCharts(document.getElementById("icmp-monitor-details-packet-loss-chart"), packetLossOptions);
             this.packetLossChart.render();
         },
@@ -1240,7 +1070,6 @@ const upsertIcmpMonitorForm = (
         },
 
         validatePacketCount() {
-            const val = parseInt(this.packetCount);
             if (!this.packetCount || isNaN(this.packetCount) || this.packetCount < 1 || this.packetCount > 10) {
                 this.errors.packetCount = this.errorMessages.packetCountInvalid;
             } else {
@@ -1515,7 +1344,7 @@ const renderMonitorOption = (data, escape) => {
     const type = parts[0];
     const name = parts[1];
     const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : type === 'icmp' ? 'bg-orange-lt text-orange-lt-fg' : '';
-    return `<div><span class="badge me-2 ${badgeColor}">${type.toUpperCase()}</span>${name}</div>`;
+    return `<div><span class="badge me-2 ${badgeColor}">${escape(type.toUpperCase())}</span>${escape(name)}</div>`;
 };
 
 const renderStatusCodeOption = (data, escape) => {
@@ -1528,226 +1357,8 @@ const renderStatusCodeItem = (data, escape) => {
     return `<div><span class="status-dot ${statusClass} me-2"></span>${escape(data.value)}</div>`;
 };
 
-// API calls
-const jsonContentHeaders = {'Content-Type': 'application/json'};
-
-const deleteHttpMonitorRequest = (
-    monitorId,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    beforeRequest();
-    fetch('/api/v2/http-monitors/' + monitorId, {
-        method: 'DELETE',
-        headers: jsonContentHeaders
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error deleting monitor:', response.statusText);
-            alert('An error occurred while deleting the monitor.');
-        }
-    });
-};
-
-const deletePushMonitorRequest = (
-    monitorId,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    beforeRequest();
-    fetch('/api/v2/push-monitors/' + monitorId, {
-        method: 'DELETE',
-        headers: jsonContentHeaders
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error deleting monitor:', response.statusText);
-            alert('An error occurred while deleting the monitor.');
-        }
-    });
-};
-
-const patchHttpMonitorRequest = (
-    monitorId,
-    body,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    this.isRequestLoading = true;
-    fetch('/api/v2/http-monitors/' + monitorId, {
-        method: 'PATCH',
-        headers: jsonContentHeaders,
-        body: JSON.stringify(body)
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error toggling monitor:', response.statusText);
-            alert('An error occurred while toggling the monitor.');
-        }
-    }).catch(error => {
-        onError();
-        console.error('Error toggling monitor:', error);
-        alert('An error occurred while toggling the monitor.');
-    });
-};
-
-const patchPushMonitorRequest = (
-    monitorId,
-    body,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    this.isRequestLoading = true;
-    fetch('/api/v2/push-monitors/' + monitorId, {
-        method: 'PATCH',
-        headers: jsonContentHeaders,
-        body: JSON.stringify(body)
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error toggling monitor:', response.statusText);
-            alert('An error occurred while toggling the monitor.');
-        }
-    }).catch(error => {
-        onError();
-        console.error('Error toggling monitor:', error);
-        alert('An error occurred while toggling the monitor.');
-    });
-};
-
-const deleteIcmpMonitorRequest = (
-    monitorId,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    beforeRequest();
-    fetch('/api/v2/icmp-monitors/' + monitorId, {
-        method: 'DELETE',
-        headers: jsonContentHeaders
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error deleting monitor:', response.statusText);
-            alert('An error occurred while deleting the monitor.');
-        }
-    });
-};
-
-const patchIcmpMonitorRequest = (
-    monitorId,
-    body,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    },
-) => {
-    this.isRequestLoading = true;
-    fetch('/api/v2/icmp-monitors/' + monitorId, {
-        method: 'PATCH',
-        headers: jsonContentHeaders,
-        body: JSON.stringify(body)
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error toggling monitor:', response.statusText);
-            alert('An error occurred while toggling the monitor.');
-        }
-    }).catch(error => {
-        onError();
-        console.error('Error toggling monitor:', error);
-        alert('An error occurred while toggling the monitor.');
-    });
-};
-
-const deleteStatusPageRequest = (
-    statusPageId,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    beforeRequest();
-    fetch('/api/v2/status-pages/' + statusPageId, {
-        method: 'DELETE',
-        headers: jsonContentHeaders
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error deleting status page:', response.statusText);
-            alert('An error occurred while deleting the status page.');
-        }
-    });
-};
-
-const patchStatusPageRequest = (
-    statusPageId,
-    body,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    beforeRequest();
-    fetch('/api/v2/status-pages/' + statusPageId, {
-        method: 'PATCH',
-        headers: jsonContentHeaders,
-        body: JSON.stringify(body)
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error toggling status page:', response.statusText);
-            alert('An error occurred while toggling the status page.');
-        }
-    }).catch(error => {
-        onError();
-        console.error('Error toggling status page:', error);
-        alert('An error occurred while toggling the status page.');
-    });
-};
-
-const monitorImportForm = (labels) => {
+// Shared Alpine component for every YAML import modal
+const importForm = (config) => {
     return {
         file: null,
         dryRun: true,
@@ -1756,7 +1367,7 @@ const monitorImportForm = (labels) => {
         result: null,
         importCompleted: false,
         errors: {},
-        labels: labels || {},
+        labels: config.labels || {},
 
         resetState() {
             this.file = null;
@@ -1766,7 +1377,7 @@ const monitorImportForm = (labels) => {
             this.result = null;
             this.importCompleted = false;
             this.errors = {};
-            const fileInput = document.getElementById('monitor-import-file-input');
+            const fileInput = document.getElementById(config.fileInputId);
             if (fileInput) {
                 fileInput.value = '';
             }
@@ -1782,6 +1393,14 @@ const monitorImportForm = (labels) => {
             return this.dryRun ? this.labels.previewButton : this.labels.importButton;
         },
 
+        // Flat single-entity result
+        formatResult(result) {
+            return result.receivedCnt + ' ' + this.labels.countReceivedLabel + ' / ' +
+                result.imported.length + ' ' + this.labels.countImportedLabel + ' / ' +
+                result.deleted.length + ' ' + this.labels.countDeletedLabel;
+        },
+
+        // Per-monitor-type result (monitors)
         formatTypeResult(typeResult) {
             let typeLabel;
             switch (typeResult.monitorType) {
@@ -1798,9 +1417,9 @@ const monitorImportForm = (labels) => {
                     typeLabel = typeResult.monitorType;
             }
             return typeLabel + ': ' +
-                typeResult.receivedMonitorCnt + ' ' + this.labels.countReceivedLabel + ' / ' +
-                typeResult.importedMonitorCnt + ' ' + this.labels.countImportedLabel + ' / ' +
-                typeResult.deletedMonitorCount + ' ' + this.labels.countDeletedLabel;
+                typeResult.receivedCnt + ' ' + this.labels.countReceivedLabel + ' / ' +
+                typeResult.imported.length + ' ' + this.labels.countImportedLabel + ' / ' +
+                typeResult.deleted.length + ' ' + this.labels.countDeletedLabel;
         },
 
         async submitForm() {
@@ -1819,7 +1438,7 @@ const monitorImportForm = (labels) => {
             formData.append('file', this.file);
 
             try {
-                const response = await fetch('/api/v2/monitors/import/yaml?dryRun=' + this.dryRun, {
+                const response = await fetch(config.endpoint + '?dryRun=' + this.dryRun, {
                     method: 'POST',
                     body: formData
                 });
@@ -1835,7 +1454,7 @@ const monitorImportForm = (labels) => {
                     this.error = data.message || this.labels.importFailed;
                 }
             } catch (err) {
-                console.error('Monitor import failed:', err);
+                console.error('Import failed:', err);
                 this.error = this.labels.importFailed;
             } finally {
                 this.isRequestLoading = false;
@@ -1843,6 +1462,24 @@ const monitorImportForm = (labels) => {
         }
     };
 };
+
+const monitorImportForm = (labels) => importForm({
+    labels: labels,
+    endpoint: '/api/v2/monitors/import/yaml',
+    fileInputId: 'monitor-import-file-input',
+});
+
+const statusPageImportForm = (labels) => importForm({
+    labels: labels,
+    endpoint: '/api/v2/status-pages/import/yaml',
+    fileInputId: 'status-page-import-file-input',
+});
+
+const maintenanceWindowImportForm = (labels) => importForm({
+    labels: labels,
+    endpoint: '/api/v2/maintenance-windows/import/yaml',
+    fileInputId: 'maintenance-window-import-file-input',
+});
 
 // ---------------------------------------------------------------------------
 // Maintenance windows
@@ -1896,89 +1533,55 @@ const refreshMaintenanceWindowDetailStatus = () => {
     sendHtmxEvent('#maintenance-window-detail-heading', 'refresh-maintenance-window-detail-status');
 };
 
-const maintenanceWindowListItem = (maintenanceWindowId, isMaintenanceWindowEnabled) => {
-    return {
-        maintenanceWindowId: maintenanceWindowId,
-        isMaintenanceWindowEnabled: isMaintenanceWindowEnabled,
-        isRequestLoading: false,
-        toggleMaintenanceWindow() {
-            patchMaintenanceWindowRequest(
-                this.maintenanceWindowId,
-                {enabled: !this.isMaintenanceWindowEnabled},
-                () => this.isRequestLoading = true,
-                () => refreshMaintenanceWindowList(),
-                () => this.isRequestLoading = false
-            );
-        },
-        deleteMaintenanceWindow() {
-            deleteMaintenanceWindowRequest(
-                this.maintenanceWindowId,
-                () => this.isRequestLoading = true,
-                () => refreshMaintenanceWindowList(),
-                () => this.isRequestLoading = false
-            );
-        }
-    }
-};
-
-const maintenanceWindowDetails = (maintenanceWindowId, isMaintenanceWindowEnabled) => {
-    return {
-        maintenanceWindowId: maintenanceWindowId,
-        isMaintenanceWindowEnabled: isMaintenanceWindowEnabled,
-        isRequestLoading: false,
-        toggleMaintenanceWindow() {
-            patchMaintenanceWindowRequest(
-                this.maintenanceWindowId,
-                {enabled: !this.isMaintenanceWindowEnabled},
-                () => this.isRequestLoading = true,
-                () => {
-                    this.isRequestLoading = false;
-                    this.isMaintenanceWindowEnabled = !this.isMaintenanceWindowEnabled;
-                    refreshMaintenanceWindowDetailStatus();
-                },
-                () => this.isRequestLoading = false
-            );
-        },
-        deleteMaintenanceWindow() {
-            deleteMaintenanceWindowRequest(
-                this.maintenanceWindowId,
-                () => this.isRequestLoading = true,
-                () => window.location.href = '/maintenance-windows',
-                () => this.isRequestLoading = false
-            );
-        }
-    }
-};
-
-const patchMaintenanceWindowRequest = (
+const maintenanceWindowListItem = (maintenanceWindowId, isMaintenanceWindowEnabled) => ({
     maintenanceWindowId,
-    body,
-    beforeRequest = () => {
+    isMaintenanceWindowEnabled,
+    isRequestLoading: false,
+    toggleMaintenanceWindow() {
+        maintenanceWindowApi.patch(
+            this.maintenanceWindowId,
+            {enabled: !this.isMaintenanceWindowEnabled},
+            () => this.isRequestLoading = true,
+            () => refreshMaintenanceWindowList(),
+            () => this.isRequestLoading = false
+        );
     },
-    onSuccess = () => {
-    },
-    onError = () => {
+    deleteMaintenanceWindow() {
+        maintenanceWindowApi.remove(
+            this.maintenanceWindowId,
+            () => this.isRequestLoading = true,
+            () => refreshMaintenanceWindowList(),
+            () => this.isRequestLoading = false
+        );
     }
-) => {
-    beforeRequest();
-    fetch('/api/v2/maintenance-windows/' + maintenanceWindowId, {
-        method: 'PATCH',
-        headers: jsonContentHeaders,
-        body: JSON.stringify(body)
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error toggling maintenance window:', response.statusText);
-            alert('An error occurred while toggling the maintenance window.');
-        }
-    }).catch(error => {
-        onError();
-        console.error('Error toggling maintenance window:', error);
-        alert('An error occurred while toggling the maintenance window.');
-    });
-};
+});
+
+const maintenanceWindowDetails = (maintenanceWindowId, isMaintenanceWindowEnabled) => ({
+    maintenanceWindowId,
+    isMaintenanceWindowEnabled,
+    isRequestLoading: false,
+    toggleMaintenanceWindow() {
+        maintenanceWindowApi.patch(
+            this.maintenanceWindowId,
+            {enabled: !this.isMaintenanceWindowEnabled},
+            () => this.isRequestLoading = true,
+            () => {
+                this.isRequestLoading = false;
+                this.isMaintenanceWindowEnabled = !this.isMaintenanceWindowEnabled;
+                refreshMaintenanceWindowDetailStatus();
+            },
+            () => this.isRequestLoading = false
+        );
+    },
+    deleteMaintenanceWindow() {
+        maintenanceWindowApi.remove(
+            this.maintenanceWindowId,
+            () => this.isRequestLoading = true,
+            () => window.location.href = '/maintenance-windows',
+            () => this.isRequestLoading = false
+        );
+    }
+});
 
 const upsertMaintenanceWindowForm = (
     maintenanceWindow,
@@ -2165,30 +1768,27 @@ const upsertMaintenanceWindowForm = (
     }
 };
 
-const deleteMaintenanceWindowRequest = (
-    maintenanceWindowId,
-    beforeRequest = () => {
-    },
-    onSuccess = () => {
-    },
-    onError = () => {
-    }
-) => {
-    beforeRequest();
-    fetch('/api/v2/maintenance-windows/' + maintenanceWindowId, {
-        method: 'DELETE',
-        headers: jsonContentHeaders
-    }).then(response => {
-        if (response.ok) {
-            onSuccess();
-        } else {
-            onError();
-            console.error('Error deleting maintenance window:', response.statusText);
-            alert('An error occurred while deleting the maintenance window.');
-        }
-    }).catch(error => {
-        onError();
-        console.error('Error deleting maintenance window:', error);
-        alert('An error occurred while deleting the maintenance window.');
-    });
-};
+// Exposes helpers and Alpine x-data factories for the Node-based unit tests (see ui/src/jsTest and the :ui:jsTest task)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        // Pure, DOM-free helpers
+        MAINTENANCE_WINDOW_TYPES,
+        sanitizeTextInput,
+        splitWithLimit,
+        statusCodeToBadgeClass,
+        hasNonNullValue,
+        isValidUrl,
+        isValidSlug,
+        isValidIsoDuration,
+        toDateTimeLocalValue,
+        resolveMaintenanceWindowType,
+        createRandomSecret,
+        // Alpine x-data component factories
+        upsertHttpMonitorForm,
+        upsertPushMonitorForm,
+        upsertIcmpMonitorForm,
+        upsertMaintenanceWindowForm,
+        httpMetricsBlock,
+        icmpMetricsBlock,
+    };
+}

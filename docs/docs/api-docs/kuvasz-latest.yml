@@ -749,6 +749,61 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/maintenance-windows/import/yaml:
+    post:
+      tags:
+      - Maintenance windows
+      summary: Import maintenance windows from a YAML backup file
+      description: "Upload a YAML maintenance window backup. Existing windows with\
+        \ the same name will be updated, and windows not present in the backup will\
+        \ be deleted. Use dryRun=true to preview the outcome without making any changes."
+      operationId: importYamlMaintenanceWindows
+      parameters:
+      - name: dryRun
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: application/octet-stream
+                explode: false
+        required: true
+      responses:
+        "200":
+          description: Successful import or dry-run preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceWindowImportResultDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Maintenance windows are in read-only mode, because they are\
+            \ loaded from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/maintenance-windows/{maintenanceWindowId}:
     get:
       tags:
@@ -1339,6 +1394,61 @@ paths:
           description: Successful query
           content:
             application/yaml: {}
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/status-pages/import/yaml:
+    post:
+      tags:
+      - Status pages
+      summary: Import status pages from a YAML backup file
+      description: "Upload a YAML status page backup. Existing status pages with the\
+        \ same slug will be updated, and status pages not present in the backup will\
+        \ be deleted. Use dryRun=true to preview the outcome without making any changes."
+      operationId: importYamlStatusPages
+      parameters:
+      - name: dryRun
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: application/octet-stream
+                explode: false
+        required: true
+      responses:
+        "200":
+          description: Successful import or dry-run preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusPageImportResultDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Status pages are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -3379,6 +3489,47 @@ components:
           type: string
           description: Timestamp of when the window was last updated
           format: date-time
+    MaintenanceWindowImportResultDto:
+      required:
+      - deleted
+      - dryRun
+      - ignoredIntegrations
+      - ignoredMonitors
+      - imported
+      - receivedCnt
+      type: object
+      properties:
+        receivedCnt:
+          type: integer
+          description: Number of items found in the uploaded backup file
+          format: int32
+        dryRun:
+          type: boolean
+          description: "Whether the import was a dry run. When true, no changes were\
+            \ applied and the lists below only describe what would have happened."
+        imported:
+          type: array
+          description: Names of the maintenance windows that were (or would be) imported
+          items:
+            type: string
+        deleted:
+          type: array
+          description: "Names of the maintenance windows that were (or would be) deleted,\
+            \ because they are absent from the backup file"
+          items:
+            type: string
+        ignoredMonitors:
+          type: array
+          description: "Referenced monitors that were dropped during validation, because\
+            \ they do not exist"
+          items:
+            type: string
+        ignoredIntegrations:
+          type: array
+          description: "Referenced integrations that were dropped during validation,\
+            \ because they are not configured"
+          items:
+            type: string
     MaintenanceWindowUpdateDto:
       type: object
       properties:
@@ -3451,8 +3602,11 @@ components:
       properties:
         dryRun:
           type: boolean
+          description: "Whether the import was a dry run. When true, no changes were\
+            \ applied and the lists below only describe what would have happened."
         perTypeResults:
           type: array
+          description: Import results broken down by monitor type
           items:
             $ref: "#/components/schemas/MonitorTypeImportResult"
     MonitorType:
@@ -3463,23 +3617,42 @@ components:
       - ICMP
     MonitorTypeImportResult:
       required:
-      - deletedMonitorCount
-      - importedMonitorCnt
+      - deleted
+      - ignoredIntegrations
+      - imported
       - monitorType
-      - receivedMonitorCnt
+      - receivedCnt
       type: object
       properties:
         monitorType:
-          $ref: "#/components/schemas/MonitorType"
-        receivedMonitorCnt:
+          description: The monitor type this result belongs to
+          allOf:
+          - $ref: "#/components/schemas/MonitorType"
+        receivedCnt:
           type: integer
+          description: Number of items found in the uploaded backup file
           format: int32
-        importedMonitorCnt:
-          type: integer
-          format: int32
-        deletedMonitorCount:
-          type: integer
-          format: int32
+        imported:
+          type: array
+          description: Identifiers of the monitors that were (or would be) imported
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        deleted:
+          type: array
+          description: "Identifiers of the monitors that were (or would be) deleted,\
+            \ because they are absent from the backup file"
+          items:
+            type: string
+            description: "A unique identifier for a monitor, formatted as 'type:name'."
+            example: http:My precious monitor
+        ignoredIntegrations:
+          type: array
+          description: "Referenced integrations that were dropped during validation,\
+            \ because they are not configured"
+          items:
+            type: string
     NotificationTestResult:
       required:
       - message
@@ -4538,6 +4711,40 @@ components:
           nullable: true
         inMaintenance:
           type: boolean
+    StatusPageImportResultDto:
+      required:
+      - deleted
+      - dryRun
+      - ignoredMonitors
+      - imported
+      - receivedCnt
+      type: object
+      properties:
+        receivedCnt:
+          type: integer
+          description: Number of items found in the uploaded backup file
+          format: int32
+        dryRun:
+          type: boolean
+          description: "Whether the import was a dry run. When true, no changes were\
+            \ applied and the lists below only describe what would have happened."
+        imported:
+          type: array
+          description: Titles of the status pages that were (or would be) imported
+          items:
+            type: string
+        deleted:
+          type: array
+          description: "Titles of the status pages that were (or would be) deleted,\
+            \ because they are absent from the backup file"
+          items:
+            type: string
+        ignoredMonitors:
+          type: array
+          description: "Referenced monitors that were dropped during validation, because\
+            \ they do not exist"
+          items:
+            type: string
     StatusPageMaintenanceWindowDto:
       required:
       - name

@@ -18,24 +18,22 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
     monitor: HttpMonitorDetailsDto?,
     globals: AppGlobals,
 ) {
-    val serializedMonitor: String? = monitor?.let { objectMapper.writeValueAsString(it) }
-    val serializedErrorMessages = objectMapper.writeValueAsString(
-        mapOf(
-            "nameRequired" to Messages.errorNameRequired(),
-            "urlRequired" to Messages.errorMissingUrl(),
-            "urlInvalid" to Messages.errorInvalidUrl(),
-            "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
-            "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
-            "sslExpiryThresholdInvalid" to Messages.errorSSLExpiryThresholdInvalid(),
-            "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
-            "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
-            "responseTimeThresholdInvalid" to Messages.errorResponseTimeThresholdInvalid(),
-            "requestHeaderInvalid" to Messages.errorNewHeaderInvalid(),
-            "expectedHeaderInvalid" to Messages.errorNewHeaderInvalid(),
-            "requestBodyInvalid" to Messages.errorRequestBodyInvalid(),
-        )
-    )
-    val serializedStatusCodes = objectMapper.writeValueAsString(SupportedExpectedHttpStatusCodes.allCodes)
+    val serializedMonitor: String? = monitor?.asJsonString()
+    val serializedErrorMessages = mapOf(
+        "nameRequired" to Messages.errorNameRequired(),
+        "urlRequired" to Messages.errorMissingUrl(),
+        "urlInvalid" to Messages.errorInvalidUrl(),
+        "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
+        "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
+        "sslExpiryThresholdInvalid" to Messages.errorSSLExpiryThresholdInvalid(),
+        "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
+        "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
+        "responseTimeThresholdInvalid" to Messages.errorResponseTimeThresholdInvalid(),
+        "requestHeaderInvalid" to Messages.errorNewHeaderInvalid(),
+        "expectedHeaderInvalid" to Messages.errorNewHeaderInvalid(),
+        "requestBodyInvalid" to Messages.errorRequestBodyInvalid(),
+    ).asJsonString()
+    val serializedStatusCodes = SupportedExpectedHttpStatusCodes.allCodes.asJsonString()
     val modalClosedEvent = "http-monitor-upsert-modal-closed"
     val acceptedStatusCodeSelectId = "accepted-status-codes-select"
     val isReadOnlyMode = globals.editabilityState.areHttpMonitorsReadOnly()

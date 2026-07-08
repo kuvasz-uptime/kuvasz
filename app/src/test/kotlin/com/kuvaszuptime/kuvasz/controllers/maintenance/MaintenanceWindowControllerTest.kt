@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.MaintenanceWindowValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowExportDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowUpdateDto
@@ -36,6 +37,7 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
@@ -65,6 +67,67 @@ class MaintenanceWindowControllerTest(
             } catch (ex: HttpClientResponseException) {
                 ex.status
             }
+
+        given("MaintenanceWindowController's importYamlMaintenanceWindows() endpoint") {
+
+            `when`("a valid backup is imported as a dry-run") {
+                val existing = createMaintenanceWindow(dslContext, name = "existing-window")
+                val yaml = buildMaintenanceWindowYaml(exportDto(name = "imported-window"))
+
+                val response = rawClient.exchange(
+                    HttpRequest.POST("/api/v2/maintenance-windows/import/yaml?dryRun=true", multipartOf(yaml))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                        .accept(MediaType.APPLICATION_JSON_TYPE),
+                    MaintenanceWindowImportResultDto::class.java,
+                ).awaitFirst()
+
+                then("it returns the preview and does not change the database") {
+                    response.status shouldBe HttpStatus.OK
+                    val body = response.body().shouldNotBeNull()
+                    body.dryRun shouldBe true
+                    body.receivedCnt shouldBe 1
+                    body.imported shouldContainExactly listOf("imported-window")
+                    body.deleted shouldContainExactly listOf("existing-window")
+                    maintenanceWindowRepository.findById(existing.id).shouldNotBeNull()
+                    maintenanceWindowRepository.fetchAll().none { it.name == "imported-window" } shouldBe true
+                }
+            }
+
+            `when`("a valid backup is imported for real") {
+                val existing = createMaintenanceWindow(dslContext, name = "existing-window")
+                val yaml = buildMaintenanceWindowYaml(exportDto(name = "imported-window"))
+
+                val response = rawClient.exchange(
+                    HttpRequest.POST("/api/v2/maintenance-windows/import/yaml?dryRun=false", multipartOf(yaml))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                        .accept(MediaType.APPLICATION_JSON_TYPE),
+                    MaintenanceWindowImportResultDto::class.java,
+                ).awaitFirst()
+
+                then("the backup is persisted and the windows not in it are deleted") {
+                    response.status shouldBe HttpStatus.OK
+                    response.body().shouldNotBeNull().dryRun shouldBe false
+                    maintenanceWindowRepository.findById(existing.id).shouldBeNull()
+                    maintenanceWindowRepository.fetchAll().any { it.name == "imported-window" } shouldBe true
+                }
+            }
+
+            `when`("the uploaded file is not valid YAML") {
+                then("it returns a 400 with a ServiceError") {
+                    val ex = shouldThrow<HttpClientResponseException> {
+                        rawClient.exchange(
+                            HttpRequest.POST(
+                                "/api/v2/maintenance-windows/import/yaml",
+                                multipartOf("not: valid: [".toByteArray()),
+                            ).contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                                .accept(MediaType.APPLICATION_JSON_TYPE),
+                            MaintenanceWindowImportResultDto::class.java,
+                        ).awaitFirst()
+                    }
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                }
+            }
+        }
 
         given("the createMaintenanceWindow endpoint") {
 
@@ -532,4 +595,28 @@ class MaintenanceWindowControllerTest(
             }
         }
     }
+
+    private fun exportDto(
+        name: String,
+        start: String? = OffsetDateTime.now().plusDays(1).toString(),
+    ) = MaintenanceWindowExportDto(
+        name = name,
+        description = null,
+        enabled = true,
+        global = true,
+        showOnStatusPages = true,
+        cron = null,
+        start = start,
+        duration = "PT1H",
+        monitors = emptySet(),
+        integrations = emptySet(),
+    )
+
+    private fun buildMaintenanceWindowYaml(vararg windows: MaintenanceWindowExportDto): ByteArray =
+        yamlMapper.writeValueAsBytes(mapOf("maintenance-windows" to windows.toList()))
+
+    private fun multipartOf(content: ByteArray): MultipartBody =
+        MultipartBody.builder()
+            .addPart("file", "content.yml", MediaType.APPLICATION_YAML_TYPE, content)
+            .build()
 }
