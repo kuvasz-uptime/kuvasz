@@ -8,7 +8,7 @@ i18n4k = "0.11.2"
 jib = "3.5.3"
 jooq = "3.21.6"
 jooqPlugin = "10.2.1"
-keycloakTestcontainers = "4.2.1"
+keycloakTestcontainers = "4.3.0"
 # @pin Better to move it together with the version that comes from Micronaut's BOM
 kotest = "6.1.9"
 kotlin = "2.4.0"
