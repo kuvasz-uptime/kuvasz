@@ -1,3 +1,24 @@
+## 4.1.0-rc <small>2026-07-09</small> { id="4.1.0-rc" data-toc-label="4.1.0-rc" }
+
+!!! question "Make your voice heard!"
+
+    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9){ target="_blank" }.
+
+    _Thanks, Adam_
+
+### Features
+
+- **YAML import/restore** is now available for your whole configuration: on top of monitors, you can restore **maintenance windows** and **status pages** from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire _Kuvasz_ setup. To try it out, head to the _"Settings"_ page and click the _"Backup & Restore"_ button! Thanks for the monitor imports to [**@visorcraft**](https://github.com/visorcraft){target="_blank"}!
+
+![Kuvasz backup & restore UI](images/features/monitor-imports.webp)
+
+- **Clonable monitors**: you can now duplicate an existing monitor straight from the Web UI, so creating similar checks no longer means filling out the whole form from scratch.
+
+### Enhancements
+
+- Helm chart: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo){ target="_blank" }!
+- The notification about a maintenance window's end doesn't contain the window's description anymore, because it doesn't really make sense to include it in there.
+
 ## 4.1.0-beta <small>2026-07-04</small> { id="4.1.0-beta" data-toc-label="4.1.0-beta" }
 
 ### Features
