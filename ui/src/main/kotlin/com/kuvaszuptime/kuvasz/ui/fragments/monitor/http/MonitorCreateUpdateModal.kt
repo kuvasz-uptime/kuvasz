@@ -45,14 +45,15 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
         xData(
             """upsertHttpMonitorForm(
-                |$serializedMonitor, 
-                |$serializedErrorMessages, 
-                |'$acceptedStatusCodeSelectId', 
+                |$serializedMonitor,
+                |$serializedErrorMessages,
+                |'$acceptedStatusCodeSelectId',
                 |$serializedStatusCodes,
                 |${globals.enabledIntegrations.count { it.value.global }})
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
+        attributes["@clone-monitor.window"] = "cloneFrom(\$event.detail.id, \$event.detail.name)"
         tabIndex = "-1"
         role = "dialog"
 
@@ -61,7 +62,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
             role = "document"
 
             div {
-                classes(MODAL_CONTENT)
+                classes(MODAL_CONTENT, POSITION_RELATIVE)
                 // Modal header
                 div {
                     classes(MODAL_HEADER)
@@ -352,9 +353,10 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 // Modal footer
                 upsertModalFooter(
                     isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading",
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isCloning",
                     xOnSaveClicked = "submitForm()",
                 )
+                cloningOverlay()
             }
         }
     }

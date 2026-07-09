@@ -34,6 +34,19 @@ class IcmpMonitorListUiTest(private val icmpMonitorRepository: IcmpMonitorReposi
                 .isVisible(LocatorAssertions.IsVisibleOptions().setTimeout(AUTO_REFRESH_TIMEOUT_MS))
         }
 
+        "each row exposes clone, pause and delete action buttons" {
+            createIcmpMonitor(icmpMonitorRepository, monitorName = "Actions Monitor")
+
+            val page = newPage()
+            val list = IcmpMonitorListPage(page)
+            list.navigate()
+
+            val row = list.rowByName("Actions Monitor")
+            assertThat(row.getByTestId("icmp-monitor-clone-button")).isVisible()
+            assertThat(row.getByTestId("icmp-monitor-toggle-button")).isVisible()
+            assertThat(row.getByTestId("icmp-monitor-delete-button")).isVisible()
+        }
+
         "pausing and resuming a monitor flips its status in the list via an HTMX refresh" {
             createIcmpMonitor(icmpMonitorRepository, monitorName = "Toggle Monitor")
 

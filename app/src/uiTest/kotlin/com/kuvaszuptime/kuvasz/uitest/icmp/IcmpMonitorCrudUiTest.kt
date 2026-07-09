@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.icmp
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.icmp.IcmpMonitorDetailsPage
@@ -33,6 +34,34 @@ class IcmpMonitorCrudUiTest : UiTestSpec() {
             list.deleteMonitor(updatedName)
             assertThat(list.rowByName(updatedName)).hasCount(0)
             assertThat(list.emptyState).isVisible()
+        }
+
+        "an ICMP monitor can be cloned from the list, pre-filling a fresh create form" {
+            val page = newPage()
+            val list = IcmpMonitorListPage(page)
+            list.navigate()
+
+            val sourceName = "ICMP Clone Source"
+            list.openCreateModal()
+                .setName(sourceName)
+                .setHost("127.0.0.1")
+                .setUptimeCheckInterval("90")
+                .save()
+            page.waitForURL("**/icmp-monitors/*")
+
+            list.navigate()
+            val clonedName = Messages.clonedMonitorName(sourceName)
+            val cloneModal = list.cloneMonitor(sourceName)
+            assertThat(cloneModal.nameInput).hasValue(clonedName)
+            assertThat(cloneModal.hostInput).hasValue("127.0.0.1")
+            assertThat(cloneModal.uptimeCheckIntervalInput).hasValue("90")
+
+            cloneModal.save()
+            page.waitForURL("**/icmp-monitors/*")
+
+            list.navigate()
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByName(clonedName)).hasCount(1)
         }
     }
 }

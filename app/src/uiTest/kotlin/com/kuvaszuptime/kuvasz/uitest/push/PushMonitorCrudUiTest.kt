@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.push
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.push.PushMonitorDetailsPage
@@ -33,6 +34,32 @@ class PushMonitorCrudUiTest : UiTestSpec() {
             list.deleteMonitor(updatedName)
             assertThat(list.rowByName(updatedName)).hasCount(0)
             assertThat(list.emptyState).isVisible()
+        }
+
+        "a push monitor can be cloned from the list, regenerating its client secret" {
+            val page = newPage()
+            val list = PushMonitorListPage(page)
+            list.navigate()
+
+            val sourceName = "Push Clone Source"
+            list.openCreateModal().setName(sourceName).setHeartbeatInterval("30").save()
+            page.waitForURL("**/push-monitors/*")
+
+            list.navigate()
+            val clonedName = Messages.clonedMonitorName(sourceName)
+            val cloneModal = list.cloneMonitor(sourceName)
+            assertThat(cloneModal.nameInput).hasValue(clonedName)
+            assertThat(cloneModal.heartbeatIntervalInput).hasValue("30")
+            // A fresh client secret is generated for the clone (the source's is unique).
+            assertThat(cloneModal.clientSecretInput).not().hasValue("")
+
+            // Saving succeeds only because the unique client secret was regenerated.
+            cloneModal.save()
+            page.waitForURL("**/push-monitors/*")
+
+            list.navigate()
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByName(clonedName)).hasCount(1)
         }
     }
 }

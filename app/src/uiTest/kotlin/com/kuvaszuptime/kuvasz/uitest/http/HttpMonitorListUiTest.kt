@@ -34,6 +34,19 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
                 .isVisible(LocatorAssertions.IsVisibleOptions().setTimeout(AUTO_REFRESH_TIMEOUT_MS))
         }
 
+        "each row exposes clone, pause and delete action buttons" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Actions Monitor")
+
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            val row = list.rowByName("Actions Monitor")
+            assertThat(row.getByTestId("http-monitor-clone-button")).isVisible()
+            assertThat(row.getByTestId("http-monitor-toggle-button")).isVisible()
+            assertThat(row.getByTestId("http-monitor-delete-button")).isVisible()
+        }
+
         "pausing and resuming a monitor flips its status in the list via an HTMX refresh" {
             createHttpMonitor(httpMonitorRepository, monitorName = "Toggle Monitor")
 

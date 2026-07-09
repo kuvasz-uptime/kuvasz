@@ -1,8 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-// kuvasz.js registers a single DOMContentLoaded listener at load time; stub the one DOM call it needs.
-globalThis.document = {addEventListener() {}};
+// kuvasz.js registers a single DOMContentLoaded listener at load time; stub the DOM calls it needs.
+// getElementById returns null so resetTomSelectState (called from the HTTP form's populateFrom) no-ops.
+globalThis.document = {addEventListener() {}, getElementById() { return null; }};
+// resetTomSelectState references TomSelect in an instanceof check; a stub keeps that expression from throwing.
+globalThis.TomSelect = class TomSelect {};
 
 const {
     MAINTENANCE_WINDOW_TYPES,
@@ -176,4 +179,118 @@ test('Push validators enforce interval, grace period and client secret rules', (
     assertValidatorBoundaries(buildForm, 'clientSecret', 'validateClientSecret', 'CS', [
         ['x'.repeat(35), true], ['x'.repeat(36), false], [null, true],
     ]);
+});
+
+// --------- #5: populateFrom field mapping (shared by reset & clone) ---------
+
+test('HTTP populateFrom copies a source and falls back to defaults', () => {
+    const form = upsertHttpMonitorForm(null, {}, 'select', [], 0);
+
+    form.populateFrom({
+        name: 'Src', url: 'https://example.com', sensitiveUrl: true, sslExpiryThreshold: 14,
+        failureCountThreshold: 4, uptimeCheckInterval: 120, sslCheckEnabled: true,
+        latencyHistoryEnabled: false, forceNoCache: false, followRedirects: false,
+        requestMethod: 'POST', integrations: ['slack'], expectedStatusCodes: [200, 301],
+        expectedKeyword: 'ok', expectedKeywordCaseSensitive: true, expectedKeywordNegated: true,
+        responseTimeThresholdMillis: 500, requestHeaders: {'X-A': '1'}, expectedHeaders: {'X-B': '2'},
+        requestBody: '{"a":1}',
+    });
+    assert.equal(form.name, 'Src');
+    assert.equal(form.url, 'https://example.com');
+    assert.equal(form.sensitiveUrl, true);
+    assert.equal(form.sslExpiryThreshold, 14);
+    assert.equal(form.failureCountThreshold, 4);
+    assert.equal(form.uptimeCheckInterval, 120);
+    assert.equal(form.sslCheckEnabled, true);
+    assert.equal(form.latencyHistoryEnabled, false);
+    assert.equal(form.forceNoCache, false);
+    assert.equal(form.followRedirects, false);
+    assert.equal(form.requestMethod, 'POST');
+    assert.deepEqual(form.integrations, ['slack']);
+    // Status codes are stringified for the TomSelect widget
+    assert.deepEqual(form.selectedHttpStatusCodes, ['200', '301']);
+    assert.equal(form.expectedKeyword, 'ok');
+    assert.equal(form.expectedKeywordCaseSensitive, true);
+    assert.equal(form.expectedKeywordNegated, true);
+    assert.equal(form.responseTimeThresholdMillis, 500);
+    assert.deepEqual(form.requestHeaders, {'X-A': '1'});
+    assert.deepEqual(form.expectedHeaders, {'X-B': '2'});
+    assert.equal(form.requestBody, '{"a":1}');
+
+    form.populateFrom(null);
+    assert.equal(form.name, '');
+    assert.equal(form.url, '');
+    assert.equal(form.sensitiveUrl, false);
+    assert.equal(form.sslExpiryThreshold, 30);
+    assert.equal(form.failureCountThreshold, 1);
+    assert.equal(form.uptimeCheckInterval, 60);
+    assert.equal(form.sslCheckEnabled, false);
+    assert.equal(form.latencyHistoryEnabled, true);
+    assert.equal(form.forceNoCache, true);
+    assert.equal(form.followRedirects, true);
+    assert.equal(form.requestMethod, 'GET');
+    assert.deepEqual(form.integrations, []);
+    assert.deepEqual(form.selectedHttpStatusCodes, []);
+    assert.equal(form.expectedKeyword, null);
+    assert.equal(form.expectedKeywordCaseSensitive, false);
+    assert.equal(form.expectedKeywordNegated, false);
+    assert.equal(form.responseTimeThresholdMillis, null);
+    assert.deepEqual(form.requestHeaders, {});
+    assert.deepEqual(form.expectedHeaders, {});
+    assert.equal(form.requestBody, null);
+});
+
+test('Push populateFrom copies a source and falls back to defaults', () => {
+    const form = upsertPushMonitorForm(null, {}, 0);
+
+    form.populateFrom({
+        name: 'Src', heartbeatInterval: 30, gracePeriod: 5,
+        failureCountThreshold: 3, clientSecret: 'secret-value', integrations: ['slack'],
+    });
+    assert.equal(form.name, 'Src');
+    assert.equal(form.heartbeatInterval, 30);
+    assert.equal(form.gracePeriod, 5);
+    assert.equal(form.failureCountThreshold, 3);
+    assert.equal(form.clientSecret, 'secret-value');
+    assert.deepEqual(form.integrations, ['slack']);
+
+    // A null source resets to the create-mode defaults; the client secret gets a fresh value
+    form.populateFrom(null);
+    assert.equal(form.name, '');
+    assert.equal(form.heartbeatInterval, 10);
+    assert.equal(form.gracePeriod, 0);
+    assert.equal(form.failureCountThreshold, 1);
+    assert.deepEqual(form.integrations, []);
+    assert.equal(typeof form.clientSecret, 'string');
+    assert.ok(form.clientSecret.length >= 36);
+});
+
+test('ICMP populateFrom copies a source and falls back to defaults', () => {
+    const form = upsertIcmpMonitorForm(null, {}, 0);
+
+    form.populateFrom({
+        name: 'Src', host: 'example.com', uptimeCheckInterval: 120, packetCount: 5,
+        timeoutSeconds: 10, packetLossThreshold: 50, failureCountThreshold: 2,
+        integrations: ['discord'], metricsHistoryEnabled: false,
+    });
+    assert.equal(form.name, 'Src');
+    assert.equal(form.host, 'example.com');
+    assert.equal(form.uptimeCheckInterval, 120);
+    assert.equal(form.packetCount, 5);
+    assert.equal(form.timeoutSeconds, 10);
+    assert.equal(form.packetLossThreshold, 50);
+    assert.equal(form.failureCountThreshold, 2);
+    assert.deepEqual(form.integrations, ['discord']);
+    assert.equal(form.metricsHistoryEnabled, false);
+
+    form.populateFrom(null);
+    assert.equal(form.name, '');
+    assert.equal(form.host, '');
+    assert.equal(form.uptimeCheckInterval, 60);
+    assert.equal(form.packetCount, 3);
+    assert.equal(form.timeoutSeconds, 5);
+    assert.equal(form.packetLossThreshold, 100);
+    assert.equal(form.failureCountThreshold, 1);
+    assert.deepEqual(form.integrations, []);
+    assert.equal(form.metricsHistoryEnabled, true);
 });

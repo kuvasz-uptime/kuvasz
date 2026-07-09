@@ -34,6 +34,19 @@ class PushMonitorListUiTest(private val pushMonitorRepository: PushMonitorReposi
                 .isVisible(LocatorAssertions.IsVisibleOptions().setTimeout(AUTO_REFRESH_TIMEOUT_MS))
         }
 
+        "each row exposes clone, pause and delete action buttons" {
+            createPushMonitor(pushMonitorRepository, monitorName = "Actions Monitor")
+
+            val page = newPage()
+            val list = PushMonitorListPage(page)
+            list.navigate()
+
+            val row = list.rowByName("Actions Monitor")
+            assertThat(row.getByTestId("push-monitor-clone-button")).isVisible()
+            assertThat(row.getByTestId("push-monitor-toggle-button")).isVisible()
+            assertThat(row.getByTestId("push-monitor-delete-button")).isVisible()
+        }
+
         "pausing and resuming a monitor flips its status in the list via an HTMX refresh" {
             createPushMonitor(pushMonitorRepository, monitorName = "Toggle Monitor")
 

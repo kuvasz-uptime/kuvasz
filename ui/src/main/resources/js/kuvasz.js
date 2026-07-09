@@ -150,8 +150,12 @@ const apiRequest = (
     });
 };
 
-// Builds the PATCH/DELETE helpers for a given entity, keeping the URL and user-facing labels in one place
+// Builds the GET/PATCH/DELETE helpers for a given entity, keeping the URL and user-facing labels in one place
 const crudRequests = (basePath, entityLabel) => ({
+    get: (id, beforeRequest, onSuccess, onError) => apiRequest('GET', `${basePath}/${id}`, {
+        beforeRequest, onSuccess, onError,
+        errorMessage: `An error occurred while loading the ${entityLabel}.`,
+    }),
     patch: (id, body, beforeRequest, onSuccess, onError) => apiRequest('PATCH', `${basePath}/${id}`, {
         body, beforeRequest, onSuccess, onError,
         errorMessage: `An error occurred while toggling the ${entityLabel}.`,
@@ -192,11 +196,15 @@ const refreshDashboard = () => {
 // --------- Alpine.js x-data ---------
 
 // Shared list-row component for every monitor type; only the API binding and list refresh differ
-const monitorListItem = (api, refreshList) => (monitorId, isMonitorEnabled, assignedToStatusPage) => ({
+const monitorListItem = (api, refreshList) => (monitorId, isMonitorEnabled, assignedToStatusPage, clonedName) => ({
     monitorId,
     isMonitorEnabled,
     assignedToStatusPage,
+    clonedName,
     isRequestLoading: false,
+    cloneMonitor() {
+        this.$dispatch('clone-monitor', {id: this.monitorId, name: this.clonedName});
+    },
     toggleMonitor() {
         api.patch(
             this.monitorId,
@@ -601,6 +609,7 @@ const upsertHttpMonitorForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        isCloning: false,
         isUpdate: !!monitor,
         supportedHttpStatusCodes: supportedHttpStatusCodes || [],
         globalIntegrationCount: globalIntegrationCount || 0,
@@ -610,26 +619,30 @@ const upsertHttpMonitorForm = (
         },
 
         resetState() {
-            this.name = originalMonitor?.name || '';
-            this.url = originalMonitor?.url || '';
-            this.sensitiveUrl = (originalMonitor?.sensitiveUrl != null ? originalMonitor?.sensitiveUrl : false);
-            this.sslExpiryThreshold = originalMonitor?.sslExpiryThreshold || 30;
-            this.failureCountThreshold = originalMonitor?.failureCountThreshold || 1;
-            this.uptimeCheckInterval = originalMonitor?.uptimeCheckInterval || 60;
-            this.sslCheckEnabled = (originalMonitor?.sslCheckEnabled != null ? originalMonitor?.sslCheckEnabled : false);
-            this.latencyHistoryEnabled = (originalMonitor?.latencyHistoryEnabled != null ? originalMonitor?.latencyHistoryEnabled : true);
-            this.forceNoCache = (originalMonitor?.forceNoCache != null ? originalMonitor?.forceNoCache : true);
-            this.followRedirects = (originalMonitor?.followRedirects != null ? originalMonitor?.followRedirects : true);
-            this.requestMethod = originalMonitor?.requestMethod || 'GET';
-            this.integrations = originalMonitor?.integrations || [];
-            this.selectedHttpStatusCodes = originalMonitor?.expectedStatusCodes?.map(code => code.toString()) || [];
-            this.expectedKeyword = originalMonitor?.expectedKeyword || null;
-            this.expectedKeywordCaseSensitive = originalMonitor?.expectedKeywordCaseSensitive || false;
-            this.expectedKeywordNegated = originalMonitor?.expectedKeywordNegated || false;
-            this.responseTimeThresholdMillis = originalMonitor?.responseTimeThresholdMillis || null;
-            this.requestHeaders = originalMonitor?.requestHeaders || {};
-            this.expectedHeaders = originalMonitor?.expectedHeaders || {};
-            this.requestBody = originalMonitor?.requestBody || null;
+            this.populateFrom(originalMonitor);
+        },
+
+        populateFrom(source) {
+            this.name = source?.name || '';
+            this.url = source?.url || '';
+            this.sensitiveUrl = (source?.sensitiveUrl != null ? source?.sensitiveUrl : false);
+            this.sslExpiryThreshold = source?.sslExpiryThreshold || 30;
+            this.failureCountThreshold = source?.failureCountThreshold || 1;
+            this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+            this.sslCheckEnabled = (source?.sslCheckEnabled != null ? source?.sslCheckEnabled : false);
+            this.latencyHistoryEnabled = (source?.latencyHistoryEnabled != null ? source?.latencyHistoryEnabled : true);
+            this.forceNoCache = (source?.forceNoCache != null ? source?.forceNoCache : true);
+            this.followRedirects = (source?.followRedirects != null ? source?.followRedirects : true);
+            this.requestMethod = source?.requestMethod || 'GET';
+            this.integrations = source?.integrations || [];
+            this.selectedHttpStatusCodes = source?.expectedStatusCodes?.map(code => code.toString()) || [];
+            this.expectedKeyword = source?.expectedKeyword || null;
+            this.expectedKeywordCaseSensitive = source?.expectedKeywordCaseSensitive || false;
+            this.expectedKeywordNegated = source?.expectedKeywordNegated || false;
+            this.responseTimeThresholdMillis = source?.responseTimeThresholdMillis || null;
+            this.requestHeaders = source?.requestHeaders || {};
+            this.expectedHeaders = source?.expectedHeaders || {};
+            this.requestBody = source?.requestBody || null;
             this.newRequestHeaderKey = '';
             this.newRequestHeaderValue = '';
             this.isRequestHeaderAddable = false;
@@ -643,6 +656,20 @@ const upsertHttpMonitorForm = (
                     ts.addItem(code, true);
                 });
             });
+        },
+
+        cloneFrom(monitorId, clonedName) {
+            httpMonitorApi.get(
+                monitorId,
+                () => this.isCloning = true,
+                async (response) => {
+                    const source = await response.json();
+                    this.populateFrom(source);
+                    this.name = clonedName;
+                    this.isCloning = false;
+                },
+                () => this.isCloning = false
+            );
         },
 
         isValidHttpHeaderName(headerName) {
@@ -859,6 +886,7 @@ const upsertPushMonitorForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        isCloning: false,
         isUpdate: !!monitor,
         globalIntegrationCount: globalIntegrationCount || 0,
 
@@ -867,13 +895,33 @@ const upsertPushMonitorForm = (
         },
 
         resetState() {
-            this.name = originalMonitor?.name || '';
-            this.heartbeatInterval = originalMonitor?.heartbeatInterval || 10;
-            this.gracePeriod = originalMonitor?.gracePeriod || 0;
-            this.failureCountThreshold = originalMonitor?.failureCountThreshold || 1;
-            this.clientSecret = originalMonitor?.clientSecret || createRandomSecret();
-            this.integrations = originalMonitor?.integrations || [];
+            this.populateFrom(originalMonitor);
+        },
+
+        populateFrom(source) {
+            this.name = source?.name || '';
+            this.heartbeatInterval = source?.heartbeatInterval || 10;
+            this.gracePeriod = source?.gracePeriod || 0;
+            this.failureCountThreshold = source?.failureCountThreshold || 1;
+            this.clientSecret = source?.clientSecret || createRandomSecret();
+            this.integrations = source?.integrations || [];
             this.errors = {};
+        },
+
+        cloneFrom(monitorId, clonedName) {
+            pushMonitorApi.get(
+                monitorId,
+                () => this.isCloning = true,
+                async (response) => {
+                    const source = await response.json();
+                    this.populateFrom(source);
+                    this.name = clonedName;
+                    // A client secret is unique per monitor, so the clone must get a fresh one
+                    this.clientSecret = createRandomSecret();
+                    this.isCloning = false;
+                },
+                () => this.isCloning = false
+            );
         },
 
         generateNewClientSecret() {
@@ -1014,6 +1062,7 @@ const upsertIcmpMonitorForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        isCloning: false,
         isUpdate: !!monitor,
         globalIntegrationCount: globalIntegrationCount || 0,
 
@@ -1022,16 +1071,34 @@ const upsertIcmpMonitorForm = (
         },
 
         resetState() {
-            this.name = originalMonitor?.name || '';
-            this.host = originalMonitor?.host || '';
-            this.uptimeCheckInterval = originalMonitor?.uptimeCheckInterval || 60;
-            this.packetCount = originalMonitor?.packetCount || 3;
-            this.timeoutSeconds = originalMonitor?.timeoutSeconds || 5;
-            this.packetLossThreshold = originalMonitor?.packetLossThreshold || 100;
-            this.failureCountThreshold = originalMonitor?.failureCountThreshold || 1;
-            this.integrations = originalMonitor?.integrations || [];
-            this.metricsHistoryEnabled = (originalMonitor?.metricsHistoryEnabled != null ? originalMonitor?.metricsHistoryEnabled : true);
+            this.populateFrom(originalMonitor);
+        },
+
+        populateFrom(source) {
+            this.name = source?.name || '';
+            this.host = source?.host || '';
+            this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+            this.packetCount = source?.packetCount || 3;
+            this.timeoutSeconds = source?.timeoutSeconds || 5;
+            this.packetLossThreshold = source?.packetLossThreshold || 100;
+            this.failureCountThreshold = source?.failureCountThreshold || 1;
+            this.integrations = source?.integrations || [];
+            this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
+        },
+
+        cloneFrom(monitorId, clonedName) {
+            icmpMonitorApi.get(
+                monitorId,
+                () => this.isCloning = true,
+                async (response) => {
+                    const source = await response.json();
+                    this.populateFrom(source);
+                    this.name = clonedName;
+                    this.isCloning = false;
+                },
+                () => this.isCloning = false
+            );
         },
 
         validate() {

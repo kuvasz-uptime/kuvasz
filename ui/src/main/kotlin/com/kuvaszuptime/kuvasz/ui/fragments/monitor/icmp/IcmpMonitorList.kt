@@ -53,7 +53,8 @@ fun renderIcmpMonitorList(
                                     """icmpMonitorListItem(
                                     |${monitor.id},
                                     |${monitor.enabled},
-                                    |${monitor.statusPages.isNotEmpty()}
+                                    |${monitor.statusPages.isNotEmpty()},
+                                    |${Messages.clonedMonitorName(monitor.name).asJsonString()}
                                     |)
                                     """.trimMargin()
                                 )
@@ -94,6 +95,11 @@ fun renderIcmpMonitorList(
                                         classes(TEXT_CENTER)
                                         div {
                                             classes(FLEX_NOWRAP, BTN_GROUP)
+                                            compactIconButton(Icon.COPY) {
+                                                testId("icmp-monitor-clone-button")
+                                                modalOpener("create-icmp-monitor-modal")
+                                                xOnClick("cloneMonitor()")
+                                            }
                                             val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
                                             compactIconButton(toggleIcon) {
                                                 testId("icmp-monitor-toggle-button")

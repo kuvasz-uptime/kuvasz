@@ -55,9 +55,10 @@ fun renderHttpMonitorList(
                                 testId("http-monitor-row")
                                 xData(
                                     """httpMonitorListItem(
-                                    |${monitor.id}, 
-                                    |${monitor.enabled}, 
-                                    |${monitor.statusPages.isNotEmpty()}
+                                    |${monitor.id},
+                                    |${monitor.enabled},
+                                    |${monitor.statusPages.isNotEmpty()},
+                                    |${Messages.clonedMonitorName(monitor.name).asJsonString()}
                                     |)
                                     """.trimMargin()
                                 )
@@ -113,6 +114,11 @@ fun renderHttpMonitorList(
                                         classes(TEXT_CENTER)
                                         div {
                                             classes(FLEX_NOWRAP, BTN_GROUP)
+                                            compactIconButton(Icon.COPY) {
+                                                testId("http-monitor-clone-button")
+                                                modalOpener("create-http-monitor-modal")
+                                                xOnClick("cloneMonitor()")
+                                            }
                                             val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
                                             compactIconButton(toggleIcon) {
                                                 testId("http-monitor-toggle-button")

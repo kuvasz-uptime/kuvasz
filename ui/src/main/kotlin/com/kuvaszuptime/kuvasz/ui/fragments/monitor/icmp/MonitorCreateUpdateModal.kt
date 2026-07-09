@@ -41,6 +41,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
+        attributes["@clone-monitor.window"] = "cloneFrom(\$event.detail.id, \$event.detail.name)"
         tabIndex = "-1"
         role = "dialog"
 
@@ -49,7 +50,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
             role = "document"
 
             div {
-                classes(MODAL_CONTENT)
+                classes(MODAL_CONTENT, POSITION_RELATIVE)
                 div {
                     classes(MODAL_HEADER)
                     h5 {
@@ -188,9 +189,10 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
                 }
                 upsertModalFooter(
                     isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading",
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isCloning",
                     xOnSaveClicked = "submitForm()",
                 )
+                cloningOverlay()
             }
         }
     }

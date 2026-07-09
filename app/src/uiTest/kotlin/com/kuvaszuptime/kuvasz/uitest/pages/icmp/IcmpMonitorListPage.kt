@@ -28,6 +28,12 @@ class IcmpMonitorListPage(private val page: Page) {
         return IcmpMonitorFormModal(page)
     }
 
+    // Clones the given monitor, returning the pre-filled create modal.
+    fun cloneMonitor(name: String): IcmpMonitorFormModal {
+        rowByName(name).getByTestId("icmp-monitor-clone-button").click()
+        return IcmpMonitorFormModal(page)
+    }
+
     fun toggleMonitor(name: String) {
         rowByName(name).getByTestId("icmp-monitor-toggle-button").click()
     }

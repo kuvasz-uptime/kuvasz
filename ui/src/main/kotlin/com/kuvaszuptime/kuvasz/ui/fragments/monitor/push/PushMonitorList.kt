@@ -51,9 +51,10 @@ fun renderPushMonitorList(
                                 testId("push-monitor-row")
                                 xData(
                                     """pushMonitorListItem(
-                                    |${monitor.id}, 
-                                    |${monitor.enabled}, 
-                                    |${monitor.statusPages.isNotEmpty()}
+                                    |${monitor.id},
+                                    |${monitor.enabled},
+                                    |${monitor.statusPages.isNotEmpty()},
+                                    |${Messages.clonedMonitorName(monitor.name).asJsonString()}
                                     |)
                                     """.trimMargin()
                                 )
@@ -104,6 +105,11 @@ fun renderPushMonitorList(
                                         classes(TEXT_CENTER)
                                         div {
                                             classes(FLEX_NOWRAP, BTN_GROUP)
+                                            compactIconButton(Icon.COPY) {
+                                                testId("push-monitor-clone-button")
+                                                modalOpener("create-push-monitor-modal")
+                                                xOnClick("cloneMonitor()")
+                                            }
                                             val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
                                             compactIconButton(toggleIcon) {
                                                 testId("push-monitor-toggle-button")

@@ -6,6 +6,24 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
+fun FlowContent.cloningOverlay() {
+    templateTag {
+        xIf("isCloning")
+        div {
+            classes(
+                POSITION_ABSOLUTE, TOP_0, START_0, END_0, BOTTOM_0,
+                D_FLEX, ALIGN_ITEMS_CENTER, JUSTIFY_CONTENT_CENTER,
+                BG_SURFACE_BACKDROP, ROUNDED
+            )
+            testId("cloning-overlay")
+            div {
+                classes(SPINNER_GROW)
+                role = "status"
+            }
+        }
+    }
+}
+
 fun FlowContent.upsertModalFooter(
     isReadOnlyMode: Boolean,
     xSaveDisabledIf: String,
