@@ -28,6 +28,12 @@ class PushMonitorListPage(private val page: Page) {
         return PushMonitorFormModal(page)
     }
 
+    // Clones the given monitor, returning the pre-filled create modal.
+    fun cloneMonitor(name: String): PushMonitorFormModal {
+        rowByName(name).getByTestId("push-monitor-clone-button").click()
+        return PushMonitorFormModal(page)
+    }
+
     fun toggleMonitor(name: String) {
         rowByName(name).getByTestId("push-monitor-toggle-button").click()
     }

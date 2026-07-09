@@ -34,12 +34,13 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
         xData(
             """upsertPushMonitorForm(
-                |$serializedMonitor, 
-                |$serializedErrorMessages, 
+                |$serializedMonitor,
+                |$serializedErrorMessages,
                 |${globals.enabledIntegrations.count { it.value.global }})
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
+        attributes["@clone-monitor.window"] = "cloneFrom(\$event.detail.id, \$event.detail.name)"
         tabIndex = "-1"
         role = "dialog"
 
@@ -48,7 +49,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
             role = "document"
 
             div {
-                classes(MODAL_CONTENT)
+                classes(MODAL_CONTENT, POSITION_RELATIVE)
                 // Modal header
                 div {
                     classes(MODAL_HEADER)
@@ -211,9 +212,10 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                 // Modal footer
                 upsertModalFooter(
                     isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading",
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isCloning",
                     xOnSaveClicked = "submitForm()",
                 )
+                cloningOverlay()
             }
         }
     }

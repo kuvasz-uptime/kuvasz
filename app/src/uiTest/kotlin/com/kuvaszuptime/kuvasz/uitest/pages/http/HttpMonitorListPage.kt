@@ -28,6 +28,12 @@ class HttpMonitorListPage(private val page: Page) {
         return HttpMonitorFormModal(page)
     }
 
+    // Clones the given monitor, returning the pre-filled create modal.
+    fun cloneMonitor(name: String): HttpMonitorFormModal {
+        rowByName(name).getByTestId("http-monitor-clone-button").click()
+        return HttpMonitorFormModal(page)
+    }
+
     fun toggleMonitor(name: String) {
         rowByName(name).getByTestId("http-monitor-toggle-button").click()
     }

@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.http
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorDetailsPage
@@ -39,6 +40,37 @@ class HttpMonitorCrudUiTest : UiTestSpec() {
             list.deleteMonitor(updatedName)
             assertThat(list.rowByName(updatedName)).hasCount(0)
             assertThat(list.emptyState).isVisible()
+        }
+
+        "an HTTP monitor can be cloned from the list, pre-filling a fresh create form" {
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            // Seed a source monitor with a couple of non-default values.
+            val sourceName = "HTTP Clone Source"
+            val sourceUrl = "https://clone-source.example.com"
+            list.openCreateModal()
+                .setName(sourceName)
+                .setUrl(sourceUrl)
+                .setUptimeCheckInterval("120")
+                .save()
+            page.waitForURL("**/http-monitors/*")
+
+            list.navigate()
+            val clonedName = Messages.clonedMonitorName(sourceName)
+            val cloneModal = list.cloneMonitor(sourceName)
+            // Every field is pre-filled from the source, except the name which is suggested as "Copy of <name>".
+            assertThat(cloneModal.nameInput).hasValue(clonedName)
+            assertThat(cloneModal.urlInput).hasValue(sourceUrl)
+            assertThat(cloneModal.uptimeCheckIntervalInput).hasValue("120")
+
+            cloneModal.save()
+            page.waitForURL("**/http-monitors/*")
+
+            list.navigate()
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByName(clonedName)).hasCount(1)
         }
 
         "the HTTP monitor modal's accepted-status-codes select adds a chosen code" {
