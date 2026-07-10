@@ -17,16 +17,16 @@ import jakarta.inject.Singleton
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
 @Around
-annotation class UnauthorizedOnly
+annotation class UnauthenticatedOnly
 
 @Singleton
-@InterceptorBean(UnauthorizedOnly::class)
-class UnauthorizedOnlyInterceptor(
+@InterceptorBean(UnauthenticatedOnly::class)
+class UnauthenticatedOnlyInterceptor(
     private val securityService: SecurityService?
 ) : MethodInterceptor<Any, Any>, Ordered {
 
     override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
-        context.findAnnotation(UnauthorizedOnly::class.java).ifPresent { _ ->
+        context.findAnnotation(UnauthenticatedOnly::class.java).ifPresent { _ ->
             if (securityService?.isAuthenticated != false) throw AlreadyLoggedInError()
         }
         return context.proceed()
