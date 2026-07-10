@@ -10,11 +10,14 @@ import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.util.UIDefaults
+import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
 import io.kotest.data.table
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.optional.shouldBePresent
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -22,6 +25,7 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -205,6 +209,26 @@ class WebUIAuthenticationTest(
                 body shouldContain "/auth/logout"
                 body shouldNotContain "/oauth/logout"
             }
+        }
+
+        "robots.txt should be accessible anonymously, disallow every crawler but allow the public status pages" {
+            val response = client.exchange(HttpRequest.GET("/robots.txt")).awaitFirst()
+
+            response.status shouldBe HttpStatus.OK
+            response.contentType.shouldBePresent().name shouldBe MediaType.TEXT_PLAIN
+            response.getBodyAs<String>().shouldNotBeNull().let { body ->
+                body shouldContain "User-agent: *"
+                body shouldContain "Disallow: /"
+                body shouldContain "Allow: ${UIDefaults.STATUS_PAGE_PATH}"
+            }
+        }
+
+        "the robots.txt static mapping does not shadow the other static resources" {
+            // The robots.txt file is served via a catch-all static mapping, better to make sure the more specific
+            // /public/** mapping still resolves its assets
+            val response = client.exchange(HttpRequest.GET("/public/kuvasz-avatar.png")).awaitFirst()
+
+            response.status shouldBe HttpStatus.OK
         }
 
         "already authenticated request against /login should be redirected to /" {

@@ -214,6 +214,7 @@ internal fun FlowContent.inlineVersionUpdateBadge(versionInfo: VersionInfo) {
     if (!versionInfo.isUpToDate && versionInfo.latestVersionDetails != null) {
         a(href = versionInfo.latestVersionDetails.toString()) {
             targetBlank()
+            testId("version-update-badge")
             classes(BADGE, BADGE_SM, BG_GREEN, MS_2, TEXT_GREEN_FG)
             tooltip(Messages.newVersionAvailable(versionInfo.latestVersion.orEmpty()))
             icon(Icon.UPLOAD)

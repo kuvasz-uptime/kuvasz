@@ -4,7 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
-import com.kuvaszuptime.kuvasz.security.ui.UnauthorizedOnly
+import com.kuvaszuptime.kuvasz.security.ui.UnauthenticatedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.ui.pages.*
@@ -40,7 +40,7 @@ class WebUIController(
     fun dashboard() = renderDashboard(appGlobals)
 
     @Get(LOGIN_PATH)
-    @UnauthorizedOnly
+    @UnauthenticatedOnly
     @Produces(MediaType.TEXT_HTML)
     fun login(@QueryValue error: Boolean?): String = renderLoginPage(
         appGlobals,
