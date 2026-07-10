@@ -1,8 +1,6 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.layout
 
-import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
-import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
@@ -25,24 +23,7 @@ internal fun FlowContent.statusPageMainHeader(title: String, customLogoUrl: Stri
 
             div {
                 classes(NAVBAR_NAV, FLEX_ROW, ORDER_MD_LAST)
-                // Dark and light mode toggles
-                div {
-                    classes(NAV_ITEM, D_MD_FLEX)
-                    a(href = "#") {
-                        classes(NAV_LINK, PX_0, HIDE_THEME_DARK)
-                        ariaLabel(Messages.enableDarkMode())
-                        onClick = "setTheme('dark')"
-                        testId("theme-toggle-dark")
-                        icon(Icon.DARK_MODE)
-                    }
-                    a(href = "#") {
-                        classes(NAV_LINK, PX_0, HIDE_THEME_LIGHT)
-                        ariaLabel(Messages.enableLightMode())
-                        onClick = "setTheme('light')"
-                        testId("theme-toggle-light")
-                        icon(Icon.LIGHT_MODE)
-                    }
-                }
+                darkModeToggle()
             }
         }
     }
