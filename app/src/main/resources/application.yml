@@ -104,6 +104,9 @@ micronaut:
       public:
         paths: classpath:public
         mapping: /public/**
+      robots:
+        paths: classpath:robots
+        mapping: /**
   netty:
     event-loops:
       uptime-check:
