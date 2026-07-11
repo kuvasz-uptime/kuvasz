@@ -3,9 +3,16 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - 'docker-examples/**'
+      - 'localdev/**'
   pull_request:
     branches: [ main ]
-
+    paths-ignore:
+      - 'docs/**'
+      - 'docker-examples/**'
+      - 'localdev/**'
 jobs:
   validate-generated-sources:
     name: Validate generated sources
