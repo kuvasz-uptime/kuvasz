@@ -8,7 +8,7 @@
 
 ### Features
 
-- **YAML import/restore** is now available for your whole configuration: on top of monitors, you can restore **maintenance windows** and **status pages** from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire _Kuvasz_ setup. To try it out, head to the _"Settings"_ page and click the _"Backup & Restore"_ button! Thanks for the monitor imports to [**@visorcraft**](https://github.com/visorcraft){target="_blank"}!
+- **YAML import/restore** is now available for your whole configuration: on top of monitors, you can restore **maintenance windows** and **status pages** from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire _Kuvasz_ setup. To try it out, head to the _"Settings"_ page and click the _"Backup & Restore"_ button! Thanks for the monitor imports to [**@visorcraft**](https://github.com/visorcraft)!
 
 ![Kuvasz backup & restore UI](images/features/monitor-imports.webp)
 

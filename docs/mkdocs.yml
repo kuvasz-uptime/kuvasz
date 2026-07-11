@@ -71,6 +71,10 @@ plugins:
   - glightbox:
       skip_classes:
         - skip-lb
+  - privacy:
+      assets: false
+      links_attr_map:
+        target: _blank
 extra:
   annotate:
     json: [ .s2 ]
