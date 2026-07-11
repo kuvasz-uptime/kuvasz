@@ -3,10 +3,10 @@ name: Lint and test Helm Chart
 on:
   push:
     branches: [ main ]
-  #    paths: [ 'helm/**' ]
+    paths: [ 'helm/**' ]
   pull_request:
     branches: [ main ]
-#    paths: [ 'helm/**' ]
+    paths: [ 'helm/**' ]
 
 env:
   CHART_DIR: helm/kuvasz-uptime

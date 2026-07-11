@@ -6,12 +6,14 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'docker-examples/**'
+      - 'helm/**'
       - 'localdev/**'
   pull_request:
     branches: [ main ]
     paths-ignore:
       - 'docs/**'
       - 'docker-examples/**'
+      - 'helm/**'
       - 'localdev/**'
 jobs:
   validate-generated-sources:
