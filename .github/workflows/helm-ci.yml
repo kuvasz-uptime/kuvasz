@@ -1,0 +1,44 @@
+name: Lint and test Helm Chart
+
+on:
+  push:
+    branches: [ main ]
+  #    paths: [ 'helm/**' ]
+  pull_request:
+    branches: [ main ]
+#    paths: [ 'helm/**' ]
+
+env:
+  CHART_DIR: helm/kuvasz-uptime
+
+jobs:
+  lint-and-template:
+    name: Lint and template chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/setup-helm@v5
+
+      - name: Lint chart
+        run: helm lint $CHART_DIR
+      - name: Install kubeconform
+        run: |
+          curl -sSLo kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Render and validate all scenarios
+        run: |
+          set -euo pipefail
+          # default values plus every tracked fixture
+          for values in "" $(ls $CHART_DIR/test-values*.yaml); do
+            args=""; label="default"
+            if [ -n "$values" ]; then args="-f $values"; label="$values"; fi
+            echo "::group::Rendering $label"
+            helm template test-release $CHART_DIR $args \
+              | kubeconform -strict -summary -verbose \
+                  -schema-location default \
+                  -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+            echo "::endgroup::"
+          done
