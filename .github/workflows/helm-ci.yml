@@ -1,4 +1,4 @@
-name: Lint and test Helm Chart
+name: Lint & Test Helm Chart
 
 on:
   push:
@@ -12,8 +12,7 @@ env:
   CHART_DIR: helm/kuvasz-uptime
 
 jobs:
-  lint-and-template:
-    name: Lint and template chart
+  lint-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
