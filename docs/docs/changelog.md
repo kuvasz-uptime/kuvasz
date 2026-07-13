@@ -24,6 +24,8 @@ The long-awaited **maintenance window support** is finally here! 🎉
 
 - **Helm chart**: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Also, the chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo){ target="_blank" }!
 - A few custom [**Glance widget examples**](management/examples.md#glance-custom-widgets) were added to the documentation. 
+- Added a **proper robots.txt** that prevents search engine from indexing anything but the public status pages (e.g. the login page of Kuvasz won't be indexed anymore in case you publicly expose your instance).
+- The actual and the latest version of _Kuvasz_ is **not leaked on the login** page anymore, by hiding the version update badge for non-authenticated users.
 
 ## 4.1.0-rc <small>2026-07-09</small> { id="4.1.0-rc" data-toc-label="4.1.0-rc" }
 
