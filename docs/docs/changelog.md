@@ -1,4 +1,4 @@
-## 4.1.0-rc <small>2026-07-09</small> { id="4.1.0-rc" data-toc-label="4.1.0-rc" }
+## 4.1.0 <small>2026-07-14</small> { id="4.1.0" data-toc-label="4.1.0" }
 
 !!! question "Make your voice heard!"
 
@@ -8,9 +8,30 @@
 
 ### Features
 
-- **YAML import/restore** is now available for your whole configuration: on top of monitors, you can restore **maintenance windows** and **status pages** from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire _Kuvasz_ setup. To try it out, head to the _"Settings"_ page and click the _"Backup & Restore"_ button! Thanks for the monitor imports to [**@visorcraft**](https://github.com/visorcraft){target="_blank"}!
+The long-awaited **maintenance window support** is finally here! 🎉
+
+![Maintenance windows](images/maintenance/maintenance_list.webp)
+
+- You can now schedule [**planned downtime**](features/maintenance-windows.md) so _Kuvasz_ pauses the affected checks and suppresses false alerts while you do scheduled work. A window can be **manual** (toggled on and off by hand), **recurring** (a `cron` expression + `duration`), or a **one-off** (a `start` timestamp + `duration`), and can be scoped to specific monitors or made global. Assigned integrations receive dedicated **start and end notifications**, and windows can optionally be shown on your status pages. Manageable via the [**Web UI, REST API, or YAML**](management/maintenance-windows.md), and exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
+
+- **YAML import/restore** is now available for your whole configuration: on top of monitors, you can restore **maintenance windows** and **status pages** from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire _Kuvasz_ setup. To try it out, head to the _"Settings"_ page and click the _"Backup & Restore"_ button! Thanks for the monitor imports to [**@visorcraft**](https://github.com/visorcraft)!
 
 ![Kuvasz backup & restore UI](images/features/monitor-imports.webp)
+
+- **Clonable monitors**: you can now duplicate an existing monitor straight from the Web UI, so creating similar checks no longer means filling out the whole form from scratch.
+
+### Enhancements
+
+- **Helm chart**: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Also, the chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo){ target="_blank" }!
+- A few custom [**Glance widget examples**](management/examples.md#glance-custom-widgets) were added to the documentation. 
+- Added a **proper robots.txt** that prevents search engine from indexing anything but the public status pages (e.g. the login page of Kuvasz won't be indexed anymore in case you publicly expose your instance).
+- The actual and the latest version of _Kuvasz_ is **not leaked on the login** page anymore, by hiding the version update badge for non-authenticated users.
+
+## 4.1.0-rc <small>2026-07-09</small> { id="4.1.0-rc" data-toc-label="4.1.0-rc" }
+
+### Features
+
+- **YAML import/restore** is now available for your whole configuration: on top of monitors, you can restore **maintenance windows** and **status pages** from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire _Kuvasz_ setup. To try it out, head to the _"Settings"_ page and click the _"Backup & Restore"_ button! Thanks for the monitor imports to [**@visorcraft**](https://github.com/visorcraft)!
 
 - **Clonable monitors**: you can now duplicate an existing monitor straight from the Web UI, so creating similar checks no longer means filling out the whole form from scratch.
 
@@ -24,8 +45,6 @@
 ### Features
 
 The long-awaited **maintenance window support** is finally here! 🎉
-
-![Maintenance windows](images/maintenance/maintenance_list.webp)
 
 - You can now schedule [**planned downtime**](features/maintenance-windows.md) so _Kuvasz_ pauses the affected checks and suppresses false alerts while you do scheduled work. A window can be **manual** (toggled on and off by hand), **recurring** (a `cron` expression + `duration`), or a **one-off** (a `start` timestamp + `duration`), and can be scoped to specific monitors or made global. Assigned integrations receive dedicated **start and end notifications**, and windows can optionally be shown on your status pages. Manageable via the [**Web UI, REST API, or YAML**](management/maintenance-windows.md), and exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
 

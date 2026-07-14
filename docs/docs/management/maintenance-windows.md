@@ -141,7 +141,7 @@ There are three ways to manage your maintenance windows in _Kuvasz_: through the
 
 ### Name
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:flag required -->
 <!-- md:type string -->
 <!-- md:yaml_prop `name` -->
@@ -150,7 +150,7 @@ The **unique name** of the maintenance window.
 
 ### Description
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:type string -->
 <!-- md:yaml_prop `description` -->
 
@@ -158,7 +158,7 @@ An optional, human-readable description of the maintenance window.
 
 ### Enabled
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:default true -->
 <!-- md:type boolean -->
 <!-- md:yaml_prop `enabled` -->
@@ -167,7 +167,7 @@ The **master on/off switch** of the window. For recurring and one-off windows th
 
 ### Global
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:default false -->
 <!-- md:type boolean -->
 <!-- md:yaml_prop `global` -->
@@ -176,7 +176,7 @@ Whether the window applies to **every monitor**, regardless of the `monitors` li
 
 ### Show on status pages
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:default false -->
 <!-- md:type boolean -->
 <!-- md:yaml_prop `show-on-status-pages` -->
@@ -185,7 +185,7 @@ Whether the window may be [displayed on status pages](status-pages.md).
 
 ### Cron
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:type string -->
 <!-- md:yaml_prop `cron` -->
 
@@ -210,7 +210,7 @@ A **cron expression** with 5 or 6 segments for a recurring window. Standard cron
 
 ### Start
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:type string -->
 <!-- md:yaml_prop `start` -->
 
@@ -218,7 +218,7 @@ The **start timestamp** for a single, one-off window (may be in the past), in IS
 
 ### Duration
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:type string -->
 <!-- md:yaml_prop `duration` -->
 
@@ -226,7 +226,7 @@ The **ISO-8601 duration** of the window (e.g. `PT1H30M`). Required for recurring
 
 ### Monitors
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:default empty -->
 <!-- md:type list -->
 <!-- md:yaml_prop `monitors` -->
@@ -237,7 +237,7 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
 
 ### Integrations
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 <!-- md:default empty -->
 <!-- md:type list -->
 <!-- md:yaml_prop `integrations` -->

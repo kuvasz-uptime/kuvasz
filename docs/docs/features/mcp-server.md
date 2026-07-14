@@ -112,7 +112,7 @@ The MCP server exposes the following tools to connected clients:
 
 ### Maintenance windows
 
-<!-- md:version 4.1.0-beta -->
+<!-- md:version 4.1.0 -->
 
 | Tool                             | Description                                                                                                                          |
 |----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|

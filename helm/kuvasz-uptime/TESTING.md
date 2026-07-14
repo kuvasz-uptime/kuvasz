@@ -66,6 +66,15 @@ This uses the `test-values-httproute.yaml` file which configures:
 - Gateway API HTTPRoute
 - Existing Gateway parent reference
 
+## Continuous Integration
+
+These checks run automatically on every push and pull request that touches
+`helm/**`, via the `.github/workflows/helm-ci.yml` workflow. It lints the chart
+and renders it with the default values plus every `test-values*.yaml` fixture,
+validating each rendered manifest against the Kubernetes (and Gateway API CRD)
+schemas with [`kubeconform`](https://github.com/yannh/kubeconform). Run the
+commands below locally before pushing to reproduce the same validation.
+
 ## Validate Chart
 
 ### Lint the chart
