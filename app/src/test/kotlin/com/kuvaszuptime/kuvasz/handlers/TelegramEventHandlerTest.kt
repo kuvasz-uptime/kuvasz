@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -13,6 +14,8 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -23,6 +26,8 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.TelegramAPIClient
@@ -52,9 +57,11 @@ class TelegramEventHandlerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
     httpUptimeEventRepository: HttpUptimeEventRepository,
     pushUptimeEventRepository: PushUptimeEventRepository,
     icmpUptimeEventRepository: IcmpUptimeEventRepository,
+    tcpUptimeEventRepository: TcpUptimeEventRepository,
     sslEventRepository: SSLEventRepository,
     telegramNotificationConfigs: List<TelegramNotificationConfig>,
     integrationRepository: IntegrationRepository,
@@ -542,6 +549,156 @@ class TelegramEventHandlerTest(
                     error = "Packet loss: 100% (sent=3, received=0)",
                     previousEvent = firstUptimeRecord,
                     packetLossPercentage = 100
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<String>()
+
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationSent)) }
+                    notificationSent.captured shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                }
+            }
+        }
+
+        given("the TelegramEventHandler - TCP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val event = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send a message about the event") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createTcpMonitor(
+                    repository = tcpMonitorRepository,
+                    integrations = listOf(
+                        globalTelegramConfig.id,
+                        otherTelegramConfig.id,
+                        disabledTelegramConfig.id,
+                    )
+                )
+                val event = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                mockSuccessfulHttpResponse(otherTelegramConfig.apiToken)
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a message about the event to every enabled integrations") {
+                    val slot = mutableListOf<String>()
+
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(otherTelegramConfig, capture(slot)) }
+                    verify(inverse = true) { apiServiceSpy.sendMessage(disabledTelegramConfig, any()) }
+
+                    slot.forAll { message ->
+                        message shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                    }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 6,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send any notification about them") {
+                    verify(inverse = true) { apiServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+                    val slot = slot<String>()
+
+                    verify(exactly = 1) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(slot)) }
+                    slot.captured shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<String>()
+
+                    verify(exactly = 2) { apiServiceSpy.sendMessage(globalTelegramConfig, capture(notificationsSent)) }
+                    notificationsSent[0] shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                    notificationsSent[1] shouldContain "Your monitor \"${monitor.name}\" is UP"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                mockSuccessfulHttpResponse(globalTelegramConfig.apiToken)
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
                 )
                 eventDispatcher.testDispatch(secondEvent)
 

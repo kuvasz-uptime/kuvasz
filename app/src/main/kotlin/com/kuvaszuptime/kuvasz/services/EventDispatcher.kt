@@ -14,9 +14,14 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.util.loggerFor
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.PublishSubject
@@ -32,6 +37,8 @@ class EventDispatcher {
     private val pushUptimeEvents = serializedSubject<PushUptimeMonitorEvent>()
     private val icmpUpEvents = serializedSubject<IcmpMonitorUpEvent>()
     private val icmpDownEvents = serializedSubject<IcmpMonitorDownEvent>()
+    private val tcpUpEvents = serializedSubject<TcpMonitorUpEvent>()
+    private val tcpDownEvents = serializedSubject<TcpMonitorDownEvent>()
     private val httpRedirectEvents = serializedSubject<HttpRedirectEvent>()
     private val sslValidEvents = serializedSubject<SSLValidEvent>()
     private val sslWillExpireEvents = serializedSubject<SSLWillExpireEvent>()
@@ -51,6 +58,8 @@ class EventDispatcher {
             is PushMonitorDownEvent, is PushMonitorUpEvent -> pushUptimeEvents.onNext(event)
             is IcmpMonitorUpEvent -> icmpUpEvents.onNext(event)
             is IcmpMonitorDownEvent -> icmpDownEvents.onNext(event)
+            is TcpMonitorUpEvent -> tcpUpEvents.onNext(event)
+            is TcpMonitorDownEvent -> tcpDownEvents.onNext(event)
         }
 
     fun dispatch(event: MonitorLifecycleEvent) {
@@ -88,6 +97,12 @@ class EventDispatcher {
     fun subscribeToIcmpMonitorDownEvents(consumer: (IcmpMonitorDownEvent) -> Unit): Disposable =
         icmpDownEvents.safeSubscribeOnIo(consumer)
 
+    fun subscribeToTcpMonitorUpEvents(consumer: (TcpMonitorUpEvent) -> Unit): Disposable =
+        tcpUpEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToTcpMonitorDownEvents(consumer: (TcpMonitorDownEvent) -> Unit): Disposable =
+        tcpDownEvents.safeSubscribeOnIo(consumer)
+
     fun subscribeToHttpRedirectEvents(consumer: (HttpRedirectEvent) -> Unit): Disposable =
         httpRedirectEvents.safeSubscribeOnIo(consumer)
 
@@ -108,6 +123,30 @@ class EventDispatcher {
 
     fun subscribeToMaintenanceEndEvents(consumer: (MaintenanceWindowEndEvent) -> Unit): Disposable =
         maintenanceEndEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToUptimeMonitorEvents(consumer: (UptimeMonitorEvent) -> Unit): Disposable =
+        CompositeDisposable(
+            subscribeToHttpMonitorUpEvents(consumer),
+            subscribeToHttpMonitorDownEvents(consumer),
+            subscribeToPushMonitorEvents(consumer),
+            subscribeToIcmpMonitorUpEvents(consumer),
+            subscribeToIcmpMonitorDownEvents(consumer),
+            subscribeToTcpMonitorUpEvents(consumer),
+            subscribeToTcpMonitorDownEvents(consumer),
+        )
+
+    fun subscribeToSSLMonitorEvents(consumer: (SSLMonitorEvent) -> Unit): Disposable =
+        CompositeDisposable(
+            subscribeToSSLValidEvents(consumer),
+            subscribeToSSLInvalidEvents(consumer),
+            subscribeToSSLWillExpireEvents(consumer),
+        )
+
+    fun subscribeToMaintenanceWindowEvents(consumer: (MaintenanceWindowEvent) -> Unit): Disposable =
+        CompositeDisposable(
+            subscribeToMaintenanceStartEvents(consumer),
+            subscribeToMaintenanceEndEvents(consumer),
+        )
 
     companion object {
         private val logger = loggerFor<EventDispatcher>()

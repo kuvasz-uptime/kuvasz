@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -16,6 +17,8 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
@@ -24,6 +27,8 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
@@ -50,9 +55,11 @@ class DatabaseEventHandlerTest(
     httpUptimeEventRepository: HttpUptimeEventRepository,
     pushUptimeEventRepository: PushUptimeEventRepository,
     icmpUptimeEventRepository: IcmpUptimeEventRepository,
+    tcpUptimeEventRepository: TcpUptimeEventRepository,
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
+    tcpMonitorRepository: TcpMonitorRepository,
     sslEventRepository: SSLEventRepository,
     dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
@@ -60,11 +67,13 @@ class DatabaseEventHandlerTest(
         val httpUptimeEventRepositorySpy = spyk(httpUptimeEventRepository)
         val pushUptimeEventRepositorySpy = spyk(pushUptimeEventRepository)
         val icmpUptimeEventRepositorySpy = spyk(icmpUptimeEventRepository)
+        val tcpUptimeEventRepositorySpy = spyk(tcpUptimeEventRepository)
         val sslEventRepositorySpy = spyk(sslEventRepository)
         val dbEventHandler = DatabaseEventHandler(
             httpUptimeEventRepositorySpy,
             pushUptimeEventRepositorySpy,
             icmpUptimeEventRepositorySpy,
+            tcpUptimeEventRepositorySpy,
             sslEventRepositorySpy,
             dslContext,
         )
@@ -694,6 +703,195 @@ class DatabaseEventHandlerTest(
 
                     verifyOrder {
                         icmpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                    }
+
+                    uptimeRecords.shouldHaveSize(1).forOne { event ->
+                        event.status shouldBe UptimeStatus.DOWN
+                        event.endedAt.shouldBeNull()
+                        event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
+                        event.error shouldBe "Reason: second error"
+                    }
+                }
+            }
+        }
+
+        given("the DatabaseEventHandler - TCP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val event = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                dbEventHandler.handleUptimeMonitorEvent(event)
+
+                then("it should insert a new UptimeEvent record with status UP") {
+                    val expectedUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { tcpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { tcpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val event = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(event)
+
+                then("it should insert a new UptimeEvent record with status DOWN") {
+                    val expectedUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { tcpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { tcpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should not insert a new UptimeEvent record") {
+                    val expectedUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                    verify(exactly = 1) { tcpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
+                    verify(exactly = 0) { tcpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should create a new UptimeEvent and end the previous one") {
+                    val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+
+                    verifyOrder {
+                        tcpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        tcpUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        tcpUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.UP
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should create a new UptimeEvent record and end the previous one") {
+                    val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+
+                    verifyOrder {
+                        tcpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        tcpUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        tcpUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.UP
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].error shouldBe "Reason: Connection refused"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "first error",
+                    previousEvent = null,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                delay(1000.milliseconds)
+
+                val secondEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "second error",
+                    previousEvent = firstUptimeRecord,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should update the updatedAt timestamp on the previous event") {
+                    val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id)
+
+                    verifyOrder {
+                        tcpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
                     }
 
                     uptimeRecords.shouldHaveSize(1).forOne { event ->

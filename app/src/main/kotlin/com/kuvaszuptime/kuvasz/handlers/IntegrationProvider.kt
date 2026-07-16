@@ -14,6 +14,8 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -57,6 +59,8 @@ fun MonitorEvent<*>.toIntegrationEventType() = when (this) {
     is PushMonitorUpEvent -> IntegrationEventType.PUSH_UP
     is IcmpMonitorDownEvent -> IntegrationEventType.ICMP_DOWN
     is IcmpMonitorUpEvent -> IntegrationEventType.ICMP_UP
+    is TcpMonitorDownEvent -> IntegrationEventType.TCP_DOWN
+    is TcpMonitorUpEvent -> IntegrationEventType.TCP_UP
     is HttpRedirectEvent ->
         throw NotImplementedError("Redirect events are not supported in integrations")
 }
