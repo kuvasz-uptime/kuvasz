@@ -14,64 +14,50 @@ import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 
 object PlainTextMessageFormatter : TextMessageFormatter {
 
     override fun toFormattedMessage(event: UptimeMonitorEvent): String {
         val messageParts: List<String> = when (event) {
-            is HttpMonitorUpEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    details.summary,
-                    details.latency,
-                    details.previousDownTime
-                )
-            }
-
-            is HttpMonitorDownEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    details.summary,
-                    details.error,
-                    details.previousUpTime
-                )
-            }
-
-            is PushMonitorDownEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    details.summary,
-                    details.error,
-                    details.previousUpTime
-                )
-            }
-
-            is PushMonitorUpEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    details.summary,
-                    details.previousDownTime
-                )
-            }
-
-            is IcmpMonitorUpEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    details.summary,
-                    details.latency,
-                    details.packetLoss,
-                    details.previousDownTime
-                )
-            }
-
-            is IcmpMonitorDownEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    details.summary,
-                    details.error,
-                    details.packetLoss,
-                    details.previousUpTime
-                )
-            }
+            is HttpMonitorUpEvent -> event.toParts()
+            is HttpMonitorDownEvent -> event.toParts()
+            is PushMonitorDownEvent -> event.toParts()
+            is PushMonitorUpEvent -> event.toParts()
+            is IcmpMonitorUpEvent -> event.toParts()
+            is IcmpMonitorDownEvent -> event.toParts()
+            is TcpMonitorUpEvent -> event.toParts()
+            is TcpMonitorDownEvent -> event.toParts()
         }
 
         return messageParts.assemble()
     }
+
+    private fun HttpMonitorUpEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, latency, previousDownTime) }
+
+    private fun HttpMonitorDownEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
+
+    private fun PushMonitorDownEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
+
+    private fun PushMonitorUpEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, previousDownTime) }
+
+    private fun IcmpMonitorUpEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, latency, packetLoss, previousDownTime) }
+
+    private fun IcmpMonitorDownEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, error, packetLoss, previousUpTime) }
+
+    private fun TcpMonitorUpEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, latency, previousDownTime) }
+
+    private fun TcpMonitorDownEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
 
     override fun toFormattedMessage(event: SSLMonitorEvent): String {
         val messageParts: List<String> = when (event) {

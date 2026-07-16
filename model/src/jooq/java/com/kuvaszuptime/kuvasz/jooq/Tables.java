@@ -16,6 +16,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent;
 
 
 /**
@@ -83,4 +86,19 @@ public class Tables {
      * The table <code>kuvasz.status_page</code>.
      */
     public static final StatusPage STATUS_PAGE = StatusPage.STATUS_PAGE;
+
+    /**
+     * The table <code>kuvasz.tcp_metrics_log</code>.
+     */
+    public static final TcpMetricsLog TCP_METRICS_LOG = TcpMetricsLog.TCP_METRICS_LOG;
+
+    /**
+     * The table <code>kuvasz.tcp_monitor</code>.
+     */
+    public static final TcpMonitor TCP_MONITOR = TcpMonitor.TCP_MONITOR;
+
+    /**
+     * The table <code>kuvasz.tcp_uptime_event</code>.
+     */
+    public static final TcpUptimeEvent TCP_UPTIME_EVENT = TcpUptimeEvent.TCP_UPTIME_EVENT;
 }

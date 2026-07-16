@@ -14,6 +14,8 @@ import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 
 abstract class RichTextMessageFormatter : TextMessageFormatter {
@@ -23,54 +25,58 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
 
     override fun toFormattedMessage(event: UptimeMonitorEvent): String {
         val messageParts: List<String> = when (event) {
-            is HttpMonitorUpEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    italic(details.latency),
-                    details.previousDownTime
-                )
-            }
-
-            is HttpMonitorDownEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    details.previousUpTime
-                )
-            }
-
-            is PushMonitorDownEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    details.previousUpTime
-                )
-            }
-
-            is PushMonitorUpEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    details.previousDownTime
-                )
-            }
-
-            is IcmpMonitorUpEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    details.latency?.let { italic(it) },
-                    details.packetLoss,
-                    details.previousDownTime
-                )
-            }
-
-            is IcmpMonitorDownEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    details.packetLoss,
-                    details.previousUpTime
-                )
-            }
+            is HttpMonitorUpEvent -> event.toParts()
+            is HttpMonitorDownEvent -> event.toParts()
+            is PushMonitorDownEvent -> event.toParts()
+            is PushMonitorUpEvent -> event.toParts()
+            is IcmpMonitorUpEvent -> event.toParts()
+            is IcmpMonitorDownEvent -> event.toParts()
+            is TcpMonitorUpEvent -> event.toParts()
+            is TcpMonitorDownEvent -> event.toParts()
         }
 
         return messageParts.assemble()
+    }
+
+    private fun HttpMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + bold(details.summary), italic(details.latency), details.previousDownTime)
+    }
+
+    private fun HttpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+    }
+
+    private fun PushMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+    }
+
+    private fun PushMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousDownTime)
+    }
+
+    private fun IcmpMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(
+            getEmoji() + " " + bold(details.summary),
+            details.latency?.let { italic(it) },
+            details.packetLoss,
+            details.previousDownTime,
+        )
+    }
+
+    private fun IcmpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + bold(details.summary), details.packetLoss, details.previousUpTime)
+    }
+
+    private fun TcpMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(
+            getEmoji() + " " + bold(details.summary),
+            details.latency?.let { italic(it) },
+            details.previousDownTime,
+        )
+    }
+
+    private fun TcpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
     }
 
     override fun toFormattedMessage(event: SSLMonitorEvent): String {

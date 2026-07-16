@@ -14,6 +14,8 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 
 object Emoji {
     const val ALERT = "🚨"
@@ -26,8 +28,9 @@ object Emoji {
 
 fun MonitorEvent<*>.getEmoji(): String =
     when (this) {
-        is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent -> Emoji.CHECK_OK
-        is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent -> Emoji.ALERT
+        is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent -> Emoji.CHECK_OK
+        is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent, is TcpMonitorDownEvent ->
+            Emoji.ALERT
         is HttpRedirectEvent -> Emoji.INFO
         is SSLValidEvent -> Emoji.LOCK
         is SSLInvalidEvent -> Emoji.ALERT

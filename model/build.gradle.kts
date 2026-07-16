@@ -117,6 +117,10 @@ jooq {
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
                                 }
                                 table {
+                                    expression = "TCP_UPTIME_EVENT"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
+                                }
+                                table {
                                     expression = "HTTP_MONITOR"
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
                                 }
@@ -126,6 +130,10 @@ jooq {
                                 }
                                 table {
                                     expression = "ICMP_MONITOR"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
+                                }
+                                table {
+                                    expression = "TCP_MONITOR"
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
                                 }
                             }
@@ -143,7 +151,7 @@ jooq {
                                 isGenericConverter = false
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression =
-                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
+                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|TCP_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
