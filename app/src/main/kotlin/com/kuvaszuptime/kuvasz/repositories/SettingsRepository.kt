@@ -62,6 +62,7 @@ class SettingsRepository(
                     arePushMonitorsReadOnly = appConfig.isPushMonitorExternalWriteDisabled(),
                     areStatusPagesReadOnly = appConfig.isStatusPageExternalWriteDisabled(),
                     areIcmpMonitorsReadOnly = appConfig.isIcmpMonitorExternalWriteDisabled(),
+                    areTcpMonitorsReadOnly = appConfig.isTcpMonitorExternalWriteDisabled(),
                     areMaintenanceWindowsReadOnly = appConfig.isMaintenanceWindowExternalWriteDisabled(),
                 ),
                 updateChecksEnabled = appConfig.checkUpdates,

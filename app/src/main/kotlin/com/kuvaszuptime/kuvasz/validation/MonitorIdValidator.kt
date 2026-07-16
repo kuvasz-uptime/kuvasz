@@ -6,9 +6,11 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import jakarta.inject.Singleton
 
 @Singleton
@@ -16,6 +18,7 @@ class MonitorIdValidator(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
 ) {
 
     private fun MonitorID.checkIfConfigured(): MonitorID? =
@@ -23,6 +26,7 @@ class MonitorIdValidator(
             MonitorType.HTTP_SSL -> httpMonitorRepository.findByName(name)?.monitorId()
             MonitorType.PUSH -> pushMonitorRepository.findByName(name)?.monitorId()
             MonitorType.ICMP -> icmpMonitorRepository.findByName(name)?.monitorId()
+            MonitorType.TCP -> tcpMonitorRepository.findByName(name)?.monitorId()
         }
 
     /**

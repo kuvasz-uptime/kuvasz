@@ -8,7 +8,7 @@ import io.micronaut.core.bind.annotation.Bindable
 
 @EachProperty(PushMonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
-interface PushMonitorConfig : PushMonitorCreator {
+interface PushMonitorConfig : PushMonitorCreator, MonitorConfig {
 
     companion object {
         const val CONFIG_PREFIX = "push-monitors"

@@ -11,6 +11,9 @@ import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createTcpMetricsLogRecord
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
@@ -20,6 +23,9 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -34,11 +40,14 @@ class DatabaseCleanerTest(
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
+    private val tcpUptimeEventRepository: TcpUptimeEventRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
     private val icmpMetricsLogRepository: IcmpMetricsLogRepository,
+    private val tcpMetricsLogRepository: TcpMetricsLogRepository,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
     private val sslEventRepository: SSLEventRepository,
     private val databaseCleaner: DatabaseCleaner,
 ) : DatabaseBehaviorSpec() {
@@ -275,6 +284,75 @@ class DatabaseCleanerTest(
 
                 then("it should delete it") {
                     icmpMetricsLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
+                }
+            }
+
+            `when`("there is a TCP_UPTIME_EVENT record with an end date greater than retention limit") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                createTcpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(1),
+                    endedAt = getCurrentTimestamp()
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    tcpUptimeEventRepository.fetchByMonitorId(monitor.id) shouldHaveSize 1
+                }
+            }
+
+            `when`("there is a TCP_UPTIME_EVENT record without an end date") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                createTcpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = null
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    tcpUptimeEventRepository.fetchByMonitorId(monitor.id) shouldHaveSize 1
+                }
+            }
+
+            `when`("there is a TCP_UPTIME_EVENT record with an end date less than retention limit") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                createTcpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = getCurrentTimestamp().minusDays(8)
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should delete it") {
+                    tcpUptimeEventRepository.fetchByMonitorId(monitor.id) shouldHaveSize 0
+                }
+            }
+
+            `when`("there is a TCP_METRICS_LOG record with a creation date greater than retention limit") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                createTcpMetricsLogRecord(dslContext, monitorId = monitor.id, createdAt = getCurrentTimestamp())
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    tcpMetricsLogRepository.fetchLatestByMonitorId(monitor.id) shouldHaveSize 1
+                }
+            }
+
+            `when`("there is a TCP_METRICS_LOG record with a creation date less than retention limit") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                createTcpMetricsLogRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    createdAt = getCurrentTimestamp().minusDays(6)
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should delete it") {
+                    tcpMetricsLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
                 }
             }
         }

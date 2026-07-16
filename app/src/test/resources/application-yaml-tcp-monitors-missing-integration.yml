@@ -1,0 +1,7 @@
+tcp-monitors:
+  - name: test1
+    host: 127.0.0.1
+    port: 8080
+    uptime-check-interval: 60
+    integrations:
+      - slack:non-existing

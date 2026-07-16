@@ -8,7 +8,7 @@ import io.micronaut.core.bind.annotation.Bindable
 
 @EachProperty(IcmpMonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
-interface IcmpMonitorConfig : IcmpMonitorCreator {
+interface IcmpMonitorConfig : IcmpMonitorCreator, MonitorConfig {
 
     companion object {
         const val CONFIG_PREFIX = "icmp-monitors"

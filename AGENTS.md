@@ -20,6 +20,7 @@
 - when multiple DB migrations would be created as part of a new changeset, squash them together, but never touch the existing ones that were already committed, as they supposed to be immutable
 - proper test coverage is really important, make sure that every possible new line is covered with meaningful tests, rely on the kover test coverage reports/checks
 - i18n files live in `shared/src/main/i18n/com/kuvaszuptime/kuvasz/i18n`
+- when you're using `@Suppress` to silence warnings, always leave a TODO and fix it later, finally remove the suppression.
 
 # Important commands
 
