@@ -36,15 +36,16 @@ import io.swagger.v3.oas.annotations.tags.Tag
         ]
     ),
     tags = [
+        Tag(name = OpenApiTags.MONITORS),
         Tag(name = OpenApiTags.HTTP_MONITORS),
+        Tag(name = OpenApiTags.PUSH_MONITORS),
+        Tag(name = OpenApiTags.ICMP_MONITORS),
+        Tag(name = OpenApiTags.TCP_MONITORS),
         Tag(name = OpenApiTags.INCIDENTS),
         Tag(name = OpenApiTags.INTEGRATIONS),
         Tag(name = OpenApiTags.MAINTENANCE_WINDOWS),
-        Tag(name = OpenApiTags.MANAGEMENT),
-        Tag(name = OpenApiTags.MONITORS),
-        Tag(name = OpenApiTags.PUSH_MONITORS),
-        Tag(name = OpenApiTags.SETTINGS),
         Tag(name = OpenApiTags.STATUS_PAGES),
+        Tag(name = OpenApiTags.SETTINGS),
     ]
 )
 @SecuritySchemes(
