@@ -4,11 +4,14 @@ import org.testcontainers.postgresql.PostgreSQLContainer
 
 class TestDbContainer : PostgreSQLContainer("postgres:14-alpine") {
     companion object {
+        private const val MAX_CONNECTIONS = 500
+
         private lateinit var instance: TestDbContainer
 
         fun start() {
             if (!Companion::instance.isInitialized) {
                 instance = TestDbContainer()
+                instance.withCommand("postgres", "-c", "max_connections=$MAX_CONNECTIONS")
                 instance.start()
 
                 System.setProperty("datasources.default.url", instance.jdbcUrl)
