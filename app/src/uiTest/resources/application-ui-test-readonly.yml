@@ -11,6 +11,11 @@ icmp-monitors:
   - name: yaml-icmp-monitor
     host: 127.0.0.1
     uptime-check-interval: 60
+tcp-monitors:
+  - name: yaml-tcp-monitor
+    host: 127.0.0.1
+    port: 8080
+    uptime-check-interval: 60
 status-pages:
   - title: YAML Status Page
     slug: yaml-status-page

@@ -10,4 +10,5 @@ enum class Color(internal val bgColor: CSSClass, internal val textColor: CSSClas
     BLUE_LT(BG_BLUE_LT, TEXT_BLUE_LT_FG),
     RED_LT(BG_RED_LT, TEXT_RED_LT_FG),
     ORANGE_LT(BG_ORANGE_LT, TEXT_ORANGE_LT_FG),
+    PURPLE_LT(BG_PURPLE_LT, TEXT_PURPLE_LT_FG),
 }

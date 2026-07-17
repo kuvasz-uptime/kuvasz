@@ -6,9 +6,11 @@ import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -29,12 +31,14 @@ class DisabledWebUIAuthenticationTest(
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
+    tcpMonitorRepository: TcpMonitorRepository,
 ) : DatabaseStringSpec() {
     init {
         "all the web UI endpoints should be publicly available" {
             val httpMonitor = createHttpMonitor(httpMonitorRepository)
             val pushMonitor = createPushMonitor(pushMonitorRepository)
             val icmpMonitor = createIcmpMonitor(icmpMonitorRepository)
+            val tcpMonitor = createTcpMonitor(tcpMonitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
             val maintenanceWindow = createMaintenanceWindow(dslContext, cron = "0 2 * * *", duration = "PT1H")
 
@@ -60,6 +64,12 @@ class DisabledWebUIAuthenticationTest(
                 row("/icmp-monitors/fragments/details-heading/${icmpMonitor.id}"),
                 row("/icmp-monitors/fragments/details-uptime-incidents/${icmpMonitor.id}"),
                 row("/icmp-monitors/fragments/stats"),
+                row("/tcp-monitors"),
+                row("/tcp-monitors/${tcpMonitor.id}"),
+                row("/tcp-monitors/fragments/list"),
+                row("/tcp-monitors/fragments/details-heading/${tcpMonitor.id}"),
+                row("/tcp-monitors/fragments/details-uptime-incidents/${tcpMonitor.id}"),
+                row("/tcp-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),

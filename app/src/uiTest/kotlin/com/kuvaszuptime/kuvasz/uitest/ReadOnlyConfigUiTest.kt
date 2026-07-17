@@ -55,6 +55,19 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             assertCannotBeSaved(modal)
         }
 
+        "YAML-configured TCP monitors are read-only on the list, detail page and config modal" {
+            val page = newPage()
+            val list = ListReadOnlyView(page, "/tcp-monitors")
+            list.navigate()
+            assertListIsReadOnly(list, "yaml-tcp-monitor")
+
+            val modal = openConfigModalFrom(page, list, "yaml-tcp-monitor")
+            assertReadOnlyField(modal, "name", "yaml-tcp-monitor")
+            assertReadOnlyField(modal, "host", "127.0.0.1")
+            assertReadOnlyField(modal, "port", "8080")
+            assertCannotBeSaved(modal)
+        }
+
         "YAML-configured status pages are read-only on the list, detail page and config modal" {
             val page = newPage()
             val list = ListReadOnlyView(page, "/status-pages")
