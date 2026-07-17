@@ -119,6 +119,10 @@ data class SettingsDto(
             val icmpLatestLatency: Boolean,
             @param:Schema(description = "Whether ICMP latest packet loss exporter is enabled", required = true)
             val icmpLatestPacketLoss: Boolean,
+            @param:Schema(description = "Whether TCP monitor status exporter is enabled", required = true)
+            val tcpUptimeStatus: Boolean,
+            @param:Schema(description = "Whether TCP latest latency exporter is enabled", required = true)
+            val tcpLatestLatency: Boolean,
         )
 
         @Introspected
