@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.Spec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -36,6 +37,7 @@ class MonitorControllerImportReadOnlyTest(
         appConfig.enableHttpMonitorExternalWrite()
         appConfig.enablePushMonitorExternalWrite()
         appConfig.enableIcmpMonitorExternalWrite()
+        appConfig.enableTcpMonitorExternalWrite()
     }
 
     init {
@@ -137,6 +139,29 @@ class MonitorControllerImportReadOnlyTest(
                 }
             }
 
+            `when`("TCP monitor writes are yaml-managed and the backup only contains TCP monitors") {
+                appConfig.enableHttpMonitorExternalWrite()
+                appConfig.enablePushMonitorExternalWrite()
+                appConfig.enableIcmpMonitorExternalWrite()
+                appConfig.disableTcpMonitorExternalWrite()
+
+                val yamlContent = buildYamlImportContent(
+                    tcpMonitors = listOf(tcpMonitor("skipped-tcp"))
+                )
+
+                then("it should silently skip TCP and return 200 with zero counts") {
+                    val response = client.exchange(
+                        HttpRequest.POST("/api/v2/monitors/import/yaml", multipartOf(yamlContent))
+                            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                            .accept(MediaType.APPLICATION_JSON_TYPE),
+                        MonitorImportResultDto::class.java,
+                    ).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body().shouldNotBeNull().perTypeResults.shouldBeEmpty()
+                }
+            }
+
             `when`("the response is an error") {
                 then("ServiceError should be returned for non-import related failures") {
                     val unused = shouldThrow<HttpClientResponseException> {
@@ -207,15 +232,30 @@ class MonitorControllerImportReadOnlyTest(
         metricsHistoryEnabled = true,
     )
 
+    private fun tcpMonitor(name: String) = TcpMonitorExportDto(
+        name = name,
+        host = "1.2.3.4",
+        port = 8080,
+        uptimeCheckInterval = 60,
+        timeoutMs = 5000,
+        latencyThresholdMs = null,
+        failureCountThreshold = 1,
+        enabled = true,
+        integrations = emptySet(),
+        metricsHistoryEnabled = true,
+    )
+
     private fun buildYamlImportContent(
         httpMonitors: List<HttpMonitorExportDto> = emptyList(),
         pushMonitors: List<PushMonitorExportDto> = emptyList(),
         icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
+        tcpMonitors: List<TcpMonitorExportDto> = emptyList(),
     ): ByteArray {
         val content = mapOf(
             "http-monitors" to httpMonitors,
             "push-monitors" to pushMonitors,
             "icmp-monitors" to icmpMonitors,
+            "tcp-monitors" to tcpMonitors,
         )
 
         return yamlMapper.writeValueAsBytes(content)

@@ -5,12 +5,14 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -19,6 +21,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow
@@ -51,6 +54,7 @@ class MonitorControllerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
     private val yamlMapper: YAMLMapper,
     private val httpCheckScheduler: HttpCheckScheduler,
 ) : DatabaseBehaviorSpec() {
@@ -60,11 +64,13 @@ class MonitorControllerTest(
             httpMonitors: List<HttpMonitorExportDto> = emptyList(),
             pushMonitors: List<PushMonitorExportDto> = emptyList(),
             icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
+            tcpMonitors: List<TcpMonitorExportDto> = emptyList(),
         ): ByteArray {
             val content = mapOf(
                 "http-monitors" to httpMonitors,
                 "push-monitors" to pushMonitors,
                 "icmp-monitors" to icmpMonitors,
+                "tcp-monitors" to tcpMonitors,
             )
 
             return yamlMapper.writeValueAsBytes(content)
@@ -151,6 +157,27 @@ class MonitorControllerTest(
                     packetCount = 5,
                     timeoutSeconds = 10,
                     packetLossThreshold = 50,
+                    failureCountThreshold = 3L,
+                    metricsHistoryEnabled = false,
+                )
+                val tcpMonitor = createTcpMonitor(
+                    tcpMonitorRepository,
+                    monitorName = "irrelevant7",
+                    port = 5432,
+                    integrations = listOf(
+                        IntegrationID(IntegrationType.SLACK, "global"),
+                        IntegrationID(IntegrationType.EMAIL, "global"),
+                    ),
+                )
+                val tcpMonitor2 = createTcpMonitor(
+                    tcpMonitorRepository,
+                    enabled = false,
+                    host = "example.com",
+                    port = 6379,
+                    monitorName = "irrelevant8",
+                    uptimeCheckInterval = 120,
+                    timeoutMs = 10000,
+                    latencyThresholdMs = 250,
                     failureCountThreshold = 3L,
                     metricsHistoryEnabled = false,
                 )
@@ -271,6 +298,38 @@ class MonitorControllerTest(
                         secondMonitor.metricsHistoryEnabled shouldBe icmpMonitor2.metricsHistoryEnabled
                         secondMonitor.integrations.shouldBeEmpty()
                     }
+
+                    val exportedTcpMonitorsRaw = yamlMapper.readTree(responseBody)["tcp-monitors"].shouldNotBeNull()
+                    val parsedTcpMonitors =
+                        yamlMapper.convertValue<List<TcpMonitorExportDto>>(exportedTcpMonitorsRaw).shouldNotBeEmpty()
+                    parsedTcpMonitors.size shouldBe 2
+                    parsedTcpMonitors.forOne { firstMonitor ->
+                        firstMonitor.name shouldBe tcpMonitor.name
+                        firstMonitor.host shouldBe tcpMonitor.host
+                        firstMonitor.port shouldBe tcpMonitor.port
+                        firstMonitor.uptimeCheckInterval shouldBe tcpMonitor.uptimeCheckInterval
+                        firstMonitor.timeoutMs shouldBe tcpMonitor.timeoutMs
+                        firstMonitor.latencyThresholdMs shouldBe tcpMonitor.latencyThresholdMs
+                        firstMonitor.failureCountThreshold shouldBe tcpMonitor.failureCountThreshold
+                        firstMonitor.enabled shouldBe tcpMonitor.enabled
+                        firstMonitor.metricsHistoryEnabled shouldBe tcpMonitor.metricsHistoryEnabled
+                        firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
+                            IntegrationID(IntegrationType.SLACK, "global"),
+                            IntegrationID(IntegrationType.EMAIL, "global"),
+                        )
+                    }
+                    parsedTcpMonitors.forOne { secondMonitor ->
+                        secondMonitor.name shouldBe tcpMonitor2.name
+                        secondMonitor.host shouldBe tcpMonitor2.host
+                        secondMonitor.port shouldBe tcpMonitor2.port
+                        secondMonitor.uptimeCheckInterval shouldBe tcpMonitor2.uptimeCheckInterval
+                        secondMonitor.timeoutMs shouldBe tcpMonitor2.timeoutMs
+                        secondMonitor.latencyThresholdMs shouldBe tcpMonitor2.latencyThresholdMs
+                        secondMonitor.failureCountThreshold shouldBe tcpMonitor2.failureCountThreshold
+                        secondMonitor.enabled shouldBe tcpMonitor2.enabled
+                        secondMonitor.metricsHistoryEnabled shouldBe tcpMonitor2.metricsHistoryEnabled
+                        secondMonitor.integrations.shouldBeEmpty()
+                    }
                 }
             }
 
@@ -289,6 +348,8 @@ class MonitorControllerTest(
                     yamlMapper.convertValue<List<PushMonitorExportDto>>(exportedPushMonitorsRaw).shouldBeEmpty()
                     val exportedIcmpMonitorsRaw = yamlMapper.readTree(responseBody)["icmp-monitors"].shouldNotBeNull()
                     yamlMapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldBeEmpty()
+                    val exportedTcpMonitorsRaw = yamlMapper.readTree(responseBody)["tcp-monitors"].shouldNotBeNull()
+                    yamlMapper.convertValue<List<TcpMonitorExportDto>>(exportedTcpMonitorsRaw).shouldBeEmpty()
                 }
             }
         }
@@ -466,6 +527,20 @@ class MonitorControllerTest(
                             metricsHistoryEnabled = true,
                         )
                     ),
+                    tcpMonitors = listOf(
+                        TcpMonitorExportDto(
+                            name = "multi-tcp",
+                            host = "1.2.3.4",
+                            port = 5432,
+                            uptimeCheckInterval = 60,
+                            timeoutMs = 5000,
+                            latencyThresholdMs = null,
+                            failureCountThreshold = 1,
+                            enabled = true,
+                            integrations = emptySet(),
+                            metricsHistoryEnabled = true,
+                        )
+                    ),
                 )
 
                 val multipartBody = MultipartBody.builder()
@@ -481,12 +556,13 @@ class MonitorControllerTest(
 
                     response.status shouldBe HttpStatus.OK
                     val perTypeResults = response.body().shouldNotBeNull().perTypeResults
-                    perTypeResults shouldHaveSize 3
-                    perTypeResults.sumOf { it.receivedCnt } shouldBe 3
+                    perTypeResults shouldHaveSize 4
+                    perTypeResults.sumOf { it.receivedCnt } shouldBe 4
                     perTypeResults.map { it.monitorType }.toSet() shouldBe setOf(
                         MonitorType.HTTP_SSL,
                         MonitorType.PUSH,
                         MonitorType.ICMP,
+                        MonitorType.TCP,
                     )
                 }
             }

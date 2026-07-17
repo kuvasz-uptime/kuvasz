@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -12,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -30,6 +32,7 @@ class MonitorRoundTripE2ETest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
 ) : DatabaseBehaviorSpec() {
 
     init {
@@ -75,6 +78,18 @@ class MonitorRoundTripE2ETest(
                     failureCountThreshold = 3L,
                     metricsHistoryEnabled = false,
                 )
+                val tcpMonitor = createTcpMonitor(
+                    tcpMonitorRepository,
+                    enabled = false,
+                    host = "example.com",
+                    port = 5432,
+                    monitorName = "roundtrip-tcp",
+                    uptimeCheckInterval = 120,
+                    timeoutMs = 10000,
+                    latencyThresholdMs = 250,
+                    failureCountThreshold = 3L,
+                    metricsHistoryEnabled = false,
+                )
 
                 // 1) Real export via the API - the actual bytes the feature must be able to consume
                 val exportBytes = client.exchange(
@@ -86,9 +101,11 @@ class MonitorRoundTripE2ETest(
                 httpMonitorRepository.deleteById(httpMonitor.id, dslContext)
                 pushMonitorRepository.deleteById(pushMonitor.id, dslContext)
                 icmpMonitorRepository.deleteById(icmpMonitor.id, dslContext)
+                tcpMonitorRepository.deleteById(tcpMonitor.id, dslContext)
                 httpMonitorRepository.findByName("roundtrip-http").shouldBeNull()
                 pushMonitorRepository.findByName("roundtrip-push").shouldBeNull()
                 icmpMonitorRepository.findByName("roundtrip-icmp").shouldBeNull()
+                tcpMonitorRepository.findByName("roundtrip-tcp").shouldBeNull()
 
                 // 3) Restore from the exported bytes via the real import API
                 val multipartBody = MultipartBody.builder()
@@ -103,8 +120,8 @@ class MonitorRoundTripE2ETest(
 
                 then("the imported monitors should match the originals field-by-field") {
                     response.status shouldBe HttpStatus.OK
-                    result.perTypeResults.sumOf { it.receivedCnt } shouldBe 3
-                    result.perTypeResults.sumOf { it.imported.size } shouldBe 3
+                    result.perTypeResults.sumOf { it.receivedCnt } shouldBe 4
+                    result.perTypeResults.sumOf { it.imported.size } shouldBe 4
                     result.perTypeResults.sumOf { it.deleted.size } shouldBe 0
                     result.dryRun shouldBe false
 
@@ -144,6 +161,16 @@ class MonitorRoundTripE2ETest(
                     restoredIcmp.failureCountThreshold shouldBe icmpMonitor.failureCountThreshold
                     restoredIcmp.enabled shouldBe icmpMonitor.enabled
                     restoredIcmp.metricsHistoryEnabled shouldBe icmpMonitor.metricsHistoryEnabled
+
+                    val restoredTcp = tcpMonitorRepository.findByName("roundtrip-tcp").shouldNotBeNull()
+                    restoredTcp.host shouldBe tcpMonitor.host
+                    restoredTcp.port shouldBe tcpMonitor.port
+                    restoredTcp.uptimeCheckInterval shouldBe tcpMonitor.uptimeCheckInterval
+                    restoredTcp.timeoutMs shouldBe tcpMonitor.timeoutMs
+                    restoredTcp.latencyThresholdMs shouldBe tcpMonitor.latencyThresholdMs
+                    restoredTcp.failureCountThreshold shouldBe tcpMonitor.failureCountThreshold
+                    restoredTcp.enabled shouldBe tcpMonitor.enabled
+                    restoredTcp.metricsHistoryEnabled shouldBe tcpMonitor.metricsHistoryEnabled
                 }
             }
         }

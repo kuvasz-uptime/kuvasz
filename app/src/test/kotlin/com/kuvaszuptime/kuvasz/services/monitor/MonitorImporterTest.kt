@@ -146,6 +146,7 @@ class MonitorImporterTest(
                     httpMonitorConfigs = listOf(httpMonitor),
                     pushMonitorConfigs = emptyList(),
                     icmpMonitorConfigs = emptyList(),
+                    tcpMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -223,6 +224,7 @@ class MonitorImporterTest(
                     httpMonitorConfigs = listOf(importedHttp),
                     pushMonitorConfigs = emptyList(),
                     icmpMonitorConfigs = emptyList(),
+                    tcpMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -243,6 +245,7 @@ class MonitorImporterTest(
                     httpMonitorConfigs = listOf(httpAdapter("scheduled-http")),
                     pushMonitorConfigs = emptyList(),
                     icmpMonitorConfigs = listOf(icmpAdapter("scheduled-icmp")),
+                    tcpMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -264,6 +267,7 @@ class MonitorImporterTest(
                     httpMonitorConfigs = listOf(httpAdapter("dry-run-scheduling")),
                     pushMonitorConfigs = emptyList(),
                     icmpMonitorConfigs = emptyList(),
+                    tcpMonitorConfigs = emptyList(),
                     dryRun = true,
                 )
 
