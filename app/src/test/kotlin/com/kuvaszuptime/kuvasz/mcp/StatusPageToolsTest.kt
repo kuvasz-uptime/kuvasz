@@ -8,11 +8,13 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -32,6 +34,7 @@ class StatusPageToolsTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
     mcpClient: McpSyncClient,
 ) : McpToolTest(client, mcpClient) {
 
@@ -148,6 +151,28 @@ class StatusPageToolsTest(
                     icmpMonitor.type shouldBe "icmp"
                     icmpMonitor.uptimeStatusHistory.shouldNotBeEmpty()
                     icmpMonitor.lastHeartbeat shouldBe null
+                }
+            }
+
+            `when`("get-status-page-details is called for a page with a TCP monitor") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val page = createStatusPage(
+                    dslContext,
+                    title = "TCP Page",
+                    monitors = listOf(MonitorID(MonitorType.TCP, monitor.name))
+                )
+                val response = callToolWithMcpClient(GET_STATUS_PAGE_DETAILS, mapOf("statusPageId" to page.id))
+
+                then("it should set type='tcp' and include TCP-specific fields in StatusPageMonitorSchema") {
+                    response.isError shouldBe false
+
+                    val details = response.structuredContentAs<StatusPageDetailsSchema>().shouldNotBeNull()
+                    val tcpMonitor = details.monitors.shouldNotBeEmpty().first()
+                    tcpMonitor.name shouldBe monitor.name
+                    tcpMonitor.type shouldBe "tcp"
+                    tcpMonitor.uptimeStatusHistory.shouldNotBeEmpty()
+                    tcpMonitor.lastHeartbeat shouldBe null
+                    tcpMonitor.lastPacketLossPercentage shouldBe null
                 }
             }
 

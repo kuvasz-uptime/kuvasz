@@ -164,6 +164,12 @@ class McpServerAuthTest(
                         CREATE_MAINTENANCE_WINDOW,
                         TOGGLE_MAINTENANCE_WINDOW,
                         DELETE_MAINTENANCE_WINDOW,
+                        ToolNames.CREATE_TCP_MONITOR,
+                        ToolNames.GET_TCP_MONITOR_DETAILS,
+                        ToolNames.GET_TCP_MONITOR_STATS,
+                        ToolNames.LIST_TCP_MONITORS,
+                        ToolNames.TOGGLE_TCP_MONITOR,
+                        ToolNames.DELETE_TCP_MONITOR,
                     )
                 }
             }
