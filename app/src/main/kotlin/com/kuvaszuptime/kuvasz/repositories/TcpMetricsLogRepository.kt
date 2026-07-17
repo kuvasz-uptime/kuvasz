@@ -18,12 +18,6 @@ import java.time.OffsetDateTime
 @Singleton
 class TcpMetricsLogRepository(private val dslContext: DSLContext) {
 
-    companion object {
-        private const val P90 = .90
-        private const val P95 = .95
-        private const val P99 = .99
-    }
-
     fun insertLog(monitorId: Long, latencyMs: Int?) {
         dslContext.insertInto(TCP_METRICS_LOG)
             .set(
