@@ -190,6 +190,8 @@ metrics-exports:
   icmp-uptime-status: ${ENABLE_ICMP_UPTIME_STATUS_EXPORT:`false`}
   icmp-latest-latency: ${ENABLE_ICMP_LATEST_LATENCY_EXPORT:`false`}
   icmp-latest-packet-loss: ${ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT:`false`}
+  tcp-uptime-status: ${ENABLE_TCP_UPTIME_STATUS_EXPORT:`false`}
+  tcp-latest-latency: ${ENABLE_TCP_LATEST_LATENCY_EXPORT:`false`}
 ---
 default-status-page:
   public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}

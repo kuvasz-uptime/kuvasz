@@ -33,4 +33,10 @@ interface MetricsExportConfig {
 
     @get:Bindable(defaultValue = "false")
     val icmpLatestPacketLoss: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val tcpUptimeStatus: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val tcpLatestLatency: Boolean
 }
