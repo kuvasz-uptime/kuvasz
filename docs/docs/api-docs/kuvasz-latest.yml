@@ -10,15 +10,16 @@ info:
   x-logo:
     url: https://github.com/kuvasz-uptime/kuvasz/raw/main/docs/docs/images/kuvasz-banner-light.webp
 tags:
+- name: Monitors
 - name: HTTP monitors
+- name: Push monitors
+- name: ICMP monitors
+- name: TCP monitors
 - name: Incidents
 - name: Integrations
 - name: Maintenance windows
-- name: Management
-- name: Monitors
-- name: Push monitors
-- name: Settings
 - name: Status pages
+- name: Settings
 paths:
   /api/v2/http-monitors:
     get:
@@ -1590,6 +1591,274 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/tcp-monitors:
+    get:
+      tags:
+      - TCP monitors
+      summary: Get all monitors with their details
+      operationId: getMonitorsWithDetails_3
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TcpMonitorDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - TCP monitors
+      summary: Create a monitor
+      operationId: createMonitor_3
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TcpMonitorCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TcpMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "TCP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/tcp-monitors/stats:
+    get:
+      tags:
+      - TCP monitors
+      summary: "Get the overall, cumulative stats of all monitors"
+      operationId: getMonitoringStats_3
+      parameters:
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TcpMonitoringStatsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/tcp-monitors/{monitorId}:
+    get:
+      tags:
+      - TCP monitors
+      summary: Get a monitor's details
+      operationId: getMonitorDetails_3
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TcpMonitorDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - TCP monitors
+      summary: Delete a monitor by ID
+      operationId: deleteMonitor_3
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "TCP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - TCP monitors
+      summary: Update a monitor by ID
+      description: Updates the monitor with the given ID. Only fields that are present
+        in the request body will be updated. Fields not present in the request body
+        will remain unchanged.
+      operationId: updateMonitor_3
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TcpMonitorUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TcpMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "TCP monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/tcp-monitors/{monitorId}/stats:
+    get:
+      tags:
+      - TCP monitors
+      summary: Get the stats of the given monitor
+      operationId: getMonitorStats_3
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P1D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TcpMonitorStatsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/tcp-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - TCP monitors
+      summary: Get the uptime events of the given monitor
+      operationId: getUptimeEvents_3
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TcpUptimeEventDto"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -3187,6 +3456,7 @@ components:
       - SSL
       - PUSH
       - ICMP
+      - TCP
     IntegrationConfigDto:
       required:
       - excludedEvents
@@ -3261,6 +3531,8 @@ components:
       - PUSH_DOWN
       - ICMP_UP
       - ICMP_DOWN
+      - TCP_UP
+      - TCP_DOWN
       - SSL_VALID
       - SSL_INVALID
       - SSL_WILL_EXPIRE
@@ -3615,6 +3887,7 @@ components:
       - HTTP_SSL
       - PUSH
       - ICMP
+      - TCP
     MonitorTypeImportResult:
       required:
       - deleted
@@ -4261,6 +4534,7 @@ components:
       - areMaintenanceWindowsReadOnly
       - arePushMonitorsReadOnly
       - areStatusPagesReadOnly
+      - areTcpMonitorsReadOnly
       type: object
       properties:
         areHttpMonitorsReadOnly:
@@ -4275,6 +4549,9 @@ components:
         areIcmpMonitorsReadOnly:
           type: boolean
           description: Whether the ICMP monitors are in read-only mode
+        areTcpMonitorsReadOnly:
+          type: boolean
+          description: Whether the TCP monitors are in read-only mode
         areMaintenanceWindowsReadOnly:
           type: boolean
           description: Whether the maintenance windows are in read-only mode
@@ -4388,6 +4665,8 @@ components:
       - pushUptimeStatus
       - sslExpiry
       - sslStatus
+      - tcpLatestLatency
+      - tcpUptimeStatus
       type: object
       properties:
         sslExpiry:
@@ -4414,6 +4693,12 @@ components:
         icmpLatestPacketLoss:
           type: boolean
           description: Whether ICMP latest packet loss exporter is enabled
+        tcpUptimeStatus:
+          type: boolean
+          description: Whether TCP monitor status exporter is enabled
+        tcpLatestLatency:
+          type: boolean
+          description: Whether TCP latest latency exporter is enabled
     SettingsDto.SmtpConfigDto:
       required:
       - host
@@ -4796,6 +5081,7 @@ components:
       - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageIcmpMonitorDetailsDto"
+      - $ref: "#/components/schemas/StatusPageTcpMonitorDetailsDto"
     StatusPagePushMonitorDetailsDto:
       required:
       - inMaintenance
@@ -4830,6 +5116,40 @@ components:
           type: string
           format: date-time
           nullable: true
+    StatusPageTcpMonitorDetailsDto:
+      required:
+      - inMaintenance
+      - name
+      - type
+      - uptimeStatusHistory
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        lastCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeRatio:
+          type: number
+          format: double
+          nullable: true
+        uptimeStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistoryDto"
+        averageLatencyInMs:
+          type: integer
+          format: int32
+          nullable: true
+        inMaintenance:
+          type: boolean
     StatusPageUpdateDto:
       type: object
       properties:
@@ -4879,6 +5199,489 @@ components:
       - PARTIAL_MAINTENANCE
       - MAINTENANCE
       - PENDING
+    TcpMetricsLogDto:
+      required:
+      - createdAt
+      - id
+      - latencyInMs
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the metrics log
+          format: int64
+        latencyInMs:
+          type: integer
+          description: "The connect latency in milliseconds recorded for the monitor,\
+            \ null if the monitor was down"
+          format: int32
+          nullable: true
+        createdAt:
+          type: string
+          description: The timestamp when the metrics were recorded
+          format: date-time
+    TcpMonitorCreateDto:
+      required:
+      - host
+      - name
+      - port
+      - uptimeCheckInterval
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          x-size-message: Monitor name must not be blank
+        host:
+          minLength: 1
+          type: string
+          description: The hostname or IP address to connect to
+          x-size-message: Host must not be blank
+        port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          description: The TCP port to connect to (1-65535)
+          format: int32
+          x-maximum-message: "Port must be at most {value}"
+          x-minimum-message: "Port must be at least {value}"
+          x-not-null-message: Port must not be null
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        timeoutMs:
+          maximum: 30000
+          minimum: 1
+          type: integer
+          description: The connection timeout in milliseconds (1-30000)
+          format: int32
+          default: 5000
+          x-maximum-message: "Timeout must be at most {value} milliseconds"
+          x-minimum-message: "Timeout must be at least {value} millisecond(s)"
+          x-not-null-message: Timeout must not be null
+        latencyThresholdMs:
+          minimum: 1
+          type: integer
+          description: "Optional connect-latency threshold in milliseconds. If set,\
+            \ the check is considered DOWN when the connection takes longer than this\
+            \ value."
+          format: int32
+          nullable: true
+          x-minimum-message: "Latency threshold must be at least {value} millisecond(s)"
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          default: 1
+          x-minimum-message: Failure count threshold must be greater than 0
+          x-not-null-message: Failure count threshold must not be null
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          default: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+          default: true
+    TcpMonitorDetailsDto:
+      required:
+      - createdAt
+      - effectiveIntegrations
+      - enabled
+      - failureCountThreshold
+      - host
+      - id
+      - inMaintenance
+      - integrations
+      - lastUptimeCheck
+      - latencyThresholdMs
+      - maintenanceWindows
+      - metricsHistoryEnabled
+      - name
+      - nextUptimeCheck
+      - port
+      - statusPages
+      - timeoutMs
+      - updatedAt
+      - uptimeCheckInterval
+      - uptimeError
+      - uptimeStatus
+      - uptimeStatusStartedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        host:
+          type: string
+          description: The hostname or IP address to connect to
+        port:
+          type: integer
+          description: The TCP port to connect to (1-65535)
+          format: int32
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        timeoutMs:
+          type: integer
+          description: The connection timeout in milliseconds (1-30000)
+          format: int32
+        latencyThresholdMs:
+          type: integer
+          description: "Optional connect-latency threshold in milliseconds. If set,\
+            \ the check is considered DOWN when the connection takes longer than this\
+            \ value."
+          format: int32
+          nullable: true
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+        uptimeStatus:
+          description: "The current uptime status of the monitor. If it's null, no\
+            \ check has completed yet."
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusStartedAt:
+          type: string
+          description: The timestamp when the uptime status was last changed
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          description: The timestamp when the last uptime check was performed
+          format: date-time
+          nullable: true
+        nextUptimeCheck:
+          type: string
+          description: The timestamp when the next uptime check is scheduled
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          description: The error message if the last uptime check failed
+          nullable: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        effectiveIntegrations:
+          type: array
+          description: "List of integrations that are effective for the monitor, including\
+            \ global integrations"
+          items:
+            $ref: "#/components/schemas/IntegrationDetailsDto"
+        statusPages:
+          type: array
+          description: List of slugs of the status pages the monitor is explicitly
+            assigned to
+          items:
+            type: string
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
+    TcpMonitorDto:
+      required:
+      - createdAt
+      - enabled
+      - failureCountThreshold
+      - host
+      - id
+      - integrations
+      - latencyThresholdMs
+      - metricsHistoryEnabled
+      - name
+      - port
+      - timeoutMs
+      - updatedAt
+      - uptimeCheckInterval
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        host:
+          type: string
+          description: The hostname or IP address to connect to
+        port:
+          type: integer
+          description: The TCP port to connect to (1-65535)
+          format: int32
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        timeoutMs:
+          type: integer
+          description: The connection timeout in milliseconds (1-30000)
+          format: int32
+        latencyThresholdMs:
+          type: integer
+          description: "Optional connect-latency threshold in milliseconds. If set,\
+            \ the check is considered DOWN when the connection takes longer than this\
+            \ value."
+          format: int32
+          nullable: true
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+    TcpMonitorStatsDto:
+      required:
+      - id
+      - latencyStats
+      - metricsHistoryEnabled
+      - metricsLogs
+      - uptimeHistory
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        uptimeHistory:
+          description: Uptime related statistics of the monitor in the given period
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+        latencyStats:
+          description: Latency related statistics of the monitor in the given period
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/LatencyStatsDto"
+        metricsLogs:
+          type: array
+          description: All the latency logs recorded for the monitor in the given
+            period
+          items:
+            $ref: "#/components/schemas/TcpMetricsLogDto"
+    TcpMonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          nullable: false
+          x-size-message: Monitor name must not be blank
+        host:
+          minLength: 1
+          type: string
+          description: The hostname or IP address to connect to
+          nullable: false
+          x-size-message: Host must not be blank
+        port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          description: The TCP port to connect to (1-65535)
+          format: int32
+          nullable: false
+          x-maximum-message: "Port must be at most {value}"
+          x-minimum-message: "Port must be at least {value}"
+          x-not-null-message: Port must not be null
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          nullable: false
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        timeoutMs:
+          maximum: 30000
+          minimum: 1
+          type: integer
+          description: The connection timeout in milliseconds (1-30000)
+          format: int32
+          nullable: false
+          x-maximum-message: "Timeout must be at most {value} milliseconds"
+          x-minimum-message: "Timeout must be at least {value} millisecond(s)"
+          x-not-null-message: Timeout must not be null
+        latencyThresholdMs:
+          minimum: 1
+          type: integer
+          description: "Optional connect-latency threshold in milliseconds. If set,\
+            \ the check is considered DOWN when the connection takes longer than this\
+            \ value."
+          format: int32
+          nullable: true
+          x-minimum-message: "Latency threshold must be at least {value} millisecond(s)"
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          nullable: false
+          x-minimum-message: Failure count threshold must be greater than 0
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          nullable: false
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+          nullable: false
+    TcpMonitoringStatsDto:
+      required:
+      - actual
+      - history
+      type: object
+      properties:
+        actual:
+          description: The actual monitoring statistics for the current state of the
+            monitors.
+          allOf:
+          - $ref: "#/components/schemas/TcpMonitoringStatsDto.ActualMonitoringStats"
+        history:
+          description: "The historical monitoring statistics, summarizing incidents\
+            \ and uptime ratios over time."
+          allOf:
+          - $ref: "#/components/schemas/TcpMonitoringStatsDto.HistoricalMonitoringStats"
+    TcpMonitoringStatsDto.ActualMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the current state of uptime for all monitors.
+          allOf:
+          - $ref: "#/components/schemas/ActualUptimeStats"
+    TcpMonitoringStatsDto.HistoricalMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the historical uptime of all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+    TcpUptimeEventDto:
+      required:
+      - endedAt
+      - error
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the uptime event
+          format: int64
+        status:
+          description: The status of the uptime event
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        startedAt:
+          type: string
+          description: The timestamp when the uptime event started
+          format: date-time
+        endedAt:
+          type: string
+          description: "The timestamp when the uptime event ended, if applicable"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: The timestamp when the uptime event was updated
+          format: date-time
     TelegramNotificationConfigDto:
       required:
       - chatId
