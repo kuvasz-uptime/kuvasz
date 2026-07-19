@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.metrics.tcp
 
 import com.kuvaszuptime.kuvasz.metrics.TcpExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
@@ -115,6 +116,57 @@ class TcpLatencyExporterTest : TcpExporterTest("enabled-metrics-tcp-latency") {
 
                 eventDispatcher().dispatch(
                     TcpMonitorUpEvent(enabledMonitorWithLatency, null, latencyInMs = null)
+                )
+
+                then("it should not update the existing meter") {
+                    meterRegistry().meters.single() shouldHaveValue 50.0
+                }
+            }
+
+            `when`("there is a down event carrying a latency (latency threshold breached)") {
+                appContext = testAppContext()
+
+                val enabledMonitorWithLatency = createTcpMonitor(
+                    tcpMonitorRepository(),
+                    monitorName = "test-enabled",
+                    enabled = true,
+                )
+                tcpMetricsLogRepository().insertLog(enabledMonitorWithLatency.id, latencyMs = 50)
+
+                restartAppContextWithMetrics()
+
+                meterRegistry().meters shouldHaveSize 1
+
+                eventDispatcher().dispatch(
+                    TcpMonitorDownEvent(
+                        enabledMonitorWithLatency,
+                        error = "too slow",
+                        previousEvent = null,
+                        latencyInMs = 120,
+                    )
+                )
+
+                then("it should update the existing meter with the measured latency") {
+                    meterRegistry().meters.single() shouldHaveValue 120.0
+                }
+            }
+
+            `when`("there is a down event without a latency (connection failed)") {
+                appContext = testAppContext()
+
+                val enabledMonitorWithLatency = createTcpMonitor(
+                    tcpMonitorRepository(),
+                    monitorName = "test-enabled",
+                    enabled = true,
+                )
+                tcpMetricsLogRepository().insertLog(enabledMonitorWithLatency.id, latencyMs = 50)
+
+                restartAppContextWithMetrics()
+
+                meterRegistry().meters shouldHaveSize 1
+
+                eventDispatcher().dispatch(
+                    TcpMonitorDownEvent(enabledMonitorWithLatency, error = "refused", previousEvent = null)
                 )
 
                 then("it should not update the existing meter") {

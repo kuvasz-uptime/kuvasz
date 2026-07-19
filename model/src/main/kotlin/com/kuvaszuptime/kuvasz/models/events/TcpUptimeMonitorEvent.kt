@@ -29,6 +29,7 @@ data class TcpMonitorDownEvent(
     override val monitor: TcpMonitorRecord,
     val error: String,
     override val previousEvent: TcpUptimeEventRecord?,
+    val latencyInMs: Int? = null,
 ) : TcpUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN

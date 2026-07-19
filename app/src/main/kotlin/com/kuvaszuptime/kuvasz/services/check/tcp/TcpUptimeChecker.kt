@@ -68,6 +68,7 @@ class TcpUptimeChecker(
                 monitor = monitor,
                 error = errorMessage,
                 previousEvent = previousEvent,
+                latencyInMs = latencyMs,
             )
             if (event.isDownNow(pendingFailureRepository)) {
                 databaseEventHandler.handleUptimeMonitorEvent(event)

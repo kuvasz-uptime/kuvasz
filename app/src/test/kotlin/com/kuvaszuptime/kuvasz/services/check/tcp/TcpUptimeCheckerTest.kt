@@ -94,6 +94,7 @@ class TcpUptimeCheckerTest(
                     downEvent.monitor.id shouldBe monitor.id
                     downEvent.uptimeStatus shouldBe UptimeStatus.DOWN
                     downEvent.error shouldBe "Connection refused"
+                    downEvent.latencyInMs shouldBe null
                 }
 
                 then("no UP event should be dispatched") {
@@ -113,10 +114,12 @@ class TcpUptimeCheckerTest(
 
                 uptimeChecker.check(monitor)
 
-                then("a DOWN event should be dispatched") {
+                then("a DOWN event carrying the measured latency should be dispatched") {
                     downSubscriber.awaitCount(1)
                     downSubscriber.values().shouldHaveSize(1)
-                    downSubscriber.values().first().uptimeStatus shouldBe UptimeStatus.DOWN
+                    val downEvent = downSubscriber.values().first()
+                    downEvent.uptimeStatus shouldBe UptimeStatus.DOWN
+                    downEvent.latencyInMs shouldBe 120
                 }
             }
 

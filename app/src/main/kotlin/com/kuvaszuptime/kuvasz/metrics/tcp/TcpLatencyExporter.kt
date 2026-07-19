@@ -39,10 +39,19 @@ class TcpLatencyExporter(
 
     override fun subscribeToEvents() {
         eventDispatcher.subscribeToTcpMonitorUpEvents { event ->
-            val latency = event.latencyInMs ?: return@subscribeToTcpMonitorUpEvents
-            logger.debug("Updating latency for monitor with ID: ${event.monitor.id} to $latency")
-            upsertMeter(event.monitor.numericMonitorId(), latency)
+            updateLatency(event.monitor, event.latencyInMs)
         }
+        // A monitor that connected but breached its latency threshold is DOWN yet still carries a real
+        // measurement, so the gauge stays in sync with the metrics log instead of freezing on the last UP.
+        eventDispatcher.subscribeToTcpMonitorDownEvents { event ->
+            updateLatency(event.monitor, event.latencyInMs)
+        }
+    }
+
+    private fun updateLatency(monitor: TcpMonitorRecord, latencyInMs: Int?) {
+        val latency = latencyInMs ?: return
+        logger.debug("Updating latency for monitor with ID: ${monitor.id} to $latency")
+        upsertMeter(monitor.numericMonitorId(), latency)
     }
 
     override fun transform(valueSource: Int): Long = valueSource.toLong()
