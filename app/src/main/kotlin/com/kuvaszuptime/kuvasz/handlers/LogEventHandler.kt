@@ -19,31 +19,13 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
     private val formatter = LogMessageFormatter
 
     init {
-        eventDispatcher.subscribeToHttpMonitorUpEvents { event ->
+        eventDispatcher.subscribeToUptimeMonitorEvents { event ->
             event.handle()
         }
-        eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToPushMonitorEvents { event ->
+        eventDispatcher.subscribeToSSLMonitorEvents { event ->
             event.handle()
         }
         eventDispatcher.subscribeToHttpRedirectEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToSSLValidEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToSSLInvalidEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToSSLWillExpireEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
-            event.handle()
-        }
-        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
             event.handle()
         }
     }

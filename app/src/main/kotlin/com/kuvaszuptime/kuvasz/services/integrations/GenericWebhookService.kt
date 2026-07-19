@@ -5,11 +5,14 @@ import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.NotifiableEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
@@ -97,6 +100,14 @@ class GenericWebhookService(
     }
 
     @Suppress("MagicNumber")
+    private val testTcpMonitorRecord = TcpMonitorRecord().apply {
+        id = 4
+        name = "Test monitor"
+        host = "test.monitor"
+        port = 8080
+    }
+
+    @Suppress("MagicNumber")
     val testEvents: List<MonitorEvent<out MonitorRecord>> = listOf(
         HttpMonitorDownEvent(
             monitor = testHttpMonitorRecord,
@@ -145,6 +156,16 @@ class GenericWebhookService(
             previousEvent = null,
             latencyInMs = 42,
             packetLossPercentage = 0,
+        ),
+        TcpMonitorDownEvent(
+            monitor = testTcpMonitorRecord,
+            error = "Test TCP error",
+            previousEvent = null,
+        ),
+        TcpMonitorUpEvent(
+            monitor = testTcpMonitorRecord,
+            previousEvent = null,
+            latencyInMs = 21,
         ),
     )
 

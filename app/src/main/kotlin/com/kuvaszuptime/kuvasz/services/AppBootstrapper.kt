@@ -6,20 +6,27 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
+import com.kuvaszuptime.kuvasz.config.MonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
+import com.kuvaszuptime.kuvasz.config.TcpMonitorConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorTypeImportResult
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowScheduler
@@ -37,14 +44,17 @@ class AppBootstrapper(
     private val yamlHttpMonitorConfigs: List<HttpMonitorConfig>,
     private val yamlPushMonitorConfigs: List<PushMonitorConfig>,
     private val yamlIcmpMonitorConfigs: List<IcmpMonitorConfig>,
+    private val yamlTcpMonitorConfigs: List<TcpMonitorConfig>,
     private val monitorImporter: MonitorImporter,
     private val appConfig: AppConfig,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
     private val integrationRepository: IntegrationRepository,
     private val httpCheckScheduler: HttpCheckScheduler,
     private val icmpCheckScheduler: IcmpCheckScheduler,
+    private val tcpCheckScheduler: TcpCheckScheduler,
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
@@ -69,6 +79,11 @@ class AppBootstrapper(
     @Nullable
     @field:Property(name = IcmpMonitorConfig.CONFIG_PREFIX)
     protected var icmpMonitorYAMLConfigChecker: List<Any>? = null
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = TcpMonitorConfig.CONFIG_PREFIX)
+    protected var tcpMonitorYAMLConfigChecker: List<Any>? = null
 
     @Suppress("ProtectedMemberInFinalClass")
     @Nullable
@@ -104,6 +119,8 @@ class AppBootstrapper(
         httpCheckScheduler.initialize()
         // Scheduling the initial ICMP uptime checks
         icmpCheckScheduler.initialize()
+        // Scheduling the initial TCP uptime checks
+        tcpCheckScheduler.initialize()
         // Scheduling the start/end notifications of the enabled maintenance windows
         maintenanceWindowScheduler.initialize()
 
@@ -154,23 +171,27 @@ class AppBootstrapper(
                         id,
                         matchedIntegrations.toTypedArray(),
                     )
+
+                    is TcpMonitorRecord -> tcpMonitorRepository.updateIntegrations(
+                        id,
+                        matchedIntegrations.toTypedArray(),
+                    )
                 }
             }
         }
 
-        // Only sanitize integrations if HTTP monitors were not configured via YAML
+        // Only sanitize integrations if * monitors were not configured via YAML
         if (!appConfig.isHttpMonitorExternalWriteDisabled()) {
             httpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
         }
-
-        // Only sanitize integrations if push monitors were not configured via YAML
         if (!appConfig.isPushMonitorExternalWriteDisabled()) {
             pushMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
         }
-
-        // Only sanitize integrations if ICMP monitors were not configured via YAML
         if (!appConfig.isIcmpMonitorExternalWriteDisabled()) {
             icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+        }
+        if (!appConfig.isTcpMonitorExternalWriteDisabled()) {
+            tcpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
         }
     }
 
@@ -179,7 +200,6 @@ class AppBootstrapper(
      * If an integration is found on a window that is not configured, it will be removed from that window.
      */
     private fun sanitizeIntegrationsOfMaintenanceWindows() {
-        // Only sanitize integrations if maintenance windows were not configured via YAML
         if (appConfig.isMaintenanceWindowExternalWriteDisabled()) return
 
         val configuredIntegrations = integrationRepository.configuredIntegrations.keys
@@ -204,65 +224,64 @@ class AppBootstrapper(
      * respective monitors
      */
     private fun processYamlMonitorConfigs() {
-        // The httpMonitorYAMLConfigChecker is a workaround to check if the http-monitors config is present in the
-        // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
-        // have zero HTTP monitors, so we should disable external writes and delete all monitors from the
-        // DB eventually.
-        val isYamlHttpConfigEffective = yamlHttpMonitorConfigs.isNotEmpty() || httpMonitorYAMLConfigChecker != null
-        if (isYamlHttpConfigEffective) {
-            appConfig.disableHttpMonitorExternalWrite()
-            logger.info(
-                "Disabled external modifications of HTTP monitors, because a YAML monitor config was found. " +
-                    "Loading HTTP monitors from YAML config..."
-            )
-            monitorImporter.importHttpMonitorConfigs(yamlHttpMonitorConfigs, dryRun = false)
-        } else {
-            logger.info(
-                "No YAML HTTP monitor config was found. " +
-                    "External modifications of HTTP monitors are enabled. Loading monitors from DB..."
-            )
+
+        processYamlMonitorConfigs(
+            monitorType = MonitorType.HTTP_SSL,
+            yamlMonitorConfigs = yamlHttpMonitorConfigs,
+            yamlConfigChecker = httpMonitorYAMLConfigChecker,
+            callToDisableExternalWrite = appConfig::disableHttpMonitorExternalWrite,
+            callToImportConfigs = monitorImporter::importHttpMonitorConfigs,
+        )
+
+        // Ensuring that all client secrets are unique before importing the push monitors
+        require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
+            "YAML push monitor configs must have unique client secrets!"
         }
+        processYamlMonitorConfigs(
+            monitorType = MonitorType.PUSH,
+            yamlMonitorConfigs = yamlPushMonitorConfigs,
+            yamlConfigChecker = pushMonitorYAMLConfigChecker,
+            callToDisableExternalWrite = appConfig::disablePushMonitorExternalWrite,
+            callToImportConfigs = monitorImporter::importPushMonitorConfigs,
+        )
 
-        // The pushMonitorYAMLConfigChecker is a workaround to check if the push-monitors config is present in the
-        // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
-        // have zero push monitors, so we should disable external writes and delete all monitors from the
-        // DB eventually.
-        val isYamlPushConfigEffective = yamlPushMonitorConfigs.isNotEmpty() || pushMonitorYAMLConfigChecker != null
-        if (isYamlPushConfigEffective) {
-            // Ensuring that all client secrets are unique
-            require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
-                "YAML push monitor configs must have unique client secrets!"
-            }
+        processYamlMonitorConfigs(
+            monitorType = MonitorType.ICMP,
+            yamlMonitorConfigs = yamlIcmpMonitorConfigs,
+            yamlConfigChecker = icmpMonitorYAMLConfigChecker,
+            callToDisableExternalWrite = appConfig::disableIcmpMonitorExternalWrite,
+            callToImportConfigs = monitorImporter::importIcmpMonitorConfigs,
+        )
 
-            appConfig.disablePushMonitorExternalWrite()
+        processYamlMonitorConfigs(
+            monitorType = MonitorType.TCP,
+            yamlMonitorConfigs = yamlTcpMonitorConfigs,
+            yamlConfigChecker = tcpMonitorYAMLConfigChecker,
+            callToDisableExternalWrite = appConfig::disableTcpMonitorExternalWrite,
+            callToImportConfigs = monitorImporter::importTcpMonitorConfigs,
+        )
+    }
+
+    private fun <C : MonitorConfig> processYamlMonitorConfigs(
+        monitorType: MonitorType,
+        yamlMonitorConfigs: List<C>,
+        yamlConfigChecker: List<Any>?,
+        callToDisableExternalWrite: () -> Unit,
+        callToImportConfigs: (yamlConfigs: List<C>, dryRun: Boolean) -> MonitorTypeImportResult,
+    ) {
+        val typeName = monitorType.name
+        val isYamlConfigEffective = yamlMonitorConfigs.isNotEmpty() || yamlConfigChecker != null
+        if (isYamlConfigEffective) {
+            callToDisableExternalWrite()
             logger.info(
-                "Disabled external modifications of push monitors, because a YAML monitor config was found. " +
-                    "Loading push monitors from YAML config..."
+                "Disabled external modifications of $typeName monitors, because a YAML monitor config was found. " +
+                    "Loading $typeName monitors from YAML config..."
             )
-            monitorImporter.importPushMonitorConfigs(yamlPushMonitorConfigs, dryRun = false)
+            callToImportConfigs(yamlMonitorConfigs, false)
         } else {
             logger.info(
-                "No YAML push monitor config was found. " +
-                    "External modifications of push monitors are enabled. Loading monitors from DB..."
-            )
-        }
-
-        // The icmpMonitorYAMLConfigChecker is a workaround to check if the icmp-monitors config is present in the
-        // YAML configuration file or not. If it's explicitly set to an empty list, it means that the user wants to
-        // have zero ICMP monitors, so we should disable external writes and delete all monitors from the
-        // DB eventually.
-        val isYamlIcmpConfigEffective = yamlIcmpMonitorConfigs.isNotEmpty() || icmpMonitorYAMLConfigChecker != null
-        if (isYamlIcmpConfigEffective) {
-            appConfig.disableIcmpMonitorExternalWrite()
-            logger.info(
-                "Disabled external modifications of ICMP monitors, because a YAML monitor config was found. " +
-                    "Loading ICMP monitors from YAML config..."
-            )
-            monitorImporter.importIcmpMonitorConfigs(yamlIcmpMonitorConfigs, dryRun = false)
-        } else {
-            logger.info(
-                "No YAML ICMP monitor config was found. " +
-                    "External modifications of ICMP monitors are enabled. Loading monitors from DB..."
+                "No YAML $typeName monitor config was found. " +
+                    "External modifications of $typeName monitors are enabled. Loading monitors from DB..."
             )
         }
     }

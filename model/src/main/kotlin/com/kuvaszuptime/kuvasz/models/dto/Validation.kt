@@ -11,8 +11,13 @@ object Validation {
     const val MAX_PACKET_COUNT = 10L
     const val MIN_TIMEOUT_SECONDS = 1L
     const val MAX_TIMEOUT_SECONDS = 30L
+    const val MIN_TIMEOUT_MILLIS = 1L
+    const val MAX_TIMEOUT_MILLIS = 30000L
     const val MIN_PACKET_LOSS_THRESHOLD = 1L
     const val MAX_PACKET_LOSS_THRESHOLD = 100L
+    const val MIN_PORT = 1L
+    const val MAX_PORT = 65535L
+    const val MIN_LATENCY_THRESHOLD_MILLIS = 1L
 }
 
 object ValidationMessages {
@@ -64,9 +69,16 @@ object MonitorValidationMessages {
     const val TIMEOUT_SECONDS_NOT_NULL = "Timeout must not be null"
     const val TIMEOUT_SECONDS_MIN = "Timeout must be at least {value} second(s)"
     const val TIMEOUT_SECONDS_MAX = "Timeout must be at most {value} seconds"
+    const val TIMEOUT_MILLIS_NOT_NULL = "Timeout must not be null"
+    const val TIMEOUT_MILLIS_MIN = "Timeout must be at least {value} millisecond(s)"
+    const val TIMEOUT_MILLIS_MAX = "Timeout must be at most {value} milliseconds"
     const val PACKET_LOSS_THRESHOLD_NOT_NULL = "Packet loss threshold must not be null"
     const val PACKET_LOSS_THRESHOLD_MIN = "Packet loss threshold must be at least {value}%"
     const val PACKET_LOSS_THRESHOLD_MAX = "Packet loss threshold must be at most {value}%"
+    const val PORT_NOT_NULL = "Port must not be null"
+    const val PORT_MIN = "Port must be at least {value}"
+    const val PORT_MAX = "Port must be at most {value}"
+    const val LATENCY_THRESHOLD_MIN = "Latency threshold must be at least {value} millisecond(s)"
 }
 
 object StatusPageValidationMessages {

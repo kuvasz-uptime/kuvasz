@@ -11,11 +11,16 @@ import com.kuvaszuptime.kuvasz.models.monitor.icmp.toMonitorRecord
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.TcpMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.ResolvedIntegrationIds
@@ -28,9 +33,11 @@ class MonitorImporter(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
     private val dslContext: DSLContext,
     private val httpCheckScheduler: HttpCheckScheduler,
     private val icmpCheckScheduler: IcmpCheckScheduler,
+    private val tcpCheckScheduler: TcpCheckScheduler,
 ) {
 
     companion object {
@@ -41,6 +48,7 @@ class MonitorImporter(
         httpMonitorConfigs: List<HttpMonitorCreator>,
         pushMonitorConfigs: List<PushMonitorCreator>,
         icmpMonitorConfigs: List<IcmpMonitorCreator>,
+        tcpMonitorConfigs: List<TcpMonitorCreator>,
         dryRun: Boolean,
     ): List<MonitorTypeImportResult> {
         val results = dslContext.transactionResult { config ->
@@ -52,6 +60,8 @@ class MonitorImporter(
                     ?.let { importPushMonitorConfigs(it, dryRun, txCtx, lenientIntegrations = true) },
                 icmpMonitorConfigs.takeIf { it.isNotEmpty() }
                     ?.let { importIcmpMonitorConfigs(it, dryRun, txCtx, lenientIntegrations = true) },
+                tcpMonitorConfigs.takeIf { it.isNotEmpty() }
+                    ?.let { importTcpMonitorConfigs(it, dryRun, txCtx, lenientIntegrations = true) },
             )
         }
         if (!dryRun) {
@@ -69,6 +79,11 @@ class MonitorImporter(
             }
 
             MonitorType.ICMP -> icmpCheckScheduler.run {
+                removeAllChecks()
+                initialize()
+            }
+
+            MonitorType.TCP -> tcpCheckScheduler.run {
                 removeAllChecks()
                 initialize()
             }
@@ -101,6 +116,13 @@ class MonitorImporter(
         dryRun: Boolean,
     ): MonitorTypeImportResult = dslContext.transactionResult { config ->
         importIcmpMonitorConfigs(monitorConfigs, dryRun, config.dsl(), lenientIntegrations = false)
+    }
+
+    fun importTcpMonitorConfigs(
+        monitorConfigs: List<TcpMonitorCreator>,
+        dryRun: Boolean,
+    ): MonitorTypeImportResult = dslContext.transactionResult { config ->
+        importTcpMonitorConfigs(monitorConfigs, dryRun, config.dsl(), lenientIntegrations = false)
     }
 
     private fun resolveIntegrations(rawIds: List<String>, lenient: Boolean): ResolvedIntegrationIds =
@@ -193,6 +215,36 @@ class MonitorImporter(
 
         return MonitorTypeImportResult(
             monitorType = MonitorType.ICMP,
+            receivedCnt = monitorConfigs.size,
+            imported = upsertedMonitors.map { it.monitorId() },
+            deleted = deleted,
+            ignoredIntegrations = ignoredIntegrations.toList(),
+        )
+    }
+
+    private fun importTcpMonitorConfigs(
+        monitorConfigs: List<TcpMonitorCreator>,
+        dryRun: Boolean,
+        txCtx: DSLContext,
+        lenientIntegrations: Boolean,
+    ): MonitorTypeImportResult {
+        val ignoredIntegrations = mutableSetOf<String>()
+        val upsertedMonitors = monitorConfigs.map { importedMonitor ->
+            val resolved = resolveIntegrations(importedMonitor.integrations.orEmpty(), lenientIntegrations)
+            ignoredIntegrations.addAll(resolved.ignored)
+            tcpMonitorRepository.upsert(importedMonitor.toMonitorRecord(resolved.valid), txCtx)
+        }
+        logger.info("Loaded ${monitorConfigs.size} TCP monitors from external config, dryrun: $dryRun")
+
+        val deleted = tcpMonitorRepository.deleteAllExcept(ignoredIds = upsertedMonitors.map { it.id }, txCtx)
+        if (deleted.isNotEmpty()) {
+            logger.info("Deleted ${deleted.size} TCP monitors that were not in the external config, dryrun: $dryRun")
+        }
+
+        if (dryRun) txCtx.connection { it.rollback() }
+
+        return MonitorTypeImportResult(
+            monitorType = MonitorType.TCP,
             receivedCnt = monitorConfigs.size,
             imported = upsertedMonitors.map { it.monitorId() },
             deleted = deleted,

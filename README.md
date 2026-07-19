@@ -33,6 +33,9 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 
 - **HTTP(S) monitoring**: Monitor the availability and performance of your websites and services by sending HTTP(S) requests.
 - **SSL certification monitoring**: Automatically check the SSL certificates of your monitored services to ensure they are valid and not expired.
+- **Heartbeat (push) monitoring**: Monitor your cron jobs, backups, and other scheduled tasks in a push-based manner, getting alerted when an expected heartbeat doesn't arrive in time.
+- **Ping (ICMP) monitoring**: Check the reachability and latency of any host by sending ICMP echo requests (pings) to it.
+- **TCP port monitoring**: Check whether any TCP service — databases, SMTP, SSH, message brokers, and more — accepts connections, and track connect latency.
 - **Notifications on a per-monitor basis**: Configure different notification channels for each monitor, allowing you to tailor alerts to your specific needs.
 - **Status pages**: Create public or private status pages to keep your users or your own team informed about the status of your services.
 - **Sleek UI**: Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.
@@ -70,7 +73,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 | **SSL monitoring**                   |       ✅       |        ❌         |        ✅         |
 | **Heartbeat (push) monitoring**      |       ✅       |        ❌         |        ✅         |
 | **Ping (ICMP) monitoring**           |       ✅       |        ✅         |        ✅         |
-| **TCP monitoring**                   |      📆       |        ✅         |        ✅         |
+| **TCP monitoring**                   |       ✅       |        ✅         |        ✅         |
 | **DNS monitoring**                   |       ❌       |        ❌         |        ✅         |
 | **Domain expiration monitoring**     |       ❌       |        ❌         |        ✅         |
 | **Notifications**                    |               |                  |                  |

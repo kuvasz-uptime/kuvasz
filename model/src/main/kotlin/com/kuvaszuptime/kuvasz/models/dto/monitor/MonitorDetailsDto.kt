@@ -17,4 +17,5 @@ fun MonitorDetailsDto.monitorId(): MonitorID = when (this) {
     is HttpMonitorDetailsDto -> MonitorID(MonitorType.HTTP_SSL, this.name)
     is PushMonitorDetailsDto -> MonitorID(MonitorType.PUSH, this.name)
     is IcmpMonitorDetailsDto -> MonitorID(MonitorType.ICMP, this.name)
+    is TcpMonitorDetailsDto -> MonitorID(MonitorType.TCP, this.name)
 }

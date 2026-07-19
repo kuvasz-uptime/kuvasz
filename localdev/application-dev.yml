@@ -76,6 +76,8 @@ metrics-exports:
   icmp-latest-packet-loss: true
   ssl-status: true
   ssl-expiry: true
+  tcp-uptime-status: true
+  tcp-latest-latency: true
 ---
 http-monitors:
   - name: "Tralala #!: j[ő"

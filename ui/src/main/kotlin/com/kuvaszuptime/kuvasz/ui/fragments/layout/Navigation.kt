@@ -54,6 +54,11 @@ internal fun FlowContent.navigation(
                                             link = "/icmp-monitors",
                                             icon = Icon.WAVE_SQUARE,
                                         ),
+                                        NavItem(
+                                            label = "TCP",
+                                            link = "/tcp-monitors",
+                                            icon = Icon.NETWORK,
+                                        ),
                                     )
                                 )
                                 navItem(

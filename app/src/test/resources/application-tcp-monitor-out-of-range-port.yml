@@ -1,0 +1,5 @@
+tcp-monitors:
+  - name: test
+    host: 127.0.0.1
+    port: 70000
+    uptime-check-interval: 60

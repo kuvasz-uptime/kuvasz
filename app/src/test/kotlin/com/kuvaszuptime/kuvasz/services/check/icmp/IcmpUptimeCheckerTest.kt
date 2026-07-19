@@ -125,6 +125,7 @@ class IcmpUptimeCheckerTest(
                     downEvent.monitor.id shouldBe monitor.id
                     downEvent.uptimeStatus shouldBe UptimeStatus.DOWN
                     downEvent.packetLossPercentage shouldBe 100
+                    downEvent.latencyInMs shouldBe null
                 }
 
                 then("no UP event should be dispatched") {
@@ -181,7 +182,7 @@ class IcmpUptimeCheckerTest(
                     packetsSent = 4,
                     packetsReceived = 2,
                     packetLossPercentage = 50,
-                    avgLatencyMs = null,
+                    avgLatencyMs = 20,
                     rawOutput = "",
                     isOutputRecognized = true
                 )
@@ -191,10 +192,12 @@ class IcmpUptimeCheckerTest(
 
                 uptimeChecker.check(monitor)
 
-                then("a DOWN event should be dispatched because loss is at threshold") {
+                then("a DOWN event carrying the latency of the replies that arrived should be dispatched") {
                     downSubscriber.awaitCount(1)
                     downSubscriber.values().shouldHaveSize(1)
-                    downSubscriber.values().first().packetLossPercentage shouldBe 50
+                    val downEvent = downSubscriber.values().first()
+                    downEvent.packetLossPercentage shouldBe 50
+                    downEvent.latencyInMs shouldBe 20
                 }
             }
 

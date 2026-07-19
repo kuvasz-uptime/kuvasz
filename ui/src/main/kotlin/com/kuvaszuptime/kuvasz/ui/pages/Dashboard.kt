@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.icmp.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.tcp.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -68,12 +69,29 @@ fun renderDashboard(globals: AppGlobals) =
                 role = "status"
             }
         }
+        div {
+            hx {
+                get("/tcp-monitors/fragments/stats")
+                trigger {
+                    load()
+                    every(30.seconds)
+                    event("refresh-dashboard")
+                }
+                onSwapReinitTooltips()
+            }
+            id = "tcp-monitoring-dashboard"
+            div {
+                classes(SPINNER_GROW, HTMX_INDICATOR)
+                role = "status"
+            }
+        }
     }
 
 private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
     val createHttpModalId = "create-http-monitor-modal"
     val createPushModalId = "create-push-monitor-modal"
     val createIcmpModalId = "create-icmp-monitor-modal"
+    val createTcpModalId = "create-tcp-monitor-modal"
     div {
         classes(CONTAINER_XL)
         div {
@@ -141,6 +159,16 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                                             readOnlyBadge(Messages.readOnlyIcmpMonitors())
                                         }
                                     }
+                                    button {
+                                        val isReadOnly = globals.editabilityState.areTcpMonitorsReadOnly()
+                                        classes(DROPDOWN_ITEM)
+                                        modalOpener(createTcpModalId)
+                                        disabled = isReadOnly
+                                        +Messages.tcpMonitor()
+                                        if (isReadOnly) {
+                                            readOnlyBadge(Messages.readOnlyTcpMonitors())
+                                        }
+                                    }
                                 }
                             }
                             compactIconButton(Icon.REFRESH, onClick = "refreshDashboard()") {}
@@ -159,5 +187,8 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
     }
     if (!globals.editabilityState.areIcmpMonitorsReadOnly()) {
         icmpMonitorCreateUpdateModal(modalId = createIcmpModalId, monitor = null, globals)
+    }
+    if (!globals.editabilityState.areTcpMonitorsReadOnly()) {
+        tcpMonitorCreateUpdateModal(modalId = createTcpModalId, monitor = null, globals)
     }
 }

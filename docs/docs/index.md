@@ -54,6 +54,14 @@ title: The developer- and cloud-friendly uptime monitor
 
     [:octicons-arrow-right-24: ICMP monitors](features/icmp-monitoring.md)
 
+-   :material-network-pos:{ .lg .card-header-icon } __TCP port monitoring__
+
+    ---
+
+    Check whether any TCP service - databases, SMTP, SSH, brokers, and more - accepts connections, and track connect latency.
+
+    [:octicons-arrow-right-24: TCP monitors](features/tcp-monitoring.md)
+
 -   :bell:{ .lg .card-header-icon } __Notifications__
 
     ---
@@ -163,7 +171,7 @@ title: The developer- and cloud-friendly uptime monitor
 | **SSL monitoring**                   |       ✅       |        ❌         |        ✅         |
 | **Heartbeat (push) monitoring**      |       ✅       |        ❌         |        ✅         |
 | **Ping (ICMP) monitoring**           |       ✅       |        ✅         |        ✅         |
-| **TCP monitoring**                   |      📆       |        ✅         |        ✅         |
+| **TCP monitoring**                   |       ✅       |        ✅         |        ✅         |
 | **DNS monitoring**                   |       ❌       |        ❌         |        ✅         |
 | **Domain expiration monitoring**     |       ❌       |        ❌         |        ✅         |
 | **Notifications**                    |               |                  |                  |

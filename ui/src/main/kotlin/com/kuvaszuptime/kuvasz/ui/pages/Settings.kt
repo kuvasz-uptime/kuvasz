@@ -81,6 +81,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         checked = settings.app.editabilityState.areIcmpMonitorsReadOnly
                     )
                     settingsToggle(
+                        label = Messages.tcpMonitorsReadOnlyMode(),
+                        checked = settings.app.editabilityState.areTcpMonitorsReadOnly
+                    )
+                    settingsToggle(
                         label = Messages.statusPagesReadOnlyMode(),
                         checked = settings.app.editabilityState.areStatusPagesReadOnly
                     )
@@ -259,6 +263,14 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                                         label = Messages.icmpLatestPacketLoss(),
                                         checked = metersConfig.icmpLatestPacketLoss
                                     )
+                                    multiSettingsToggle(
+                                        label = Messages.tcpUptimeStatus(),
+                                        checked = metersConfig.tcpUptimeStatus
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.tcpLatestLatency(),
+                                        checked = metersConfig.tcpLatestLatency
+                                    )
                                 }
                             }
                         }
@@ -337,6 +349,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     "typeHttpLabel" to Messages.monitorImportResultTypeHttp(),
                     "typePushLabel" to Messages.monitorImportResultTypePush(),
                     "typeIcmpLabel" to Messages.monitorImportResultTypeIcmp(),
+                    "typeTcpLabel" to Messages.monitorImportResultTypeTcp(),
                     "countReceivedLabel" to Messages.monitorImportResultCountReceived(),
                     "countImportedLabel" to Messages.monitorImportResultCountImported(),
                     "countDeletedLabel" to Messages.monitorImportResultCountDeleted(),

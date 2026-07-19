@@ -84,7 +84,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -102,6 +102,8 @@ class GenericWebhookServiceTest(
                     IntegrationEventType.PUSH_UP,
                     IntegrationEventType.ICMP_DOWN,
                     IntegrationEventType.ICMP_UP,
+                    IntegrationEventType.TCP_DOWN,
+                    IntegrationEventType.TCP_UP,
                 )
 
                 genericMessages.map { it.eventDetails } shouldContainExactly expectedEventDetails
@@ -120,6 +122,10 @@ class GenericWebhookServiceTest(
                 genericMessages.forExactly(2) { message ->
                     message.monitorId shouldBe 3
                     message.monitorUrn shouldBe MonitorID(MonitorType.ICMP, "Test monitor").toString()
+                }
+                genericMessages.forExactly(2) { message ->
+                    message.monitorId shouldBe 4
+                    message.monitorUrn shouldBe MonitorID(MonitorType.TCP, "Test monitor").toString()
                 }
             }
         }
@@ -145,7 +151,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
-                verify(exactly = 7) {
+                verify(exactly = 9) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -161,6 +167,8 @@ class GenericWebhookServiceTest(
                     IntegrationEventType.PUSH_DOWN,
                     IntegrationEventType.ICMP_DOWN,
                     IntegrationEventType.ICMP_UP,
+                    IntegrationEventType.TCP_DOWN,
+                    IntegrationEventType.TCP_UP,
                 )
 
                 genericMessages.forAll { message ->
@@ -177,6 +185,10 @@ class GenericWebhookServiceTest(
                 genericMessages.forExactly(2) { message ->
                     message.monitorId shouldBe 3
                     message.monitorUrn shouldBe MonitorID(MonitorType.ICMP, "Test monitor").toString()
+                }
+                genericMessages.forExactly(2) { message ->
+                    message.monitorId shouldBe 4
+                    message.monitorUrn shouldBe MonitorID(MonitorType.TCP, "Test monitor").toString()
                 }
             }
         }
@@ -291,7 +303,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val templatedMessages = mutableListOf<String>()
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -309,6 +321,8 @@ class GenericWebhookServiceTest(
                     "Event type: PUSH_UP",
                     "Event type: ICMP_DOWN",
                     "Event type: ICMP_UP",
+                    "Event type: TCP_DOWN",
+                    "Event type: TCP_UP",
                 )
             }
         }
@@ -335,7 +349,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val templatedMessages = mutableListOf<String>()
-                verify(exactly = 7) {
+                verify(exactly = 9) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -351,6 +365,8 @@ class GenericWebhookServiceTest(
                     "Event type: PUSH_DOWN",
                     "Event type: ICMP_DOWN",
                     "Event type: ICMP_UP",
+                    "Event type: TCP_DOWN",
+                    "Event type: TCP_UP",
                 )
             }
         }
@@ -483,7 +499,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all messages via PUT") {
                 result.success shouldBe true
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PUT,
                         url = URI(webhookUrl),
@@ -510,7 +526,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all messages via PATCH") {
                 result.success shouldBe true
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PATCH,
                         url = URI(webhookUrl),
@@ -540,7 +556,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all templated messages via PUT") {
                 result.success shouldBe true
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PUT,
                         url = URI(webhookUrl),
@@ -570,7 +586,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all templated messages via PATCH") {
                 result.success shouldBe true
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PATCH,
                         url = URI(webhookUrl),
@@ -597,7 +613,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all messages via GET") {
                 result.success shouldBe true
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.GET,
                         url = URI(webhookUrl),
@@ -627,7 +643,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all templated messages via GET") {
                 result.success shouldBe true
-                verify(exactly = 9) {
+                verify(exactly = 11) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.GET,
                         url = URI(webhookUrl),

@@ -62,6 +62,7 @@ class SettingsRepository(
                     arePushMonitorsReadOnly = appConfig.isPushMonitorExternalWriteDisabled(),
                     areStatusPagesReadOnly = appConfig.isStatusPageExternalWriteDisabled(),
                     areIcmpMonitorsReadOnly = appConfig.isIcmpMonitorExternalWriteDisabled(),
+                    areTcpMonitorsReadOnly = appConfig.isTcpMonitorExternalWriteDisabled(),
                     areMaintenanceWindowsReadOnly = appConfig.isMaintenanceWindowExternalWriteDisabled(),
                 ),
                 updateChecksEnabled = appConfig.checkUpdates,
@@ -90,6 +91,8 @@ class SettingsRepository(
             icmpUptimeStatus = exportConfig.icmpUptimeStatus,
             icmpLatestLatency = exportConfig.icmpLatestLatency,
             icmpLatestPacketLoss = exportConfig.icmpLatestPacketLoss,
+            tcpUptimeStatus = exportConfig.tcpUptimeStatus,
+            tcpLatestLatency = exportConfig.tcpLatestLatency,
         ),
         exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
             prometheus = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(

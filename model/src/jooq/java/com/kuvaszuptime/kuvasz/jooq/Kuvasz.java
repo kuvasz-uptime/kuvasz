@@ -16,6 +16,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent;
 
 import java.util.Arrays;
 import java.util.List;
@@ -101,6 +104,21 @@ public class Kuvasz extends SchemaImpl {
     public final StatusPage STATUS_PAGE = StatusPage.STATUS_PAGE;
 
     /**
+     * The table <code>kuvasz.tcp_metrics_log</code>.
+     */
+    public final TcpMetricsLog TCP_METRICS_LOG = TcpMetricsLog.TCP_METRICS_LOG;
+
+    /**
+     * The table <code>kuvasz.tcp_monitor</code>.
+     */
+    public final TcpMonitor TCP_MONITOR = TcpMonitor.TCP_MONITOR;
+
+    /**
+     * The table <code>kuvasz.tcp_uptime_event</code>.
+     */
+    public final TcpUptimeEvent TCP_UPTIME_EVENT = TcpUptimeEvent.TCP_UPTIME_EVENT;
+
+    /**
      * No further instances allowed
      */
     private Kuvasz() {
@@ -136,7 +154,10 @@ public class Kuvasz extends SchemaImpl {
             PushMonitor.PUSH_MONITOR,
             PushUptimeEvent.PUSH_UPTIME_EVENT,
             SslEvent.SSL_EVENT,
-            StatusPage.STATUS_PAGE
+            StatusPage.STATUS_PAGE,
+            TcpMetricsLog.TCP_METRICS_LOG,
+            TcpMonitor.TCP_MONITOR,
+            TcpUptimeEvent.TCP_UPTIME_EVENT
         );
     }
 }

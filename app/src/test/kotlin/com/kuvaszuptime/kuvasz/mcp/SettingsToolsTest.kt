@@ -47,6 +47,7 @@ class SettingsToolsTest(
                             areHttpMonitorsReadOnly shouldBe false
                             arePushMonitorsReadOnly shouldBe false
                             areIcmpMonitorsReadOnly shouldBe false
+                            areTcpMonitorsReadOnly shouldBe false
                             areStatusPagesReadOnly shouldBe false
                             areMaintenanceWindowsReadOnly shouldBe false
                         }

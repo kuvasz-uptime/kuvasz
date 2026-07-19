@@ -28,6 +28,7 @@ import kotlinx.coroutines.reactive.awaitFirst
         "yaml-monitors",
         "yaml-push-monitors",
         "yaml-icmp-monitors",
+        "yaml-tcp-monitors",
         "enabled-metrics-otlp",
         "enabled-metrics-prometheus",
         "enabled-mcp-server",
@@ -74,6 +75,7 @@ class SettingsControllerTest(
                 result.app.editabilityState.areHttpMonitorsReadOnly shouldBe true
                 result.app.editabilityState.arePushMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areIcmpMonitorsReadOnly shouldBe true
+                result.app.editabilityState.areTcpMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areStatusPagesReadOnly shouldBe true
                 result.app.editabilityState.areMaintenanceWindowsReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false
@@ -95,6 +97,8 @@ class SettingsControllerTest(
                     meters.icmpUptimeStatus shouldBe true
                     meters.icmpLatestLatency shouldBe true
                     meters.icmpLatestPacketLoss shouldBe true
+                    meters.tcpUptimeStatus shouldBe true
+                    meters.tcpLatestLatency shouldBe true
 
                     with(exporters.prometheus) {
                         enabled shouldBe true

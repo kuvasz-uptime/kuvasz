@@ -12,9 +12,11 @@ const {
     upsertHttpMonitorForm,
     upsertPushMonitorForm,
     upsertIcmpMonitorForm,
+    upsertTcpMonitorForm,
     upsertMaintenanceWindowForm,
     httpMetricsBlock,
     icmpMetricsBlock,
+    tcpMetricsBlock,
 } = require('../main/resources/js/kuvasz.js');
 
 // --------- #1: isValidHttpHeaderName (regex) ---------
@@ -124,6 +126,21 @@ test('icmpMetricsBlock.transformData preserves null latency but parses packet lo
     assert.equal(result.packetLoss.labels.length, 2);
 });
 
+test('tcpMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
+    const block = tcpMetricsBlock(1, true, 60, 'no data', 24);
+    const result = block.transformData({
+        metricsLogs: [
+            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
+            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '80'},
+        ],
+    });
+    // Null latency must stay null (a gap in the chart), not become NaN
+    assert.deepEqual(result.latency.series[0].data, [null, 80]);
+    assert.equal(result.latency.labels.length, 2);
+    // TCP monitors track latency only - there is no packet-loss series
+    assert.equal(result.packetLoss, undefined);
+});
+
 // --------- #4: numeric-boundary validators ---------
 
 // Runs a single validator over a set of [value, expectedError] cases against a freshly built form
@@ -158,6 +175,26 @@ test('ICMP validators enforce their numeric ranges', () => {
     // packetLossThreshold: valid 1..100
     assertValidatorBoundaries(buildForm, 'packetLossThreshold', 'validatePacketLossThreshold', 'PL', [
         [0, true], [1, false], [100, false], [101, true],
+    ]);
+});
+
+test('TCP validators enforce port, timeout and the optional latency threshold', () => {
+    const msgs = {
+        portInvalid: 'PORT', timeoutMsInvalid: 'TS', latencyThresholdInvalid: 'LT',
+    };
+    const buildForm = () => upsertTcpMonitorForm(null, msgs, 0);
+
+    // port: valid 1..65535
+    assertValidatorBoundaries(buildForm, 'port', 'validatePort', 'PORT', [
+        [0, true], [1, false], [65535, false], [65536, true], ['', true],
+    ]);
+    // timeoutMs: valid 1..30000
+    assertValidatorBoundaries(buildForm, 'timeoutMs', 'validateTimeoutMs', 'TS', [
+        [0, true], [1, false], [30000, false], [30001, true],
+    ]);
+    // latencyThresholdMs: optional - blank/null is OK, otherwise it must be a positive number
+    assertValidatorBoundaries(buildForm, 'latencyThresholdMs', 'validateLatencyThreshold', 'LT', [
+        ['', false], [null, false], [0, true], [1, false], [500, false], [-1, true],
     ]);
 });
 
@@ -290,6 +327,37 @@ test('ICMP populateFrom copies a source and falls back to defaults', () => {
     assert.equal(form.packetCount, 3);
     assert.equal(form.timeoutSeconds, 5);
     assert.equal(form.packetLossThreshold, 100);
+    assert.equal(form.failureCountThreshold, 1);
+    assert.deepEqual(form.integrations, []);
+    assert.equal(form.metricsHistoryEnabled, true);
+});
+
+test('TCP populateFrom copies a source and falls back to defaults', () => {
+    const form = upsertTcpMonitorForm(null, {}, 0);
+
+    form.populateFrom({
+        name: 'Src', host: 'example.com', port: 5432, uptimeCheckInterval: 120,
+        timeoutMs: 10000, latencyThresholdMs: 250, failureCountThreshold: 2,
+        integrations: ['discord'], metricsHistoryEnabled: false,
+    });
+    assert.equal(form.name, 'Src');
+    assert.equal(form.host, 'example.com');
+    assert.equal(form.port, 5432);
+    assert.equal(form.uptimeCheckInterval, 120);
+    assert.equal(form.timeoutMs, 10000);
+    assert.equal(form.latencyThresholdMs, 250);
+    assert.equal(form.failureCountThreshold, 2);
+    assert.deepEqual(form.integrations, ['discord']);
+    assert.equal(form.metricsHistoryEnabled, false);
+
+    form.populateFrom(null);
+    assert.equal(form.name, '');
+    assert.equal(form.host, '');
+    assert.equal(form.port, '');
+    assert.equal(form.uptimeCheckInterval, 60);
+    assert.equal(form.timeoutMs, 5000);
+    // The optional latency threshold falls back to an empty string, not a number
+    assert.equal(form.latencyThresholdMs, '');
     assert.equal(form.failureCountThreshold, 1);
     assert.deepEqual(form.integrations, []);
     assert.equal(form.metricsHistoryEnabled, true);

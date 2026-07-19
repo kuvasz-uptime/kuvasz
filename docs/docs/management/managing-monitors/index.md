@@ -53,6 +53,8 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     push-monitors: []
     # or
     icmp-monitors: []
+    # or
+    tcp-monitors: []
     ```
 
     In this case all monitors of that type in the database **will be deleted**.
@@ -113,10 +115,10 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 
     [:octicons-arrow-right-24: ICMP monitors](../icmp-monitors.md)
 
--   :construction:{ .lg .card-header-icon } __More to come...__
+-   :material-network-pos:{ .lg .card-header-icon } __TCP monitors__
 
     ---
 
-    Planned new monitor types:
+    Check whether any TCP service accepts connections, and track connect latency.
 
-    - **TCP** port monitoring
+    [:octicons-arrow-right-24: TCP monitors](../tcp-monitors.md)

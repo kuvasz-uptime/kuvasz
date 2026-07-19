@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
@@ -17,6 +18,7 @@ import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -37,6 +39,7 @@ class StatusPageDataActionsTest(
     private val httpMonitorActions: HttpMonitorActions,
     private val pushMonitorActions: PushMonitorActions,
     private val icmpMonitorActions: IcmpMonitorActions,
+    private val tcpMonitorActions: TcpMonitorActions,
     private val statusPageRepository: StatusPageRepository,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
 ) : BehaviorSpec({
@@ -471,6 +474,64 @@ class StatusPageDataActionsTest(
             then("it should include the ICMP monitor in the result and return PARTIAL_OUTAGE") {
 
                 result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockIcmpMonitorList
+                result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
+            }
+        }
+
+        `when`("a DOWN TCP monitor is mixed with UP HTTP monitors") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "HTTP monitor",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 50,
+                    uptimeRatio = 1.0,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                ),
+            )
+            val mockTcpMonitorList = listOf(
+                StatusPageTcpMonitorDetailsDto(
+                    name = "TCP monitor pending",
+                    lastCheck = null,
+                    averageLatencyInMs = null,
+                    uptimeRatio = null,
+                    uptimeStatus = null,
+                    uptimeStatusHistory = emptyList(),
+                ),
+                StatusPageTcpMonitorDetailsDto(
+                    name = "TCP monitor down",
+                    lastCheck = getCurrentTimestamp().minusSeconds(5),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.95,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 2,
+                        )
+                    ),
+                ),
+            )
+
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            val mockTcpMonitorActions = getMock(tcpMonitorActions)
+            every {
+                mockTcpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns mockTcpMonitorList
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("it should include the TCP monitors in the result and return PARTIAL_OUTAGE") {
+
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockTcpMonitorList
                 result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
             }
         }
@@ -1157,6 +1218,110 @@ class StatusPageDataActionsTest(
                 icmpDown.uptimeStatus shouldBe UptimeStatus.DOWN
             }
         }
+
+        `when`("there are TCP monitors assigned to the status page") {
+
+            fun tcpStatusPageRecord() = StatusPageRecord().apply {
+                id = 3L
+                slug = "tcp-status"
+                title = "TCP Status"
+                customLogoUrl = null
+                customFaviconUrl = null
+                public = true
+                monitors = listOf(
+                    MonitorID(MonitorType.HTTP_SSL, "http-monitor-1"),
+                    MonitorID(MonitorType.TCP, "tcp-monitor-1"),
+                    MonitorID(MonitorType.TCP, "tcp-monitor-2"),
+                ).toTypedArray()
+                createdAt = getCurrentTimestamp()
+                updatedAt = getCurrentTimestamp()
+            }
+
+            val repoMock = getMock(statusPageRepository)
+            every { repoMock.findById(3L, any()) } returns tcpStatusPageRecord()
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "http-monitor-1",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 80,
+                    uptimeRatio = 1.0,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                ),
+            )
+            val mockTcpMonitorList = listOf(
+                StatusPageTcpMonitorDetailsDto(
+                    name = "tcp-monitor-1",
+                    lastCheck = getCurrentTimestamp().minusSeconds(5),
+                    averageLatencyInMs = 15,
+                    uptimeRatio = 1.0,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 0,
+                        )
+                    ),
+                ),
+                StatusPageTcpMonitorDetailsDto(
+                    name = "tcp-monitor-2",
+                    lastCheck = getCurrentTimestamp().minusSeconds(5),
+                    averageLatencyInMs = null,
+                    uptimeRatio = 0.9,
+                    uptimeStatus = UptimeStatus.DOWN,
+                    uptimeStatusHistory = listOf(
+                        StatusHistoryDto(
+                            date = getCurrentTimestamp().minusDays(1).toLocalDate(),
+                            outageCnt = 3,
+                        )
+                    ),
+                ),
+            )
+
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    tcpStatusPageRecord().monitors?.toList(),
+                )
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    tcpStatusPageRecord().monitors?.toList(),
+                )
+            } returns emptyList()
+            val mockTcpMonitorActions = getMock(tcpMonitorActions)
+            every {
+                mockTcpMonitorActions.getStatusPageDataOfEnabledMonitors(
+                    Duration.ofDays(30),
+                    tcpStatusPageRecord().monitors?.toList(),
+                )
+            } returns mockTcpMonitorList
+
+            val result = statusPageActions.getStatusPageData(tcpStatusPageRecord().id)
+
+            then("it should include TCP monitors in the result with correct fields and return PARTIAL_OUTAGE") {
+
+                result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockTcpMonitorList
+                result.systemStatus shouldBe SystemStatus.PARTIAL_OUTAGE
+                result.title shouldBe "TCP Status"
+
+                val tcpUp = result.monitors.filterIsInstance<StatusPageTcpMonitorDetailsDto>()
+                    .first { it.name == "tcp-monitor-1" }
+                tcpUp.averageLatencyInMs shouldBe 15
+                tcpUp.uptimeRatio shouldBe 1.0
+                tcpUp.uptimeStatus shouldBe UptimeStatus.UP
+
+                val tcpDown = result.monitors.filterIsInstance<StatusPageTcpMonitorDetailsDto>()
+                    .first { it.name == "tcp-monitor-2" }
+                tcpDown.averageLatencyInMs shouldBe null
+                tcpDown.uptimeRatio shouldBe 0.9
+                tcpDown.uptimeStatus shouldBe UptimeStatus.DOWN
+            }
+        }
     }
 }) {
     @MockBean(HttpMonitorActions::class)
@@ -1167,6 +1332,11 @@ class StatusPageDataActionsTest(
 
     @MockBean(IcmpMonitorActions::class)
     fun icmpMonitorActions(): IcmpMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any()) } returns emptyList()
+    }
+
+    @MockBean(TcpMonitorActions::class)
+    fun tcpMonitorActions(): TcpMonitorActions = mockk {
         every { getStatusPageDataOfEnabledMonitors(any(), any()) } returns emptyList()
     }
 

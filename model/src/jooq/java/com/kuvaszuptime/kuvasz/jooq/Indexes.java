@@ -14,6 +14,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent;
 
 import org.jooq.Index;
 import org.jooq.OrderField;
@@ -46,6 +49,11 @@ public class Indexes {
     public static final Index SSL_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("ssl_event_ended_at_idx"), SslEvent.SSL_EVENT, new OrderField[] { SslEvent.SSL_EVENT.ENDED_AT }, false);
     public static final Index SSL_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("ssl_event_monitor_idx"), SslEvent.SSL_EVENT, new OrderField[] { SslEvent.SSL_EVENT.MONITOR_ID }, false);
     public static final Index STATUS_PAGE_MONITORS_IDX = Internal.createIndex(DSL.name("status_page_monitors_idx"), StatusPage.STATUS_PAGE, new OrderField[] { StatusPage.STATUS_PAGE.MONITORS }, false);
+    public static final Index TCP_METRICS_LOG_CREATED_AT_IDX = Internal.createIndex(DSL.name("tcp_metrics_log_created_at_idx"), TcpMetricsLog.TCP_METRICS_LOG, new OrderField[] { TcpMetricsLog.TCP_METRICS_LOG.CREATED_AT }, false);
+    public static final Index TCP_METRICS_LOG_MONITOR_ID_IDX = Internal.createIndex(DSL.name("tcp_metrics_log_monitor_id_idx"), TcpMetricsLog.TCP_METRICS_LOG, new OrderField[] { TcpMetricsLog.TCP_METRICS_LOG.MONITOR_ID }, false);
+    public static final Index TCP_MONITOR_ENABLED_IDX = Internal.createIndex(DSL.name("tcp_monitor_enabled_idx"), TcpMonitor.TCP_MONITOR, new OrderField[] { TcpMonitor.TCP_MONITOR.ENABLED }, false);
+    public static final Index TCP_UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("tcp_uptime_event_ended_at_idx"), TcpUptimeEvent.TCP_UPTIME_EVENT, new OrderField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.ENDED_AT }, false);
+    public static final Index TCP_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("tcp_uptime_event_monitor_idx"), TcpUptimeEvent.TCP_UPTIME_EVENT, new OrderField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("uptime_event_ended_at_idx"), HttpUptimeEvent.HTTP_UPTIME_EVENT, new OrderField[] { HttpUptimeEvent.HTTP_UPTIME_EVENT.ENDED_AT }, false);
     public static final Index UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("uptime_event_monitor_idx"), HttpUptimeEvent.HTTP_UPTIME_EVENT, new OrderField[] { HttpUptimeEvent.HTTP_UPTIME_EVENT.MONITOR_ID }, false);
 }

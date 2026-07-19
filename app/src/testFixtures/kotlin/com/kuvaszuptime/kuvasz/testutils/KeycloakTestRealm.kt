@@ -32,6 +32,13 @@ object KeycloakTestRealm {
     // Issuer URL for this realm given a running Keycloak's base auth-server URL
     fun issuerUrl(authServerUrl: String): String = "$authServerUrl/realms/$REALM"
 
+    // default heap (max 5% of the container's RAM) is not enough for Keycloak 26's config/build step and
+    // makes the container die with an OutOfMemoryError
+    private const val INITIAL_RAM_PERCENTAGE = 2
+    private const val MAX_RAM_PERCENTAGE = 70
+
     fun newContainer(): KeycloakContainer =
-        KeycloakContainer(IMAGE).withRealmImportFile(REALM_IMPORT_FILE)
+        KeycloakContainer(IMAGE)
+            .withRealmImportFile(REALM_IMPORT_FILE)
+            .withRamPercentage(INITIAL_RAM_PERCENTAGE, MAX_RAM_PERCENTAGE)
 }

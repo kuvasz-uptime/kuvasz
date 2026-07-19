@@ -17,6 +17,8 @@ datasources:
     initialPoolSize: 1
     maximumPoolSize: 2
     minimumIdle: 0
+    maxLifetime: 5000
+    idleTimeout: 1000
 ---
 logger:
   levels:

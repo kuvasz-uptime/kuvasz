@@ -10,7 +10,7 @@ import io.micronaut.core.bind.annotation.Bindable
 @EachProperty(HttpMonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
 @Suppress("ComplexInterface")
-interface HttpMonitorConfig : HttpMonitorCreator {
+interface HttpMonitorConfig : HttpMonitorCreator, MonitorConfig {
 
     companion object {
         const val CONFIG_PREFIX = "http-monitors"

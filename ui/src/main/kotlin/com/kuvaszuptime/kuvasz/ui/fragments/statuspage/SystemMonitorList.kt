@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.WithLatency
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -92,6 +93,11 @@ fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
                                     }
 
                                     is StatusPageIcmpMonitorDetailsDto -> {
+                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
+                                        +"${Messages.lastCheck()}: $lastCheckText"
+                                    }
+
+                                    is StatusPageTcpMonitorDetailsDto -> {
                                         val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
                                         +"${Messages.lastCheck()}: $lastCheckText"
                                     }

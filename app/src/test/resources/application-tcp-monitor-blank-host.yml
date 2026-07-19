@@ -1,0 +1,5 @@
+tcp-monitors:
+  - name: test
+    host: ''
+    port: 8080
+    uptime-check-interval: 60

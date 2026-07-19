@@ -20,6 +20,11 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMetricsLogRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog.TCP_METRICS_LOG
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -28,6 +33,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import org.jooq.DSLContext
@@ -260,6 +266,72 @@ fun createIcmpMonitor(
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
     return repository.returningInsert(monitor)
 }
+
+fun createTcpMonitor(
+    repository: TcpMonitorRepository,
+    enabled: Boolean = true,
+    host: String = "127.0.0.1",
+    port: Int = 8080,
+    monitorName: String = randomClientSecret(),
+    uptimeCheckInterval: Int = 60,
+    timeoutMs: Int = 5000,
+    latencyThresholdMs: Int? = null,
+    failureCountThreshold: Long = 1L,
+    integrations: List<IntegrationID> = emptyList(),
+    metricsHistoryEnabled: Boolean = true,
+): TcpMonitorRecord {
+    val monitor = TcpMonitorRecord()
+        .setName(monitorName)
+        .setHost(host)
+        .setPort(port)
+        .setUptimeCheckInterval(uptimeCheckInterval)
+        .setTimeoutMs(timeoutMs)
+        .setLatencyThresholdMs(latencyThresholdMs)
+        .setFailureCountThreshold(failureCountThreshold)
+        .setEnabled(enabled)
+        .setCreatedAt(getCurrentTimestamp())
+        .setIntegrations(integrations.toTypedArray())
+        .setMetricsHistoryEnabled(metricsHistoryEnabled)
+    return repository.returningInsert(monitor)
+}
+
+fun createTcpUptimeEventRecord(
+    dslContext: DSLContext,
+    monitorId: Long,
+    status: UptimeStatus = UptimeStatus.UP,
+    startedAt: OffsetDateTime,
+    endedAt: OffsetDateTime?,
+    error: String? = null,
+    updatedAt: OffsetDateTime? = null,
+) = dslContext
+    .insertInto(TCP_UPTIME_EVENT)
+    .set(
+        TcpUptimeEventRecord()
+            .setMonitorId(monitorId)
+            .setStatus(status)
+            .setStartedAt(startedAt)
+            .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
+            .setEndedAt(endedAt)
+            .setError(error)
+    )
+    .returning(TCP_UPTIME_EVENT.asterisk())
+    .fetchOneOrThrow<TcpUptimeEventRecord>()
+
+fun createTcpMetricsLogRecord(
+    dslContext: DSLContext,
+    monitorId: Long,
+    latencyMs: Int? = 10,
+    createdAt: OffsetDateTime = getCurrentTimestamp(),
+) = dslContext
+    .insertInto(TCP_METRICS_LOG)
+    .set(
+        TcpMetricsLogRecord()
+            .setMonitorId(monitorId)
+            .setLatencyMs(latencyMs)
+            .setCreatedAt(createdAt)
+    )
+    .returning(TCP_METRICS_LOG.asterisk())
+    .fetchOneOrThrow<TcpMetricsLogRecord>()
 
 fun createIcmpUptimeEventRecord(
     dslContext: DSLContext,

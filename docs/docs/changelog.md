@@ -1,3 +1,15 @@
+## 4.2.0 <small>2026-07-xx</small> { id="4.2.0" data-toc-label="4.2.0" }
+
+### Features
+
+**TCP port monitoring** is here!
+
+- You can now create [**TCP monitors**](features/tcp-monitoring.md) that check whether a **TCP service is accepting connections** — a database, an SMTP or SSH server, a message broker, a game server, or any other `host:port` endpoint — by periodically opening a TCP connection to it. For each check _Kuvasz_ measures **reachability** and **connect latency**, and marks the monitor as DOWN (notifying you through your configured channels) if the connection can't be established within the configured **timeout** or, when set, exceeds the optional **latency threshold**. TCP monitors are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/tcp-monitors.md), participate in **incidents**, **uptime & latency stats**, **notifications** (including generic webhook templating), the **metrics** exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
+
+### Fixes
+
+- **ICMP latest-latency metric**: the `icmp-latest-latency` exporter now also updates when a monitor goes DOWN due to **partial packet loss** while some replies still arrived, instead of freezing on the last successful check. The exported gauge now stays consistent with the recorded latency history in this degraded state.
+
 ## 4.1.0 <small>2026-07-14</small> { id="4.1.0" data-toc-label="4.1.0" }
 
 !!! question "Make your voice heard!"

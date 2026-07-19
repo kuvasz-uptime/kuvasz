@@ -8,6 +8,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -17,6 +19,8 @@ import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -216,6 +220,92 @@ class SlackTextFormatterTest : BehaviorSpec(
                     val expectedMessage =
                         "🚨 *Your monitor \"test_icmp_monitor\" is DOWN*\nPacket loss: 100%\n" +
                             "Was up for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("toFormattedMessage(event: UptimeMonitorEvent) - TCP") {
+
+            val tcpMonitor = TcpMonitorRecord()
+                .setId(4444L)
+                .setName("test_tcp_monitor")
+                .setHost("example.com")
+
+            `when`("it gets a TcpMonitorUpEvent without a previousEvent") {
+                val event = TcpMonitorUpEvent(tcpMonitor, null, 300)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "✅ *Your monitor \"test_tcp_monitor\" is UP*\n_Connect latency: 300 ms_"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a TcpMonitorUpEvent with null latency") {
+                val event = TcpMonitorUpEvent(tcpMonitor, null, null)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "✅ *Your monitor \"test_tcp_monitor\" is UP*"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a TcpMonitorUpEvent with a previousEvent with the same status") {
+                val previousEvent = TcpUptimeEventRecord().setStatus(UptimeStatus.UP)
+                val event = TcpMonitorUpEvent(tcpMonitor, previousEvent, 300)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "✅ *Your monitor \"test_tcp_monitor\" is UP*\n_Connect latency: 300 ms_"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a TcpMonitorUpEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent = TcpUptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
+                val event = TcpMonitorUpEvent(tcpMonitor, previousEvent, 300)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage =
+                        "✅ *Your monitor \"test_tcp_monitor\" is UP*\n_Connect latency: 300 ms_\n" +
+                            "Was down for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a TcpMonitorDownEvent without a previousEvent") {
+                val event = TcpMonitorDownEvent(tcpMonitor, "tcp error", null)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "🚨 *Your monitor \"test_tcp_monitor\" is DOWN*"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a TcpMonitorDownEvent with a previousEvent with the same status") {
+                val previousEvent = TcpUptimeEventRecord().setStatus(UptimeStatus.DOWN)
+                val event = TcpMonitorDownEvent(tcpMonitor, "tcp error", previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "🚨 *Your monitor \"test_tcp_monitor\" is DOWN*"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a TcpMonitorDownEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent = TcpUptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
+                val event = TcpMonitorDownEvent(tcpMonitor, "tcp error", previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage =
+                        "🚨 *Your monitor \"test_tcp_monitor\" is DOWN*\nWas up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }

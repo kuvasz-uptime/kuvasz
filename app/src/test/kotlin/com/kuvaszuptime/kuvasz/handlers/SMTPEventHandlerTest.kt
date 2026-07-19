@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -17,6 +18,8 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -27,6 +30,8 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.SMTPMailer
@@ -53,9 +58,11 @@ class SMTPEventHandlerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
+    private val tcpUptimeEventRepository: TcpUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     smtpMailer: SMTPMailer,
     integrationRepository: IntegrationRepository,
@@ -593,6 +600,178 @@ class SMTPEventHandlerTest(
                     error = "Packet loss: 100% (sent=3, received=0)",
                     previousEvent = firstUptimeRecord,
                     packetLossPercentage = 100
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+
+                then("it should send an email only about the down event") {
+                    val emailSent = slot<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
+                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
+                    emailSent.captured.subject shouldContain "is DOWN"
+                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                }
+            }
+        }
+
+        given("the SMTPEventHandler - TCP UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val event = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send an email about the event") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createTcpMonitor(
+                    repository = tcpMonitorRepository,
+                    integrations = listOf(
+                        globalEmailConfig.id,
+                        otherEmailConfig.id,
+                        disabledEmailConfig.id,
+                    ),
+                )
+                val event = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send an email about the event to every enabled integration") {
+                    val sentEmails = mutableListOf<Email>()
+
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldBe expectedEmail.subject
+                        email.subject shouldContain "is DOWN"
+                    }
+                    sentEmails.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
+                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
+                    }
+                    sentEmails.forOne { fromOtherConfig ->
+                        fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                    }
+                    sentEmails.forNone { fromDisabledConfig ->
+                        fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
+                            disabledEmailConfig.fromAddress
+                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                    }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 6,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send out any email about them") {
+                    verify(inverse = true) { mailerSpy.sendAsync(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+
+                val secondEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one email about them") {
+                    val slot = slot<Email>()
+
+                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
+                    slot.captured.plainText shouldBe expectedEmail.plainText
+                    slot.captured.subject shouldContain "is DOWN"
+                    slot.captured.subject shouldBe expectedEmail.subject
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+
+                then("it should send two different emails about them") {
+                    val emailsSent = mutableListOf<Email>()
+
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
+                    emailsSent[0].subject shouldContain "is DOWN"
+                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
+                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
+                    emailsSent[1].subject shouldContain "is UP"
+                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val firstEvent = TcpMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = TcpMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
                 )
                 eventDispatcher.testDispatch(secondEvent)
 

@@ -33,4 +33,10 @@ object ToolNames {
     const val TOGGLE_HTTP_MONITOR = "toggle-http-monitor"
     const val TOGGLE_ICMP_MONITOR = "toggle-icmp-monitor"
     const val TOGGLE_PUSH_MONITOR = "toggle-push-monitor"
+    const val CREATE_TCP_MONITOR = "create-tcp-monitor"
+    const val GET_TCP_MONITOR_DETAILS = "get-tcp-monitor-details"
+    const val GET_TCP_MONITOR_STATS = "get-tcp-monitor-stats"
+    const val LIST_TCP_MONITORS = "list-tcp-monitors"
+    const val DELETE_TCP_MONITOR = "delete-tcp-monitor"
+    const val TOGGLE_TCP_MONITOR = "toggle-tcp-monitor"
 }

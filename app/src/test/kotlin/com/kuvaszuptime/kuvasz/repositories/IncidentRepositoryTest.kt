@@ -10,6 +10,8 @@ import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -26,6 +28,7 @@ class IncidentRepositoryTest(
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
+    tcpMonitorRepository: TcpMonitorRepository,
     incidentRepository: IncidentRepository
 ) : DatabaseBehaviorSpec() {
     init {
@@ -202,8 +205,40 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusDays(4),
                     )
 
+                    val tcpMonitor1 = createTcpMonitor(tcpMonitorRepository)
+                    val tcpMonitor2 = createTcpMonitor(tcpMonitorRepository)
+                    val openDownTcpMonitor1 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    val resolvedDownTcpMonitor1 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownTcpMonitor2 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    val resolvedDownTcpMonitor2 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+
                     val incidentsWithResolved = incidentRepository.getIncidents(includeResolved = true)
-                    incidentsWithResolved shouldHaveSize 16
+                    incidentsWithResolved shouldHaveSize 20
 
                     incidentsWithResolved.forOne { resolvedHttpMonitor2 ->
                         resolvedHttpMonitor2.monitorId shouldBe resolvedDownHttpMonitor2.monitorId
@@ -397,8 +432,56 @@ class IncidentRepositoryTest(
                         openIcmpMonitor1.details shouldBe null
                     }
 
+                    incidentsWithResolved.forOne { resolvedTcpMonitor2 ->
+                        resolvedTcpMonitor2.monitorId shouldBe resolvedDownTcpMonitor2.monitorId
+                        resolvedTcpMonitor2.monitorName shouldBe tcpMonitor2.name
+                        resolvedTcpMonitor2.isMonitorEnabled shouldBe tcpMonitor2.enabled
+                        resolvedTcpMonitor2.status shouldBe IncidentStatus.RESOLVED
+                        resolvedTcpMonitor2.startedAt shouldBe resolvedDownTcpMonitor2.startedAt
+                        resolvedTcpMonitor2.endedAt shouldBe resolvedDownTcpMonitor2.endedAt.shouldNotBeNull()
+                        resolvedTcpMonitor2.updatedAt shouldBe resolvedDownTcpMonitor2.updatedAt
+                        resolvedTcpMonitor2.incidentType shouldBe IncidentType.TCP
+                        resolvedTcpMonitor2.details shouldBe null
+                    }
+
+                    incidentsWithResolved.forOne { resolvedTcpMonitor1 ->
+                        resolvedTcpMonitor1.monitorId shouldBe resolvedDownTcpMonitor1.monitorId
+                        resolvedTcpMonitor1.monitorName shouldBe tcpMonitor1.name
+                        resolvedTcpMonitor1.isMonitorEnabled shouldBe tcpMonitor1.enabled
+                        resolvedTcpMonitor1.status shouldBe IncidentStatus.RESOLVED
+                        resolvedTcpMonitor1.startedAt shouldBe resolvedDownTcpMonitor1.startedAt
+                        resolvedTcpMonitor1.endedAt shouldBe resolvedDownTcpMonitor1.endedAt.shouldNotBeNull()
+                        resolvedTcpMonitor1.updatedAt shouldBe resolvedDownTcpMonitor1.updatedAt
+                        resolvedTcpMonitor1.incidentType shouldBe IncidentType.TCP
+                        resolvedTcpMonitor1.details shouldBe null
+                    }
+
+                    incidentsWithResolved.forOne { openTcpMonitor2 ->
+                        openTcpMonitor2.monitorId shouldBe openDownTcpMonitor2.monitorId
+                        openTcpMonitor2.monitorName shouldBe tcpMonitor2.name
+                        openTcpMonitor2.isMonitorEnabled shouldBe tcpMonitor2.enabled
+                        openTcpMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openTcpMonitor2.startedAt shouldBe openDownTcpMonitor2.startedAt
+                        openTcpMonitor2.endedAt shouldBe null
+                        openTcpMonitor2.updatedAt shouldBe openDownTcpMonitor2.updatedAt
+                        openTcpMonitor2.incidentType shouldBe IncidentType.TCP
+                        openTcpMonitor2.details shouldBe openDownTcpMonitor2.error
+                    }
+
+                    incidentsWithResolved.forOne { openTcpMonitor1 ->
+                        openTcpMonitor1.monitorId shouldBe openDownTcpMonitor1.monitorId
+                        openTcpMonitor1.monitorName shouldBe tcpMonitor1.name
+                        openTcpMonitor1.isMonitorEnabled shouldBe tcpMonitor1.enabled
+                        openTcpMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openTcpMonitor1.startedAt shouldBe openDownTcpMonitor1.startedAt
+                        openTcpMonitor1.endedAt shouldBe null
+                        openTcpMonitor1.updatedAt shouldBe openDownTcpMonitor1.updatedAt
+                        openTcpMonitor1.incidentType shouldBe IncidentType.TCP
+                        openTcpMonitor1.details shouldBe null
+                    }
+
                     val incidentsWithoutResolved = incidentRepository.getIncidents(includeResolved = false)
-                    incidentsWithoutResolved shouldHaveSize 8
+                    incidentsWithoutResolved shouldHaveSize 10
 
                     incidentsWithoutResolved.forOne { openHttpMonitor2 ->
                         openHttpMonitor2.monitorId shouldBe openDownHttpMonitor2.monitorId
@@ -494,6 +577,30 @@ class IncidentRepositoryTest(
                         openIcmpMonitor1.updatedAt shouldBe openDownIcmpMonitor1.updatedAt
                         openIcmpMonitor1.incidentType shouldBe IncidentType.ICMP
                         openIcmpMonitor1.details shouldBe null
+                    }
+
+                    incidentsWithoutResolved.forOne { openTcpMonitor2 ->
+                        openTcpMonitor2.monitorId shouldBe openDownTcpMonitor2.monitorId
+                        openTcpMonitor2.monitorName shouldBe tcpMonitor2.name
+                        openTcpMonitor2.isMonitorEnabled shouldBe tcpMonitor2.enabled
+                        openTcpMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openTcpMonitor2.startedAt shouldBe openDownTcpMonitor2.startedAt
+                        openTcpMonitor2.endedAt shouldBe null
+                        openTcpMonitor2.updatedAt shouldBe openDownTcpMonitor2.updatedAt
+                        openTcpMonitor2.incidentType shouldBe IncidentType.TCP
+                        openTcpMonitor2.details shouldBe openDownTcpMonitor2.error
+                    }
+
+                    incidentsWithoutResolved.forOne { openTcpMonitor1 ->
+                        openTcpMonitor1.monitorId shouldBe openDownTcpMonitor1.monitorId
+                        openTcpMonitor1.monitorName shouldBe tcpMonitor1.name
+                        openTcpMonitor1.isMonitorEnabled shouldBe tcpMonitor1.enabled
+                        openTcpMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openTcpMonitor1.startedAt shouldBe openDownTcpMonitor1.startedAt
+                        openTcpMonitor1.endedAt shouldBe null
+                        openTcpMonitor1.updatedAt shouldBe openDownTcpMonitor1.updatedAt
+                        openTcpMonitor1.incidentType shouldBe IncidentType.TCP
+                        openTcpMonitor1.details shouldBe null
                     }
                 }
             }
@@ -630,11 +737,43 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusHours(4),
                     )
 
+                    val tcpMonitor1 = createTcpMonitor(tcpMonitorRepository)
+                    val tcpMonitor2 = createTcpMonitor(tcpMonitorRepository)
+                    val openDownTcpMonitor1 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownTcpMonitor2 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    val resolvedDownTcpMonitor2 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(1),
+                        endedAt = getCurrentTimestamp().minusHours(4),
+                    )
+
                     val incidentsInTheLast2Days = incidentRepository.getIncidents(
                         period = Duration.ofDays(2),
                         includeResolved = true,
                     )
-                    incidentsInTheLast2Days shouldHaveSize 11
+                    incidentsInTheLast2Days shouldHaveSize 14
 
                     incidentsInTheLast2Days.forOne { resolvedHttpMonitor2 ->
                         resolvedHttpMonitor2.monitorId shouldBe resolvedDownHttpMonitor2.monitorId
@@ -701,6 +840,24 @@ class IncidentRepositoryTest(
                         openIcmpMonitor1.incidentType shouldBe IncidentType.ICMP
                         openIcmpMonitor1.startedAt shouldBe openDownIcmpMonitor1.startedAt
                     }
+
+                    incidentsInTheLast2Days.forOne { resolvedTcpMonitor2 ->
+                        resolvedTcpMonitor2.monitorId shouldBe resolvedDownTcpMonitor2.monitorId
+                        resolvedTcpMonitor2.incidentType shouldBe IncidentType.TCP
+                        resolvedTcpMonitor2.startedAt shouldBe resolvedDownTcpMonitor2.startedAt
+                    }
+
+                    incidentsInTheLast2Days.forOne { openTcpMonitor2 ->
+                        openTcpMonitor2.monitorId shouldBe openDownTcpMonitor2.monitorId
+                        openTcpMonitor2.incidentType shouldBe IncidentType.TCP
+                        openTcpMonitor2.startedAt shouldBe openDownTcpMonitor2.startedAt
+                    }
+
+                    incidentsInTheLast2Days.forOne { openTcpMonitor1 ->
+                        openTcpMonitor1.monitorId shouldBe openDownTcpMonitor1.monitorId
+                        openTcpMonitor1.incidentType shouldBe IncidentType.TCP
+                        openTcpMonitor1.startedAt shouldBe openDownTcpMonitor1.startedAt
+                    }
                 }
             }
 
@@ -714,6 +871,8 @@ class IncidentRepositoryTest(
                     val pushMonitor2 = createPushMonitor(pushMonitorRepository, enabled = false)
                     val icmpMonitor1 = createIcmpMonitor(icmpMonitorRepository)
                     val icmpMonitor2 = createIcmpMonitor(icmpMonitorRepository, enabled = false)
+                    val tcpMonitor1 = createTcpMonitor(tcpMonitorRepository)
+                    val tcpMonitor2 = createTcpMonitor(tcpMonitorRepository, enabled = false)
 
                     val openDownHttpMonitor1 = createHttpUptimeEventRecord(
                         dslContext,
@@ -836,6 +995,36 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusDays(4),
                     )
 
+                    val openDownTcpMonitor1 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownTcpMonitor2 = createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+
                     val incidentsOfHttpMonitor1 = incidentRepository.getIncidents(
                         includeResolved = false,
                         monitorId = httpMonitor1.id,
@@ -923,6 +1112,32 @@ class IncidentRepositoryTest(
                         openMonitor2.monitorId shouldBe openDownIcmpMonitor2.monitorId
                         openMonitor2.status shouldBe IncidentStatus.ONGOING
                         openMonitor2.incidentType shouldBe IncidentType.ICMP
+                    }
+
+                    val incidentsOfTcpMonitor1 = incidentRepository.getIncidents(
+                        includeResolved = false,
+                        monitorId = tcpMonitor1.id,
+                    )
+                    incidentsOfTcpMonitor1 shouldHaveSize 1
+
+                    incidentsOfTcpMonitor1.forOne { openMonitor1 ->
+                        openMonitor1.monitorId shouldBe openDownTcpMonitor1.monitorId
+                        openMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openMonitor1.incidentType shouldBe IncidentType.TCP
+                    }
+
+                    // Should return events for the disabled monitor as well
+                    val incidentsOfTcpMonitor2 = incidentRepository.getIncidents(
+                        includeResolved = false,
+                        monitorId = tcpMonitor2.id,
+                    )
+
+                    incidentsOfTcpMonitor2 shouldHaveSize 1
+
+                    incidentsOfTcpMonitor2.forOne { openMonitor2 ->
+                        openMonitor2.monitorId shouldBe openDownTcpMonitor2.monitorId
+                        openMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openMonitor2.incidentType shouldBe IncidentType.TCP
                     }
                 }
             }

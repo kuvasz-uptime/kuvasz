@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
+import com.kuvaszuptime.kuvasz.config.TcpMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
@@ -13,15 +14,19 @@ import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.PushMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.TcpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.TcpMonitorCreator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import com.kuvaszuptime.kuvasz.validation.validated
@@ -60,6 +65,7 @@ class MonitorController(
     private val httpMonitorActions: HttpMonitorActions,
     private val pushMonitorActions: PushMonitorActions,
     private val icmpMonitorActions: IcmpMonitorActions,
+    private val tcpMonitorActions: TcpMonitorActions,
     private val exportHandler: ExportHandler,
     private val monitorImporter: MonitorImporter,
     private val yamlMapper: YAMLMapper,
@@ -84,6 +90,8 @@ class MonitorController(
                 to pushMonitorActions.getPushMonitorsExport().map { PushMonitorExportDto.fromMonitorRecord(it) },
             IcmpMonitorConfig.CONFIG_PREFIX
                 to icmpMonitorActions.getIcmpMonitorsExport().map { IcmpMonitorExportDto.fromMonitorRecord(it) },
+            TcpMonitorConfig.CONFIG_PREFIX
+                to tcpMonitorActions.getTcpMonitorsExport().map { TcpMonitorExportDto.fromMonitorRecord(it) },
         )
 
         return exportHandler.createYamlFileFrom(fileNamePrefix = EXPORT_FILE_NAME_PREFIX, content = export)
@@ -124,11 +132,16 @@ class MonitorController(
             ?.takeUnless { appConfig.isIcmpMonitorExternalWriteDisabled() }
             ?.map { validator.validated(IcmpMonitorImportAdapter(it)) }
             .orEmpty()
+        val tcpMonitors: List<TcpMonitorCreator> = importDto.tcpMonitors
+            ?.takeUnless { appConfig.isTcpMonitorExternalWriteDisabled() }
+            ?.map { validator.validated(TcpMonitorImportAdapter(it)) }
+            .orEmpty()
 
         val perTypeResults = monitorImporter.batchImportMonitors(
             httpMonitors,
             pushMonitors,
             icmpMonitors,
+            tcpMonitors,
             dryRun,
         )
 

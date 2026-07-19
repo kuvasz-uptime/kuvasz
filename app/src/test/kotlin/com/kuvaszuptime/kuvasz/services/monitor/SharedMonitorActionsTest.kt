@@ -4,11 +4,13 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainExactly
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -19,6 +21,7 @@ class SharedMonitorActionsTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
+    private val tcpMonitorRepository: TcpMonitorRepository,
 ) : DatabaseBehaviorSpec({
 
     given("getConfiguredMonitorIds") {
@@ -26,12 +29,14 @@ class SharedMonitorActionsTest(
             val httpMonitor = createHttpMonitor(httpMonitorRepository, monitorName = "http-mon")
             val pushMonitor = createPushMonitor(pushMonitorRepository, monitorName = "push-mon")
             val icmpMonitor = createIcmpMonitor(icmpMonitorRepository, monitorName = "icmp-mon")
+            val tcpMonitor = createTcpMonitor(tcpMonitorRepository, monitorName = "tcp-mon")
 
             then("it maps every monitor's URN to its numeric identifier") {
                 sharedMonitorActions.getConfiguredMonitorIds() shouldContainExactly mapOf(
                     MonitorID(MonitorType.HTTP_SSL, "http-mon") to httpMonitor.id,
                     MonitorID(MonitorType.PUSH, "push-mon") to pushMonitor.id,
                     MonitorID(MonitorType.ICMP, "icmp-mon") to icmpMonitor.id,
+                    MonitorID(MonitorType.TCP, "tcp-mon") to tcpMonitor.id,
                 )
             }
         }

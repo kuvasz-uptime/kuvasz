@@ -18,12 +18,6 @@ import java.time.OffsetDateTime
 @Singleton
 class IcmpMetricsLogRepository(private val dslContext: DSLContext) {
 
-    companion object {
-        private const val P90 = .90
-        private const val P95 = .95
-        private const val P99 = .99
-    }
-
     fun insertLog(monitorId: Long, latencyMs: Int?, packetLossPercentage: Int) {
         dslContext.insertInto(ICMP_METRICS_LOG)
             .set(

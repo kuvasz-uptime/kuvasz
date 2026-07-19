@@ -1,0 +1,20 @@
+tcp-monitors:
+  - name: test1
+    host: 127.0.0.1
+    port: 5432
+    uptime-check-interval: 120
+    enabled: false
+    timeout-ms: 10000
+    latency-threshold-ms: 250
+    failure-count-threshold: 3
+  - name: test2
+    host: 192.168.1.1
+    port: 6379
+    uptime-check-interval: 60
+    integrations:
+      - 'slack:test_implicitly_enabled'
+  - name: test3
+    host: 10.0.0.1
+    port: 22
+    uptime-check-interval: 120
+    enabled: true

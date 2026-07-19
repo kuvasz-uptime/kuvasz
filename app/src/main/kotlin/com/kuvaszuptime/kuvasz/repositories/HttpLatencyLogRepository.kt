@@ -4,7 +4,6 @@ import com.kuvaszuptime.kuvasz.jooq.Tables.HTTP_LATENCY_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyLogDto
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.avg
@@ -17,12 +16,6 @@ import java.time.OffsetDateTime
 
 @Singleton
 class HttpLatencyLogRepository(private val dslContext: DSLContext) {
-
-    companion object {
-        private const val P90 = .90
-        private const val P95 = .95
-        private const val P99 = .99
-    }
 
     fun insertLatencyForMonitor(monitorId: Long, latency: Int, createdAt: OffsetDateTime = getCurrentTimestamp()) {
         dslContext.insertInto(HTTP_LATENCY_LOG)
@@ -96,14 +89,3 @@ class HttpLatencyLogRepository(private val dslContext: DSLContext) {
             .fetchOneInto(LatencyMetricResult::class.java)
     }
 }
-
-@Introspected
-data class LatencyMetricResult(
-    val monitorId: Long,
-    val avg: Int?,
-    val min: Int?,
-    val max: Int?,
-    val p90: Int?,
-    val p95: Int?,
-    val p99: Int?,
-)

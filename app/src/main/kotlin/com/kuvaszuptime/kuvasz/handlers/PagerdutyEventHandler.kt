@@ -14,6 +14,8 @@ import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -25,102 +27,43 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient
-import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
-import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.disposables.Disposable
 
 @Context
 @Requires(bean = PagerdutyConfig::class)
 class PagerdutyEventHandler(
-    private val eventDispatcher: EventDispatcher,
+    eventDispatcher: EventDispatcher,
     private val apiClient: PagerdutyAPIClient,
     integrationRepository: IntegrationRepository,
-) : AbstractIntegrationProvider(integrationRepository) {
-    companion object {
-        private val logger = loggerFor<PagerdutyEventHandler>()
-    }
+) : NotificationEventHandler(eventDispatcher, integrationRepository) {
 
-    init {
-        subscribeToEvents()
-        logger.info("PagerDuty event handler has been initialized")
-    }
+    override val logger = loggerFor<PagerdutyEventHandler>()
 
     override val integrationType: IntegrationType = IntegrationType.PAGERDUTY
 
-    private fun subscribeToEvents() {
-        eventDispatcher.subscribeToHttpMonitorUpEvents { event ->
-            logger.debug("An HttpMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToHttpMonitorDownEvents { event ->
-            logger.debug("An HttpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToPushMonitorEvents { event ->
-            logger.debug(
-                "A PushMonitorEvent (${event.toIntegrationEventType()}) has been received for " +
-                    "monitor with ID: ${event.monitor.id}"
-            )
-            event.handle()
-        }
-        eventDispatcher.subscribeToSSLValidEvents { event ->
-            logger.debug("An SSLValidEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToSSLInvalidEvents { event ->
-            logger.debug("An SSLInvalidEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToSSLWillExpireEvents { event ->
-            logger.debug("An SSLWillExpireEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
-            logger.debug("An IcmpMonitorUpEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
-            logger.debug("An IcmpMonitorDownEvent has been received for monitor with ID: ${event.monitor.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToMaintenanceStartEvents { event ->
-            logger.debug("A MaintenanceWindowStartEvent has been received for window with ID: ${event.window.id}")
-            event.handle()
-        }
-        eventDispatcher.subscribeToMaintenanceEndEvents { event ->
-            logger.debug("A MaintenanceWindowEndEvent has been received for window with ID: ${event.window.id}")
-            event.handle()
-        }
+    init {
+        logger.info("PagerDuty event handler has been initialized")
     }
-
-    private fun Single<String>.handleResponse(): Disposable =
-        subscribe(
-            {
-                logger.debug("The event has been successfully sent to Pagerduty")
-            },
-            { ex ->
-                if (ex is HttpClientResponseException) {
-                    val responseBody = ex.response.getBodyAs<String>()
-                    logger.error("The event cannot be sent to Pagerduty: $responseBody")
-                }
-            }
-        )
 
     private val MaintenanceWindowEvent.deduplicationKey: String
         get() = "kuvasz_maintenance_${window.id}"
 
-    private fun MaintenanceWindowEvent.handle() {
-        val integrationKeys = filterMaintenanceTargets(this).map { (it as PagerdutyConfig).integrationKey }
-        when (this) {
+    private val UptimeMonitorEvent.deduplicationKey: String
+        get() = "kuvasz_uptime_${monitor.id}"
+
+    private val SSLMonitorEvent.deduplicationKey: String
+        get() = "kuvasz_ssl_${monitor.id}"
+
+    override fun handleMaintenanceEvent(event: MaintenanceWindowEvent) {
+        val integrationKeys = filterMaintenanceTargets(event).map { (it as PagerdutyConfig).integrationKey }
+        when (event) {
             is MaintenanceWindowStartEvent ->
                 integrationKeys.forEach { integrationKey ->
-                    val request = toTriggerRequest(
+                    val request = event.toTriggerRequest(
                         serviceKey = integrationKey,
-                        deduplicationKey = deduplicationKey,
+                        deduplicationKey = event.deduplicationKey,
                         severity = PagerdutySeverity.WARNING,
                     )
                     apiClient.triggerAlert(request).handleResponse()
@@ -130,9 +73,65 @@ class PagerdutyEventHandler(
                 integrationKeys.forEach { integrationKey ->
                     val request = createResolveRequest(
                         serviceKey = integrationKey,
-                        deduplicationKey = deduplicationKey,
+                        deduplicationKey = event.deduplicationKey,
                     )
                     apiClient.resolveAlert(request).handleResponse()
+                }
+        }
+    }
+
+    override fun handleUptimeEvent(event: UptimeMonitorEvent) {
+        val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
+        when (event) {
+            is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent ->
+                integrationKeys.forEach { integrationKey ->
+                    val request = createResolveRequest(
+                        serviceKey = integrationKey,
+                        deduplicationKey = event.deduplicationKey
+                    )
+                    apiClient.resolveAlert(request).handleResponse()
+                }
+
+            is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent, is TcpMonitorDownEvent ->
+                integrationKeys.forEach { integrationKey ->
+                    val request = event.toTriggerRequest(
+                        serviceKey = integrationKey,
+                        deduplicationKey = event.deduplicationKey
+                    )
+                    apiClient.triggerAlert(request).handleResponse()
+                }
+        }
+    }
+
+    override fun handleSSLEvent(event: SSLMonitorEvent) {
+        val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
+        when (event) {
+            is SSLValidEvent ->
+                integrationKeys.forEach { integrationKey ->
+                    val request = createResolveRequest(
+                        serviceKey = integrationKey,
+                        deduplicationKey = event.deduplicationKey
+                    )
+                    apiClient.resolveAlert(request).handleResponse()
+                }
+
+            is SSLInvalidEvent ->
+                integrationKeys.forEach { integrationKey ->
+                    val request = event.toTriggerRequest(
+                        serviceKey = integrationKey,
+                        deduplicationKey = event.deduplicationKey
+                    )
+                    apiClient.triggerAlert(request).handleResponse()
+                }
+
+            is SSLWillExpireEvent ->
+                integrationKeys.forEach { integrationKey ->
+                    val request = event.toTriggerRequest(
+                        serviceKey = integrationKey,
+                        deduplicationKey = event.deduplicationKey,
+                        severity = PagerdutySeverity.WARNING
+                    )
+                    apiClient.triggerAlert(request).handleResponse()
                 }
         }
     }
@@ -151,81 +150,6 @@ class PagerdutyEventHandler(
                 severity = severity
             )
         )
-
-    private val UptimeMonitorEvent.deduplicationKey: String
-        get() = "kuvasz_uptime_${monitor.id}"
-
-    private val SSLMonitorEvent.deduplicationKey: String
-        get() = "kuvasz_ssl_${monitor.id}"
-
-    private fun UptimeMonitorEvent.handle() {
-        runWhenStateChanges { event ->
-            val integrations = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
-            when (event) {
-                is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent -> {
-                    if (previousEvent != null) {
-                        integrations.forEach { integrationKey ->
-                            val request = createResolveRequest(
-                                serviceKey = integrationKey,
-                                deduplicationKey = deduplicationKey
-                            )
-                            apiClient.resolveAlert(request).handleResponse()
-                        }
-                    }
-                }
-
-                is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent -> {
-                    integrations.forEach { integrationKey ->
-                        val request = event.toTriggerRequest(
-                            serviceKey = integrationKey,
-                            deduplicationKey = deduplicationKey
-                        )
-                        apiClient.triggerAlert(request).handleResponse()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun SSLMonitorEvent.handle() {
-        runWhenStateChanges { event ->
-            val integrations = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
-            when (event) {
-                is SSLValidEvent -> {
-                    if (previousEvent != null) {
-                        integrations.forEach { integrationKey ->
-                            val request = createResolveRequest(
-                                serviceKey = integrationKey,
-                                deduplicationKey = deduplicationKey
-                            )
-                            apiClient.resolveAlert(request).handleResponse()
-                        }
-                    }
-                }
-
-                is SSLInvalidEvent -> {
-                    integrations.forEach { integrationKey ->
-                        val request = event.toTriggerRequest(
-                            serviceKey = integrationKey,
-                            deduplicationKey = deduplicationKey
-                        )
-                        apiClient.triggerAlert(request).handleResponse()
-                    }
-                }
-
-                is SSLWillExpireEvent -> {
-                    integrations.forEach { integrationKey ->
-                        val request = event.toTriggerRequest(
-                            serviceKey = integrationKey,
-                            deduplicationKey = deduplicationKey,
-                            severity = PagerdutySeverity.WARNING
-                        )
-                        apiClient.triggerAlert(request).handleResponse()
-                    }
-                }
-            }
-        }
-    }
 
     private fun MonitorEvent<*>.toTriggerRequest(
         serviceKey: String,

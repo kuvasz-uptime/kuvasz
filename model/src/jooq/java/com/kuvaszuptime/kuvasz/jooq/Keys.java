@@ -16,6 +16,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord;
@@ -28,6 +31,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMetricsLogRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord;
 
 import org.jooq.ForeignKey;
 import org.jooq.TableField;
@@ -70,6 +76,11 @@ public class Keys {
     public static final UniqueKey<SslEventRecord> SSL_EVENT_PKEY = Internal.createUniqueKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_pkey"), new TableField[] { SslEvent.SSL_EVENT.ID }, true);
     public static final UniqueKey<StatusPageRecord> STATUS_PAGE_PKEY = Internal.createUniqueKey(StatusPage.STATUS_PAGE, DSL.name("status_page_pkey"), new TableField[] { StatusPage.STATUS_PAGE.ID }, true);
     public static final UniqueKey<StatusPageRecord> STATUS_PAGE_SLUG_KEY = Internal.createUniqueKey(StatusPage.STATUS_PAGE, DSL.name("status_page_slug_key"), new TableField[] { StatusPage.STATUS_PAGE.SLUG }, true);
+    public static final UniqueKey<TcpMetricsLogRecord> TCP_METRICS_LOG_PKEY = Internal.createUniqueKey(TcpMetricsLog.TCP_METRICS_LOG, DSL.name("tcp_metrics_log_pkey"), new TableField[] { TcpMetricsLog.TCP_METRICS_LOG.ID }, true);
+    public static final UniqueKey<TcpMonitorRecord> TCP_MONITOR_PKEY = Internal.createUniqueKey(TcpMonitor.TCP_MONITOR, DSL.name("tcp_monitor_pkey"), new TableField[] { TcpMonitor.TCP_MONITOR.ID }, true);
+    public static final UniqueKey<TcpMonitorRecord> UNIQUE_TCP_MONITOR_NAME = Internal.createUniqueKey(TcpMonitor.TCP_MONITOR, DSL.name("unique_tcp_monitor_name"), new TableField[] { TcpMonitor.TCP_MONITOR.NAME }, true);
+    public static final UniqueKey<TcpUptimeEventRecord> TCP_UPTIME_EVENT_KEY = Internal.createUniqueKey(TcpUptimeEvent.TCP_UPTIME_EVENT, DSL.name("tcp_uptime_event_key"), new TableField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.MONITOR_ID, TcpUptimeEvent.TCP_UPTIME_EVENT.STATUS, TcpUptimeEvent.TCP_UPTIME_EVENT.ENDED_AT }, true);
+    public static final UniqueKey<TcpUptimeEventRecord> TCP_UPTIME_EVENT_PKEY = Internal.createUniqueKey(TcpUptimeEvent.TCP_UPTIME_EVENT, DSL.name("tcp_uptime_event_pkey"), new TableField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.ID }, true);
 
     // -------------------------------------------------------------------------
     // FOREIGN KEY definitions
@@ -81,4 +92,6 @@ public class Keys {
     public static final ForeignKey<IcmpUptimeEventRecord, IcmpMonitorRecord> ICMP_UPTIME_EVENT__ICMP_UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(IcmpUptimeEvent.ICMP_UPTIME_EVENT, DSL.name("icmp_uptime_event_monitor_id_fkey"), new TableField[] { IcmpUptimeEvent.ICMP_UPTIME_EVENT.MONITOR_ID }, Keys.ICMP_MONITOR_PKEY, new TableField[] { IcmpMonitor.ICMP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
     public static final ForeignKey<PushUptimeEventRecord, PushMonitorRecord> PUSH_UPTIME_EVENT__PUSH_UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(PushUptimeEvent.PUSH_UPTIME_EVENT, DSL.name("push_uptime_event_monitor_id_fkey"), new TableField[] { PushUptimeEvent.PUSH_UPTIME_EVENT.MONITOR_ID }, Keys.PUSH_MONITOR_PKEY, new TableField[] { PushMonitor.PUSH_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
     public static final ForeignKey<SslEventRecord, HttpMonitorRecord> SSL_EVENT__SSL_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(SslEvent.SSL_EVENT, DSL.name("ssl_event_monitor_id_fkey"), new TableField[] { SslEvent.SSL_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { HttpMonitor.HTTP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
+    public static final ForeignKey<TcpMetricsLogRecord, TcpMonitorRecord> TCP_METRICS_LOG__TCP_METRICS_LOG_MONITOR_ID_FKEY = Internal.createForeignKey(TcpMetricsLog.TCP_METRICS_LOG, DSL.name("tcp_metrics_log_monitor_id_fkey"), new TableField[] { TcpMetricsLog.TCP_METRICS_LOG.MONITOR_ID }, Keys.TCP_MONITOR_PKEY, new TableField[] { TcpMonitor.TCP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
+    public static final ForeignKey<TcpUptimeEventRecord, TcpMonitorRecord> TCP_UPTIME_EVENT__TCP_UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(TcpUptimeEvent.TCP_UPTIME_EVENT, DSL.name("tcp_uptime_event_monitor_id_fkey"), new TableField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.MONITOR_ID }, Keys.TCP_MONITOR_PKEY, new TableField[] { TcpMonitor.TCP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
 }

@@ -82,6 +82,7 @@ class IcmpUptimeChecker(
                 error = error,
                 previousEvent = previousEvent,
                 packetLossPercentage = packetLossPercentage,
+                latencyInMs = avgLatencyMs,
             )
             if (event.isDownNow(pendingFailureRepository)) {
                 databaseEventHandler.handleUptimeMonitorEvent(event)
