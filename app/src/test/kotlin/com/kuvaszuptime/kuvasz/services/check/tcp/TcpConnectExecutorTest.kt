@@ -97,6 +97,32 @@ class TcpConnectExecutorTest : BehaviorSpec({
         }
     }
 
+    given("a TcpConnectExecutor whose name resolution is slow but succeeds") {
+
+        val slowResolver: (String) -> InetAddress = {
+            Thread.sleep(SLOW_RESOLVER_MS)
+            InetAddress.getByName("127.0.0.1")
+        }
+        val resolverPool = Executors.newCachedThreadPool()
+        val slowExecutor = TcpConnectExecutor(resolver = slowResolver, resolverExecutor = resolverPool)
+
+        `when`("a check connects to an open port through it") {
+            val result = slowExecutor.execute("slow-but-ok.example", mockServer.localPort, timeoutMs = 5000)
+
+            then("the reported latency reflects only the handshake, not the resolution time") {
+                result.isConnected.shouldBeTrue()
+                result.error.shouldBeNull()
+                // The handshake on loopback is near-instant, so the latency must stay well below the
+                // resolver delay - proving DNS time is excluded from the measurement.
+                result.latencyMs.shouldNotBeNull() shouldBeLessThan SLOW_RESOLVER_MS.toInt()
+            }
+        }
+
+        afterSpec {
+            slowExecutor.close()
+        }
+    }
+
     given("a TcpConnectExecutor with a blocking resolver and concurrent checks for the same host") {
 
         val invocationCount = AtomicInteger(0)
@@ -129,6 +155,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
 }) {
     companion object {
         private const val RESOLVER_HANG_MS = 3000L
+        private const val SLOW_RESOLVER_MS = 500L
         private const val CONCURRENT_CHECKS = 5
         private const val THREAD_JOIN_TIMEOUT_MS = 2000L
     }

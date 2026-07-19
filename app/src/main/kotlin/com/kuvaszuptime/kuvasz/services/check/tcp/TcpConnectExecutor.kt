@@ -56,8 +56,9 @@ class TcpConnectExecutor internal constructor(
             Socket().use { socket ->
                 // The resolution has already consumed part of the budget, so the handshake gets the rest.
                 val remainingMs = (timeoutMs - elapsedMsSince(start)).coerceAtLeast(MIN_CONNECT_TIMEOUT_MS)
+                val connectStart = System.nanoTime()
                 socket.connect(InetSocketAddress(address, port), remainingMs)
-                TcpCheckResult(isConnected = true, latencyMs = elapsedMsSince(start), error = null)
+                TcpCheckResult(isConnected = true, latencyMs = elapsedMsSince(connectStart), error = null)
             }
         } catch (ex: IOException) {
             TcpCheckResult(isConnected = false, latencyMs = null, error = ex.message ?: ex.javaClass.simpleName)
