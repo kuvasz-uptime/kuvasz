@@ -11,8 +11,6 @@ If the connection cannot be established within the configured [**timeout**](../m
 
 These two settings cover **different failure modes** and are meant to complement each other. The timeout is a hard ceiling that decides whether the port is **reachable at all**, while the latency threshold is a lower bar (set well below the timeout) that flags connections which succeed but are **too slow**. For example, with a `5000` ms timeout and a `500` ms latency threshold, a connect that takes 800 ms is still reachable but breaches your latency SLA, so the monitor is marked DOWN. Leave the latency threshold unset if you only care about reachability.
 
-Each check is deliberately lightweight: it opens a single socket and closes it immediately, without spawning any external process or keeping pooled resources around, so even many monitors on short intervals stay cheap.
-
 ### What can be configured?
 
 - interval for uptime checks
