@@ -32,6 +32,7 @@ data class IcmpMonitorDownEvent(
     val error: String,
     override val previousEvent: IcmpUptimeEventRecord?,
     val packetLossPercentage: Int,
+    val latencyInMs: Int? = null,
 ) : IcmpUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN

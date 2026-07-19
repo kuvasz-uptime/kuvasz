@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.metrics.icmp
 
 import com.kuvaszuptime.kuvasz.metrics.IcmpExporterTest
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.inspectors.forNone
@@ -143,6 +144,71 @@ class IcmpLatencyExporterTest : IcmpExporterTest("enabled-metrics-icmp-latency")
 
                 eventDispatcher().dispatch(
                     IcmpMonitorUpEvent(enabledMonitorWithLatency, null, latencyInMs = null, packetLossPercentage = 0)
+                )
+
+                then("it should not update the existing meter") {
+                    meterRegistry().meters.single() shouldHaveValue 50.0
+                }
+            }
+
+            `when`("there is a down event carrying a latency (partial packet loss over the threshold)") {
+                appContext = testAppContext()
+
+                val enabledMonitorWithLatency = createIcmpMonitor(
+                    icmpMonitorRepository(),
+                    monitorName = "test-enabled",
+                    enabled = true,
+                )
+                icmpMetricsLogRepository().insertLog(
+                    enabledMonitorWithLatency.id,
+                    latencyMs = 50,
+                    packetLossPercentage = 0,
+                )
+
+                restartAppContextWithMetrics()
+
+                meterRegistry().meters shouldHaveSize 1
+
+                eventDispatcher().dispatch(
+                    IcmpMonitorDownEvent(
+                        enabledMonitorWithLatency,
+                        error = "packet loss too high",
+                        previousEvent = null,
+                        packetLossPercentage = 60,
+                        latencyInMs = 120,
+                    )
+                )
+
+                then("it should update the existing meter with the measured latency") {
+                    meterRegistry().meters.single() shouldHaveValue 120.0
+                }
+            }
+
+            `when`("there is a down event without a latency (total packet loss)") {
+                appContext = testAppContext()
+
+                val enabledMonitorWithLatency = createIcmpMonitor(
+                    icmpMonitorRepository(),
+                    monitorName = "test-enabled",
+                    enabled = true,
+                )
+                icmpMetricsLogRepository().insertLog(
+                    enabledMonitorWithLatency.id,
+                    latencyMs = 50,
+                    packetLossPercentage = 0,
+                )
+
+                restartAppContextWithMetrics()
+
+                meterRegistry().meters shouldHaveSize 1
+
+                eventDispatcher().dispatch(
+                    IcmpMonitorDownEvent(
+                        enabledMonitorWithLatency,
+                        error = "host unreachable",
+                        previousEvent = null,
+                        packetLossPercentage = 100,
+                    )
                 )
 
                 then("it should not update the existing meter") {

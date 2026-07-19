@@ -39,10 +39,17 @@ class IcmpLatencyExporter(
 
     override fun subscribeToEvents() {
         eventDispatcher.subscribeToIcmpMonitorUpEvents { event ->
-            val latency = event.latencyInMs ?: return@subscribeToIcmpMonitorUpEvents
-            logger.debug("Updating latency for monitor with ID: ${event.monitor.id} to $latency")
-            upsertMeter(event.monitor.numericMonitorId(), latency)
+            updateLatency(event.monitor, event.latencyInMs)
         }
+        eventDispatcher.subscribeToIcmpMonitorDownEvents { event ->
+            updateLatency(event.monitor, event.latencyInMs)
+        }
+    }
+
+    private fun updateLatency(monitor: IcmpMonitorRecord, latencyInMs: Int?) {
+        val latency = latencyInMs ?: return
+        logger.debug("Updating latency for monitor with ID: ${monitor.id} to $latency")
+        upsertMeter(monitor.numericMonitorId(), latency)
     }
 
     override fun transform(valueSource: Int): Long = valueSource.toLong()
