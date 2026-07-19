@@ -99,6 +99,7 @@ nav:
       - SSL monitoring: features/ssl-monitoring.md
       - Push monitoring: features/push-monitoring.md
       - Ping (ICMP) monitoring: features/icmp-monitoring.md
+      - TCP port monitoring: features/tcp-monitoring.md
       - Status pages: features/status-pages.md
       - Maintenance windows: features/maintenance-windows.md
       - Notifications: features/notifications.md
@@ -117,6 +118,7 @@ nav:
           - HTTP & SSL monitors: management/http-monitors.md
           - Push monitors: management/push-monitors.md
           - ICMP monitors: management/icmp-monitors.md
+          - TCP monitors: management/tcp-monitors.md
       - Status pages: management/status-pages.md
       - Maintenance windows: management/maintenance-windows.md
       - Metrics exporters: management/metrics-exporters.md

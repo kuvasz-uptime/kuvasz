@@ -31,7 +31,7 @@ Metrics have the following **labels/tags**, that you can use to filter/group the
 every metric has all of them:
 
 - `name`: the name of the monitor
-- `target`: the target that is monitored (i.e. a URL or an IP address / hostname)
+- `target`: the target that is monitored (i.e. a URL, an IP address / hostname, or a `host:port` pair for TCP monitors)
 
 |                      | `name` | `target` |
 |----------------------|--------|----------|
@@ -43,6 +43,8 @@ every metric has all of them:
 | ICMP uptime status   | ✅      | ✅        |
 | ICMP latest latency  | ✅      | ✅        |
 | ICMP packet loss     | ✅      | ✅        |
+| TCP uptime status    | ✅      | ✅        |
+| TCP latest latency   | ✅      | ✅        |
 
 ### HTTP uptime status
 
@@ -224,6 +226,51 @@ This metric is exported as a **gauge** and reports the latest recorded average r
 
 This metric is exported as a **gauge** and reports the latest recorded packet loss percentage (0-100) of the monitored host.
 
+### TCP uptime status
+
+<!-- md:version 4.2.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.tcp-uptime-status: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_TCP_UPTIME_STATUS_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and indicates the current uptime status of the given TCP (port) monitor.
+
+| Status                                | Gauge value |
+|---------------------------------------|-------------|
+| UP                                    | 1           |
+| DOWN                                  | 0           |
+
+### TCP latest latency
+
+<!-- md:version 4.2.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.tcp-latest-latency: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_TCP_LATEST_LATENCY_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports the latest recorded connect latency of the monitored `host:port` endpoint, in milliseconds.
+
 ## Prometheus
 
 The _Prometheus_ exporter is a built-in exporter that allows you to **expose your metrics** in a format that **can be scraped** by _Prometheus_. It supports the standard _Prometheus_ text format, which is widely used for monitoring and alerting.
@@ -282,6 +329,8 @@ kuvasz_http_ssl_expiry_seconds{name="nytimes.com",target="https://www.nytimes.co
 kuvasz_icmp_uptime_status{name="my-router",target="192.168.1.1"} 1.0
 kuvasz_icmp_latency_latest_milliseconds{name="my-router",target="192.168.1.1"} 4.0
 kuvasz_icmp_packet_loss_latest_percentage{name="my-router",target="192.168.1.1"} 0.0
+kuvasz_tcp_uptime_status{name="postgres",target="192.168.1.1:5432"} 1.0
+kuvasz_tcp_latency_latest_milliseconds{name="postgres",target="192.168.1.1:5432"} 3.0
 ```
 
 ### Example config
@@ -306,6 +355,8 @@ kuvasz_icmp_packet_loss_latest_percentage{name="my-router",target="192.168.1.1"}
         icmp-uptime-status: true
         icmp-latest-latency: true
         icmp-latest-packet-loss: true
+        tcp-uptime-status: true
+        tcp-latest-latency: true
     ```
 
 === "ENV"
@@ -323,6 +374,8 @@ kuvasz_icmp_packet_loss_latest_percentage{name="my-router",target="192.168.1.1"}
     ENABLE_ICMP_UPTIME_STATUS_EXPORT=true
     ENABLE_ICMP_LATEST_LATENCY_EXPORT=true
     ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
+    ENABLE_TCP_UPTIME_STATUS_EXPORT=true
+    ENABLE_TCP_LATEST_LATENCY_EXPORT=true
     ```
 
 ## OpenTelemetry
@@ -421,6 +474,8 @@ kuvasz.http.ssl.expiry.seconds{name=bbc.com,target=https://www.bbc.com} 1.785147
 kuvasz.icmp.uptime.status{name=my-router,target=192.168.1.1} 1
 kuvasz.icmp.latency.latest.milliseconds{name=my-router,target=192.168.1.1} 4
 kuvasz.icmp.packet.loss.latest.percentage{name=my-router,target=192.168.1.1} 0
+kuvasz.tcp.uptime.status{name=postgres,target=192.168.1.1:5432} 1
+kuvasz.tcp.latency.latest.milliseconds{name=postgres,target=192.168.1.1:5432} 3
 ```
 
 ### Example config
@@ -447,6 +502,8 @@ kuvasz.icmp.packet.loss.latest.percentage{name=my-router,target=192.168.1.1} 0
       icmp-uptime-status: true
       icmp-latest-latency: true
       icmp-latest-packet-loss: true
+      tcp-uptime-status: true
+      tcp-latest-latency: true
     ```
 
 === "ENV"
@@ -466,6 +523,8 @@ kuvasz.icmp.packet.loss.latest.percentage{name=my-router,target=192.168.1.1} 0
     ENABLE_ICMP_UPTIME_STATUS_EXPORT=true
     ENABLE_ICMP_LATEST_LATENCY_EXPORT=true
     ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
+    ENABLE_TCP_UPTIME_STATUS_EXPORT=true
+    ENABLE_TCP_LATEST_LATENCY_EXPORT=true
     ```
 
 ## Checking the configuration on the UI

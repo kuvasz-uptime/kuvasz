@@ -19,10 +19,10 @@ Every integration **watches a set of events
 
 ### Uptime events
 
-| Event                               | Description                                                            |
-|-------------------------------------|------------------------------------------------------------------------|
-| `HTTP_UP` `PUSH_UP` `ICMP_UP`       | Fired, when a monitor is **healthy** now (and it was unhealthy before) |
-| `HTTP_DOWN` `PUSH_DOWN` `ICMP_DOWN` | Fired, when a monitors is **unhealthy**                                |
+| Event                                          | Description                                                            |
+|------------------------------------------------|------------------------------------------------------------------------|
+| `HTTP_UP` `PUSH_UP` `ICMP_UP` `TCP_UP`         | Fired, when a monitor is **healthy** now (and it was unhealthy before) |
+| `HTTP_DOWN` `PUSH_DOWN` `ICMP_DOWN` `TCP_DOWN` | Fired, when a monitors is **unhealthy**                                |
 
 ### SSL events
 

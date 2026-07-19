@@ -101,6 +101,19 @@ The MCP server exposes the following tools to connected clients:
 | `toggle-push-monitor`      | Enable or disable a push monitor                                                    |
 | `delete-push-monitor`      | Permanently delete a push monitor by ID, including all its history and events       |
 
+### TCP (port) monitors
+
+<!-- md:version 4.2.0 -->
+
+| Tool                      | Description                                                                  |
+|---------------------------|------------------------------------------------------------------------------|
+| `list-tcp-monitors`       | List all TCP monitors with their current uptime status                       |
+| `get-tcp-monitor-details` | Get detailed information about a TCP monitor by ID                           |
+| `get-tcp-monitor-stats`   | Get latency and uptime statistics (configurable look-back window)            |
+| `create-tcp-monitor`      | Create a new TCP monitor                                                     |
+| `toggle-tcp-monitor`      | Enable or disable a TCP monitor                                              |
+| `delete-tcp-monitor`      | Permanently delete a TCP monitor by ID, including all its history and events |
+
 ### Status pages
 
 <!-- md:version 4.0.0 -->

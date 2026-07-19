@@ -9,7 +9,7 @@ _Kuvasz_ monitors your websites and services by **periodically sending requests*
 ### What can be configured?
 
 - interval for uptime checks
-- HTTP method
+- HTTP method (`GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, or `OPTIONS`)
 - URL to monitor
 - whether to follow redirects
 - request headers
