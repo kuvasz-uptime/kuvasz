@@ -4,6 +4,9 @@
 package com.kuvaszuptime.kuvasz.jooq;
 
 
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog;
@@ -34,6 +37,11 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
+    public static final Index DNS_METRICS_LOG_CREATED_AT_IDX = Internal.createIndex(DSL.name("dns_metrics_log_created_at_idx"), DnsMetricsLog.DNS_METRICS_LOG, new OrderField[] { DnsMetricsLog.DNS_METRICS_LOG.CREATED_AT }, false);
+    public static final Index DNS_METRICS_LOG_MONITOR_ID_IDX = Internal.createIndex(DSL.name("dns_metrics_log_monitor_id_idx"), DnsMetricsLog.DNS_METRICS_LOG, new OrderField[] { DnsMetricsLog.DNS_METRICS_LOG.MONITOR_ID }, false);
+    public static final Index DNS_MONITOR_ENABLED_IDX = Internal.createIndex(DSL.name("dns_monitor_enabled_idx"), DnsMonitor.DNS_MONITOR, new OrderField[] { DnsMonitor.DNS_MONITOR.ENABLED }, false);
+    public static final Index DNS_UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("dns_uptime_event_ended_at_idx"), DnsUptimeEvent.DNS_UPTIME_EVENT, new OrderField[] { DnsUptimeEvent.DNS_UPTIME_EVENT.ENDED_AT }, false);
+    public static final Index DNS_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("dns_uptime_event_monitor_idx"), DnsUptimeEvent.DNS_UPTIME_EVENT, new OrderField[] { DnsUptimeEvent.DNS_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index ICMP_METRICS_LOG_CREATED_AT_IDX = Internal.createIndex(DSL.name("icmp_metrics_log_created_at_idx"), IcmpMetricsLog.ICMP_METRICS_LOG, new OrderField[] { IcmpMetricsLog.ICMP_METRICS_LOG.CREATED_AT }, false);
     public static final Index ICMP_METRICS_LOG_MONITOR_ID_IDX = Internal.createIndex(DSL.name("icmp_metrics_log_monitor_id_idx"), IcmpMetricsLog.ICMP_METRICS_LOG, new OrderField[] { IcmpMetricsLog.ICMP_METRICS_LOG.MONITOR_ID }, false);
     public static final Index ICMP_MONITOR_ENABLED_IDX = Internal.createIndex(DSL.name("icmp_monitor_enabled_idx"), IcmpMonitor.ICMP_MONITOR, new OrderField[] { IcmpMonitor.ICMP_MONITOR.ENABLED }, false);

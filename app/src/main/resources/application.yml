@@ -148,7 +148,7 @@ flyway:
       enabled: true
 ---
 jackson:
-  bean-introspection-module: false
+  bean-introspection-module: true
   serialization-inclusion: always
   serialization:
     - WRITE_DATES_AS_TIMESTAMPS: false

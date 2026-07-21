@@ -4,6 +4,10 @@
 package com.kuvaszuptime.kuvasz.jooq;
 
 
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsResolutionSnapshot;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
@@ -19,6 +23,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMetricsLogRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsResolutionSnapshotRecord;
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord;
@@ -54,6 +62,12 @@ public class Keys {
     // UNIQUE and PRIMARY KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final UniqueKey<DnsMetricsLogRecord> DNS_METRICS_LOG_PKEY = Internal.createUniqueKey(DnsMetricsLog.DNS_METRICS_LOG, DSL.name("dns_metrics_log_pkey"), new TableField[] { DnsMetricsLog.DNS_METRICS_LOG.ID }, true);
+    public static final UniqueKey<DnsMonitorRecord> DNS_MONITOR_PKEY = Internal.createUniqueKey(DnsMonitor.DNS_MONITOR, DSL.name("dns_monitor_pkey"), new TableField[] { DnsMonitor.DNS_MONITOR.ID }, true);
+    public static final UniqueKey<DnsMonitorRecord> UNIQUE_DNS_MONITOR_NAME = Internal.createUniqueKey(DnsMonitor.DNS_MONITOR, DSL.name("unique_dns_monitor_name"), new TableField[] { DnsMonitor.DNS_MONITOR.NAME }, true);
+    public static final UniqueKey<DnsResolutionSnapshotRecord> DNS_RESOLUTION_SNAPSHOT_PKEY = Internal.createUniqueKey(DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT, DSL.name("dns_resolution_snapshot_pkey"), new TableField[] { DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT.MONITOR_ID }, true);
+    public static final UniqueKey<DnsUptimeEventRecord> DNS_UPTIME_EVENT_KEY = Internal.createUniqueKey(DnsUptimeEvent.DNS_UPTIME_EVENT, DSL.name("dns_uptime_event_key"), new TableField[] { DnsUptimeEvent.DNS_UPTIME_EVENT.MONITOR_ID, DnsUptimeEvent.DNS_UPTIME_EVENT.STATUS, DnsUptimeEvent.DNS_UPTIME_EVENT.ENDED_AT }, true);
+    public static final UniqueKey<DnsUptimeEventRecord> DNS_UPTIME_EVENT_PKEY = Internal.createUniqueKey(DnsUptimeEvent.DNS_UPTIME_EVENT, DSL.name("dns_uptime_event_pkey"), new TableField[] { DnsUptimeEvent.DNS_UPTIME_EVENT.ID }, true);
     public static final UniqueKey<HttpLatencyLogRecord> LATENCY_LOG_PKEY = Internal.createUniqueKey(HttpLatencyLog.HTTP_LATENCY_LOG, DSL.name("latency_log_pkey"), new TableField[] { HttpLatencyLog.HTTP_LATENCY_LOG.ID }, true);
     public static final UniqueKey<HttpMonitorRecord> MONITOR_PKEY = Internal.createUniqueKey(HttpMonitor.HTTP_MONITOR, DSL.name("monitor_pkey"), new TableField[] { HttpMonitor.HTTP_MONITOR.ID }, true);
     public static final UniqueKey<HttpMonitorRecord> UNIQUE_MONITOR_NAME = Internal.createUniqueKey(HttpMonitor.HTTP_MONITOR, DSL.name("unique_monitor_name"), new TableField[] { HttpMonitor.HTTP_MONITOR.NAME }, true);
@@ -86,6 +100,9 @@ public class Keys {
     // FOREIGN KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final ForeignKey<DnsMetricsLogRecord, DnsMonitorRecord> DNS_METRICS_LOG__DNS_METRICS_LOG_MONITOR_ID_FKEY = Internal.createForeignKey(DnsMetricsLog.DNS_METRICS_LOG, DSL.name("dns_metrics_log_monitor_id_fkey"), new TableField[] { DnsMetricsLog.DNS_METRICS_LOG.MONITOR_ID }, Keys.DNS_MONITOR_PKEY, new TableField[] { DnsMonitor.DNS_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
+    public static final ForeignKey<DnsResolutionSnapshotRecord, DnsMonitorRecord> DNS_RESOLUTION_SNAPSHOT__DNS_RESOLUTION_SNAPSHOT_MONITOR_ID_FKEY = Internal.createForeignKey(DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT, DSL.name("dns_resolution_snapshot_monitor_id_fkey"), new TableField[] { DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT.MONITOR_ID }, Keys.DNS_MONITOR_PKEY, new TableField[] { DnsMonitor.DNS_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
+    public static final ForeignKey<DnsUptimeEventRecord, DnsMonitorRecord> DNS_UPTIME_EVENT__DNS_UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(DnsUptimeEvent.DNS_UPTIME_EVENT, DSL.name("dns_uptime_event_monitor_id_fkey"), new TableField[] { DnsUptimeEvent.DNS_UPTIME_EVENT.MONITOR_ID }, Keys.DNS_MONITOR_PKEY, new TableField[] { DnsMonitor.DNS_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
     public static final ForeignKey<HttpLatencyLogRecord, HttpMonitorRecord> HTTP_LATENCY_LOG__LATENCY_LOG_MONITOR_ID_FKEY = Internal.createForeignKey(HttpLatencyLog.HTTP_LATENCY_LOG, DSL.name("latency_log_monitor_id_fkey"), new TableField[] { HttpLatencyLog.HTTP_LATENCY_LOG.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { HttpMonitor.HTTP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
     public static final ForeignKey<HttpUptimeEventRecord, HttpMonitorRecord> HTTP_UPTIME_EVENT__UPTIME_EVENT_MONITOR_ID_FKEY = Internal.createForeignKey(HttpUptimeEvent.HTTP_UPTIME_EVENT, DSL.name("uptime_event_monitor_id_fkey"), new TableField[] { HttpUptimeEvent.HTTP_UPTIME_EVENT.MONITOR_ID }, Keys.MONITOR_PKEY, new TableField[] { HttpMonitor.HTTP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);
     public static final ForeignKey<IcmpMetricsLogRecord, IcmpMonitorRecord> ICMP_METRICS_LOG__ICMP_METRICS_LOG_MONITOR_ID_FKEY = Internal.createForeignKey(IcmpMetricsLog.ICMP_METRICS_LOG, DSL.name("icmp_metrics_log_monitor_id_fkey"), new TableField[] { IcmpMetricsLog.ICMP_METRICS_LOG.MONITOR_ID }, Keys.ICMP_MONITOR_PKEY, new TableField[] { IcmpMonitor.ICMP_MONITOR.ID }, true, ForeignKeyRule.CASCADE, ForeignKeyRule.NO_ACTION);

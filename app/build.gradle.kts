@@ -95,6 +95,9 @@ dependencies {
     implementation(libs.simplejavamail)
     implementation(libs.simplejavamail.batchmodule)
 
+    // DNS resolution (DNS monitors)
+    implementation(libs.dnsjava)
+
     // i18n
     compileOnly(libs.i18n4k)
     testCompileOnly(libs.i18n4k)

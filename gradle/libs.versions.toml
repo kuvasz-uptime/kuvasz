@@ -2,7 +2,8 @@
 buildconfig = "6.0.10"
 detekt = "2.0.0-alpha.5"
 detektFormatting = "1.23.8"
-flywayPlugin = "12.11.0"
+dnsjava = "3.6.5"
+flywayPlugin = "13.0.0"
 gitVersion = "5.0.0"
 i18n4k = "0.11.2"
 jib = "3.5.4"
@@ -30,6 +31,7 @@ versionCatalogUpdate = "1.1.0"
 
 [libraries]
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detektFormatting" }
+dnsjava = { module = "dnsjava:dnsjava", version.ref = "dnsjava" }
 i18n4k = { module = "de.comahe.i18n4k:i18n4k-core-jvm", version.ref = "i18n4k" }
 jooq-gradle-plugin = { module = "nu.studer:gradle-jooq-plugin", version.ref = "jooqPlugin" }
 jooq-jackson-extensions = { module = "org.jooq:jooq-jackson3-extensions", version.ref = "jooq" }

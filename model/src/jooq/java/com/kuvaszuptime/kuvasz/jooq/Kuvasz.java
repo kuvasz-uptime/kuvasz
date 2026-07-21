@@ -4,6 +4,10 @@
 package com.kuvaszuptime.kuvasz.jooq;
 
 
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsResolutionSnapshot;
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
@@ -42,6 +46,26 @@ public class Kuvasz extends SchemaImpl {
      * The reference instance of <code>kuvasz</code>
      */
     public static final Kuvasz KUVASZ = new Kuvasz();
+
+    /**
+     * The table <code>kuvasz.dns_metrics_log</code>.
+     */
+    public final DnsMetricsLog DNS_METRICS_LOG = DnsMetricsLog.DNS_METRICS_LOG;
+
+    /**
+     * The table <code>kuvasz.dns_monitor</code>.
+     */
+    public final DnsMonitor DNS_MONITOR = DnsMonitor.DNS_MONITOR;
+
+    /**
+     * The table <code>kuvasz.dns_resolution_snapshot</code>.
+     */
+    public final DnsResolutionSnapshot DNS_RESOLUTION_SNAPSHOT = DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT;
+
+    /**
+     * The table <code>kuvasz.dns_uptime_event</code>.
+     */
+    public final DnsUptimeEvent DNS_UPTIME_EVENT = DnsUptimeEvent.DNS_UPTIME_EVENT;
 
     /**
      * The table <code>kuvasz.http_latency_log</code>.
@@ -143,6 +167,10 @@ public class Kuvasz extends SchemaImpl {
     @Override
     public final List<Table<?>> getTables() {
         return Arrays.asList(
+            DnsMetricsLog.DNS_METRICS_LOG,
+            DnsMonitor.DNS_MONITOR,
+            DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT,
+            DnsUptimeEvent.DNS_UPTIME_EVENT,
             HttpLatencyLog.HTTP_LATENCY_LOG,
             HttpMonitor.HTTP_MONITOR,
             HttpUptimeEvent.HTTP_UPTIME_EVENT,
