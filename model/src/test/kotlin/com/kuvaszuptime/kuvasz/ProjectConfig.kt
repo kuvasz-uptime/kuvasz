@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models
+package com.kuvaszuptime.kuvasz
 
 import io.kotest.core.config.AbstractProjectConfig
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension

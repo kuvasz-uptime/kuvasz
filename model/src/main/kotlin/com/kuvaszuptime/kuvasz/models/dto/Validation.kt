@@ -27,6 +27,8 @@ object ValidationMessages {
     const val APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX = "Read timeout for HTTP checks cannot be higher than {value} seconds"
     const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
         "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
+    const val VALID_DNS_RECORD_MATCHERS = "Each DNS record matcher must have a non-blank value, and REGEX matchers " +
+        "must use a valid regular expression"
 }
 
 object IntegrationValidationMessages {
@@ -79,6 +81,12 @@ object MonitorValidationMessages {
     const val PORT_MIN = "Port must be at least {value}"
     const val PORT_MAX = "Port must be at most {value}"
     const val LATENCY_THRESHOLD_MIN = "Latency threshold must be at least {value} millisecond(s)"
+    const val RESOLVER_PORT_NOT_NULL = "Resolver port must not be null"
+    const val RESOLVER_PORT_MIN = "Resolver port must be at least {value}"
+    const val RESOLVER_PORT_MAX = "Resolver port must be at most {value}"
+    const val DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS =
+        "Record matchers must be empty when the expected response code is not NOERROR, because you cannot assert " +
+            "on the records of a name you expect not to resolve"
 }
 
 object StatusPageValidationMessages {

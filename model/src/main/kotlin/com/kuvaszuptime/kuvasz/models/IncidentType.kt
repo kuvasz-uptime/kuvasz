@@ -9,4 +9,5 @@ enum class IncidentType {
     PUSH,
     ICMP,
     TCP,
+    DNS,
 }
