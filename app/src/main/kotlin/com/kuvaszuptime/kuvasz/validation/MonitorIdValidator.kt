@@ -27,6 +27,8 @@ class MonitorIdValidator(
             MonitorType.PUSH -> pushMonitorRepository.findByName(name)?.monitorId()
             MonitorType.ICMP -> icmpMonitorRepository.findByName(name)?.monitorId()
             MonitorType.TCP -> tcpMonitorRepository.findByName(name)?.monitorId()
+            // TODO(dns): validate against DnsMonitorRepository once it exists (stage 5)
+            MonitorType.DNS -> null
         }
 
     /**

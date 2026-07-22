@@ -3457,6 +3457,7 @@ components:
       - PUSH
       - ICMP
       - TCP
+      - DNS
     IntegrationConfigDto:
       required:
       - excludedEvents
@@ -3888,6 +3889,7 @@ components:
       - PUSH
       - ICMP
       - TCP
+      - DNS
     MonitorTypeImportResult:
       required:
       - deleted

@@ -89,6 +89,9 @@ class MonitorImporter(
             }
 
             MonitorType.PUSH -> Unit
+
+            // TODO(dns): reschedule via DnsCheckScheduler once it exists (stage 5)
+            MonitorType.DNS -> Unit
         }
     }
 

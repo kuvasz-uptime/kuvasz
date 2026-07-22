@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.tcp
 
+import com.kuvaszuptime.kuvasz.util.elapsedMsSince
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Singleton
 import java.io.IOException
@@ -85,8 +86,6 @@ class TcpConnectExecutor(private val hostnameResolver: HostnameResolver) : AutoC
         }
     }
 
-    private fun elapsedMsSince(startNanos: Long): Int = ((System.nanoTime() - startNanos) / NANOS_IN_MILLI).toInt()
-
     @PreDestroy
     override fun close() {
         resolverExecutor.shutdownNow()
@@ -100,7 +99,6 @@ class TcpConnectExecutor(private val hostnameResolver: HostnameResolver) : AutoC
     }
 
     companion object {
-        private const val NANOS_IN_MILLI = 1_000_000L
         private const val MIN_CONNECT_TIMEOUT_MS = 1
     }
 }
