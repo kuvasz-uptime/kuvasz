@@ -12,12 +12,11 @@ import io.kotest.matchers.string.shouldContain
 import org.mockserver.integration.ClientAndServer
 import java.net.InetAddress
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 class TcpConnectExecutorTest : BehaviorSpec({
 
-    val executor = TcpConnectExecutor()
+    val executor = TcpConnectExecutor(SystemHostnameResolver())
 
     lateinit var mockServer: ClientAndServer
 
@@ -74,8 +73,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
             Thread.sleep(RESOLVER_HANG_MS)
             InetAddress.getLoopbackAddress()
         }
-        val resolverPool = Executors.newCachedThreadPool()
-        val hangingExecutor = TcpConnectExecutor(resolver = hangingResolver, resolverExecutor = resolverPool)
+        val hangingExecutor = TcpConnectExecutor(HostnameResolver(hangingResolver))
 
         `when`("a check runs against it") {
             val timeoutMs = 200
@@ -103,8 +101,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
             Thread.sleep(SLOW_RESOLVER_MS)
             InetAddress.getByName("127.0.0.1")
         }
-        val resolverPool = Executors.newCachedThreadPool()
-        val slowExecutor = TcpConnectExecutor(resolver = slowResolver, resolverExecutor = resolverPool)
+        val slowExecutor = TcpConnectExecutor(HostnameResolver(slowResolver))
 
         `when`("a check connects to an open port through it") {
             val result = slowExecutor.execute("slow-but-ok.example", mockServer.localPort, timeoutMs = 5000)
@@ -132,8 +129,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
             releaseResolver.await()
             InetAddress.getLoopbackAddress()
         }
-        val resolverPool = Executors.newCachedThreadPool()
-        val dedupExecutor = TcpConnectExecutor(resolver = blockingResolver, resolverExecutor = resolverPool)
+        val dedupExecutor = TcpConnectExecutor(HostnameResolver(blockingResolver))
 
         `when`("several checks target the same unresolved host at once") {
             val threads = (1..CONCURRENT_CHECKS).map {

@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.tcp
 
 import jakarta.annotation.PreDestroy
-import jakarta.inject.Inject
 import jakarta.inject.Singleton
 import java.io.IOException
 import java.net.InetAddress
@@ -23,17 +22,19 @@ data class TcpCheckResult(
     val error: String?,
 )
 
-@Singleton
-class TcpConnectExecutor internal constructor(
-    private val resolver: (String) -> InetAddress,
-    private val resolverExecutor: ExecutorService,
-) : AutoCloseable {
+fun interface HostnameResolver {
+    fun resolve(host: String): InetAddress
+}
 
-    @Inject
-    constructor() : this(
-        resolver = InetAddress::getByName,
-        resolverExecutor = Executors.newCachedThreadPool(DaemonThreadFactory),
-    )
+@Singleton
+class SystemHostnameResolver : HostnameResolver {
+    override fun resolve(host: String): InetAddress = InetAddress.getByName(host)
+}
+
+@Singleton
+class TcpConnectExecutor(private val hostnameResolver: HostnameResolver) : AutoCloseable {
+
+    private val resolverExecutor: ExecutorService = Executors.newCachedThreadPool(DaemonThreadFactory)
 
     // Tracks the currently outstanding name resolution per host, so a slow or black-holed DNS lookup
     // can't create a new resolver thread on every check: concurrent and subsequent checks for the
@@ -67,7 +68,7 @@ class TcpConnectExecutor internal constructor(
 
     private fun resolveWithTimeout(host: String, timeoutMs: Int): InetAddress {
         val future = inFlightResolutions.computeIfAbsent(host) { hostToResolve ->
-            resolverExecutor.submit<InetAddress> { resolver(hostToResolve) }
+            resolverExecutor.submit<InetAddress> { hostnameResolver.resolve(hostToResolve) }
         }
         return try {
             future.get(timeoutMs.toLong(), TimeUnit.MILLISECONDS)
