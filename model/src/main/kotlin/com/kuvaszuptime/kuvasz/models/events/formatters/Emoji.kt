@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -28,10 +31,14 @@ object Emoji {
 
 fun MonitorEvent<*>.getEmoji(): String =
     when (this) {
-        is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent -> Emoji.CHECK_OK
-        is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent, is TcpMonitorDownEvent ->
+        is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent,
+        is DnsMonitorUpEvent ->
+            Emoji.CHECK_OK
+        is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent, is TcpMonitorDownEvent,
+        is DnsMonitorDownEvent ->
             Emoji.ALERT
         is HttpRedirectEvent -> Emoji.INFO
+        is DnsRecordsChangedEvent -> Emoji.INFO
         is SSLValidEvent -> Emoji.LOCK
         is SSLInvalidEvent -> Emoji.ALERT
         is SSLWillExpireEvent -> Emoji.WARNING

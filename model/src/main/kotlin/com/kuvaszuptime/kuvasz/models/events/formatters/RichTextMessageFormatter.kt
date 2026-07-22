@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -33,6 +36,8 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
             is IcmpMonitorDownEvent -> event.toParts()
             is TcpMonitorUpEvent -> event.toParts()
             is TcpMonitorDownEvent -> event.toParts()
+            is DnsMonitorUpEvent -> event.toParts()
+            is DnsMonitorDownEvent -> event.toParts()
         }
 
         return messageParts.assemble()
@@ -78,6 +83,26 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
     private fun TcpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
         listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
     }
+
+    private fun DnsMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(
+            getEmoji() + " " + bold(details.summary),
+            details.latency?.let { italic(it) },
+            details.previousDownTime,
+        )
+    }
+
+    private fun DnsMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+    }
+
+    fun toFormattedMessage(event: DnsRecordsChangedEvent): String =
+        event.toStructuredMessage().let { details ->
+            listOfNotNull(
+                event.getEmoji() + " " + bold(details.summary),
+                details.details.takeIf { it.isNotBlank() },
+            ).assemble()
+        }
 
     override fun toFormattedMessage(event: SSLMonitorEvent): String {
         val messageParts: List<String> = when (event) {

@@ -7,6 +7,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode;
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport;
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -32,6 +33,7 @@ public class DnsMonitor implements Serializable {
     private JsonNode recordMatchers;
     private DnsResponseCode expectedResponseCode;
     private Boolean driftDetectionEnabled;
+    private DnsRecordType[] driftRecordTypes;
     private Integer uptimeCheckInterval;
     private Integer timeoutMs;
     private Integer latencyThresholdMs;
@@ -54,6 +56,7 @@ public class DnsMonitor implements Serializable {
         this.recordMatchers = value.recordMatchers;
         this.expectedResponseCode = value.expectedResponseCode;
         this.driftDetectionEnabled = value.driftDetectionEnabled;
+        this.driftRecordTypes = value.driftRecordTypes;
         this.uptimeCheckInterval = value.uptimeCheckInterval;
         this.timeoutMs = value.timeoutMs;
         this.latencyThresholdMs = value.latencyThresholdMs;
@@ -75,6 +78,7 @@ public class DnsMonitor implements Serializable {
         JsonNode recordMatchers,
         DnsResponseCode expectedResponseCode,
         Boolean driftDetectionEnabled,
+        DnsRecordType[] driftRecordTypes,
         Integer uptimeCheckInterval,
         Integer timeoutMs,
         Integer latencyThresholdMs,
@@ -94,6 +98,7 @@ public class DnsMonitor implements Serializable {
         this.recordMatchers = recordMatchers;
         this.expectedResponseCode = expectedResponseCode;
         this.driftDetectionEnabled = driftDetectionEnabled;
+        this.driftRecordTypes = driftRecordTypes;
         this.uptimeCheckInterval = uptimeCheckInterval;
         this.timeoutMs = timeoutMs;
         this.latencyThresholdMs = latencyThresholdMs;
@@ -237,6 +242,21 @@ public class DnsMonitor implements Serializable {
      */
     public DnsMonitor setDriftDetectionEnabled(Boolean driftDetectionEnabled) {
         this.driftDetectionEnabled = driftDetectionEnabled;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.dns_monitor.drift_record_types</code>.
+     */
+    public DnsRecordType[] getDriftRecordTypes() {
+        return this.driftRecordTypes;
+    }
+
+    /**
+     * Setter for <code>kuvasz.dns_monitor.drift_record_types</code>.
+     */
+    public DnsMonitor setDriftRecordTypes(DnsRecordType[] driftRecordTypes) {
+        this.driftRecordTypes = driftRecordTypes;
         return this;
     }
 
@@ -438,6 +458,12 @@ public class DnsMonitor implements Serializable {
         }
         else if (!this.driftDetectionEnabled.equals(other.driftDetectionEnabled))
             return false;
+        if (this.driftRecordTypes == null) {
+            if (other.driftRecordTypes != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.driftRecordTypes, other.driftRecordTypes))
+            return false;
         if (this.uptimeCheckInterval == null) {
             if (other.uptimeCheckInterval != null)
                 return false;
@@ -508,6 +534,7 @@ public class DnsMonitor implements Serializable {
         result = prime * result + ((this.recordMatchers == null) ? 0 : this.recordMatchers.hashCode());
         result = prime * result + ((this.expectedResponseCode == null) ? 0 : this.expectedResponseCode.hashCode());
         result = prime * result + ((this.driftDetectionEnabled == null) ? 0 : this.driftDetectionEnabled.hashCode());
+        result = prime * result + ((this.driftRecordTypes == null) ? 0 : Arrays.deepHashCode(this.driftRecordTypes));
         result = prime * result + ((this.uptimeCheckInterval == null) ? 0 : this.uptimeCheckInterval.hashCode());
         result = prime * result + ((this.timeoutMs == null) ? 0 : this.timeoutMs.hashCode());
         result = prime * result + ((this.latencyThresholdMs == null) ? 0 : this.latencyThresholdMs.hashCode());
@@ -533,6 +560,7 @@ public class DnsMonitor implements Serializable {
         sb.append(", ").append(recordMatchers);
         sb.append(", ").append(expectedResponseCode);
         sb.append(", ").append(driftDetectionEnabled);
+        sb.append(", ").append(Arrays.deepToString(driftRecordTypes));
         sb.append(", ").append(uptimeCheckInterval);
         sb.append(", ").append(timeoutMs);
         sb.append(", ").append(latencyThresholdMs);

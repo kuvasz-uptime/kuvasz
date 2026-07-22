@@ -18,6 +18,12 @@ object DnsMonitorDocs {
     const val DRIFT_DETECTION_ENABLED =
         "Whether to emit a notification (without changing the UP/DOWN state) when the resolved record set changes " +
             "between checks"
+    const val DRIFT_RECORD_TYPES =
+        "The record types drift detection watches. When empty (the default), it watches exactly the types the record " +
+            "matchers cover, so it costs no extra lookups. Naming types here is how a monitor watches something it " +
+            "does not assert on (an NS or MX change worth a notification but not a DOWN event); each such type adds " +
+            "a lookup per check, which is not counted towards the latency reading. Ignored unless " +
+            "driftDetectionEnabled is true."
     const val TIMEOUT_MS = "The DNS query timeout in milliseconds (1-30000)"
     const val LATENCY_THRESHOLD_MS =
         "Optional resolution-latency threshold in milliseconds. If set, the check is considered DOWN when the " +

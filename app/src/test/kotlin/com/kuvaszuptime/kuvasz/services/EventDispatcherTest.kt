@@ -3,11 +3,15 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -24,8 +28,10 @@ import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -44,6 +50,7 @@ class EventDispatcherTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
 ) : DatabaseBehaviorSpec() {
 
     private val dispatcher = EventDispatcher()
@@ -53,12 +60,14 @@ class EventDispatcherTest(
     private val receivedUptimeEvents = mutableListOf<UptimeMonitorEvent>()
     private val receivedSSLEvents = mutableListOf<SSLMonitorEvent>()
     private val receivedMaintenanceEvents = mutableListOf<MaintenanceWindowEvent>()
+    private val receivedDriftEvents = mutableListOf<DnsRecordsChangedEvent>()
 
     init {
         afterContainer {
             receivedUptimeEvents.clear()
             receivedSSLEvents.clear()
             receivedMaintenanceEvents.clear()
+            receivedDriftEvents.clear()
         }
 
         dispatcher.subscribeToHttpMonitorUpEvents { event ->
@@ -74,6 +83,7 @@ class EventDispatcherTest(
         dispatcher.subscribeToUptimeMonitorEvents { event -> receivedUptimeEvents.add(event) }
         dispatcher.subscribeToSSLMonitorEvents { event -> receivedSSLEvents.add(event) }
         dispatcher.subscribeToMaintenanceWindowEvents { event -> receivedMaintenanceEvents.add(event) }
+        dispatcher.subscribeToDnsRecordsChangedEvents { event -> receivedDriftEvents.add(event) }
 
         given("an event dispatcher") {
 
@@ -105,6 +115,7 @@ class EventDispatcherTest(
                 val pushMonitor = createPushMonitor(pushMonitorRepository)
                 val icmpMonitor = createIcmpMonitor(icmpMonitorRepository)
                 val tcpMonitor = createTcpMonitor(tcpMonitorRepository)
+                val dnsMonitor = createDnsMonitor(dnsMonitorRepository)
 
                 val events = listOf(
                     HttpMonitorUpEvent(httpMonitor, HttpStatus.OK, latency = 100, previousEvent = null),
@@ -125,6 +136,8 @@ class EventDispatcherTest(
                     ),
                     TcpMonitorUpEvent(tcpMonitor, previousEvent = null, latencyInMs = 5),
                     TcpMonitorDownEvent(tcpMonitor, error = "tcp error", previousEvent = null),
+                    DnsMonitorUpEvent(dnsMonitor, previousEvent = null, latencyInMs = 5),
+                    DnsMonitorDownEvent(dnsMonitor, error = "dns error", previousEvent = null),
                 )
                 events.forEach { dispatcher.dispatch(it) }
 
@@ -171,6 +184,26 @@ class EventDispatcherTest(
                 then("it should receive every one of them") {
                     eventually(2.seconds) {
                         receivedMaintenanceEvents shouldContainExactlyInAnyOrder events
+                    }
+                }
+            }
+        }
+
+        given("the subscription to DNS records changed events") {
+
+            `when`("a DnsRecordsChangedEvent is dispatched") {
+                val dnsMonitor = createDnsMonitor(dnsMonitorRepository)
+                val event = DnsRecordsChangedEvent(
+                    monitor = dnsMonitor,
+                    previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                )
+
+                dispatcher.dispatch(event)
+
+                then("it should be received by the drift subscriber") {
+                    eventually(2.seconds) {
+                        receivedDriftEvents shouldContainExactlyInAnyOrder listOf(event)
                     }
                 }
             }

@@ -162,6 +162,13 @@ jooq {
                                     "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|TCP_MONITOR.INTEGRATIONS|DNS_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
                             }
                             forcedType {
+                                userType = "com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType[]"
+                                converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToDnsRecordTypeArrayConverter"
+                                isGenericConverter = false
+                                jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
+                                includeExpression = "DNS_MONITOR.DRIFT_RECORD_TYPES"
+                            }
+                            forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToMonitorIdArrayConverter"
                                 isGenericConverter = false

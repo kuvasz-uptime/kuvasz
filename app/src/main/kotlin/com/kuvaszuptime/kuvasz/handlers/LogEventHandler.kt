@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -28,6 +29,9 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
         eventDispatcher.subscribeToHttpRedirectEvents { event ->
             event.handle()
         }
+        eventDispatcher.subscribeToDnsRecordsChangedEvents { event ->
+            event.handle()
+        }
     }
 
     private fun UptimeMonitorEvent.handle() {
@@ -45,6 +49,11 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
     }
 
     private fun HttpRedirectEvent.handle() {
+        val message = formatter.toFormattedMessage(this)
+        logger.info(message)
+    }
+
+    private fun DnsRecordsChangedEvent.handle() {
         val message = formatter.toFormattedMessage(this)
         logger.info(message)
     }

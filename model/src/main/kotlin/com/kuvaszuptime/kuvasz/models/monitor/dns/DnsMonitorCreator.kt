@@ -35,6 +35,7 @@ interface DnsMonitorCreator {
 
     val expectedResponseCode: DnsResponseCode
     val driftDetectionEnabled: Boolean
+    val driftRecordTypes: List<DnsRecordType>?
 
     @get:NotNull(message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_NOT_NULL)
     @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL, message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
@@ -67,6 +68,7 @@ fun DnsMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>)
         .setRecordMatchers(recordMatchers.orEmpty().toJsonNode())
         .setExpectedResponseCode(expectedResponseCode)
         .setDriftDetectionEnabled(driftDetectionEnabled)
+        .setDriftRecordTypes(driftRecordTypes.orEmpty().distinct().toTypedArray())
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setTimeoutMs(timeoutMs)
         .setLatencyThresholdMs(latencyThresholdMs)

@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsResponseCodeMatchers
 import com.kuvaszuptime.kuvasz.validation.ValidDnsResponseCode
 import io.micronaut.core.annotation.Introspected
@@ -39,6 +40,8 @@ data class DnsMonitorCreateDto(
         defaultValue = DnsMonitorDefaults.DRIFT_DETECTION_ENABLED.toString()
     )
     override val driftDetectionEnabled: Boolean = DnsMonitorDefaults.DRIFT_DETECTION_ENABLED,
+    @param:Schema(description = DnsMonitorDocs.DRIFT_RECORD_TYPES, required = false)
+    override val driftRecordTypes: List<DnsRecordType>? = emptyList(),
     @param:Schema(
         description = DnsMonitorDocs.TIMEOUT_MS,
         required = false,

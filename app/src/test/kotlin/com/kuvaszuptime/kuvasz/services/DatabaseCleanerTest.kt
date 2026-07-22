@@ -3,6 +3,9 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.Tables.HTTP_LATENCY_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord
+import com.kuvaszuptime.kuvasz.mocks.createDnsMetricsLogRecord
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMetricsLogRecord
@@ -14,6 +17,11 @@ import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
+import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
@@ -29,6 +37,8 @@ import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
@@ -41,13 +51,17 @@ class DatabaseCleanerTest(
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val tcpUptimeEventRepository: TcpUptimeEventRepository,
+    private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
     private val icmpMetricsLogRepository: IcmpMetricsLogRepository,
     private val tcpMetricsLogRepository: TcpMetricsLogRepository,
+    private val dnsMetricsLogRepository: DnsMetricsLogRepository,
+    private val dnsResolutionSnapshotRepository: DnsResolutionSnapshotRepository,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val sslEventRepository: SSLEventRepository,
     private val databaseCleaner: DatabaseCleaner,
 ) : DatabaseBehaviorSpec() {
@@ -353,6 +367,95 @@ class DatabaseCleanerTest(
 
                 then("it should delete it") {
                     tcpMetricsLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
+                }
+            }
+
+            `when`("there is a DNS_UPTIME_EVENT record with an end date greater than retention limit") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                createDnsUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(1),
+                    endedAt = getCurrentTimestamp()
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    dnsUptimeEventRepository.fetchByMonitorId(monitor.id) shouldHaveSize 1
+                }
+            }
+
+            `when`("there is a DNS_UPTIME_EVENT record without an end date") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                createDnsUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = null
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    dnsUptimeEventRepository.fetchByMonitorId(monitor.id) shouldHaveSize 1
+                }
+            }
+
+            `when`("there is a DNS_UPTIME_EVENT record with an end date less than retention limit") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                createDnsUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(20),
+                    endedAt = getCurrentTimestamp().minusDays(8)
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should delete it") {
+                    dnsUptimeEventRepository.fetchByMonitorId(monitor.id) shouldHaveSize 0
+                }
+            }
+
+            `when`("there is a DNS_METRICS_LOG record with a creation date greater than retention limit") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                createDnsMetricsLogRecord(dslContext, monitorId = monitor.id, createdAt = getCurrentTimestamp())
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete it") {
+                    dnsMetricsLogRepository.fetchLatestByMonitorId(monitor.id) shouldHaveSize 1
+                }
+            }
+
+            `when`("there is a DNS_METRICS_LOG record with a creation date less than retention limit") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                createDnsMetricsLogRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    createdAt = getCurrentTimestamp().minusDays(6)
+                )
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should delete it") {
+                    dnsMetricsLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
+                }
+            }
+
+            `when`("there is a DNS_RESOLUTION_SNAPSHOT for a monitor that still has drift detection enabled") {
+                val monitor = createDnsMonitor(dnsMonitorRepository, driftDetectionEnabled = true)
+                dnsResolutionSnapshotRepository.upsert(monitor.id, mapOf(DnsRecordType.A to listOf("1.2.3.4")))
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should not delete the snapshot") {
+                    dnsResolutionSnapshotRepository.getRecords(monitor.id).shouldNotBeNull()
+                }
+            }
+
+            `when`("there is a DNS_RESOLUTION_SNAPSHOT for a monitor that no longer has drift detection enabled") {
+                val monitor = createDnsMonitor(dnsMonitorRepository, driftDetectionEnabled = false)
+                dnsResolutionSnapshotRepository.upsert(monitor.id, mapOf(DnsRecordType.A to listOf("1.2.3.4")))
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should delete the stale snapshot") {
+                    dnsResolutionSnapshotRepository.getRecords(monitor.id).shouldBeNull()
                 }
             }
         }

@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
@@ -38,6 +39,7 @@ class MonitorImporter(
     private val httpCheckScheduler: HttpCheckScheduler,
     private val icmpCheckScheduler: IcmpCheckScheduler,
     private val tcpCheckScheduler: TcpCheckScheduler,
+    private val dnsCheckScheduler: DnsCheckScheduler,
 ) {
 
     companion object {
@@ -90,8 +92,10 @@ class MonitorImporter(
 
             MonitorType.PUSH -> Unit
 
-            // TODO(dns): reschedule via DnsCheckScheduler once it exists (stage 5)
-            MonitorType.DNS -> Unit
+            MonitorType.DNS -> dnsCheckScheduler.run {
+                removeAllChecks()
+                initialize()
+            }
         }
     }
 

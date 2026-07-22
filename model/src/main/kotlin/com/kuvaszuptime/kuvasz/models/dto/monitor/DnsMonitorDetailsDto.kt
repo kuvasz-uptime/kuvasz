@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDt
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
@@ -31,6 +32,8 @@ data class DnsMonitorDetailsDto(
     val expectedResponseCode: DnsResponseCode,
     @param:Schema(description = DnsMonitorDocs.DRIFT_DETECTION_ENABLED, required = true)
     val driftDetectionEnabled: Boolean,
+    @param:Schema(description = DnsMonitorDocs.DRIFT_RECORD_TYPES, required = true)
+    val driftRecordTypes: List<DnsRecordType>,
     @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
     @param:Schema(description = DnsMonitorDocs.TIMEOUT_MS, required = true)

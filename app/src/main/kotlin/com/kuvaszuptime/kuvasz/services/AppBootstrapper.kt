@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.config.TcpMonitorConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
@@ -18,12 +19,15 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorTypeImportResult
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
+import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
@@ -51,10 +55,12 @@ class AppBootstrapper(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val integrationRepository: IntegrationRepository,
     private val httpCheckScheduler: HttpCheckScheduler,
     private val icmpCheckScheduler: IcmpCheckScheduler,
     private val tcpCheckScheduler: TcpCheckScheduler,
+    private val dnsCheckScheduler: DnsCheckScheduler,
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
@@ -121,6 +127,8 @@ class AppBootstrapper(
         icmpCheckScheduler.initialize()
         // Scheduling the initial TCP uptime checks
         tcpCheckScheduler.initialize()
+        // Scheduling the initial DNS uptime checks
+        dnsCheckScheduler.initialize()
         // Scheduling the start/end notifications of the enabled maintenance windows
         maintenanceWindowScheduler.initialize()
 
@@ -146,52 +154,41 @@ class AppBootstrapper(
     private fun sanitizeIntegrationsOfMonitors() {
         val configuredIntegrations = integrationRepository.configuredIntegrations.keys
 
-        fun MonitorRecord.sanitizeIntegrations() {
-            val originalIntegrations = integrations.toSet()
-            val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
-            if (!matchedIntegrations.containsAll(originalIntegrations)) {
-                // There are integrations on the monitor that are not configured, update them
-                logger.warn(
-                    "Monitor with ID $id has integrations that are not configured: " +
-                        "${originalIntegrations - matchedIntegrations}. " +
-                        "Updating monitor integrations to only include configured ones."
-                )
-                when (this) {
-                    is HttpMonitorRecord -> httpMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-
-                    is PushMonitorRecord -> pushMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-
-                    is IcmpMonitorRecord -> icmpMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-
-                    is TcpMonitorRecord -> tcpMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-                }
-            }
-        }
-
         // Only sanitize integrations if * monitors were not configured via YAML
         if (!appConfig.isHttpMonitorExternalWriteDisabled()) {
-            httpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            httpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
         if (!appConfig.isPushMonitorExternalWriteDisabled()) {
-            pushMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            pushMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
         if (!appConfig.isIcmpMonitorExternalWriteDisabled()) {
-            icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
         if (!appConfig.isTcpMonitorExternalWriteDisabled()) {
-            tcpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            tcpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
+        }
+        // TODO(dns): guard with appConfig.isDnsMonitorExternalWriteDisabled() once DnsMonitorConfig lands (API stage)
+        dnsMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
+    }
+
+    private fun MonitorRecord.sanitizeIntegrations(configuredIntegrations: Set<IntegrationID>) {
+        val originalIntegrations = integrations.toSet()
+        val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
+        if (matchedIntegrations.containsAll(originalIntegrations)) return
+
+        // There are integrations on the monitor that are not configured, update them
+        logger.warn(
+            "Monitor with ID $id has integrations that are not configured: " +
+                "${originalIntegrations - matchedIntegrations}. " +
+                "Updating monitor integrations to only include configured ones."
+        )
+        val newIntegrations = matchedIntegrations.toTypedArray()
+        when (this) {
+            is HttpMonitorRecord -> httpMonitorRepository.updateIntegrations(id, newIntegrations)
+            is PushMonitorRecord -> pushMonitorRepository.updateIntegrations(id, newIntegrations)
+            is IcmpMonitorRecord -> icmpMonitorRepository.updateIntegrations(id, newIntegrations)
+            is TcpMonitorRecord -> tcpMonitorRepository.updateIntegrations(id, newIntegrations)
+            is DnsMonitorRecord -> dnsMonitorRepository.updateIntegrations(id, newIntegrations)
         }
     }
 

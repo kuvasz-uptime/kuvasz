@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode;
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport;
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor;
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType;
 
 import java.time.OffsetDateTime;
 
@@ -162,10 +163,25 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
     }
 
     /**
+     * Setter for <code>kuvasz.dns_monitor.drift_record_types</code>.
+     */
+    public DnsMonitorRecord setDriftRecordTypes(DnsRecordType[] value) {
+        set(9, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.dns_monitor.drift_record_types</code>.
+     */
+    public DnsRecordType[] getDriftRecordTypes() {
+        return (DnsRecordType[]) get(9);
+    }
+
+    /**
      * Setter for <code>kuvasz.dns_monitor.uptime_check_interval</code>.
      */
     public DnsMonitorRecord setUptimeCheckInterval(Integer value) {
-        set(9, value);
+        set(10, value);
         return this;
     }
 
@@ -173,14 +189,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.uptime_check_interval</code>.
      */
     public Integer getUptimeCheckInterval() {
-        return (Integer) get(9);
+        return (Integer) get(10);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.timeout_ms</code>.
      */
     public DnsMonitorRecord setTimeoutMs(Integer value) {
-        set(10, value);
+        set(11, value);
         return this;
     }
 
@@ -188,14 +204,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.timeout_ms</code>.
      */
     public Integer getTimeoutMs() {
-        return (Integer) get(10);
+        return (Integer) get(11);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.latency_threshold_ms</code>.
      */
     public DnsMonitorRecord setLatencyThresholdMs(Integer value) {
-        set(11, value);
+        set(12, value);
         return this;
     }
 
@@ -203,14 +219,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.latency_threshold_ms</code>.
      */
     public Integer getLatencyThresholdMs() {
-        return (Integer) get(11);
+        return (Integer) get(12);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.failure_count_threshold</code>.
      */
     public DnsMonitorRecord setFailureCountThreshold(Long value) {
-        set(12, value);
+        set(13, value);
         return this;
     }
 
@@ -218,14 +234,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.failure_count_threshold</code>.
      */
     public Long getFailureCountThreshold() {
-        return (Long) get(12);
+        return (Long) get(13);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.enabled</code>.
      */
     public DnsMonitorRecord setEnabled(Boolean value) {
-        set(13, value);
+        set(14, value);
         return this;
     }
 
@@ -233,14 +249,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.enabled</code>.
      */
     public Boolean getEnabled() {
-        return (Boolean) get(13);
+        return (Boolean) get(14);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.metrics_history_enabled</code>.
      */
     public DnsMonitorRecord setMetricsHistoryEnabled(Boolean value) {
-        set(14, value);
+        set(15, value);
         return this;
     }
 
@@ -248,14 +264,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.metrics_history_enabled</code>.
      */
     public Boolean getMetricsHistoryEnabled() {
-        return (Boolean) get(14);
+        return (Boolean) get(15);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.integrations</code>.
      */
     public DnsMonitorRecord setIntegrations(IntegrationID[] value) {
-        set(15, value);
+        set(16, value);
         return this;
     }
 
@@ -263,14 +279,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.integrations</code>.
      */
     public IntegrationID[] getIntegrations() {
-        return (IntegrationID[]) get(15);
+        return (IntegrationID[]) get(16);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.created_at</code>.
      */
     public DnsMonitorRecord setCreatedAt(OffsetDateTime value) {
-        set(16, value);
+        set(17, value);
         return this;
     }
 
@@ -278,14 +294,14 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.created_at</code>.
      */
     public OffsetDateTime getCreatedAt() {
-        return (OffsetDateTime) get(16);
+        return (OffsetDateTime) get(17);
     }
 
     /**
      * Setter for <code>kuvasz.dns_monitor.updated_at</code>.
      */
     public DnsMonitorRecord setUpdatedAt(OffsetDateTime value) {
-        set(17, value);
+        set(18, value);
         return this;
     }
 
@@ -293,7 +309,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
      * Getter for <code>kuvasz.dns_monitor.updated_at</code>.
      */
     public OffsetDateTime getUpdatedAt() {
-        return (OffsetDateTime) get(17);
+        return (OffsetDateTime) get(18);
     }
 
     // -------------------------------------------------------------------------
@@ -319,7 +335,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
     /**
      * Create a detached, initialised DnsMonitorRecord
      */
-    public DnsMonitorRecord(Long id, String name, String host, String resolverHost, Integer resolverPort, DnsTransport transport, JsonNode recordMatchers, DnsResponseCode expectedResponseCode, Boolean driftDetectionEnabled, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public DnsMonitorRecord(Long id, String name, String host, String resolverHost, Integer resolverPort, DnsTransport transport, JsonNode recordMatchers, DnsResponseCode expectedResponseCode, Boolean driftDetectionEnabled, DnsRecordType[] driftRecordTypes, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
         super(DnsMonitor.DNS_MONITOR);
 
         setId(id);
@@ -331,6 +347,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
         setRecordMatchers(recordMatchers);
         setExpectedResponseCode(expectedResponseCode);
         setDriftDetectionEnabled(driftDetectionEnabled);
+        setDriftRecordTypes(driftRecordTypes);
         setUptimeCheckInterval(uptimeCheckInterval);
         setTimeoutMs(timeoutMs);
         setLatencyThresholdMs(latencyThresholdMs);
@@ -359,6 +376,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
             setRecordMatchers(value.getRecordMatchers());
             setExpectedResponseCode(value.getExpectedResponseCode());
             setDriftDetectionEnabled(value.getDriftDetectionEnabled());
+            setDriftRecordTypes(value.getDriftRecordTypes());
             setUptimeCheckInterval(value.getUptimeCheckInterval());
             setTimeoutMs(value.getTimeoutMs());
             setLatencyThresholdMs(value.getLatencyThresholdMs());

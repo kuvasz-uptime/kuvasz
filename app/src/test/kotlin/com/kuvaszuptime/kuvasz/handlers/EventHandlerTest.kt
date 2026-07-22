@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -14,6 +15,10 @@ abstract class EventHandlerTest(private val databaseEventHandler: DatabaseEventH
 
     fun EventDispatcher.testDispatch(event: SSLMonitorEvent) {
         databaseEventHandler.handleSSLMonitorEvent(event)
+        dispatch(event)
+    }
+
+    fun EventDispatcher.testDispatch(event: DnsRecordsChangedEvent) {
         dispatch(event)
     }
 }

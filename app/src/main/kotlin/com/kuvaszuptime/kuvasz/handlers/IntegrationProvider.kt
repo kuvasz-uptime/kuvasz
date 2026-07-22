@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -12,10 +15,12 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -49,10 +54,15 @@ private fun Set<IntegrationConfig>.filterByEventType(type: IntegrationEventType)
     }.toSet()
 
 @Suppress("NotImplementedDeclaration")
-fun MonitorEvent<*>.toIntegrationEventType() = when (this) {
-    is SSLInvalidEvent -> IntegrationEventType.SSL_INVALID
-    is SSLValidEvent -> IntegrationEventType.SSL_VALID
-    is SSLWillExpireEvent -> IntegrationEventType.SSL_WILL_EXPIRE
+fun MonitorEvent<*>.toIntegrationEventType(): IntegrationEventType = when (this) {
+    is UptimeMonitorEvent -> toIntegrationEventType()
+    is SSLMonitorEvent -> toIntegrationEventType()
+    is DnsRecordsChangedEvent -> IntegrationEventType.DNS_RECORDS_CHANGED
+    is HttpRedirectEvent ->
+        throw NotImplementedError("Redirect events are not supported in integrations")
+}
+
+private fun UptimeMonitorEvent.toIntegrationEventType() = when (this) {
     is HttpMonitorDownEvent -> IntegrationEventType.HTTP_DOWN
     is HttpMonitorUpEvent -> IntegrationEventType.HTTP_UP
     is PushMonitorDownEvent -> IntegrationEventType.PUSH_DOWN
@@ -61,8 +71,14 @@ fun MonitorEvent<*>.toIntegrationEventType() = when (this) {
     is IcmpMonitorUpEvent -> IntegrationEventType.ICMP_UP
     is TcpMonitorDownEvent -> IntegrationEventType.TCP_DOWN
     is TcpMonitorUpEvent -> IntegrationEventType.TCP_UP
-    is HttpRedirectEvent ->
-        throw NotImplementedError("Redirect events are not supported in integrations")
+    is DnsMonitorDownEvent -> IntegrationEventType.DNS_DOWN
+    is DnsMonitorUpEvent -> IntegrationEventType.DNS_UP
+}
+
+private fun SSLMonitorEvent.toIntegrationEventType() = when (this) {
+    is SSLInvalidEvent -> IntegrationEventType.SSL_INVALID
+    is SSLValidEvent -> IntegrationEventType.SSL_VALID
+    is SSLWillExpireEvent -> IntegrationEventType.SSL_WILL_EXPIRE
 }
 
 fun MaintenanceWindowEvent.toIntegrationEventType() = when (this) {

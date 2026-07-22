@@ -28,6 +28,7 @@ class DnsMonitorUpdateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         recordMatchers = recordMatchers,
         expectedResponseCode = expectedResponseCode,
         driftDetectionEnabled = false,
+        driftRecordTypes = emptyList(),
         uptimeCheckInterval = 60,
         timeoutMs = 5000,
         latencyThresholdMs = null,

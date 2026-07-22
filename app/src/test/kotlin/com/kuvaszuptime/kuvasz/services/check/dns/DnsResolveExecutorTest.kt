@@ -19,6 +19,7 @@ import org.xbill.DNS.ARecord
 import org.xbill.DNS.CNAMERecord
 import org.xbill.DNS.DClass
 import org.xbill.DNS.Message
+import org.xbill.DNS.NSRecord
 import org.xbill.DNS.Name
 import org.xbill.DNS.Rcode
 import org.xbill.DNS.Record
@@ -46,6 +47,7 @@ class DnsResolveExecutorTest : BehaviorSpec({
 
     fun aRecord(ip: String) = ARecord(name("example.com."), DClass.IN, 300, InetAddress.getByName(ip))
     fun cnameRecord(target: String) = CNAMERecord(name("example.com."), DClass.IN, 300, name(target))
+    fun nsRecord(target: String) = NSRecord(name("example.com."), DClass.IN, 300, name(target))
 
     given("a DnsResolveExecutor") {
 
@@ -67,6 +69,33 @@ class DnsResolveExecutorTest : BehaviorSpec({
                 result.responseCode shouldBe DnsResponseCode.NOERROR
                 result.latencyMs.shouldNotBeNull() shouldBeGreaterThanOrEqual 0
                 result.error.shouldBeNull()
+            }
+        }
+
+        `when`("the same RRset comes back in a different order between two responses") {
+            val resolver = mockk<Resolver>(relaxed = true)
+            every { resolver.send(any()) } returnsMany listOf(
+                response(Rcode.NOERROR, aRecord("1.2.3.4"), aRecord("5.6.7.8"), aRecord("9.9.9.9")),
+                response(Rcode.NOERROR, aRecord("9.9.9.9"), aRecord("1.2.3.4"), aRecord("5.6.7.8")),
+            )
+            val executor = executorReturning(resolver)
+
+            fun resolve() = executor.execute(
+                host = "example.com",
+                recordTypes = emptySet(),
+                resolverHost = null,
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 5000,
+            )
+
+            val first = resolve()
+            val second = resolve()
+
+            then("both are sorted into the same canonical answer set, so a rotation cannot look like drift") {
+                first.records[DnsRecordType.A].shouldNotBeNull()
+                    .shouldContainExactly("1.2.3.4", "5.6.7.8", "9.9.9.9")
+                second.records shouldBe first.records
             }
         }
 
@@ -148,6 +177,98 @@ class DnsResolveExecutorTest : BehaviorSpec({
                 verify(exactly = 2) { resolver.send(any()) }
                 result.records[DnsRecordType.A].shouldNotBeNull().shouldContainExactly("1.2.3.4")
                 result.records[DnsRecordType.TXT].shouldNotBeNull().shouldContainExactly("v=spf1 ~all")
+            }
+        }
+
+        `when`("drift record types are requested that the matchers do not already cover") {
+            val resolver = mockk<Resolver>(relaxed = true)
+            every { resolver.send(any()) } returnsMany listOf(
+                response(Rcode.NOERROR, aRecord("1.2.3.4")),
+                response(Rcode.NOERROR, nsRecord("ns1.example.com.")),
+            )
+
+            val result = executorReturning(resolver).execute(
+                host = "example.com",
+                recordTypes = setOf(DnsRecordType.A),
+                resolverHost = null,
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 5000,
+                driftRecordTypes = setOf(DnsRecordType.A, DnsRecordType.NS),
+            )
+
+            then("the drift-only type is looked up as well, and the answer set is complete") {
+                verify(exactly = 2) { resolver.send(any()) }
+                result.records[DnsRecordType.NS].shouldNotBeNull().shouldContainExactly("ns1.example.com")
+                result.driftRecordsComplete shouldBe true
+            }
+        }
+
+        `when`("the drift record types are already covered by the matchers") {
+            val resolver = mockk<Resolver>(relaxed = true)
+            every { resolver.send(any()) } returns response(Rcode.NOERROR, aRecord("1.2.3.4"))
+
+            val result = executorReturning(resolver).execute(
+                host = "example.com",
+                recordTypes = setOf(DnsRecordType.A),
+                resolverHost = null,
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 5000,
+                driftRecordTypes = setOf(DnsRecordType.A),
+            )
+
+            then("no extra lookup is made") {
+                verify(exactly = 1) { resolver.send(any()) }
+                result.driftRecordsComplete shouldBe true
+            }
+        }
+
+        `when`("a drift-only lookup fails") {
+            val resolver = mockk<Resolver>(relaxed = true)
+            every { resolver.send(any()) } returnsMany listOf(
+                response(Rcode.NOERROR, aRecord("1.2.3.4")),
+            ) andThenThrows IOException("timed out")
+
+            val result = executorReturning(resolver).execute(
+                host = "example.com",
+                recordTypes = setOf(DnsRecordType.A),
+                resolverHost = null,
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 5000,
+                driftRecordTypes = setOf(DnsRecordType.MX),
+            )
+
+            then("the check itself still succeeds, but the answer set is flagged as incomplete") {
+                result.error.shouldBeNull()
+                result.responseCode shouldBe DnsResponseCode.NOERROR
+                result.records[DnsRecordType.A].shouldNotBeNull().shouldContainExactly("1.2.3.4")
+                result.driftRecordsComplete shouldBe false
+            }
+        }
+
+        `when`("a drift-only lookup answers with a non-NOERROR response code") {
+            val resolver = mockk<Resolver>(relaxed = true)
+            every { resolver.send(any()) } returnsMany listOf(
+                response(Rcode.NOERROR, aRecord("1.2.3.4")),
+                response(Rcode.SERVFAIL),
+            )
+
+            val result = executorReturning(resolver).execute(
+                host = "example.com",
+                recordTypes = setOf(DnsRecordType.A),
+                resolverHost = null,
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 5000,
+                driftRecordTypes = setOf(DnsRecordType.MX),
+            )
+
+            then("its empty answer is not recorded as a removal, and the uptime response code is untouched") {
+                result.responseCode shouldBe DnsResponseCode.NOERROR
+                result.records.containsKey(DnsRecordType.MX) shouldBe false
+                result.driftRecordsComplete shouldBe false
             }
         }
 

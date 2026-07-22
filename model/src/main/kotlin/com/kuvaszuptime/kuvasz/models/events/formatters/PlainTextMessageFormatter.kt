@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -30,6 +33,8 @@ object PlainTextMessageFormatter : TextMessageFormatter {
             is IcmpMonitorDownEvent -> event.toParts()
             is TcpMonitorUpEvent -> event.toParts()
             is TcpMonitorDownEvent -> event.toParts()
+            is DnsMonitorUpEvent -> event.toParts()
+            is DnsMonitorDownEvent -> event.toParts()
         }
 
         return messageParts.assemble()
@@ -58,6 +63,15 @@ object PlainTextMessageFormatter : TextMessageFormatter {
 
     private fun TcpMonitorDownEvent.toParts() =
         toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
+
+    private fun DnsMonitorUpEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, latency, previousDownTime) }
+
+    private fun DnsMonitorDownEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
+
+    fun toFormattedMessage(event: DnsRecordsChangedEvent): String =
+        event.toStructuredMessage().run { listOf(summary, details).assemble() }
 
     override fun toFormattedMessage(event: SSLMonitorEvent): String {
         val messageParts: List<String> = when (event) {

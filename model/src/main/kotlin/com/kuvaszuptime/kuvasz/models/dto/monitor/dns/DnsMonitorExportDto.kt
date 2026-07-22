@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
 import io.micronaut.core.annotation.Introspected
 
@@ -18,6 +19,7 @@ data class DnsMonitorExportDto(
     val recordMatchers: List<DnsRecordMatcher>,
     val expectedResponseCode: DnsResponseCode,
     val driftDetectionEnabled: Boolean,
+    val driftRecordTypes: List<DnsRecordType>,
     val uptimeCheckInterval: Int,
     val timeoutMs: Int,
     val latencyThresholdMs: Int?,
@@ -37,6 +39,7 @@ data class DnsMonitorExportDto(
                 recordMatchers = record.recordMatchersAsList(),
                 expectedResponseCode = record.expectedResponseCode,
                 driftDetectionEnabled = record.driftDetectionEnabled,
+                driftRecordTypes = record.driftRecordTypes.toList(),
                 uptimeCheckInterval = record.uptimeCheckInterval,
                 timeoutMs = record.timeoutMs,
                 latencyThresholdMs = record.latencyThresholdMs,

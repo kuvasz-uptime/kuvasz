@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.factories
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
@@ -37,6 +38,12 @@ class EmailFactory(private val config: EmailNotificationConfig) {
             .withPlainText(formatter.toFormattedMessage(event))
             .buildEmail()
 
+    fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): Email =
+        createEmailBase()
+            .withSubject(event.getSubject())
+            .withPlainText(formatter.toFormattedMessage(event))
+            .buildEmail()
+
     private fun UptimeMonitorEvent.getSubject(): String =
         "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] is $uptimeStatus"
 
@@ -49,6 +56,9 @@ class EmailFactory(private val config: EmailNotificationConfig) {
 
         return "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] $statusString"
     }
+
+    private fun DnsRecordsChangedEvent.getSubject(): String =
+        "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${Messages.dnsRecordsHaveChanged()}"
 
     private fun MaintenanceWindowEvent.getSubject(): String {
         val statusString = when (this) {

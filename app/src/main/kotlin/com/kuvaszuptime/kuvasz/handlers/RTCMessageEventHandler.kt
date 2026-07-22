@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -31,6 +32,13 @@ abstract class RTCMessageEventHandler(
     }
 
     override fun handleSSLEvent(event: SSLMonitorEvent) {
+        val message = formatter.toFormattedMessage(event)
+        filterTargetConfigs(event).forEach { target ->
+            messageService.sendMessage(target, message).handleResponse()
+        }
+    }
+
+    override fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent) {
         val message = formatter.toFormattedMessage(event)
         filterTargetConfigs(event).forEach { target ->
             messageService.sendMessage(target, message).handleResponse()

@@ -1,8 +1,12 @@
 package com.kuvaszuptime.kuvasz.mocks
 
+import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
+import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMetricsLog.DNS_METRICS_LOG
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent.DNS_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog.ICMP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
@@ -10,6 +14,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMetricsLogRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMetricsLogRecord
@@ -28,8 +35,12 @@ import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
+import com.kuvaszuptime.kuvasz.models.monitor.dns.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -294,6 +305,85 @@ fun createTcpMonitor(
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
     return repository.returningInsert(monitor)
 }
+
+@Suppress("LongParameterList")
+fun createDnsMonitor(
+    repository: DnsMonitorRepository,
+    enabled: Boolean = true,
+    host: String = "example.com",
+    resolverHost: String? = null,
+    resolverPort: Int = 53,
+    transport: DnsTransport = DnsTransport.UDP,
+    recordMatchers: List<DnsRecordMatcher> = emptyList(),
+    expectedResponseCode: DnsResponseCode = DnsResponseCode.NOERROR,
+    driftDetectionEnabled: Boolean = false,
+    driftRecordTypes: List<DnsRecordType> = emptyList(),
+    monitorName: String = randomClientSecret(),
+    uptimeCheckInterval: Int = 60,
+    timeoutMs: Int = 5000,
+    latencyThresholdMs: Int? = null,
+    failureCountThreshold: Long = 1L,
+    integrations: List<IntegrationID> = emptyList(),
+    metricsHistoryEnabled: Boolean = true,
+): DnsMonitorRecord {
+    val monitor = DnsMonitorRecord()
+        .setName(monitorName)
+        .setHost(host)
+        .setResolverHost(resolverHost)
+        .setResolverPort(resolverPort)
+        .setTransport(transport)
+        .setRecordMatchers(recordMatchers.toJsonNode())
+        .setExpectedResponseCode(expectedResponseCode)
+        .setDriftDetectionEnabled(driftDetectionEnabled)
+        .setDriftRecordTypes(driftRecordTypes.toTypedArray())
+        .setUptimeCheckInterval(uptimeCheckInterval)
+        .setTimeoutMs(timeoutMs)
+        .setLatencyThresholdMs(latencyThresholdMs)
+        .setFailureCountThreshold(failureCountThreshold)
+        .setEnabled(enabled)
+        .setCreatedAt(getCurrentTimestamp())
+        .setIntegrations(integrations.toTypedArray())
+        .setMetricsHistoryEnabled(metricsHistoryEnabled)
+    return repository.returningInsert(monitor)
+}
+
+fun createDnsUptimeEventRecord(
+    dslContext: DSLContext,
+    monitorId: Long,
+    status: UptimeStatus = UptimeStatus.UP,
+    startedAt: OffsetDateTime,
+    endedAt: OffsetDateTime?,
+    error: String? = null,
+    updatedAt: OffsetDateTime? = null,
+) = dslContext
+    .insertInto(DNS_UPTIME_EVENT)
+    .set(
+        DnsUptimeEventRecord()
+            .setMonitorId(monitorId)
+            .setStatus(status)
+            .setStartedAt(startedAt)
+            .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
+            .setEndedAt(endedAt)
+            .setError(error)
+    )
+    .returning(DNS_UPTIME_EVENT.asterisk())
+    .fetchOneOrThrow<DnsUptimeEventRecord>()
+
+fun createDnsMetricsLogRecord(
+    dslContext: DSLContext,
+    monitorId: Long,
+    latencyMs: Int? = 10,
+    createdAt: OffsetDateTime = getCurrentTimestamp(),
+) = dslContext
+    .insertInto(DNS_METRICS_LOG)
+    .set(
+        DnsMetricsLogRecord()
+            .setMonitorId(monitorId)
+            .setLatencyMs(latencyMs)
+            .setCreatedAt(createdAt)
+    )
+    .returning(DNS_METRICS_LOG.asterisk())
+    .fetchOneOrThrow<DnsMetricsLogRecord>()
 
 fun createTcpUptimeEventRecord(
     dslContext: DSLContext,

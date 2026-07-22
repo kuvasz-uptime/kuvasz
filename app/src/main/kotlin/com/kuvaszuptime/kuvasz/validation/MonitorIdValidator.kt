@@ -3,10 +3,12 @@ package com.kuvaszuptime.kuvasz.validation
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.InvalidMonitorIdException
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -19,6 +21,7 @@ class MonitorIdValidator(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
 ) {
 
     private fun MonitorID.checkIfConfigured(): MonitorID? =
@@ -27,8 +30,7 @@ class MonitorIdValidator(
             MonitorType.PUSH -> pushMonitorRepository.findByName(name)?.monitorId()
             MonitorType.ICMP -> icmpMonitorRepository.findByName(name)?.monitorId()
             MonitorType.TCP -> tcpMonitorRepository.findByName(name)?.monitorId()
-            // TODO(dns): validate against DnsMonitorRepository once it exists (stage 5)
-            MonitorType.DNS -> null
+            MonitorType.DNS -> dnsMonitorRepository.findByName(name)?.monitorId()
         }
 
     /**

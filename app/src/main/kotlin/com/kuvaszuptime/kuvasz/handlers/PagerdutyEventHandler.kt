@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -24,6 +27,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient
@@ -56,6 +60,17 @@ class PagerdutyEventHandler(
     private val SSLMonitorEvent.deduplicationKey: String
         get() = "kuvasz_ssl_${monitor.id}"
 
+    private val DnsRecordsChangedEvent.deduplicationKey: String
+        get() = "kuvasz_dns_drift_${monitor.id}_${currentRecords.contentHash()}"
+
+    private fun Map<DnsRecordType, List<String>>.contentHash(): String =
+        Integer.toHexString(
+            entries
+                .sortedBy { it.key.name }
+                .joinToString(";") { (type, records) -> "${type.name}=${records.joinToString(",")}" }
+                .hashCode()
+        )
+
     override fun handleMaintenanceEvent(event: MaintenanceWindowEvent) {
         val integrationKeys = filterMaintenanceTargets(event).map { (it as PagerdutyConfig).integrationKey }
         when (event) {
@@ -83,7 +98,8 @@ class PagerdutyEventHandler(
     override fun handleUptimeEvent(event: UptimeMonitorEvent) {
         val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
         when (event) {
-            is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent ->
+            is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent,
+            is DnsMonitorUpEvent ->
                 integrationKeys.forEach { integrationKey ->
                     val request = createResolveRequest(
                         serviceKey = integrationKey,
@@ -92,7 +108,8 @@ class PagerdutyEventHandler(
                     apiClient.resolveAlert(request).handleResponse()
                 }
 
-            is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent, is TcpMonitorDownEvent ->
+            is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent, is TcpMonitorDownEvent,
+            is DnsMonitorDownEvent ->
                 integrationKeys.forEach { integrationKey ->
                     val request = event.toTriggerRequest(
                         serviceKey = integrationKey,
@@ -133,6 +150,18 @@ class PagerdutyEventHandler(
                     )
                     apiClient.triggerAlert(request).handleResponse()
                 }
+        }
+    }
+
+    override fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent) {
+        val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
+        integrationKeys.forEach { integrationKey ->
+            val request = event.toTriggerRequest(
+                serviceKey = integrationKey,
+                deduplicationKey = event.deduplicationKey,
+                severity = PagerdutySeverity.WARNING,
+            )
+            apiClient.triggerAlert(request).handleResponse()
         }
     }
 

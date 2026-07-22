@@ -12,6 +12,7 @@ CREATE TABLE dns_monitor
     record_matchers         JSONB                    NOT NULL DEFAULT '[]',
     expected_response_code  dns_response_code        NOT NULL DEFAULT 'NOERROR',
     drift_detection_enabled BOOLEAN                  NOT NULL DEFAULT FALSE,
+    drift_record_types      TEXT[]                   NOT NULL DEFAULT ARRAY []::TEXT[],
     uptime_check_interval   INTEGER                  NOT NULL,
     timeout_ms              INT                      NOT NULL DEFAULT 5000,
     latency_threshold_ms    INT                      NULL,

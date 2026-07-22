@@ -1,11 +1,15 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -25,7 +29,10 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -44,7 +51,9 @@ import io.kotest.engine.test.TestResult
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -62,10 +71,12 @@ class PagerdutyEventHandlerTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val tcpUptimeEventRepository: TcpUptimeEventRepository,
+    private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     sslEventRepository: SSLEventRepository,
     integrationRepository: IntegrationRepository,
     pagerdutyConfigs: List<PagerdutyConfig>,
@@ -871,6 +882,296 @@ class PagerdutyEventHandlerTest(
                     verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
                     slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
                     slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+        }
+
+        given("the PagerdutyEventHandler - DNS UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val event = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val event = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should trigger an alert on PD for each enabled integration") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe event.toStructuredMessage().summary
+                    }
+                    slot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    slot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    slot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should call triggerAlert() only once") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val firstEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                mockSuccessfulResolveResponse()
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should trigger an alert and then resolve it for each enabled integration") {
+                    val triggerSlot = mutableListOf<PagerdutyTriggerRequest>()
+                    val resolveSlot = mutableListOf<PagerdutyResolveRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(triggerSlot)) }
+                    verify(exactly = 2) { mockClient.resolveAlert(capture(resolveSlot)) }
+
+                    triggerSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe firstEvent.toStructuredMessage().summary
+                    }
+                    triggerSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+
+                    resolveSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.RESOLVE
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                    }
+                    resolveSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should call only triggerAlert()") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+        }
+
+        given("the PagerdutyEventHandler - DNS drift events") {
+            `when`("it receives a DnsRecordsChangedEvent") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should trigger a warning alert on PD for each enabled integration") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldStartWith "kuvasz_dns_drift_${monitor.id}_"
+                        request.payload.severity shouldBe PagerdutySeverity.WARNING
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe event.toStructuredMessage().summary
+                    }
+                    slot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives two DnsRecordsChangedEvents with different answer sets") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(globalPagerdutyConfig.id),
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(
+                    DnsRecordsChangedEvent(
+                        monitor = monitor,
+                        previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                        currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                    )
+                )
+                eventDispatcher.testDispatch(
+                    DnsRecordsChangedEvent(
+                        monitor = monitor,
+                        previousRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                        currentRecords = mapOf(DnsRecordType.A to listOf("3.3.3.3")),
+                    )
+                )
+
+                then("each change gets its own dedup key, so PD does not fold the second one into the first") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.map { it.dedupKey }.toSet() shouldHaveSize 2
+                }
+            }
+
+            `when`("it receives a DnsRecordsChangedEvent arriving at the same answer set twice") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(globalPagerdutyConfig.id),
+                )
+                mockSuccessfulTriggerResponse()
+
+                // A monitor flapping between two answer sets keeps landing back on the one it already alerted about
+                eventDispatcher.testDispatch(
+                    DnsRecordsChangedEvent(
+                        monitor = monitor,
+                        previousRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                        currentRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    )
+                )
+                eventDispatcher.testDispatch(
+                    DnsRecordsChangedEvent(
+                        monitor = monitor,
+                        previousRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                        currentRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    )
+                )
+
+                then("both carry the same dedup key, so the flapping folds onto a single incident") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.map { it.dedupKey }.toSet() shouldHaveSize 1
                 }
             }
         }

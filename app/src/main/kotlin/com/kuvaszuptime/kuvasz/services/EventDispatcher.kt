@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -39,7 +42,10 @@ class EventDispatcher {
     private val icmpDownEvents = serializedSubject<IcmpMonitorDownEvent>()
     private val tcpUpEvents = serializedSubject<TcpMonitorUpEvent>()
     private val tcpDownEvents = serializedSubject<TcpMonitorDownEvent>()
+    private val dnsUpEvents = serializedSubject<DnsMonitorUpEvent>()
+    private val dnsDownEvents = serializedSubject<DnsMonitorDownEvent>()
     private val httpRedirectEvents = serializedSubject<HttpRedirectEvent>()
+    private val dnsRecordsChangedEvents = serializedSubject<DnsRecordsChangedEvent>()
     private val sslValidEvents = serializedSubject<SSLValidEvent>()
     private val sslWillExpireEvents = serializedSubject<SSLWillExpireEvent>()
     private val sslInvalidEvents = serializedSubject<SSLInvalidEvent>()
@@ -52,6 +58,7 @@ class EventDispatcher {
             is HttpMonitorUpEvent -> httpUpEvents.onNext(event)
             is HttpMonitorDownEvent -> httpDownEvents.onNext(event)
             is HttpRedirectEvent -> httpRedirectEvents.onNext(event)
+            is DnsRecordsChangedEvent -> dnsRecordsChangedEvents.onNext(event)
             is SSLValidEvent -> sslValidEvents.onNext(event)
             is SSLInvalidEvent -> sslInvalidEvents.onNext(event)
             is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
@@ -60,6 +67,8 @@ class EventDispatcher {
             is IcmpMonitorDownEvent -> icmpDownEvents.onNext(event)
             is TcpMonitorUpEvent -> tcpUpEvents.onNext(event)
             is TcpMonitorDownEvent -> tcpDownEvents.onNext(event)
+            is DnsMonitorUpEvent -> dnsUpEvents.onNext(event)
+            is DnsMonitorDownEvent -> dnsDownEvents.onNext(event)
         }
 
     fun dispatch(event: MonitorLifecycleEvent) {
@@ -103,8 +112,17 @@ class EventDispatcher {
     fun subscribeToTcpMonitorDownEvents(consumer: (TcpMonitorDownEvent) -> Unit): Disposable =
         tcpDownEvents.safeSubscribeOnIo(consumer)
 
+    fun subscribeToDnsMonitorUpEvents(consumer: (DnsMonitorUpEvent) -> Unit): Disposable =
+        dnsUpEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToDnsMonitorDownEvents(consumer: (DnsMonitorDownEvent) -> Unit): Disposable =
+        dnsDownEvents.safeSubscribeOnIo(consumer)
+
     fun subscribeToHttpRedirectEvents(consumer: (HttpRedirectEvent) -> Unit): Disposable =
         httpRedirectEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToDnsRecordsChangedEvents(consumer: (DnsRecordsChangedEvent) -> Unit): Disposable =
+        dnsRecordsChangedEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToSSLValidEvents(consumer: (SSLValidEvent) -> Unit): Disposable =
         sslValidEvents.safeSubscribeOnIo(consumer)
@@ -133,6 +151,8 @@ class EventDispatcher {
             subscribeToIcmpMonitorDownEvents(consumer),
             subscribeToTcpMonitorUpEvents(consumer),
             subscribeToTcpMonitorDownEvents(consumer),
+            subscribeToDnsMonitorUpEvents(consumer),
+            subscribeToDnsMonitorDownEvents(consumer),
         )
 
     fun subscribeToSSLMonitorEvents(consumer: (SSLMonitorEvent) -> Unit): Disposable =

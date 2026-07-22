@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -31,6 +32,8 @@ data class DnsMonitorDto(
     val expectedResponseCode: DnsResponseCode,
     @param:Schema(description = DnsMonitorDocs.DRIFT_DETECTION_ENABLED, required = true)
     val driftDetectionEnabled: Boolean,
+    @param:Schema(description = DnsMonitorDocs.DRIFT_RECORD_TYPES, required = true)
+    val driftRecordTypes: List<DnsRecordType>,
     @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
     @param:Schema(description = DnsMonitorDocs.TIMEOUT_MS, required = true)
@@ -61,6 +64,7 @@ data class DnsMonitorDto(
             recordMatchers = record.recordMatchersAsList(),
             expectedResponseCode = record.expectedResponseCode,
             driftDetectionEnabled = record.driftDetectionEnabled,
+            driftRecordTypes = record.driftRecordTypes.toList(),
             uptimeCheckInterval = record.uptimeCheckInterval,
             timeoutMs = record.timeoutMs,
             latencyThresholdMs = record.latencyThresholdMs,

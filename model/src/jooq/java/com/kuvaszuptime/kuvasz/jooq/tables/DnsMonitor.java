@@ -7,6 +7,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables;
 import com.kuvaszuptime.kuvasz.jooq.Indexes;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
+import com.kuvaszuptime.kuvasz.jooq.TextArrayToDnsRecordTypeArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode;
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport;
@@ -15,6 +16,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DnsResolutionSnapshot.DnsResolutionSn
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent.DnsUptimeEventPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord;
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -113,6 +115,11 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
      * The column <code>kuvasz.dns_monitor.drift_detection_enabled</code>.
      */
     public final TableField<DnsMonitorRecord, Boolean> DRIFT_DETECTION_ENABLED = createField(DSL.name("drift_detection_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>kuvasz.dns_monitor.drift_record_types</code>.
+     */
+    public final TableField<DnsMonitorRecord, DnsRecordType[]> DRIFT_RECORD_TYPES = createField(DSL.name("drift_record_types"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "", new TextArrayToDnsRecordTypeArrayConverter());
 
     /**
      * The column <code>kuvasz.dns_monitor.uptime_check_interval</code>.

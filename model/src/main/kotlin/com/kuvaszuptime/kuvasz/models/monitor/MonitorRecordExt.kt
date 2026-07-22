@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.monitor
 
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
@@ -12,5 +13,6 @@ val MonitorRecord.relativeDetailsUrl: String
         is PushMonitorRecord -> "/push-monitors/${this.id}"
         is IcmpMonitorRecord -> "/icmp-monitors/${this.id}"
         is TcpMonitorRecord -> "/tcp-monitors/${this.id}"
+        is DnsMonitorRecord -> "/dns-monitors/${this.id}"
         else -> error("Unknown monitor type: ${this::class}")
     }

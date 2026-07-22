@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsResponseCodeMatchers
 import com.kuvaszuptime.kuvasz.validation.ValidDnsRecordMatchers
 import com.kuvaszuptime.kuvasz.validation.ValidDnsResponseCode
@@ -54,6 +55,10 @@ data class DnsMonitorUpdateDto(
     @param:Schema(description = DnsMonitorDocs.DRIFT_DETECTION_ENABLED, required = false, nullable = false)
     @get:NotNull
     val driftDetectionEnabled: Boolean?,
+
+    @param:Schema(description = DnsMonitorDocs.DRIFT_RECORD_TYPES, required = false, nullable = false)
+    @get:NotNull
+    val driftRecordTypes: List<DnsRecordType>?,
 
     @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = false, nullable = false)
     @get:NotNull(message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_NOT_NULL)
