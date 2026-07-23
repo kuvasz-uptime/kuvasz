@@ -29,6 +29,7 @@ import kotlinx.coroutines.reactive.awaitFirst
         "yaml-push-monitors",
         "yaml-icmp-monitors",
         "yaml-tcp-monitors",
+        "yaml-dns-monitors",
         "enabled-metrics-otlp",
         "enabled-metrics-prometheus",
         "enabled-mcp-server",
@@ -76,6 +77,7 @@ class SettingsControllerTest(
                 result.app.editabilityState.arePushMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areIcmpMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areTcpMonitorsReadOnly shouldBe true
+                result.app.editabilityState.areDnsMonitorsReadOnly shouldBe true
                 result.app.editabilityState.areStatusPagesReadOnly shouldBe true
                 result.app.editabilityState.areMaintenanceWindowsReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false

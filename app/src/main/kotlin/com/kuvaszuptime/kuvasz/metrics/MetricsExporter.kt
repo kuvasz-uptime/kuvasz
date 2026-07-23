@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.metrics
 
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
@@ -9,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.numericMonitorId
@@ -200,8 +202,9 @@ internal fun MonitorRecord.numericMonitorId(): NumericMonitorID = when (this) {
     is PushMonitorRecord -> this.numericMonitorId()
     is IcmpMonitorRecord -> this.numericMonitorId()
     is TcpMonitorRecord -> this.numericMonitorId()
+    is DnsMonitorRecord -> this.numericMonitorId()
     else -> throw IllegalStateException(
         "The given monitor is not an instance of HttpMonitorRecord, PushMonitorRecord, " +
-            "IcmpMonitorRecord, or TcpMonitorRecord"
+            "IcmpMonitorRecord, TcpMonitorRecord, or DnsMonitorRecord"
     )
 }

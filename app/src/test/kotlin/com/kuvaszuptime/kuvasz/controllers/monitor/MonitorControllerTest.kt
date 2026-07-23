@@ -1,7 +1,10 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
+import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
@@ -9,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -16,8 +20,13 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
+import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -55,6 +64,7 @@ class MonitorControllerTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val yamlMapper: YAMLMapper,
     private val httpCheckScheduler: HttpCheckScheduler,
 ) : DatabaseBehaviorSpec() {
@@ -65,12 +75,14 @@ class MonitorControllerTest(
             pushMonitors: List<PushMonitorExportDto> = emptyList(),
             icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
             tcpMonitors: List<TcpMonitorExportDto> = emptyList(),
+            dnsMonitors: List<DnsMonitorExportDto> = emptyList(),
         ): ByteArray {
             val content = mapOf(
                 "http-monitors" to httpMonitors,
                 "push-monitors" to pushMonitors,
                 "icmp-monitors" to icmpMonitors,
                 "tcp-monitors" to tcpMonitors,
+                "dns-monitors" to dnsMonitors,
             )
 
             return yamlMapper.writeValueAsBytes(content)
@@ -176,6 +188,32 @@ class MonitorControllerTest(
                     port = 6379,
                     monitorName = "irrelevant8",
                     uptimeCheckInterval = 120,
+                    timeoutMs = 10000,
+                    latencyThresholdMs = 250,
+                    failureCountThreshold = 3L,
+                    metricsHistoryEnabled = false,
+                )
+                val dnsMonitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    monitorName = "irrelevant9",
+                    integrations = listOf(
+                        IntegrationID(IntegrationType.SLACK, "global"),
+                        IntegrationID(IntegrationType.EMAIL, "global"),
+                    ),
+                )
+                val dnsMonitor2 = createDnsMonitor(
+                    dnsMonitorRepository,
+                    enabled = false,
+                    host = "example.com",
+                    monitorName = "irrelevant10",
+                    uptimeCheckInterval = 120,
+                    resolverHost = "1.1.1.1",
+                    resolverPort = 5353,
+                    transport = DnsTransport.TCP,
+                    recordMatchers = listOf(DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4")),
+                    expectedResponseCode = DnsResponseCode.NXDOMAIN,
+                    driftDetectionEnabled = true,
+                    driftRecordTypes = listOf(DnsRecordType.NS, DnsRecordType.MX),
                     timeoutMs = 10000,
                     latencyThresholdMs = 250,
                     failureCountThreshold = 3L,
@@ -330,6 +368,40 @@ class MonitorControllerTest(
                         secondMonitor.metricsHistoryEnabled shouldBe tcpMonitor2.metricsHistoryEnabled
                         secondMonitor.integrations.shouldBeEmpty()
                     }
+
+                    val exportedDnsMonitorsRaw = yamlMapper.readTree(responseBody)["dns-monitors"].shouldNotBeNull()
+                    val parsedDnsMonitors =
+                        yamlMapper.convertValue<List<DnsMonitorExportDto>>(exportedDnsMonitorsRaw).shouldNotBeEmpty()
+                    parsedDnsMonitors.size shouldBe 2
+                    parsedDnsMonitors.forOne { firstMonitor ->
+                        firstMonitor.name shouldBe dnsMonitor.name
+                        firstMonitor.host shouldBe dnsMonitor.host
+                        firstMonitor.uptimeCheckInterval shouldBe dnsMonitor.uptimeCheckInterval
+                        firstMonitor.enabled shouldBe dnsMonitor.enabled
+                        firstMonitor.metricsHistoryEnabled shouldBe dnsMonitor.metricsHistoryEnabled
+                        firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
+                            IntegrationID(IntegrationType.SLACK, "global"),
+                            IntegrationID(IntegrationType.EMAIL, "global"),
+                        )
+                    }
+                    parsedDnsMonitors.forOne { secondMonitor ->
+                        secondMonitor.name shouldBe dnsMonitor2.name
+                        secondMonitor.host shouldBe dnsMonitor2.host
+                        secondMonitor.resolverHost shouldBe dnsMonitor2.resolverHost
+                        secondMonitor.resolverPort shouldBe dnsMonitor2.resolverPort
+                        secondMonitor.transport shouldBe DnsTransport.TCP
+                        secondMonitor.recordMatchers shouldBe dnsMonitor2.recordMatchersAsList()
+                        secondMonitor.expectedResponseCode shouldBe DnsResponseCode.NXDOMAIN
+                        secondMonitor.driftDetectionEnabled shouldBe true
+                        secondMonitor.driftRecordTypes shouldContainExactly listOf(DnsRecordType.NS, DnsRecordType.MX)
+                        secondMonitor.uptimeCheckInterval shouldBe dnsMonitor2.uptimeCheckInterval
+                        secondMonitor.timeoutMs shouldBe dnsMonitor2.timeoutMs
+                        secondMonitor.latencyThresholdMs shouldBe dnsMonitor2.latencyThresholdMs
+                        secondMonitor.failureCountThreshold shouldBe dnsMonitor2.failureCountThreshold
+                        secondMonitor.enabled shouldBe dnsMonitor2.enabled
+                        secondMonitor.metricsHistoryEnabled shouldBe dnsMonitor2.metricsHistoryEnabled
+                        secondMonitor.integrations.shouldBeEmpty()
+                    }
                 }
             }
 
@@ -350,6 +422,8 @@ class MonitorControllerTest(
                     yamlMapper.convertValue<List<IcmpMonitorExportDto>>(exportedIcmpMonitorsRaw).shouldBeEmpty()
                     val exportedTcpMonitorsRaw = yamlMapper.readTree(responseBody)["tcp-monitors"].shouldNotBeNull()
                     yamlMapper.convertValue<List<TcpMonitorExportDto>>(exportedTcpMonitorsRaw).shouldBeEmpty()
+                    val exportedDnsMonitorsRaw = yamlMapper.readTree(responseBody)["dns-monitors"].shouldNotBeNull()
+                    yamlMapper.convertValue<List<DnsMonitorExportDto>>(exportedDnsMonitorsRaw).shouldBeEmpty()
                 }
             }
         }
@@ -541,6 +615,26 @@ class MonitorControllerTest(
                             metricsHistoryEnabled = true,
                         )
                     ),
+                    dnsMonitors = listOf(
+                        DnsMonitorExportDto(
+                            name = "multi-dns",
+                            host = "example.com",
+                            resolverHost = "1.1.1.1",
+                            resolverPort = 5353,
+                            transport = DnsTransport.TCP,
+                            recordMatchers = listOf(DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4")),
+                            expectedResponseCode = DnsResponseCode.NOERROR,
+                            driftDetectionEnabled = true,
+                            driftRecordTypes = listOf(DnsRecordType.NS),
+                            uptimeCheckInterval = 60,
+                            timeoutMs = 5000,
+                            latencyThresholdMs = null,
+                            failureCountThreshold = 1,
+                            enabled = true,
+                            integrations = emptySet(),
+                            metricsHistoryEnabled = true,
+                        )
+                    ),
                 )
 
                 val multipartBody = MultipartBody.builder()
@@ -556,14 +650,24 @@ class MonitorControllerTest(
 
                     response.status shouldBe HttpStatus.OK
                     val perTypeResults = response.body().shouldNotBeNull().perTypeResults
-                    perTypeResults shouldHaveSize 4
-                    perTypeResults.sumOf { it.receivedCnt } shouldBe 4
+                    perTypeResults shouldHaveSize 5
+                    perTypeResults.sumOf { it.receivedCnt } shouldBe 5
                     perTypeResults.map { it.monitorType }.toSet() shouldBe setOf(
                         MonitorType.HTTP_SSL,
                         MonitorType.PUSH,
                         MonitorType.ICMP,
                         MonitorType.TCP,
+                        MonitorType.DNS,
                     )
+
+                    // The DNS-specific fields, incl. the JSONB matchers, must survive the import
+                    val importedDns = dnsMonitorRepository.findByName("multi-dns").shouldNotBeNull()
+                    importedDns.transport shouldBe DnsTransport.TCP
+                    importedDns.resolverPort shouldBe 5353
+                    importedDns.driftDetectionEnabled shouldBe true
+                    importedDns.driftRecordTypes.toList() shouldContainExactly listOf(DnsRecordType.NS)
+                    importedDns.recordMatchersAsList() shouldContainExactly
+                        listOf(DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4"))
                 }
             }
 

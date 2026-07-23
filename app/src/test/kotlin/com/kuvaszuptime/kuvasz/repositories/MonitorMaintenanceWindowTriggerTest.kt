@@ -1,10 +1,12 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
@@ -23,6 +25,7 @@ class MonitorMaintenanceWindowTriggerTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
 ) : DatabaseBehaviorSpec() {
 
@@ -75,6 +78,16 @@ class MonitorMaintenanceWindowTriggerTest(
                         .where(TCP_MONITOR.ID.eq(id)).execute()
                 },
                 delete = { id -> dslContext.deleteFrom(TCP_MONITOR).where(TCP_MONITOR.ID.eq(id)).execute() },
+            ),
+            TriggerCase(
+                label = "DNS",
+                type = MonitorType.DNS,
+                createMonitor = { createDnsMonitor(dnsMonitorRepository).let { it.id to it.name } },
+                rename = { id, newName ->
+                    dslContext.update(DNS_MONITOR).set(DNS_MONITOR.NAME, newName)
+                        .where(DNS_MONITOR.ID.eq(id)).execute()
+                },
+                delete = { id -> dslContext.deleteFrom(DNS_MONITOR).where(DNS_MONITOR.ID.eq(id)).execute() },
             ),
         )
 

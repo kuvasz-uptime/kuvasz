@@ -1,0 +1,8 @@
+dns-monitors:
+  - name: test
+    host: example.com
+    uptime-check-interval: 60
+    record-matchers:
+      - record-type: TXT
+        match-type: REGEX
+        value: '[unclosed'

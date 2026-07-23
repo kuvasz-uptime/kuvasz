@@ -272,5 +272,49 @@ class DnsDriftDetectionTest(
                 }
             }
         }
+
+        given("the DNS snapshot reset trigger") {
+
+            `when`("a drift-relevant column changes") {
+                val monitor = createDnsMonitor(monitorRepository, driftDetectionEnabled = true)
+                snapshotRepository.upsert(monitor.id, mapOf(DnsRecordType.A to listOf("1.2.3.4")))
+
+                monitorRepository.returningUpdate(
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull()
+                        .setDriftRecordTypes(arrayOf(DnsRecordType.NS))
+                )
+
+                then("the snapshot is dropped so it re-seeds on the next check") {
+                    snapshotRepository.getRecords(monitor.id).shouldBeNull()
+                }
+            }
+
+            `when`("only a drift-irrelevant column changes") {
+                val monitor = createDnsMonitor(monitorRepository, driftDetectionEnabled = true)
+                val records = mapOf(DnsRecordType.A to listOf("1.2.3.4"))
+                snapshotRepository.upsert(monitor.id, records)
+
+                monitorRepository.returningUpdate(
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull()
+                        .setFailureCountThreshold(5L)
+                )
+
+                then("the baseline is kept") {
+                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(records)
+                }
+            }
+
+            `when`("the row is rewritten with identical values (a no-op config reload)") {
+                val monitor = createDnsMonitor(monitorRepository, driftDetectionEnabled = true)
+                val records = mapOf(DnsRecordType.A to listOf("1.2.3.4"))
+                snapshotRepository.upsert(monitor.id, records)
+
+                monitorRepository.returningUpdate(monitorRepository.findById(monitor.id, null).shouldNotBeNull())
+
+                then("the baseline survives") {
+                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(records)
+                }
+            }
+        }
     }
 }

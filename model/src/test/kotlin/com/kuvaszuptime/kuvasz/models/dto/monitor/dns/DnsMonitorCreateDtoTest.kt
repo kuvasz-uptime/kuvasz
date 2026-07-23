@@ -233,9 +233,9 @@ class DnsMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.enabled shouldBe DnsMonitorDefaults.MONITOR_ENABLED
             dto.resolverHost shouldBe null
             dto.resolverPort shouldBe DnsMonitorDefaults.RESOLVER_PORT
-            dto.transport shouldBe DnsMonitorDefaults.TRANSPORT
+            dto.transport shouldBe DnsTransport.UDP
             dto.recordMatchers shouldBe emptyList()
-            dto.expectedResponseCode shouldBe DnsMonitorDefaults.EXPECTED_RESPONSE_CODE
+            dto.expectedResponseCode shouldBe DnsResponseCode.NOERROR
             dto.driftDetectionEnabled shouldBe DnsMonitorDefaults.DRIFT_DETECTION_ENABLED
             dto.timeoutMs shouldBe DnsMonitorDefaults.TIMEOUT_MS
             dto.latencyThresholdMs shouldBe null

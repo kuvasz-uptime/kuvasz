@@ -28,12 +28,16 @@ data class DnsMonitorCreateDto(
         defaultValue = DnsMonitorDefaults.RESOLVER_PORT.toString()
     )
     override val resolverPort: Int = DnsMonitorDefaults.RESOLVER_PORT,
-    @param:Schema(description = DnsMonitorDocs.TRANSPORT, required = false, defaultValue = "UDP")
-    override val transport: DnsTransport = DnsMonitorDefaults.TRANSPORT,
+    @param:Schema(description = DnsMonitorDocs.TRANSPORT, required = false, defaultValue = DnsMonitorDefaults.TRANSPORT)
+    override val transport: DnsTransport = DnsTransport.UDP,
     @param:Schema(description = DnsMonitorDocs.RECORD_MATCHERS, required = false)
     override val recordMatchers: List<DnsRecordMatcher>? = emptyList(),
-    @param:Schema(description = DnsMonitorDocs.EXPECTED_RESPONSE_CODE, required = false, defaultValue = "NOERROR")
-    override val expectedResponseCode: DnsResponseCode = DnsMonitorDefaults.EXPECTED_RESPONSE_CODE,
+    @param:Schema(
+        description = DnsMonitorDocs.EXPECTED_RESPONSE_CODE,
+        required = false,
+        defaultValue = DnsMonitorDefaults.EXPECTED_RESPONSE_CODE
+    )
+    override val expectedResponseCode: DnsResponseCode = DnsResponseCode.NOERROR,
     @param:Schema(
         description = DnsMonitorDocs.DRIFT_DETECTION_ENABLED,
         required = false,

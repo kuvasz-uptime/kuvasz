@@ -41,27 +41,27 @@ class IcmpMetricsLogRepository(private val dslContext: DSLContext) {
         .orderBy(ICMP_METRICS_LOG.CREATED_AT.desc(), ICMP_METRICS_LOG.ID.desc())
         .fetchInto(IcmpMetricsLogDto::class.java)
 
-    fun getLatencyMetrics(monitorId: Long, period: Duration): IcmpLatencyMetricResult? {
+    fun getLatencyMetrics(monitorId: Long, period: Duration): LatencyMetricResult? {
         val thresholdSeconds = period.toSeconds()
         return dslContext
             .select(
-                ICMP_METRICS_LOG.MONITOR_ID.`as`(IcmpLatencyMetricResult::monitorId.name),
-                round(avg(ICMP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java).`as`(IcmpLatencyMetricResult::avg.name),
-                min(ICMP_METRICS_LOG.LATENCY_MS).`as`(IcmpLatencyMetricResult::min.name),
-                max(ICMP_METRICS_LOG.LATENCY_MS).`as`(IcmpLatencyMetricResult::max.name),
+                ICMP_METRICS_LOG.MONITOR_ID.`as`(LatencyMetricResult::monitorId.name),
+                round(avg(ICMP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java).`as`(LatencyMetricResult::avg.name),
+                min(ICMP_METRICS_LOG.LATENCY_MS).`as`(LatencyMetricResult::min.name),
+                max(ICMP_METRICS_LOG.LATENCY_MS).`as`(LatencyMetricResult::max.name),
                 round(percentileCont(P90).withinGroupOrderBy(ICMP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java)
-                    .`as`(IcmpLatencyMetricResult::p90.name),
+                    .`as`(LatencyMetricResult::p90.name),
                 round(percentileCont(P95).withinGroupOrderBy(ICMP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java)
-                    .`as`(IcmpLatencyMetricResult::p95.name),
+                    .`as`(LatencyMetricResult::p95.name),
                 round(percentileCont(P99).withinGroupOrderBy(ICMP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java)
-                    .`as`(IcmpLatencyMetricResult::p99.name),
+                    .`as`(LatencyMetricResult::p99.name),
             )
             .from(ICMP_METRICS_LOG)
             .where(ICMP_METRICS_LOG.MONITOR_ID.eq(monitorId))
             .and(ICMP_METRICS_LOG.CREATED_AT.greaterOrEqual(getCurrentTimestamp().minusSeconds(thresholdSeconds)))
             .and(ICMP_METRICS_LOG.LATENCY_MS.isNotNull)
             .groupBy(ICMP_METRICS_LOG.MONITOR_ID)
-            .fetchOneInto(IcmpLatencyMetricResult::class.java)
+            .fetchOneInto(LatencyMetricResult::class.java)
     }
 
     fun getPacketLossMetrics(monitorId: Long, period: Duration): PacketLossMetricResult? {
@@ -113,17 +113,6 @@ class IcmpMetricsLogRepository(private val dslContext: DSLContext) {
         .limit(1)
         .fetchOneInto(IcmpMetricsLogDto::class.java)
 }
-
-@Introspected
-data class IcmpLatencyMetricResult(
-    val monitorId: Long,
-    val avg: Int?,
-    val min: Int?,
-    val max: Int?,
-    val p90: Int?,
-    val p95: Int?,
-    val p99: Int?,
-)
 
 @Introspected
 data class PacketLossMetricResult(

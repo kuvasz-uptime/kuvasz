@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.repositories
 import com.kuvaszuptime.kuvasz.jooq.Tables.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent.DNS_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
@@ -51,6 +53,8 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .unionAll(dslContext.icmpUptimeIncidentSelect(monitorId, period, includeResolved))
             // TCP incidents
             .unionAll(dslContext.tcpUptimeIncidentSelect(monitorId, period, includeResolved))
+            // DNS incidents
+            .unionAll(dslContext.dnsUptimeIncidentSelect(monitorId, period, includeResolved))
             // SSL incidents
             .unionAll(dslContext.sslIncidentsSelect(monitorId, period, includeResolved))
             .orderBy(DSL.field(orderFieldName).desc())
@@ -204,6 +208,42 @@ class IncidentRepository(private val dslContext: DSLContext) {
             }
             if (!includeResolved) {
                 and(TCP_UPTIME_EVENT.ENDED_AT.isNull)
+            }
+        }
+
+    @Suppress("IgnoredReturnValue")
+    private fun DSLContext.dnsUptimeIncidentSelect(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean
+    ) = this
+        .select(
+            DNS_MONITOR.ID.`as`(IncidentDto::monitorId.name),
+            DNS_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            DNS_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
+            DSL.inline(IncidentType.DNS.name).`as`(IncidentDto::incidentType.name),
+            DSL.`when`(DNS_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
+                .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
+            DNS_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
+            DNS_UPTIME_EVENT.STARTED_AT.`as`(IncidentDto::startedAt.name),
+            DNS_UPTIME_EVENT.ENDED_AT.`as`(IncidentDto::endedAt.name),
+            DNS_UPTIME_EVENT.UPDATED_AT.`as`(IncidentDto::updatedAt.name),
+        )
+        .from(DNS_UPTIME_EVENT)
+        .join(DNS_MONITOR).on(DNS_UPTIME_EVENT.MONITOR_ID.eq(DNS_MONITOR.ID))
+        .where(DNS_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+        .apply {
+            if (monitorId != null) {
+                and(DNS_MONITOR.ID.eq(monitorId))
+            } else {
+                and(DNS_MONITOR.ENABLED.isTrue)
+            }
+            period?.let {
+                val periodStart = getCurrentTimestamp().minus(period)
+                and(DSL.coalesce(DNS_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            }
+            if (!includeResolved) {
+                and(DNS_UPTIME_EVENT.ENDED_AT.isNull)
             }
         }
 

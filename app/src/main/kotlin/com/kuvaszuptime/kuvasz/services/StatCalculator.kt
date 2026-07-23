@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
@@ -10,6 +11,8 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -36,6 +39,8 @@ class StatCalculator(
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val tcpUptimeEventRepository: TcpUptimeEventRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
+    private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     private val maintenanceWindowService: MaintenanceWindowService,
 ) {
     @Suppress("NestedBlockDepth")
@@ -279,6 +284,60 @@ class StatCalculator(
         monitorId: Long,
     ): HistoricalUptimeStatsDto {
         val uptimeEvents = tcpUptimeEventRepository.fetchAllInPeriod(period, monitorId)
+
+        return calculateHistoricalUptimeStats(period, uptimeEvents)
+    }
+
+    fun calculateOverallDnsStats(period: Duration): DnsMonitoringStatsDto {
+        val monitors = dnsMonitorRepository.getMonitorsWithDetails()
+        val uptimeEvents = dnsUptimeEventRepository.fetchAllInPeriod(period)
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(
+            monitorIds = monitors.filter { it.enabled }.map { it.monitorId() }
+        )
+        var downMonitors = 0
+        var upMonitors = 0
+        var pausedMonitors = 0
+        var uptimeInProgressMonitors = 0
+        var inMaintenanceMonitors = 0
+
+        monitors.forEach { monitor ->
+            if (monitor.enabled) {
+                when (monitor.uptimeStatus) {
+                    UptimeStatus.DOWN -> downMonitors++
+                    UptimeStatus.UP -> upMonitors++
+                    null -> uptimeInProgressMonitors++
+                }
+                if (windowsByMonitor[monitor.monitorId()]?.any { it.active } == true) {
+                    inMaintenanceMonitors++
+                }
+            } else {
+                pausedMonitors++
+            }
+        }
+
+        return DnsMonitoringStatsDto(
+            actual = DnsMonitoringStatsDto.ActualMonitoringStats(
+                uptimeStats = ActualUptimeStats(
+                    total = monitors.size,
+                    down = downMonitors,
+                    up = upMonitors,
+                    paused = pausedMonitors,
+                    inProgress = uptimeInProgressMonitors,
+                    inMaintenance = inMaintenanceMonitors,
+                    lastIncident = dnsUptimeEventRepository.fetchLatestIncidentTimestamp(),
+                ),
+            ),
+            history = DnsMonitoringStatsDto.HistoricalMonitoringStats(
+                uptimeStats = calculateHistoricalUptimeStats(period, uptimeEvents)
+            )
+        )
+    }
+
+    fun calculateHistoricalDnsUptimeStats(
+        period: Duration,
+        monitorId: Long,
+    ): HistoricalUptimeStatsDto {
+        val uptimeEvents = dnsUptimeEventRepository.fetchAllInPeriod(period, monitorId)
 
         return calculateHistoricalUptimeStats(period, uptimeEvents)
     }

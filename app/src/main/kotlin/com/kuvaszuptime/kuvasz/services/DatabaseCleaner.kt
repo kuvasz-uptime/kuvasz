@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
-import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
@@ -31,7 +30,6 @@ class DatabaseCleaner(
     private val icmpMetricsLogRepository: IcmpMetricsLogRepository,
     private val tcpMetricsLogRepository: TcpMetricsLogRepository,
     private val dnsMetricsLogRepository: DnsMetricsLogRepository,
-    private val dnsResolutionSnapshotRepository: DnsResolutionSnapshotRepository,
     private val sslEventRepository: SSLEventRepository
 ) {
 
@@ -55,7 +53,6 @@ class DatabaseCleaner(
         val deletedIcmpMetricsLogs = icmpMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
         val deletedTcpMetricsLogs = tcpMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
         val deletedDnsMetricsLogs = dnsMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
-        val deletedDnsSnapshots = dnsResolutionSnapshotRepository.deleteSnapshotsOfDriftDisabledMonitors()
 
         logger.info("$deletedHttpUptimeEvents HTTP_UPTIME_EVENT record has been deleted")
         logger.info("$deletedPushUptimeEvents PUSH_UPTIME_EVENT record has been deleted")
@@ -66,7 +63,6 @@ class DatabaseCleaner(
         logger.info("$deletedIcmpMetricsLogs ICMP_METRICS_LOG record has been deleted")
         logger.info("$deletedTcpMetricsLogs TCP_METRICS_LOG record has been deleted")
         logger.info("$deletedDnsMetricsLogs DNS_METRICS_LOG record has been deleted")
-        logger.info("$deletedDnsSnapshots DNS_RESOLUTION_SNAPSHOT record has been deleted")
         logger.info("$deletedSSLEvents SSL_EVENT record has been deleted")
     }
 }

@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
-import com.kuvaszuptime.kuvasz.repositories.IcmpLatencyMetricResult
+import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
@@ -89,7 +89,7 @@ class IcmpMonitorActionsTest(
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
                     metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns IcmpLatencyMetricResult(
+                } returns LatencyMetricResult(
                     monitorId = enabledMonitor.id,
                     avg = 123,
                     min = 6982,
@@ -208,7 +208,7 @@ class IcmpMonitorActionsTest(
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
                     metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns IcmpLatencyMetricResult(
+                } returns LatencyMetricResult(
                     monitorId = enabledMonitor.id,
                     avg = 123,
                     min = 6982,

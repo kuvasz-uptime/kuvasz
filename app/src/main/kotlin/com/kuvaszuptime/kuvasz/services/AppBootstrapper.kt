@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.config.DnsMonitorConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
@@ -49,6 +50,7 @@ class AppBootstrapper(
     private val yamlPushMonitorConfigs: List<PushMonitorConfig>,
     private val yamlIcmpMonitorConfigs: List<IcmpMonitorConfig>,
     private val yamlTcpMonitorConfigs: List<TcpMonitorConfig>,
+    private val yamlDnsMonitorConfigs: List<DnsMonitorConfig>,
     private val monitorImporter: MonitorImporter,
     private val appConfig: AppConfig,
     private val httpMonitorRepository: HttpMonitorRepository,
@@ -90,6 +92,11 @@ class AppBootstrapper(
     @Nullable
     @field:Property(name = TcpMonitorConfig.CONFIG_PREFIX)
     protected var tcpMonitorYAMLConfigChecker: List<Any>? = null
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = DnsMonitorConfig.CONFIG_PREFIX)
+    protected var dnsMonitorYAMLConfigChecker: List<Any>? = null
 
     @Suppress("ProtectedMemberInFinalClass")
     @Nullable
@@ -167,8 +174,9 @@ class AppBootstrapper(
         if (!appConfig.isTcpMonitorExternalWriteDisabled()) {
             tcpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
-        // TODO(dns): guard with appConfig.isDnsMonitorExternalWriteDisabled() once DnsMonitorConfig lands (API stage)
-        dnsMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
+        if (!appConfig.isDnsMonitorExternalWriteDisabled()) {
+            dnsMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
+        }
     }
 
     private fun MonitorRecord.sanitizeIntegrations(configuredIntegrations: Set<IntegrationID>) {
@@ -256,6 +264,14 @@ class AppBootstrapper(
             yamlConfigChecker = tcpMonitorYAMLConfigChecker,
             callToDisableExternalWrite = appConfig::disableTcpMonitorExternalWrite,
             callToImportConfigs = monitorImporter::importTcpMonitorConfigs,
+        )
+
+        processYamlMonitorConfigs(
+            monitorType = MonitorType.DNS,
+            yamlMonitorConfigs = yamlDnsMonitorConfigs,
+            yamlConfigChecker = dnsMonitorYAMLConfigChecker,
+            callToDisableExternalWrite = appConfig::disableDnsMonitorExternalWrite,
+            callToImportConfigs = monitorImporter::importDnsMonitorConfigs,
         )
     }
 

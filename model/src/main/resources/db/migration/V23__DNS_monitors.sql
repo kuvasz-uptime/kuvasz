@@ -87,3 +87,30 @@ CREATE TABLE dns_resolution_snapshot
     records    JSONB       NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- The snapshot is runtime state derived from the drift-relevant config. When any of those inputs change, the stored
+-- answer set is no longer comparable, so it is dropped and re-seeded silently on the next check. The WHEN clause keeps
+-- the baseline intact across restarts / unrelated edits (the YAML bootstrap upserts every monitor on every boot).
+
+CREATE OR REPLACE FUNCTION reset_dns_snapshot_on_drift_config_change() RETURNS TRIGGER AS
+$$
+BEGIN
+    DELETE FROM dns_resolution_snapshot WHERE monitor_id = NEW.id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_reset_dns_snapshot_on_drift_config_change
+    AFTER UPDATE
+    ON dns_monitor
+    FOR EACH ROW
+    WHEN (
+        OLD.drift_detection_enabled IS DISTINCT FROM NEW.drift_detection_enabled
+        OR OLD.drift_record_types IS DISTINCT FROM NEW.drift_record_types
+        OR OLD.record_matchers IS DISTINCT FROM NEW.record_matchers
+        OR OLD.host IS DISTINCT FROM NEW.host
+        OR OLD.resolver_host IS DISTINCT FROM NEW.resolver_host
+        OR OLD.resolver_port IS DISTINCT FROM NEW.resolver_port
+        OR OLD.transport IS DISTINCT FROM NEW.transport
+        )
+EXECUTE FUNCTION reset_dns_snapshot_on_drift_config_change();

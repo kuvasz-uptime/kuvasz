@@ -37,12 +37,13 @@ data class AppGlobals(
         val arePushMonitorsReadOnly: () -> Boolean,
         val areIcmpMonitorsReadOnly: () -> Boolean,
         val areTcpMonitorsReadOnly: () -> Boolean,
+        val areDnsMonitorsReadOnly: () -> Boolean,
         val areStatusPagesReadOnly: () -> Boolean,
         val areMaintenanceWindowsReadOnly: () -> Boolean,
     ) {
         fun areAllMonitorsReadOnly(): Boolean =
             areHttpMonitorsReadOnly() && arePushMonitorsReadOnly() &&
-                areIcmpMonitorsReadOnly() && areTcpMonitorsReadOnly()
+                areIcmpMonitorsReadOnly() && areTcpMonitorsReadOnly() && areDnsMonitorsReadOnly()
     }
 
     data class DefaultStatusPageSettings(

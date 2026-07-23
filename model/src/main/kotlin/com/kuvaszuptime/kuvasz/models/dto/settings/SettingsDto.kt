@@ -77,6 +77,9 @@ data class SettingsDto(
             @param:Schema(description = "Whether the TCP monitors are in read-only mode", required = true)
             val areTcpMonitorsReadOnly: Boolean,
 
+            @param:Schema(description = "Whether the DNS monitors are in read-only mode", required = true)
+            val areDnsMonitorsReadOnly: Boolean,
+
             @param:Schema(description = "Whether the maintenance windows are in read-only mode", required = true)
             val areMaintenanceWindowsReadOnly: Boolean,
         )

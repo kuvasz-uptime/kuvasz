@@ -1,0 +1,4 @@
+dns-monitors:
+  - name: irrelevant
+    host: example.com
+    uptime-check-interval: 60

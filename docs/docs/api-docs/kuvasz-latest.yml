@@ -15,18 +15,287 @@ tags:
 - name: Push monitors
 - name: ICMP monitors
 - name: TCP monitors
+- name: DNS monitors
 - name: Incidents
 - name: Integrations
 - name: Maintenance windows
 - name: Status pages
 - name: Settings
 paths:
+  /api/v2/dns-monitors:
+    get:
+      tags:
+      - DNS monitors
+      summary: Get all monitors with their details
+      operationId: getMonitorsWithDetails
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DnsMonitorDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - DNS monitors
+      summary: Create a monitor
+      operationId: createMonitor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DnsMonitorCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnsMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "DNS monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/dns-monitors/stats:
+    get:
+      tags:
+      - DNS monitors
+      summary: "Get the overall, cumulative stats of all monitors"
+      operationId: getMonitoringStats
+      parameters:
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnsMonitoringStatsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/dns-monitors/{monitorId}:
+    get:
+      tags:
+      - DNS monitors
+      summary: Get a monitor's details
+      operationId: getMonitorDetails
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnsMonitorDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - DNS monitors
+      summary: Delete a monitor by ID
+      operationId: deleteMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "DNS monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - DNS monitors
+      summary: Update a monitor by ID
+      description: Updates the monitor with the given ID. Only fields that are present
+        in the request body will be updated. Fields not present in the request body
+        will remain unchanged.
+      operationId: updateMonitor
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DnsMonitorUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnsMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "DNS monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/dns-monitors/{monitorId}/stats:
+    get:
+      tags:
+      - DNS monitors
+      summary: Get the stats of the given monitor
+      operationId: getMonitorStats
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P1D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnsMonitorStatsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/dns-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - DNS monitors
+      summary: Get the uptime events of the given monitor
+      operationId: getUptimeEvents
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DnsUptimeEventDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/http-monitors:
     get:
       tags:
       - HTTP monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails
+      operationId: getMonitorsWithDetails_1
       parameters:
       - name: enabled
         in: query
@@ -72,7 +341,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Create a monitor
-      operationId: createMonitor
+      operationId: createMonitor_1
       requestBody:
         content:
           application/json:
@@ -107,7 +376,7 @@ paths:
       tags:
       - HTTP monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats
+      operationId: getMonitoringStats_1
       parameters:
       - name: period
         in: query
@@ -131,7 +400,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails
+      operationId: getMonitorDetails_1
       parameters:
       - name: monitorId
         in: path
@@ -159,7 +428,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor
+      operationId: deleteMonitor_1
       parameters:
       - name: monitorId
         in: path
@@ -199,7 +468,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor
+      operationId: updateMonitor_1
       parameters:
       - name: monitorId
         in: path
@@ -272,7 +541,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats
+      operationId: getMonitorStats_1
       parameters:
       - name: monitorId
         in: path
@@ -308,7 +577,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents
+      operationId: getUptimeEvents_1
       parameters:
       - name: monitorId
         in: path
@@ -333,7 +602,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_1
+      operationId: getMonitorsWithDetails_2
       parameters:
       - name: enabled
         in: query
@@ -365,7 +634,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Create a monitor
-      operationId: createMonitor_1
+      operationId: createMonitor_2
       requestBody:
         content:
           application/json:
@@ -400,7 +669,7 @@ paths:
       tags:
       - ICMP monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_1
+      operationId: getMonitoringStats_2
       parameters:
       - name: period
         in: query
@@ -424,7 +693,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_1
+      operationId: getMonitorDetails_2
       parameters:
       - name: monitorId
         in: path
@@ -452,7 +721,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_1
+      operationId: deleteMonitor_2
       parameters:
       - name: monitorId
         in: path
@@ -492,7 +761,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_1
+      operationId: updateMonitor_2
       parameters:
       - name: monitorId
         in: path
@@ -540,7 +809,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_1
+      operationId: getMonitorStats_2
       parameters:
       - name: monitorId
         in: path
@@ -576,7 +845,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_1
+      operationId: getUptimeEvents_2
       parameters:
       - name: monitorId
         in: path
@@ -982,7 +1251,7 @@ paths:
       tags:
       - Push monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_2
+      operationId: getMonitorsWithDetails_3
       parameters:
       - name: enabled
         in: query
@@ -1014,7 +1283,7 @@ paths:
       tags:
       - Push monitors
       summary: Create a monitor
-      operationId: createMonitor_2
+      operationId: createMonitor_3
       requestBody:
         content:
           application/json:
@@ -1113,7 +1382,7 @@ paths:
       tags:
       - Push monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_2
+      operationId: getMonitoringStats_3
       parameters:
       - name: period
         in: query
@@ -1137,7 +1406,7 @@ paths:
       tags:
       - Push monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_2
+      operationId: getMonitorDetails_3
       parameters:
       - name: monitorId
         in: path
@@ -1165,7 +1434,7 @@ paths:
       tags:
       - Push monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_2
+      operationId: deleteMonitor_3
       parameters:
       - name: monitorId
         in: path
@@ -1205,7 +1474,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_2
+      operationId: updateMonitor_3
       parameters:
       - name: monitorId
         in: path
@@ -1253,7 +1522,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_2
+      operationId: getMonitorStats_3
       parameters:
       - name: monitorId
         in: path
@@ -1289,7 +1558,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_2
+      operationId: getUptimeEvents_3
       parameters:
       - name: monitorId
         in: path
@@ -1599,7 +1868,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_3
+      operationId: getMonitorsWithDetails_4
       parameters:
       - name: enabled
         in: query
@@ -1631,7 +1900,7 @@ paths:
       tags:
       - TCP monitors
       summary: Create a monitor
-      operationId: createMonitor_3
+      operationId: createMonitor_4
       requestBody:
         content:
           application/json:
@@ -1666,7 +1935,7 @@ paths:
       tags:
       - TCP monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_3
+      operationId: getMonitoringStats_4
       parameters:
       - name: period
         in: query
@@ -1690,7 +1959,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_3
+      operationId: getMonitorDetails_4
       parameters:
       - name: monitorId
         in: path
@@ -1718,7 +1987,7 @@ paths:
       tags:
       - TCP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_3
+      operationId: deleteMonitor_4
       parameters:
       - name: monitorId
         in: path
@@ -1758,7 +2027,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_3
+      operationId: updateMonitor_4
       parameters:
       - name: monitorId
         in: path
@@ -1806,7 +2075,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_3
+      operationId: getMonitorStats_4
       parameters:
       - name: monitorId
         in: path
@@ -1842,7 +2111,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_3
+      operationId: getUptimeEvents_4
       parameters:
       - name: monitorId
         in: path
@@ -1983,6 +2252,713 @@ components:
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
+    DnsMatchType:
+      type: string
+      enum:
+      - EXACT
+      - CONTAINS
+      - REGEX
+    DnsMetricsLogDto:
+      required:
+      - createdAt
+      - id
+      - latencyInMs
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the metrics log
+          format: int64
+        latencyInMs:
+          type: integer
+          description: "The resolution latency in milliseconds recorded for the monitor,\
+            \ null if the monitor was down"
+          format: int32
+          nullable: true
+        createdAt:
+          type: string
+          description: The timestamp when the metrics were recorded
+          format: date-time
+    DnsMonitorCreateDto:
+      required:
+      - host
+      - name
+      - uptimeCheckInterval
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          x-size-message: Monitor name must not be blank
+        host:
+          minLength: 1
+          type: string
+          description: The name to query (e.g. example.com)
+          x-size-message: Host must not be blank
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        resolverHost:
+          type: string
+          description: "Optional custom nameserver host to query. If not set, the\
+            \ system resolver is used."
+          nullable: true
+        resolverPort:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          description: "The port of the custom nameserver (1-65535, defaults to 53)"
+          format: int32
+          default: 53
+          x-maximum-message: "Resolver port must be at most {value}"
+          x-minimum-message: "Resolver port must be at least {value}"
+          x-not-null-message: Resolver port must not be null
+        transport:
+          description: "The DNS transport to use: UDP (default, with automatic TCP\
+            \ fallback on truncated responses) or TCP (forced)"
+          allOf:
+          - $ref: "#/components/schemas/DnsTransport"
+          default: UDP
+        recordMatchers:
+          type: array
+          description: "The DNS assertions to evaluate. Each matcher targets a record\
+            \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
+            \ and a value. All matchers are ANDed; a matcher passes if any record\
+            \ of its type satisfies it. When empty, the check falls back to a plain\
+            \ A lookup and is UP if the name resolves to anything."
+          nullable: true
+          items:
+            $ref: "#/components/schemas/DnsRecordMatcher"
+        expectedResponseCode:
+          description: "The DNS response code the check expects: NOERROR (default),\
+            \ NXDOMAIN, SERVFAIL or REFUSED. A non-NOERROR value requires the record\
+            \ matchers to be empty."
+          allOf:
+          - $ref: "#/components/schemas/DnsResponseCode"
+          default: NOERROR
+        driftDetectionEnabled:
+          type: boolean
+          description: Whether to emit a notification (without changing the UP/DOWN
+            state) when the resolved record set changes between checks
+          default: false
+        driftRecordTypes:
+          type: array
+          description: "The record types drift detection watches. When empty (the\
+            \ default), it watches exactly the types the record matchers cover, so\
+            \ it costs no extra lookups. Naming types here is how a monitor watches\
+            \ something it does not assert on (an NS or MX change worth a notification\
+            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
+            \ is true."
+          nullable: true
+          items:
+            $ref: "#/components/schemas/DnsRecordType"
+        timeoutMs:
+          maximum: 30000
+          minimum: 1
+          type: integer
+          description: The DNS query timeout in milliseconds (1-30000)
+          format: int32
+          default: 5000
+          x-maximum-message: "Timeout must be at most {value} milliseconds"
+          x-minimum-message: "Timeout must be at least {value} millisecond(s)"
+          x-not-null-message: Timeout must not be null
+        latencyThresholdMs:
+          minimum: 1
+          type: integer
+          description: "Optional resolution-latency threshold in milliseconds. If\
+            \ set, the check is considered DOWN when the resolution takes longer than\
+            \ this value."
+          format: int32
+          nullable: true
+          x-minimum-message: "Latency threshold must be at least {value} millisecond(s)"
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          default: 1
+          x-minimum-message: Failure count threshold must be greater than 0
+          x-not-null-message: Failure count threshold must not be null
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          default: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+          default: true
+    DnsMonitorDetailsDto:
+      required:
+      - createdAt
+      - driftDetectionEnabled
+      - driftRecordTypes
+      - effectiveIntegrations
+      - enabled
+      - expectedResponseCode
+      - failureCountThreshold
+      - host
+      - id
+      - inMaintenance
+      - integrations
+      - lastUptimeCheck
+      - latencyThresholdMs
+      - maintenanceWindows
+      - metricsHistoryEnabled
+      - name
+      - nextUptimeCheck
+      - recordMatchers
+      - resolverHost
+      - resolverPort
+      - statusPages
+      - timeoutMs
+      - transport
+      - updatedAt
+      - uptimeCheckInterval
+      - uptimeError
+      - uptimeStatus
+      - uptimeStatusStartedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        host:
+          type: string
+          description: The name to query (e.g. example.com)
+        resolverHost:
+          type: string
+          description: "Optional custom nameserver host to query. If not set, the\
+            \ system resolver is used."
+          nullable: true
+        resolverPort:
+          type: integer
+          description: "The port of the custom nameserver (1-65535, defaults to 53)"
+          format: int32
+        transport:
+          description: "The DNS transport to use: UDP (default, with automatic TCP\
+            \ fallback on truncated responses) or TCP (forced)"
+          allOf:
+          - $ref: "#/components/schemas/DnsTransport"
+        recordMatchers:
+          type: array
+          description: "The DNS assertions to evaluate. Each matcher targets a record\
+            \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
+            \ and a value. All matchers are ANDed; a matcher passes if any record\
+            \ of its type satisfies it. When empty, the check falls back to a plain\
+            \ A lookup and is UP if the name resolves to anything."
+          items:
+            $ref: "#/components/schemas/DnsRecordMatcher"
+        expectedResponseCode:
+          description: "The DNS response code the check expects: NOERROR (default),\
+            \ NXDOMAIN, SERVFAIL or REFUSED. A non-NOERROR value requires the record\
+            \ matchers to be empty."
+          allOf:
+          - $ref: "#/components/schemas/DnsResponseCode"
+        driftDetectionEnabled:
+          type: boolean
+          description: Whether to emit a notification (without changing the UP/DOWN
+            state) when the resolved record set changes between checks
+        driftRecordTypes:
+          type: array
+          description: "The record types drift detection watches. When empty (the\
+            \ default), it watches exactly the types the record matchers cover, so\
+            \ it costs no extra lookups. Naming types here is how a monitor watches\
+            \ something it does not assert on (an NS or MX change worth a notification\
+            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
+            \ is true."
+          items:
+            $ref: "#/components/schemas/DnsRecordType"
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        timeoutMs:
+          type: integer
+          description: The DNS query timeout in milliseconds (1-30000)
+          format: int32
+        latencyThresholdMs:
+          type: integer
+          description: "Optional resolution-latency threshold in milliseconds. If\
+            \ set, the check is considered DOWN when the resolution takes longer than\
+            \ this value."
+          format: int32
+          nullable: true
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+        uptimeStatus:
+          description: "The current uptime status of the monitor. If it's null, no\
+            \ check has completed yet."
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusStartedAt:
+          type: string
+          description: The timestamp when the uptime status was last changed
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          description: The timestamp when the last uptime check was performed
+          format: date-time
+          nullable: true
+        nextUptimeCheck:
+          type: string
+          description: The timestamp when the next uptime check is scheduled
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          description: The error message if the last uptime check failed
+          nullable: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        effectiveIntegrations:
+          type: array
+          description: "List of integrations that are effective for the monitor, including\
+            \ global integrations"
+          items:
+            $ref: "#/components/schemas/IntegrationDetailsDto"
+        statusPages:
+          type: array
+          description: List of slugs of the status pages the monitor is explicitly
+            assigned to
+          items:
+            type: string
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
+    DnsMonitorDto:
+      required:
+      - createdAt
+      - driftDetectionEnabled
+      - driftRecordTypes
+      - enabled
+      - expectedResponseCode
+      - failureCountThreshold
+      - host
+      - id
+      - integrations
+      - latencyThresholdMs
+      - metricsHistoryEnabled
+      - name
+      - recordMatchers
+      - resolverHost
+      - resolverPort
+      - timeoutMs
+      - transport
+      - updatedAt
+      - uptimeCheckInterval
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        host:
+          type: string
+          description: The name to query (e.g. example.com)
+        resolverHost:
+          type: string
+          description: "Optional custom nameserver host to query. If not set, the\
+            \ system resolver is used."
+          nullable: true
+        resolverPort:
+          type: integer
+          description: "The port of the custom nameserver (1-65535, defaults to 53)"
+          format: int32
+        transport:
+          description: "The DNS transport to use: UDP (default, with automatic TCP\
+            \ fallback on truncated responses) or TCP (forced)"
+          allOf:
+          - $ref: "#/components/schemas/DnsTransport"
+        recordMatchers:
+          type: array
+          description: "The DNS assertions to evaluate. Each matcher targets a record\
+            \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
+            \ and a value. All matchers are ANDed; a matcher passes if any record\
+            \ of its type satisfies it. When empty, the check falls back to a plain\
+            \ A lookup and is UP if the name resolves to anything."
+          items:
+            $ref: "#/components/schemas/DnsRecordMatcher"
+        expectedResponseCode:
+          description: "The DNS response code the check expects: NOERROR (default),\
+            \ NXDOMAIN, SERVFAIL or REFUSED. A non-NOERROR value requires the record\
+            \ matchers to be empty."
+          allOf:
+          - $ref: "#/components/schemas/DnsResponseCode"
+        driftDetectionEnabled:
+          type: boolean
+          description: Whether to emit a notification (without changing the UP/DOWN
+            state) when the resolved record set changes between checks
+        driftRecordTypes:
+          type: array
+          description: "The record types drift detection watches. When empty (the\
+            \ default), it watches exactly the types the record matchers cover, so\
+            \ it costs no extra lookups. Naming types here is how a monitor watches\
+            \ something it does not assert on (an NS or MX change worth a notification\
+            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
+            \ is true."
+          items:
+            $ref: "#/components/schemas/DnsRecordType"
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        timeoutMs:
+          type: integer
+          description: The DNS query timeout in milliseconds (1-30000)
+          format: int32
+        latencyThresholdMs:
+          type: integer
+          description: "Optional resolution-latency threshold in milliseconds. If\
+            \ set, the check is considered DOWN when the resolution takes longer than\
+            \ this value."
+          format: int32
+          nullable: true
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+    DnsMonitorStatsDto:
+      required:
+      - id
+      - latencyStats
+      - metricsHistoryEnabled
+      - metricsLogs
+      - uptimeHistory
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+        uptimeHistory:
+          description: Uptime related statistics of the monitor in the given period
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+        latencyStats:
+          description: Latency related statistics of the monitor in the given period
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/LatencyStatsDto"
+        metricsLogs:
+          type: array
+          description: All the latency logs recorded for the monitor in the given
+            period
+          items:
+            $ref: "#/components/schemas/DnsMetricsLogDto"
+    DnsMonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          nullable: false
+          x-size-message: Monitor name must not be blank
+        host:
+          minLength: 1
+          type: string
+          description: The name to query (e.g. example.com)
+          nullable: false
+          x-size-message: Host must not be blank
+        resolverHost:
+          type: string
+          description: "Optional custom nameserver host to query. If not set, the\
+            \ system resolver is used."
+          nullable: true
+        resolverPort:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          description: "The port of the custom nameserver (1-65535, defaults to 53)"
+          format: int32
+          nullable: false
+          x-maximum-message: "Resolver port must be at most {value}"
+          x-minimum-message: "Resolver port must be at least {value}"
+          x-not-null-message: Resolver port must not be null
+        transport:
+          description: "The DNS transport to use: UDP (default, with automatic TCP\
+            \ fallback on truncated responses) or TCP (forced)"
+          allOf:
+          - $ref: "#/components/schemas/DnsTransport"
+        recordMatchers:
+          type: array
+          description: "The DNS assertions to evaluate. Each matcher targets a record\
+            \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
+            \ and a value. All matchers are ANDed; a matcher passes if any record\
+            \ of its type satisfies it. When empty, the check falls back to a plain\
+            \ A lookup and is UP if the name resolves to anything."
+          nullable: false
+          items:
+            $ref: "#/components/schemas/DnsRecordMatcher"
+        expectedResponseCode:
+          description: "The DNS response code the check expects: NOERROR (default),\
+            \ NXDOMAIN, SERVFAIL or REFUSED. A non-NOERROR value requires the record\
+            \ matchers to be empty."
+          allOf:
+          - $ref: "#/components/schemas/DnsResponseCode"
+        driftDetectionEnabled:
+          type: boolean
+          description: Whether to emit a notification (without changing the UP/DOWN
+            state) when the resolved record set changes between checks
+          nullable: false
+        driftRecordTypes:
+          type: array
+          description: "The record types drift detection watches. When empty (the\
+            \ default), it watches exactly the types the record matchers cover, so\
+            \ it costs no extra lookups. Naming types here is how a monitor watches\
+            \ something it does not assert on (an NS or MX change worth a notification\
+            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
+            \ is true."
+          nullable: false
+          items:
+            $ref: "#/components/schemas/DnsRecordType"
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          nullable: false
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        timeoutMs:
+          maximum: 30000
+          minimum: 1
+          type: integer
+          description: The DNS query timeout in milliseconds (1-30000)
+          format: int32
+          nullable: false
+          x-maximum-message: "Timeout must be at most {value} milliseconds"
+          x-minimum-message: "Timeout must be at least {value} millisecond(s)"
+          x-not-null-message: Timeout must not be null
+        latencyThresholdMs:
+          minimum: 1
+          type: integer
+          description: "Optional resolution-latency threshold in milliseconds. If\
+            \ set, the check is considered DOWN when the resolution takes longer than\
+            \ this value."
+          format: int32
+          nullable: true
+          x-minimum-message: "Latency threshold must be at least {value} millisecond(s)"
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          nullable: false
+          x-minimum-message: Failure count threshold must be greater than 0
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          nullable: false
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        metricsHistoryEnabled:
+          type: boolean
+          description: Whether metrics history is enabled for the monitor
+          nullable: false
+    DnsMonitoringStatsDto:
+      required:
+      - actual
+      - history
+      type: object
+      properties:
+        actual:
+          description: The actual monitoring statistics for the current state of the
+            monitors.
+          allOf:
+          - $ref: "#/components/schemas/DnsMonitoringStatsDto.ActualMonitoringStats"
+        history:
+          description: "The historical monitoring statistics, summarizing incidents\
+            \ and uptime ratios over time."
+          allOf:
+          - $ref: "#/components/schemas/DnsMonitoringStatsDto.HistoricalMonitoringStats"
+    DnsMonitoringStatsDto.ActualMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the current state of uptime for all monitors.
+          allOf:
+          - $ref: "#/components/schemas/ActualUptimeStats"
+    DnsMonitoringStatsDto.HistoricalMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the historical uptime of all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+    DnsRecordMatcher:
+      required:
+      - matchType
+      - recordType
+      - value
+      type: object
+      properties:
+        recordType:
+          $ref: "#/components/schemas/DnsRecordType"
+        matchType:
+          $ref: "#/components/schemas/DnsMatchType"
+        value:
+          type: string
+    DnsRecordType:
+      type: string
+      enum:
+      - A
+      - AAAA
+      - CNAME
+      - MX
+      - NS
+      - TXT
+      - SOA
+      - SRV
+      - CAA
+      - PTR
+    DnsResponseCode:
+      type: string
+      enum:
+      - NOERROR
+      - NXDOMAIN
+      - SERVFAIL
+      - REFUSED
+    DnsTransport:
+      type: string
+      enum:
+      - UDP
+      - TCP
+    DnsUptimeEventDto:
+      required:
+      - endedAt
+      - error
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the uptime event
+          format: int64
+        status:
+          description: The status of the uptime event
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        startedAt:
+          type: string
+          description: The timestamp when the uptime event started
+          format: date-time
+        endedAt:
+          type: string
+          description: "The timestamp when the uptime event ended, if applicable"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: The timestamp when the uptime event was updated
+          format: date-time
     EmailNotificationConfigDto:
       required:
       - enabled
@@ -4534,6 +5510,7 @@ components:
           format: int64
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
+      - areDnsMonitorsReadOnly
       - areHttpMonitorsReadOnly
       - areIcmpMonitorsReadOnly
       - areMaintenanceWindowsReadOnly
@@ -4557,6 +5534,9 @@ components:
         areTcpMonitorsReadOnly:
           type: boolean
           description: Whether the TCP monitors are in read-only mode
+        areDnsMonitorsReadOnly:
+          type: boolean
+          description: Whether the DNS monitors are in read-only mode
         areMaintenanceWindowsReadOnly:
           type: boolean
           description: Whether the maintenance windows are in read-only mode

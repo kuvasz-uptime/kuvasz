@@ -17,10 +17,8 @@ import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -37,8 +35,6 @@ import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
@@ -56,7 +52,6 @@ class DatabaseCleanerTest(
     private val icmpMetricsLogRepository: IcmpMetricsLogRepository,
     private val tcpMetricsLogRepository: TcpMetricsLogRepository,
     private val dnsMetricsLogRepository: DnsMetricsLogRepository,
-    private val dnsResolutionSnapshotRepository: DnsResolutionSnapshotRepository,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
@@ -436,26 +431,6 @@ class DatabaseCleanerTest(
 
                 then("it should delete it") {
                     dnsMetricsLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
-                }
-            }
-
-            `when`("there is a DNS_RESOLUTION_SNAPSHOT for a monitor that still has drift detection enabled") {
-                val monitor = createDnsMonitor(dnsMonitorRepository, driftDetectionEnabled = true)
-                dnsResolutionSnapshotRepository.upsert(monitor.id, mapOf(DnsRecordType.A to listOf("1.2.3.4")))
-                databaseCleaner.cleanObsoleteData()
-
-                then("it should not delete the snapshot") {
-                    dnsResolutionSnapshotRepository.getRecords(monitor.id).shouldNotBeNull()
-                }
-            }
-
-            `when`("there is a DNS_RESOLUTION_SNAPSHOT for a monitor that no longer has drift detection enabled") {
-                val monitor = createDnsMonitor(dnsMonitorRepository, driftDetectionEnabled = false)
-                dnsResolutionSnapshotRepository.upsert(monitor.id, mapOf(DnsRecordType.A to listOf("1.2.3.4")))
-                databaseCleaner.cleanObsoleteData()
-
-                then("it should delete the stale snapshot") {
-                    dnsResolutionSnapshotRepository.getRecords(monitor.id).shouldBeNull()
                 }
             }
         }
