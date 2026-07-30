@@ -5642,6 +5642,8 @@ components:
           description: Whether descriptions are included in the export
     SettingsDto.MetricsExportSettingsDto.MeterSettingsDto:
       required:
+      - dnsLatestLatency
+      - dnsUptimeStatus
       - httpLatestLatency
       - httpUptimeStatus
       - icmpLatestLatency
@@ -5684,6 +5686,12 @@ components:
         tcpLatestLatency:
           type: boolean
           description: Whether TCP latest latency exporter is enabled
+        dnsUptimeStatus:
+          type: boolean
+          description: Whether DNS monitor status exporter is enabled
+        dnsLatestLatency:
+          type: boolean
+          description: Whether DNS latest latency exporter is enabled
     SettingsDto.SmtpConfigDto:
       required:
       - host

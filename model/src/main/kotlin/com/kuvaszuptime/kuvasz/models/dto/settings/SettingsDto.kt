@@ -126,6 +126,10 @@ data class SettingsDto(
             val tcpUptimeStatus: Boolean,
             @param:Schema(description = "Whether TCP latest latency exporter is enabled", required = true)
             val tcpLatestLatency: Boolean,
+            @param:Schema(description = "Whether DNS monitor status exporter is enabled", required = true)
+            val dnsUptimeStatus: Boolean,
+            @param:Schema(description = "Whether DNS latest latency exporter is enabled", required = true)
+            val dnsLatestLatency: Boolean,
         )
 
         @Introspected

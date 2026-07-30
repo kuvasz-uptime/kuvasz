@@ -12,3 +12,5 @@ metrics-exports:
   icmp-latest-packet-loss: true
   tcp-uptime-status: true
   tcp-latest-latency: true
+  dns-uptime-status: true
+  dns-latest-latency: true

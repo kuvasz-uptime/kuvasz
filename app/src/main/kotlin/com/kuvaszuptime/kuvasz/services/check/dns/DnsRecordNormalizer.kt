@@ -46,17 +46,21 @@ object DnsRecordNormalizer {
         return DnsMatchResult(matched = failed.isEmpty(), failedMatchers = failed)
     }
 
-    private fun DnsRecordMatcher.isSatisfiedBy(candidates: List<String>): Boolean {
-        val normalizedValue = normalizeValue(value)
-        return when (matchType) {
-            DnsMatchType.EXACT -> candidates.any { it == normalizedValue }
-            DnsMatchType.CONTAINS -> candidates.any { it.contains(normalizedValue) }
+    private fun DnsRecordMatcher.isSatisfiedBy(candidates: List<String>): Boolean =
+        when (matchType) {
+            DnsMatchType.EXACT -> {
+                val normalizedValue = normalizeValue(value)
+                candidates.any { it == normalizedValue }
+            }
+            DnsMatchType.CONTAINS -> {
+                val normalizedValue = normalizeValue(value)
+                candidates.any { it.contains(normalizedValue) }
+            }
             DnsMatchType.REGEX -> {
                 val regex = Regex(value, RegexOption.IGNORE_CASE)
                 candidates.any { regex.containsMatchIn(it) }
             }
         }
-    }
 
     private fun canonicalize(raw: String): String =
         raw.replace("\"", "").trim().replace(WHITESPACE, " ").removeSuffix(".").lowercase()

@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.PacketLossStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMetricsLogDto
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.jsonschema.JsonSchema
@@ -124,6 +125,22 @@ data class TcpMetricsLogSchema(
 ) {
     companion object {
         fun fromDto(dto: TcpMetricsLogDto) = TcpMetricsLogSchema(
+            id = dto.id,
+            latencyInMs = dto.latencyInMs,
+            createdAt = dto.createdAt,
+        )
+    }
+}
+
+@Introspected
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class DnsMetricsLogSchema(
+    val id: Long,
+    val latencyInMs: Int?,
+    val createdAt: OffsetDateTime,
+) {
+    companion object {
+        fun fromDto(dto: DnsMetricsLogDto) = DnsMetricsLogSchema(
             id = dto.id,
             latencyInMs = dto.latencyInMs,
             createdAt = dto.createdAt,

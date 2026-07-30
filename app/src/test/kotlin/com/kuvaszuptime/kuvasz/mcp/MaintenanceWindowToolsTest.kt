@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
+import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
@@ -156,10 +157,10 @@ class MaintenanceWindowToolsTest(
             }
 
             `when`("create-maintenance-window is called with a blank name") {
-                val response = callTool(CREATE_MAINTENANCE_WINDOW, mapOf("name" to ""))
+                val response = callToolWithMcpClient(CREATE_MAINTENANCE_WINDOW, mapOf("name" to ""))
 
-                then("it should return an invalid-params protocol error with no result") {
-                    response.shouldHaveError(McpSchema.ErrorCodes.INVALID_PARAMS)
+                then("it should return an input schema validation error") {
+                    response.shouldHaveInputValidationError("/name: must be at least 1 characters long")
                 }
             }
 

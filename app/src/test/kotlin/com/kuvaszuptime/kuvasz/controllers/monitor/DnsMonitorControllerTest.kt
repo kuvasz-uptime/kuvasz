@@ -464,21 +464,43 @@ class DnsMonitorControllerTest(
             `when`("a monitor is updated") {
                 val monitor = createDnsMonitor(monitorRepository, host = "example.com")
 
+                val newMatchers = listOf(
+                    DnsRecordMatcher(DnsRecordType.MX, DnsMatchType.CONTAINS, "mail"),
+                )
                 val updateNode = mapper.createObjectNode()
                     .put("host", "other.example.com")
                     .put("resolverHost", "8.8.8.8")
                     .put("resolverPort", 5353)
+                    .put("transport", DnsTransport.TCP.name)
+                updateNode.replace("recordMatchers", mapper.valueToTree(newMatchers))
+                updateNode.replace("driftRecordTypes", mapper.valueToTree(listOf(DnsRecordType.NS, DnsRecordType.MX)))
                 val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
 
-                then("it should update the monitor") {
+                then("it should update the monitor, including the DNS-specific JSONB, array and enum fields") {
                     updatedMonitor.host shouldBe "other.example.com"
                     val persisted = monitorRepository.findById(monitor.id, null).shouldNotBeNull()
                     persisted.resolverHost shouldBe "8.8.8.8"
                     persisted.resolverPort shouldBe 5353
+                    persisted.transport shouldBe DnsTransport.TCP
+                    persisted.driftRecordTypes.toList() shouldBe listOf(DnsRecordType.NS, DnsRecordType.MX)
+                    persisted.recordMatchersAsList() shouldBe newMatchers
                 }
 
                 then("it should reschedule checks") {
                     checkScheduler.getScheduledUptimeChecks().containsKey(monitor.id) shouldBe true
+                }
+            }
+
+            `when`("the expected response code is updated") {
+                val monitor = createDnsMonitor(monitorRepository, host = "does-not-exist.example.com")
+                monitor.expectedResponseCode shouldBe DnsResponseCode.NOERROR
+
+                val updateNode = mapper.createObjectNode().put("expectedResponseCode", DnsResponseCode.NXDOMAIN.name)
+                monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should persist the new expected response code") {
+                    monitorRepository.findById(monitor.id, null)
+                        .shouldNotBeNull().expectedResponseCode shouldBe DnsResponseCode.NXDOMAIN
                 }
             }
 

@@ -101,6 +101,8 @@ class SettingsControllerTest(
                     meters.icmpLatestPacketLoss shouldBe true
                     meters.tcpUptimeStatus shouldBe true
                     meters.tcpLatestLatency shouldBe true
+                    meters.dnsUptimeStatus shouldBe true
+                    meters.dnsLatestLatency shouldBe true
 
                     with(exporters.prometheus) {
                         enabled shouldBe true

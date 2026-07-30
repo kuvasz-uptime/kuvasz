@@ -44,10 +44,11 @@ data class DnsCheckResult(
 
 @Singleton
 class DnsResolverFactory {
-    fun create(resolverHost: String?, transport: DnsTransport): Resolver = when (transport) {
-        DnsTransport.UDP -> simpleResolver(resolverHost).apply { tcp = false }
-        DnsTransport.TCP -> simpleResolver(resolverHost).apply { tcp = true }
-    }
+    fun create(resolverHost: String?, transport: DnsTransport): Resolver =
+        when (transport) {
+            DnsTransport.UDP -> simpleResolver(resolverHost).apply { tcp = false }
+            DnsTransport.TCP -> simpleResolver(resolverHost).apply { tcp = true }
+        }
 
     private fun simpleResolver(resolverHost: String?): SimpleResolver =
         if (resolverHost != null) SimpleResolver(resolverHost) else SimpleResolver()

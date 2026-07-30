@@ -39,4 +39,10 @@ object ToolNames {
     const val LIST_TCP_MONITORS = "list-tcp-monitors"
     const val DELETE_TCP_MONITOR = "delete-tcp-monitor"
     const val TOGGLE_TCP_MONITOR = "toggle-tcp-monitor"
+    const val CREATE_DNS_MONITOR = "create-dns-monitor"
+    const val GET_DNS_MONITOR_DETAILS = "get-dns-monitor-details"
+    const val GET_DNS_MONITOR_STATS = "get-dns-monitor-stats"
+    const val LIST_DNS_MONITORS = "list-dns-monitors"
+    const val DELETE_DNS_MONITOR = "delete-dns-monitor"
+    const val TOGGLE_DNS_MONITOR = "toggle-dns-monitor"
 }

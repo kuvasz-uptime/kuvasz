@@ -12,7 +12,7 @@ class TextArrayToDnsRecordTypeArrayConverter : Converter<Array<String>, Array<Dn
 
     override fun from(databaseObject: Array<String>?): Array<DnsRecordType> = databaseObject
         .orEmpty()
-        .mapNotNull { value -> DnsRecordType.entries.firstOrNull { it.name == value } }
+        .mapNotNull { value -> runCatching { DnsRecordType.valueOf(value) }.getOrNull() }
         .toTypedArray()
 
     override fun to(userObject: Array<DnsRecordType>?): Array<String> =

@@ -13,14 +13,14 @@ fun DnsMonitorRecord.recordMatchersAsList(): List<DnsRecordMatcher> = converter.
 
 fun List<DnsRecordMatcher>.toJsonNode(): JsonNode = converter.to(this)
 
-fun DnsMonitorRecord.assertionRecordTypes(): Set<DnsRecordType> =
-    recordMatchersAsList().map { it.recordType }.toSet().ifEmpty { setOf(DnsRecordType.A) }
+fun List<DnsRecordMatcher>.assertionRecordTypes(): Set<DnsRecordType> =
+    map { it.recordType }.toSet().ifEmpty { setOf(DnsRecordType.A) }
 
-fun DnsMonitorRecord.driftWatchTypes(): Set<DnsRecordType> =
+fun DnsMonitorRecord.driftWatchTypes(default: Set<DnsRecordType>): Set<DnsRecordType> =
     if (!driftDetectionEnabled) {
         emptySet()
     } else {
-        driftRecordTypes.toSet().ifEmpty { assertionRecordTypes() }
+        driftRecordTypes.toSet().ifEmpty { default }
     }
 
 fun DnsMonitorRecord.monitorId() = MonitorID(MonitorType.DNS, name)

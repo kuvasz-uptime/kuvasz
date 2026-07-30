@@ -94,6 +94,8 @@ class SettingsRepository(
             icmpLatestPacketLoss = exportConfig.icmpLatestPacketLoss,
             tcpUptimeStatus = exportConfig.tcpUptimeStatus,
             tcpLatestLatency = exportConfig.tcpLatestLatency,
+            dnsUptimeStatus = exportConfig.dnsUptimeStatus,
+            dnsLatestLatency = exportConfig.dnsLatestLatency,
         ),
         exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
             prometheus = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(

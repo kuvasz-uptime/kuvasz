@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
+import com.kuvaszuptime.kuvasz.models.monitor.dns.assertionRecordTypes
 import com.kuvaszuptime.kuvasz.models.monitor.dns.driftWatchTypes
 import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
 import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
@@ -39,10 +40,11 @@ class DnsUptimeChecker(
         logger.debug("Starting DNS check for monitor [${monitor.name}] on ${monitor.host}")
 
         val matchers = monitor.recordMatchersAsList()
-        val driftWatchTypes = monitor.driftWatchTypes()
+        val assertionTypes = matchers.assertionRecordTypes()
+        val driftWatchTypes = monitor.driftWatchTypes(default = assertionTypes)
         val checkResult = resolveExecutor.execute(
             host = monitor.host,
-            recordTypes = matchers.map { it.recordType }.toSet(),
+            recordTypes = assertionTypes,
             resolverHost = monitor.resolverHost,
             resolverPort = monitor.resolverPort,
             transport = monitor.transport,

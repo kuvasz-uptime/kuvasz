@@ -33,18 +33,20 @@ every metric has all of them:
 - `name`: the name of the monitor
 - `target`: the target that is monitored (i.e. a URL, an IP address / hostname, or a `host:port` pair for TCP monitors)
 
-|                      | `name` | `target` |
-|----------------------|--------|----------|
-| HTTP uptime status   | ✅      | ✅        |
-| HTTP latest latency  | ✅      | ✅        |
-| SSL status           | ✅      | ✅        |
-| SSL expiry           | ✅      | ✅        |
-| Push uptime status   | ✅      | ❌        |
-| ICMP uptime status   | ✅      | ✅        |
-| ICMP latest latency  | ✅      | ✅        |
-| ICMP packet loss     | ✅      | ✅        |
-| TCP uptime status    | ✅      | ✅        |
-| TCP latest latency   | ✅      | ✅        |
+|                     | `name` | `target` |
+|---------------------|--------|----------|
+| HTTP uptime status  | ✅     | ✅       |
+| HTTP latest latency | ✅     | ✅       |
+| SSL status          | ✅     | ✅       |
+| SSL expiry          | ✅     | ✅       |
+| Push uptime status  | ✅     | ❌       |
+| ICMP uptime status  | ✅     | ✅       |
+| ICMP latest latency | ✅     | ✅       |
+| ICMP packet loss    | ✅     | ✅       |
+| TCP uptime status   | ✅     | ✅       |
+| TCP latest latency  | ✅     | ✅       |
+| DNS uptime status   | ✅     | ✅       |
+| DNS latest latency  | ✅     | ✅       |
 
 ### HTTP uptime status
 
@@ -271,6 +273,51 @@ This metric is exported as a **gauge** and indicates the current uptime status o
 
 This metric is exported as a **gauge** and reports the latest recorded connect latency of the monitored `host:port` endpoint, in milliseconds.
 
+### DNS uptime status
+
+<!-- md:version 4.2.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.dns-uptime-status: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_DNS_UPTIME_STATUS_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and indicates the current uptime status of the given DNS monitor.
+
+| Status                                | Gauge value |
+|---------------------------------------|-------------|
+| UP                                    | 1           |
+| DOWN                                  | 0           |
+
+### DNS latest latency
+
+<!-- md:version 4.2.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.dns-latest-latency: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_DNS_LATEST_LATENCY_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports the latest recorded resolution latency of the monitored name, in milliseconds. The `target` tag is the queried host.
+
 ## Prometheus
 
 The _Prometheus_ exporter is a built-in exporter that allows you to **expose your metrics** in a format that **can be scraped** by _Prometheus_. It supports the standard _Prometheus_ text format, which is widely used for monitoring and alerting.
@@ -331,6 +378,8 @@ kuvasz_icmp_latency_latest_milliseconds{name="my-router",target="192.168.1.1"} 4
 kuvasz_icmp_packet_loss_latest_percentage{name="my-router",target="192.168.1.1"} 0.0
 kuvasz_tcp_uptime_status{name="postgres",target="192.168.1.1:5432"} 1.0
 kuvasz_tcp_latency_latest_milliseconds{name="postgres",target="192.168.1.1:5432"} 3.0
+kuvasz_dns_uptime_status{name="example.com",target="example.com"} 1.0
+kuvasz_dns_latency_latest_milliseconds{name="example.com",target="example.com"} 12.0
 ```
 
 ### Example config
@@ -357,6 +406,8 @@ kuvasz_tcp_latency_latest_milliseconds{name="postgres",target="192.168.1.1:5432"
         icmp-latest-packet-loss: true
         tcp-uptime-status: true
         tcp-latest-latency: true
+        dns-uptime-status: true
+        dns-latest-latency: true
     ```
 
 === "ENV"
@@ -376,6 +427,8 @@ kuvasz_tcp_latency_latest_milliseconds{name="postgres",target="192.168.1.1:5432"
     ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
     ENABLE_TCP_UPTIME_STATUS_EXPORT=true
     ENABLE_TCP_LATEST_LATENCY_EXPORT=true
+    ENABLE_DNS_UPTIME_STATUS_EXPORT=true
+    ENABLE_DNS_LATEST_LATENCY_EXPORT=true
     ```
 
 ## OpenTelemetry
@@ -476,6 +529,8 @@ kuvasz.icmp.latency.latest.milliseconds{name=my-router,target=192.168.1.1} 4
 kuvasz.icmp.packet.loss.latest.percentage{name=my-router,target=192.168.1.1} 0
 kuvasz.tcp.uptime.status{name=postgres,target=192.168.1.1:5432} 1
 kuvasz.tcp.latency.latest.milliseconds{name=postgres,target=192.168.1.1:5432} 3
+kuvasz.dns.uptime.status{name=example.com,target=example.com} 1
+kuvasz.dns.latency.latest.milliseconds{name=example.com,target=example.com} 12
 ```
 
 ### Example config
@@ -504,6 +559,8 @@ kuvasz.tcp.latency.latest.milliseconds{name=postgres,target=192.168.1.1:5432} 3
       icmp-latest-packet-loss: true
       tcp-uptime-status: true
       tcp-latest-latency: true
+      dns-uptime-status: true
+      dns-latest-latency: true
     ```
 
 === "ENV"
@@ -525,6 +582,8 @@ kuvasz.tcp.latency.latest.milliseconds{name=postgres,target=192.168.1.1:5432} 3
     ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
     ENABLE_TCP_UPTIME_STATUS_EXPORT=true
     ENABLE_TCP_LATEST_LATENCY_EXPORT=true
+    ENABLE_DNS_UPTIME_STATUS_EXPORT=true
+    ENABLE_DNS_LATEST_LATENCY_EXPORT=true
     ```
 
 ## Checking the configuration on the UI

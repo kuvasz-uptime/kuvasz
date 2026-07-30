@@ -22,6 +22,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
+import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -138,7 +139,7 @@ class HttpMonitorToolsTest(
             }
 
             `when`("create-http-monitor is called with an invalid input") {
-                val response = callTool(
+                val response = callToolWithMcpClient(
                     CREATE_HTTP_MONITOR,
                     mapOf(
                         "name" to "mcp-created-monitor",
@@ -147,11 +148,8 @@ class HttpMonitorToolsTest(
                     )
                 )
 
-                then("it should return an invalid-params protocol error with no result") {
-                    response.shouldHaveError(
-                        McpSchema.ErrorCodes.INVALID_PARAMS,
-                        "Uptime check interval must be at least 5 seconds",
-                    )
+                then("it should return an input schema validation error") {
+                    response.shouldHaveInputValidationError("/uptimeCheckInterval: must have a minimum value of 5")
                 }
             }
 

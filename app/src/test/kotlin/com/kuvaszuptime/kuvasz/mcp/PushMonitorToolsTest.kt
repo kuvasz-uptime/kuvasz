@@ -19,6 +19,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
+import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -129,7 +130,7 @@ class PushMonitorToolsTest(
             }
 
             `when`("create-push-monitor is called with an invalid heartbeatInterval") {
-                val response = callTool(
+                val response = callToolWithMcpClient(
                     CREATE_PUSH_MONITOR,
                     mapOf(
                         "name" to "mcp-created-push-monitor",
@@ -138,11 +139,8 @@ class PushMonitorToolsTest(
                     )
                 )
 
-                then("it should return an invalid-params protocol error with no result") {
-                    response.shouldHaveError(
-                        McpSchema.ErrorCodes.INVALID_PARAMS,
-                        "Heartbeat interval must be at least 10 seconds",
-                    )
+                then("it should return an input schema validation error") {
+                    response.shouldHaveInputValidationError("/heartbeatInterval: must have a minimum value of 10")
                 }
             }
 
