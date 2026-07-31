@@ -56,6 +56,7 @@ class WebUIPushMonitorController(
 
     @Get("/push-monitors/{monitorId}")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun pushMonitorDetails(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)
