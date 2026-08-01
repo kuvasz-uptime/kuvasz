@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -18,349 +19,267 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
     monitor: HttpMonitorDetailsDto?,
     globals: AppGlobals,
 ) {
-    val serializedMonitor: String? = monitor?.asJsonString()
-    val serializedErrorMessages = mapOf(
-        "nameRequired" to Messages.errorNameRequired(),
-        "urlRequired" to Messages.errorMissingUrl(),
-        "urlInvalid" to Messages.errorInvalidUrl(),
-        "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
-        "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
-        "sslExpiryThresholdInvalid" to Messages.errorSSLExpiryThresholdInvalid(),
-        "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
-        "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
-        "responseTimeThresholdInvalid" to Messages.errorResponseTimeThresholdInvalid(),
-        "requestHeaderInvalid" to Messages.errorNewHeaderInvalid(),
-        "expectedHeaderInvalid" to Messages.errorNewHeaderInvalid(),
-        "requestBodyInvalid" to Messages.errorRequestBodyInvalid(),
-    ).asJsonString()
     val serializedStatusCodes = SupportedExpectedHttpStatusCodes.allCodes.asJsonString()
-    val modalClosedEvent = "http-monitor-upsert-modal-closed"
     val acceptedStatusCodeSelectId = "accepted-status-codes-select"
-    val isReadOnlyMode = globals.editabilityState.areHttpMonitorsReadOnly()
-    val isMonitorNameReadOnly = monitor?.statusPages?.isNotEmpty() == true &&
-        globals.editabilityState.areStatusPagesReadOnly()
-
-    div {
-        id = modalId
-        classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
-        xData(
-            """upsertHttpMonitorForm(
-                |$serializedMonitor,
-                |$serializedErrorMessages,
-                |'$acceptedStatusCodeSelectId',
-                |$serializedStatusCodes,
-                |${globals.enabledIntegrations.count { it.value.global }})
-            """.trimMargin()
-        )
-        attributes["@$modalClosedEvent.window"] = "resetState()"
-        attributes["@clone-monitor.window"] = "cloneFrom(\$event.detail.id, \$event.detail.name)"
-        tabIndex = "-1"
-        role = "dialog"
-
-        div {
-            classes(MODAL_DIALOG, MODAL_LG, MODAL_DIALOG_CENTERED)
-            role = "document"
-
-            div {
-                classes(MODAL_CONTENT, POSITION_RELATIVE)
-                // Modal header
+    monitorUpsertModal(
+        modalId = modalId,
+        typeUiConfig = MonitorTypeUiConfig.HTTP,
+        monitor = monitor,
+        globals = globals,
+        createTitle = Messages.createNewHttpMonitor(),
+        errorMessages = mapOf(
+            "nameRequired" to Messages.errorNameRequired(),
+            "urlRequired" to Messages.errorMissingUrl(),
+            "urlInvalid" to Messages.errorInvalidUrl(),
+            "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
+            "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
+            "sslExpiryThresholdInvalid" to Messages.errorSSLExpiryThresholdInvalid(),
+            "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
+            "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
+            "responseTimeThresholdInvalid" to Messages.errorResponseTimeThresholdInvalid(),
+            "requestHeaderInvalid" to Messages.errorNewHeaderInvalid(),
+            "expectedHeaderInvalid" to Messages.errorNewHeaderInvalid(),
+            "requestBodyInvalid" to Messages.errorRequestBodyInvalid(),
+        ),
+        extraFormArgs = listOf("'" + acceptedStatusCodeSelectId + "'", serializedStatusCodes),
+        extraSettings = { isReadOnlyMode, settingsAccordionId ->
+            // HTTP Monitor Request Settings
+            accordionItem(
+                id = "http-monitor-request-settings",
+                parentId = settingsAccordionId,
+                title = Messages.requestSettingsLabel(),
+                titleIcon = Icon.ADJUSTMENTS_SHARE,
+            ) {
+                // HTTP Method (GET, HEAD, etc.)
                 div {
-                    classes(MODAL_HEADER)
-                    h5 {
-                        classes(MODAL_TITLE)
-                        if (monitor == null) {
-                            +Messages.createNewHttpMonitor()
-                        } else if (isReadOnlyMode) {
-                            +Messages.configurationOf(monitor.name)
-                        } else {
-                            +Messages.updateMonitor(monitor.name)
-                        }
-                    }
-                    button(type = ButtonType.button) {
-                        classes(BTN_CLOSE)
-                        modalCloser()
-                    }
+                    formLabel(
+                        label = Messages.httpMethodLabel(),
+                        description = Messages.httpMethodDescription(),
+                        inputName = "requestMethod",
+                        required = true,
+                    )
+                    httpMethodSelector(xModelName = "requestMethod", isReadOnly = isReadOnlyMode)
                 }
-                // Modal body
+                // Follow Redirects
                 div {
-                    classes(MODAL_BODY, PB_0)
-                    // Name
-                    div {
-                        classes(MB_3)
-                        // Showing the tooltip only if the name is read-only but the rest of the form is editable
-                        val tooltip = if (isMonitorNameReadOnly && !isReadOnlyMode) {
-                            Messages.monitorNameReadOnlyTooltip()
-                        } else {
-                            null
-                        }
-                        validatedInput(
-                            propName = "name",
-                            label = Messages.monitorNameLabel(),
-                            placeholder = Messages.monitorNamePlaceholder(),
-                            description = tooltip,
-                            required = true,
-                            onInput = "validateName()",
-                            disabledIf = "$isReadOnlyMode || $isMonitorNameReadOnly",
-                        )
-                    }
-                    // URL
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "url",
-                            label = Messages.monitorUrlLabel(),
-                            placeholder = Messages.monitorUrlPlaceholder(),
-                            required = true,
-                            onInput = "validateUrl()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    div {
-                        classes(MB_3)
-                        toggleSwitch(
-                            propName = "sensitiveUrl",
-                            label = Messages.sensitiveUrlLabel(),
-                            description = Messages.sensitiveUrlDescription(),
-                            isDisabled = isReadOnlyMode,
-                        )
-                    }
-                    // Uptime Check Interval
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "uptimeCheckInterval",
-                            label = Messages.uptimeCheckIntervalLabel(),
-                            placeholder = null,
-                            required = true,
-                            onInput = "validateUptimeCheckInterval()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Latency History
-                    div {
-                        classes(MB_4)
-                        toggleSwitch(
-                            propName = "latencyHistoryEnabled",
-                            label = Messages.latencyHistorySwitchLabel(),
-                            description = Messages.latencyHistorySwitchDescription(),
-                            isDisabled = isReadOnlyMode,
-                        )
-                    }
-
-                    // Accordion for all the specific settings
-                    val settingsAccordionId = "http-monitor-settings-accordion"
-                    accordion(id = settingsAccordionId) {
-                        // HTTP Monitor Request Settings
-                        accordionItem(
-                            id = "http-monitor-request-settings",
-                            parentId = settingsAccordionId,
-                            title = Messages.requestSettingsLabel(),
-                            titleIcon = Icon.ADJUSTMENTS_SHARE,
-                        ) {
-                            // HTTP Method (GET, HEAD, etc.)
-                            div {
-                                formLabel(
-                                    label = Messages.httpMethodLabel(),
-                                    description = Messages.httpMethodDescription(),
-                                    inputName = "requestMethod",
-                                    required = true,
-                                )
-                                httpMethodSelector(xModelName = "requestMethod", isReadOnly = isReadOnlyMode)
-                            }
-                            // Follow Redirects
-                            div {
-                                classes(MB_3)
-                                toggleSwitch(
-                                    propName = "followRedirects",
-                                    label = Messages.followRedirectsSwitchLabel(),
-                                    description = Messages.followRedirectsSwitchDescription(),
-                                    isDisabled = isReadOnlyMode,
-                                )
-                            }
-                            // Force no-cache header
-                            div {
-                                classes(MB_3)
-                                toggleSwitch(
-                                    propName = "forceNoCache",
-                                    label = Messages.forceNoCacheSwitchLabel(),
-                                    description = Messages.forceNoCacheSwitchDescription(),
-                                    isDisabled = isReadOnlyMode,
-                                )
-                            }
-                            // Custom Headers
-                            div {
-                                classes(MT_4, MB_3)
-                                headersTable(
-                                    label = Messages.requestHeadersLabel(),
-                                    description = Messages.requestHeadersDescription(),
-                                    errorProp = "newRequestHeader",
-                                    isReadOnly = isReadOnlyMode,
-                                    xModelName = "requestHeaders",
-                                    xNewKeyModelName = "newRequestHeaderKey",
-                                    xNewValueModelName = "newRequestHeaderValue",
-                                    onInput = "validateNewRequestHeader()",
-                                    onRemove = "removeRequestHeader(key)",
-                                    onAdd = "addRequestHeader()",
-                                    newHeaderValidator = "isRequestHeaderAddable",
-                                )
-                            }
-                            // Request body
-                            div {
-                                validatedTextArea(
-                                    propName = "requestBody",
-                                    label = Messages.requestBodyLabel(),
-                                    description = Messages.requestBodyDescription(),
-                                    placeholder = Messages.requestBodyPlaceholder(),
-                                    required = false,
-                                    onInput = "validateRequestBody()",
-                                    disabledIf = "isRequestLoading || $isReadOnlyMode",
-                                )
-                            }
-                        }
-
-                        // HTTP Monitor Evaluation Settings
-                        accordionItem(
-                            id = "http-monitor-evaluation-settings",
-                            parentId = settingsAccordionId,
-                            title = Messages.evaluationSettingsLabel(),
-                            titleIcon = Icon.LIST_CHECK,
-                        ) {
-                            // Accepted status codes
-                            div {
-                                classes(MB_3)
-                                formLabel(
-                                    label = Messages.expectedStatusCodesLabel(),
-                                    description = Messages.expectedStatusCodesDescription(),
-                                    inputName = acceptedStatusCodeSelectId,
-                                    required = false,
-                                )
-                                acceptedStatusCodeSelector(
-                                    xModelName = "selectedHttpStatusCodes",
-                                    acceptedStatusCodeSelectId = acceptedStatusCodeSelectId,
-                                    isReadOnly = isReadOnlyMode,
-                                )
-                            }
-                            //Failure count threshold
-                            div {
-                                classes(MB_3)
-                                validatedInput(
-                                    propName = "failureCountThreshold",
-                                    label = Messages.failureCountThresholdLabel(),
-                                    description = Messages.failureCountThresholdDescription(),
-                                    placeholder = null,
-                                    required = true,
-                                    onInput = "validateFailureCountThreshold()",
-                                    disabledIf = "$isReadOnlyMode",
-                                )
-                            }
-                            // Expected Keyword
-                            div {
-                                classes(MB_3)
-                                validatedInput(
-                                    propName = "expectedKeyword",
-                                    label = Messages.expectedKeywordLabel(),
-                                    description = Messages.expectedKeywordDescription(),
-                                    placeholder = null,
-                                    required = false,
-                                    onInput = null,
-                                    disabledIf = "$isReadOnlyMode",
-                                )
-                            }
-                            // Expected Keyword Case Sensitivity
-                            div {
-                                classes(MB_3)
-                                toggleSwitch(
-                                    propName = "expectedKeywordCaseSensitive",
-                                    label = Messages.expectedKeywordCaseSensitiveLabel(),
-                                    description = Messages.expectedKeywordCaseSensitiveDescription(),
-                                    isDisabled = isReadOnlyMode,
-                                )
-                            }
-                            // Expected Keyword Negation
-                            div {
-                                classes(MB_3)
-                                toggleSwitch(
-                                    propName = "expectedKeywordNegated",
-                                    label = Messages.negateExpectedKeywordLabel(),
-                                    description = Messages.negateExpectedKeywordDescription(),
-                                    isDisabled = isReadOnlyMode,
-                                )
-                            }
-                            // Response Time Threshold
-                            div {
-                                validatedInput(
-                                    propName = "responseTimeThresholdMillis",
-                                    label = Messages.responseTimeThresholdLabel(),
-                                    description = Messages.responseTimeThresholdDescription(),
-                                    placeholder = null,
-                                    required = false,
-                                    onInput = "validateResponseTimeThreshold()",
-                                    disabledIf = "$isReadOnlyMode",
-                                    isNumber = true,
-                                )
-                            }
-                            // Expected headers
-                            // Custom Headers
-                            div {
-                                classes(MT_4, MB_3)
-                                headersTable(
-                                    label = Messages.expectedHeadersLabel(),
-                                    description = Messages.expectedHeadersDescription(),
-                                    errorProp = "newExpectedHeader",
-                                    isReadOnly = isReadOnlyMode,
-                                    xModelName = "expectedHeaders",
-                                    xNewKeyModelName = "newExpectedHeaderKey",
-                                    xNewValueModelName = "newExpectedHeaderValue",
-                                    onInput = "validateNewExpectedHeader()",
-                                    onRemove = "removeExpectedHeader(key)",
-                                    onAdd = "addExpectedHeader()",
-                                    newHeaderValidator = "isExpectedHeaderAddable",
-                                )
-                            }
-                        }
-                        // SSL Check Settings
-                        accordionItem(
-                            id = "http-monitor-ssl-check-settings",
-                            parentId = settingsAccordionId,
-                            title = Messages.sslCheckLabel(),
-                            titleIcon = Icon.LOCK_QUESTION,
-                        ) {
-                            toggleSwitch(
-                                propName = "sslCheckEnabled",
-                                label = Messages.enabled(),
-                                description = Messages.sslCheckSwitchDescription(),
-                                isDisabled = isReadOnlyMode,
-                            )
-                            validatedInput(
-                                propName = "sslExpiryThreshold",
-                                label = Messages.sslExpiryThresholdLabel(),
-                                description = Messages.sslExpiryThresholdDescription(),
-                                placeholder = null,
-                                required = true,
-                                onInput = "validateSslExpiryThreshold()",
-                                disabledIf = "$isReadOnlyMode || !sslCheckEnabled",
-                            )
-                        }
-                        // Integration Settings
-                        integrationsAccordionItem(
-                            elementId = "http-monitor-integration-settings",
-                            parentAccordionId = settingsAccordionId,
-                            configuredIntegrationsByType = globals.configuredIntegrationsByType,
-                            isReadOnlyMode = isReadOnlyMode,
-                        )
-                    }
+                    classes(MB_3)
+                    toggleSwitch(
+                        propName = "followRedirects",
+                        label = Messages.followRedirectsSwitchLabel(),
+                        description = Messages.followRedirectsSwitchDescription(),
+                        isDisabled = isReadOnlyMode,
+                    )
                 }
-                // Modal footer
-                upsertModalFooter(
-                    isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isCloning",
-                    xOnSaveClicked = "submitForm()",
-                )
-                cloningOverlay()
+                // Force no-cache header
+                div {
+                    classes(MB_3)
+                    toggleSwitch(
+                        propName = "forceNoCache",
+                        label = Messages.forceNoCacheSwitchLabel(),
+                        description = Messages.forceNoCacheSwitchDescription(),
+                        isDisabled = isReadOnlyMode,
+                    )
+                }
+                // Custom Headers
+                div {
+                    classes(MT_4, MB_3)
+                    headersTable(
+                        label = Messages.requestHeadersLabel(),
+                        description = Messages.requestHeadersDescription(),
+                        errorProp = "newRequestHeader",
+                        isReadOnly = isReadOnlyMode,
+                        xModelName = "requestHeaders",
+                        xNewKeyModelName = "newRequestHeaderKey",
+                        xNewValueModelName = "newRequestHeaderValue",
+                        onInput = "validateNewRequestHeader()",
+                        onRemove = "removeRequestHeader(key)",
+                        onAdd = "addRequestHeader()",
+                        newHeaderValidator = "isRequestHeaderAddable",
+                    )
+                }
+                // Request body
+                div {
+                    validatedTextArea(
+                        propName = "requestBody",
+                        label = Messages.requestBodyLabel(),
+                        description = Messages.requestBodyDescription(),
+                        placeholder = Messages.requestBodyPlaceholder(),
+                        required = false,
+                        onInput = "validateRequestBody()",
+                        disabledIf = "isRequestLoading || $isReadOnlyMode",
+                    )
+                }
             }
+
+            // HTTP Monitor Evaluation Settings
+            accordionItem(
+                id = "http-monitor-evaluation-settings",
+                parentId = settingsAccordionId,
+                title = Messages.evaluationSettingsLabel(),
+                titleIcon = Icon.LIST_CHECK,
+            ) {
+                // Accepted status codes
+                div {
+                    classes(MB_3)
+                    formLabel(
+                        label = Messages.expectedStatusCodesLabel(),
+                        description = Messages.expectedStatusCodesDescription(),
+                        inputName = acceptedStatusCodeSelectId,
+                        required = false,
+                    )
+                    acceptedStatusCodeSelector(
+                        xModelName = "selectedHttpStatusCodes",
+                        acceptedStatusCodeSelectId = acceptedStatusCodeSelectId,
+                        isReadOnly = isReadOnlyMode,
+                    )
+                }
+                //Failure count threshold
+                div {
+                    classes(MB_3)
+                    validatedInput(
+                        propName = "failureCountThreshold",
+                        label = Messages.failureCountThresholdLabel(),
+                        description = Messages.failureCountThresholdDescription(),
+                        placeholder = null,
+                        required = true,
+                        onInput = "validateFailureCountThreshold()",
+                        disabledIf = "$isReadOnlyMode",
+                    )
+                }
+                // Expected Keyword
+                div {
+                    classes(MB_3)
+                    validatedInput(
+                        propName = "expectedKeyword",
+                        label = Messages.expectedKeywordLabel(),
+                        description = Messages.expectedKeywordDescription(),
+                        placeholder = null,
+                        required = false,
+                        onInput = null,
+                        disabledIf = "$isReadOnlyMode",
+                    )
+                }
+                // Expected Keyword Case Sensitivity
+                div {
+                    classes(MB_3)
+                    toggleSwitch(
+                        propName = "expectedKeywordCaseSensitive",
+                        label = Messages.expectedKeywordCaseSensitiveLabel(),
+                        description = Messages.expectedKeywordCaseSensitiveDescription(),
+                        isDisabled = isReadOnlyMode,
+                    )
+                }
+                // Expected Keyword Negation
+                div {
+                    classes(MB_3)
+                    toggleSwitch(
+                        propName = "expectedKeywordNegated",
+                        label = Messages.negateExpectedKeywordLabel(),
+                        description = Messages.negateExpectedKeywordDescription(),
+                        isDisabled = isReadOnlyMode,
+                    )
+                }
+                // Response Time Threshold
+                div {
+                    validatedInput(
+                        propName = "responseTimeThresholdMillis",
+                        label = Messages.responseTimeThresholdLabel(),
+                        description = Messages.responseTimeThresholdDescription(),
+                        placeholder = null,
+                        required = false,
+                        onInput = "validateResponseTimeThreshold()",
+                        disabledIf = "$isReadOnlyMode",
+                        isNumber = true,
+                    )
+                }
+                // Expected headers
+                // Custom Headers
+                div {
+                    classes(MT_4, MB_3)
+                    headersTable(
+                        label = Messages.expectedHeadersLabel(),
+                        description = Messages.expectedHeadersDescription(),
+                        errorProp = "newExpectedHeader",
+                        isReadOnly = isReadOnlyMode,
+                        xModelName = "expectedHeaders",
+                        xNewKeyModelName = "newExpectedHeaderKey",
+                        xNewValueModelName = "newExpectedHeaderValue",
+                        onInput = "validateNewExpectedHeader()",
+                        onRemove = "removeExpectedHeader(key)",
+                        onAdd = "addExpectedHeader()",
+                        newHeaderValidator = "isExpectedHeaderAddable",
+                    )
+                }
+            }
+            // SSL Check Settings
+            accordionItem(
+                id = "http-monitor-ssl-check-settings",
+                parentId = settingsAccordionId,
+                title = Messages.sslCheckLabel(),
+                titleIcon = Icon.LOCK_QUESTION,
+            ) {
+                toggleSwitch(
+                    propName = "sslCheckEnabled",
+                    label = Messages.enabled(),
+                    description = Messages.sslCheckSwitchDescription(),
+                    isDisabled = isReadOnlyMode,
+                )
+                validatedInput(
+                    propName = "sslExpiryThreshold",
+                    label = Messages.sslExpiryThresholdLabel(),
+                    description = Messages.sslExpiryThresholdDescription(),
+                    placeholder = null,
+                    required = true,
+                    onInput = "validateSslExpiryThreshold()",
+                    disabledIf = "$isReadOnlyMode || !sslCheckEnabled",
+                )
+            }
+        },
+    ) { isReadOnlyMode ->
+// URL
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "url",
+                label = Messages.monitorUrlLabel(),
+                placeholder = Messages.monitorUrlPlaceholder(),
+                required = true,
+                onInput = "validateUrl()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        div {
+            classes(MB_3)
+            toggleSwitch(
+                propName = "sensitiveUrl",
+                label = Messages.sensitiveUrlLabel(),
+                description = Messages.sensitiveUrlDescription(),
+                isDisabled = isReadOnlyMode,
+            )
+        }
+        // Uptime Check Interval
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "uptimeCheckInterval",
+                label = Messages.uptimeCheckIntervalLabel(),
+                placeholder = null,
+                required = true,
+                onInput = "validateUptimeCheckInterval()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Latency History
+        div {
+            classes(MB_4)
+            toggleSwitch(
+                propName = "latencyHistoryEnabled",
+                label = Messages.latencyHistorySwitchLabel(),
+                description = Messages.latencyHistorySwitchDescription(),
+                isDisabled = isReadOnlyMode,
+            )
         }
     }
-    handleFormResetOnModalClose(modalId = modalId, eventName = modalClosedEvent)
 }
 
 private fun FlowContent.acceptedStatusCodeSelector(

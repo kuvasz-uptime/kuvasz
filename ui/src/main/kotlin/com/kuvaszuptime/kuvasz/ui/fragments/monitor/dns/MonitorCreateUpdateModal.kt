@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -19,295 +20,220 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
     monitor: DnsMonitorDetailsDto?,
     globals: AppGlobals,
 ) {
-    val serializedMonitor: String? = monitor?.asJsonString()
-    val serializedErrorMessages = mapOf(
-        "nameRequired" to Messages.errorNameRequired(),
-        "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
-        "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
-        "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
-        "hostRequired" to Messages.errorHostRequired(),
-        "resolverPortInvalid" to Messages.errorDnsResolverPortInvalid(),
-        "timeoutMsInvalid" to Messages.errorTimeoutMsInvalid(),
-        "latencyThresholdInvalid" to Messages.errorLatencyThresholdInvalid(),
-        "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
-        "recordMatcherInvalid" to Messages.errorDnsRecordMatcherInvalid(),
-        "responseCodeMatchersConflict" to Messages.errorDnsResponseCodeMatchersConflict(),
-    ).asJsonString()
-    val modalClosedEvent = "dns-monitor-upsert-modal-closed"
-    val isReadOnlyMode = globals.editabilityState.areDnsMonitorsReadOnly()
-    val isMonitorNameReadOnly = monitor?.statusPages?.isNotEmpty() == true &&
-        globals.editabilityState.areStatusPagesReadOnly()
-
-    div {
-        id = modalId
-        classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
-        xData(
-            """upsertDnsMonitorForm(
-                |$serializedMonitor,
-                |$serializedErrorMessages,
-                |${globals.enabledIntegrations.count { it.value.global }})
-            """.trimMargin()
-        )
-        attributes["@$modalClosedEvent.window"] = "resetState()"
-        attributes["@clone-monitor.window"] = "cloneFrom(\$event.detail.id, \$event.detail.name)"
-        tabIndex = "-1"
-        role = "dialog"
-
-        div {
-            classes(MODAL_DIALOG, MODAL_LG, MODAL_DIALOG_CENTERED)
-            role = "document"
-
-            div {
-                classes(MODAL_CONTENT, POSITION_RELATIVE)
+    monitorUpsertModal(
+        modalId = modalId,
+        typeUiConfig = MonitorTypeUiConfig.DNS,
+        monitor = monitor,
+        globals = globals,
+        createTitle = Messages.createNewDnsMonitor(),
+        errorMessages = mapOf(
+            "nameRequired" to Messages.errorNameRequired(),
+            "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
+            "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
+            "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),
+            "hostRequired" to Messages.errorHostRequired(),
+            "resolverPortInvalid" to Messages.errorDnsResolverPortInvalid(),
+            "timeoutMsInvalid" to Messages.errorTimeoutMsInvalid(),
+            "latencyThresholdInvalid" to Messages.errorLatencyThresholdInvalid(),
+            "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
+            "recordMatcherInvalid" to Messages.errorDnsRecordMatcherInvalid(),
+            "responseCodeMatchersConflict" to Messages.errorDnsResponseCodeMatchersConflict(),
+        ),
+        extraSettings = { isReadOnlyMode, settingsAccordionId ->
+            // DNS assertion settings
+            accordionItem(
+                id = "dns-monitor-assertion-settings",
+                parentId = settingsAccordionId,
+                title = Messages.evaluationSettingsLabel(),
+                titleIcon = Icon.LIST_CHECK,
+            ) {
+                // Record matchers
                 div {
-                    classes(MODAL_HEADER)
-                    h5 {
-                        classes(MODAL_TITLE)
-                        if (monitor == null) {
-                            +Messages.createNewDnsMonitor()
-                        } else if (isReadOnlyMode) {
-                            +Messages.configurationOf(monitor.name)
-                        } else {
-                            +Messages.updateMonitor(monitor.name)
+                    classes(MB_3)
+                    recordMatchersTable(isReadOnly = isReadOnlyMode)
+                }
+                // Expected response code
+                div {
+                    classes(MB_3)
+                    formLabel(
+                        label = Messages.dnsExpectedResponseCodeLabel(),
+                        description = Messages.dnsExpectedResponseCodeDescription(),
+                        required = true,
+                    )
+                    selectGroup(
+                        xModelName = "expectedResponseCode",
+                        readOnly = isReadOnlyMode,
+                        values = DnsResponseCode.entries.map { ValueAndLabel(it.literal, it.literal) },
+                        // Switching the code can conflict with the already-added matchers, just like
+                        // adding a matcher can conflict with the already-selected code
+                        onChange = "validateResponseCodeMatchers()",
+                    )
+                    templateTag {
+                        xIf("errors.recordMatchers")
+                        div {
+                            classes(INVALID_FEEDBACK, D_BLOCK)
+                            xText("errors.recordMatchers")
                         }
-                    }
-                    button(type = ButtonType.button) {
-                        classes(BTN_CLOSE)
-                        modalCloser()
                     }
                 }
+                // Drift detection
                 div {
-                    classes(MODAL_BODY, PB_0)
-                    // Name
+                    classes(MB_3)
+                    toggleSwitch(
+                        propName = "driftDetectionEnabled",
+                        label = Messages.dnsDriftDetectionLabel(),
+                        description = Messages.dnsDriftDetectionDescription(),
+                        isDisabled = isReadOnlyMode,
+                    )
+                }
+                // The record types drift detection watches
+                templateTag {
+                    xIf("driftDetectionEnabled")
+                div {
+                    classes(MB_2)
+                    formLabel(
+                        label = Messages.dnsDriftRecordTypesLabel(),
+                        description = Messages.dnsDriftRecordTypesDescription(),
+                        required = false,
+                    )
                     div {
-                        classes(MB_3)
-                        val tooltip = if (isMonitorNameReadOnly && !isReadOnlyMode) {
-                            Messages.monitorNameReadOnlyTooltip()
-                        } else {
-                            null
-                        }
-                        validatedInput(
-                            propName = "name",
-                            label = Messages.monitorNameLabel(),
-                            placeholder = Messages.monitorNamePlaceholder(),
-                            description = tooltip,
-                            required = true,
-                            onInput = "validateName()",
-                            disabledIf = "$isReadOnlyMode || $isMonitorNameReadOnly",
-                        )
-                    }
-                    // Host (domain name)
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "host",
-                            label = Messages.dnsHostLabel(),
-                            placeholder = Messages.dnsHostPlaceholder(),
-                            description = null,
-                            required = true,
-                            onInput = "validateHost()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Custom resolver host (optional)
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "resolverHost",
-                            label = Messages.dnsResolverHostLabel(),
-                            placeholder = Messages.dnsResolverHostPlaceholder(),
-                            description = Messages.dnsResolverHostDescription(),
-                            required = false,
-                            onInput = null,
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Resolver port
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "resolverPort",
-                            label = Messages.dnsResolverPortLabel(),
-                            placeholder = null,
-                            description = null,
-                            required = true,
-                            onInput = "validateResolverPort()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Transport
-                    div {
-                        classes(MB_3)
-                        formLabel(
-                            label = Messages.dnsTransportLabel(),
-                            description = Messages.dnsTransportDescription(),
-                            required = true,
-                        )
-                        selectGroup(
-                            xModelName = "transport",
-                            readOnly = isReadOnlyMode,
-                            values = DnsTransport.entries.map { ValueAndLabel(it.literal, it.literal) },
-                        )
-                    }
-                    // Uptime check interval
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "uptimeCheckInterval",
-                            label = Messages.uptimeCheckIntervalLabel(),
-                            placeholder = null,
-                            description = null,
-                            required = true,
-                            onInput = "validateUptimeCheckInterval()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Timeout (ms)
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "timeoutMs",
-                            label = Messages.dnsTimeoutMsLabel(),
-                            placeholder = null,
-                            description = Messages.dnsTimeoutMsDescription(),
-                            required = true,
-                            onInput = "validateTimeoutMs()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Latency threshold (optional)
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "latencyThresholdMs",
-                            label = Messages.latencyThresholdLabel(),
-                            placeholder = null,
-                            description = Messages.dnsLatencyThresholdDescription(),
-                            required = false,
-                            onInput = "validateLatencyThreshold()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Failure count threshold
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "failureCountThreshold",
-                            label = Messages.failureCountThresholdLabel(),
-                            description = Messages.failureCountThresholdDescription(),
-                            placeholder = null,
-                            required = true,
-                            onInput = "validateFailureCountThreshold()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
-                    }
-                    // Metrics History
-                    div {
-                        classes(MB_4)
-                        toggleSwitch(
-                            propName = "metricsHistoryEnabled",
-                            label = Messages.metricsHistorySwitchLabel(),
-                            description = Messages.metricsHistorySwitchDescription(),
-                            isDisabled = isReadOnlyMode,
-                        )
-                    }
-
-                    val settingsAccordionId = "dns-monitor-settings-accordion"
-                    accordion(id = settingsAccordionId) {
-                        // DNS assertion settings
-                        accordionItem(
-                            id = "dns-monitor-assertion-settings",
-                            parentId = settingsAccordionId,
-                            title = Messages.evaluationSettingsLabel(),
-                            titleIcon = Icon.LIST_CHECK,
-                        ) {
-                            // Record matchers
-                            div {
-                                classes(MB_3)
-                                recordMatchersTable(isReadOnly = isReadOnlyMode)
-                            }
-                            // Expected response code
-                            div {
-                                classes(MB_3)
-                                formLabel(
-                                    label = Messages.dnsExpectedResponseCodeLabel(),
-                                    description = Messages.dnsExpectedResponseCodeDescription(),
-                                    required = true,
-                                )
-                                selectGroup(
-                                    xModelName = "expectedResponseCode",
-                                    readOnly = isReadOnlyMode,
-                                    values = DnsResponseCode.entries.map { ValueAndLabel(it.literal, it.literal) },
-                                    // Switching the code can conflict with the already-added matchers, just like
-                                    // adding a matcher can conflict with the already-selected code
-                                    onChange = "validateResponseCodeMatchers()",
-                                )
-                                templateTag {
-                                    xIf("errors.recordMatchers")
-                                    div {
-                                        classes(INVALID_FEEDBACK, D_BLOCK)
-                                        xText("errors.recordMatchers")
-                                    }
+                        DnsRecordType.entries.forEach { recordType ->
+                            label {
+                                classes(FORM_CHECK, FORM_CHECK_INLINE)
+                                input(type = InputType.checkBox) {
+                                    value = recordType.name
+                                    classes(FORM_CHECK_INPUT)
+                                    xModel("driftRecordTypes")
+                                    if (isReadOnlyMode) disabled = true
                                 }
-                            }
-                            // Drift detection
-                            div {
-                                classes(MB_3)
-                                toggleSwitch(
-                                    propName = "driftDetectionEnabled",
-                                    label = Messages.dnsDriftDetectionLabel(),
-                                    description = Messages.dnsDriftDetectionDescription(),
-                                    isDisabled = isReadOnlyMode,
-                                )
-                            }
-                            // The record types drift detection watches
-                            templateTag {
-                                xIf("driftDetectionEnabled")
-                                div {
-                                    classes(MB_2)
-                                    formLabel(
-                                        label = Messages.dnsDriftRecordTypesLabel(),
-                                        description = Messages.dnsDriftRecordTypesDescription(),
-                                        required = false,
-                                    )
-                                    div {
-                                        DnsRecordType.entries.forEach { recordType ->
-                                            label {
-                                                classes(FORM_CHECK, FORM_CHECK_INLINE)
-                                                input(type = InputType.checkBox) {
-                                                    value = recordType.name
-                                                    classes(FORM_CHECK_INPUT)
-                                                    xModel("driftRecordTypes")
-                                                    if (isReadOnlyMode) disabled = true
-                                                }
-                                                span {
-                                                    classes(FORM_CHECK_LABEL)
-                                                    +recordType.name
-                                                }
-                                            }
-                                        }
-                                    }
+                                span {
+                                    classes(FORM_CHECK_LABEL)
+                                    +recordType.name
                                 }
                             }
                         }
-                        integrationsAccordionItem(
-                            elementId = "dns-monitor-integration-settings",
-                            parentAccordionId = settingsAccordionId,
-                            configuredIntegrationsByType = globals.configuredIntegrationsByType,
-                            isReadOnlyMode = isReadOnlyMode,
-                        )
                     }
                 }
-                upsertModalFooter(
-                    isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isCloning",
-                    xOnSaveClicked = "submitForm()",
-                )
-                cloningOverlay()
+                }
             }
+        },
+    ) { isReadOnlyMode ->
+// Host (domain name)
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "host",
+                label = Messages.dnsHostLabel(),
+                placeholder = Messages.dnsHostPlaceholder(),
+                description = null,
+                required = true,
+                onInput = "validateHost()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Custom resolver host (optional)
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "resolverHost",
+                label = Messages.dnsResolverHostLabel(),
+                placeholder = Messages.dnsResolverHostPlaceholder(),
+                description = Messages.dnsResolverHostDescription(),
+                required = false,
+                onInput = null,
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Resolver port
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "resolverPort",
+                label = Messages.dnsResolverPortLabel(),
+                placeholder = null,
+                description = null,
+                required = true,
+                onInput = "validateResolverPort()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Transport
+        div {
+            classes(MB_3)
+            formLabel(
+                label = Messages.dnsTransportLabel(),
+                description = Messages.dnsTransportDescription(),
+                required = true,
+            )
+            selectGroup(
+                xModelName = "transport",
+                readOnly = isReadOnlyMode,
+                values = DnsTransport.entries.map { ValueAndLabel(it.literal, it.literal) },
+            )
+        }
+        // Uptime check interval
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "uptimeCheckInterval",
+                label = Messages.uptimeCheckIntervalLabel(),
+                placeholder = null,
+                description = null,
+                required = true,
+                onInput = "validateUptimeCheckInterval()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Timeout (ms)
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "timeoutMs",
+                label = Messages.dnsTimeoutMsLabel(),
+                placeholder = null,
+                description = Messages.dnsTimeoutMsDescription(),
+                required = true,
+                onInput = "validateTimeoutMs()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Latency threshold (optional)
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "latencyThresholdMs",
+                label = Messages.latencyThresholdLabel(),
+                placeholder = null,
+                description = Messages.dnsLatencyThresholdDescription(),
+                required = false,
+                onInput = "validateLatencyThreshold()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Failure count threshold
+        div {
+            classes(MB_3)
+            validatedInput(
+                propName = "failureCountThreshold",
+                label = Messages.failureCountThresholdLabel(),
+                description = Messages.failureCountThresholdDescription(),
+                placeholder = null,
+                required = true,
+                onInput = "validateFailureCountThreshold()",
+                disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Metrics History
+        div {
+            classes(MB_4)
+            toggleSwitch(
+                propName = "metricsHistoryEnabled",
+                label = Messages.metricsHistorySwitchLabel(),
+                description = Messages.metricsHistorySwitchDescription(),
+                isDisabled = isReadOnlyMode,
+            )
         }
     }
-    handleFormResetOnModalClose(modalId = modalId, eventName = modalClosedEvent)
 }
 
 private fun FlowContent.recordMatchersTable(isReadOnly: Boolean) {
