@@ -9,6 +9,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -28,6 +29,7 @@ import org.xbill.DNS.Section
 import org.xbill.DNS.TXTRecord
 import java.io.IOException
 import java.net.InetAddress
+import java.net.UnknownHostException
 import java.time.Duration
 
 private fun name(fqdn: String) = Name.fromConstantString(fqdn)
@@ -154,6 +156,28 @@ class DnsResolveExecutorTest : BehaviorSpec({
                 result.error.shouldNotBeNull() shouldBe "timed out"
                 result.latencyMs.shouldBeNull()
                 result.responseCode.shouldBeNull()
+            }
+        }
+
+        `when`("the custom resolver itself cannot be resolved") {
+            val factory = mockk<DnsResolverFactory>()
+            every { factory.create(any(), any()) } throws
+                UnknownHostException("not-a-real-resolver.invalid")
+
+            val result = DnsResolveExecutor(factory).execute(
+                host = "example.com",
+                recordTypes = emptySet(),
+                resolverHost = "not-a-real-resolver.invalid",
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 5000,
+            )
+
+            then("it reports the error instead of letting it escape, so the monitor still gets a verdict") {
+                result.error.shouldNotBeNull() shouldBe "not-a-real-resolver.invalid"
+                result.latencyMs.shouldBeNull()
+                result.responseCode.shouldBeNull()
+                result.records.shouldBeEmpty()
             }
         }
 

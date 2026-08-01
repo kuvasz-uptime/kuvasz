@@ -17,6 +17,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 
 @Introspected
@@ -31,6 +32,7 @@ data class DnsMonitorUpdateDto(
     val host: String?,
 
     @param:Schema(description = DnsMonitorDocs.RESOLVER_HOST, required = false, nullable = true)
+    @get:Pattern(regexp = Validation.NOT_BLANK_REGEX, message = MonitorValidationMessages.RESOLVER_HOST_NOT_BLANK)
     val resolverHost: String?,
 
     @param:Schema(description = DnsMonitorDocs.RESOLVER_PORT, required = false, nullable = false)

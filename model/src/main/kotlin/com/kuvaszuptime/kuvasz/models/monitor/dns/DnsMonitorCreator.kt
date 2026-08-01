@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 
 @Suppress("ComplexInterface")
@@ -21,6 +22,7 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers {
     @get:NotBlank(message = MonitorValidationMessages.HOST_NOT_BLANK)
     val host: String
 
+    @get:Pattern(regexp = Validation.NOT_BLANK_REGEX, message = MonitorValidationMessages.RESOLVER_HOST_NOT_BLANK)
     val resolverHost: String?
 
     @get:NotNull(message = MonitorValidationMessages.RESOLVER_PORT_NOT_NULL)
@@ -65,7 +67,7 @@ fun DnsMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>)
         .setResolverHost(resolverHost)
         .setResolverPort(resolverPort)
         .setTransport(transport)
-        .setRecordMatchers(recordMatchers.orEmpty().toJsonNode())
+        .setRecordMatchers(recordMatchers.orEmpty().distinct().toJsonNode())
         .setExpectedResponseCode(expectedResponseCode)
         .setDriftDetectionEnabled(driftDetectionEnabled)
         .setDriftRecordTypes(driftRecordTypes.orEmpty().distinct().toTypedArray())

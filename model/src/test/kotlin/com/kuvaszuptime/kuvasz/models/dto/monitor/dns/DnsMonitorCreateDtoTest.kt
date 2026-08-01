@@ -7,6 +7,8 @@ import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
+import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
+import com.kuvaszuptime.kuvasz.models.monitor.dns.toMonitorRecord
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -219,6 +221,43 @@ class DnsMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
 
             then("bean validation should NOT signal an error") {
                 validator.validate(dto).shouldBeEmpty()
+            }
+        }
+        `when`("resolverHost is set to a blank string") {
+            val dto = DnsMonitorCreateDto(
+                name = "Test Monitor",
+                host = "example.com",
+                uptimeCheckInterval = 60,
+                resolverHost = "   ",
+            )
+
+            then("bean validation should signal an error, since a blank nameserver cannot be resolved") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "resolverHost",
+                    message = MonitorValidationMessages.RESOLVER_HOST_NOT_BLANK
+                )
+            }
+        }
+
+        `when`("resolverHost is not set at all") {
+            val dto = DnsMonitorCreateDto(name = "Test Monitor", host = "example.com", uptimeCheckInterval = 60)
+
+            then("bean validation should NOT signal an error, because the system resolver is used then") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
+
+        `when`("the same record matcher is listed twice") {
+            val matcher = DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4")
+            val dto = DnsMonitorCreateDto(
+                name = "Test Monitor",
+                host = "example.com",
+                uptimeCheckInterval = 60,
+                recordMatchers = listOf(matcher, matcher),
+            )
+
+            then("the duplicate is dropped when the record is built, since it would be evaluated twice") {
+                dto.toMonitorRecord(emptySet()).recordMatchersAsList() shouldBe listOf(matcher)
             }
         }
     }

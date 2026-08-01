@@ -68,20 +68,36 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
         driftRecordTypes: Set<DnsRecordType> = emptySet(),
     ): DnsCheckResult {
         val assertionTypes = recordTypes.ifEmpty { setOf(DnsRecordType.A) }
-        val driftOnlyTypes = driftRecordTypes - assertionTypes
 
-        val resolver = resolverFactory.create(resolverHost, transport).apply {
-            setPort(resolverPort)
-            timeout = Duration.ofMillis(timeoutMs.toLong())
+        val resolver = try {
+            resolverFactory.create(resolverHost, transport).apply {
+                setPort(resolverPort)
+                timeout = Duration.ofMillis(timeoutMs.toLong())
+            }
+        } catch (ex: IOException) {
+            return DnsCheckResult(
+                records = emptyMap(),
+                responseCode = null,
+                latencyMs = null,
+                error = ex.message ?: ex.javaClass.simpleName,
+            )
         }
 
+        return resolver.query(host, assertionTypes, driftOnlyTypes = driftRecordTypes - assertionTypes)
+    }
+
+    private fun Resolver.query(
+        host: String,
+        assertionTypes: Set<DnsRecordType>,
+        driftOnlyTypes: Set<DnsRecordType>,
+    ): DnsCheckResult {
         val records = mutableMapOf<DnsRecordType, List<String>>()
         var problemResponseCode: DnsResponseCode? = null
         val start = System.nanoTime()
 
         assertionTypes.forEach { type ->
             val response = try {
-                resolver.send(queryFor(host, type.toDnsJavaType()))
+                send(queryFor(host, type.toDnsJavaType()))
             } catch (ex: IOException) {
                 return DnsCheckResult(
                     records = records,
@@ -104,7 +120,7 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
         var driftRecordsComplete = true
         driftOnlyTypes.forEach { type ->
             try {
-                val response = resolver.send(queryFor(host, type.toDnsJavaType()))
+                val response = send(queryFor(host, type.toDnsJavaType()))
                 // A non-NOERROR answer is empty for the same reason a non-existent record is, so it cannot be told
                 // apart from "this type is genuinely absent" -- treat it as missing data rather than as a removal.
                 if (response.rcode.toDnsResponseCode() == DnsResponseCode.NOERROR) {
