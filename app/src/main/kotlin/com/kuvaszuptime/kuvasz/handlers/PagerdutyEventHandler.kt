@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
@@ -34,6 +33,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
+import java.util.UUID
 
 @Context
 @Requires(bean = PagerdutyConfig::class)
@@ -60,16 +60,11 @@ class PagerdutyEventHandler(
     private val SSLMonitorEvent.deduplicationKey: String
         get() = "kuvasz_ssl_${monitor.id}"
 
+    // Drift is a point-in-time signal rather than an incident: nothing ever resolves these alerts, so every
+    // occurrence gets its own key. Deriving the key from the answer set instead would fold a monitor that flaps back
+    // to a set it already alerted about into the still-open alert of the earlier change, dropping it silently.
     private val DnsRecordsChangedEvent.deduplicationKey: String
-        get() = "kuvasz_dns_drift_${monitor.id}_${currentRecords.contentHash()}"
-
-    private fun DnsSnapshotRecords.contentHash(): String =
-        Integer.toHexString(
-            entries
-                .sortedBy { it.key.name }
-                .joinToString(";") { (type, records) -> "${type.name}=${records.joinToString(",")}" }
-                .hashCode()
-        )
+        get() = "kuvasz_dns_drift_${monitor.id}_${UUID.randomUUID()}"
 
     override fun handleMaintenanceEvent(event: MaintenanceWindowEvent) {
         val integrationKeys = filterMaintenanceTargets(event).map { (it as PagerdutyConfig).integrationKey }
@@ -155,10 +150,12 @@ class PagerdutyEventHandler(
 
     override fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent) {
         val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
+        // Resolved once, so that a single change stays one alert identity across every targeted integration
+        val deduplicationKey = event.deduplicationKey
         integrationKeys.forEach { integrationKey ->
             val request = event.toTriggerRequest(
                 serviceKey = integrationKey,
-                deduplicationKey = event.deduplicationKey,
+                deduplicationKey = deduplicationKey,
                 severity = PagerdutySeverity.WARNING,
             )
             apiClient.triggerAlert(request).handleResponse()

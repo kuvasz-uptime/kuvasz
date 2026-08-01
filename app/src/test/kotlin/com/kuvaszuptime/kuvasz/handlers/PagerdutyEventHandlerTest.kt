@@ -1167,7 +1167,30 @@ class PagerdutyEventHandlerTest(
                     )
                 )
 
-                then("both carry the same dedup key, so the flapping folds onto a single incident") {
+                then("they still get distinct dedup keys, so the repeated change is not folded away") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.map { it.dedupKey }.toSet() shouldHaveSize 2
+                }
+            }
+
+            `when`("a single DnsRecordsChangedEvent targets multiple integrations") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(globalPagerdutyConfig.id, otherPagerdutyConfig.id),
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(
+                    DnsRecordsChangedEvent(
+                        monitor = monitor,
+                        previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                        currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                    )
+                )
+
+                then("every integration gets the same key, so one change stays one alert identity") {
                     val slot = mutableListOf<PagerdutyTriggerRequest>()
 
                     verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
