@@ -2368,7 +2368,9 @@ components:
           maximum: 30000
           minimum: 1
           type: integer
-          description: The DNS query timeout in milliseconds (1-30000)
+          description: "The timeout of a whole check in milliseconds (1-30000). It\
+            \ is a budget shared by every query the check makes, so asserting on more\
+            \ record types does not extend it."
           format: int32
           default: 5000
           x-maximum-message: "Timeout must be at most {value} milliseconds"
@@ -2505,7 +2507,9 @@ components:
           format: int32
         timeoutMs:
           type: integer
-          description: The DNS query timeout in milliseconds (1-30000)
+          description: "The timeout of a whole check in milliseconds (1-30000). It\
+            \ is a budget shared by every query the check makes, so asserting on more\
+            \ record types does not extend it."
           format: int32
         latencyThresholdMs:
           type: integer
@@ -2676,7 +2680,9 @@ components:
           format: int32
         timeoutMs:
           type: integer
-          description: The DNS query timeout in milliseconds (1-30000)
+          description: "The timeout of a whole check in milliseconds (1-30000). It\
+            \ is a budget shared by every query the check makes, so asserting on more\
+            \ record types does not extend it."
           format: int32
         latencyThresholdMs:
           type: integer
@@ -2830,7 +2836,9 @@ components:
           maximum: 30000
           minimum: 1
           type: integer
-          description: The DNS query timeout in milliseconds (1-30000)
+          description: "The timeout of a whole check in milliseconds (1-30000). It\
+            \ is a budget shared by every query the check makes, so asserting on more\
+            \ record types does not extend it."
           format: int32
           nullable: false
           x-maximum-message: "Timeout must be at most {value} milliseconds"
