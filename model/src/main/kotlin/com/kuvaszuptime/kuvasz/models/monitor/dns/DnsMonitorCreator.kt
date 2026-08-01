@@ -14,7 +14,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 
 @Suppress("ComplexInterface")
-interface DnsMonitorCreator {
+interface DnsMonitorCreator : DnsResponseCodeMatchers {
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String
 
@@ -31,9 +31,9 @@ interface DnsMonitorCreator {
     val transport: DnsTransport
 
     @get:ValidDnsRecordMatchers
-    val recordMatchers: List<DnsRecordMatcher>?
+    override val recordMatchers: List<DnsRecordMatcher>?
 
-    val expectedResponseCode: DnsResponseCode
+    override val expectedResponseCode: DnsResponseCode
     val driftDetectionEnabled: Boolean
     val driftRecordTypes: List<DnsRecordType>?
 

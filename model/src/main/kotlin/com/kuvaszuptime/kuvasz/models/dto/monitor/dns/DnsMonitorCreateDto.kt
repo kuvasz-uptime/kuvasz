@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
-import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsResponseCodeMatchers
 import com.kuvaszuptime.kuvasz.validation.ValidDnsResponseCode
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
@@ -73,4 +72,4 @@ data class DnsMonitorCreateDto(
         defaultValue = DnsMonitorDefaults.METRICS_HISTORY_ENABLED.toString()
     )
     override val metricsHistoryEnabled: Boolean = DnsMonitorDefaults.METRICS_HISTORY_ENABLED,
-) : DnsMonitorCreator, DnsResponseCodeMatchers
+) : DnsMonitorCreator

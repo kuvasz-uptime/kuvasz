@@ -6,9 +6,11 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
+import com.kuvaszuptime.kuvasz.validation.ValidDnsResponseCode
 import io.micronaut.core.annotation.Introspected
 
 @Introspected
+@ValidDnsResponseCode
 class DnsMonitorImportAdapter(dto: DnsMonitorExportDto) : DnsMonitorCreator {
     override val name: String = dto.name
     override val host: String = dto.host

@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.validation
 
-import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsResponseCodeMatchers
+import com.kuvaszuptime.kuvasz.models.monitor.dns.hasValidResponseCodeExpectation
 import io.micronaut.context.annotation.Factory
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import jakarta.inject.Singleton
@@ -25,10 +25,6 @@ class DnsResponseCodeValidatorFactory {
     @Singleton
     fun dnsResponseCodeValidator(): ConstraintValidator<ValidDnsResponseCode, DnsResponseCodeMatchers> =
         ConstraintValidator { value, _, _ ->
-            if (value == null) return@ConstraintValidator true
-            val expectedResponseCode = value.expectedResponseCode
-            expectedResponseCode == null
-                || expectedResponseCode == DnsResponseCode.NOERROR
-                || value.recordMatchers.isNullOrEmpty()
+            value == null || value.hasValidResponseCodeExpectation()
         }
 }

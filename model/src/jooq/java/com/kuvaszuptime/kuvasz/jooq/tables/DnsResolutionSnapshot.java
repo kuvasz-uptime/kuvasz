@@ -18,7 +18,6 @@ import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.InverseForeignKey;
-import org.jooq.JSONB;
 import org.jooq.Name;
 import org.jooq.Path;
 import org.jooq.PlainSQL;
@@ -36,6 +35,9 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
+import org.jooq.jackson3.extensions.converters.JSONBtoJacksonConverter;
+
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -67,7 +69,7 @@ public class DnsResolutionSnapshot extends TableImpl<DnsResolutionSnapshotRecord
     /**
      * The column <code>kuvasz.dns_resolution_snapshot.records</code>.
      */
-    public final TableField<DnsResolutionSnapshotRecord, JSONB> RECORDS = createField(DSL.name("records"), SQLDataType.JSONB.nullable(false), this, "");
+    public final TableField<DnsResolutionSnapshotRecord, JsonNode> RECORDS = createField(DSL.name("records"), SQLDataType.JSONB.nullable(false), this, "", new JSONBtoJacksonConverter<JsonNode>(JsonNode.class));
 
     /**
      * The column <code>kuvasz.dns_resolution_snapshot.updated_at</code>.

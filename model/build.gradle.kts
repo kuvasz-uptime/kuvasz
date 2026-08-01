@@ -180,7 +180,8 @@ jooq {
                                 isJsonConverter = true
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression =
-                                    "HTTP_MONITOR.REQUEST_HEADERS|HTTP_MONITOR.EXPECTED_HEADERS|DNS_MONITOR.RECORD_MATCHERS"
+                                    "HTTP_MONITOR.REQUEST_HEADERS|HTTP_MONITOR.EXPECTED_HEADERS|" +
+                                    "DNS_MONITOR.RECORD_MATCHERS|DNS_RESOLUTION_SNAPSHOT.RECORDS"
                             }
                         }
                     }

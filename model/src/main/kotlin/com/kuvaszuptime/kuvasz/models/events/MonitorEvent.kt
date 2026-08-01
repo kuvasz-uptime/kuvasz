@@ -4,8 +4,8 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.ERROR_MAX_LENGTH
-import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import java.net.URI
@@ -34,8 +34,8 @@ data class HttpRedirectEvent(
 
 data class DnsRecordsChangedEvent(
     override val monitor: DnsMonitorRecord,
-    val previousRecords: Map<DnsRecordType, List<String>>,
-    val currentRecords: Map<DnsRecordType, List<String>>,
+    val previousRecords: DnsSnapshotRecords,
+    val currentRecords: DnsSnapshotRecords,
 ) : MonitorEvent<DnsMonitorRecord>() {
 
     override fun toStructuredMessage() = StructuredDnsRecordsChangedMessage(

@@ -10,10 +10,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -28,6 +28,8 @@ import org.jooq.impl.DSL
 @Singleton
 @Suppress("TooManyFunctions")
 class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<HttpMonitorRecord> {
+
+    private val jsonToMapConverter = JsonNodeToMapConverter()
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): HttpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(HTTP_MONITOR)
@@ -202,10 +204,8 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
             HTTP_MONITOR.EXPECTED_KEYWORD.`as`(HttpMonitorDetailsDto::expectedKeyword.name),
             HTTP_MONITOR.EXPECTED_KEYWORD_CASE_SENSITIVE.`as`(HttpMonitorDetailsDto::expectedKeywordCaseSensitive.name),
             HTTP_MONITOR.EXPECTED_KEYWORD_NEGATED.`as`(HttpMonitorDetailsDto::expectedKeywordNegated.name),
-            HTTP_MONITOR.REQUEST_HEADERS.`as`(HttpMonitorDetailsDto::requestHeaders.name)
-                .convert(JsonNodeToMapConverter()),
-            HTTP_MONITOR.EXPECTED_HEADERS.`as`(HttpMonitorDetailsDto::expectedHeaders.name)
-                .convert(JsonNodeToMapConverter()),
+            HTTP_MONITOR.REQUEST_HEADERS.`as`(HttpMonitorDetailsDto::requestHeaders.name).convert(jsonToMapConverter),
+            HTTP_MONITOR.EXPECTED_HEADERS.`as`(HttpMonitorDetailsDto::expectedHeaders.name).convert(jsonToMapConverter),
             HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(HttpMonitorDetailsDto::statusPages.name),

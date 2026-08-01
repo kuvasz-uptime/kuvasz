@@ -4,11 +4,11 @@ import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
-import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.assertionRecordTypes
 import com.kuvaszuptime.kuvasz.models.monitor.dns.driftWatchTypes
 import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
@@ -145,8 +145,8 @@ class DnsUptimeChecker(
      * Compares the freshly resolved answer set against the stored snapshot. On the very first successful check the
      * snapshot is seeded silently, afterward a change emits a single [DnsRecordsChangedEvent] and re-seeds it.
      */
-    private fun detectDrift(monitor: DnsMonitorRecord, currentRecords: Map<DnsRecordType, List<String>>) {
-        val previousRecords = snapshotRepository.getRecords(monitor.id)
+    private fun detectDrift(monitor: DnsMonitorRecord, currentRecords: DnsSnapshotRecords) {
+        val previousRecords = snapshotRepository.getSnapshot(monitor.id)?.records
         when {
             previousRecords == null -> snapshotRepository.upsert(monitor.id, currentRecords)
             previousRecords != currentRecords -> {

@@ -786,6 +786,49 @@ class MonitorControllerTest(
                 }
             }
 
+            `when`("the uploaded YAML contains a DNS monitor with a conflicting response code and matchers") {
+                val yamlContent = buildYamlImportContent(
+                    dnsMonitors = listOf(
+                        DnsMonitorExportDto(
+                            name = "conflicting-dns",
+                            host = "example.com",
+                            resolverHost = null,
+                            resolverPort = 53,
+                            transport = DnsTransport.UDP,
+                            recordMatchers = listOf(
+                                DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4")
+                            ),
+                            expectedResponseCode = DnsResponseCode.NXDOMAIN,
+                            driftDetectionEnabled = false,
+                            driftRecordTypes = emptyList(),
+                            uptimeCheckInterval = 60,
+                            timeoutMs = 5000,
+                            latencyThresholdMs = null,
+                            failureCountThreshold = 1,
+                            enabled = true,
+                            integrations = emptySet(),
+                            metricsHistoryEnabled = true,
+                        )
+                    ),
+                )
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "conflicting-dns.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should return 400 bad request") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    dnsMonitorRepository.findByName("conflicting-dns").shouldBeNull()
+                }
+            }
+
             `when`("the uploaded YAML references a non-configured integration") {
                 createHttpMonitor(httpMonitorRepository, monitorName = "should-not-survive")
                 val ghostIntegration = IntegrationID(IntegrationType.SLACK, "does-not-exist")

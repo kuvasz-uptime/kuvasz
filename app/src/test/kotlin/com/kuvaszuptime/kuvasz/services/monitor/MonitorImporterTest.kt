@@ -361,7 +361,7 @@ class MonitorImporterTest(
                 )
 
                 then("the upsert fires the reset trigger, so the stale snapshot is dropped") {
-                    snapshotRepository.getRecords(monitor.id).shouldBeNull()
+                    snapshotRepository.getSnapshot(monitor.id).shouldBeNull()
                 }
             }
 
@@ -380,7 +380,7 @@ class MonitorImporterTest(
                 )
 
                 then("the identical upsert keeps the baseline (survives no-op restarts)") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(records)
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull().shouldContainExactly(records)
                 }
             }
         }

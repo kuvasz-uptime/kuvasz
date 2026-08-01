@@ -22,6 +22,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -112,13 +113,21 @@ class MonitorRoundTripE2ETest(
                         DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4"),
                         DnsRecordMatcher(DnsRecordType.TXT, DnsMatchType.REGEX, "v=spf1.*"),
                     ),
-                    expectedResponseCode = DnsResponseCode.NXDOMAIN,
+                    expectedResponseCode = DnsResponseCode.NOERROR,
                     driftDetectionEnabled = true,
                     driftRecordTypes = listOf(DnsRecordType.NS, DnsRecordType.MX),
                     timeoutMs = 10000,
                     latencyThresholdMs = 250,
                     failureCountThreshold = 3L,
                     metricsHistoryEnabled = false,
+                )
+                // A negative monitor: a non-NOERROR expectation cannot be combined with matchers, so it needs its own
+                // monitor to keep the response code covered by the round trip
+                val negativeDnsMonitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    host = "decommissioned.example.com",
+                    monitorName = "roundtrip-dns-negative",
+                    expectedResponseCode = DnsResponseCode.NXDOMAIN,
                 )
 
                 // 1) Real export via the API - the actual bytes the feature must be able to consume
@@ -133,11 +142,13 @@ class MonitorRoundTripE2ETest(
                 icmpMonitorRepository.deleteById(icmpMonitor.id, dslContext)
                 tcpMonitorRepository.deleteById(tcpMonitor.id, dslContext)
                 dnsMonitorRepository.deleteById(dnsMonitor.id, dslContext)
+                dnsMonitorRepository.deleteById(negativeDnsMonitor.id, dslContext)
                 httpMonitorRepository.findByName("roundtrip-http").shouldBeNull()
                 pushMonitorRepository.findByName("roundtrip-push").shouldBeNull()
                 icmpMonitorRepository.findByName("roundtrip-icmp").shouldBeNull()
                 tcpMonitorRepository.findByName("roundtrip-tcp").shouldBeNull()
                 dnsMonitorRepository.findByName("roundtrip-dns").shouldBeNull()
+                dnsMonitorRepository.findByName("roundtrip-dns-negative").shouldBeNull()
 
                 // 3) Restore from the exported bytes via the real import API
                 val multipartBody = MultipartBody.builder()
@@ -152,8 +163,8 @@ class MonitorRoundTripE2ETest(
 
                 then("the imported monitors should match the originals field-by-field") {
                     response.status shouldBe HttpStatus.OK
-                    result.perTypeResults.sumOf { it.receivedCnt } shouldBe 5
-                    result.perTypeResults.sumOf { it.imported.size } shouldBe 5
+                    result.perTypeResults.sumOf { it.receivedCnt } shouldBe 6
+                    result.perTypeResults.sumOf { it.imported.size } shouldBe 6
                     result.perTypeResults.sumOf { it.deleted.size } shouldBe 0
                     result.dryRun shouldBe false
 
@@ -219,6 +230,12 @@ class MonitorRoundTripE2ETest(
                     restoredDns.failureCountThreshold shouldBe dnsMonitor.failureCountThreshold
                     restoredDns.enabled shouldBe dnsMonitor.enabled
                     restoredDns.metricsHistoryEnabled shouldBe dnsMonitor.metricsHistoryEnabled
+
+                    val restoredNegativeDns =
+                        dnsMonitorRepository.findByName("roundtrip-dns-negative").shouldNotBeNull()
+                    restoredNegativeDns.host shouldBe negativeDnsMonitor.host
+                    restoredNegativeDns.expectedResponseCode shouldBe negativeDnsMonitor.expectedResponseCode
+                    restoredNegativeDns.recordMatchersAsList().shouldBeEmpty()
                 }
             }
         }

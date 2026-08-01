@@ -19,8 +19,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorTypeImportResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.hasValidResponseCodeExpectation
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -266,6 +268,11 @@ class AppBootstrapper(
             callToImportConfigs = monitorImporter::importTcpMonitorConfigs,
         )
 
+        // Micronaut cannot resolve the class-level @ValidDnsResponseCode constraint on an @EachProperty bean, so the
+        // same rule is enforced here for the YAML configs
+        require(yamlDnsMonitorConfigs.all { it.hasValidResponseCodeExpectation() }) {
+            MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS
+        }
         processYamlMonitorConfigs(
             monitorType = MonitorType.DNS,
             yamlMonitorConfigs = yamlDnsMonitorConfigs,

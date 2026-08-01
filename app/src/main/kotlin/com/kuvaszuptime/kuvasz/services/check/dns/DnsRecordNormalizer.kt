@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services.check.dns
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
-import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import org.xbill.DNS.Record
 import org.xbill.DNS.TXTRecord
 
@@ -40,7 +40,7 @@ object DnsRecordNormalizer {
      */
     fun evaluate(
         matchers: List<DnsRecordMatcher>,
-        records: Map<DnsRecordType, List<String>>,
+        records: DnsSnapshotRecords,
     ): DnsMatchResult {
         val failed = matchers.filterNot { matcher -> matcher.isSatisfiedBy(records[matcher.recordType].orEmpty()) }
         return DnsMatchResult(matched = failed.isEmpty(), failedMatchers = failed)

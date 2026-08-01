@@ -1,0 +1,9 @@
+dns-monitors:
+  - name: test
+    host: example.com
+    uptime-check-interval: 60
+    expected-response-code: NXDOMAIN
+    record-matchers:
+      - record-type: A
+        match-type: EXACT
+        value: 1.2.3.4

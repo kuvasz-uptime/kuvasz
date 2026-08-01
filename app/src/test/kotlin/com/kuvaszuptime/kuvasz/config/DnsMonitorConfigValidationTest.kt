@@ -85,6 +85,15 @@ class DnsMonitorConfigValidationTest : BehaviorSpec({
             }
         }
 
+        `when`("a non-NOERROR expected response code is combined with record matchers") {
+            val exception = shouldThrow<BeanInstantiationException> {
+                testAppContext("dns-monitor-response-code-conflict")
+            }
+            then("AppContext should throw a BeanInstantiationException") {
+                exception.message shouldContain MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS
+            }
+        }
+
         `when`("timeoutMs is out of range") {
             val exception = shouldThrow<BeanInstantiationException> {
                 testAppContext("dns-monitor-out-of-range-timeout")

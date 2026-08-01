@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.check.dns
 
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.util.elapsedMsSince
 import com.kuvaszuptime.kuvasz.util.loggerFor
@@ -35,7 +36,7 @@ import java.time.Duration
  * skipped for the round instead. Always true when no drift-only lookups were requested.
  */
 data class DnsCheckResult(
-    val records: Map<DnsRecordType, List<String>>,
+    val records: DnsSnapshotRecords,
     val responseCode: DnsResponseCode?,
     val latencyMs: Int?,
     val error: String?,

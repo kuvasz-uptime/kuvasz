@@ -27,6 +27,8 @@ import org.jooq.impl.DSL
 @Suppress("TooManyFunctions")
 class DnsMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<DnsMonitorRecord> {
 
+    private val matcherListConverter = JsonNodeToMatcherListConverter()
+
     override fun findById(monitorId: Long, txCtx: DSLContext?): DnsMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DNS_MONITOR)
         .where(DNS_MONITOR.ID.eq(monitorId))
@@ -158,8 +160,7 @@ class DnsMonitorRepository(private val dslContext: DSLContext) : MonitorReposito
             DNS_MONITOR.RESOLVER_HOST.`as`(DnsMonitorDetailsDto::resolverHost.name),
             DNS_MONITOR.RESOLVER_PORT.`as`(DnsMonitorDetailsDto::resolverPort.name),
             DNS_MONITOR.TRANSPORT.`as`(DnsMonitorDetailsDto::transport.name),
-            DNS_MONITOR.RECORD_MATCHERS.`as`(DnsMonitorDetailsDto::recordMatchers.name)
-                .convert(JsonNodeToMatcherListConverter()),
+            DNS_MONITOR.RECORD_MATCHERS.`as`(DnsMonitorDetailsDto::recordMatchers.name).convert(matcherListConverter),
             DNS_MONITOR.EXPECTED_RESPONSE_CODE.`as`(DnsMonitorDetailsDto::expectedResponseCode.name),
             DNS_MONITOR.DRIFT_DETECTION_ENABLED.`as`(DnsMonitorDetailsDto::driftDetectionEnabled.name),
             DNS_MONITOR.DRIFT_RECORD_TYPES.`as`(DnsMonitorDetailsDto::driftRecordTypes.name),

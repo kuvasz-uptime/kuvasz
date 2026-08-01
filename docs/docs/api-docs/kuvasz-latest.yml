@@ -2330,7 +2330,10 @@ components:
             \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
             \ and a value. All matchers are ANDed; a matcher passes if any record\
             \ of its type satisfies it. When empty, the check falls back to a plain\
-            \ A lookup and is UP if the name resolves to anything."
+            \ A lookup and is UP if the name resolves to anything. REGEX values are\
+            \ Java/Kotlin (java.util.regex) patterns, compiled case-insensitively\
+            \ and matched anywhere in the record, so anchor them with ^ and $ for\
+            \ a whole-record match."
           nullable: true
           items:
             $ref: "#/components/schemas/DnsRecordMatcher"
@@ -2350,9 +2353,10 @@ components:
           type: array
           description: "The record types drift detection watches. When empty (the\
             \ default), it watches exactly the types the record matchers cover, so\
-            \ it costs no extra lookups. Naming types here is how a monitor watches\
-            \ something it does not assert on (an NS or MX change worth a notification\
-            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ it costs no extra lookups. Naming types here replaces that default with\
+            \ the given list, which is how a monitor watches something it does not\
+            \ assert on (an NS or MX change worth a notification but not a DOWN event);\
+            \ each named type that no matcher covers adds a lookup per check, which\
             \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
             \ is true."
           nullable: true
@@ -2465,7 +2469,10 @@ components:
             \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
             \ and a value. All matchers are ANDed; a matcher passes if any record\
             \ of its type satisfies it. When empty, the check falls back to a plain\
-            \ A lookup and is UP if the name resolves to anything."
+            \ A lookup and is UP if the name resolves to anything. REGEX values are\
+            \ Java/Kotlin (java.util.regex) patterns, compiled case-insensitively\
+            \ and matched anywhere in the record, so anchor them with ^ and $ for\
+            \ a whole-record match."
           items:
             $ref: "#/components/schemas/DnsRecordMatcher"
         expectedResponseCode:
@@ -2482,9 +2489,10 @@ components:
           type: array
           description: "The record types drift detection watches. When empty (the\
             \ default), it watches exactly the types the record matchers cover, so\
-            \ it costs no extra lookups. Naming types here is how a monitor watches\
-            \ something it does not assert on (an NS or MX change worth a notification\
-            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ it costs no extra lookups. Naming types here replaces that default with\
+            \ the given list, which is how a monitor watches something it does not\
+            \ assert on (an NS or MX change worth a notification but not a DOWN event);\
+            \ each named type that no matcher covers adds a lookup per check, which\
             \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
             \ is true."
           items:
@@ -2632,7 +2640,10 @@ components:
             \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
             \ and a value. All matchers are ANDed; a matcher passes if any record\
             \ of its type satisfies it. When empty, the check falls back to a plain\
-            \ A lookup and is UP if the name resolves to anything."
+            \ A lookup and is UP if the name resolves to anything. REGEX values are\
+            \ Java/Kotlin (java.util.regex) patterns, compiled case-insensitively\
+            \ and matched anywhere in the record, so anchor them with ^ and $ for\
+            \ a whole-record match."
           items:
             $ref: "#/components/schemas/DnsRecordMatcher"
         expectedResponseCode:
@@ -2649,9 +2660,10 @@ components:
           type: array
           description: "The record types drift detection watches. When empty (the\
             \ default), it watches exactly the types the record matchers cover, so\
-            \ it costs no extra lookups. Naming types here is how a monitor watches\
-            \ something it does not assert on (an NS or MX change worth a notification\
-            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ it costs no extra lookups. Naming types here replaces that default with\
+            \ the given list, which is how a monitor watches something it does not\
+            \ assert on (an NS or MX change worth a notification but not a DOWN event);\
+            \ each named type that no matcher covers adds a lookup per check, which\
             \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
             \ is true."
           items:
@@ -2771,7 +2783,10 @@ components:
             \ type with a match type (EXACT, CONTAINS or REGEX, defaulting to CONTAINS)\
             \ and a value. All matchers are ANDed; a matcher passes if any record\
             \ of its type satisfies it. When empty, the check falls back to a plain\
-            \ A lookup and is UP if the name resolves to anything."
+            \ A lookup and is UP if the name resolves to anything. REGEX values are\
+            \ Java/Kotlin (java.util.regex) patterns, compiled case-insensitively\
+            \ and matched anywhere in the record, so anchor them with ^ and $ for\
+            \ a whole-record match."
           nullable: false
           items:
             $ref: "#/components/schemas/DnsRecordMatcher"
@@ -2790,9 +2805,10 @@ components:
           type: array
           description: "The record types drift detection watches. When empty (the\
             \ default), it watches exactly the types the record matchers cover, so\
-            \ it costs no extra lookups. Naming types here is how a monitor watches\
-            \ something it does not assert on (an NS or MX change worth a notification\
-            \ but not a DOWN event); each such type adds a lookup per check, which\
+            \ it costs no extra lookups. Naming types here replaces that default with\
+            \ the given list, which is how a monitor watches something it does not\
+            \ assert on (an NS or MX change worth a notification but not a DOWN event);\
+            \ each named type that no matcher covers adds a lookup per check, which\
             \ is not counted towards the latency reading. Ignored unless driftDetectionEnabled\
             \ is true."
           nullable: false

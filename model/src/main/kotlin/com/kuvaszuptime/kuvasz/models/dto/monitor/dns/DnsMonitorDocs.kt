@@ -11,7 +11,9 @@ object DnsMonitorDocs {
         "The DNS assertions to evaluate. Each matcher targets a record type with a match type (EXACT, CONTAINS or " +
             "REGEX, defaulting to CONTAINS) and a value. All matchers are ANDed; a matcher passes if any record of " +
             "its type satisfies it. When empty, the check falls back to a plain A lookup and is UP if the name " +
-            "resolves to anything."
+            "resolves to anything. REGEX values are Java/Kotlin (java.util.regex) patterns, compiled " +
+            "case-insensitively and matched anywhere in the record, so anchor them with ^ and $ for a whole-record " +
+            "match."
     const val EXPECTED_RESPONSE_CODE =
         "The DNS response code the check expects: NOERROR (default), NXDOMAIN, SERVFAIL or REFUSED. A non-NOERROR " +
             "value requires the record matchers to be empty."
@@ -20,10 +22,10 @@ object DnsMonitorDocs {
             "between checks"
     const val DRIFT_RECORD_TYPES =
         "The record types drift detection watches. When empty (the default), it watches exactly the types the record " +
-            "matchers cover, so it costs no extra lookups. Naming types here is how a monitor watches something it " +
-            "does not assert on (an NS or MX change worth a notification but not a DOWN event); each such type adds " +
-            "a lookup per check, which is not counted towards the latency reading. Ignored unless " +
-            "driftDetectionEnabled is true."
+            "matchers cover, so it costs no extra lookups. Naming types here replaces that default with the given " +
+            "list, which is how a monitor watches something it does not assert on (an NS or MX change worth a " +
+            "notification but not a DOWN event); each named type that no matcher covers adds a lookup per check, " +
+            "which is not counted towards the latency reading. Ignored unless driftDetectionEnabled is true."
     const val TIMEOUT_MS = "The DNS query timeout in milliseconds (1-30000)"
     const val LATENCY_THRESHOLD_MS =
         "Optional resolution-latency threshold in milliseconds. If set, the check is considered DOWN when the " +

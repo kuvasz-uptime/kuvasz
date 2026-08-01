@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
@@ -27,7 +28,6 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
-import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient
@@ -63,7 +63,7 @@ class PagerdutyEventHandler(
     private val DnsRecordsChangedEvent.deduplicationKey: String
         get() = "kuvasz_dns_drift_${monitor.id}_${currentRecords.contentHash()}"
 
-    private fun Map<DnsRecordType, List<String>>.contentHash(): String =
+    private fun DnsSnapshotRecords.contentHash(): String =
         Integer.toHexString(
             entries
                 .sortedBy { it.key.name }

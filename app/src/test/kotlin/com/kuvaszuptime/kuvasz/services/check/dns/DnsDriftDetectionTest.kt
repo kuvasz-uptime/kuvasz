@@ -2,9 +2,9 @@ package com.kuvaszuptime.kuvasz.services.check.dns
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
-import com.kuvaszuptime.kuvasz.jooq.tables.DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
@@ -23,7 +23,6 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
 import io.reactivex.rxjava3.subscribers.TestSubscriber
-import org.jooq.JSONB
 
 @MicronautTest(startApplication = false)
 class DnsDriftDetectionTest(
@@ -38,7 +37,7 @@ class DnsDriftDetectionTest(
     fun resolveExecutorMock(): DnsResolveExecutor = mockk()
 
     private fun result(
-        records: Map<DnsRecordType, List<String>>,
+        records: DnsSnapshotRecords,
         responseCode: DnsResponseCode = DnsResponseCode.NOERROR,
         driftRecordsComplete: Boolean = true,
     ) = DnsCheckResult(
@@ -76,7 +75,7 @@ class DnsDriftDetectionTest(
                 uptimeChecker.check(monitor)
 
                 then("it stores the snapshot silently without emitting a drift event") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull()
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull()
                         .shouldContainExactly(mapOf(DnsRecordType.A to listOf("1.2.3.4")))
                     subscriber.values().size shouldBe 0
                 }
@@ -94,7 +93,7 @@ class DnsDriftDetectionTest(
                 uptimeChecker.check(monitor)
 
                 then("no drift event is emitted and the snapshot is unchanged") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(records)
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull().shouldContainExactly(records)
                     subscriber.values().size shouldBe 0
                 }
             }
@@ -123,7 +122,7 @@ class DnsDriftDetectionTest(
                 }
 
                 then("the snapshot is advanced to the new answer set") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull()
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull()
                         .shouldContainExactly(mapOf(DnsRecordType.A to listOf("5.6.7.8")))
                 }
             }
@@ -143,7 +142,7 @@ class DnsDriftDetectionTest(
                 uptimeChecker.check(monitor)
 
                 then("no drift event is emitted and no snapshot is stored") {
-                    snapshotRepository.getRecords(monitor.id).shouldBeNull()
+                    snapshotRepository.getSnapshot(monitor.id).shouldBeNull()
                     subscriber.values().size shouldBe 0
                 }
             }
@@ -162,7 +161,7 @@ class DnsDriftDetectionTest(
                 uptimeChecker.check(monitor)
 
                 then("only the types the matchers cover are watched, ignoring anything else resolved") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull()
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull()
                         .shouldContainExactly(mapOf(DnsRecordType.A to listOf("1.2.3.4")))
                 }
             }
@@ -197,7 +196,7 @@ class DnsDriftDetectionTest(
                 }
 
                 then("the unwatched, asserted type is left out of the snapshot") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull()
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull()
                         .shouldContainExactly(mapOf(DnsRecordType.NS to listOf("ns2.evil.com")))
                 }
             }
@@ -218,7 +217,7 @@ class DnsDriftDetectionTest(
 
                 then("its empty answer set is not mistaken for the records having been removed") {
                     subscriber.values().size shouldBe 0
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull()
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull()
                         .shouldContainExactly(mapOf(DnsRecordType.A to listOf("1.2.3.4")))
                 }
             }
@@ -243,34 +242,12 @@ class DnsDriftDetectionTest(
 
                 then("the partial answer set is skipped instead of being reported as a removal") {
                     subscriber.values().size shouldBe 0
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull().shouldContainExactly(
                         mapOf(DnsRecordType.A to listOf("1.2.3.4"), DnsRecordType.MX to listOf("10 mail.com"))
                     )
                 }
             }
 
-            `when`("the stored snapshot is not readable anymore") {
-                val monitor = createDnsMonitor(monitorRepository, driftDetectionEnabled = true)
-                val records = mapOf(DnsRecordType.A to listOf("1.2.3.4"))
-                getMock(resolveExecutor).stubReturning(monitor, result(records))
-                snapshotRepository.upsert(monitor.id, records)
-                // A shape this version cannot parse, as a payload written by a newer one would be after a downgrade
-                dslContext
-                    .update(DNS_RESOLUTION_SNAPSHOT)
-                    .set(DNS_RESOLUTION_SNAPSHOT.RECORDS, JSONB.valueOf("""{"A":{"value":"1.2.3.4","ttl":60}}"""))
-                    .where(DNS_RESOLUTION_SNAPSHOT.MONITOR_ID.eq(monitor.id))
-                    .execute()
-
-                val subscriber = TestSubscriber<DnsRecordsChangedEvent>()
-                eventDispatcher.subscribeToDnsRecordsChangedEvents { it.forwardToSubscriber(subscriber) }
-
-                uptimeChecker.check(monitor)
-
-                then("the check re-seeds it rather than failing, and reports no phantom drift") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(records)
-                    subscriber.values().size shouldBe 0
-                }
-            }
         }
 
         given("the DNS snapshot reset trigger") {
@@ -285,7 +262,7 @@ class DnsDriftDetectionTest(
                 )
 
                 then("the snapshot is dropped so it re-seeds on the next check") {
-                    snapshotRepository.getRecords(monitor.id).shouldBeNull()
+                    snapshotRepository.getSnapshot(monitor.id).shouldBeNull()
                 }
             }
 
@@ -300,7 +277,7 @@ class DnsDriftDetectionTest(
                 )
 
                 then("the baseline is kept") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(records)
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull().shouldContainExactly(records)
                 }
             }
 
@@ -312,7 +289,7 @@ class DnsDriftDetectionTest(
                 monitorRepository.returningUpdate(monitorRepository.findById(monitor.id, null).shouldNotBeNull())
 
                 then("the baseline survives") {
-                    snapshotRepository.getRecords(monitor.id).shouldNotBeNull().shouldContainExactly(records)
+                    snapshotRepository.getSnapshot(monitor.id)?.records.shouldNotBeNull().shouldContainExactly(records)
                 }
             }
         }

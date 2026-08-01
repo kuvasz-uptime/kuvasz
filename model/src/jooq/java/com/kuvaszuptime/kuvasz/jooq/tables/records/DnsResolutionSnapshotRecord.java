@@ -8,9 +8,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DnsResolutionSnapshot;
 
 import java.time.OffsetDateTime;
 
-import org.jooq.JSONB;
 import org.jooq.Record1;
 import org.jooq.impl.UpdatableRecordImpl;
+
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -39,7 +40,7 @@ public class DnsResolutionSnapshotRecord extends UpdatableRecordImpl<DnsResoluti
     /**
      * Setter for <code>kuvasz.dns_resolution_snapshot.records</code>.
      */
-    public DnsResolutionSnapshotRecord setRecords(JSONB value) {
+    public DnsResolutionSnapshotRecord setRecords(JsonNode value) {
         set(1, value);
         return this;
     }
@@ -47,8 +48,8 @@ public class DnsResolutionSnapshotRecord extends UpdatableRecordImpl<DnsResoluti
     /**
      * Getter for <code>kuvasz.dns_resolution_snapshot.records</code>.
      */
-    public JSONB getRecords() {
-        return (JSONB) get(1);
+    public JsonNode getRecords() {
+        return (JsonNode) get(1);
     }
 
     /**
@@ -89,7 +90,7 @@ public class DnsResolutionSnapshotRecord extends UpdatableRecordImpl<DnsResoluti
     /**
      * Create a detached, initialised DnsResolutionSnapshotRecord
      */
-    public DnsResolutionSnapshotRecord(Long monitorId, JSONB records, OffsetDateTime updatedAt) {
+    public DnsResolutionSnapshotRecord(Long monitorId, JsonNode records, OffsetDateTime updatedAt) {
         super(DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT);
 
         setMonitorId(monitorId);

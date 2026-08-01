@@ -7,7 +7,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 
-import org.jooq.JSONB;
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -19,7 +19,7 @@ public class DnsResolutionSnapshot implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long monitorId;
-    private JSONB records;
+    private JsonNode records;
     private OffsetDateTime updatedAt;
 
     public DnsResolutionSnapshot() {}
@@ -32,7 +32,7 @@ public class DnsResolutionSnapshot implements Serializable {
 
     public DnsResolutionSnapshot(
         Long monitorId,
-        JSONB records,
+        JsonNode records,
         OffsetDateTime updatedAt
     ) {
         this.monitorId = monitorId;
@@ -58,14 +58,14 @@ public class DnsResolutionSnapshot implements Serializable {
     /**
      * Getter for <code>kuvasz.dns_resolution_snapshot.records</code>.
      */
-    public JSONB getRecords() {
+    public JsonNode getRecords() {
         return this.records;
     }
 
     /**
      * Setter for <code>kuvasz.dns_resolution_snapshot.records</code>.
      */
-    public DnsResolutionSnapshot setRecords(JSONB records) {
+    public DnsResolutionSnapshot setRecords(JsonNode records) {
         this.records = records;
         return this;
     }
