@@ -2304,10 +2304,12 @@ components:
           x-minimum-message: "Uptime check interval must be at least {value} seconds"
           x-not-null-message: Uptime check interval must not be null
         resolverHost:
+          pattern: .*\S.*
           type: string
           description: "Optional custom nameserver host to query. If not set, the\
             \ system resolver is used."
           nullable: true
+          x-pattern-message: Resolver host must not be blank when it is set
         resolverPort:
           maximum: 65535
           minimum: 1
@@ -2758,10 +2760,12 @@ components:
           nullable: false
           x-size-message: Host must not be blank
         resolverHost:
+          pattern: .*\S.*
           type: string
           description: "Optional custom nameserver host to query. If not set, the\
             \ system resolver is used."
           nullable: true
+          x-pattern-message: Resolver host must not be blank when it is set
         resolverPort:
           maximum: 65535
           minimum: 1

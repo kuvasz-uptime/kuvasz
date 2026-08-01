@@ -24,13 +24,31 @@ fun FlowContent.cloningOverlay() {
     }
 }
 
+/**
+ * The error the server reported for a save that the client-side validation let through (e.g. a constraint only the
+ * backend can check). Without it such a response would leave the modal open with no explanation at all.
+ */
+fun FlowContent.formErrorAlert() {
+    templateTag {
+        xIf("formError")
+        div {
+            classes(ALERT, ALERT_DANGER, W_100, MB_0)
+            testId("modal-form-error")
+            xText("formError")
+        }
+    }
+}
+
 fun FlowContent.upsertModalFooter(
     isReadOnlyMode: Boolean,
     xSaveDisabledIf: String,
     xOnSaveClicked: String,
 ) {
     div {
-        classes(MODAL_FOOTER)
+        classes(MODAL_FOOTER, FLEX_WRAP)
+        if (!isReadOnlyMode) {
+            formErrorAlert()
+        }
         a(href = "#") {
             classes(BTN, BTN_LINK, LINK_SECONDARY)
             modalCloser()

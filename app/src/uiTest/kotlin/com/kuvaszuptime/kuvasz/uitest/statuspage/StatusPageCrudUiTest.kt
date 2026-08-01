@@ -41,6 +41,49 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(details.heading(updatedTitle)).isVisible()
         }
 
+        "an abandoned create form is reset when the modal is reopened" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Abandoned Selection")
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setTitle("Abandoned Status Page")
+                .setSlug("abandoned-status-page")
+            modal.selectOption("Abandoned Selection")
+            assertThat(modal.selectedOptions).hasCount(1)
+            modal.dismiss()
+
+            // Closing the modal fires the reset event, so the next open starts from the defaults again.
+            val reopened = list.openCreateModal()
+            assertThat(reopened.titleInput).hasValue("")
+            assertThat(reopened.slugInput).hasValue("")
+            // The monitor multi-select is reset along with the plain inputs.
+            assertThat(reopened.selectedOptions).hasCount(0)
+        }
+
+        "edits abandoned on an existing status page are discarded when its configure modal is reopened" {
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val originalTitle = "Status Page Reset Source"
+            val originalSlug = "status-page-reset-source"
+            list.openCreateModal().setTitle(originalTitle).setSlug(originalSlug).save()
+            page.waitForURL("**/status-pages/*")
+            val details = StatusPageDetailsPage(page)
+
+            details.openConfigureModal()
+                .setTitle("Status Page Reset Renamed")
+                .setSlug("changed-slug")
+                .dismiss()
+
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.titleInput).hasValue(originalTitle)
+            assertThat(reopened.slugInput).hasValue(originalSlug)
+        }
+
         "the status-page modal's monitors select adds a seeded monitor" {
             createHttpMonitor(httpMonitorRepository, monitorName = "Selectable Monitor")
 

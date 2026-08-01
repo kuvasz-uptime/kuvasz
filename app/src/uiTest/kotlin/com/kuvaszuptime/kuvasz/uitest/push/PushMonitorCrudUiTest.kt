@@ -61,5 +61,45 @@ class PushMonitorCrudUiTest : UiTestSpec() {
             assertThat(list.rows).hasCount(2)
             assertThat(list.rowByName(clonedName)).hasCount(1)
         }
+
+        "an abandoned create form is reset when the modal is reopened" {
+            val page = newPage()
+            val list = PushMonitorListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setName("Abandoned Push Monitor")
+                .setHeartbeatInterval("300")
+                .setClientSecret("abandoned-client-secret")
+            modal.dismiss()
+
+            // Closing the modal fires the reset event, so the next open starts from the defaults again.
+            val reopened = list.openCreateModal()
+            assertThat(reopened.nameInput).hasValue("")
+            assertThat(reopened.heartbeatIntervalInput).hasValue("10")
+            // The secret is auto-generated on every reset, so the abandoned one is gone rather than merely cleared.
+            assertThat(reopened.clientSecretInput).not().hasValue("abandoned-client-secret")
+            assertThat(reopened.clientSecretInput).not().hasValue("")
+        }
+
+        "edits abandoned on an existing monitor are discarded when its configure modal is reopened" {
+            val page = newPage()
+            val list = PushMonitorListPage(page)
+            list.navigate()
+
+            val originalName = "Push Reset Source"
+            list.openCreateModal().setName(originalName).setHeartbeatInterval("30").save()
+            page.waitForURL("**/push-monitors/*")
+            val details = PushMonitorDetailsPage(page)
+
+            details.openConfigureModal()
+                .setName("Push Reset Renamed")
+                .setHeartbeatInterval("600")
+                .dismiss()
+
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.nameInput).hasValue(originalName)
+            assertThat(reopened.heartbeatIntervalInput).hasValue("30")
+        }
     }
 }

@@ -65,7 +65,7 @@ internal fun FlowContent.maintenanceWindowImportModal(modalId: String, labelsJso
                             name = "file"
                             classes(FORM_CONTROL)
                             accept = ".yaml,.yml"
-                            xOn("change", "handleFileChange(\$event)")
+                            xOnChange("handleFileChange(\$event)")
                             xBindDisabled("importCompleted")
                         }
                         templateTag {

@@ -59,6 +59,11 @@ internal fun FlowContent.navigation(
                                             link = "/tcp-monitors",
                                             icon = Icon.NETWORK,
                                         ),
+                                        NavItem(
+                                            label = "DNS",
+                                            link = "/dns-monitors",
+                                            icon = Icon.CLOUD_QUESTION,
+                                        ),
                                     )
                                 )
                                 navItem(

@@ -65,5 +65,48 @@ class TcpMonitorCrudUiTest : UiTestSpec() {
             assertThat(list.rows).hasCount(2)
             assertThat(list.rowByName(clonedName)).hasCount(1)
         }
+
+        "an abandoned create form is reset when the modal is reopened" {
+            val page = newPage()
+            val list = TcpMonitorListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setName("Abandoned TCP Monitor")
+                .setHost("abandoned.example.com")
+                .setPort("9999")
+                .setUptimeCheckInterval("300")
+            modal.dismiss()
+
+            // Closing the modal fires the reset event, so the next open starts from the defaults again.
+            val reopened = list.openCreateModal()
+            assertThat(reopened.nameInput).hasValue("")
+            assertThat(reopened.hostInput).hasValue("")
+            assertThat(reopened.portInput).hasValue("")
+            assertThat(reopened.uptimeCheckIntervalInput).hasValue("60")
+        }
+
+        "edits abandoned on an existing monitor are discarded when its configure modal is reopened" {
+            val page = newPage()
+            val list = TcpMonitorListPage(page)
+            list.navigate()
+
+            val originalName = "TCP Reset Source"
+            val originalHost = "original.example.com"
+            list.openCreateModal().setName(originalName).setHost(originalHost).setPort("5432").save()
+            page.waitForURL("**/tcp-monitors/*")
+            val details = TcpMonitorDetailsPage(page)
+
+            details.openConfigureModal()
+                .setName("TCP Reset Renamed")
+                .setHost("changed.example.com")
+                .setPort("9999")
+                .dismiss()
+
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.nameInput).hasValue(originalName)
+            assertThat(reopened.hostInput).hasValue(originalHost)
+            assertThat(reopened.portInput).hasValue("5432")
+        }
     }
 }

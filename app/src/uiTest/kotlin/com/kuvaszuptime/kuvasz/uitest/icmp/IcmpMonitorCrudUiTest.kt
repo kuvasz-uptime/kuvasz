@@ -63,5 +63,44 @@ class IcmpMonitorCrudUiTest : UiTestSpec() {
             assertThat(list.rows).hasCount(2)
             assertThat(list.rowByName(clonedName)).hasCount(1)
         }
+
+        "an abandoned create form is reset when the modal is reopened" {
+            val page = newPage()
+            val list = IcmpMonitorListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setName("Abandoned ICMP Monitor")
+                .setHost("abandoned.example.com")
+                .setUptimeCheckInterval("300")
+            modal.dismiss()
+
+            // Closing the modal fires the reset event, so the next open starts from the defaults again.
+            val reopened = list.openCreateModal()
+            assertThat(reopened.nameInput).hasValue("")
+            assertThat(reopened.hostInput).hasValue("")
+            assertThat(reopened.uptimeCheckIntervalInput).hasValue("60")
+        }
+
+        "edits abandoned on an existing monitor are discarded when its configure modal is reopened" {
+            val page = newPage()
+            val list = IcmpMonitorListPage(page)
+            list.navigate()
+
+            val originalName = "ICMP Reset Source"
+            val originalHost = "original.example.com"
+            list.openCreateModal().setName(originalName).setHost(originalHost).save()
+            page.waitForURL("**/icmp-monitors/*")
+            val details = IcmpMonitorDetailsPage(page)
+
+            details.openConfigureModal()
+                .setName("ICMP Reset Renamed")
+                .setHost("changed.example.com")
+                .dismiss()
+
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.nameInput).hasValue(originalName)
+            assertThat(reopened.hostInput).hasValue(originalHost)
+        }
     }
 }

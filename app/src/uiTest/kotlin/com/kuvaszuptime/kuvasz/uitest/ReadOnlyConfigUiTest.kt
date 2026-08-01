@@ -68,6 +68,19 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             assertCannotBeSaved(modal)
         }
 
+        "YAML-configured DNS monitors are read-only on the list, detail page and config modal" {
+            val page = newPage()
+            val list = ListReadOnlyView(page, "/dns-monitors")
+            list.navigate()
+            assertListIsReadOnly(list, "yaml-dns-monitor")
+
+            val modal = openConfigModalFrom(page, list, "yaml-dns-monitor")
+            assertReadOnlyField(modal, "name", "yaml-dns-monitor")
+            assertReadOnlyField(modal, "host", "example.com")
+            assertReadOnlyField(modal, "resolverPort", "53")
+            assertCannotBeSaved(modal)
+        }
+
         "YAML-configured status pages are read-only on the list, detail page and config modal" {
             val page = newPage()
             val list = ListReadOnlyView(page, "/status-pages")
@@ -136,6 +149,6 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
     // Saving is not possible — only "Close" is offered.
     private fun assertCannotBeSaved(modal: UpsertModalReadOnlyView) {
         assertThat(modal.saveButton).hasCount(0)
-        assertThat(modal.closeButton).isVisible()
+        assertThat(modal.dismissButton).isVisible()
     }
 }

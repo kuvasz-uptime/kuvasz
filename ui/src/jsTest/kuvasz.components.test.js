@@ -13,10 +13,12 @@ const {
     upsertPushMonitorForm,
     upsertIcmpMonitorForm,
     upsertTcpMonitorForm,
+    upsertDnsMonitorForm,
     upsertMaintenanceWindowForm,
     httpMetricsBlock,
     icmpMetricsBlock,
     tcpMetricsBlock,
+    dnsMetricsBlock,
 } = require('../main/resources/js/kuvasz.js');
 
 // --------- #1: isValidHttpHeaderName (regex) ---------
@@ -357,6 +359,196 @@ test('TCP populateFrom copies a source and falls back to defaults', () => {
     assert.equal(form.uptimeCheckInterval, 60);
     assert.equal(form.timeoutMs, 5000);
     // The optional latency threshold falls back to an empty string, not a number
+    assert.equal(form.latencyThresholdMs, '');
+    assert.equal(form.failureCountThreshold, 1);
+    assert.deepEqual(form.integrations, []);
+    assert.equal(form.metricsHistoryEnabled, true);
+});
+
+// --------- DNS: metrics block ---------
+
+test('dnsMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
+    const block = dnsMetricsBlock(1, true, 60, 'no data', 24);
+    const result = block.transformData({
+        metricsLogs: [
+            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
+            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '42'},
+        ],
+    });
+    // Null latency must stay null (a gap in the chart), not become NaN
+    assert.deepEqual(result.latency.series[0].data, [null, 42]);
+    assert.equal(result.latency.labels.length, 2);
+    // DNS monitors track latency only - there is no packet-loss series
+    assert.equal(result.packetLoss, undefined);
+});
+
+// --------- DNS: numeric-boundary validators ---------
+
+test('DNS validators enforce resolver port, timeout and the optional latency threshold', () => {
+    const msgs = {
+        resolverPortInvalid: 'PORT', timeoutMsInvalid: 'TS', latencyThresholdInvalid: 'LT',
+    };
+    const buildForm = () => upsertDnsMonitorForm(null, msgs, 0);
+
+    // resolverPort: valid 1..65535
+    assertValidatorBoundaries(buildForm, 'resolverPort', 'validateResolverPort', 'PORT', [
+        [0, true], [1, false], [65535, false], [65536, true], ['', true],
+    ]);
+    // timeoutMs: valid 1..30000
+    assertValidatorBoundaries(buildForm, 'timeoutMs', 'validateTimeoutMs', 'TS', [
+        [0, true], [1, false], [30000, false], [30001, true],
+    ]);
+    // latencyThresholdMs: optional - blank/null is OK, otherwise it must be a positive number
+    assertValidatorBoundaries(buildForm, 'latencyThresholdMs', 'validateLatencyThreshold', 'LT', [
+        ['', false], [null, false], [0, true], [1, false], [500, false], [-1, true],
+    ]);
+});
+
+// --------- DNS: record matcher add/remove + regex validation ---------
+
+test('DNS validateNewMatcher rejects blank values and invalid regex, gates isMatcherAddable', () => {
+    const form = upsertDnsMonitorForm(null, {recordMatcherInvalid: 'RM'}, 0);
+    form.init();
+
+    // Blank value is not addable, but not an error either
+    form.newMatcherValue = '   ';
+    form.validateNewMatcher();
+    assert.equal(form.isMatcherAddable, false);
+    assert.equal(form.errors.newMatcher, null);
+
+    // A non-blank CONTAINS value is addable
+    form.newMatcherMatchType = 'CONTAINS';
+    form.newMatcherValue = '1.2.3.4';
+    form.validateNewMatcher();
+    assert.equal(form.isMatcherAddable, true);
+    assert.equal(form.errors.newMatcher, null);
+
+    // An invalid REGEX value is flagged and not addable
+    form.newMatcherMatchType = 'REGEX';
+    form.newMatcherValue = '([';
+    form.validateNewMatcher();
+    assert.equal(form.isMatcherAddable, false);
+    assert.equal(form.errors.newMatcher, 'RM');
+
+    // A valid REGEX value is addable again
+    form.newMatcherValue = '^mail\\..*';
+    form.validateNewMatcher();
+    assert.equal(form.isMatcherAddable, true);
+    assert.equal(form.errors.newMatcher, null);
+});
+
+test('DNS addMatcher/removeMatcher mutate the recordMatchers list', () => {
+    const form = upsertDnsMonitorForm(null, {}, 0);
+    form.init();
+
+    form.newMatcherRecordType = 'A';
+    form.newMatcherMatchType = 'EXACT';
+    form.newMatcherValue = ' 1.2.3.4 ';
+    form.addMatcher();
+
+    assert.equal(form.recordMatchers.length, 1);
+    assert.deepEqual(form.recordMatchers[0], {recordType: 'A', matchType: 'EXACT', value: '1.2.3.4'});
+    // The add-row value is cleared after a successful add
+    assert.equal(form.newMatcherValue, '');
+    assert.equal(form.isMatcherAddable, false);
+
+    // A blank value cannot be added
+    form.newMatcherValue = '';
+    form.addMatcher();
+    assert.equal(form.recordMatchers.length, 1);
+
+    form.removeMatcher(0);
+    assert.equal(form.recordMatchers.length, 0);
+});
+
+test('DNS addMatcher ignores a matcher that is already in the list', () => {
+    const form = upsertDnsMonitorForm(null, {}, 0);
+    form.init();
+
+    const add = (recordType, matchType, value) => {
+        form.newMatcherRecordType = recordType;
+        form.newMatcherMatchType = matchType;
+        form.newMatcherValue = value;
+        form.addMatcher();
+    };
+
+    add('A', 'EXACT', '1.2.3.4');
+    // The very same matcher would only be evaluated twice, and the server drops it anyway
+    add('A', 'EXACT', '1.2.3.4');
+    assert.equal(form.recordMatchers.length, 1);
+    // The entry row is cleared either way, so the form does not look stuck
+    assert.equal(form.newMatcherValue, '');
+
+    // Differing in any single field still makes it a new matcher
+    add('A', 'CONTAINS', '1.2.3.4');
+    add('AAAA', 'EXACT', '1.2.3.4');
+    add('A', 'EXACT', '5.6.7.8');
+    assert.equal(form.recordMatchers.length, 4);
+});
+
+test('DNS validateResponseCodeMatchers conflicts when a non-NOERROR code has matchers', () => {
+    const form = upsertDnsMonitorForm(null, {responseCodeMatchersConflict: 'CONFLICT'}, 0);
+    form.init();
+
+    // NOERROR + matchers is fine
+    form.expectedResponseCode = 'NOERROR';
+    form.recordMatchers = [{recordType: 'A', matchType: 'EXACT', value: '1.2.3.4'}];
+    form.validateResponseCodeMatchers();
+    assert.equal(form.errors.recordMatchers, null);
+
+    // NXDOMAIN + matchers is a conflict
+    form.expectedResponseCode = 'NXDOMAIN';
+    form.validateResponseCodeMatchers();
+    assert.equal(form.errors.recordMatchers, 'CONFLICT');
+
+    // NXDOMAIN without matchers is fine
+    form.recordMatchers = [];
+    form.validateResponseCodeMatchers();
+    assert.equal(form.errors.recordMatchers, null);
+});
+
+// --------- DNS: populateFrom field mapping ---------
+
+test('DNS populateFrom copies a source and falls back to defaults', () => {
+    const form = upsertDnsMonitorForm(null, {}, 0);
+
+    form.populateFrom({
+        name: 'Src', host: 'example.com', resolverHost: '8.8.8.8', resolverPort: 5353,
+        transport: 'TCP', recordMatchers: [{recordType: 'A', matchType: 'EXACT', value: '1.2.3.4'}],
+        expectedResponseCode: 'NXDOMAIN', driftDetectionEnabled: true, driftRecordTypes: ['A', 'MX'],
+        uptimeCheckInterval: 120, timeoutMs: 10000, latencyThresholdMs: 250, failureCountThreshold: 2,
+        integrations: ['discord'], metricsHistoryEnabled: false,
+    });
+    assert.equal(form.name, 'Src');
+    assert.equal(form.host, 'example.com');
+    assert.equal(form.resolverHost, '8.8.8.8');
+    assert.equal(form.resolverPort, 5353);
+    assert.equal(form.transport, 'TCP');
+    assert.deepEqual(form.recordMatchers, [{recordType: 'A', matchType: 'EXACT', value: '1.2.3.4'}]);
+    assert.equal(form.expectedResponseCode, 'NXDOMAIN');
+    assert.equal(form.driftDetectionEnabled, true);
+    assert.deepEqual(form.driftRecordTypes, ['A', 'MX']);
+    assert.equal(form.uptimeCheckInterval, 120);
+    assert.equal(form.timeoutMs, 10000);
+    assert.equal(form.latencyThresholdMs, 250);
+    assert.equal(form.failureCountThreshold, 2);
+    assert.deepEqual(form.integrations, ['discord']);
+    assert.equal(form.metricsHistoryEnabled, false);
+
+    // recordMatchers is deep-copied, not aliased to the source array
+    form.recordMatchers.push({recordType: 'AAAA', matchType: 'CONTAINS', value: '::1'});
+    form.populateFrom(null);
+    assert.equal(form.name, '');
+    assert.equal(form.host, '');
+    assert.equal(form.resolverHost, '');
+    assert.equal(form.resolverPort, 53);
+    assert.equal(form.transport, 'UDP');
+    assert.deepEqual(form.recordMatchers, []);
+    assert.equal(form.expectedResponseCode, 'NOERROR');
+    assert.equal(form.driftDetectionEnabled, false);
+    assert.deepEqual(form.driftRecordTypes, []);
+    assert.equal(form.uptimeCheckInterval, 60);
+    assert.equal(form.timeoutMs, 5000);
     assert.equal(form.latencyThresholdMs, '');
     assert.equal(form.failureCountThreshold, 1);
     assert.deepEqual(form.integrations, []);

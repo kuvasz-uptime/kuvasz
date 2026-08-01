@@ -83,5 +83,44 @@ class HttpMonitorCrudUiTest : UiTestSpec() {
             modal.selectOption("200")
             assertThat(modal.selectedOptions).hasCount(1)
         }
+
+        "an abandoned create form is reset when the modal is reopened" {
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setName("Abandoned HTTP Monitor")
+                .setUrl("https://abandoned.example.com")
+                .setUptimeCheckInterval("300")
+            modal.dismiss()
+
+            // Closing the modal fires the reset event, so the next open starts from the defaults again.
+            val reopened = list.openCreateModal()
+            assertThat(reopened.nameInput).hasValue("")
+            assertThat(reopened.urlInput).hasValue("")
+            assertThat(reopened.uptimeCheckIntervalInput).hasValue("60")
+        }
+
+        "edits abandoned on an existing monitor are discarded when its configure modal is reopened" {
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            val originalName = "HTTP Reset Source"
+            val originalUrl = "https://original.example.com"
+            list.openCreateModal().setName(originalName).setUrl(originalUrl).save()
+            page.waitForURL("**/http-monitors/*")
+            val details = HttpMonitorDetailsPage(page)
+
+            details.openConfigureModal()
+                .setName("HTTP Reset Renamed")
+                .setUrl("https://changed.example.com")
+                .dismiss()
+
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.nameInput).hasValue(originalName)
+            assertThat(reopened.urlInput).hasValue(originalUrl)
+        }
     }
 }

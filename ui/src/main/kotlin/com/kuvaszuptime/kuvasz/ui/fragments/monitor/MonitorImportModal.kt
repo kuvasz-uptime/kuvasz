@@ -65,7 +65,7 @@ internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String)
                             name = "file"
                             classes(FORM_CONTROL)
                             accept = ".yaml,.yml"
-                            xOn("change", "handleFileChange(\$event)")
+                            xOnChange("handleFileChange(\$event)")
                             xBindDisabled("importCompleted")
                         }
                         templateTag {
