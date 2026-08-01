@@ -154,6 +154,58 @@ class DnsUptimeCheckerTest(
                 }
             }
 
+            `when`("the name resolves to an empty answer set without matchers") {
+                val monitor = createDnsMonitor(monitorRepository)
+                getMock(resolveExecutor).stub(
+                    monitor,
+                    DnsCheckResult(
+                        records = mapOf(DnsRecordType.A to emptyList()),
+                        responseCode = DnsResponseCode.NOERROR,
+                        latencyMs = 5,
+                        error = null,
+                    ),
+                )
+
+                val upSubscriber = TestSubscriber<DnsMonitorUpEvent>()
+                val downSubscriber = TestSubscriber<DnsMonitorDownEvent>()
+                eventDispatcher.subscribeToDnsMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+                eventDispatcher.subscribeToDnsMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                uptimeChecker.check(monitor)
+
+                then("an UP event should be dispatched, because the response code is the expected one") {
+                    upSubscriber.awaitCount(1)
+                    upSubscriber.values().shouldHaveSize(1)
+                    downSubscriber.values().shouldHaveSize(0)
+                }
+            }
+
+            `when`("a REGEX matcher of `.` is used against an empty answer set") {
+                val monitor = createDnsMonitor(
+                    monitorRepository,
+                    recordMatchers = listOf(DnsRecordMatcher(DnsRecordType.A, DnsMatchType.REGEX, ".")),
+                )
+                getMock(resolveExecutor).stub(
+                    monitor,
+                    DnsCheckResult(
+                        records = mapOf(DnsRecordType.A to emptyList()),
+                        responseCode = DnsResponseCode.NOERROR,
+                        latencyMs = 5,
+                        error = null,
+                    ),
+                )
+
+                val downSubscriber = TestSubscriber<DnsMonitorDownEvent>()
+                eventDispatcher.subscribeToDnsMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                uptimeChecker.check(monitor)
+
+                then("a DOWN event should be dispatched, since no record satisfies the matcher") {
+                    downSubscriber.awaitCount(1)
+                    downSubscriber.values().shouldHaveSize(1)
+                }
+            }
+
             `when`("the expected response code is NXDOMAIN and the name does not exist") {
                 val monitor = createDnsMonitor(monitorRepository, expectedResponseCode = DnsResponseCode.NXDOMAIN)
                 getMock(resolveExecutor).stub(
