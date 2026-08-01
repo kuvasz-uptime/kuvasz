@@ -5,10 +5,14 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.inspectors.forAll
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.longs.shouldBeGreaterThan
+import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.longs.shouldBeLessThanOrEqual
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -490,11 +494,71 @@ class DnsResolveExecutorTest : BehaviorSpec({
 
             then("the factory builds a resolver for that host and transport and the timeout is applied") {
                 verify { factory.create("9.9.9.9", DnsTransport.UDP) }
-                verify { resolver.setTimeout(Duration.ofMillis(2000)) }
+
+                val applied = mutableListOf<Duration>()
+                verify { resolver.setTimeout(capture(applied)) }
+                // The budget is what is left of the 2000ms, so the only query gets approximately all of it
+                applied.single().toMillis() shouldBeGreaterThan 1500L
+                applied.single().toMillis() shouldBeLessThanOrEqual 2000L
+            }
+        }
+
+        `when`("a check asserts on several record types and watches another one for drift") {
+            val resolver = mockk<Resolver>(relaxed = true)
+            every { resolver.send(any()) } returns response(Rcode.NOERROR, aRecord("1.2.3.4"))
+
+            executorReturning(resolver).execute(
+                host = "example.com",
+                recordTypes = setOf(DnsRecordType.A, DnsRecordType.AAAA, DnsRecordType.MX),
+                resolverHost = null,
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 2000,
+                driftRecordTypes = setOf(DnsRecordType.NS),
+            )
+
+            then("every query draws from the one budget instead of getting the full timeout each") {
+                val applied = mutableListOf<Duration>()
+                verify(exactly = 4) { resolver.setTimeout(capture(applied)) }
+
+                applied.forAll { it.toMillis() shouldBeLessThanOrEqual 2000L }
+                // Monotonically shrinking: each query is handed only what the previous ones left over
+                applied.zipWithNext().forAll { (earlier, later) ->
+                    later.toMillis() shouldBeLessThanOrEqual earlier.toMillis()
+                }
+            }
+        }
+
+        `when`("the budget is already exhausted before a query is sent") {
+            val resolver = mockk<Resolver>(relaxed = true)
+            every { resolver.send(any()) } answers {
+                burnBudget()
+                response(Rcode.NOERROR, aRecord("1.2.3.4"))
+            }
+
+            executorReturning(resolver).execute(
+                host = "example.com",
+                recordTypes = setOf(DnsRecordType.A, DnsRecordType.AAAA),
+                resolverHost = null,
+                resolverPort = 53,
+                transport = DnsTransport.UDP,
+                timeoutMs = 30,
+                driftRecordTypes = emptySet(),
+            )
+
+            then("the later query still gets a positive timeout instead of a zero or negative one") {
+                val applied = mutableListOf<Duration>()
+                verify(exactly = 2) { resolver.setTimeout(capture(applied)) }
+
+                applied.forAll { it.toMillis() shouldBeGreaterThanOrEqual 1L }
             }
         }
     }
 })
+
+private const val SLOW_RESPONSE_MS = 50L
+
+private fun burnBudget() = Thread.sleep(SLOW_RESPONSE_MS)
 
 @Ignored
 class DnsResolveExecutorLiveTest : BehaviorSpec({

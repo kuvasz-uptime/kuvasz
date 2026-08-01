@@ -68,11 +68,11 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
         driftRecordTypes: Set<DnsRecordType> = emptySet(),
     ): DnsCheckResult {
         val assertionTypes = recordTypes.ifEmpty { setOf(DnsRecordType.A) }
+        val start = System.nanoTime()
 
         val resolver = try {
             resolverFactory.create(resolverHost, transport).apply {
                 setPort(resolverPort)
-                timeout = Duration.ofMillis(timeoutMs.toLong())
             }
         } catch (ex: IOException) {
             return DnsCheckResult(
@@ -83,21 +83,29 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
             )
         }
 
-        return resolver.query(host, assertionTypes, driftOnlyTypes = driftRecordTypes - assertionTypes)
+        return resolver.query(
+            host = host,
+            assertionTypes = assertionTypes,
+            driftOnlyTypes = driftRecordTypes - assertionTypes,
+            start = start,
+            timeoutMs = timeoutMs,
+        )
     }
 
     private fun Resolver.query(
         host: String,
         assertionTypes: Set<DnsRecordType>,
         driftOnlyTypes: Set<DnsRecordType>,
+        start: Long,
+        timeoutMs: Int,
     ): DnsCheckResult {
         val records = mutableMapOf<DnsRecordType, List<String>>()
         var problemResponseCode: DnsResponseCode? = null
-        val start = System.nanoTime()
+        val latencyStart = System.nanoTime()
 
         assertionTypes.forEach { type ->
             val response = try {
-                send(queryFor(host, type.toDnsJavaType()))
+                sendWithinBudget(host, type, start, timeoutMs)
             } catch (ex: IOException) {
                 return DnsCheckResult(
                     records = records,
@@ -113,14 +121,15 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
             records[type] = response.answersOf(type)
         }
 
-        val latencyMs = elapsedMsSince(start)
+        val latencyMs = elapsedMsSince(latencyStart)
 
         // Drift-only lookups are informational: a failure here must not flip the monitor to DOWN, it only means the
-        // answer set is incomplete and cannot be compared this round.
+        // answer set is incomplete and cannot be compared this round. They share the check's budget, so a slow
+        // assertion phase starves them into a skipped comparison rather than into extra blocking.
         var driftRecordsComplete = true
         driftOnlyTypes.forEach { type ->
             try {
-                val response = send(queryFor(host, type.toDnsJavaType()))
+                val response = sendWithinBudget(host, type, start, timeoutMs)
                 // A non-NOERROR answer is empty for the same reason a non-existent record is, so it cannot be told
                 // apart from "this type is genuinely absent" -- treat it as missing data rather than as a removal.
                 if (response.rcode.toDnsResponseCode() == DnsResponseCode.NOERROR) {
@@ -143,6 +152,19 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
         )
     }
 
+    /**
+     * Sends a single query with whatever is left of the check's timeout budget, the same way TcpConnectExecutor
+     * hands the handshake what the name resolution left over. Without this a monitor asserting on several record
+     * types (and watching more of them for drift) could block its scheduler slot for a multiple of the configured
+     * timeout, since every query would get the full value on its own.
+     */
+    private fun Resolver.sendWithinBudget(host: String, type: DnsRecordType, start: Long, timeoutMs: Int): Message {
+        val remainingMs = (timeoutMs - elapsedMsSince(start)).coerceAtLeast(MIN_QUERY_TIMEOUT_MS)
+        timeout = Duration.ofMillis(remainingMs.toLong())
+
+        return send(queryFor(host, type.toDnsJavaType()))
+    }
+
     private fun Message.answersOf(type: DnsRecordType): List<String> {
         val dnsType = type.toDnsJavaType()
         return getSection(Section.ANSWER)
@@ -161,6 +183,7 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
         )
 
     companion object {
+        private const val MIN_QUERY_TIMEOUT_MS = 1
         private val logger = loggerFor<DnsResolveExecutor>()
     }
 }

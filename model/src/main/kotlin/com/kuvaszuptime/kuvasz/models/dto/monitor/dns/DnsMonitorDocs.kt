@@ -26,7 +26,9 @@ object DnsMonitorDocs {
             "list, which is how a monitor watches something it does not assert on (an NS or MX change worth a " +
             "notification but not a DOWN event); each named type that no matcher covers adds a lookup per check, " +
             "which is not counted towards the latency reading. Ignored unless driftDetectionEnabled is true."
-    const val TIMEOUT_MS = "The DNS query timeout in milliseconds (1-30000)"
+    const val TIMEOUT_MS =
+        "The timeout of a whole check in milliseconds (1-30000). It is a budget shared by every query the check " +
+            "makes, so asserting on more record types does not extend it."
     const val LATENCY_THRESHOLD_MS =
         "Optional resolution-latency threshold in milliseconds. If set, the check is considered DOWN when the " +
             "resolution takes longer than this value."
