@@ -1,5 +1,8 @@
 dns-monitors:
-  - name: test
+  - name: well-configured-monitor
+    host: example.com
+    uptime-check-interval: 60
+  - name: conflicting-monitor
     host: example.com
     uptime-check-interval: 60
     expected-response-code: NXDOMAIN

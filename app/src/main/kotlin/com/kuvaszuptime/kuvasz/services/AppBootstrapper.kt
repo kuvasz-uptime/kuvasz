@@ -270,8 +270,10 @@ class AppBootstrapper(
 
         // Micronaut cannot resolve the class-level @ValidDnsResponseCode constraint on an @EachProperty bean, so the
         // same rule is enforced here for the YAML configs
-        require(yamlDnsMonitorConfigs.all { it.hasValidResponseCodeExpectation() }) {
-            MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS
+        val invalidDnsMonitorConfigs = yamlDnsMonitorConfigs.filterNot { it.hasValidResponseCodeExpectation() }
+        require(invalidDnsMonitorConfigs.isEmpty()) {
+            "${MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS}. Offending DNS monitors: " +
+                invalidDnsMonitorConfigs.joinToString { it.name }
         }
         processYamlMonitorConfigs(
             monitorType = MonitorType.DNS,

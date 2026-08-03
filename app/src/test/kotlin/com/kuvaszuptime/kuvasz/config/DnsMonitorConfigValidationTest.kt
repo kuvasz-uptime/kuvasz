@@ -12,6 +12,7 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.exceptions.BeanInstantiationException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -89,8 +90,10 @@ class DnsMonitorConfigValidationTest : BehaviorSpec({
             val exception = shouldThrow<BeanInstantiationException> {
                 testAppContext("dns-monitor-response-code-conflict")
             }
-            then("AppContext should throw a BeanInstantiationException") {
+            then("AppContext should throw a BeanInstantiationException naming only the offending monitor") {
                 exception.message shouldContain MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS
+                exception.message shouldContain "Offending DNS monitors: conflicting-monitor"
+                exception.message shouldNotContain "well-configured-monitor"
             }
         }
 
