@@ -159,6 +159,15 @@ Setting it explicitly is useful when you want to **verify a specific nameserver*
 
     Since a monitor queries exactly one resolver, the way to **compare resolvers** is to create one monitor per resolver with the same host and the same matchers. That also gives you separate incidents, latency history and notifications per resolver.
 
+!!! warning "Prefer an IP address over a hostname"
+
+    A hostname has to be **resolved first**, before the check can send a single query to it - and that lookup goes through the **system resolver**, on **every check**. Two consequences worth knowing about:
+
+    - It is **not covered by the [timeout](#timeout)**. The timeout budget applies to the queries the check sends to your nameserver, not to finding that nameserver in the first place. If the system resolver is slow or unreachable, the check can take considerably longer than `timeout-ms` before it gives up.
+    - When it does give up, the monitor goes DOWN with a **timeout or network error from the queries**, not with one naming the resolver - so a broken `resolver-host` looks like a broken monitored name.
+
+    Giving an **IP address** (`1.1.1.1`, `10.0.0.53`, ...) skips the lookup entirely and keeps the whole check inside its budget. Use a hostname only when the address genuinely isn't stable, and keep in mind that you are then also monitoring the system resolver's ability to resolve it.
+
 ### Resolver port
 
 <!-- md:version 4.2.0 -->
@@ -196,6 +205,8 @@ The **transport used for the queries**:
 The **timeout of a whole check in milliseconds**. Must be between 1 and 30000. If the resolver doesn't answer within this time, the check is considered a failure.
 
 Note that this is a **budget shared by every query the check makes**, not a per-query limit. A monitor with matchers on three different record types sends three queries, and each of them gets whatever the previous ones left over - so **asserting on more record types never extends the time a check may take**. The [lookups made only for drift detection](#drift-record-types) draw from the same budget, and are made last: a slow assertion phase starves them, which skips the drift comparison for that round instead of letting the check run longer.
+
+The budget covers the queries sent to your nameserver. It does **not** cover looking up the nameserver itself when [`resolver-host`](#custom-resolver) is given as a hostname rather than an IP address - see the warning there.
 
 ### Latency threshold
 
