@@ -73,7 +73,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
                 sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
                 sslCheckEnabled?.let { and(HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it)) }
                 monitorNames?.let { and(HTTP_MONITOR.NAME.`in`(it)) }
-                sortedBy?.let { orderBy(it) }
+                sortedBy?.let { orderBy(it, HTTP_MONITOR.ID.asc()) }
             }
             .fetchInto(HttpMonitorDetailsDto::class.java)
 

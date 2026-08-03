@@ -10,6 +10,8 @@ class MaintenanceWindowListPage(private val page: Page) {
 
     val rows: Locator get() = page.getByTestId("maintenance-window-row")
 
+    val names: List<String> get() = rows.locator("td:first-of-type").allInnerTexts().map { it.trim() }
+
     fun navigate() {
         page.navigate("/maintenance-windows")
     }

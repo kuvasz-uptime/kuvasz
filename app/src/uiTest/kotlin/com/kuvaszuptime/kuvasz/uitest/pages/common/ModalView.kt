@@ -29,6 +29,17 @@ abstract class ModalView(protected val page: Page) {
     // The selected chips of the (single) TomSelect multi-select in this modal.
     val selectedOptions: Locator get() = modal.locator(".ts-control .item")
 
+    // The options of the monitor multi-select, in the order the app offers them. TomSelect hides the `select` it is
+    // built on, so their labels are read from the DOM instead of through the visibility-aware `allInnerTexts()`.
+    val monitorOptions: Locator get() = modal.locator("select[multiple] option")
+
+    val monitorOptionNames: List<String> get() = monitorOptions.allTextContents().map { it.trim() }
+
+    // The checkboxes of the integrations accordion, which stays collapsed (but rendered) until it is opened.
+    val integrationCheckboxes: Locator get() = modal.getByTestId("integration-checkbox")
+
+    val integrationCheckboxNames: List<String> get() = integrationCheckboxes.allTextContents().map { it.trim() }
+
     // Opens the modal's TomSelect dropdown and picks the option matching [optionText].
     fun selectOption(optionText: String) {
         modal.locator(".ts-control").click()

@@ -66,7 +66,7 @@ class AppGlobalsFactory {
             public = defaultStatusPageConfig.public,
         ),
         configuredMonitors = {
-            monitorActions.getConfiguredMonitors().sortedBy { it.name }
+            monitorActions.getConfiguredMonitors().sortedBy { it.name.lowercase() }
         },
     )
 }

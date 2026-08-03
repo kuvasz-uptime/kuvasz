@@ -86,7 +86,7 @@ class DnsMonitorRepository(private val dslContext: DSLContext) : MonitorReposito
                     and(latestUptimeEventSelect.field(DNS_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
                 monitorNames?.let { and(DNS_MONITOR.NAME.`in`(it)) }
-                sortedBy?.let { orderBy(it) }
+                sortedBy?.let { orderBy(it, DNS_MONITOR.ID.asc()) }
             }
             .fetchInto(DnsMonitorDetailsDto::class.java)
 

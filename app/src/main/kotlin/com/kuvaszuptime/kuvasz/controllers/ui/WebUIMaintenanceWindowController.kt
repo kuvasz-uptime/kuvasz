@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.ui.fragments.maintenance.*
 import com.kuvaszuptime.kuvasz.ui.pages.maintenance.*
+import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -59,7 +60,7 @@ class WebUIMaintenanceWindowController(
     @Produces(MediaType.TEXT_HTML)
     fun maintenanceWindowList(): String {
         val maintenanceWindows =
-            maintenanceWindowActions.getMaintenanceWindows(sortedBy = MAINTENANCE_WINDOW.NAME.asc())
+            maintenanceWindowActions.getMaintenanceWindows(sortedBy = MAINTENANCE_WINDOW.NAME.ascIgnoreCase())
 
         return renderMaintenanceWindowList(
             maintenanceWindows = maintenanceWindows,

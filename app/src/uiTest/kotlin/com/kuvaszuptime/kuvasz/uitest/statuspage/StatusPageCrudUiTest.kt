@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -98,6 +99,19 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(modal.selectedOptions).containsText("Selectable Monitor")
         }
 
+        "the status-page modal offers the monitors sorted by name, regardless of its casing" {
+            val names = listOf("Charlie", "bravo", "Delta", "alpha")
+            names.forEach { createHttpMonitor(httpMonitorRepository, monitorName = it) }
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+            val modal = list.openCreateModal()
+
+            assertThat(modal.monitorOptions).hasCount(names.size)
+            modal.monitorOptionNames shouldBe listOf("http:alpha", "http:bravo", "http:Charlie", "http:Delta")
+        }
+
         "a status page can be published and unpublished from the list" {
             createStatusPage(
                 dslContext,
@@ -135,6 +149,19 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
 
             details.visibilityToggleButton.click()
             assertThat(details.visibilityBadge(Messages.private())).isVisible()
+        }
+
+        "the status page list is sorted by title, regardless of its casing" {
+            val titles = listOf("Charlie", "bravo", "Delta", "alpha")
+            titles.forEach { createStatusPage(dslContext, title = it, slug = it.lowercase()) }
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            // The table is HTMX-swapped in, so wait for every row before reading their order.
+            assertThat(list.rows).hasCount(titles.size)
+            list.titles shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
     }
 }

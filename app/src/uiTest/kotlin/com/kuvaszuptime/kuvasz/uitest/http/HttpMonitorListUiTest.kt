@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorListPage
 import com.microsoft.playwright.assertions.LocatorAssertions
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
 
@@ -86,6 +87,19 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
             // The badge is grayed out (with a tool icon) but keeps the UP label
             assertThat(list.maintenanceBadge(monitor.name)).isVisible()
             assertThat(list.maintenanceBadge(monitor.name)).containsText(UptimeStatus.UP.literal)
+        }
+
+        "the HTTP monitor list is sorted by name, regardless of its casing" {
+            val names = listOf("Charlie", "bravo", "Delta", "alpha")
+            names.forEach { createHttpMonitor(httpMonitorRepository, monitorName = it) }
+
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            // The table is HTMX-swapped in, so wait for every row before reading their order.
+            assertThat(list.rows).hasCount(names.size)
+            list.names shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
     }
 

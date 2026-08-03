@@ -209,9 +209,10 @@ internal fun FlowContent.integrationsAccordionItem(
                 }
                 div {
                     // Render each integration as a checkbox
-                    integrations.sortedBy { it.name }.forEach { integration ->
+                    integrations.sortedBy { it.name.lowercase() }.forEach { integration ->
                         label {
                             classes(FORM_CHECK, FORM_CHECK_INLINE)
+                            testId("integration-checkbox")
                             input(type = InputType.checkBox) {
                                 value = integration.id.toString()
                                 classes(FORM_CHECK_INPUT)

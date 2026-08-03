@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.jooq.Keys.MAINTENANCE_WINDOW_NAME_KEY
 import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
-import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.MaintenanceWindowDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -30,7 +30,7 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
     @Suppress("IgnoredReturnValue")
     fun fetchAll(sortedBy: SortField<*>? = null): List<MaintenanceWindowRecord> = dslContext
         .selectFrom(MAINTENANCE_WINDOW)
-        .apply { sortedBy?.let { orderBy(sortedBy) } }
+        .apply { sortedBy?.let { orderBy(it, MAINTENANCE_WINDOW.ID.asc()) } }
         .fetch()
 
     fun fetchByEnabled(enabled: Boolean): List<MaintenanceWindowRecord> = dslContext
