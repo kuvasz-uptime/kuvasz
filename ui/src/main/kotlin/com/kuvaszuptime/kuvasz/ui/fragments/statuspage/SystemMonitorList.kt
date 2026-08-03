@@ -20,9 +20,9 @@ import kotlinx.html.*
 fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
     div {
         classes(CSSClass.ROW)
-        // DOWN monitors are more important, sort by status (D < U), then by name
+        // DOWN monitors are more important, sort by status (D < U), then by name, ignoring its casing
         pageData.monitors
-            .sortedBy { it.uptimeStatus?.name + it.name }
+            .sortedWith(compareBy({ it.uptimeStatus?.name.toString() }, { it.name.lowercase() }))
             .forEach { monitor ->
                 div {
                     classes(COL_MD_6, MB_3)

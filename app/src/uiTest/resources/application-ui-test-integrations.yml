@@ -1,0 +1,12 @@
+---
+# Deliberately mixed-case names, to pin down the case-insensitive ordering of the integration lists
+integrations:
+  slack:
+    - name: Charlie
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX
+    - name: bravo
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/YYYYYYYYYYYYYYYY
+    - name: Delta
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/ZZZZZZZZZZZZZZZZ
+    - name: alpha
+      webhook-url: https://hooks.slack.com/services/T00000000/B00000000/WWWWWWWWWWWWWWWW

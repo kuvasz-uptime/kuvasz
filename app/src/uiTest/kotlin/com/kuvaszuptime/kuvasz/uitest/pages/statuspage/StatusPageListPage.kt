@@ -10,6 +10,8 @@ class StatusPageListPage(private val page: Page) {
 
     val rows: Locator get() = page.getByTestId("status-page-row")
 
+    val titles: List<String> get() = rows.locator("td:first-of-type").allInnerTexts().map { it.trim() }
+
     fun navigate() {
         page.navigate("/status-pages")
     }

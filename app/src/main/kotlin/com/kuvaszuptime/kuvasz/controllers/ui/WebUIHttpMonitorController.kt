@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.http.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
+import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -82,7 +83,7 @@ class WebUIHttpMonitorController(
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorTable(): String {
-        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = HTTP_MONITOR.NAME.asc())
+        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = HTTP_MONITOR.NAME.ascIgnoreCase())
 
         return renderHttpMonitorList(monitors, appGlobals.editabilityState)
     }

@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.icmp.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.icmp.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
+import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -76,7 +77,7 @@ class WebUIIcmpMonitorController(
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun icmpMonitorList(): String {
-        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = ICMP_MONITOR.NAME.asc())
+        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = ICMP_MONITOR.NAME.ascIgnoreCase())
 
         return renderIcmpMonitorList(monitors, appGlobals.editabilityState)
     }

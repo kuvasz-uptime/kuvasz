@@ -14,6 +14,10 @@ class PublicStatusPage(private val page: Page) {
 
     fun monitorCard(name: String): Locator = page.byRole(AriaRole.HEADING, name)
 
+    val monitorCards: Locator get() = page.getByTestId("status-monitor-card")
+
+    val monitorNames: List<String> get() = monitorCards.locator("h3").allInnerTexts().map { it.trim() }
+
     fun monitorCardBody(name: String): Locator =
         page.getByTestId("status-monitor-card").filter(Locator.FilterOptions().setHasText(name))
 

@@ -121,7 +121,7 @@ private fun FlowContent.maintenanceWindowDetailsContent(
                                 } else if (window.monitors.isEmpty()) {
                                     noData()
                                 } else {
-                                    window.monitors.sortedBy { it.toString() }.forEach { monitor ->
+                                    window.monitors.sortedBy { it.toString().lowercase() }.forEach { monitor ->
                                         span {
                                             classes(ME_2)
                                             affectedMonitorBadge(monitor, monitorIds[monitor])
@@ -133,7 +133,7 @@ private fun FlowContent.maintenanceWindowDetailsContent(
                                 if (window.integrations.isEmpty()) {
                                     noData()
                                 } else {
-                                    window.integrations.sortedBy { it.toString() }.forEach { integration ->
+                                    window.integrations.sortedBy { it.toString().lowercase() }.forEach { integration ->
                                         span {
                                             classes(ME_2)
                                             inlineBadge(text = integration.toString())

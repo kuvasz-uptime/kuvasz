@@ -59,7 +59,7 @@ class WebUIController(
     @ExecuteOn(TaskExecutors.BLOCKING)
     fun integrations() = renderIntegrations(
         globals = appGlobals,
-        integrations = integrationsRepository.getConfiguredIntegrationDtos().sortedBy { it.name },
+        integrations = integrationsRepository.getConfiguredIntegrationDtos().sortedBy { it.name.lowercase() },
         settings = settingsRepository.getSettings(),
     )
 

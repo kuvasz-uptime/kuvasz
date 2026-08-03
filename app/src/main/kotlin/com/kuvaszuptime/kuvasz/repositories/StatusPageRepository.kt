@@ -38,7 +38,7 @@ class StatusPageRepository(private val dslContext: DSLContext) {
         .selectFrom(STATUS_PAGE)
         .apply {
             public?.let { where(STATUS_PAGE.PUBLIC.eq(public)) }
-            sortedBy?.let { orderBy(sortedBy) }
+            sortedBy?.let { orderBy(it, STATUS_PAGE.ID.asc()) }
         }
         .fetch()
 

@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -54,6 +55,19 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             list.navigate()
             // The monitors column shows the affected-monitor count, not the global badge.
             assertThat(list.monitorsCell("Scoped Window")).hasText("2")
+        }
+
+        "the maintenance window list is sorted by name, regardless of its casing" {
+            val names = listOf("Charlie", "bravo", "Delta", "alpha")
+            names.forEach { createMaintenanceWindow(dslContext, name = it) }
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            // The table is HTMX-swapped in, so wait for every row before reading their order.
+            assertThat(list.rows).hasCount(names.size)
+            list.names shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
     }
 }

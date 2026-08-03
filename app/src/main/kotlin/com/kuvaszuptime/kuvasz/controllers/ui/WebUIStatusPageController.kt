@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.ui.fragments.statuspage.*
 import com.kuvaszuptime.kuvasz.ui.pages.statuspage.*
+import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -49,7 +50,7 @@ class WebUIStatusPageController(
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun statusPageList(): String {
-        val statusPages = statusPageActions.getStatusPages(public = null, sortedBy = STATUS_PAGE.TITLE.asc())
+        val statusPages = statusPageActions.getStatusPages(public = null, sortedBy = STATUS_PAGE.TITLE.ascIgnoreCase())
 
         return renderStatusPageList(
             statusPages = statusPages,

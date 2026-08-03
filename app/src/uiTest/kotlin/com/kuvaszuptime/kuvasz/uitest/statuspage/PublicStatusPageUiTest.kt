@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.PublicStatusPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
 
@@ -137,6 +138,27 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             // The timeframe pill is rendered with the window's start and end timestamps
             assertThat(statusPage.maintenanceTimeframe()).isVisible()
             assertThat(statusPage.maintenanceTimeframe()).containsText(windowStart.year.toString())
+        }
+
+        "monitor cards with the same status are sorted by name, regardless of its casing" {
+            val monitors = listOf("Charlie", "bravo", "Delta", "alpha").map { name ->
+                createHttpMonitor(httpMonitorRepository, monitorName = name)
+            }
+            val slug = "sorted-status"
+            createStatusPage(
+                dslContext,
+                title = "Sorted Status",
+                slug = slug,
+                public = true,
+                monitors = monitors.map { MonitorID(MonitorType.HTTP_SSL, it.name) },
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate(slug)
+
+            assertThat(statusPage.monitorCards).hasCount(monitors.size)
+            statusPage.monitorNames shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
     }
 }

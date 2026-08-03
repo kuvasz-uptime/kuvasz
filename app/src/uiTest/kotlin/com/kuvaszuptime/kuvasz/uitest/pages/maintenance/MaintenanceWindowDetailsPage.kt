@@ -22,6 +22,9 @@ class MaintenanceWindowDetailsPage(private val page: Page) {
     fun detailRow(label: String): Locator =
         page.locator("tr").filter(Locator.FilterOptions().setHasText(label))
 
+    fun badgeTextsOf(label: String): List<String> =
+        detailRow(label).locator(".badge").allInnerTexts().map { it.trim() }
+
     fun navigate(maintenanceWindowId: Long) {
         page.navigate("/maintenance-windows/$maintenanceWindowId")
     }

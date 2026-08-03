@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.dns.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.dns.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
+import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -78,7 +79,7 @@ class WebUIDnsMonitorController(
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun dnsMonitorList(): String {
-        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = DNS_MONITOR.NAME.asc())
+        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = DNS_MONITOR.NAME.ascIgnoreCase())
 
         return renderDnsMonitorList(monitors, appGlobals.editabilityState)
     }

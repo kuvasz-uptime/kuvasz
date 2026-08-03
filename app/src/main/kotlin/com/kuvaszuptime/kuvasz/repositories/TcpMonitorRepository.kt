@@ -7,10 +7,10 @@ import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -64,7 +64,7 @@ class TcpMonitorRepository(private val dslContext: DSLContext) : MonitorReposito
                     and(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
                 monitorNames?.let { and(TCP_MONITOR.NAME.`in`(it)) }
-                sortedBy?.let { orderBy(it) }
+                sortedBy?.let { orderBy(it, TCP_MONITOR.ID.asc()) }
             }
             .fetchInto(TcpMonitorDetailsDto::class.java)
 

@@ -11,6 +11,8 @@ class PushMonitorListPage(private val page: Page) {
 
     val rows: Locator get() = page.getByTestId("push-monitor-row")
 
+    val names: List<String> get() = rows.locator("td:first-of-type").allInnerTexts().map { it.trim() }
+
     val emptyState: Locator get() = page.getByText(Messages.noMonitors())
 
     fun navigate() {

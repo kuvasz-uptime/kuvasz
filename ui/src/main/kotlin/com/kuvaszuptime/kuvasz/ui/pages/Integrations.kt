@@ -60,6 +60,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 null
                                             }
                                         tr {
+                                            testId("integration-row")
                                             xData("integrationListItem('${integration.id}')")
                                             // Icon
                                             td {

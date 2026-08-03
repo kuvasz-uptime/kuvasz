@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowDetailsPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -57,6 +58,23 @@ class MaintenanceWindowDetailsUiTest(private val httpMonitorRepository: HttpMoni
                 .containsText(first.monitorId().toString())
             assertThat(affectedMonitors.locator("a[href='/http-monitors/${second.id}']"))
                 .containsText(second.monitorId().toString())
+        }
+
+        "the affected-monitor badges are sorted by monitor, regardless of the name's casing" {
+            val names = listOf("Charlie", "bravo", "Delta", "alpha")
+            val monitors = names.map { createHttpMonitor(httpMonitorRepository, monitorName = it) }
+            val window = createMaintenanceWindow(
+                dslContext,
+                name = "Sorted Badges Window",
+                monitors = monitors.map { it.monitorId() },
+            )
+
+            val page = newPage()
+            val details = MaintenanceWindowDetailsPage(page)
+            details.navigate(window.id)
+
+            details.badgeTextsOf(Messages.maintenanceWindowAffectedMonitors()) shouldBe
+                listOf("http:alpha", "http:bravo", "http:Charlie", "http:Delta")
         }
     }
 }
