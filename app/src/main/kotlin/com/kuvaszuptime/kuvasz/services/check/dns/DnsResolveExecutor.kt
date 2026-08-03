@@ -132,13 +132,18 @@ class DnsResolveExecutor(private val resolverFactory: DnsResolverFactory) {
                 val response = sendWithinBudget(host, type, start, timeoutMs)
                 // A non-NOERROR answer is empty for the same reason a non-existent record is, so it cannot be told
                 // apart from "this type is genuinely absent" -- treat it as missing data rather than as a removal.
-                if (response.rcode.toDnsResponseCode() == DnsResponseCode.NOERROR) {
+                val dnsResponseCode = response.rcode.toDnsResponseCode()
+                if (dnsResponseCode == DnsResponseCode.NOERROR) {
                     records[type] = response.answersOf(type)
                 } else {
+                    logger.warn(
+                        "Drift lookup of $type for [$host] resulted in [$dnsResponseCode], skipping drift " +
+                            "detection this round"
+                    )
                     driftRecordsComplete = false
                 }
             } catch (ex: IOException) {
-                logger.debug("Drift lookup of $type for [$host] failed, skipping drift detection this round", ex)
+                logger.warn("Drift lookup of $type for [$host] failed, skipping drift detection this round", ex)
                 driftRecordsComplete = false
             }
         }
