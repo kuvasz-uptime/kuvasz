@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.config.DnsMonitorConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
@@ -11,19 +12,25 @@ import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.config.TcpMonitorConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorTypeImportResult
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.hasValidResponseCodeExpectation
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
+import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
@@ -45,16 +52,19 @@ class AppBootstrapper(
     private val yamlPushMonitorConfigs: List<PushMonitorConfig>,
     private val yamlIcmpMonitorConfigs: List<IcmpMonitorConfig>,
     private val yamlTcpMonitorConfigs: List<TcpMonitorConfig>,
+    private val yamlDnsMonitorConfigs: List<DnsMonitorConfig>,
     private val monitorImporter: MonitorImporter,
     private val appConfig: AppConfig,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val integrationRepository: IntegrationRepository,
     private val httpCheckScheduler: HttpCheckScheduler,
     private val icmpCheckScheduler: IcmpCheckScheduler,
     private val tcpCheckScheduler: TcpCheckScheduler,
+    private val dnsCheckScheduler: DnsCheckScheduler,
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
@@ -84,6 +94,11 @@ class AppBootstrapper(
     @Nullable
     @field:Property(name = TcpMonitorConfig.CONFIG_PREFIX)
     protected var tcpMonitorYAMLConfigChecker: List<Any>? = null
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = DnsMonitorConfig.CONFIG_PREFIX)
+    protected var dnsMonitorYAMLConfigChecker: List<Any>? = null
 
     @Suppress("ProtectedMemberInFinalClass")
     @Nullable
@@ -121,6 +136,8 @@ class AppBootstrapper(
         icmpCheckScheduler.initialize()
         // Scheduling the initial TCP uptime checks
         tcpCheckScheduler.initialize()
+        // Scheduling the initial DNS uptime checks
+        dnsCheckScheduler.initialize()
         // Scheduling the start/end notifications of the enabled maintenance windows
         maintenanceWindowScheduler.initialize()
 
@@ -146,52 +163,42 @@ class AppBootstrapper(
     private fun sanitizeIntegrationsOfMonitors() {
         val configuredIntegrations = integrationRepository.configuredIntegrations.keys
 
-        fun MonitorRecord.sanitizeIntegrations() {
-            val originalIntegrations = integrations.toSet()
-            val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
-            if (!matchedIntegrations.containsAll(originalIntegrations)) {
-                // There are integrations on the monitor that are not configured, update them
-                logger.warn(
-                    "Monitor with ID $id has integrations that are not configured: " +
-                        "${originalIntegrations - matchedIntegrations}. " +
-                        "Updating monitor integrations to only include configured ones."
-                )
-                when (this) {
-                    is HttpMonitorRecord -> httpMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-
-                    is PushMonitorRecord -> pushMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-
-                    is IcmpMonitorRecord -> icmpMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-
-                    is TcpMonitorRecord -> tcpMonitorRepository.updateIntegrations(
-                        id,
-                        matchedIntegrations.toTypedArray(),
-                    )
-                }
-            }
-        }
-
         // Only sanitize integrations if * monitors were not configured via YAML
         if (!appConfig.isHttpMonitorExternalWriteDisabled()) {
-            httpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            httpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
         if (!appConfig.isPushMonitorExternalWriteDisabled()) {
-            pushMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            pushMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
         if (!appConfig.isIcmpMonitorExternalWriteDisabled()) {
-            icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            icmpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
         if (!appConfig.isTcpMonitorExternalWriteDisabled()) {
-            tcpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations() }
+            tcpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
+        }
+        if (!appConfig.isDnsMonitorExternalWriteDisabled()) {
+            dnsMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
+        }
+    }
+
+    private fun MonitorRecord.sanitizeIntegrations(configuredIntegrations: Set<IntegrationID>) {
+        val originalIntegrations = integrations.toSet()
+        val matchedIntegrations = originalIntegrations.intersect(configuredIntegrations)
+        if (matchedIntegrations.containsAll(originalIntegrations)) return
+
+        // There are integrations on the monitor that are not configured, update them
+        logger.warn(
+            "Monitor with ID $id has integrations that are not configured: " +
+                "${originalIntegrations - matchedIntegrations}. " +
+                "Updating monitor integrations to only include configured ones."
+        )
+        val newIntegrations = matchedIntegrations.toTypedArray()
+        when (this) {
+            is HttpMonitorRecord -> httpMonitorRepository.updateIntegrations(id, newIntegrations)
+            is PushMonitorRecord -> pushMonitorRepository.updateIntegrations(id, newIntegrations)
+            is IcmpMonitorRecord -> icmpMonitorRepository.updateIntegrations(id, newIntegrations)
+            is TcpMonitorRecord -> tcpMonitorRepository.updateIntegrations(id, newIntegrations)
+            is DnsMonitorRecord -> dnsMonitorRepository.updateIntegrations(id, newIntegrations)
         }
     }
 
@@ -224,6 +231,17 @@ class AppBootstrapper(
      * respective monitors
      */
     private fun processYamlMonitorConfigs() {
+        // Ensuring that all client secrets are unique before importing the push monitors
+        require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
+            "YAML push monitor configs must have unique client secrets!"
+        }
+        // Micronaut cannot resolve the class-level @ValidDnsResponseCode constraint on an @EachProperty bean, so the
+        // same rule is enforced here for the YAML configs
+        val invalidDnsMonitorConfigs = yamlDnsMonitorConfigs.filterNot { it.hasValidResponseCodeExpectation() }
+        require(invalidDnsMonitorConfigs.isEmpty()) {
+            "${MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS}. Offending DNS monitors: " +
+                invalidDnsMonitorConfigs.joinToString { it.name }
+        }
 
         processYamlMonitorConfigs(
             monitorType = MonitorType.HTTP_SSL,
@@ -233,10 +251,6 @@ class AppBootstrapper(
             callToImportConfigs = monitorImporter::importHttpMonitorConfigs,
         )
 
-        // Ensuring that all client secrets are unique before importing the push monitors
-        require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
-            "YAML push monitor configs must have unique client secrets!"
-        }
         processYamlMonitorConfigs(
             monitorType = MonitorType.PUSH,
             yamlMonitorConfigs = yamlPushMonitorConfigs,
@@ -259,6 +273,14 @@ class AppBootstrapper(
             yamlConfigChecker = tcpMonitorYAMLConfigChecker,
             callToDisableExternalWrite = appConfig::disableTcpMonitorExternalWrite,
             callToImportConfigs = monitorImporter::importTcpMonitorConfigs,
+        )
+
+        processYamlMonitorConfigs(
+            monitorType = MonitorType.DNS,
+            yamlMonitorConfigs = yamlDnsMonitorConfigs,
+            yamlConfigChecker = dnsMonitorYAMLConfigChecker,
+            callToDisableExternalWrite = appConfig::disableDnsMonitorExternalWrite,
+            callToImportConfigs = monitorImporter::importDnsMonitorConfigs,
         )
     }
 

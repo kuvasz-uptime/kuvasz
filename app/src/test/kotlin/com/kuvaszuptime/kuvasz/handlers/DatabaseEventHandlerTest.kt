@@ -20,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -56,6 +57,7 @@ class DatabaseEventHandlerTest(
     pushUptimeEventRepository: PushUptimeEventRepository,
     icmpUptimeEventRepository: IcmpUptimeEventRepository,
     tcpUptimeEventRepository: TcpUptimeEventRepository,
+    dnsUptimeEventRepository: DnsUptimeEventRepository,
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
@@ -68,12 +70,14 @@ class DatabaseEventHandlerTest(
         val pushUptimeEventRepositorySpy = spyk(pushUptimeEventRepository)
         val icmpUptimeEventRepositorySpy = spyk(icmpUptimeEventRepository)
         val tcpUptimeEventRepositorySpy = spyk(tcpUptimeEventRepository)
+        val dnsUptimeEventRepositorySpy = spyk(dnsUptimeEventRepository)
         val sslEventRepositorySpy = spyk(sslEventRepository)
         val dbEventHandler = DatabaseEventHandler(
             httpUptimeEventRepositorySpy,
             pushUptimeEventRepositorySpy,
             icmpUptimeEventRepositorySpy,
             tcpUptimeEventRepositorySpy,
+            dnsUptimeEventRepositorySpy,
             sslEventRepositorySpy,
             dslContext,
         )

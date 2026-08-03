@@ -1,10 +1,14 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -18,7 +22,10 @@ import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -58,10 +65,12 @@ class DiscordEventHandlerTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val tcpUptimeEventRepository: TcpUptimeEventRepository,
+    private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     integrationRepository: IntegrationRepository,
     discordNotificationConfigs: List<DiscordNotificationConfig>,
@@ -733,6 +742,198 @@ class DiscordEventHandlerTest(
                         )
                     }
                     notificationSent.captured shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                }
+            }
+        }
+
+        given("the DiscordEventHandler - DNS UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val event = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalDiscordConfig.id,
+                        otherDiscordConfig.id,
+                        disabledDiscordConfig.id,
+                    )
+                )
+                val event = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a webhook message about the event to all enabled integrations") {
+                    val slot = mutableListOf<String>()
+
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(globalDiscordConfig, capture(slot)) }
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(otherDiscordConfig, capture(slot)) }
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(disabledDiscordConfig, any()) }
+
+                    slot.forAll { message ->
+                        message shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                    }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 6,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send notifications about them") {
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+                    val slot = slot<String>()
+
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(globalDiscordConfig, capture(slot)) }
+                    slot.captured shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<String>()
+
+                    verify(exactly = 2) {
+                        webhookServiceSpy.sendMessage(
+                            globalDiscordConfig,
+                            capture(notificationsSent)
+                        )
+                    }
+                    notificationsSent[0] shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                    notificationsSent[1] shouldContain "Your monitor \"${monitor.name}\" is UP"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                mockSuccessfulHttpResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<String>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendMessage(
+                            globalDiscordConfig,
+                            capture(notificationSent)
+                        )
+                    }
+                    notificationSent.captured shouldContain "Your monitor \"${monitor.name}\" is DOWN"
+                }
+            }
+        }
+
+        given("the DiscordEventHandler - DNS drift events") {
+            `when`("it receives a DnsRecordsChangedEvent") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalDiscordConfig.id,
+                        otherDiscordConfig.id,
+                        disabledDiscordConfig.id,
+                    )
+                )
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                )
+                mockSuccessfulHttpResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a drift notification to all enabled integrations") {
+                    val slot = mutableListOf<String>()
+
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(globalDiscordConfig, capture(slot)) }
+                    verify(exactly = 1) { webhookServiceSpy.sendMessage(otherDiscordConfig, capture(slot)) }
+                    verify(inverse = true) { webhookServiceSpy.sendMessage(disabledDiscordConfig, any()) }
+
+                    slot.forAll { message ->
+                        message shouldContain "DNS records changed for monitor \"${monitor.name}\""
+                    }
                 }
             }
         }

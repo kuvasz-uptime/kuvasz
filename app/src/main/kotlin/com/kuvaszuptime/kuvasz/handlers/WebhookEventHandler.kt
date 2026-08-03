@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -41,6 +42,12 @@ class WebhookEventHandler(
     }
 
     override fun handleSSLEvent(event: SSLMonitorEvent) {
+        filterTargetConfigs(event).forEach { target ->
+            webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
+        }
+    }
+
+    override fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent) {
         filterTargetConfigs(event).forEach { target ->
             webhookService.sendWebhookEvent(target as WebhookNotificationConfig, event).handleResponse()
         }

@@ -1,0 +1,5 @@
+dns-monitors:
+  - name: test
+    host: example.com
+    uptime-check-interval: 60
+    resolver-port: 70000

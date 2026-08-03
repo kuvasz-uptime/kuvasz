@@ -1,0 +1,29 @@
+dns-monitors:
+  - name: test1
+    host: example.com
+    uptime-check-interval: 120
+    enabled: false
+    timeout-ms: 10000
+    latency-threshold-ms: 250
+    failure-count-threshold: 3
+  - name: test2
+    host: kuvasz-uptime.dev
+    uptime-check-interval: 60
+    record-matchers:
+      - record-type: A
+        match-type: EXACT
+        value: 1.2.3.4
+    integrations:
+      - 'slack:test_implicitly_enabled'
+  - name: test3
+    host: mail.example.com
+    uptime-check-interval: 120
+    enabled: true
+    resolver-host: 1.1.1.1
+    resolver-port: 5353
+    transport: TCP
+    expected-response-code: NXDOMAIN
+    drift-detection-enabled: true
+    drift-record-types:
+      - NS
+      - MX

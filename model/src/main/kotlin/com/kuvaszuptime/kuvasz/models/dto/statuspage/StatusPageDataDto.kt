@@ -48,6 +48,7 @@ data class StatusPageMaintenanceWindowDto(
     JsonSubTypes.Type(value = StatusPageHttpMonitorDetailsDto::class, name = "http"),
     JsonSubTypes.Type(value = StatusPageIcmpMonitorDetailsDto::class, name = "icmp"),
     JsonSubTypes.Type(value = StatusPageTcpMonitorDetailsDto::class, name = "tcp"),
+    JsonSubTypes.Type(value = StatusPageDnsMonitorDetailsDto::class, name = "dns"),
 )
 sealed interface StatusPageMonitorDetailsDto {
     val name: String
@@ -100,6 +101,17 @@ data class StatusPageIcmpMonitorDetailsDto(
 data class StatusPageTcpMonitorDetailsDto(
     override val name: String,
     override val type: String = "tcp",
+    override val lastCheck: OffsetDateTime?,
+    override val uptimeRatio: Double?,
+    override val uptimeStatus: UptimeStatus?,
+    override val uptimeStatusHistory: List<StatusHistoryDto>,
+    override val averageLatencyInMs: Int?,
+    override val inMaintenance: Boolean = false,
+) : StatusPageMonitorDetailsDto, WithLatency
+
+data class StatusPageDnsMonitorDetailsDto(
+    override val name: String,
+    override val type: String = "dns",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,

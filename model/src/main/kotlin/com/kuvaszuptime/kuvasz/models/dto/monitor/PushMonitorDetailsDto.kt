@@ -29,9 +29,9 @@ data class PushMonitorDetailsDto(
     @param:Schema(description = MonitorDocs.UPTIME_STATUS, required = true, nullable = true)
     override val uptimeStatus: UptimeStatus?,
     @param:Schema(description = MonitorDocs.UPTIME_STATUS_STARTED_AT, required = true, nullable = true)
-    val uptimeStatusStartedAt: OffsetDateTime?,
+    override val uptimeStatusStartedAt: OffsetDateTime?,
     @param:Schema(description = MonitorDocs.LAST_UPTIME_CHECK, required = true, nullable = true)
-    val lastUptimeCheck: OffsetDateTime?,
+    override val lastUptimeCheck: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.LAST_HEARTBEAT, required = true, nullable = true)
     val lastHeartbeat: OffsetDateTime?,
     @param:Schema(description = PushMonitorDocs.NEXT_EXPECTED_HEARTBEAT, required = true, nullable = true)
@@ -43,7 +43,7 @@ data class PushMonitorDetailsDto(
     @param:Schema(description = MonitorDocs.EFFECTIVE_INTEGRATIONS, required = true)
     val effectiveIntegrations: Set<IntegrationDetailsDto>,
     @param:Schema(description = MonitorDocs.STATUS_PAGES, required = true)
-    val statusPages: Set<String>,
+    override val statusPages: Set<String>,
     @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
     val failureCountThreshold: Long,
     @param:Schema(description = MonitorDocs.MAINTENANCE_WINDOWS, required = true)

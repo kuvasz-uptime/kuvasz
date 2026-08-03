@@ -31,6 +31,7 @@ class WebUIStatusPageController(
 
     @Get("/{statusPageId}")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun statusPageDetails(@PathVariable statusPageId: Long): String {
         val statusPage = statusPageActions.getStatusPageById(statusPageId)

@@ -20,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
+import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -131,7 +132,7 @@ class IcmpMonitorToolsTest(
             }
 
             `when`("create-icmp-monitor is called with an invalid uptimeCheckInterval") {
-                val response = callTool(
+                val response = callToolWithMcpClient(
                     CREATE_ICMP_MONITOR,
                     mapOf(
                         "name" to "mcp-created-icmp-monitor",
@@ -140,11 +141,8 @@ class IcmpMonitorToolsTest(
                     )
                 )
 
-                then("it should return an invalid-params protocol error with no result") {
-                    response.shouldHaveError(
-                        McpSchema.ErrorCodes.INVALID_PARAMS,
-                        "Uptime check interval must be at least 5 seconds",
-                    )
+                then("it should return an input schema validation error") {
+                    response.shouldHaveInputValidationError("/uptimeCheckInterval: must have a minimum value of 5")
                 }
             }
 

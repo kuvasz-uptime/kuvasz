@@ -114,6 +114,19 @@ The MCP server exposes the following tools to connected clients:
 | `toggle-tcp-monitor`      | Enable or disable a TCP monitor                                              |
 | `delete-tcp-monitor`      | Permanently delete a TCP monitor by ID, including all its history and events |
 
+### DNS monitors
+
+<!-- md:version 4.2.0 -->
+
+| Tool                      | Description                                                                  |
+|---------------------------|------------------------------------------------------------------------------|
+| `list-dns-monitors`       | List all DNS monitors with their current uptime status                       |
+| `get-dns-monitor-details` | Get detailed information about a DNS monitor by ID                           |
+| `get-dns-monitor-stats`   | Get latency and uptime statistics (configurable look-back window)            |
+| `create-dns-monitor`      | Create a new DNS monitor                                                     |
+| `toggle-dns-monitor`      | Enable or disable a DNS monitor                                              |
+| `delete-dns-monitor`      | Permanently delete a DNS monitor by ID, including all its history and events |
+
 ### Status pages
 
 <!-- md:version 4.0.0 -->

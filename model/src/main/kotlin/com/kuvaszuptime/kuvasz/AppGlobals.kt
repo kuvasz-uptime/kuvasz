@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz
 
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -37,12 +38,19 @@ data class AppGlobals(
         val arePushMonitorsReadOnly: () -> Boolean,
         val areIcmpMonitorsReadOnly: () -> Boolean,
         val areTcpMonitorsReadOnly: () -> Boolean,
+        val areDnsMonitorsReadOnly: () -> Boolean,
         val areStatusPagesReadOnly: () -> Boolean,
         val areMaintenanceWindowsReadOnly: () -> Boolean,
     ) {
-        fun areAllMonitorsReadOnly(): Boolean =
-            areHttpMonitorsReadOnly() && arePushMonitorsReadOnly() &&
-                areIcmpMonitorsReadOnly() && areTcpMonitorsReadOnly()
+        fun areMonitorsReadOnly(type: MonitorType): Boolean = when (type) {
+            MonitorType.HTTP_SSL -> areHttpMonitorsReadOnly()
+            MonitorType.PUSH -> arePushMonitorsReadOnly()
+            MonitorType.ICMP -> areIcmpMonitorsReadOnly()
+            MonitorType.TCP -> areTcpMonitorsReadOnly()
+            MonitorType.DNS -> areDnsMonitorsReadOnly()
+        }
+
+        fun areAllMonitorsReadOnly(): Boolean = MonitorType.entries.all { areMonitorsReadOnly(it) }
     }
 
     data class DefaultStatusPageSettings(

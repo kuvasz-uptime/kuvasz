@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.monitor
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorCannotBeDeletedException
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
@@ -63,6 +65,7 @@ abstract class MonitorActions<R : MonitorRecord>(
         is PushMonitorRecord -> this.monitorId()
         is IcmpMonitorRecord -> this.monitorId()
         is TcpMonitorRecord -> this.monitorId()
+        is DnsMonitorRecord -> this.monitorId()
         else -> throw IllegalArgumentException("Unknown monitor record type: ${this::class.java}")
     }
 }

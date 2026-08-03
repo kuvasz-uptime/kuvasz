@@ -13,6 +13,8 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
 import io.micronaut.http.server.exceptions.NotFoundException
+import io.micronaut.scheduling.TaskExecutors
+import io.micronaut.scheduling.annotation.ExecuteOn
 import io.micronaut.security.utils.SecurityService
 import io.swagger.v3.oas.annotations.Hidden
 
@@ -27,6 +29,7 @@ class ExternalStatusPageController(
 ) {
 
     @Get("/")
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun getDefaultStatusPage(): String {
         // If the default status page is not public and the user is not authenticated, return 404
@@ -40,6 +43,7 @@ class ExternalStatusPageController(
     }
 
     @Get("/{slug}")
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun getStatusPage(@PathVariable slug: String): String {
         val existingPage = if (missesWebRole()) {

@@ -4,7 +4,8 @@ enum class MonitorType(val identifier: String) {
     HTTP_SSL("http"),
     PUSH("push"),
     ICMP("icmp"),
-    TCP("tcp");
+    TCP("tcp"),
+    DNS("dns");
 
     companion object {
         fun fromIdentifier(identifier: String): MonitorType? =

@@ -1,12 +1,16 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -26,7 +30,10 @@ import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -67,10 +74,12 @@ class WebhookEventHandlerTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val tcpUptimeEventRepository: TcpUptimeEventRepository,
+    private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     integrationRepository: IntegrationRepository,
     webhookConfigs: List<WebhookNotificationConfig>,
@@ -732,6 +741,190 @@ class WebhookEventHandlerTest(
                         )
                     }
                     notificationSent.captured.shouldBeInstanceOf<TcpMonitorDownEvent>()
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - DNS UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val event = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not send a webhook message about the event") {
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val event = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a webhook message about the event to all enabled integrations") {
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not send notifications about them") {
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(any(), any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "First error",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Second error",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification about them") {
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val firstEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = null,
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send two different notifications about them") {
+                    val notificationsSent = mutableListOf<MonitorEvent<*>>()
+
+                    verify(exactly = 2) {
+                        webhookServiceSpy.sendWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationsSent)
+                        )
+                    }
+                    notificationsSent[0].shouldBeInstanceOf<DnsMonitorDownEvent>()
+                    notificationsSent[1].shouldBeInstanceOf<DnsMonitorUpEvent>()
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val firstEvent = DnsMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                mockSuccessfulHttpResponses()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DnsMonitorDownEvent(
+                    monitor = monitor,
+                    error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should send only one notification, about the down event") {
+                    val notificationSent = slot<MonitorEvent<*>>()
+
+                    verify(exactly = 1) {
+                        webhookServiceSpy.sendWebhookEvent(
+                            globalWebhookConfig,
+                            capture(notificationSent)
+                        )
+                    }
+                    notificationSent.captured.shouldBeInstanceOf<DnsMonitorDownEvent>()
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - DNS drift events") {
+            `when`("it receives a DnsRecordsChangedEvent") {
+                val monitor = createDnsMonitor(
+                    dnsMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a drift webhook to all enabled integrations") {
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }
                 }
             }
         }

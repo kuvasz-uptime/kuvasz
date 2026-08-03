@@ -8,7 +8,7 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
-import com.kuvaszuptime.kuvasz.repositories.TcpLatencyMetricResult
+import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
 import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
@@ -87,7 +87,7 @@ class TcpMonitorActionsTest(
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
                     metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns TcpLatencyMetricResult(
+                } returns LatencyMetricResult(
                     monitorId = enabledMonitor.id,
                     avg = 123,
                     min = 6982,
@@ -193,7 +193,7 @@ class TcpMonitorActionsTest(
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
                     metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns TcpLatencyMetricResult(
+                } returns LatencyMetricResult(
                     monitorId = enabledMonitor.id,
                     avg = 123,
                     min = 6982,

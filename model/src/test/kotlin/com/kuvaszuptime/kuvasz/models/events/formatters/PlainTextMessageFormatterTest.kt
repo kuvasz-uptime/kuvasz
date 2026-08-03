@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
@@ -12,12 +14,16 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -25,12 +31,15 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpStatus
 
 class PlainTextMessageFormatterTest : BehaviorSpec(
@@ -413,6 +422,160 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                         "Your monitor \"test_tcp_monitor\" is DOWN\nReason: tcp error\n" +
                             "Was up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("toFormattedMessage(event: UptimeMonitorEvent) - DNS") {
+
+            val dnsMonitor = DnsMonitorRecord()
+                .setId(4444L)
+                .setName("test_dns_monitor")
+                .setHost("example.com")
+
+            `when`("it gets a DnsMonitorUpEvent without a previousEvent") {
+                val event = DnsMonitorUpEvent(dnsMonitor, null, 300)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "Your monitor \"test_dns_monitor\" is UP\nResolution latency: 300 ms"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DnsMonitorUpEvent with null latency") {
+                val event = DnsMonitorUpEvent(dnsMonitor, null, null)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "Your monitor \"test_dns_monitor\" is UP"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DnsMonitorUpEvent with a previousEvent with the same status") {
+                val previousEvent = DnsUptimeEventRecord().setStatus(UptimeStatus.UP)
+                val event = DnsMonitorUpEvent(dnsMonitor, previousEvent, 300)
+
+                then("it should return the correct message") {
+                    val expectedMessage =
+                        "Your monitor \"test_dns_monitor\" is UP\nResolution latency: 300 ms"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DnsMonitorUpEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent = DnsUptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
+                val event = DnsMonitorUpEvent(dnsMonitor, previousEvent, 300)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage =
+                        "Your monitor \"test_dns_monitor\" is UP\nResolution latency: 300 ms\n" +
+                            "Was down for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DnsMonitorDownEvent without a previousEvent") {
+                val event = DnsMonitorDownEvent(dnsMonitor, "dns error", null)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "Your monitor \"test_dns_monitor\" is DOWN\nReason: dns error"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DnsMonitorDownEvent with a previousEvent with the same status") {
+                val previousEvent = DnsUptimeEventRecord().setStatus(UptimeStatus.DOWN)
+                val event = DnsMonitorDownEvent(dnsMonitor, "dns error", previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "Your monitor \"test_dns_monitor\" is DOWN\nReason: dns error"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DnsMonitorDownEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent = DnsUptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
+                val event = DnsMonitorDownEvent(dnsMonitor, "dns error", previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage =
+                        "Your monitor \"test_dns_monitor\" is DOWN\nReason: dns error\n" +
+                            "Was up for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("toFormattedMessage(event: DnsRecordsChangedEvent)") {
+            val monitor = DnsMonitorRecord().setId(5555L).setName("drift_monitor")
+
+            `when`("it gets a DnsRecordsChangedEvent") {
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                )
+
+                then("it should return the correct message") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "DNS records changed for monitor \"drift_monitor\"\nA: [1.1.1.1] → [2.2.2.2]"
+                }
+            }
+
+            `when`("the changed records are longer than the allowed details length") {
+                // A single TXT value (a DKIM key, for example) can be longer than a chat message is allowed to be
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.TXT to listOf("v=dkim1; p=" + "a".repeat(2000))),
+                    currentRecords = mapOf(DnsRecordType.TXT to listOf("v=dkim1; p=" + "b".repeat(2000))),
+                )
+
+                then("the diff should be truncated and marked as redacted") {
+                    val details = event.toStructuredMessage().details
+
+                    details.length shouldBe MonitorEvent.DETAILS_MAX_LENGTH + "... [REDACTED]".length
+                    details shouldEndWith "... [REDACTED]"
+                    details shouldStartWith "TXT: [v=dkim1; p=aaa"
+                }
+            }
+
+            `when`("the changed records span more record types than fit into the details length") {
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(
+                        DnsRecordType.A to listOf("1.1.1.1"),
+                        DnsRecordType.TXT to listOf("x".repeat(2000)),
+                    ),
+                    currentRecords = mapOf(
+                        DnsRecordType.A to listOf("2.2.2.2"),
+                        DnsRecordType.TXT to listOf("y".repeat(2000)),
+                    ),
+                )
+
+                then("the entries that fit are kept, so a huge TXT does not hide the other types") {
+                    val details = event.toStructuredMessage().details
+
+                    details shouldStartWith "A: [1.1.1.1] → [2.2.2.2]\nTXT: ["
+                    details shouldEndWith "... [REDACTED]"
+                }
+            }
+
+            `when`("a record value contains ISO control characters") {
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.TXT to listOf("old")),
+                    currentRecords = mapOf(DnsRecordType.TXT to listOf("new\u0000\u0007")),
+                )
+
+                then("they should be stripped while the entry separators survive") {
+                    event.toStructuredMessage().details shouldBe "TXT: [old] → [newnull]"
                 }
             }
         }

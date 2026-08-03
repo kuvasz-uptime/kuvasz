@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
+import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
@@ -23,9 +25,11 @@ class DatabaseCleaner(
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val tcpUptimeEventRepository: TcpUptimeEventRepository,
+    private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
     private val icmpMetricsLogRepository: IcmpMetricsLogRepository,
     private val tcpMetricsLogRepository: TcpMetricsLogRepository,
+    private val dnsMetricsLogRepository: DnsMetricsLogRepository,
     private val sslEventRepository: SSLEventRepository
 ) {
 
@@ -43,18 +47,22 @@ class DatabaseCleaner(
         val deletedPushUptimeEvents = pushUptimeEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedIcmpUptimeEvents = icmpUptimeEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedTcpUptimeEvents = tcpUptimeEventRepository.deleteEventsBeforeDate(eventLimit)
+        val deletedDnsUptimeEvents = dnsUptimeEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedSSLEvents = sslEventRepository.deleteEventsBeforeDate(eventLimit)
         val deletedLatencyLogs = latencyLogRepository.deleteLogsBeforeDate(latencyLimit)
         val deletedIcmpMetricsLogs = icmpMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
         val deletedTcpMetricsLogs = tcpMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
+        val deletedDnsMetricsLogs = dnsMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
 
         logger.info("$deletedHttpUptimeEvents HTTP_UPTIME_EVENT record has been deleted")
         logger.info("$deletedPushUptimeEvents PUSH_UPTIME_EVENT record has been deleted")
         logger.info("$deletedIcmpUptimeEvents ICMP_UPTIME_EVENT record has been deleted")
         logger.info("$deletedTcpUptimeEvents TCP_UPTIME_EVENT record has been deleted")
+        logger.info("$deletedDnsUptimeEvents DNS_UPTIME_EVENT record has been deleted")
         logger.info("$deletedLatencyLogs LATENCY_LOG record has been deleted")
         logger.info("$deletedIcmpMetricsLogs ICMP_METRICS_LOG record has been deleted")
         logger.info("$deletedTcpMetricsLogs TCP_METRICS_LOG record has been deleted")
+        logger.info("$deletedDnsMetricsLogs DNS_METRICS_LOG record has been deleted")
         logger.info("$deletedSSLEvents SSL_EVENT record has been deleted")
     }
 }

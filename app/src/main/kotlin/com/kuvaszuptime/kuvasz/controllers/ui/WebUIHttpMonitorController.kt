@@ -62,6 +62,7 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors/{monitorId}")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitorDetails(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)

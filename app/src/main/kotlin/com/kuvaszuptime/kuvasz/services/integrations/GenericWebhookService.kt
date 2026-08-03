@@ -3,10 +3,14 @@ package com.kuvaszuptime.kuvasz.services.integrations
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -22,6 +26,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
+import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -108,6 +113,13 @@ class GenericWebhookService(
     }
 
     @Suppress("MagicNumber")
+    private val testDnsMonitorRecord = DnsMonitorRecord().apply {
+        id = 5
+        name = "Test monitor"
+        host = "test.monitor"
+    }
+
+    @Suppress("MagicNumber")
     val testEvents: List<MonitorEvent<out MonitorRecord>> = listOf(
         HttpMonitorDownEvent(
             monitor = testHttpMonitorRecord,
@@ -166,6 +178,21 @@ class GenericWebhookService(
             monitor = testTcpMonitorRecord,
             previousEvent = null,
             latencyInMs = 21,
+        ),
+        DnsMonitorDownEvent(
+            monitor = testDnsMonitorRecord,
+            error = "Test DNS error",
+            previousEvent = null,
+        ),
+        DnsMonitorUpEvent(
+            monitor = testDnsMonitorRecord,
+            previousEvent = null,
+            latencyInMs = 15,
+        ),
+        DnsRecordsChangedEvent(
+            monitor = testDnsMonitorRecord,
+            previousRecords = mapOf(DnsRecordType.A to listOf("192.0.2.1")),
+            currentRecords = mapOf(DnsRecordType.A to listOf("192.0.2.2")),
         ),
     )
 

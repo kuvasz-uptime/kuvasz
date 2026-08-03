@@ -1,12 +1,14 @@
 package com.kuvaszuptime.kuvasz.services.monitor
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -22,6 +24,7 @@ class SharedMonitorActionsTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dnsMonitorRepository: DnsMonitorRepository,
 ) : DatabaseBehaviorSpec({
 
     given("getConfiguredMonitorIds") {
@@ -30,6 +33,7 @@ class SharedMonitorActionsTest(
             val pushMonitor = createPushMonitor(pushMonitorRepository, monitorName = "push-mon")
             val icmpMonitor = createIcmpMonitor(icmpMonitorRepository, monitorName = "icmp-mon")
             val tcpMonitor = createTcpMonitor(tcpMonitorRepository, monitorName = "tcp-mon")
+            val dnsMonitor = createDnsMonitor(dnsMonitorRepository, monitorName = "dns-mon")
 
             then("it maps every monitor's URN to its numeric identifier") {
                 sharedMonitorActions.getConfiguredMonitorIds() shouldContainExactly mapOf(
@@ -37,6 +41,7 @@ class SharedMonitorActionsTest(
                     MonitorID(MonitorType.PUSH, "push-mon") to pushMonitor.id,
                     MonitorID(MonitorType.ICMP, "icmp-mon") to icmpMonitor.id,
                     MonitorID(MonitorType.TCP, "tcp-mon") to tcpMonitor.id,
+                    MonitorID(MonitorType.DNS, "dns-mon") to dnsMonitor.id,
                 )
             }
         }

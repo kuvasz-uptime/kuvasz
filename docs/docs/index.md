@@ -62,6 +62,14 @@ title: The developer- and cloud-friendly uptime monitor
 
     [:octicons-arrow-right-24: TCP monitors](features/tcp-monitoring.md)
 
+-   :material-dns:{ .lg .card-header-icon } __DNS monitoring__
+
+    ---
+
+    Check that a name resolves, that it resolves to the right records, and get notified when the answer changes behind your back.
+
+    [:octicons-arrow-right-24: DNS monitors](features/dns-monitoring.md)
+
 -   :bell:{ .lg .card-header-icon } __Notifications__
 
     ---
@@ -172,7 +180,7 @@ title: The developer- and cloud-friendly uptime monitor
 | **Heartbeat (push) monitoring**      |       ✅       |        ❌         |        ✅         |
 | **Ping (ICMP) monitoring**           |       ✅       |        ✅         |        ✅         |
 | **TCP monitoring**                   |       ✅       |        ✅         |        ✅         |
-| **DNS monitoring**                   |       ❌       |        ❌         |        ✅         |
+| **DNS monitoring**                   |       ✅       |        ❌         |        ✅         |
 | **Domain expiration monitoring**     |       ❌       |        ❌         |        ✅         |
 | **Notifications**                    |               |                  |                  |
 | Email                                |       ✅       |        ✅         |        ✅         |

@@ -20,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
+import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -134,7 +135,7 @@ class TcpMonitorToolsTest(
             }
 
             `when`("create-tcp-monitor is called with an invalid port") {
-                val response = callTool(
+                val response = callToolWithMcpClient(
                     CREATE_TCP_MONITOR,
                     mapOf(
                         "name" to "mcp-created-tcp-monitor",
@@ -144,11 +145,8 @@ class TcpMonitorToolsTest(
                     )
                 )
 
-                then("it should return an invalid-params protocol error with no result") {
-                    response.shouldHaveError(
-                        McpSchema.ErrorCodes.INVALID_PARAMS,
-                        "Port must be at most 65535",
-                    )
+                then("it should return an input schema validation error") {
+                    response.shouldHaveInputValidationError("/port: must have a maximum value of 65535")
                 }
             }
 

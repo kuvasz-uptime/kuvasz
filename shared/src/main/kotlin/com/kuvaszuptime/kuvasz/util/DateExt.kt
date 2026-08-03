@@ -159,3 +159,7 @@ fun JavaDuration.formatAsSimpleInterval(): String {
         else -> Messages.daysInterval(duration.inWholeDays)
     }
 }
+
+private const val NANOS_IN_MILLI = 1_000_000L
+
+fun elapsedMsSince(startNanos: Long): Int = ((System.nanoTime() - startNanos) / NANOS_IN_MILLI).toInt()

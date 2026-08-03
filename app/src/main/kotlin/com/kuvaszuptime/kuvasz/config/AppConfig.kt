@@ -38,6 +38,7 @@ class AppConfig {
     private var isPushMonitorExternalWriteDisabled = false
     private var isIcmpMonitorExternalWriteDisabled = false
     private var isTcpMonitorExternalWriteDisabled = false
+    private var isDnsMonitorExternalWriteDisabled = false
 
     private var isStatusPageExternalWriteDisabled = false
 
@@ -62,6 +63,10 @@ class AppConfig {
 
     fun disableTcpMonitorExternalWrite() {
         isTcpMonitorExternalWriteDisabled = true
+    }
+
+    fun disableDnsMonitorExternalWrite() {
+        isDnsMonitorExternalWriteDisabled = true
     }
 
     fun disableStatusPageExternalWrite() {
@@ -91,6 +96,10 @@ class AppConfig {
         isTcpMonitorExternalWriteDisabled = false
     }
 
+    fun enableDnsMonitorExternalWrite() {
+        isDnsMonitorExternalWriteDisabled = false
+    }
+
     fun enableStatusPageExternalWrite() {
         isStatusPageExternalWriteDisabled = false
     }
@@ -104,6 +113,8 @@ class AppConfig {
     fun isIcmpMonitorExternalWriteDisabled() = isIcmpMonitorExternalWriteDisabled
 
     fun isTcpMonitorExternalWriteDisabled() = isTcpMonitorExternalWriteDisabled
+
+    fun isDnsMonitorExternalWriteDisabled() = isDnsMonitorExternalWriteDisabled
 
     fun isMaintenanceWindowExternalWriteDisabled() = isMaintenanceWindowExternalWriteDisabled
 }

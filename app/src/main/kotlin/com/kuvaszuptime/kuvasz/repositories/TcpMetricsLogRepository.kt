@@ -4,7 +4,6 @@ import com.kuvaszuptime.kuvasz.jooq.Tables.TCP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMetricsLogDto
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
-import io.micronaut.core.annotation.Introspected
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.avg
@@ -40,27 +39,27 @@ class TcpMetricsLogRepository(private val dslContext: DSLContext) {
         .orderBy(TCP_METRICS_LOG.CREATED_AT.desc(), TCP_METRICS_LOG.ID.desc())
         .fetchInto(TcpMetricsLogDto::class.java)
 
-    fun getLatencyMetrics(monitorId: Long, period: Duration): TcpLatencyMetricResult? {
+    fun getLatencyMetrics(monitorId: Long, period: Duration): LatencyMetricResult? {
         val thresholdSeconds = period.toSeconds()
         return dslContext
             .select(
-                TCP_METRICS_LOG.MONITOR_ID.`as`(TcpLatencyMetricResult::monitorId.name),
-                round(avg(TCP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java).`as`(TcpLatencyMetricResult::avg.name),
-                min(TCP_METRICS_LOG.LATENCY_MS).`as`(TcpLatencyMetricResult::min.name),
-                max(TCP_METRICS_LOG.LATENCY_MS).`as`(TcpLatencyMetricResult::max.name),
+                TCP_METRICS_LOG.MONITOR_ID.`as`(LatencyMetricResult::monitorId.name),
+                round(avg(TCP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java).`as`(LatencyMetricResult::avg.name),
+                min(TCP_METRICS_LOG.LATENCY_MS).`as`(LatencyMetricResult::min.name),
+                max(TCP_METRICS_LOG.LATENCY_MS).`as`(LatencyMetricResult::max.name),
                 round(percentileCont(P90).withinGroupOrderBy(TCP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java)
-                    .`as`(TcpLatencyMetricResult::p90.name),
+                    .`as`(LatencyMetricResult::p90.name),
                 round(percentileCont(P95).withinGroupOrderBy(TCP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java)
-                    .`as`(TcpLatencyMetricResult::p95.name),
+                    .`as`(LatencyMetricResult::p95.name),
                 round(percentileCont(P99).withinGroupOrderBy(TCP_METRICS_LOG.LATENCY_MS)).cast(Int::class.java)
-                    .`as`(TcpLatencyMetricResult::p99.name),
+                    .`as`(LatencyMetricResult::p99.name),
             )
             .from(TCP_METRICS_LOG)
             .where(TCP_METRICS_LOG.MONITOR_ID.eq(monitorId))
             .and(TCP_METRICS_LOG.CREATED_AT.greaterOrEqual(getCurrentTimestamp().minusSeconds(thresholdSeconds)))
             .and(TCP_METRICS_LOG.LATENCY_MS.isNotNull)
             .groupBy(TCP_METRICS_LOG.MONITOR_ID)
-            .fetchOneInto(TcpLatencyMetricResult::class.java)
+            .fetchOneInto(LatencyMetricResult::class.java)
     }
 
     fun deleteLogsBeforeDate(limit: OffsetDateTime) = dslContext
@@ -88,14 +87,3 @@ class TcpMetricsLogRepository(private val dslContext: DSLContext) {
         .limit(1)
         .fetchOneInto(TcpMetricsLogDto::class.java)
 }
-
-@Introspected
-data class TcpLatencyMetricResult(
-    val monitorId: Long,
-    val avg: Int?,
-    val min: Int?,
-    val max: Int?,
-    val p90: Int?,
-    val p95: Int?,
-    val p99: Int?,
-)

@@ -319,9 +319,58 @@ class TcpMonitorControllerTest(
                     ex.status shouldBe HttpStatus.BAD_REQUEST
                 }
             }
+
+            `when`("a monitor with an already-taken name is created") {
+                val existing = createTcpMonitor(monitorRepository)
+                val createDto = TcpMonitorCreateDto(
+                    name = existing.name,
+                    host = "1.2.3.4",
+                    port = 8080,
+                    uptimeCheckInterval = 60,
+                )
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.toBlocking().exchange(
+                        HttpRequest.POST("/api/v2/tcp-monitors/", createDto).header("X-Api-Key", "test"),
+                        String::class.java,
+                    )
+                }
+
+                then("it should return 409 CONFLICT and not create a duplicate") {
+                    ex.status shouldBe HttpStatus.CONFLICT
+                    monitorRepository.fetchAll().filter { it.name == existing.name } shouldHaveSize 1
+                }
+            }
         }
 
         given("PATCH /api/v2/tcp-monitors/{id}") {
+            `when`("it is updated to a name another monitor already has") {
+                val first = createTcpMonitor(monitorRepository)
+                val second = createTcpMonitor(monitorRepository)
+                val updateNode = mapper.createObjectNode().put("name", first.name)
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange(
+                        HttpRequest.PATCH("/api/v2/tcp-monitors/${second.id}", updateNode)
+                    ).awaitFirst()
+                }
+
+                then("it should return 409 CONFLICT") {
+                    ex.status shouldBe HttpStatus.CONFLICT
+                }
+            }
+
+            `when`("a disabled monitor is enabled") {
+                val monitor = createTcpMonitor(monitorRepository, enabled = false)
+                checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldBeNull()
+                val updateNode = mapper.createObjectNode().put("enabled", true)
+
+                monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should persist the change and schedule the checks") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().enabled shouldBe true
+                    checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
+                }
+            }
+
             `when`("a monitor is updated") {
                 val monitor = createTcpMonitor(monitorRepository, host = "1.1.1.1", port = 80)
 
@@ -594,6 +643,16 @@ class TcpMonitorControllerTest(
                     events shouldHaveSize 2
                     events.first().status shouldBe UptimeStatus.UP
                     events.last().status shouldBe UptimeStatus.DOWN
+                }
+            }
+
+            `when`("the monitor does not exist") {
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v2/tcp-monitors/1232132432/uptime-events").awaitFirst()
+                }
+
+                then("it should return 404 NOT_FOUND") {
+                    ex.status shouldBe HttpStatus.NOT_FOUND
                 }
             }
         }

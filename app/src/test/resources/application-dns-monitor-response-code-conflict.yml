@@ -1,0 +1,12 @@
+dns-monitors:
+  - name: well-configured-monitor
+    host: example.com
+    uptime-check-interval: 60
+  - name: conflicting-monitor
+    host: example.com
+    uptime-check-interval: 60
+    expected-response-code: NXDOMAIN
+    record-matchers:
+      - record-type: A
+        match-type: EXACT
+        value: 1.2.3.4

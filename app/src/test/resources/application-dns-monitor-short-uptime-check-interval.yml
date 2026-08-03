@@ -1,0 +1,4 @@
+dns-monitors:
+  - name: test
+    host: example.com
+    uptime-check-interval: 1

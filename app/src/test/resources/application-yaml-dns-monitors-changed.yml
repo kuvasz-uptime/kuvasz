@@ -1,0 +1,15 @@
+dns-monitors:
+  - name: test1
+    host: example.org
+    uptime-check-interval: 180
+    enabled: true
+    timeout-ms: 5000
+    latency-threshold-ms: 500
+    failure-count-threshold: 2
+  - name: test2
+    host: kuvasz-uptime.dev
+    uptime-check-interval: 60
+  - name: test4
+    host: other.example.com
+    uptime-check-interval: 300
+    enabled: false

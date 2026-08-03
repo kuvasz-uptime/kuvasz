@@ -1,50 +1,20 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
-import com.iodesystems.htmx.Htmx.Companion.hx
-import com.iodesystems.htmx.HtmxAttrs
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
-import com.kuvaszuptime.kuvasz.util.formatAsSimpleInterval
 import kotlinx.html.*
-import java.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
-internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) {
-    div {
-        id = "http-monitor-details-content"
-        // Uptime summary
-        h2 {
-            testId("uptime-block-title")
-            +Messages.uptimeBlockTitle()
-        }
-        detailsHttpUptimeSummary(monitor, stats)
-        // Uptime incidents
-        h3 {
-            +Messages.incidents()
-            span {
-                classes(BADGE)
-                +Messages.lastX(
-                    Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS).formatAsSimpleInterval()
-                )
-            }
-        }
-        div {
-            classes(ROW, ROW_CARDS, MB_3)
-            id = "http-monitor-details-incidents"
-            hx {
-                get("/http-monitors/fragments/details-uptime-incidents/${monitor.id}")
-                trigger {
-                    load()
-                    every(15.seconds)
-                }
-                onSwapReinitTooltips()
-                swap(HtmxAttrs.Swap.innerHTML)
-            }
-        }
+internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) =
+    monitorDetailsContent(
+        typeUiConfig = MonitorTypeUiConfig.HTTP,
+        monitor = monitor,
+        uptimeSummary = { detailsHttpUptimeSummary(monitor, stats) },
+    ) {
         // Latency metrics
         if (monitor.latencyHistoryEnabled) {
             h2 {
@@ -65,28 +35,11 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
             }
             detailsSSLSummary(monitor)
             // SSL incidents
-            h3 {
-                +Messages.incidents()
-                span {
-                    classes(BADGE)
-                    +Messages.lastX(
-                        Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS).formatAsSimpleInterval()
-                    )
-                }
-            }
-            div {
-                classes(ROW, ROW_CARDS, MB_3)
-                id = "http-monitor-details-ssl-events"
-                hx {
-                    get("/http-monitors/fragments/details-ssl-incidents/${monitor.id}")
-                    trigger {
-                        load()
-                        every(15.seconds)
-                    }
-                    onSwapReinitTooltips()
-                    swap(HtmxAttrs.Swap.innerHTML)
-                }
-            }
+            incidentsHeading()
+            autoRefreshedBlock(
+                elementId = "http-monitor-details-ssl-events",
+                path = MonitorTypeUiConfig.HTTP.fragmentPath("details-ssl-incidents/${monitor.id}"),
+                cssClasses = setOf(ROW, ROW_CARDS, MB_3),
+            )
         }
     }
-}

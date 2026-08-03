@@ -77,6 +77,9 @@ data class SettingsDto(
             @param:Schema(description = "Whether the TCP monitors are in read-only mode", required = true)
             val areTcpMonitorsReadOnly: Boolean,
 
+            @param:Schema(description = "Whether the DNS monitors are in read-only mode", required = true)
+            val areDnsMonitorsReadOnly: Boolean,
+
             @param:Schema(description = "Whether the maintenance windows are in read-only mode", required = true)
             val areMaintenanceWindowsReadOnly: Boolean,
         )
@@ -123,6 +126,10 @@ data class SettingsDto(
             val tcpUptimeStatus: Boolean,
             @param:Schema(description = "Whether TCP latest latency exporter is enabled", required = true)
             val tcpLatestLatency: Boolean,
+            @param:Schema(description = "Whether DNS monitor status exporter is enabled", required = true)
+            val dnsUptimeStatus: Boolean,
+            @param:Schema(description = "Whether DNS latest latency exporter is enabled", required = true)
+            val dnsLatestLatency: Boolean,
         )
 
         @Introspected

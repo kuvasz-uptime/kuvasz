@@ -2,9 +2,12 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
+import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -38,6 +41,7 @@ class MonitorControllerImportReadOnlyTest(
         appConfig.enablePushMonitorExternalWrite()
         appConfig.enableIcmpMonitorExternalWrite()
         appConfig.enableTcpMonitorExternalWrite()
+        appConfig.enableDnsMonitorExternalWrite()
     }
 
     init {
@@ -162,6 +166,30 @@ class MonitorControllerImportReadOnlyTest(
                 }
             }
 
+            `when`("DNS monitor writes are yaml-managed and the backup only contains DNS monitors") {
+                appConfig.enableHttpMonitorExternalWrite()
+                appConfig.enablePushMonitorExternalWrite()
+                appConfig.enableIcmpMonitorExternalWrite()
+                appConfig.enableTcpMonitorExternalWrite()
+                appConfig.disableDnsMonitorExternalWrite()
+
+                val yamlContent = buildYamlImportContent(
+                    dnsMonitors = listOf(dnsMonitor("skipped-dns"))
+                )
+
+                then("it should silently skip DNS and return 200 with zero counts") {
+                    val response = client.exchange(
+                        HttpRequest.POST("/api/v2/monitors/import/yaml", multipartOf(yamlContent))
+                            .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                            .accept(MediaType.APPLICATION_JSON_TYPE),
+                        MonitorImportResultDto::class.java,
+                    ).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body().shouldNotBeNull().perTypeResults.shouldBeEmpty()
+                }
+            }
+
             `when`("the response is an error") {
                 then("ServiceError should be returned for non-import related failures") {
                     val unused = shouldThrow<HttpClientResponseException> {
@@ -245,17 +273,38 @@ class MonitorControllerImportReadOnlyTest(
         metricsHistoryEnabled = true,
     )
 
+    private fun dnsMonitor(name: String) = DnsMonitorExportDto(
+        name = name,
+        host = "example.com",
+        resolverHost = null,
+        resolverPort = 53,
+        transport = DnsTransport.UDP,
+        recordMatchers = emptyList(),
+        expectedResponseCode = DnsResponseCode.NOERROR,
+        driftDetectionEnabled = false,
+        driftRecordTypes = emptyList(),
+        uptimeCheckInterval = 60,
+        timeoutMs = 5000,
+        latencyThresholdMs = null,
+        failureCountThreshold = 1,
+        enabled = true,
+        integrations = emptySet(),
+        metricsHistoryEnabled = true,
+    )
+
     private fun buildYamlImportContent(
         httpMonitors: List<HttpMonitorExportDto> = emptyList(),
         pushMonitors: List<PushMonitorExportDto> = emptyList(),
         icmpMonitors: List<IcmpMonitorExportDto> = emptyList(),
         tcpMonitors: List<TcpMonitorExportDto> = emptyList(),
+        dnsMonitors: List<DnsMonitorExportDto> = emptyList(),
     ): ByteArray {
         val content = mapOf(
             "http-monitors" to httpMonitors,
             "push-monitors" to pushMonitors,
             "icmp-monitors" to icmpMonitors,
             "tcp-monitors" to tcpMonitors,
+            "dns-monitors" to dnsMonitors,
         )
 
         return yamlMapper.writeValueAsBytes(content)

@@ -37,6 +37,18 @@ data class StructuredTcpMonitorDownMessage(
     val previousUpTime: String?,
 ) : StructuredMonitorMessage()
 
+data class StructuredDnsMonitorUpMessage(
+    override val summary: String,
+    val latency: String?,
+    val previousDownTime: String?,
+) : StructuredMonitorMessage()
+
+data class StructuredDnsMonitorDownMessage(
+    override val summary: String,
+    val error: String,
+    val previousUpTime: String?,
+) : StructuredMonitorMessage()
+
 data class StructuredHttpMonitorUpMessage(
     override val summary: String,
     val latency: String,
@@ -51,6 +63,11 @@ data class StructuredMonitorDownMessage(
 
 data class StructuredRedirectMessage(
     override val summary: String,
+) : StructuredMessage()
+
+data class StructuredDnsRecordsChangedMessage(
+    override val summary: String,
+    val details: String,
 ) : StructuredMessage()
 
 sealed class StructuredSSLMessage : StructuredMessage()

@@ -1,0 +1,6 @@
+dns-monitors:
+  - name: test1
+    host: example.com
+    uptime-check-interval: 60
+    integrations:
+      - slack:non-existing

@@ -1,0 +1,4 @@
+micronaut.metrics.enabled: true
+---
+metrics-exports:
+  dns-latest-latency: true

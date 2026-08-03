@@ -4,7 +4,12 @@ import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.selectGroup(xModelName: String, readOnly: Boolean, values: List<ValueAndLabel>) {
+internal fun FlowContent.selectGroup(
+    xModelName: String,
+    readOnly: Boolean,
+    values: List<ValueAndLabel>,
+    onChange: String? = null,
+) {
     div {
         classes(FORM_SELECTGROUP, MB_2)
         values.forEach { option ->
@@ -14,6 +19,7 @@ internal fun FlowContent.selectGroup(xModelName: String, readOnly: Boolean, valu
                     classes(FORM_SELECTGROUP_INPUT)
                     this.value = option.value
                     xModel(xModelName)
+                    onChange?.let { xOnChange(it) }
                     if (readOnly) disabled = true
                 }
                 span {

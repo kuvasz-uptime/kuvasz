@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.metrics
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.core.bind.annotation.Bindable
 
+@Suppress("ComplexInterface")
 @ConfigurationProperties(MetricsExportConfig.CONFIG_PREFIX)
 interface MetricsExportConfig {
 
@@ -39,4 +40,10 @@ interface MetricsExportConfig {
 
     @get:Bindable(defaultValue = "false")
     val tcpLatestLatency: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val dnsUptimeStatus: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val dnsLatestLatency: Boolean
 }

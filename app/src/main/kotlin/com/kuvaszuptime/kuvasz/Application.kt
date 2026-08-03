@@ -41,6 +41,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
         Tag(name = OpenApiTags.PUSH_MONITORS),
         Tag(name = OpenApiTags.ICMP_MONITORS),
         Tag(name = OpenApiTags.TCP_MONITORS),
+        Tag(name = OpenApiTags.DNS_MONITORS),
         Tag(name = OpenApiTags.INCIDENTS),
         Tag(name = OpenApiTags.INTEGRATIONS),
         Tag(name = OpenApiTags.MAINTENANCE_WINDOWS),

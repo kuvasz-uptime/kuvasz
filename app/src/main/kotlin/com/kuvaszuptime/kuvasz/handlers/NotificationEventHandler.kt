@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
@@ -45,6 +46,12 @@ abstract class NotificationEventHandler(
             )
             handleMaintenanceEvent(event)
         }
+        eventDispatcher.subscribeToDnsRecordsChangedEvents { event ->
+            logger.debug(
+                "A ${event::class.simpleName} has been received for monitor with ID: ${event.monitor.id}"
+            )
+            handleDnsRecordsChangedEvent(event)
+        }
     }
 
     protected abstract fun handleUptimeEvent(event: UptimeMonitorEvent)
@@ -52,6 +59,8 @@ abstract class NotificationEventHandler(
     protected abstract fun handleSSLEvent(event: SSLMonitorEvent)
 
     protected abstract fun handleMaintenanceEvent(event: MaintenanceWindowEvent)
+
+    protected abstract fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent)
 
     private fun UptimeMonitorEvent.logReceipt() =
         logger.debug("A ${this::class.simpleName} has been received for monitor with ID: ${monitor.id}")

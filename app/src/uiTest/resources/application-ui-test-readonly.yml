@@ -16,6 +16,10 @@ tcp-monitors:
     host: 127.0.0.1
     port: 8080
     uptime-check-interval: 60
+dns-monitors:
+  - name: yaml-dns-monitor
+    host: example.com
+    uptime-check-interval: 60
 status-pages:
   - title: YAML Status Page
     slug: yaml-status-page

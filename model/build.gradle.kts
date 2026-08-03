@@ -121,6 +121,10 @@ jooq {
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
                                 }
                                 table {
+                                    expression = "DNS_UPTIME_EVENT"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
+                                }
+                                table {
                                     expression = "HTTP_MONITOR"
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
                                 }
@@ -134,6 +138,10 @@ jooq {
                                 }
                                 table {
                                     expression = "TCP_MONITOR"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
+                                }
+                                table {
+                                    expression = "DNS_MONITOR"
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.MonitorRecord"
                                 }
                             }
@@ -151,7 +159,14 @@ jooq {
                                 isGenericConverter = false
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression =
-                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|TCP_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
+                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|TCP_MONITOR.INTEGRATIONS|DNS_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
+                            }
+                            forcedType {
+                                userType = "com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType[]"
+                                converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToDnsRecordTypeArrayConverter"
+                                isGenericConverter = false
+                                jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
+                                includeExpression = "DNS_MONITOR.DRIFT_RECORD_TYPES"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.MonitorID[]"
@@ -164,7 +179,9 @@ jooq {
                                 userType = "tools.jackson.databind.JsonNode"
                                 isJsonConverter = true
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
-                                includeExpression = "HTTP_MONITOR.REQUEST_HEADERS|HTTP_MONITOR.EXPECTED_HEADERS"
+                                includeExpression =
+                                    "HTTP_MONITOR.REQUEST_HEADERS|HTTP_MONITOR.EXPECTED_HEADERS|" +
+                                    "DNS_MONITOR.RECORD_MATCHERS|DNS_RESOLUTION_SNAPSHOT.RECORDS"
                             }
                         }
                     }

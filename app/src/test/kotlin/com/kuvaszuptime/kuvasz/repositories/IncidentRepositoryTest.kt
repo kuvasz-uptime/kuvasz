@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.repositories
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
@@ -29,6 +31,7 @@ class IncidentRepositoryTest(
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
     tcpMonitorRepository: TcpMonitorRepository,
+    dnsMonitorRepository: DnsMonitorRepository,
     incidentRepository: IncidentRepository
 ) : DatabaseBehaviorSpec() {
     init {
@@ -237,8 +240,40 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusDays(4),
                     )
 
+                    val dnsMonitor1 = createDnsMonitor(dnsMonitorRepository)
+                    val dnsMonitor2 = createDnsMonitor(dnsMonitorRepository)
+                    val openDownDnsMonitor1 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    val resolvedDownDnsMonitor1 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownDnsMonitor2 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    val resolvedDownDnsMonitor2 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+
                     val incidentsWithResolved = incidentRepository.getIncidents(includeResolved = true)
-                    incidentsWithResolved shouldHaveSize 20
+                    incidentsWithResolved shouldHaveSize 24
 
                     incidentsWithResolved.forOne { resolvedHttpMonitor2 ->
                         resolvedHttpMonitor2.monitorId shouldBe resolvedDownHttpMonitor2.monitorId
@@ -480,8 +515,56 @@ class IncidentRepositoryTest(
                         openTcpMonitor1.details shouldBe null
                     }
 
+                    incidentsWithResolved.forOne { resolvedDnsMonitor2 ->
+                        resolvedDnsMonitor2.monitorId shouldBe resolvedDownDnsMonitor2.monitorId
+                        resolvedDnsMonitor2.monitorName shouldBe dnsMonitor2.name
+                        resolvedDnsMonitor2.isMonitorEnabled shouldBe dnsMonitor2.enabled
+                        resolvedDnsMonitor2.status shouldBe IncidentStatus.RESOLVED
+                        resolvedDnsMonitor2.startedAt shouldBe resolvedDownDnsMonitor2.startedAt
+                        resolvedDnsMonitor2.endedAt shouldBe resolvedDownDnsMonitor2.endedAt.shouldNotBeNull()
+                        resolvedDnsMonitor2.updatedAt shouldBe resolvedDownDnsMonitor2.updatedAt
+                        resolvedDnsMonitor2.incidentType shouldBe IncidentType.DNS
+                        resolvedDnsMonitor2.details shouldBe null
+                    }
+
+                    incidentsWithResolved.forOne { resolvedDnsMonitor1 ->
+                        resolvedDnsMonitor1.monitorId shouldBe resolvedDownDnsMonitor1.monitorId
+                        resolvedDnsMonitor1.monitorName shouldBe dnsMonitor1.name
+                        resolvedDnsMonitor1.isMonitorEnabled shouldBe dnsMonitor1.enabled
+                        resolvedDnsMonitor1.status shouldBe IncidentStatus.RESOLVED
+                        resolvedDnsMonitor1.startedAt shouldBe resolvedDownDnsMonitor1.startedAt
+                        resolvedDnsMonitor1.endedAt shouldBe resolvedDownDnsMonitor1.endedAt.shouldNotBeNull()
+                        resolvedDnsMonitor1.updatedAt shouldBe resolvedDownDnsMonitor1.updatedAt
+                        resolvedDnsMonitor1.incidentType shouldBe IncidentType.DNS
+                        resolvedDnsMonitor1.details shouldBe null
+                    }
+
+                    incidentsWithResolved.forOne { openDnsMonitor2 ->
+                        openDnsMonitor2.monitorId shouldBe openDownDnsMonitor2.monitorId
+                        openDnsMonitor2.monitorName shouldBe dnsMonitor2.name
+                        openDnsMonitor2.isMonitorEnabled shouldBe dnsMonitor2.enabled
+                        openDnsMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openDnsMonitor2.startedAt shouldBe openDownDnsMonitor2.startedAt
+                        openDnsMonitor2.endedAt shouldBe null
+                        openDnsMonitor2.updatedAt shouldBe openDownDnsMonitor2.updatedAt
+                        openDnsMonitor2.incidentType shouldBe IncidentType.DNS
+                        openDnsMonitor2.details shouldBe openDownDnsMonitor2.error
+                    }
+
+                    incidentsWithResolved.forOne { openDnsMonitor1 ->
+                        openDnsMonitor1.monitorId shouldBe openDownDnsMonitor1.monitorId
+                        openDnsMonitor1.monitorName shouldBe dnsMonitor1.name
+                        openDnsMonitor1.isMonitorEnabled shouldBe dnsMonitor1.enabled
+                        openDnsMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openDnsMonitor1.startedAt shouldBe openDownDnsMonitor1.startedAt
+                        openDnsMonitor1.endedAt shouldBe null
+                        openDnsMonitor1.updatedAt shouldBe openDownDnsMonitor1.updatedAt
+                        openDnsMonitor1.incidentType shouldBe IncidentType.DNS
+                        openDnsMonitor1.details shouldBe null
+                    }
+
                     val incidentsWithoutResolved = incidentRepository.getIncidents(includeResolved = false)
-                    incidentsWithoutResolved shouldHaveSize 10
+                    incidentsWithoutResolved shouldHaveSize 12
 
                     incidentsWithoutResolved.forOne { openHttpMonitor2 ->
                         openHttpMonitor2.monitorId shouldBe openDownHttpMonitor2.monitorId
@@ -601,6 +684,30 @@ class IncidentRepositoryTest(
                         openTcpMonitor1.updatedAt shouldBe openDownTcpMonitor1.updatedAt
                         openTcpMonitor1.incidentType shouldBe IncidentType.TCP
                         openTcpMonitor1.details shouldBe null
+                    }
+
+                    incidentsWithoutResolved.forOne { openDnsMonitor2 ->
+                        openDnsMonitor2.monitorId shouldBe openDownDnsMonitor2.monitorId
+                        openDnsMonitor2.monitorName shouldBe dnsMonitor2.name
+                        openDnsMonitor2.isMonitorEnabled shouldBe dnsMonitor2.enabled
+                        openDnsMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openDnsMonitor2.startedAt shouldBe openDownDnsMonitor2.startedAt
+                        openDnsMonitor2.endedAt shouldBe null
+                        openDnsMonitor2.updatedAt shouldBe openDownDnsMonitor2.updatedAt
+                        openDnsMonitor2.incidentType shouldBe IncidentType.DNS
+                        openDnsMonitor2.details shouldBe openDownDnsMonitor2.error
+                    }
+
+                    incidentsWithoutResolved.forOne { openDnsMonitor1 ->
+                        openDnsMonitor1.monitorId shouldBe openDownDnsMonitor1.monitorId
+                        openDnsMonitor1.monitorName shouldBe dnsMonitor1.name
+                        openDnsMonitor1.isMonitorEnabled shouldBe dnsMonitor1.enabled
+                        openDnsMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openDnsMonitor1.startedAt shouldBe openDownDnsMonitor1.startedAt
+                        openDnsMonitor1.endedAt shouldBe null
+                        openDnsMonitor1.updatedAt shouldBe openDownDnsMonitor1.updatedAt
+                        openDnsMonitor1.incidentType shouldBe IncidentType.DNS
+                        openDnsMonitor1.details shouldBe null
                     }
                 }
             }
@@ -769,11 +876,43 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusHours(4),
                     )
 
+                    val dnsMonitor1 = createDnsMonitor(dnsMonitorRepository)
+                    val dnsMonitor2 = createDnsMonitor(dnsMonitorRepository)
+                    val openDownDnsMonitor1 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownDnsMonitor2 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    val resolvedDownDnsMonitor2 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(1),
+                        endedAt = getCurrentTimestamp().minusHours(4),
+                    )
+
                     val incidentsInTheLast2Days = incidentRepository.getIncidents(
                         period = Duration.ofDays(2),
                         includeResolved = true,
                     )
-                    incidentsInTheLast2Days shouldHaveSize 14
+                    incidentsInTheLast2Days shouldHaveSize 17
 
                     incidentsInTheLast2Days.forOne { resolvedHttpMonitor2 ->
                         resolvedHttpMonitor2.monitorId shouldBe resolvedDownHttpMonitor2.monitorId
@@ -858,6 +997,24 @@ class IncidentRepositoryTest(
                         openTcpMonitor1.incidentType shouldBe IncidentType.TCP
                         openTcpMonitor1.startedAt shouldBe openDownTcpMonitor1.startedAt
                     }
+
+                    incidentsInTheLast2Days.forOne { resolvedDnsMonitor2 ->
+                        resolvedDnsMonitor2.monitorId shouldBe resolvedDownDnsMonitor2.monitorId
+                        resolvedDnsMonitor2.incidentType shouldBe IncidentType.DNS
+                        resolvedDnsMonitor2.startedAt shouldBe resolvedDownDnsMonitor2.startedAt
+                    }
+
+                    incidentsInTheLast2Days.forOne { openDnsMonitor2 ->
+                        openDnsMonitor2.monitorId shouldBe openDownDnsMonitor2.monitorId
+                        openDnsMonitor2.incidentType shouldBe IncidentType.DNS
+                        openDnsMonitor2.startedAt shouldBe openDownDnsMonitor2.startedAt
+                    }
+
+                    incidentsInTheLast2Days.forOne { openDnsMonitor1 ->
+                        openDnsMonitor1.monitorId shouldBe openDownDnsMonitor1.monitorId
+                        openDnsMonitor1.incidentType shouldBe IncidentType.DNS
+                        openDnsMonitor1.startedAt shouldBe openDownDnsMonitor1.startedAt
+                    }
                 }
             }
 
@@ -873,6 +1030,9 @@ class IncidentRepositoryTest(
                     val icmpMonitor2 = createIcmpMonitor(icmpMonitorRepository, enabled = false)
                     val tcpMonitor1 = createTcpMonitor(tcpMonitorRepository)
                     val tcpMonitor2 = createTcpMonitor(tcpMonitorRepository, enabled = false)
+
+                    val dnsMonitor1 = createDnsMonitor(dnsMonitorRepository)
+                    val dnsMonitor2 = createDnsMonitor(dnsMonitorRepository, enabled = false)
 
                     val openDownHttpMonitor1 = createHttpUptimeEventRecord(
                         dslContext,
@@ -1025,6 +1185,36 @@ class IncidentRepositoryTest(
                         endedAt = getCurrentTimestamp().minusDays(4),
                     )
 
+                    val openDownDnsMonitor1 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                    )
+                    createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor1.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+                    val openDownDnsMonitor2 = createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(3),
+                        endedAt = null,
+                        error = "sh#t happened"
+                    )
+                    createDnsUptimeEventRecord(
+                        dslContext,
+                        monitorId = dnsMonitor2.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusDays(6),
+                        endedAt = getCurrentTimestamp().minusDays(4),
+                    )
+
                     val incidentsOfHttpMonitor1 = incidentRepository.getIncidents(
                         includeResolved = false,
                         monitorId = httpMonitor1.id,
@@ -1138,6 +1328,32 @@ class IncidentRepositoryTest(
                         openMonitor2.monitorId shouldBe openDownTcpMonitor2.monitorId
                         openMonitor2.status shouldBe IncidentStatus.ONGOING
                         openMonitor2.incidentType shouldBe IncidentType.TCP
+                    }
+
+                    val incidentsOfDnsMonitor1 = incidentRepository.getIncidents(
+                        includeResolved = false,
+                        monitorId = dnsMonitor1.id,
+                    )
+                    incidentsOfDnsMonitor1 shouldHaveSize 1
+
+                    incidentsOfDnsMonitor1.forOne { openMonitor1 ->
+                        openMonitor1.monitorId shouldBe openDownDnsMonitor1.monitorId
+                        openMonitor1.status shouldBe IncidentStatus.ONGOING
+                        openMonitor1.incidentType shouldBe IncidentType.DNS
+                    }
+
+                    // Should return events for the disabled monitor as well
+                    val incidentsOfDnsMonitor2 = incidentRepository.getIncidents(
+                        includeResolved = false,
+                        monitorId = dnsMonitor2.id,
+                    )
+
+                    incidentsOfDnsMonitor2 shouldHaveSize 1
+
+                    incidentsOfDnsMonitor2.forOne { openMonitor2 ->
+                        openMonitor2.monitorId shouldBe openDownDnsMonitor2.monitorId
+                        openMonitor2.status shouldBe IncidentStatus.ONGOING
+                        openMonitor2.incidentType shouldBe IncidentType.DNS
                     }
                 }
             }

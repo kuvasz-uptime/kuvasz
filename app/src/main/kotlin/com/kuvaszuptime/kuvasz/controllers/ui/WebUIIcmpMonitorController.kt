@@ -56,6 +56,7 @@ class WebUIIcmpMonitorController(
 
     @Get("/icmp-monitors/{monitorId}")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun icmpMonitorDetails(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)

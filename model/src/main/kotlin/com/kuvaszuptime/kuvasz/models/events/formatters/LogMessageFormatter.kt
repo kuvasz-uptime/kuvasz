@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -31,6 +34,8 @@ object LogMessageFormatter : TextMessageFormatter {
             is IcmpMonitorDownEvent -> event.toParts()
             is TcpMonitorUpEvent -> event.toParts()
             is TcpMonitorDownEvent -> event.toParts()
+            is DnsMonitorUpEvent -> event.toParts()
+            is DnsMonitorDownEvent -> event.toParts()
         }
 
         return messageParts.assemble()
@@ -68,6 +73,14 @@ object LogMessageFormatter : TextMessageFormatter {
         listOfNotNull(getEmoji() + " " + details.summary, details.error, details.previousUpTime)
     }
 
+    private fun DnsMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + details.summary, details.latency, details.previousDownTime)
+    }
+
+    private fun DnsMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + details.summary, details.error, details.previousUpTime)
+    }
+
     override fun toFormattedMessage(event: SSLMonitorEvent): String {
         val messageParts: List<String> = when (event) {
             is SSLValidEvent -> event.toStructuredMessage().let { details ->
@@ -95,6 +108,12 @@ object LogMessageFormatter : TextMessageFormatter {
     }
 
     fun toFormattedMessage(event: HttpRedirectEvent) = "${event.getEmoji()} ${event.toStructuredMessage().summary}"
+
+    fun toFormattedMessage(event: DnsRecordsChangedEvent): String =
+        event.toStructuredMessage().let { details ->
+            listOfNotNull(event.getEmoji() + " " + details.summary, details.details.takeIf { it.isNotBlank() })
+                .assemble()
+        }
 
     override fun toFormattedMessage(event: MaintenanceWindowEvent): String {
         val window = event.window

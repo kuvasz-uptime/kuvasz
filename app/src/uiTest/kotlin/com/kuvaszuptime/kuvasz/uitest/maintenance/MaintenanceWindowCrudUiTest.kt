@@ -76,6 +76,57 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(details.heading(name)).isVisible()
         }
 
+        "an abandoned create form is reset when the modal is reopened" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Abandoned Selection")
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+            modal.selectType(MaintenanceWindowType.CRON)
+                .setName("Abandoned Window")
+                .setCron("0 2 * * *")
+                .setDuration("PT1H")
+            modal.selectOption("Abandoned Selection")
+            assertThat(modal.selectedOptions).hasCount(1)
+            modal.dismiss()
+
+            // Closing the modal fires the reset event, so the next open starts from the defaults again.
+            val reopened = list.openCreateModal()
+            assertThat(reopened.nameInput).hasValue("")
+            assertThat(reopened.cronInput).hasValue("")
+            assertThat(reopened.durationInput).hasValue("")
+            assertThat(reopened.selectedOptions).hasCount(0)
+            // The schedule type falls back to the default a fresh form starts with.
+            assertThat(reopened.typeRadio(MaintenanceWindowType.MANUAL)).isChecked()
+        }
+
+        "edits abandoned on an existing maintenance window are discarded when its configure modal is reopened" {
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val originalName = "Window Reset Source"
+            val originalCron = "0 2 * * *"
+            val modal = list.openCreateModal()
+            modal.selectType(MaintenanceWindowType.CRON).setName(originalName).setCron(originalCron).blurCron()
+            modal.durationPreset(Messages.hourInterval(1)).click()
+            modal.save()
+            page.waitForURL("**/maintenance-windows/*")
+            val details = MaintenanceWindowDetailsPage(page)
+
+            details.openConfigureModal()
+                .setName("Window Reset Renamed")
+                .setCron("30 4 * * *")
+                .dismiss()
+
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.nameInput).hasValue(originalName)
+            assertThat(reopened.cronInput).hasValue(originalCron)
+            assertThat(reopened.typeRadio(MaintenanceWindowType.CRON)).isChecked()
+        }
+
         "the modal's monitor multi-select adds a seeded monitor" {
             createHttpMonitor(httpMonitorRepository, monitorName = "Selectable Monitor")
 

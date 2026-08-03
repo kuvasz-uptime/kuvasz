@@ -2,7 +2,10 @@ package com.kuvaszuptime.kuvasz.models.events
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.DETAILS_MAX_LENGTH
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.ERROR_MAX_LENGTH
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -17,6 +20,7 @@ sealed class MonitorEvent<M : MonitorRecord> : NotifiableEvent {
 
     companion object {
         const val ERROR_MAX_LENGTH = 255
+        const val DETAILS_MAX_LENGTH = 1000
     }
 }
 
@@ -28,6 +32,33 @@ data class HttpRedirectEvent(
     override fun toStructuredMessage() = StructuredRedirectMessage(
         summary = Messages.requestHasBeenRedirected(monitor.name, monitor.safeDisplayUrl, redirectLocation),
     )
+}
+
+data class DnsRecordsChangedEvent(
+    override val monitor: DnsMonitorRecord,
+    val previousRecords: DnsSnapshotRecords,
+    val currentRecords: DnsSnapshotRecords,
+) : MonitorEvent<DnsMonitorRecord>() {
+
+    override fun toStructuredMessage() = StructuredDnsRecordsChangedMessage(
+        summary = Messages.dnsRecordsChanged(monitor.name),
+        details = buildDiff(),
+    )
+
+    private fun buildDiff(): String =
+        (previousRecords.keys + currentRecords.keys)
+            .sortedBy { it.name }
+            .mapNotNull { type ->
+                val previous = previousRecords[type].orEmpty()
+                val current = currentRecords[type].orEmpty()
+                if (previous == current) {
+                    null
+                } else {
+                    "${type.name}: [${previous.joinToString(", ")}] → [${current.joinToString(", ")}]"
+                }
+            }
+            .joinToString("\n")
+            .sanitizeAsDetails()
 }
 
 /**
@@ -44,6 +75,23 @@ fun String.sanitizeAsError(): String {
 
     return if (sanitized.length > ERROR_MAX_LENGTH) {
         Messages.redacted(sanitized.take(ERROR_MAX_LENGTH))
+    } else {
+        sanitized
+    }
+}
+
+/**
+ * Same as [sanitizeAsError], but keeps the line breaks that separate the entries of a multi-line detail block, and
+ * allows a longer text, capped at [DETAILS_MAX_LENGTH] so it still fits the message size limit of every integration.
+ *
+ * Useful for external inputs that are out of our control, such as the resolved records of a monitored DNS name, where
+ * a single value (a DKIM key, for example) can be longer than a whole chat message is allowed to be.
+ */
+fun String.sanitizeAsDetails(): String {
+    val sanitized = replace("\u0000", "null").filter { it == '\n' || !it.isISOControl() }
+
+    return if (sanitized.length > DETAILS_MAX_LENGTH) {
+        Messages.redacted(sanitized.take(DETAILS_MAX_LENGTH))
     } else {
         sanitized
     }

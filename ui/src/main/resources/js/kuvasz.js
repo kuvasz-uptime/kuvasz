@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     || currentPath.startsWith('/push-monitors')
                     || currentPath.startsWith('/icmp-monitors')
                     || currentPath.startsWith('/tcp-monitors')
+                    || currentPath.startsWith('/dns-monitors')
                 ) && linkPath === '#navbar-monitors')
         ) {
             link.parentNode.classList.add('active');
@@ -171,6 +172,7 @@ const httpMonitorApi = crudRequests('/api/v2/http-monitors', 'monitor');
 const pushMonitorApi = crudRequests('/api/v2/push-monitors', 'monitor');
 const icmpMonitorApi = crudRequests('/api/v2/icmp-monitors', 'monitor');
 const tcpMonitorApi = crudRequests('/api/v2/tcp-monitors', 'monitor');
+const dnsMonitorApi = crudRequests('/api/v2/dns-monitors', 'monitor');
 const statusPageApi = crudRequests('/api/v2/status-pages', 'status page');
 const maintenanceWindowApi = crudRequests('/api/v2/maintenance-windows', 'maintenance window');
 
@@ -180,12 +182,14 @@ const refreshHttpMonitorDetailStatus = () => sendHtmxEvent('#http-monitor-detail
 const refreshPushMonitorDetailStatus = () => sendHtmxEvent('#push-monitor-detail-heading', 'refresh-monitor-detail-status');
 const refreshIcmpMonitorDetailStatus = () => sendHtmxEvent('#icmp-monitor-detail-heading', 'refresh-monitor-detail-status');
 const refreshTcpMonitorDetailStatus = () => sendHtmxEvent('#tcp-monitor-detail-heading', 'refresh-monitor-detail-status');
+const refreshDnsMonitorDetailStatus = () => sendHtmxEvent('#dns-monitor-detail-heading', 'refresh-monitor-detail-status');
 
 // Refreshes a monitor list by triggering an HTMX event
 const refreshHttpMonitorList = () => sendHtmxEvent('#http-monitors-list', 'refresh-monitor-list');
 const refreshPushMonitorList = () => sendHtmxEvent('#push-monitors-list', 'refresh-monitor-list');
 const refreshIcmpMonitorList = () => sendHtmxEvent('#icmp-monitors-list', 'refresh-monitor-list');
 const refreshTcpMonitorList = () => sendHtmxEvent('#tcp-monitors-list', 'refresh-monitor-list');
+const refreshDnsMonitorList = () => sendHtmxEvent('#dns-monitors-list', 'refresh-monitor-list');
 
 // Refreshes the status page list by triggering an HTMX event
 const refreshStatusPageList = () => sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
@@ -196,6 +200,7 @@ const refreshDashboard = () => {
     sendHtmxEvent('#push-monitoring-dashboard', 'refresh-dashboard');
     sendHtmxEvent('#icmp-monitoring-dashboard', 'refresh-dashboard');
     sendHtmxEvent('#tcp-monitoring-dashboard', 'refresh-dashboard');
+    sendHtmxEvent('#dns-monitoring-dashboard', 'refresh-dashboard');
 };
 
 // --------- Alpine.js x-data ---------
@@ -231,6 +236,7 @@ const monitorListItem = (api, refreshList) => (monitorId, isMonitorEnabled, assi
 const httpMonitorListItem = monitorListItem(httpMonitorApi, refreshHttpMonitorList);
 const icmpMonitorListItem = monitorListItem(icmpMonitorApi, refreshIcmpMonitorList);
 const tcpMonitorListItem = monitorListItem(tcpMonitorApi, refreshTcpMonitorList);
+const dnsMonitorListItem = monitorListItem(dnsMonitorApi, refreshDnsMonitorList);
 const pushMonitorListItem = monitorListItem(pushMonitorApi, refreshPushMonitorList);
 
 const statusPageListItem = (statusPageId, isStatusPagePublic) => ({
@@ -290,6 +296,7 @@ const httpMonitorDetails = monitorDetails(httpMonitorApi, refreshHttpMonitorDeta
 const pushMonitorDetails = monitorDetails(pushMonitorApi, refreshPushMonitorDetailStatus, '/push-monitors');
 const icmpMonitorDetails = monitorDetails(icmpMonitorApi, refreshIcmpMonitorDetailStatus, '/icmp-monitors');
 const tcpMonitorDetails = monitorDetails(tcpMonitorApi, refreshTcpMonitorDetailStatus, '/tcp-monitors');
+const dnsMonitorDetails = monitorDetails(dnsMonitorApi, refreshDnsMonitorDetailStatus, '/dns-monitors');
 
 const statusPageDetails = (statusPageId, isStatusPagePublic) => ({
     statusPageId,
@@ -685,6 +692,98 @@ const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDat
     };
 };
 
+const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
+    return {
+        isMonitorEnabled,
+        latencyChart: null,
+        previousData: null,
+        endpointUrl: `/api/v2/dns-monitors/${monitorId}/stats?period=PT${statPeriodInHours}H`,
+        pollInterval: uptimeCheckInterval * 1000,
+        isAutoRefreshEnabled: false,
+        intervalId: null,
+        lastResponse: null,
+        noDataLabel,
+
+        init() {
+            this.initializeCharts();
+            this.startPolling();
+            if (!this.isAutoRefreshEnabled) {
+                this.stopPolling();
+            }
+            this.$watch('isAutoRefreshEnabled', (value) => {
+                if (value) {
+                    this.startPolling();
+                } else {
+                    this.stopPolling();
+                }
+            });
+        },
+
+        startPolling() {
+            this.pollEndpoint();
+            this.intervalId = setInterval(() => this.pollEndpoint(), this.pollInterval);
+        },
+
+        stopPolling() {
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+        },
+
+        initializeCharts() {
+            const latencyOptions = baseAreaChartOptions(this.noDataLabel, (val) => val + " ms");
+            this.latencyChart = new ApexCharts(document.getElementById("dns-monitor-details-latency-chart"), latencyOptions);
+            this.latencyChart.render();
+        },
+
+        async pollEndpoint() {
+            try {
+                const response = await fetch(this.endpointUrl);
+                if (!response.ok) {
+                    console.error('Error fetching data:', response.status);
+                    return;
+                }
+                const rawData = await response.json();
+                this.lastResponse = rawData;
+                const transformedData = this.transformData(rawData);
+
+                if (!this.previousData || JSON.stringify(transformedData) !== JSON.stringify(this.previousData)) {
+                    this.updateCharts(transformedData);
+                    this.previousData = transformedData;
+                }
+            } catch (error) {
+                console.error('Error during polling:', error);
+            }
+        },
+
+        transformData(rawData) {
+            const latencyLabels = [];
+            const latencyData = [];
+
+            rawData.metricsLogs.forEach(item => {
+                const timestamp = new Date(item.createdAt).toString();
+                latencyLabels.push(timestamp);
+                latencyData.push(item.latencyInMs !== null ? parseInt(item.latencyInMs) : null);
+            });
+
+            return {
+                latency: {
+                    labels: latencyLabels,
+                    series: [{name: 'Latency', data: latencyData}],
+                },
+            };
+        },
+
+        updateCharts(newData) {
+            this.latencyChart.updateOptions({
+                labels: newData.latency.labels,
+                series: newData.latency.series,
+            });
+        },
+    };
+};
+
 const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null);
 
 const isValidUrl = (url) => {
@@ -708,6 +807,7 @@ const upsertHttpMonitorForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        formError: null,
         isCloning: false,
         isUpdate: !!monitor,
         supportedHttpStatusCodes: supportedHttpStatusCodes || [],
@@ -749,6 +849,7 @@ const upsertHttpMonitorForm = (
             this.newExpectedHeaderValue = '';
             this.isExpectedHeaderAddable = false;
             this.errors = {};
+            this.formError = null;
 
             resetTomSelectState(acceptedStatusCodeSelectId, (ts) => {
                 this.selectedHttpStatusCodes.forEach(code => {
@@ -823,6 +924,7 @@ const upsertHttpMonitorForm = (
 
         validate() {
             this.errors = {};
+            this.formError = null;
             this.validateName();
             this.validateUrl();
             this.validateSslExpiryThreshold();
@@ -896,6 +998,7 @@ const upsertHttpMonitorForm = (
         },
 
         submitForm() {
+            this.formError = null;
             this.validate();
             if (hasNonNullValue(this.errors)) {
                 return;
@@ -960,6 +1063,8 @@ const upsertHttpMonitorForm = (
                         this.isRequestLoading = false;
                         if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
                             this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        } else {
+                            this.formError = errorData.message;
                         }
                     } else {
                         console.error('Error creating/updating monitor:', response.statusText);
@@ -985,6 +1090,7 @@ const upsertPushMonitorForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        formError: null,
         isCloning: false,
         isUpdate: !!monitor,
         globalIntegrationCount: globalIntegrationCount || 0,
@@ -1005,6 +1111,7 @@ const upsertPushMonitorForm = (
             this.clientSecret = source?.clientSecret || createRandomSecret();
             this.integrations = source?.integrations || [];
             this.errors = {};
+            this.formError = null;
         },
 
         cloneFrom(monitorId, clonedName) {
@@ -1036,6 +1143,7 @@ const upsertPushMonitorForm = (
 
         validate() {
             this.errors = {};
+            this.formError = null;
             this.validateName();
             this.validateHeartbeatInterval();
             this.validateGracePeriod();
@@ -1085,6 +1193,7 @@ const upsertPushMonitorForm = (
         },
 
         submitForm() {
+            this.formError = null;
             this.validate();
             if (hasNonNullValue(this.errors)) {
                 return;
@@ -1136,6 +1245,8 @@ const upsertPushMonitorForm = (
                         this.isRequestLoading = false;
                         if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
                             this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        } else {
+                            this.formError = errorData.message;
                         }
                     } else {
                         console.error('Error creating/updating monitor:', response.statusText);
@@ -1161,6 +1272,7 @@ const upsertIcmpMonitorForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        formError: null,
         isCloning: false,
         isUpdate: !!monitor,
         globalIntegrationCount: globalIntegrationCount || 0,
@@ -1184,6 +1296,7 @@ const upsertIcmpMonitorForm = (
             this.integrations = source?.integrations || [];
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
+            this.formError = null;
         },
 
         cloneFrom(monitorId, clonedName) {
@@ -1202,6 +1315,7 @@ const upsertIcmpMonitorForm = (
 
         validate() {
             this.errors = {};
+            this.formError = null;
             this.validateName();
             this.validateHost();
             this.validateUptimeCheckInterval();
@@ -1268,6 +1382,7 @@ const upsertIcmpMonitorForm = (
         },
 
         submitForm() {
+            this.formError = null;
             this.validate();
             if (hasNonNullValue(this.errors)) {
                 return;
@@ -1320,6 +1435,8 @@ const upsertIcmpMonitorForm = (
                         this.isRequestLoading = false;
                         if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
                             this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        } else {
+                            this.formError = errorData.message;
                         }
                     } else {
                         console.error('Error creating/updating ICMP monitor:', response.statusText);
@@ -1345,6 +1462,7 @@ const upsertTcpMonitorForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        formError: null,
         isCloning: false,
         isUpdate: !!monitor,
         globalIntegrationCount: globalIntegrationCount || 0,
@@ -1368,6 +1486,7 @@ const upsertTcpMonitorForm = (
             this.integrations = source?.integrations || [];
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
+            this.formError = null;
         },
 
         cloneFrom(monitorId, clonedName) {
@@ -1386,6 +1505,7 @@ const upsertTcpMonitorForm = (
 
         validate() {
             this.errors = {};
+            this.formError = null;
             this.validateName();
             this.validateHost();
             this.validatePort();
@@ -1454,6 +1574,7 @@ const upsertTcpMonitorForm = (
         },
 
         submitForm() {
+            this.formError = null;
             this.validate();
             if (hasNonNullValue(this.errors)) {
                 return;
@@ -1506,6 +1627,8 @@ const upsertTcpMonitorForm = (
                         this.isRequestLoading = false;
                         if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
                             this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        } else {
+                            this.formError = errorData.message;
                         }
                     } else {
                         console.error('Error creating/updating TCP monitor:', response.statusText);
@@ -1522,6 +1645,271 @@ const upsertTcpMonitorForm = (
     }
 };
 
+const upsertDnsMonitorForm = (
+    monitor,
+    errorMessages,
+    globalIntegrationCount
+) => {
+    const originalMonitor = monitor || null;
+    return {
+        errorMessages: errorMessages || {},
+        isRequestLoading: false,
+        formError: null,
+        isCloning: false,
+        isUpdate: !!monitor,
+        globalIntegrationCount: globalIntegrationCount || 0,
+
+        init() {
+            this.resetState();
+        },
+
+        resetState() {
+            this.populateFrom(originalMonitor);
+        },
+
+        populateFrom(source) {
+            this.name = source?.name || '';
+            this.host = source?.host || '';
+            this.resolverHost = source?.resolverHost != null ? source.resolverHost : '';
+            this.resolverPort = source?.resolverPort || 53;
+            this.transport = source?.transport || 'UDP';
+            this.recordMatchers = source?.recordMatchers ? JSON.parse(JSON.stringify(source.recordMatchers)) : [];
+            this.expectedResponseCode = source?.expectedResponseCode || 'NOERROR';
+            this.driftDetectionEnabled = (source?.driftDetectionEnabled != null ? source.driftDetectionEnabled : false);
+            this.driftRecordTypes = source?.driftRecordTypes ? [...source.driftRecordTypes] : [];
+            this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+            this.timeoutMs = source?.timeoutMs || 5000;
+            this.latencyThresholdMs = source?.latencyThresholdMs != null ? source.latencyThresholdMs : '';
+            this.failureCountThreshold = source?.failureCountThreshold || 1;
+            this.integrations = source?.integrations || [];
+            this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
+            this.newMatcherRecordType = 'A';
+            this.newMatcherMatchType = 'CONTAINS';
+            this.newMatcherValue = '';
+            this.isMatcherAddable = false;
+            this.errors = {};
+            this.formError = null;
+        },
+
+        cloneFrom(monitorId, clonedName) {
+            dnsMonitorApi.get(
+                monitorId,
+                () => this.isCloning = true,
+                async (response) => {
+                    const source = await response.json();
+                    this.populateFrom(source);
+                    this.name = clonedName;
+                    this.isCloning = false;
+                },
+                () => this.isCloning = false
+            );
+        },
+
+        validate() {
+            this.errors = {};
+            this.formError = null;
+            this.validateName();
+            this.validateHost();
+            this.validateResolverPort();
+            this.validateUptimeCheckInterval();
+            this.validateTimeoutMs();
+            this.validateLatencyThreshold();
+            this.validateFailureCountThreshold();
+            this.validateResponseCodeMatchers();
+        },
+
+        validateName() {
+            if (!this.name || this.name.trim() === '') {
+                this.errors.name = this.errorMessages.nameRequired;
+            } else {
+                this.errors.name = null;
+            }
+        },
+
+        validateHost() {
+            if (!this.host || this.host.trim() === '') {
+                this.errors.host = this.errorMessages.hostRequired;
+            } else {
+                this.errors.host = null;
+            }
+        },
+
+        validateResolverPort() {
+            if (!this.resolverPort || isNaN(this.resolverPort) || this.resolverPort < 1 || this.resolverPort > 65535) {
+                this.errors.resolverPort = this.errorMessages.resolverPortInvalid;
+            } else {
+                this.errors.resolverPort = null;
+            }
+        },
+
+        validateUptimeCheckInterval() {
+            if (!this.uptimeCheckInterval || isNaN(this.uptimeCheckInterval) || this.uptimeCheckInterval < 5) {
+                this.errors.uptimeCheckInterval = this.errorMessages.uptimeCheckIntervalInvalid;
+            } else {
+                this.errors.uptimeCheckInterval = null;
+            }
+        },
+
+        validateTimeoutMs() {
+            if (!this.timeoutMs || isNaN(this.timeoutMs) || this.timeoutMs < 1 || this.timeoutMs > 30000) {
+                this.errors.timeoutMs = this.errorMessages.timeoutMsInvalid;
+            } else {
+                this.errors.timeoutMs = null;
+            }
+        },
+
+        validateLatencyThreshold() {
+            if (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) {
+                this.errors.latencyThresholdMs = null;
+            } else if (isNaN(this.latencyThresholdMs) || this.latencyThresholdMs < 1) {
+                this.errors.latencyThresholdMs = this.errorMessages.latencyThresholdInvalid;
+            } else {
+                this.errors.latencyThresholdMs = null;
+            }
+        },
+
+        validateFailureCountThreshold() {
+            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
+                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
+            } else {
+                this.errors.failureCountThreshold = null;
+            }
+        },
+
+        isValidRegex(value) {
+            try {
+                new RegExp(value);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        },
+
+        validateNewMatcher() {
+            const value = (this.newMatcherValue || '').trim();
+            const isRegexValid = this.newMatcherMatchType !== 'REGEX' || this.isValidRegex(value);
+            if (value !== '' && !isRegexValid) {
+                this.errors.newMatcher = this.errorMessages.recordMatcherInvalid;
+            } else {
+                this.errors.newMatcher = null;
+            }
+            this.isMatcherAddable = value !== '' && isRegexValid;
+        },
+
+        validateResponseCodeMatchers() {
+            if (this.expectedResponseCode !== 'NOERROR' && this.recordMatchers.length > 0) {
+                this.errors.recordMatchers = this.errorMessages.responseCodeMatchersConflict;
+            } else {
+                this.errors.recordMatchers = null;
+            }
+        },
+
+        addMatcher() {
+            this.validateNewMatcher();
+            if (!this.isMatcherAddable) return;
+            const candidate = {
+                recordType: this.newMatcherRecordType,
+                matchType: this.newMatcherMatchType,
+                value: this.newMatcherValue.trim(),
+            };
+            // An identical matcher would only be evaluated twice, so adding it again is a no-op (the server dedupes
+            // the list as well, which would otherwise make the saved monitor differ from what the form shows)
+            const isDuplicate = this.recordMatchers.some(matcher =>
+                matcher.recordType === candidate.recordType &&
+                matcher.matchType === candidate.matchType &&
+                matcher.value === candidate.value
+            );
+            if (!isDuplicate) {
+                this.recordMatchers.push(candidate);
+            }
+            this.newMatcherValue = '';
+            this.isMatcherAddable = false;
+            this.validateResponseCodeMatchers();
+        },
+
+        removeMatcher(index) {
+            this.recordMatchers.splice(index, 1);
+            this.validateResponseCodeMatchers();
+        },
+
+        submitForm() {
+            this.formError = null;
+            this.validate();
+            if (hasNonNullValue(this.errors)) {
+                return;
+            }
+            this.upsertMonitor();
+        },
+
+        async upsertMonitor() {
+            try {
+                this.isRequestLoading = true;
+                const body = {
+                    name: this.name,
+                    host: this.host,
+                    resolverHost: (this.resolverHost === '' || this.resolverHost == null) ? null : this.resolverHost,
+                    resolverPort: parseInt(this.resolverPort),
+                    transport: this.transport,
+                    recordMatchers: this.recordMatchers,
+                    expectedResponseCode: this.expectedResponseCode,
+                    driftDetectionEnabled: this.driftDetectionEnabled,
+                    driftRecordTypes: this.driftRecordTypes,
+                    uptimeCheckInterval: this.uptimeCheckInterval,
+                    timeoutMs: this.timeoutMs,
+                    latencyThresholdMs: (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) ? null : parseInt(this.latencyThresholdMs),
+                    failureCountThreshold: this.failureCountThreshold,
+                    integrations: this.integrations,
+                    metricsHistoryEnabled: this.metricsHistoryEnabled,
+                };
+                if (!this.isUpdate) {
+                    body.enabled = true;
+                }
+
+                const url = this.isUpdate ? '/api/v2/dns-monitors/' + monitor.id : '/api/v2/dns-monitors';
+                const method = this.isUpdate ? 'PATCH' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: jsonContentHeaders,
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    this.isRequestLoading = false;
+                    const responseData = await response.json();
+
+                    if (this.isUpdate) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/dns-monitors/' + responseData.id;
+                    }
+                } else {
+                    if (response.status === 409) {
+                        this.isRequestLoading = false;
+                        this.errors.name = this.errorMessages.nameAlreadyExists;
+                    } else if (response.status === 400) {
+                        const errorData = await response.json();
+                        this.isRequestLoading = false;
+                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
+                            this.errors.name = this.errorMessages.nameCannotBeChanged;
+                        } else {
+                            this.formError = errorData.message;
+                        }
+                    } else {
+                        console.error('Error creating/updating DNS monitor:', response.statusText);
+                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
+                        this.isRequestLoading = false;
+                    }
+                }
+            } catch (error) {
+                this.isRequestLoading = false;
+                console.error('Error creating DNS monitor:', error);
+                alert('An error occurred while creating/updating the monitor. Please try again.');
+            }
+        }
+    }
+};
+
 const upsertStatusPageForm = (
     statusPage,
     errorMessages,
@@ -1532,6 +1920,7 @@ const upsertStatusPageForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        formError: null,
         isUpdate: !!statusPage,
         selectableMonitors: selectableMonitors || [],
         imagePreviewState: {},
@@ -1548,6 +1937,7 @@ const upsertStatusPageForm = (
             this.selectedMonitors = originalStatusPage?.monitors || [];
             this.public = (originalStatusPage?.public != null ? originalStatusPage?.public : false);
             this.errors = {};
+            this.formError = null;
 
             resetTomSelectState(monitorSelectId, (ts) => {
                 this.selectedMonitors.forEach(monitor => {
@@ -1558,6 +1948,7 @@ const upsertStatusPageForm = (
 
         validate() {
             this.errors = {};
+            this.formError = null;
             this.validateTitle();
             this.validateSlug();
         },
@@ -1581,6 +1972,7 @@ const upsertStatusPageForm = (
         },
 
         submitForm() {
+            this.formError = null;
             this.validate();
             if (hasNonNullValue(this.errors)) {
                 return;
@@ -1623,6 +2015,10 @@ const upsertStatusPageForm = (
                     if (response.status === 409) {
                         this.isRequestLoading = false;
                         this.errors.slug = this.errorMessages.slugAlreadyExists;
+                    } else if (response.status === 400) {
+                        const errorData = await response.json();
+                        this.isRequestLoading = false;
+                        this.formError = errorData.message;
                     } else {
                         this.isRequestLoading = false;
                         console.error('Error creating/updating status page:', response.statusText);
@@ -1695,7 +2091,7 @@ const renderMonitorOption = (data, escape) => {
     const parts = splitWithLimit(data.value, ':', 2);
     const type = parts[0];
     const name = parts[1];
-    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : type === 'icmp' ? 'bg-orange-lt text-orange-lt-fg' : type === 'tcp' ? 'bg-purple-lt text-purple-lt-fg' : '';
+    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : type === 'icmp' ? 'bg-orange-lt text-orange-lt-fg' : type === 'tcp' ? 'bg-purple-lt text-purple-lt-fg' : type === 'dns' ? 'bg-cyan-lt text-cyan-lt-fg' : '';
     return `<div><span class="badge me-2 ${badgeColor}">${escape(type.toUpperCase())}</span>${escape(name)}</div>`;
 };
 
@@ -1767,6 +2163,9 @@ const importForm = (config) => {
                     break;
                 case 'TCP':
                     typeLabel = this.labels.typeTcpLabel;
+                    break;
+                case 'DNS':
+                    typeLabel = this.labels.typeDnsLabel;
                     break;
                 default:
                     typeLabel = typeResult.monitorType;
@@ -1948,6 +2347,7 @@ const upsertMaintenanceWindowForm = (
     return {
         errorMessages: errorMessages || {},
         isRequestLoading: false,
+        formError: null,
         isUpdate: !!maintenanceWindow,
         selectableMonitors: selectableMonitors || [],
         // The integrations accordion expects this; maintenance windows never auto-apply global integrations
@@ -1971,6 +2371,7 @@ const upsertMaintenanceWindowForm = (
             this.selectedMonitors = originalWindow?.monitors || [];
             this.integrations = originalWindow?.integrations || [];
             this.errors = {};
+            this.formError = null;
 
             resetTomSelectState(monitorSelectId, (ts) => {
                 this.selectedMonitors.forEach(monitor => {
@@ -1981,6 +2382,7 @@ const upsertMaintenanceWindowForm = (
 
         validate() {
             this.errors = {};
+            this.formError = null;
             this.validateName();
             this.validateCronPresence();
             this.validateStart();
@@ -2053,6 +2455,7 @@ const upsertMaintenanceWindowForm = (
 
         async submitForm() {
             this.errors = {};
+            this.formError = null;
             this.validateName();
             this.validateStart();
             this.validateDuration();
@@ -2109,6 +2512,10 @@ const upsertMaintenanceWindowForm = (
                 } else if (response.status === 409) {
                     this.isRequestLoading = false;
                     this.errors.name = this.errorMessages.nameAlreadyExists;
+                } else if (response.status === 400) {
+                    const errorData = await response.json();
+                    this.isRequestLoading = false;
+                    this.formError = errorData.message;
                 } else {
                     this.isRequestLoading = false;
                     console.error('Error creating/updating maintenance window:', response.statusText);
@@ -2143,9 +2550,11 @@ if (typeof module !== 'undefined' && module.exports) {
         upsertPushMonitorForm,
         upsertIcmpMonitorForm,
         upsertTcpMonitorForm,
+        upsertDnsMonitorForm,
         upsertMaintenanceWindowForm,
         httpMetricsBlock,
         icmpMetricsBlock,
         tcpMetricsBlock,
+        dnsMetricsBlock,
     };
 }

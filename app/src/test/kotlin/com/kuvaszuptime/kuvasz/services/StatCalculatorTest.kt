@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
@@ -15,6 +17,7 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -38,6 +41,7 @@ class StatCalculatorTest(
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
     tcpMonitorRepository: TcpMonitorRepository,
+    dnsMonitorRepository: DnsMonitorRepository,
     statCalculator: StatCalculator,
 ) : DatabaseBehaviorSpec() {
     init {
@@ -1777,6 +1781,308 @@ class StatCalculatorTest(
             }
         }
 
+        given("the calculateOverallDnsStats method") {
+
+            `when`("there is a paused monitor") {
+
+                val enabledUpMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val enabledDownMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val pausedMonitor = createDnsMonitor(dnsMonitorRepository, enabled = false)
+                val now = getCurrentTimestamp()
+
+                // enabledUpMonitor's incidents
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = enabledUpMonitor.id,
+                    startedAt = now.minusDays(10),
+                    status = UptimeStatus.DOWN,
+                    endedAt = now.minusDays(5), // 5 days DOWN, 1 day in the period
+                )
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = enabledUpMonitor.id,
+                    startedAt = now.minusDays(5),
+                    status = UptimeStatus.UP,
+                    endedAt = null, // 5 days UP
+                )
+                // enabledDownMonitor's incidents
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = enabledDownMonitor.id,
+                    startedAt = now.minusHours(12),
+                    status = UptimeStatus.DOWN,
+                    endedAt = null, // 0.5 day DOWN
+                )
+                // pausedMonitor's incidents
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedMonitor.id,
+                    startedAt = now.minusDays(2),
+                    status = UptimeStatus.DOWN,
+                    endedAt = null,
+                    updatedAt = now.minusDays(1), // 1 day DOWN
+                )
+
+                then("it should count their uptime based on the events' update date in the statistics") {
+                    val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(6))
+                    stats.actual.uptimeStats.total shouldBe 3 // 2 enabled monitors + 1 paused monitor
+                    stats.actual.uptimeStats.down shouldBe 1
+                    stats.actual.uptimeStats.up shouldBe 1
+                    stats.actual.uptimeStats.paused shouldBe 1
+                    stats.actual.uptimeStats.inProgress shouldBe 0
+                    stats.actual.uptimeStats.inMaintenance shouldBe 0
+
+                    stats.history.uptimeStats.incidents shouldBe 3
+                    stats.history.uptimeStats.affectedMonitors shouldBe 3
+                    // 2.5 days DOWN inside the period
+                    stats.history.uptimeStats.totalDowntimeSeconds shouldBe 60 * 60 * 60
+                    // 5 days UP, 2.5 days DOWN
+                    stats.history.uptimeStats.uptimeRatio shouldEqualRounded 5.toDouble() / 7.5
+                }
+            }
+
+            `when`("there is a paused monitor - last update before the period") {
+
+                val enabledUpMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val enabledDownMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val pausedMonitor = createDnsMonitor(dnsMonitorRepository, enabled = false)
+                val now = getCurrentTimestamp()
+
+                // enabledUpMonitor's incidents
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = enabledUpMonitor.id,
+                    startedAt = now.minusDays(10),
+                    status = UptimeStatus.DOWN,
+                    endedAt = now.minusDays(5), // 5 days DOWN, 1 day in the period
+                )
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = enabledUpMonitor.id,
+                    startedAt = now.minusDays(5),
+                    status = UptimeStatus.UP,
+                    endedAt = null, // 5 days UP
+                )
+                // enabledDownMonitor's incidents
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = enabledDownMonitor.id,
+                    startedAt = now.minusHours(12),
+                    status = UptimeStatus.DOWN,
+                    endedAt = null, // 0.5 day DOWN
+                )
+                // pausedMonitor's incidents
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedMonitor.id,
+                    startedAt = now.minusDays(12),
+                    status = UptimeStatus.DOWN,
+                    endedAt = null,
+                    updatedAt = now.minusDays(8),
+                )
+
+                then("it should not count the obsolete events from the paused monitor") {
+                    val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(6))
+                    stats.actual.uptimeStats.total shouldBe 3 // 2 enabled monitors + 1 paused monitor
+                    stats.actual.uptimeStats.down shouldBe 1
+                    stats.actual.uptimeStats.up shouldBe 1
+                    stats.actual.uptimeStats.paused shouldBe 1
+                    stats.actual.uptimeStats.inProgress shouldBe 0
+                    stats.actual.uptimeStats.inMaintenance shouldBe 0
+
+                    stats.history.uptimeStats.incidents shouldBe 2
+                    stats.history.uptimeStats.affectedMonitors shouldBe 2
+                    // 1.5 days DOWN inside the period
+                    stats.history.uptimeStats.totalDowntimeSeconds shouldBe 36 * 60 * 60
+                    // 5 days UP, 1.5 days DOWN
+                    stats.history.uptimeStats.uptimeRatio shouldEqualRounded 5.toDouble() / 6.5
+                }
+            }
+
+            `when`("there is a monitor that was just created") {
+
+                createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val oldMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+
+                // Old monitor's events
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = oldMonitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(10),
+                    status = UptimeStatus.UP,
+                    endedAt = null,
+                )
+
+                then("it should count it as an in progress one") {
+
+                    val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(6))
+                    stats.actual.uptimeStats.total shouldBe 2 // 1 old monitor + 1 new monitor
+                    stats.actual.uptimeStats.up shouldBe 1
+                    stats.actual.uptimeStats.inProgress shouldBe 1
+
+                    stats.history.uptimeStats.incidents shouldBe 0
+                    stats.history.uptimeStats.affectedMonitors shouldBe 0
+                }
+            }
+
+            `when`("monitors with all the exposed statuses are present") {
+
+                createDnsMonitor(dnsMonitorRepository, enabled = true) // inProgressMonitor
+                val upMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val downMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val pausedMonitor = createDnsMonitor(dnsMonitorRepository, enabled = false)
+
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = upMonitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(10),
+                    status = UptimeStatus.UP,
+                    endedAt = null,
+                )
+
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = downMonitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(5),
+                    status = UptimeStatus.DOWN,
+                    endedAt = null,
+                )
+
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedMonitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(2),
+                    status = UptimeStatus.UP,
+                    endedAt = null,
+                )
+
+                then("it should correctly calculate the stats for all statuses") {
+                    val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(6))
+
+                    stats.actual.uptimeStats.total shouldBe 4
+                    stats.actual.uptimeStats.down shouldBe 1
+                    stats.actual.uptimeStats.up shouldBe 1
+                    stats.actual.uptimeStats.paused shouldBe 1
+                    stats.actual.uptimeStats.inProgress shouldBe 1
+
+                    stats.history.uptimeStats.incidents shouldBe 1 // Only the downMonitor has an incident
+                    stats.history.uptimeStats.affectedMonitors shouldBe 1
+                    val expectedDowntimeSeconds = 5L * 24 * 60 * 60 // 5 days in seconds
+                    stats.history.uptimeStats.totalDowntimeSeconds shouldBeInRange
+                        expectedDowntimeSeconds..expectedDowntimeSeconds + 1
+                }
+            }
+
+            `when`("there are no events in the given period") {
+
+                val monitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp().minusDays(10),
+                    status = UptimeStatus.UP,
+                    endedAt = getCurrentTimestamp().minusDays(6).minusSeconds(1),
+                )
+
+                val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(6))
+
+                then("it should handle it gracefully and return null as the ratio") {
+
+                    stats.history.uptimeStats.uptimeRatio shouldBe null
+                }
+            }
+
+            `when`("there are no monitors at all") {
+
+                then("it should return empty stats") {
+                    val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(6))
+
+                    stats.actual.uptimeStats.total shouldBe 0
+                    stats.actual.uptimeStats.down shouldBe 0
+                    stats.actual.uptimeStats.up shouldBe 0
+                    stats.actual.uptimeStats.paused shouldBe 0
+                    stats.actual.uptimeStats.inProgress shouldBe 0
+
+                    stats.history.uptimeStats.incidents shouldBe 0
+                    stats.history.uptimeStats.affectedMonitors shouldBe 0
+                    stats.history.uptimeStats.uptimeRatio shouldBe null
+                    stats.history.uptimeStats.totalDowntimeSeconds shouldBe 0L
+                }
+            }
+
+            `when`("there are multiple events for a given period") {
+
+                val monitor1 = createDnsMonitor(dnsMonitorRepository)
+                val monitor2 = createDnsMonitor(dnsMonitorRepository)
+
+                val firstUpStartedAt = getCurrentTimestamp().minusDays(10)
+                val firstUpEndedAt = getCurrentTimestamp().minusDays(5)
+
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor1.id,
+                    status = UptimeStatus.UP,
+                    startedAt = firstUpStartedAt,
+                    endedAt = firstUpEndedAt,
+                )
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor1.id,
+                    startedAt = firstUpEndedAt,
+                    status = UptimeStatus.DOWN,
+                    endedAt = null,
+                )
+
+                val secondDownStartedAt = getCurrentTimestamp().minusDays(3)
+                val secondDownEndedAt = getCurrentTimestamp().minusDays(1)
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor2.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = secondDownStartedAt,
+                    endedAt = secondDownEndedAt,
+                )
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor2.id,
+                    status = UptimeStatus.UP,
+                    startedAt = secondDownEndedAt,
+                    endedAt = null,
+                )
+
+                val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(12))
+
+                then("it should calculate the uptimeRatio correctly & return the last incident timestamp") {
+
+                    // 5 days UP + 5 days DOWN for monitor1, 1 day UP + 2 days DOWN for monitor2
+                    stats.history.uptimeStats.uptimeRatio shouldEqualRounded 6.toDouble() / 13
+                    // 5 days + 2 days in seconds
+                    val expectedDowntimeSeconds = 5 * 24 * 60 * 60 + 2 * 24 * 60 * 60L
+                    stats.history.uptimeStats.totalDowntimeSeconds shouldBeInRange
+                        expectedDowntimeSeconds..expectedDowntimeSeconds + 1
+                    stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
+                }
+            }
+
+            `when`("there is a monitor under an active maintenance window") {
+
+                val maintainedMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                createDnsMonitor(dnsMonitorRepository, enabled = true)
+                createMaintenanceWindow(
+                    dslContext = dslContext,
+                    name = "active-dns-window",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.DNS, maintainedMonitor.name)),
+                )
+
+                then("it should count it as under maintenance") {
+                    val stats = statCalculator.calculateOverallDnsStats(Duration.ofDays(6))
+                    stats.actual.uptimeStats.total shouldBe 2
+                    stats.actual.uptimeStats.inMaintenance shouldBe 1
+                }
+            }
+        }
+
         given("the calculateHistoricalTcpUptimeStats(monitor) method") {
 
             `when`("monitors with all the exposed statuses are present") {
@@ -1885,6 +2191,114 @@ class StatCalculatorTest(
             }
         }
 
+
+        given("the calculateHistoricalDnsUptimeStats(monitor) method") {
+
+            `when`("monitors with all the exposed statuses are present") {
+
+                val now = getCurrentTimestamp()
+                val upMonitorInProgress = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val upMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val downMonitor = createDnsMonitor(dnsMonitorRepository, enabled = true)
+                val pausedMonitor = createDnsMonitor(dnsMonitorRepository, enabled = false)
+                val pausedMonitor2 = createDnsMonitor(dnsMonitorRepository, enabled = false)
+
+                // upMonitor's events: UP
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = upMonitor.id,
+                    startedAt = now.minusDays(10),
+                    status = UptimeStatus.UP,
+                    endedAt = null,
+                )
+
+                // downMonitor's events: DOWN
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = downMonitor.id,
+                    startedAt = now.minusDays(5),
+                    status = UptimeStatus.DOWN,
+                    endedAt = null,
+                )
+
+                // pausedMonitor's events: UP (it should be counted until it's update date, because it's ongoing)
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedMonitor.id,
+                    startedAt = now.minusDays(2),
+                    status = UptimeStatus.UP,
+                    endedAt = null,
+                    updatedAt = now.minusDays(1),
+                )
+                // pausedMonitor's events: DOWN (it should be counted until it's end date)
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedMonitor.id,
+                    startedAt = now.minusDays(3),
+                    status = UptimeStatus.DOWN,
+                    endedAt = now.minusDays(2),
+                )
+
+                // pausedMonitor2's events: DOWN, but update date is before the period, so it should not be counted
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedMonitor2.id,
+                    startedAt = now.minusDays(10),
+                    status = UptimeStatus.DOWN,
+                    endedAt = null,
+                    updatedAt = now.minusDays(7),
+                )
+
+                then("it should correctly calculate the stats for all statuses") {
+                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                        period = Duration.ofDays(6),
+                        monitorId = upMonitorInProgress.id,
+                    )
+                    statsOfInProgressUpMonitor.incidents shouldBe 0
+                    statsOfInProgressUpMonitor.affectedMonitors shouldBe 0
+                    statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
+                    statsOfInProgressUpMonitor.uptimeRatio shouldBe null
+
+                    val statsOfUpMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                        period = Duration.ofDays(6),
+                        monitorId = upMonitor.id,
+                    )
+                    statsOfUpMonitor.incidents shouldBe 0
+                    statsOfUpMonitor.affectedMonitors shouldBe 0
+                    statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
+                    statsOfUpMonitor.uptimeRatio shouldBe 1.0
+
+                    val statsOfDownMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                        period = Duration.ofDays(6),
+                        monitorId = downMonitor.id,
+                    )
+                    statsOfDownMonitor.incidents shouldBe 1
+                    statsOfDownMonitor.affectedMonitors shouldBe 1
+                    val expectedDowntimeSeconds = 5L * 24 * 60 * 60 // 5 days in seconds
+                    statsOfDownMonitor.totalDowntimeSeconds shouldBeInRange
+                        expectedDowntimeSeconds..expectedDowntimeSeconds + 1
+                    statsOfDownMonitor.uptimeRatio shouldBe 0.0
+
+                    val statsOfPausedMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                        period = Duration.ofDays(6),
+                        monitorId = pausedMonitor.id,
+                    )
+                    statsOfPausedMonitor.incidents shouldBe 1
+                    statsOfPausedMonitor.affectedMonitors shouldBe 1
+                    statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
+                    statsOfPausedMonitor.uptimeRatio shouldBe 0.5
+
+                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalDnsUptimeStats(
+                        period = Duration.ofDays(6),
+                        monitorId = pausedMonitor2.id,
+                    )
+                    statsOfPausedMonitor2.incidents shouldBe 0
+                    statsOfPausedMonitor2.affectedMonitors shouldBe 0
+                    statsOfPausedMonitor2.totalDowntimeSeconds shouldBe 0
+                    statsOfPausedMonitor2.uptimeRatio shouldBe null
+                }
+            }
+        }
 
         given("the generateUptimeHistoryOverview() method") {
 

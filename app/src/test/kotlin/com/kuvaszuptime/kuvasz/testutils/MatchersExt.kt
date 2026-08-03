@@ -6,6 +6,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.modelcontextprotocol.spec.McpSchema
 import java.math.RoundingMode
 import java.net.URI
 import java.time.OffsetDateTime
@@ -35,4 +36,11 @@ fun McpToolCallResponse.shouldHaveError(errorCode: Int, expectedMessage: String?
         code shouldBe errorCode
         if (expectedMessage != null) message shouldContain expectedMessage
     }
+}
+
+fun McpSchema.CallToolResult.shouldHaveInputValidationError(vararg expectedViolations: String) {
+    isError shouldBe true
+    val text = content.filterIsInstance<McpSchema.TextContent>().firstOrNull()?.text.shouldNotBeNull()
+    text shouldContain "input validation failed"
+    expectedViolations.forEach { text shouldContain it }
 }

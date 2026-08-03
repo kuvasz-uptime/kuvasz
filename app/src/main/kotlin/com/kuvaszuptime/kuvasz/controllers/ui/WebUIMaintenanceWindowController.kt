@@ -31,6 +31,7 @@ class WebUIMaintenanceWindowController(
 
     @Get("/{maintenanceWindowId}")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun maintenanceWindowDetails(@PathVariable maintenanceWindowId: Long): String {
         val maintenanceWindow = maintenanceWindowActions.getMaintenanceWindowById(maintenanceWindowId)

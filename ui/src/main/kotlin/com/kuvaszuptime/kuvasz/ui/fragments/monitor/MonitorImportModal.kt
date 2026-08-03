@@ -4,188 +4,68 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
-import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
+private const val SLUG = "monitor"
+
 internal fun FlowContent.monitorImportModal(modalId: String, labelsJson: String) {
+    importModal(
+        modalId = modalId,
+        slug = SLUG,
+        alpineForm = "monitorImportForm($labelsJson)",
+        title = Messages.importMonitorBackup(),
+        warning = Messages.monitorImportWarning(),
+        fileLabel = Messages.monitorImportFileLabel(),
+        dryRunLabel = Messages.monitorImportDryRunLabel(),
+        dryRunDescription = Messages.monitorImportDryRunDescription(),
+    ) {
+        monitorImportResult()
+    }
+}
+
+// Monitors are imported per type, so the result is a summary of what happened to each of them
+private fun FlowContent.monitorImportResult() {
+    p {
+        xShow("result && result.perTypeResults.length === 0")
+        +Messages.monitorImportResultEmpty()
+    }
     div {
-        id = modalId
-        classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
-        xData("monitorImportForm($labelsJson)")
-        attributes["@monitor-import-modal-closed.window"] = "resetState()"
-        tabIndex = "-1"
-        role = "dialog"
-
-        div {
-            classes(MODAL_DIALOG, MODAL_DIALOG_CENTERED)
-            role = "document"
-
-            div {
-                classes(MODAL_CONTENT)
-
-                div {
-                    classes(MODAL_HEADER)
-                    h5 {
-                        classes(MODAL_TITLE)
-                        +Messages.importMonitorBackup()
-                    }
-                    button(type = ButtonType.button) {
-                        classes(BTN_CLOSE)
-                        modalCloser()
-                    }
-                }
-
-                div {
-                    classes(MODAL_BODY, PB_0)
-
+        xShow("result && result.perTypeResults.length > 0")
+        p {
+            strong { +Messages.monitorImportResultPerType() }
+        }
+        ul {
+            templateTag {
+                xFor("typeResult in (result?.perTypeResults || [])")
+                liTag {
+                    classes(MB_3)
                     div {
-                        classes(ALERT, ALERT_WARNING)
-                        role = "alert"
-                        div {
-                            classes(ALERT_ICON)
-                            icon(Icon.ALERT_TRIANGLE)
-                        }
-                        div {
-                            classes(ALERT_DESCRIPTION)
-                            +Messages.monitorImportWarning()
-                        }
+                        xText("formatTypeResult(typeResult)")
                     }
-
-                    div {
-                        classes(MB_3, MT_3)
-                        formLabel(
-                            label = Messages.monitorImportFileLabel(),
-                            required = true,
-                            inputName = "monitor-import-file-input"
-                        )
-                        input {
-                            id = "monitor-import-file-input"
-                            type = InputType.file
-                            name = "file"
-                            classes(FORM_CONTROL)
-                            accept = ".yaml,.yml"
-                            xOn("change", "handleFileChange(\$event)")
-                            xBindDisabled("importCompleted")
-                        }
-                        templateTag {
-                            xIf("errors.file")
-                            div {
-                                classes(INVALID_FEEDBACK)
-                                xText("errors.file")
-                            }
-                        }
-                    }
-
-                    div {
-                        classes(MB_3)
-                        toggleSwitch(
-                            propName = "dryRun",
-                            label = Messages.monitorImportDryRunLabel(),
-                            description = Messages.monitorImportDryRunDescription(),
-                            disabledIf = "importCompleted"
-                        )
-                    }
-
-                    div {
-                        xShow("result !== null")
-                        classes(ALERT, MT_3)
-                        testId("monitor-import-result")
-                        xBindClass(
-                            "result?.dryRun === true " +
-                                "? '${ALERT_INFO.className}' " +
-                                ": '${ALERT_SUCCESS.className}'"
-                        )
-                        role = "alert"
-                        div {
-                            classes(ALERT_DESCRIPTION)
-                            p {
-                                xShow("result && result.perTypeResults.length === 0")
-                                +Messages.monitorImportResultEmpty()
-                            }
-                            div {
-                                xShow("result && result.perTypeResults.length > 0")
-                                p {
-                                    strong { +Messages.monitorImportResultPerType() }
-                                }
-                                ul {
-                                    templateTag {
-                                        xFor("typeResult in (result?.perTypeResults || [])")
-                                        liTag {
-                                            classes(MB_3)
-                                            div {
-                                                xText("formatTypeResult(typeResult)")
-                                            }
-                                            importResultBadgeList(
-                                                itemsExpr = "typeResult.imported",
-                                                label = Messages.monitorImportResultImportedLabel(),
-                                                color = Color.GREEN_LT,
-                                                testId = "monitor-import-result-imported",
-                                                testIdSuffixExpr = "typeResult.monitorType",
-                                            )
-                                            importResultBadgeList(
-                                                itemsExpr = "typeResult.deleted",
-                                                label = Messages.monitorImportResultDeletedLabel(),
-                                                color = Color.RED_LT,
-                                                testId = "monitor-import-result-deleted",
-                                                testIdSuffixExpr = "typeResult.monitorType",
-                                            )
-                                            importResultBadgeList(
-                                                itemsExpr = "typeResult.ignoredIntegrations",
-                                                label = Messages.monitorImportResultIgnoredIntegrationsLabel(),
-                                                color = Color.YELLOW_LT,
-                                                testId = "monitor-import-result-ignored-integrations",
-                                                testIdSuffixExpr = "typeResult.monitorType",
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    templateTag {
-                        xIf("error")
-                        div {
-                            classes(ALERT, ALERT_DANGER, MT_3)
-                            testId("monitor-import-error")
-                            role = "alert"
-                            div {
-                                classes(ALERT_DESCRIPTION)
-                                xText("error")
-                            }
-                        }
-                    }
-                }
-
-                div {
-                    classes(MODAL_FOOTER)
-                    a(href = "#") {
-                        xShow("!importCompleted")
-                        classes(BTN, BTN_LINK, LINK_SECONDARY)
-                        modalCloser()
-                        +Messages.cancel()
-                    }
-                    button {
-                        xShow("!importCompleted")
-                        classes(BTN, BTN_PRIMARY, MS_AUTO)
-                        testId("monitor-import-submit-button")
-                        xBindDisabled("!file || isRequestLoading")
-                        xOnClick("submitForm()")
-                        icon(Icon.UPLOAD)
-                        span {
-                            xText("submitButtonLabel")
-                        }
-                    }
-                    a(href = "#") {
-                        xShow("importCompleted")
-                        classes(BTN, BTN_PRIMARY, MS_AUTO)
-                        modalCloser()
-                        +Messages.close()
-                    }
+                    importResultBadgeList(
+                        itemsExpr = "typeResult.imported",
+                        label = Messages.monitorImportResultImportedLabel(),
+                        color = Color.GREEN_LT,
+                        testId = "$SLUG-import-result-imported",
+                        testIdSuffixExpr = "typeResult.monitorType",
+                    )
+                    importResultBadgeList(
+                        itemsExpr = "typeResult.deleted",
+                        label = Messages.monitorImportResultDeletedLabel(),
+                        color = Color.RED_LT,
+                        testId = "$SLUG-import-result-deleted",
+                        testIdSuffixExpr = "typeResult.monitorType",
+                    )
+                    importResultBadgeList(
+                        itemsExpr = "typeResult.ignoredIntegrations",
+                        label = Messages.monitorImportResultIgnoredIntegrationsLabel(),
+                        color = Color.YELLOW_LT,
+                        testId = "$SLUG-import-result-ignored-integrations",
+                        testIdSuffixExpr = "typeResult.monitorType",
+                    )
                 }
             }
         }
     }
-    handleFormResetOnModalClose(modalId = modalId, eventName = "monitor-import-modal-closed")
 }
