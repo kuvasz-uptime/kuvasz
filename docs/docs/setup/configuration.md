@@ -434,9 +434,7 @@ The password of the user above.
 
     Using an SMTP server is **optional**, it's only needed if you want to use the [**email integration**](../features/notifications.md#email) to send notifications about events.
 
-    The SMTP configuration can be set **only via _YAML_**.
-
-    Be aware that if you include `smtp-config` in your configuration, then you'll **need to provide all the required** properties of it, otherwise _Kuvasz_ won't start.
+    Be aware that if you configure SMTP at all, then you'll **need to provide all the required** properties of it, otherwise _Kuvasz_ won't start.
 
 ### Host
 
@@ -448,6 +446,12 @@ The password of the user above.
 
     ```yaml
     smtp-config.host: 'your.smtp.server'
+    ```
+
+=== "ENV"
+
+    ```bash
+    SMTP_CONFIG_HOST=your.smtp.server
     ```
 
 The **hostname or IP address** of the SMTP server you want to use for sending emails.
@@ -464,6 +468,12 @@ The **hostname or IP address** of the SMTP server you want to use for sending em
     smtp-config.port: 465
     ```
 
+=== "ENV"
+
+    ```bash
+    SMTP_CONFIG_PORT=465
+    ```
+
 The **port** of the SMTP server you want to use for sending emails.
 
 ### Username
@@ -476,6 +486,12 @@ The **port** of the SMTP server you want to use for sending emails.
 
     ```yaml
     smtp-config.username: YourSMTPUsername
+    ```
+
+=== "ENV"
+
+    ```bash
+    SMTP_CONFIG_USERNAME=YourSMTPUsername
     ```
 
 The **username** to authenticate with the SMTP server. If your SMTP server doesn't require authentication, you can omit specifying this property, or set it explicitly to `null`.
@@ -492,6 +508,12 @@ The **username** to authenticate with the SMTP server. If your SMTP server doesn
     smtp-config.password: YourSMTPPassword
     ```
 
+=== "ENV"
+
+    ```bash
+    SMTP_CONFIG_PASSWORD=YourSMTPPassword
+    ```
+
 The **password** to authenticate with the SMTP server. If your SMTP server doesn't require authentication, you can omit specifying this property, or set it explicitly to `null`.
 
 ### Transport strategy
@@ -504,6 +526,12 @@ The **password** to authenticate with the SMTP server. If your SMTP server doesn
 
     ```yaml
     smtp-config.transport-strategy: SMTP_TLS
+    ```
+
+=== "ENV"
+
+    ```bash
+    SMTP_CONFIG_TRANSPORT_STRATEGY=SMTP_TLS
     ```
 
 The **transport strategy** to use for sending emails. The default is `SMTP_TLS`, which uses TLS encryption for the connection. You can also use `SMTPS` (implicit SSL) or `SMTP` (no encryption).
@@ -803,4 +831,10 @@ You can find the full configuration example below, which includes all the option
     ENABLE_TCP_LATEST_LATENCY_EXPORT=true
     ENABLE_DNS_UPTIME_STATUS_EXPORT=true
     ENABLE_DNS_LATEST_LATENCY_EXPORT=true
+    # SMTP is optional, only needed for the email integration
+    SMTP_CONFIG_HOST=your.smtp.server
+    SMTP_CONFIG_PORT=465
+    SMTP_CONFIG_TRANSPORT_STRATEGY=SMTP_TLS
+    SMTP_CONFIG_USERNAME=YourSMTPUsername
+    SMTP_CONFIG_PASSWORD=YourSMTPPassword
     ```
