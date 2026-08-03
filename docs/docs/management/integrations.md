@@ -181,7 +181,7 @@ The email integration allows you to send notifications via email. You can have m
 
 !!! warning
 
-    To make the email integration work, it's not enough to just configure the integration itself, you also **need to set up the _SMTP_ configuration** in your _YAML_ file. You can have multiple email integrations, but they will **all use the same** SMTP configuration.
+    To make the email integration work, it's not enough to just configure the integration itself, you also **need to set up the _SMTP_ configuration**. You can have multiple email integrations, but they will **all use the same** SMTP configuration.
 
     For more information, see the [**SMTP configuration**](../setup/configuration.md#smtp) section of the documentation.
 
