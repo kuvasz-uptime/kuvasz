@@ -231,6 +231,17 @@ class AppBootstrapper(
      * respective monitors
      */
     private fun processYamlMonitorConfigs() {
+        // Ensuring that all client secrets are unique before importing the push monitors
+        require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
+            "YAML push monitor configs must have unique client secrets!"
+        }
+        // Micronaut cannot resolve the class-level @ValidDnsResponseCode constraint on an @EachProperty bean, so the
+        // same rule is enforced here for the YAML configs
+        val invalidDnsMonitorConfigs = yamlDnsMonitorConfigs.filterNot { it.hasValidResponseCodeExpectation() }
+        require(invalidDnsMonitorConfigs.isEmpty()) {
+            "${MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS}. Offending DNS monitors: " +
+                invalidDnsMonitorConfigs.joinToString { it.name }
+        }
 
         processYamlMonitorConfigs(
             monitorType = MonitorType.HTTP_SSL,
@@ -240,10 +251,6 @@ class AppBootstrapper(
             callToImportConfigs = monitorImporter::importHttpMonitorConfigs,
         )
 
-        // Ensuring that all client secrets are unique before importing the push monitors
-        require(yamlPushMonitorConfigs.groupBy { it.clientSecret }.all { it.value.size == 1 }) {
-            "YAML push monitor configs must have unique client secrets!"
-        }
         processYamlMonitorConfigs(
             monitorType = MonitorType.PUSH,
             yamlMonitorConfigs = yamlPushMonitorConfigs,
@@ -268,13 +275,6 @@ class AppBootstrapper(
             callToImportConfigs = monitorImporter::importTcpMonitorConfigs,
         )
 
-        // Micronaut cannot resolve the class-level @ValidDnsResponseCode constraint on an @EachProperty bean, so the
-        // same rule is enforced here for the YAML configs
-        val invalidDnsMonitorConfigs = yamlDnsMonitorConfigs.filterNot { it.hasValidResponseCodeExpectation() }
-        require(invalidDnsMonitorConfigs.isEmpty()) {
-            "${MonitorValidationMessages.DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS}. Offending DNS monitors: " +
-                invalidDnsMonitorConfigs.joinToString { it.name }
-        }
         processYamlMonitorConfigs(
             monitorType = MonitorType.DNS,
             yamlMonitorConfigs = yamlDnsMonitorConfigs,
