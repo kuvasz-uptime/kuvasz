@@ -491,6 +491,25 @@ class DnsMonitorControllerTest(
                 }
             }
 
+            `when`("a monitor is updated with duplicated matchers and drift record types") {
+                val monitor = createDnsMonitor(monitorRepository, host = "example.com")
+
+                val matcher = DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4")
+                val updateNode = mapper.createObjectNode()
+                updateNode.replace("recordMatchers", mapper.valueToTree(listOf(matcher, matcher)))
+                updateNode.replace(
+                    "driftRecordTypes",
+                    mapper.valueToTree(listOf(DnsRecordType.NS, DnsRecordType.NS, DnsRecordType.MX)),
+                )
+                monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("the duplicates are collapsed, the same way they are on the create path") {
+                    val persisted = monitorRepository.findById(monitor.id, null).shouldNotBeNull()
+                    persisted.recordMatchersAsList() shouldBe listOf(matcher)
+                    persisted.driftRecordTypes.toList() shouldBe listOf(DnsRecordType.NS, DnsRecordType.MX)
+                }
+            }
+
             `when`("the expected response code is updated") {
                 val monitor = createDnsMonitor(monitorRepository, host = "does-not-exist.example.com")
                 monitor.expectedResponseCode shouldBe DnsResponseCode.NOERROR

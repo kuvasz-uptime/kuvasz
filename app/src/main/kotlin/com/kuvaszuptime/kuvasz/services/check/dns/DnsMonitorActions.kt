@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.dns.deduplicated
 import com.kuvaszuptime.kuvasz.models.monitor.dns.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.dns.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
@@ -133,7 +134,7 @@ class DnsMonitorActions(
             // Validate the raw integrations from the DTO
             updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
 
-            DnsMonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, txCtx)
+            DnsMonitorRecord(updatedMonitor).deduplicated().saveAndReschedule(existingMonitor, txCtx)
         }.also { updatedMonitorRecord ->
             eventDispatcher.dispatch(MonitorUpdateEvent(updatedMonitorRecord.numericMonitorId()))
         }
