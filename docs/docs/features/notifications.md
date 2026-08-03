@@ -19,10 +19,22 @@ Every integration **watches a set of events
 
 ### Uptime events
 
-| Event                                          | Description                                                            |
-|------------------------------------------------|------------------------------------------------------------------------|
-| `HTTP_UP` `PUSH_UP` `ICMP_UP` `TCP_UP`         | Fired, when a monitor is **healthy** now (and it was unhealthy before) |
-| `HTTP_DOWN` `PUSH_DOWN` `ICMP_DOWN` `TCP_DOWN` | Fired, when a monitors is **unhealthy**                                |
+| Event                                                     | Description                                                            |
+|-----------------------------------------------------------|------------------------------------------------------------------------|
+| `HTTP_UP` `PUSH_UP` `ICMP_UP` `TCP_UP` `DNS_UP`           | Fired, when a monitor is **healthy** now (and it was unhealthy before) |
+| `HTTP_DOWN` `PUSH_DOWN` `ICMP_DOWN` `TCP_DOWN` `DNS_DOWN` | Fired, when a monitors is **unhealthy**                                |
+
+### DNS events
+
+| Event                 | Description                                                                                                                                                       |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DNS_RECORDS_CHANGED` | Fired, when the **resolved records of a DNS monitor change** (only if [drift detection](../management/dns-monitors.md#drift-detection) is enabled on the monitor) |
+
+Drift notifications behave differently from uptime events:
+
+- They are **independent of the up/down status**: a monitor that is perfectly UP can - and should - report drift, since a hijacked delegation or an accidental record change resolves just fine.
+- They **never create an incident** and never change the monitor's status. The notification contains the previous and the current records, so you can see exactly what changed.
+- On **PagerDuty** a drift alert is triggered as a `warning`, and since it is not tied to an up/down transition, it is **not resolved automatically** - each distinct answer set triggers its own alert.
 
 ### SSL events
 

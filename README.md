@@ -36,6 +36,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 - **Heartbeat (push) monitoring**: Monitor your cron jobs, backups, and other scheduled tasks in a push-based manner, getting alerted when an expected heartbeat doesn't arrive in time.
 - **Ping (ICMP) monitoring**: Check the reachability and latency of any host by sending ICMP echo requests (pings) to it.
 - **TCP port monitoring**: Check whether any TCP service — databases, SMTP, SSH, message brokers, and more — accepts connections, and track connect latency.
+- **DNS monitoring**: Check that a name resolves, assert on the returned records (`A`, `MX`, `TXT`, `NS`, and more) with exact, substring or regex matchers, verify the response code, and optionally get notified when the resolved records change behind your back.
 - **Notifications on a per-monitor basis**: Configure different notification channels for each monitor, allowing you to tailor alerts to your specific needs.
 - **Status pages**: Create public or private status pages to keep your users or your own team informed about the status of your services.
 - **Sleek UI**: Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.
@@ -53,41 +54,41 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 | Price                                |     Free      |       Free       |     $84/year     |
 | Monitoring interval                  | **5 seconds** |    5 minutes     |    60 seconds    |
 | Monitors limit                       | **unlimited** |        50        |        10        |
-| Location-specific monitoring         |      ✅\*      |        ❌         |        ✅         |
-| Translations                         |       ✅       |        ❌         |        ❌         |
-| Custom data retention                |       ✅       |     3 months     |    12 months     |
-| REST API                             |       ✅       |        ✅         |        ✅         |
-| OIDC                                 |       ✅       |        ❌         |        ❌         |
-| Prometheus & OpenTelemetry exporters |       ✅       |        ❌         |        ❌         |
-| Backups & YAML configuration         |       ✅       |        ❌         |        ❌         |
-| Status pages                         |       ✅       |      only 1      |      only 3      |
-| Maintenance windows                  |       ✅       |        ❌         |        ✅         |
+| Location-specific monitoring         |     ✅\*      |        ❌        |        ✅        |
+| Translations                         |      ✅       |        ❌        |        ❌        |
+| Custom data retention                |      ✅       |     3 months     |    12 months     |
+| REST API                             |      ✅       |        ✅        |        ✅        |
+| OIDC                                 |      ✅       |        ❌        |        ❌        |
+| Prometheus & OpenTelemetry exporters |      ✅       |        ❌        |        ❌        |
+| Backups & YAML configuration         |      ✅       |        ❌        |        ❌        |
+| Status pages                         |      ✅       |      only 1      |      only 3      |
+| Maintenance windows                  |      ✅       |        ❌        |        ✅        |
 | **HTTPs monitoring**                 |               |                  |                  |
-| Keyword matching                     |       ✅       |        ✅         |        ✅         |
-| Header matching                      |       ✅       |        ❌         |        ❌         |
-| Slow response alerts                 |       ✅       |        ❌         |        ✅         |
-| Custom HTTP methods                  |       ✅       |  ❌ (HEAD only)   |        ✅         |
-| Custom status matcher                |       ✅       |        ❌         |        ✅         |
-| Custom headers                       |       ✅       |        ❌         |        ✅         |
-| Custom request body                  |       ✅       |        ❌         |        ✅         |
-| **SSL monitoring**                   |       ✅       |        ❌         |        ✅         |
-| **Heartbeat (push) monitoring**      |       ✅       |        ❌         |        ✅         |
-| **Ping (ICMP) monitoring**           |       ✅       |        ✅         |        ✅         |
-| **TCP monitoring**                   |       ✅       |        ✅         |        ✅         |
-| **DNS monitoring**                   |       ❌       |        ❌         |        ✅         |
-| **Domain expiration monitoring**     |       ❌       |        ❌         |        ✅         |
+| Keyword matching                     |      ✅       |        ✅        |        ✅        |
+| Header matching                      |      ✅       |        ❌        |        ❌        |
+| Slow response alerts                 |      ✅       |        ❌        |        ✅        |
+| Custom HTTP methods                  |      ✅       |  ❌ (HEAD only)  |        ✅        |
+| Custom status matcher                |      ✅       |        ❌        |        ✅        |
+| Custom headers                       |      ✅       |        ❌        |        ✅        |
+| Custom request body                  |      ✅       |        ❌        |        ✅        |
+| **SSL monitoring**                   |      ✅       |        ❌        |        ✅        |
+| **Heartbeat (push) monitoring**      |      ✅       |        ❌        |        ✅        |
+| **Ping (ICMP) monitoring**           |      ✅       |        ✅        |        ✅        |
+| **TCP monitoring**                   |      ✅       |        ✅        |        ✅        |
+| **DNS monitoring**                   |      ✅       |        ❌        |        ✅        |
+| **Domain expiration monitoring**     |      ❌       |        ❌        |        ✅        |
 | **Notifications**                    |               |                  |                  |
-| Email                                |       ✅       |        ✅         |        ✅         |
-| Discord                              |       ✅       |        ✅         |        ✅         |
-| Slack                                |       ✅       |        ❌         |        ✅         |
-| Telegram                             |       ✅       |        ❌         |        ✅         |
-| Pagerduty                            |       ✅       |        ❌         |        ❌         |
-| Webhook                              |       ✅       |        ❌         |        ❌         |
-| MS Teams                             |     ✅\**      |        ❌         |        ✅         |
-| SMS / Voice call                     |     ✅\**      |        ❌         |  10 incl./month  |
-| Google Chat, Pushover                |     ✅\**      |        ✅         |        ✅         |
-| Mattermost                           |     ✅\**      |        ❌         |        ✅         |
-| Signal                               |     ✅\**      |        ❌         |        ❌         |
+| Email                                |      ✅       |        ✅        |        ✅        |
+| Discord                              |      ✅       |        ✅        |        ✅        |
+| Slack                                |      ✅       |        ❌        |        ✅        |
+| Telegram                             |      ✅       |        ❌        |        ✅        |
+| Pagerduty                            |      ✅       |        ❌        |        ❌        |
+| Webhook                              |      ✅       |        ❌        |        ❌        |
+| MS Teams                             |     ✅\**     |        ❌        |        ✅        |
+| SMS / Voice call                     |     ✅\**     |        ❌        |  10 incl./month  |
+| Google Chat, Pushover                |     ✅\**     |        ✅        |        ✅        |
+| Mattermost                           |     ✅\**     |        ❌        |        ✅        |
+| Signal                               |     ✅\**     |        ❌        |        ❌        |
 
 ✅ Supported | ❌ Not supported | 📆 Planned
 

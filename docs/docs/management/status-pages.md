@@ -27,6 +27,7 @@
           - "push:My backup 1"
           - "icmp:My ICMP Monitor"
           - "tcp:My TCP Monitor"
+          - "dns:My DNS Monitor"
       # ... other status pages
     ```
 
@@ -37,7 +38,7 @@
     5. The `public` field determines whether the status page is public or private.
     6. The `custom-logo-url` field is the URL of the custom logo to be displayed on the status page.
     7. The `custom-favicon-url` field is the URL of the custom favicon to be used for the status page.
-    8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`.
+    8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
 
     !!!info "Consequences of describing your status pages as YAML"
 
@@ -260,7 +261,7 @@ The URL of the **custom favicon** to be used for the custom status page. If not 
 
 A list of **monitors to assign** to the status page.
 
-If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, and `tcp`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`.
+If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, `tcp` and `dns`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
 
 !!!tip
 

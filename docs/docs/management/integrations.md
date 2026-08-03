@@ -91,6 +91,9 @@ The valid options are the following:
 - `ICMP_DOWN`
 - `TCP_UP`
 - `TCP_DOWN`
+- `DNS_UP`
+- `DNS_DOWN`
+- `DNS_RECORDS_CHANGED`
 
 In case you don't specify any event types, or you provide an empty list, the integration **will receive all the events**.
 
@@ -343,7 +346,7 @@ The generic webhook message (if you don't use a custom template) has the followi
     1. **monitorUrn**: A unique identifier of a monitor, formatted as 'type:name'.
     2. **monitorName**: The name of the monitor, which must be unique.
     3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
-    4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `ICMP_UP`, `ICMP_DOWN`, `TCP_UP`, `TCP_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
+    4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `ICMP_UP`, `ICMP_DOWN`, `TCP_UP`, `TCP_DOWN`, `DNS_UP`, `DNS_DOWN`, `DNS_RECORDS_CHANGED`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
     5. **eventDetails**: A human-readable message with more details about the event.
     6. **monitorId**: A unique, numeric ID of a monitor.
     7. **monitorDetailsUrl**: The relative URL to the monitor details page in the _Kuvasz_ web interface.
@@ -386,6 +389,9 @@ The generic webhook message (if you don't use a custom template) has the followi
             - ICMP_DOWN
             - TCP_UP
             - TCP_DOWN
+            - DNS_UP
+            - DNS_DOWN
+            - DNS_RECORDS_CHANGED
             - SSL_VALID
             - SSL_INVALID
             - SSL_WILL_EXPIRE
@@ -608,7 +614,7 @@ integrations:
           "user":     "your_user_or_group_key",
           "title":    "{{ ctx.monitorName | escape(strategy="js") }}",
           "message":  "{{ ctx.eventDetails | escape(strategy="js") }}",
-          "priority": {% if ctx.type == 'HTTP_DOWN' or ctx.type == 'ICMP_DOWN' or ctx.type == 'TCP_DOWN' or ctx.type == 'PUSH_DOWN' or ctx.type == 'SSL_INVALID' %}1{% else %}0{% endif %}
+          "priority": {% if ctx.type == 'HTTP_DOWN' or ctx.type == 'ICMP_DOWN' or ctx.type == 'TCP_DOWN' or ctx.type == 'DNS_DOWN' or ctx.type == 'PUSH_DOWN' or ctx.type == 'SSL_INVALID' %}1{% else %}0{% endif %}
         }
 ```
 

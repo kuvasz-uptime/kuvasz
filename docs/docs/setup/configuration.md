@@ -723,6 +723,8 @@ You can find the full configuration example below, which includes all the option
       icmp-latest-packet-loss: true
       tcp-uptime-status: true
       tcp-latest-latency: true
+      dns-uptime-status: true
+      dns-latest-latency: true
     ---
     admin-auth:
       username: YourSuperSecretUsername
@@ -799,4 +801,6 @@ You can find the full configuration example below, which includes all the option
     ENABLE_ICMP_LATEST_PACKET_LOSS_EXPORT=true
     ENABLE_TCP_UPTIME_STATUS_EXPORT=true
     ENABLE_TCP_LATEST_LATENCY_EXPORT=true
+    ENABLE_DNS_UPTIME_STATUS_EXPORT=true
+    ENABLE_DNS_LATEST_LATENCY_EXPORT=true
     ```

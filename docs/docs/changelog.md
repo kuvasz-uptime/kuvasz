@@ -1,10 +1,14 @@
-## 4.2.0 <small>2026-07-xx</small> { id="4.2.0" data-toc-label="4.2.0" }
+## 4.2.0 <small>2026-08-xx</small> { id="4.2.0" data-toc-label="4.2.0" }
 
 ### Features
 
-**TCP port monitoring** is here!
+**TCP port monitoring** and **DNS monitoring** are here!
 
-- You can now create [**TCP monitors**](features/tcp-monitoring.md) that check whether a **TCP service is accepting connections** — a database, an SMTP or SSH server, a message broker, a game server, or any other `host:port` endpoint — by periodically opening a TCP connection to it. For each check _Kuvasz_ measures **reachability** and **connect latency**, and marks the monitor as DOWN (notifying you through your configured channels) if the connection can't be established within the configured **timeout** or, when set, exceeds the optional **latency threshold**. TCP monitors are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/tcp-monitors.md), participate in **incidents**, **uptime & latency stats**, **notifications** (including generic webhook templating), the **metrics** exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
+- You can now create [**TCP monitors**](features/tcp-monitoring.md) that check whether a **TCP service is accepting connections** — a database, an SMTP or SSH server, a message broker, a game server, or any other `host:port` endpoint — by periodically opening a TCP connection to it. For each check _Kuvasz_ measures **reachability** and **connect latency**, and marks the monitor as DOWN (notifying you through your configured channels) if the connection can't be established within the configured **timeout** or, when set, exceeds the optional **latency threshold**.
+
+- [**DNS monitors**](features/dns-monitoring.md) arrived as well! They check whether a name resolves, and you can assert on the records it resolves to. A monitor holds a list of **record matchers** (`A`, `AAAA`, `CNAME`, `MX`, `NS`, `TXT`, `SOA`, `SRV`, `CAA`, `PTR`) matched as `EXACT`, `CONTAINS` or `REGEX`, can expect a specific **response code** (so _"this name must **not** resolve"_ checks work too), and can query a custom nameserver over `UDP` or `TCP`. On top of that, an opt-in **drift detection** notifies you when the resolved records change, without flipping the monitor to DOWN. See the [**Managing DNS monitors**](management/dns-monitors.md) section for further details.
+
+Both new types are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/managing-monitors/index.md), participate in **incidents**, **uptime & latency stats**, **notifications** (including generic webhook templating), the **metrics** exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
 
 ### Fixes
 

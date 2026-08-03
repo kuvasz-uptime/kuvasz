@@ -55,13 +55,15 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     icmp-monitors: []
     # or
     tcp-monitors: []
+    # or
+    dns-monitors: []
     ```
 
     In this case all monitors of that type in the database **will be deleted**.
 
     **What happens if you remove the relevant properties from the YAML file?**
 
-    By that we mean that your YAML file **doesn't contain the relevant property keys** (i.e. `push-monitors`, `http-monitors`, `icmp-monitors`, etc.), or they are **not explicitly set to an empty array** (see the example below).
+    By that we mean that your YAML file **doesn't contain the relevant property keys** (i.e. `push-monitors`, `http-monitors`, `icmp-monitors`, `tcp-monitors`, `dns-monitors`, etc.), or they are **not explicitly set to an empty array** (see the example below).
 
     ```yaml
     # Watch out for the missing property values here. 
@@ -73,6 +75,8 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     push-monitors:
     # or
     icmp-monitors:
+    # or
+    dns-monitors:
     ```
 
     In this case all monitors in the database **will be kept** (i.e. the ones that were created before via YAML). This is especially useful if you want to **restore your monitors from your exported YAML backup**, but you want to manage them on the UI in the future.
@@ -122,3 +126,11 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     Check whether any TCP service accepts connections, and track connect latency.
 
     [:octicons-arrow-right-24: TCP monitors](../tcp-monitors.md)
+
+-   :material-dns:{ .lg .card-header-icon } __DNS monitors__
+
+    ---
+
+    Check that a name resolves to the right records, and get notified when the answer changes.
+
+    [:octicons-arrow-right-24: DNS monitors](../dns-monitors.md)
