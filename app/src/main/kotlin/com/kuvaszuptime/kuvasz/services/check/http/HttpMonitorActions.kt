@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
@@ -76,8 +75,8 @@ class HttpMonitorActions(
         val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
 
         return monitorFromRepo.copy(
-            nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, monitorId),
-            nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, monitorId),
+            nextUptimeCheck = checkScheduler.getNextCheck(monitorId),
+            nextSSLCheck = checkScheduler.getNextSSLCheck(monitorId),
             effectiveIntegrations = integrationRepository.getEffectiveIntegrations(monitorFromRepo.integrations)
                 .toSet(),
             maintenanceWindows = windows,
@@ -99,8 +98,8 @@ class HttpMonitorActions(
         return monitors.map { detailsDto ->
             val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
             detailsDto.copy(
-                nextUptimeCheck = checkScheduler.getNextCheck(CheckType.UPTIME, detailsDto.id),
-                nextSSLCheck = checkScheduler.getNextCheck(CheckType.SSL, detailsDto.id),
+                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
+                nextSSLCheck = checkScheduler.getNextSSLCheck(detailsDto.id),
                 effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
                     .toSet(),
                 maintenanceWindows = windows,

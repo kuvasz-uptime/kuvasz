@@ -40,7 +40,7 @@ class TcpMonitorRepository(private val dslContext: DSLContext) : MonitorReposito
         .selectFrom(TCP_MONITOR)
         .fetch()
 
-    fun fetchByEnabled(enabled: Boolean): List<TcpMonitorRecord> = dslContext
+    override fun fetchByEnabled(enabled: Boolean): List<TcpMonitorRecord> = dslContext
         .selectFrom(TCP_MONITOR)
         .where(TCP_MONITOR.ENABLED.eq(enabled))
         .fetch()

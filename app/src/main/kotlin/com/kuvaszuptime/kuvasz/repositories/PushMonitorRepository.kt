@@ -54,7 +54,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .selectFrom(PUSH_MONITOR)
         .fetch()
 
-    fun fetchByEnabled(enabled: Boolean): List<PushMonitorRecord> = dslContext
+    override fun fetchByEnabled(enabled: Boolean): List<PushMonitorRecord> = dslContext
         .selectFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.ENABLED.eq(enabled))
         .fetch()

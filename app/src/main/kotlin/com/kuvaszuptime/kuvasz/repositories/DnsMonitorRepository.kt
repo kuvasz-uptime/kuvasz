@@ -43,7 +43,7 @@ class DnsMonitorRepository(private val dslContext: DSLContext) : MonitorReposito
         .selectFrom(DNS_MONITOR)
         .fetch()
 
-    fun fetchByEnabled(enabled: Boolean): List<DnsMonitorRecord> = dslContext
+    override fun fetchByEnabled(enabled: Boolean): List<DnsMonitorRecord> = dslContext
         .selectFrom(DNS_MONITOR)
         .where(DNS_MONITOR.ENABLED.eq(enabled))
         .fetch()

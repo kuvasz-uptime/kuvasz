@@ -2,21 +2,11 @@ package com.kuvaszuptime.kuvasz.services.monitor
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
-import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.MonitorCannotBeDeletedException
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
-import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
-import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
-import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
-import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.monitorId
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -39,7 +29,7 @@ abstract class MonitorActions<R : MonitorRecord>(
         if (!appConfig.isStatusPageExternalWriteDisabled()) {
             true
         } else {
-            val referencingStatusPages = statusPageRepository.getStatusPagesOfMonitor(existingMonitor.getMonitorId())
+            val referencingStatusPages = statusPageRepository.getStatusPagesOfMonitor(existingMonitor.monitorId())
             referencingStatusPages.isEmpty()
         }
 
@@ -59,13 +49,4 @@ abstract class MonitorActions<R : MonitorRecord>(
         }
 
     fun R?.orThrowNotFound(monitorId: Long): R = this ?: throw MonitorNotFoundException(monitorId)
-
-    private fun R.getMonitorId(): MonitorID = when (this) {
-        is HttpMonitorRecord -> this.monitorId()
-        is PushMonitorRecord -> this.monitorId()
-        is IcmpMonitorRecord -> this.monitorId()
-        is TcpMonitorRecord -> this.monitorId()
-        is DnsMonitorRecord -> this.monitorId()
-        else -> throw IllegalArgumentException("Unknown monitor record type: ${this::class.java}")
-    }
 }

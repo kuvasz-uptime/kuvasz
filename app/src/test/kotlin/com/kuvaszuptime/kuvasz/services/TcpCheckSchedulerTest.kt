@@ -16,6 +16,7 @@ import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
@@ -169,6 +170,52 @@ class TcpCheckSchedulerTest(
                     }
                     val checkAfter = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
                     checkAfter.hashCode() shouldNotBe checkBefore.hashCode()
+                }
+            }
+
+            `when`("an uptime check calls the doAfter callback with a disabled monitor") {
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val disabledMonitor = monitorRepository.findById(monitor.id, null).shouldNotBeNull()
+                    .also { it.enabled = false }
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                coEvery { uptimeCheckerMock.check(monitor, captureLambda()) } coAnswers {
+                    lambda<(TcpMonitorRecord) -> Unit>().captured.invoke(disabledMonitor)
+                }
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+
+                checkScheduler.initialize()
+                val checkBefore = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("the check should not be re-scheduled") {
+                    coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
+                    val checkAfter = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
+                    checkAfter.hashCode() shouldBe checkBefore.hashCode()
+                }
+            }
+
+            `when`("an uptime check calls the doAfter callback with an unschedulable monitor") {
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val unschedulableMonitor = monitorRepository.findById(monitor.id, null).shouldNotBeNull()
+                    .also { it.uptimeCheckInterval = 0 }
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                coEvery { uptimeCheckerMock.check(monitor, captureLambda()) } coAnswers {
+                    lambda<(TcpMonitorRecord) -> Unit>().captured.invoke(unschedulableMonitor)
+                }
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+
+                checkScheduler.initialize()
+                val checkBefore = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("the re-scheduling should fail, leaving the previous check in place") {
+                    coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
+                    val checkAfter = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
+                    checkAfter.hashCode() shouldBe checkBefore.hashCode()
                 }
             }
 
