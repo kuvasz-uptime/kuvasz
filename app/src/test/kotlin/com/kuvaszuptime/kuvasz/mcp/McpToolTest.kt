@@ -65,5 +65,5 @@ abstract class McpToolTest(
     protected fun callToolWithMcpClient(
         toolName: String,
         arguments: Map<String, Any?> = emptyMap(),
-    ): McpSchema.CallToolResult = mcpClient.callTool(McpSchema.CallToolRequest(toolName, arguments))
+    ): McpSchema.CallToolResult = mcpClient.callTool(McpSchema.CallToolRequest(toolName, arguments, emptyMap()))
 }
