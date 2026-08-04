@@ -54,6 +54,9 @@ class HttpCheckScheduler(
     override fun scheduleAdditionalChecks(monitor: HttpMonitorRecord) {
         if (monitor.sslCheckEnabled) {
             scheduleSSLCheck(monitor)
+        } else {
+            // The SSL check might have been turned off by an update, so the previous one has to be cancelled
+            cancelAdditionalChecks(monitor)
         }
     }
 

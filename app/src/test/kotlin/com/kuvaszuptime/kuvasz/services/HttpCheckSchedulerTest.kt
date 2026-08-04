@@ -241,6 +241,21 @@ class HttpCheckSchedulerTest(
                 }
             }
 
+            `when`("the SSL check of a monitor gets turned off by an update") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                checkScheduler.createChecksForMonitor(monitor)
+                val sslCheckBefore = checkScheduler.getScheduledSSLChecks()[monitor.id].shouldNotBeNull()
+
+                checkScheduler.createChecksForMonitor(monitor.also { it.sslCheckEnabled = false })
+
+                then("the previously scheduled SSL check should be cancelled and removed") {
+                    sslCheckBefore.isCancelled.shouldBeTrue()
+                    checkScheduler.getScheduledSSLChecks().shouldNotContainKey(monitor.id)
+                    // The uptime check of the monitor has to stay in place
+                    checkScheduler.getScheduledUptimeChecks().shouldContainKey(monitor.id)
+                }
+            }
+
             `when`("a lock can't be acquired for an uptime check") {
                 val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
                 val uptimeCheckerMock = getMock(uptimeChecker)
@@ -337,7 +352,42 @@ class HttpCheckSchedulerTest(
                 }
             }
 
-            `when`("the scheduler is closed") {
+        }
+    }
+
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
+        checkScheduler.removeAllChecks()
+        super.afterTest(testCase, result)
+    }
+
+    @MockBean(HttpUptimeChecker::class)
+    fun uptimeCheckerMock(): HttpUptimeChecker = mockk()
+
+    @MockBean(UptimeCheckLockRegistry::class)
+    fun uptimeCheckLockRegistryMock(): UptimeCheckLockRegistry = mockk()
+
+    @MockBean(MaintenanceWindowService::class)
+    fun maintenanceWindowServiceMock(): MaintenanceWindowService = mockk {
+        every { isUnderMaintenance(any()) } returns false
+    }
+
+    @MockBean(SSLChecker::class)
+    fun sslCheckerMock(): SSLChecker = mockk()
+}
+
+/**
+ * [HttpCheckScheduler.close] permanently shuts down the scheduler it is called on, so it gets a dedicated spec with
+ * its own application context, instead of leaving a closed instance behind for the rest of the test cases.
+ */
+@MicronautTest(startApplication = false)
+class HttpCheckSchedulerCloseTest(
+    private val checkScheduler: HttpCheckScheduler,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
+) : DatabaseBehaviorSpec() {
+    init {
+        given("a CheckScheduler service with scheduled uptime and SSL checks") {
+            `when`("it is closed") {
                 val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 every { lockRegistryMock.hasLocks() } returns false
@@ -353,11 +403,6 @@ class HttpCheckSchedulerTest(
                 }
             }
         }
-    }
-
-    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
-        checkScheduler.removeAllChecks()
-        super.afterTest(testCase, result)
     }
 
     @MockBean(HttpUptimeChecker::class)
