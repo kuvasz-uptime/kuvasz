@@ -16,8 +16,8 @@ import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -192,7 +192,7 @@ class TcpCheckSchedulerTest(
                 then("the check should not be re-scheduled") {
                     coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
                     val checkAfter = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
-                    checkAfter.hashCode() shouldBe checkBefore.hashCode()
+                    checkAfter shouldBeSameInstanceAs checkBefore
                 }
             }
 
@@ -215,7 +215,7 @@ class TcpCheckSchedulerTest(
                 then("the re-scheduling should fail, leaving the previous check in place") {
                     coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
                     val checkAfter = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
-                    checkAfter.hashCode() shouldBe checkBefore.hashCode()
+                    checkAfter shouldBeSameInstanceAs checkBefore
                 }
             }
 

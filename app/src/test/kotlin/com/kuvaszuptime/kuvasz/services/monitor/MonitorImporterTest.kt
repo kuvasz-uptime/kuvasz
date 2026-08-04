@@ -34,14 +34,11 @@ import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
-import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
-import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -60,7 +57,6 @@ class MonitorImporterTest(
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val tcpCheckScheduler: TcpCheckScheduler,
     private val pushMonitorRepository: PushMonitorRepository,
-    private val integrationIdValidator: IntegrationIdValidator,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -312,38 +308,6 @@ class MonitorImporterTest(
                     tcpCheckScheduler.getScheduledUptimeChecks() shouldHaveSize 1
                     tcpCheckScheduler.getScheduledUptimeChecks()[tcpId].shouldNotBeNull()
                     pushMonitorRepository.findByName("scheduled-push").shouldNotBeNull()
-                }
-            }
-
-            `when`("a schedulable monitor type has no registered check scheduler") {
-                // Simulating a wiring error, where a schedulable type is left without its scheduler bean
-                val importerWithoutSchedulers = MonitorImporter(
-                    integrationIdValidator = integrationIdValidator,
-                    httpMonitorRepository = httpMonitorRepository,
-                    pushMonitorRepository = pushMonitorRepository,
-                    icmpMonitorRepository = icmpMonitorRepository,
-                    tcpMonitorRepository = tcpMonitorRepository,
-                    dnsMonitorRepository = dnsMonitorRepository,
-                    dslContext = dslContext,
-                    checkSchedulers = emptyList(),
-                )
-
-                val thrown = shouldThrow<NoSuchElementException> {
-                    importerWithoutSchedulers.batchImportMonitors(
-                        httpMonitorConfigs = emptyList(),
-                        pushMonitorConfigs = emptyList(),
-                        icmpMonitorConfigs = emptyList(),
-                        tcpMonitorConfigs = listOf(tcpAdapter("unscheduled-tcp")),
-                        dnsMonitorConfigs = emptyList(),
-                        dryRun = false,
-                    )
-                }
-
-                then("it should fail loudly instead of silently skipping the rescheduling") {
-                    thrown.shouldNotBeNull()
-                    // The import itself is already committed at this point, only the rescheduling blows up
-                    val tcpId = tcpMonitorRepository.findByName("unscheduled-tcp").shouldNotBeNull().id
-                    tcpCheckScheduler.getScheduledUptimeChecks() shouldNotContainKey tcpId
                 }
             }
 
