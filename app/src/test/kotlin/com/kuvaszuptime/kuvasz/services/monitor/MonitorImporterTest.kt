@@ -10,9 +10,13 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.DnsMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.PushMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.TcpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -24,13 +28,17 @@ import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.maps.shouldContainExactly
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -46,6 +54,9 @@ class MonitorImporterTest(
     private val dnsMonitorRepository: DnsMonitorRepository,
     private val snapshotRepository: DnsResolutionSnapshotRepository,
     private val dnsCheckScheduler: DnsCheckScheduler,
+    private val tcpMonitorRepository: TcpMonitorRepository,
+    private val tcpCheckScheduler: TcpCheckScheduler,
+    private val pushMonitorRepository: PushMonitorRepository,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -278,6 +289,28 @@ class MonitorImporterTest(
                 }
             }
 
+            `when`("a real import persists TCP and push monitors") {
+                val results = monitorImporter.batchImportMonitors(
+                    httpMonitorConfigs = emptyList(),
+                    pushMonitorConfigs = listOf(pushAdapter("scheduled-push")),
+                    icmpMonitorConfigs = emptyList(),
+                    tcpMonitorConfigs = listOf(tcpAdapter("scheduled-tcp")),
+                    dnsMonitorConfigs = emptyList(),
+                    dryRun = false,
+                )
+
+                then("only the TCP monitor gets scheduled, the push one has no scheduler at all") {
+                    results.map { it.monitorType } shouldContainExactlyInAnyOrder
+                        listOf(MonitorType.TCP, MonitorType.PUSH)
+
+                    val tcpId = tcpMonitorRepository.findByName("scheduled-tcp").shouldNotBeNull().id
+                    // The TCP monitor is the only scheduled check, the push import doesn't schedule anything
+                    tcpCheckScheduler.getScheduledUptimeChecks() shouldHaveSize 1
+                    tcpCheckScheduler.getScheduledUptimeChecks()[tcpId].shouldNotBeNull()
+                    pushMonitorRepository.findByName("scheduled-push").shouldNotBeNull()
+                }
+            }
+
             `when`("a dry-run import is performed") {
                 val scheduledBefore = httpCheckScheduler.getScheduledUptimeChecks().keys.toSet()
 
@@ -434,6 +467,33 @@ class MonitorImporterTest(
             requestHeaders = emptyMap(),
             expectedHeaders = emptyMap(),
             requestBody = null,
+        )
+    )
+
+    private fun tcpAdapter(name: String) = TcpMonitorImportAdapter(
+        TcpMonitorExportDto(
+            name = name,
+            host = "1.2.3.4",
+            port = 8080,
+            uptimeCheckInterval = 60,
+            timeoutMs = 5000,
+            latencyThresholdMs = 250,
+            failureCountThreshold = 1,
+            enabled = true,
+            integrations = emptySet(),
+            metricsHistoryEnabled = true,
+        )
+    )
+
+    private fun pushAdapter(name: String) = PushMonitorImportAdapter(
+        PushMonitorExportDto(
+            name = name,
+            heartbeatInterval = 60,
+            gracePeriod = 30,
+            clientSecret = "secret-of-$name",
+            enabled = true,
+            integrations = emptySet(),
+            failureCountThreshold = 1,
         )
     )
 

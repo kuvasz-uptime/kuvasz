@@ -11,7 +11,6 @@ import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
-import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
@@ -743,9 +742,9 @@ class HttpMonitorControllerTest(
                 then("it should return the right values for the next scheduled checks") {
                     val response = monitorClient.getMonitorDetails(monitorId = createdMonitor.id)
                     response.nextUptimeCheck.shouldNotBeNull().toEpochSecond() shouldBe
-                        checkScheduler.getNextCheck(CheckType.UPTIME, response.id)?.toEpochSecond()
+                        checkScheduler.getNextCheck(response.id)?.toEpochSecond()
                     response.nextSSLCheck.shouldNotBeNull().toEpochSecond() shouldBe
-                        checkScheduler.getNextCheck(CheckType.SSL, response.id)?.toEpochSecond()
+                        checkScheduler.getNextSSLCheck(response.id)?.toEpochSecond()
                 }
             }
 

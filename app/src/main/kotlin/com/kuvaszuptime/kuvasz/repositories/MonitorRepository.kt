@@ -25,6 +25,7 @@ interface MonitorRepository<R : MonitorRecord> {
 
     fun findById(monitorId: Long, txCtx: DSLContext?): R?
     fun deleteById(monitorId: Long, txCtx: DSLContext?): Int
+    fun fetchByEnabled(enabled: Boolean): List<R>
 
     val monitorNameField: Field<String?>
         get() = DSL.field("t.monitor_name", SQLDataType.VARCHAR).`as`(MONITOR_NAME_FIELD_NAME)

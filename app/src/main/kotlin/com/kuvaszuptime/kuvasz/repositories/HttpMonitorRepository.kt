@@ -45,7 +45,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .selectFrom(HTTP_MONITOR)
         .fetch()
 
-    fun fetchByEnabled(enabled: Boolean): List<HttpMonitorRecord> = dslContext
+    override fun fetchByEnabled(enabled: Boolean): List<HttpMonitorRecord> = dslContext
         .selectFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.ENABLED.eq(enabled))
         .fetch()

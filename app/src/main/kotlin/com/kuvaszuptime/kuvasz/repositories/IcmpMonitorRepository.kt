@@ -40,7 +40,7 @@ class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .selectFrom(ICMP_MONITOR)
         .fetch()
 
-    fun fetchByEnabled(enabled: Boolean): List<IcmpMonitorRecord> = dslContext
+    override fun fetchByEnabled(enabled: Boolean): List<IcmpMonitorRecord> = dslContext
         .selectFrom(ICMP_MONITOR)
         .where(ICMP_MONITOR.ENABLED.eq(enabled))
         .fetch()

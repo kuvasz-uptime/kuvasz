@@ -3,7 +3,6 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
-import com.kuvaszuptime.kuvasz.models.CheckType
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
@@ -14,6 +13,7 @@ import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainKey
@@ -194,6 +194,21 @@ class HttpCheckSchedulerTest(
                 }
             }
 
+            `when`("an SSL check throws an unexpected exception") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                val sslCheckerMock = getMock(sslChecker)
+                every { sslCheckerMock.check(monitor) } throws RuntimeException("bad")
+                val maintenanceServiceMock = getMock(maintenanceWindowService)
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns false
+
+                val thrown = runCatching { checkScheduler.runSSLCheck(monitor) }.exceptionOrNull()
+
+                then("it should be swallowed, otherwise the periodic check would be cancelled by the executor") {
+                    thrown.shouldBeNull()
+                    verify(exactly = 1) { sslCheckerMock.check(monitor) }
+                }
+            }
+
             `when`("a re-scheduled SSL check runs after the maintenance is over") {
                 val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
                 val sslCheckerMock = getMock(sslChecker)
@@ -223,6 +238,21 @@ class HttpCheckSchedulerTest(
 
                 then("the re-scheduled SSL check should be cancelled and removed") {
                     checkScheduler.getScheduledSSLChecks().shouldNotContainKey(monitor.id)
+                }
+            }
+
+            `when`("the SSL check of a monitor gets turned off by an update") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                checkScheduler.createChecksForMonitor(monitor)
+                val sslCheckBefore = checkScheduler.getScheduledSSLChecks()[monitor.id].shouldNotBeNull()
+
+                checkScheduler.createChecksForMonitor(monitor.also { it.sslCheckEnabled = false })
+
+                then("the previously scheduled SSL check should be cancelled and removed") {
+                    sslCheckBefore.isCancelled.shouldBeTrue()
+                    checkScheduler.getScheduledSSLChecks().shouldNotContainKey(monitor.id)
+                    // The uptime check of the monitor has to stay in place
+                    checkScheduler.getScheduledUptimeChecks().shouldContainKey(monitor.id)
                 }
             }
 
@@ -292,8 +322,8 @@ class HttpCheckSchedulerTest(
                 checkScheduler.initialize()
 
                 then("it should return null") {
-                    checkScheduler.getNextCheck(CheckType.UPTIME, monitor.id + 100).shouldBeNull()
-                    checkScheduler.getNextCheck(CheckType.SSL, monitor.id + 100).shouldBeNull()
+                    checkScheduler.getNextCheck(monitor.id + 100).shouldBeNull()
+                    checkScheduler.getNextSSLCheck(monitor.id + 100).shouldBeNull()
                 }
             }
 
@@ -303,9 +333,9 @@ class HttpCheckSchedulerTest(
 
                 then("it should return them correctly") {
                     val nextUptimeCheck =
-                        checkScheduler.getNextCheck(CheckType.UPTIME, monitor.id).shouldNotBeNull().toEpochSecond()
+                        checkScheduler.getNextCheck(monitor.id).shouldNotBeNull().toEpochSecond()
                     val nextSSLCheck =
-                        checkScheduler.getNextCheck(CheckType.SSL, monitor.id).shouldNotBeNull().toEpochSecond()
+                        checkScheduler.getNextSSLCheck(monitor.id).shouldNotBeNull().toEpochSecond()
                     val expectedNextUptimeCheck = checkScheduler
                         .getScheduledUptimeChecks()[monitor.id]
                         .shouldNotBeNull()
@@ -321,12 +351,58 @@ class HttpCheckSchedulerTest(
                     nextSSLCheck shouldBeInRange expectedNextSSLCheck - 1..expectedNextSSLCheck + 1
                 }
             }
+
         }
     }
 
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         checkScheduler.removeAllChecks()
         super.afterTest(testCase, result)
+    }
+
+    @MockBean(HttpUptimeChecker::class)
+    fun uptimeCheckerMock(): HttpUptimeChecker = mockk()
+
+    @MockBean(UptimeCheckLockRegistry::class)
+    fun uptimeCheckLockRegistryMock(): UptimeCheckLockRegistry = mockk()
+
+    @MockBean(MaintenanceWindowService::class)
+    fun maintenanceWindowServiceMock(): MaintenanceWindowService = mockk {
+        every { isUnderMaintenance(any()) } returns false
+    }
+
+    @MockBean(SSLChecker::class)
+    fun sslCheckerMock(): SSLChecker = mockk()
+}
+
+/**
+ * [HttpCheckScheduler.close] permanently shuts down the scheduler it is called on, so it gets a dedicated spec with
+ * its own application context, instead of leaving a closed instance behind for the rest of the test cases.
+ */
+@MicronautTest(startApplication = false)
+class HttpCheckSchedulerCloseTest(
+    private val checkScheduler: HttpCheckScheduler,
+    private val monitorRepository: HttpMonitorRepository,
+    private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
+) : DatabaseBehaviorSpec() {
+    init {
+        given("a CheckScheduler service with scheduled uptime and SSL checks") {
+            `when`("it is closed") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                every { lockRegistryMock.hasLocks() } returns false
+                checkScheduler.initialize()
+                val uptimeCheck = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
+                val sslCheck = checkScheduler.getScheduledSSLChecks()[monitor.id].shouldNotBeNull()
+
+                checkScheduler.close()
+
+                then("it should cancel the scheduled SSL checks beside the uptime ones") {
+                    uptimeCheck.isCancelled.shouldBeTrue()
+                    sslCheck.isCancelled.shouldBeTrue()
+                }
+            }
+        }
     }
 
     @MockBean(HttpUptimeChecker::class)

@@ -30,10 +30,7 @@ import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
-import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
-import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
-import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
-import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.MonitorCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowScheduler
@@ -61,10 +58,7 @@ class AppBootstrapper(
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
     private val integrationRepository: IntegrationRepository,
-    private val httpCheckScheduler: HttpCheckScheduler,
-    private val icmpCheckScheduler: IcmpCheckScheduler,
-    private val tcpCheckScheduler: TcpCheckScheduler,
-    private val dnsCheckScheduler: DnsCheckScheduler,
+    private val checkSchedulers: List<MonitorCheckScheduler>,
     private val metricsExportRegistry: MetricsExportRegistry?,
     private val yamlStatusPageConfigs: List<StatusPageConfig>,
     private val statusPageImporter: StatusPageImporter,
@@ -130,14 +124,8 @@ class AppBootstrapper(
         sanitizeIntegrationsOfMaintenanceWindows()
         // Conditionally initialize the metrics export if enabled
         metricsExportRegistry?.initialize()
-        // Scheduling the initial checks (HTTP uptime & SSL)
-        httpCheckScheduler.initialize()
-        // Scheduling the initial ICMP uptime checks
-        icmpCheckScheduler.initialize()
-        // Scheduling the initial TCP uptime checks
-        tcpCheckScheduler.initialize()
-        // Scheduling the initial DNS uptime checks
-        dnsCheckScheduler.initialize()
+        // Scheduling the initial checks of every monitor type
+        checkSchedulers.forEach { it.initialize() }
         // Scheduling the start/end notifications of the enabled maintenance windows
         maintenanceWindowScheduler.initialize()
 

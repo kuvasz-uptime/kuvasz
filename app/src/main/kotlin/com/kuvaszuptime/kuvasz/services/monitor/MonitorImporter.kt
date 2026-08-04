@@ -22,10 +22,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
-import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
-import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
-import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
-import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.check.MonitorCheckScheduler
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.ResolvedIntegrationIds
@@ -41,10 +38,7 @@ class MonitorImporter(
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
     private val dslContext: DSLContext,
-    private val httpCheckScheduler: HttpCheckScheduler,
-    private val icmpCheckScheduler: IcmpCheckScheduler,
-    private val tcpCheckScheduler: TcpCheckScheduler,
-    private val dnsCheckScheduler: DnsCheckScheduler,
+    private val checkSchedulers: List<MonitorCheckScheduler>,
 ) {
 
     companion object {
@@ -83,27 +77,14 @@ class MonitorImporter(
 
     private fun rescheduleChecksFor(monitorType: MonitorType) {
         when (monitorType) {
-            MonitorType.HTTP_SSL -> httpCheckScheduler.run {
-                removeAllChecks()
-                initialize()
-            }
-
-            MonitorType.ICMP -> icmpCheckScheduler.run {
-                removeAllChecks()
-                initialize()
-            }
-
-            MonitorType.TCP -> tcpCheckScheduler.run {
-                removeAllChecks()
-                initialize()
+            MonitorType.HTTP_SSL, MonitorType.TCP, MonitorType.ICMP, MonitorType.DNS -> {
+                checkSchedulers.first { it.monitorType == monitorType }.run {
+                    removeAllChecks()
+                    initialize()
+                }
             }
 
             MonitorType.PUSH -> Unit
-
-            MonitorType.DNS -> dnsCheckScheduler.run {
-                removeAllChecks()
-                initialize()
-            }
         }
     }
 
