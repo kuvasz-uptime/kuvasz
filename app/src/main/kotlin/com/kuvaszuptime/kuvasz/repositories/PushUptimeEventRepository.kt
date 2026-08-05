@@ -108,7 +108,10 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .fetchInto(PushUptimeEventDto::class.java)
 
     @Suppress("IgnoredReturnValue")
-    override fun fetchAllInPeriod(period: Duration, monitorId: Long?): List<UptimeEventCalculationContext> {
+    override fun fetchAllInPeriod(
+        period: Duration,
+        monitorIds: List<Long>?,
+    ): List<UptimeEventCalculationContext> {
         val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
@@ -123,7 +126,7 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
             .join(PUSH_MONITOR).on(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))
             .where(DSL.coalesce(PUSH_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
             .apply {
-                monitorId?.let { and(PUSH_UPTIME_EVENT.MONITOR_ID.eq(it)) }
+                monitorIds?.let { and(PUSH_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
             }
             .fetchInto(UptimeEventCalculationContext::class.java)
     }

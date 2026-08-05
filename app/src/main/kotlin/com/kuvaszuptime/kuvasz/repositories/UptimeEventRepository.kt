@@ -19,7 +19,7 @@ sealed interface UptimeEventRepository {
     /**
      * Fetches all uptime events that have ended or was open within the specified period.
      */
-    fun fetchAllInPeriod(period: Duration, monitorId: Long? = null): List<UptimeEventCalculationContext>
+    fun fetchAllInPeriod(period: Duration, monitorIds: List<Long>? = null): List<UptimeEventCalculationContext>
 
     /**
      * Fetches the timestamp of the latest incident (DOWN status) for enabled monitors.

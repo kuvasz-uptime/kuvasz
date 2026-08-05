@@ -108,7 +108,10 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .fetchInto(IcmpUptimeEventDto::class.java)
 
     @Suppress("IgnoredReturnValue")
-    override fun fetchAllInPeriod(period: Duration, monitorId: Long?): List<UptimeEventCalculationContext> {
+    override fun fetchAllInPeriod(
+        period: Duration,
+        monitorIds: List<Long>?,
+    ): List<UptimeEventCalculationContext> {
         val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
@@ -123,7 +126,7 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
             .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))
             .where(DSL.coalesce(ICMP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
             .apply {
-                monitorId?.let { and(ICMP_UPTIME_EVENT.MONITOR_ID.eq(it)) }
+                monitorIds?.let { and(ICMP_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
             }
             .fetchInto(UptimeEventCalculationContext::class.java)
     }

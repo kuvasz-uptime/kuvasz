@@ -73,10 +73,16 @@ class PushMonitorActionsTest(
                 )
 
                 every {
-                    statCalculatorMock.calculateUptimeOverview(MonitorType.PUSH, testPeriod, enabledMonitor.id)
-                } returns UptimeOverview(
-                    uptimeRatio = 0.2312,
-                    statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    statCalculatorMock.calculateUptimeOverviews(
+                        monitorType = MonitorType.PUSH,
+                        period = testPeriod,
+                        monitorIds = listOf(enabledMonitor.id),
+                    )
+                } returns mapOf(
+                    enabledMonitor.id to UptimeOverview(
+                        uptimeRatio = 0.2312,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    ),
                 )
 
                 // Executing the method under test
@@ -138,10 +144,16 @@ class PushMonitorActionsTest(
                 )
 
                 every {
-                    statCalculatorMock.calculateUptimeOverview(MonitorType.PUSH, testPeriod, enabledMonitor.id)
-                } returns UptimeOverview(
-                    uptimeRatio = 0.2312,
-                    statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    statCalculatorMock.calculateUptimeOverviews(
+                        monitorType = MonitorType.PUSH,
+                        period = testPeriod,
+                        monitorIds = listOf(enabledMonitor.id),
+                    )
+                } returns mapOf(
+                    enabledMonitor.id to UptimeOverview(
+                        uptimeRatio = 0.2312,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    ),
                 )
 
                 // Executing the method under test

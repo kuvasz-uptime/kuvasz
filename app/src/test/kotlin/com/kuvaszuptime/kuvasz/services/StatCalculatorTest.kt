@@ -2382,31 +2382,40 @@ class StatCalculatorTest(
             }
         }
 
-        given("the generateUptimeHistoryOverview() method") {
+        given("the calculateUptimeOverviews() method") {
 
             fun createTestEvent(
+                monitorId: Long,
                 status: UptimeStatus,
                 startedAt: OffsetDateTime,
                 endedAt: OffsetDateTime? = null,
                 updatedAt: OffsetDateTime,
-            ) = UptimeEventCalculationContext(
-                monitorId = 1,
-                isMonitorEnabled = true,
+            ) = createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitorId,
                 status = status,
                 startedAt = startedAt,
                 endedAt = endedAt,
                 updatedAt = updatedAt,
             )
 
+            fun statusHistoryOf(monitorId: Long, period: Duration) = statCalculator
+                .calculateUptimeOverviews(MonitorType.PUSH, period, listOf(monitorId))
+                .getValue(monitorId)
+                .statusHistory
+
             `when`("there is no event for a given day") {
 
-                val event1 = createTestEvent(
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.UP,
                     startedAt = getCurrentTimestamp().minusDays(9),
                     endedAt = getCurrentTimestamp().minusDays(8),
                     updatedAt = getCurrentTimestamp().minusDays(8),
                 )
-                val event2 = createTestEvent(
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(8),
                     endedAt = getCurrentTimestamp().minusDays(7),
@@ -2415,10 +2424,7 @@ class StatCalculatorTest(
 
                 then("it should return null for that day as outageCnt") {
 
-                    val result = statCalculator.generateUptimeHistoryOverview(
-                        period = Duration.ofDays(11),
-                        uptimeEvents = listOf(event1, event2),
-                    )
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(11))
 
                     result shouldBeSortedBy { it.date }
                     result shouldHaveSize 11
@@ -2452,14 +2458,16 @@ class StatCalculatorTest(
 
             `when`("there is an event that started before the period, but ended within it") {
 
-                val event1 = createTestEvent(
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(10),
                     endedAt = getCurrentTimestamp().minusDays(3),
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-
-                val event2 = createTestEvent(
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.UP,
                     startedAt = getCurrentTimestamp().minusDays(3),
                     endedAt = null,
@@ -2468,10 +2476,7 @@ class StatCalculatorTest(
 
                 then("it should count that event on the days within the period") {
 
-                    val result = statCalculator.generateUptimeHistoryOverview(
-                        period = Duration.ofDays(7),
-                        uptimeEvents = listOf(event1, event2),
-                    )
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(7))
 
                     result shouldBeSortedBy { it.date }
                     result shouldHaveSize 7
@@ -2503,14 +2508,16 @@ class StatCalculatorTest(
 
             `when`("an open event was updated before today") {
 
-                val event1 = createTestEvent(
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(10),
                     endedAt = getCurrentTimestamp().minusDays(3),
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-
-                val event2 = createTestEvent(
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.UP,
                     startedAt = getCurrentTimestamp().minusDays(3),
                     endedAt = null,
@@ -2519,10 +2526,7 @@ class StatCalculatorTest(
 
                 then("its updateDate should be the base of the calculation") {
 
-                    val result = statCalculator.generateUptimeHistoryOverview(
-                        period = Duration.ofDays(7),
-                        uptimeEvents = listOf(event1, event2),
-                    )
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(7))
                     val today = getCurrentTimestamp().toLocalDate()
 
                     result shouldBeSortedBy { it.date }
@@ -2557,21 +2561,62 @@ class StatCalculatorTest(
                 }
             }
 
-            `when`("there is a monitor under an active maintenance window") {
+            `when`("the overviews of multiple monitors are requested at once") {
 
-                val maintainedMonitor = createIcmpMonitor(icmpMonitorRepository, enabled = true)
-                createIcmpMonitor(icmpMonitorRepository, enabled = true)
-                createMaintenanceWindow(
-                    dslContext = dslContext,
-                    name = "active-icmp-window",
-                    enabled = true,
-                    monitors = listOf(MonitorID(MonitorType.ICMP, maintainedMonitor.name)),
+                val period = Duration.ofDays(7)
+                val downMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val upMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val monitorWithoutEvents = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = downMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusDays(2),
+                    endedAt = null,
+                    updatedAt = getCurrentTimestamp(),
+                )
+                createTestEvent(
+                    monitorId = upMonitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = getCurrentTimestamp().minusDays(2),
+                    endedAt = null,
+                    updatedAt = getCurrentTimestamp(),
                 )
 
-                then("it should count it as under maintenance") {
-                    val stats = statCalculator.calculateOverallIcmpStats(Duration.ofDays(6))
-                    stats.actual.uptimeStats.total shouldBe 2
-                    stats.actual.uptimeStats.inMaintenance shouldBe 1
+                then("every requested monitor should get its own overview, from a single fetch") {
+
+                    val result = statCalculator.calculateUptimeOverviews(
+                        monitorType = MonitorType.PUSH,
+                        period = period,
+                        monitorIds = listOf(downMonitor.id, upMonitor.id, monitorWithoutEvents.id),
+                    )
+
+                    result.keys shouldContainExactlyInAnyOrder
+                        listOf(downMonitor.id, upMonitor.id, monitorWithoutEvents.id)
+
+                    // The events of the monitors should not leak into each other's overview
+                    result.getValue(downMonitor.id).uptimeRatio shouldBe 0.0
+                    result.getValue(downMonitor.id).statusHistory.last().outageCnt shouldBe 1
+                    result.getValue(upMonitor.id).uptimeRatio shouldBe 1.0
+                    result.getValue(upMonitor.id).statusHistory.last().outageCnt shouldBe 0
+
+                    // A monitor without any event in the period still gets an entry, with nothing measured
+                    with(result.getValue(monitorWithoutEvents.id)) {
+                        uptimeRatio shouldBe null
+                        statusHistory shouldHaveSize 7
+                        statusHistory.forAll { it.outageCnt shouldBe null }
+                    }
+                }
+            }
+
+            `when`("no monitor is requested") {
+
+                then("it should not even hit the database") {
+
+                    statCalculator.calculateUptimeOverviews(
+                        monitorType = MonitorType.PUSH,
+                        period = Duration.ofDays(7),
+                        monitorIds = emptyList(),
+                    ) shouldBe emptyMap()
                 }
             }
         }

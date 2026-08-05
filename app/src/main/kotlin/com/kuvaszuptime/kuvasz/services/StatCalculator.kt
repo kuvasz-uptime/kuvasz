@@ -177,18 +177,19 @@ class StatCalculator(
         period: Duration,
         monitorId: Long,
     ): HistoricalUptimeStatsDto =
-        calculateHistoricalUptimeStats(period, fetchUptimeEventsInPeriod(monitorType, period, monitorId))
+        calculateHistoricalUptimeStats(period, fetchUptimeEventsInPeriod(monitorType, period, listOf(monitorId)))
 
     /**
      * Calculates historical uptime statistics based on a list of uptime events and a period's start time.
+     *
+     * @param now The instant both ends of the period are anchored to. Otherwise the ongoing events would be measured
+     * against a slightly later "now" than the one the period start was derived from, inflating their durations.
      */
     private fun calculateHistoricalUptimeStats(
         period: Duration,
         uptimeEvents: List<UptimeEventCalculationContext>,
+        now: OffsetDateTime = getCurrentTimestamp(),
     ): HistoricalUptimeStatsDto {
-        // Both ends of the period are anchored to a single instant, otherwise the ongoing events would be measured
-        // against a slightly later "now" than the one the period start was derived from, inflating their durations
-        val now = getCurrentTimestamp()
         val periodStart = now.minus(period)
         val monitorsWithIncidents: MutableSet<Long> = mutableSetOf()
         var historicalIncidentCnt = 0
@@ -232,20 +233,27 @@ class StatCalculator(
     }
 
     /**
-     * Calculates the uptime ratio and the daily status history of a specific monitor over the given period, from a
-     * single fetch of its uptime events, because both of them are derived from the very same data set.
+     * Calculates the uptime ratio and the daily status history of the given monitors over the given period, from a
+     * single fetch of their uptime events, because both of the figures are derived from the very same data set.
      */
-    fun calculateUptimeOverview(
+    fun calculateUptimeOverviews(
         monitorType: MonitorType,
         period: Duration,
-        monitorId: Long,
-    ): UptimeOverview {
-        val uptimeEvents = fetchUptimeEventsInPeriod(monitorType, period, monitorId)
+        monitorIds: List<Long>,
+    ): Map<Long, UptimeOverview> {
+        if (monitorIds.isEmpty()) return emptyMap()
+        // The whole batch is anchored to a single instant, so the overviews of the individual monitors stay comparable
+        val now = getCurrentTimestamp()
+        val eventsByMonitor = fetchUptimeEventsInPeriod(monitorType, period, monitorIds).groupBy { it.monitorId }
 
-        return UptimeOverview(
-            uptimeRatio = calculateHistoricalUptimeStats(period, uptimeEvents).uptimeRatio,
-            statusHistory = generateUptimeHistoryOverview(period, uptimeEvents),
-        )
+        return monitorIds.associateWith { monitorId ->
+            val uptimeEvents = eventsByMonitor[monitorId].orEmpty()
+
+            UptimeOverview(
+                uptimeRatio = calculateHistoricalUptimeStats(period, uptimeEvents, now).uptimeRatio,
+                statusHistory = generateUptimeHistoryOverview(period, uptimeEvents, now),
+            )
+        }
     }
 
     /**
@@ -255,15 +263,17 @@ class StatCalculator(
      *
      * @param period The duration over which to generate the history.
      * @param uptimeEvents A list of uptime events to analyze.
+     * @param now The instant both ends of the period are anchored to.
      *
      * @return A list of [StatusHistoryDto] representing the daily uptime status history.
      */
-    fun generateUptimeHistoryOverview(
+    private fun generateUptimeHistoryOverview(
         period: Duration,
         uptimeEvents: List<UptimeEventCalculationContext>,
+        now: OffsetDateTime = getCurrentTimestamp(),
     ): List<StatusHistoryDto> {
-        val periodStartTimestamp: OffsetDateTime = getCurrentTimestamp().minus(period)
-        val periodEnd: LocalDate = getCurrentTimestamp().toLocalDate()
+        val periodStartTimestamp: OffsetDateTime = now.minus(period)
+        val periodEnd: LocalDate = now.toLocalDate()
         // The start date is the current date minus the period, plus one day to include today as well
         val periodStart: LocalDate = periodStartTimestamp.toLocalDate().plusDays(1)
         val result = mutableListOf<StatusHistoryDto>()
@@ -296,9 +306,9 @@ class StatCalculator(
     private fun fetchUptimeEventsInPeriod(
         monitorType: MonitorType,
         period: Duration,
-        monitorId: Long,
+        monitorIds: List<Long>,
     ): List<UptimeEventCalculationContext> =
-        uptimeEventReposByType.getValue(monitorType).fetchAllInPeriod(period, monitorId)
+        uptimeEventReposByType.getValue(monitorType).fetchAllInPeriod(period, monitorIds)
 
     private data class OverallStats(
         val monitors: List<MonitorDetailsDto>,

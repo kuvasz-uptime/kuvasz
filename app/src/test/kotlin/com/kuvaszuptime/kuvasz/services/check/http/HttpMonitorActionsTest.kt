@@ -87,16 +87,20 @@ class HttpMonitorActionsTest(
                 )
 
                 every {
-                    statCalculatorMock.calculateUptimeOverview(MonitorType.HTTP_SSL, testPeriod, enabledMonitor.id)
-                } returns UptimeOverview(
-                    uptimeRatio = 0.2312,
-                    statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
-                )
-                every {
-                    statCalculatorMock.calculateUptimeOverview(MonitorType.HTTP_SSL, testPeriod, enabledMonitor2.id)
-                } returns UptimeOverview(
-                    uptimeRatio = 0.0123,
-                    statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 34)),
+                    statCalculatorMock.calculateUptimeOverviews(
+                        monitorType = MonitorType.HTTP_SSL,
+                        period = testPeriod,
+                        monitorIds = match { it.toSet() == setOf(enabledMonitor.id, enabledMonitor2.id) },
+                    )
+                } returns mapOf(
+                    enabledMonitor.id to UptimeOverview(
+                        uptimeRatio = 0.2312,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    ),
+                    enabledMonitor2.id to UptimeOverview(
+                        uptimeRatio = 0.0123,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 34)),
+                    ),
                 )
 
                 // Executing the method under test
@@ -182,10 +186,16 @@ class HttpMonitorActionsTest(
                 )
 
                 every {
-                    statCalculatorMock.calculateUptimeOverview(MonitorType.HTTP_SSL, testPeriod, enabledMonitor.id)
-                } returns UptimeOverview(
-                    uptimeRatio = 0.2312,
-                    statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    statCalculatorMock.calculateUptimeOverviews(
+                        monitorType = MonitorType.HTTP_SSL,
+                        period = testPeriod,
+                        monitorIds = listOf(enabledMonitor.id),
+                    )
+                } returns mapOf(
+                    enabledMonitor.id to UptimeOverview(
+                        uptimeRatio = 0.2312,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    ),
                 )
 
                 // Executing the method under test

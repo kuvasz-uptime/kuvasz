@@ -109,7 +109,10 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .fetchInto(HttpUptimeEventDto::class.java)
 
     @Suppress("IgnoredReturnValue")
-    override fun fetchAllInPeriod(period: Duration, monitorId: Long?): List<UptimeEventCalculationContext> {
+    override fun fetchAllInPeriod(
+        period: Duration,
+        monitorIds: List<Long>?,
+    ): List<UptimeEventCalculationContext> {
         val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
@@ -124,7 +127,7 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
             .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
             .where(DSL.coalesce(HTTP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
             .apply {
-                monitorId?.let { and(HTTP_UPTIME_EVENT.MONITOR_ID.eq(it)) }
+                monitorIds?.let { and(HTTP_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
             }
             .fetchInto(UptimeEventCalculationContext::class.java)
     }

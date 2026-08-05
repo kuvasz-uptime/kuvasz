@@ -33,7 +33,7 @@ abstract class MonitorActions<R : MonitorRecord, D : MonitorDetailsDto>(
     private val statCalculator: StatCalculator,
     protected val maintenanceWindowService: MaintenanceWindowService,
 ) {
-    protected val monitorType: MonitorType get() = monitorRepository.monitorType
+    private val monitorType: MonitorType get() = monitorRepository.monitorType
 
     /**
      * Checks if it's safe to update the monitor's name or delete it at all from the status pages' perspective.
@@ -90,9 +90,14 @@ abstract class MonitorActions<R : MonitorRecord, D : MonitorDetailsDto>(
         val monitorNames = monitorIds?.filter { it.type == monitorType }?.map { it.name }
         val enabledMonitors = monitorRepository.fetchAllWithDetails(enabled = true, monitorNames = monitorNames)
         val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
+        val overviewsByMonitor = statCalculator.calculateUptimeOverviews(
+            monitorType = monitorType,
+            period = period,
+            monitorIds = enabledMonitors.map { it.id },
+        )
 
         return enabledMonitors.map { monitor ->
-            val overview = statCalculator.calculateUptimeOverview(monitorType, period, monitor.id)
+            val overview = overviewsByMonitor.getValue(monitor.id)
             val uptimeData = StatusPageUptimeData(
                 uptimeRatio = overview.uptimeRatio,
                 uptimeStatusHistory = overview.statusHistory,
