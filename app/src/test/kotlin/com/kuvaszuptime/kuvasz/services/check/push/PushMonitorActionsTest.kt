@@ -7,7 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -18,7 +18,7 @@ import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
-import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
+import com.kuvaszuptime.kuvasz.services.UptimeOverview
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -37,8 +37,6 @@ import io.mockk.mockk
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.time.Duration
 import java.time.LocalDate
-import java.time.OffsetDateTime
-import kotlin.random.Random
 
 @MicronautTest(startApplication = false)
 class PushMonitorActionsTest(
@@ -53,15 +51,6 @@ class PushMonitorActionsTest(
 
         given("the getStatusPageDataOfEnabledMonitors() method") {
 
-            fun randomUptimeEventCalculationContext() = UptimeEventCalculationContext(
-                monitorId = Random.nextLong(),
-                isMonitorEnabled = true,
-                status = UptimeStatus.entries.toTypedArray().random(),
-                startedAt = getCurrentTimestamp().minusDays((1..10).random().toLong()),
-                endedAt = null as OffsetDateTime?,
-                updatedAt = getCurrentTimestamp().minusDays((1..10).random().toLong()),
-            )
-
             `when`("it is called without monitorIds") {
 
                 val testPeriod = Duration.ofDays(7)
@@ -72,16 +61,6 @@ class PushMonitorActionsTest(
                 )
 
                 val statCalculatorMock = getMock(statCalculator)
-                every {
-                    statCalculatorMock.calculateHistoricalPushUptimeStats(testPeriod, enabledMonitor.id)
-                } returns HistoricalUptimeStatsDto(
-                    period = "irrelevant",
-                    incidents = 432,
-                    affectedMonitors = 2343,
-                    uptimeRatio = 0.2312,
-                    totalDowntimeSeconds = 342342,
-                )
-
                 createPushMonitor(pushMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 createMaintenanceWindow(dslContext, global = true)
                 val enabledMonitorsUptimeEvent = createPushUptimeEventRecord(
@@ -93,13 +72,12 @@ class PushMonitorActionsTest(
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
 
-                val uptimeEventRepoMock = getMock(uptimeEventRepository)
-                val firstMonitorsUptimeCalcContexts = listOf(randomUptimeEventCalculationContext())
-                every { uptimeEventRepoMock.fetchAllInPeriod(testPeriod, enabledMonitor.id) } returns
-                    firstMonitorsUptimeCalcContexts
                 every {
-                    statCalculator.generateUptimeHistoryOverview(testPeriod, firstMonitorsUptimeCalcContexts)
-                } returns listOf(StatusHistoryDto(LocalDate.now(), 12))
+                    statCalculatorMock.calculateUptimeOverview(MonitorType.PUSH, testPeriod, enabledMonitor.id)
+                } returns UptimeOverview(
+                    uptimeRatio = 0.2312,
+                    statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                )
 
                 // Executing the method under test
                 val result = pushMonitorActions.getStatusPageDataOfEnabledMonitors(
@@ -141,16 +119,6 @@ class PushMonitorActionsTest(
                 )
 
                 val statCalculatorMock = getMock(statCalculator)
-                every {
-                    statCalculatorMock.calculateHistoricalPushUptimeStats(testPeriod, enabledMonitor.id)
-                } returns HistoricalUptimeStatsDto(
-                    period = "irrelevant",
-                    incidents = 432,
-                    affectedMonitors = 2343,
-                    uptimeRatio = 0.2312,
-                    totalDowntimeSeconds = 342342,
-                )
-
                 createPushMonitor(pushMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 val enabledMonitorsUptimeEvent = createPushUptimeEventRecord(
                     dslContext,
@@ -169,13 +137,12 @@ class PushMonitorActionsTest(
                     updatedAt = getCurrentTimestamp().minusDays(2),
                 )
 
-                val uptimeEventRepoMock = getMock(uptimeEventRepository)
-                val firstMonitorsUptimeCalcContexts = listOf(randomUptimeEventCalculationContext())
-                every { uptimeEventRepoMock.fetchAllInPeriod(testPeriod, enabledMonitor.id) } returns
-                    firstMonitorsUptimeCalcContexts
                 every {
-                    statCalculator.generateUptimeHistoryOverview(testPeriod, firstMonitorsUptimeCalcContexts)
-                } returns listOf(StatusHistoryDto(LocalDate.now(), 12))
+                    statCalculatorMock.calculateUptimeOverview(MonitorType.PUSH, testPeriod, enabledMonitor.id)
+                } returns UptimeOverview(
+                    uptimeRatio = 0.2312,
+                    statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                )
 
                 // Executing the method under test
                 val result = pushMonitorActions.getStatusPageDataOfEnabledMonitors(

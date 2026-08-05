@@ -18,7 +18,7 @@ import java.time.OffsetDateTime
 
 @Suppress("TooManyFunctions")
 @Singleton
-class IcmpUptimeEventRepository(private val dslContext: DSLContext) {
+class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private fun IcmpMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
@@ -108,7 +108,7 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) {
         .fetchInto(IcmpUptimeEventDto::class.java)
 
     @Suppress("IgnoredReturnValue")
-    fun fetchAllInPeriod(period: Duration, monitorId: Long? = null): List<UptimeEventCalculationContext> {
+    override fun fetchAllInPeriod(period: Duration, monitorId: Long?): List<UptimeEventCalculationContext> {
         val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
@@ -128,7 +128,7 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) {
             .fetchInto(UptimeEventCalculationContext::class.java)
     }
 
-    fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
         .select(DSL.max(DSL.coalesce(ICMP_UPTIME_EVENT.UPDATED_AT, ICMP_UPTIME_EVENT.STARTED_AT)))
         .from(ICMP_UPTIME_EVENT)
         .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))

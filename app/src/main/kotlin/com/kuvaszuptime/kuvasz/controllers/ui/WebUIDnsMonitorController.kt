@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
@@ -67,7 +68,8 @@ class WebUIDnsMonitorController(
         return renderDnsMonitorDetailsPage(
             appGlobals,
             monitor,
-            stats = statCalculator.calculateHistoricalDnsUptimeStats(
+            stats = statCalculator.calculateHistoricalUptimeStats(
+                monitorType = MonitorType.DNS,
                 period = Duration.ofDays(UIDefaults.DNS_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                 monitorId = monitor.id,
             ),
@@ -95,7 +97,8 @@ class WebUIDnsMonitorController(
             append(
                 renderDnsUptimeSummary(
                     monitor = monitor,
-                    stats = statCalculator.calculateHistoricalDnsUptimeStats(
+                    stats = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.DNS,
                         period = Duration.ofDays(UIDefaults.DNS_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                         monitorId = monitor.id,
                     )

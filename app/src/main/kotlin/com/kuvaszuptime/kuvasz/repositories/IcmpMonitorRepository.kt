@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -24,7 +23,12 @@ import org.jooq.impl.DSL
 
 @Singleton
 @Suppress("TooManyFunctions")
-class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<IcmpMonitorRecord> {
+class IcmpMonitorRepository(
+    private val dslContext: DSLContext,
+) : MonitorRepository<IcmpMonitorRecord, IcmpMonitorDetailsDto> {
+
+    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<IcmpMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): IcmpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(ICMP_MONITOR)
@@ -177,7 +181,7 @@ class IcmpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .on(
             monitorNameField
                 .eq(
-                    DSL.`val`(MonitorType.ICMP.identifier)
+                    DSL.`val`(monitorType.identifier)
                         .concat(":")
                         .concat(ICMP_MONITOR.NAME)
                 )

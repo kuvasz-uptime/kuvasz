@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -24,7 +23,12 @@ import org.jooq.impl.DSL
 
 @Singleton
 @Suppress("TooManyFunctions")
-class TcpMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<TcpMonitorRecord> {
+class TcpMonitorRepository(
+    private val dslContext: DSLContext,
+) : MonitorRepository<TcpMonitorRecord, TcpMonitorDetailsDto> {
+
+    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<TcpMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): TcpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(TCP_MONITOR)
@@ -177,7 +181,7 @@ class TcpMonitorRepository(private val dslContext: DSLContext) : MonitorReposito
         .on(
             monitorNameField
                 .eq(
-                    DSL.`val`(MonitorType.TCP.identifier)
+                    DSL.`val`(monitorType.identifier)
                         .concat(":")
                         .concat(TCP_MONITOR.NAME)
                 )

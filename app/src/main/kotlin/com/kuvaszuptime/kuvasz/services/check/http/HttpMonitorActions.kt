@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
@@ -14,7 +13,6 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
@@ -26,6 +24,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
+import com.kuvaszuptime.kuvasz.repositories.toStatsDto
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -58,12 +57,20 @@ class HttpMonitorActions(
     private val integrationIdValidator: IntegrationIdValidator,
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
-    private val statCalculator: StatCalculator,
-    private val maintenanceWindowService: MaintenanceWindowService,
+    statCalculator: StatCalculator,
+    maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
 ) : StatusPageMonitorDataProvider,
-    MonitorActions<HttpMonitorRecord>(dslContext, appConfig, statusPageRepository, monitorRepository, eventDispatcher) {
+    MonitorActions<HttpMonitorRecord, HttpMonitorDetailsDto>(
+        dslContext,
+        appConfig,
+        statusPageRepository,
+        monitorRepository,
+        eventDispatcher,
+        statCalculator,
+        maintenanceWindowService,
+    ) {
 
     private val objectMapper: ObjectMapper = jacksonMapperBuilder()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -187,70 +194,47 @@ class HttpMonitorActions(
             }
 
     fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =
-        monitorRepository.findById(monitorId, null)
-            .orThrowNotFound(monitorId)
-            .let { monitor ->
-                val uptimeHistory = statCalculator.calculateHistoricalHttpUptimeStats(period, monitorId)
-                val statsDto = HttpMonitorStatsDto(
-                    id = monitor.id,
-                    uptimeHistory = uptimeHistory,
-                    latencyHistoryEnabled = monitor.latencyHistoryEnabled,
-                    latencyStats = null,
-                    latencyLogs = emptyList()
-                )
-                if (!monitor.latencyHistoryEnabled) {
-                    return statsDto
-                }
-
-                val metrics = latencyLogRepository.getLatencyMetrics(monitor.id, period)
-                statsDto.copy(
-                    latencyStats = metrics?.let {
-                        LatencyStatsDto(
-                            averageLatencyInMs = metrics.avg,
-                            minLatencyInMs = metrics.min,
-                            maxLatencyInMs = metrics.max,
-                            p90LatencyInMs = metrics.p90,
-                            p95LatencyInMs = metrics.p95,
-                            p99LatencyInMs = metrics.p99,
-                        )
-                    },
-                    latencyLogs = latencyLogRepository.fetchLatestByMonitorId(monitor.id, period)
-                )
+        withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->
+            val statsDto = HttpMonitorStatsDto(
+                id = monitor.id,
+                uptimeHistory = uptimeHistory,
+                latencyHistoryEnabled = monitor.latencyHistoryEnabled,
+                latencyStats = null,
+                latencyLogs = emptyList()
+            )
+            if (!monitor.latencyHistoryEnabled) {
+                return@withUptimeHistory statsDto
             }
+
+            statsDto.copy(
+                latencyStats = latencyLogRepository.getLatencyMetrics(monitor.id, period)?.toStatsDto(),
+                latencyLogs = latencyLogRepository.fetchLatestByMonitorId(monitor.id, period)
+            )
+        }
 
     fun getHttpMonitorsExport(): List<HttpMonitorRecord> = monitorRepository.fetchAll()
 
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
-    ): List<StatusPageHttpMonitorDetailsDto> {
-        val httpMonitorNames = monitorIds?.filter { it.type == MonitorType.HTTP_SSL }?.map { it.name }
-        val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = httpMonitorNames)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
-
-        return enabledMonitors.map { monitor ->
-            val uptimeHistory = statCalculator.calculateHistoricalHttpUptimeStats(period, monitor.id)
+    ): List<StatusPageHttpMonitorDetailsDto> =
+        buildStatusPageData(
+            period = period,
+            monitorIds = monitorIds,
+        ) { monitor, uptime ->
             val latencyMetrics = if (monitor.latencyHistoryEnabled) {
                 latencyLogRepository.getLatencyMetrics(monitor.id, period)
             } else {
                 null
             }
-            val statusHistory = statCalculator.generateUptimeHistoryOverview(
-                period = period,
-                uptimeEvents = uptimeEventRepository.fetchAllInPeriod(
-                    period = period,
-                    monitorId = monitor.id,
-                )
-            )
             StatusPageHttpMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = latencyMetrics?.avg,
-                uptimeRatio = uptimeHistory.uptimeRatio,
+                uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
-                uptimeStatusHistory = statusHistory,
-                inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
+                uptimeStatusHistory = uptime.uptimeStatusHistory,
+                inMaintenance = uptime.inMaintenance,
             )
         }
-    }
 }

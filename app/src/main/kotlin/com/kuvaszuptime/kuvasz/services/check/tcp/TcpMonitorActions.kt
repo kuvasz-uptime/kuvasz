@@ -5,24 +5,23 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.TcpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.TcpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorUpdateDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.toMonitorRecord
+import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
-import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
+import com.kuvaszuptime.kuvasz.repositories.toStatsDto
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -54,12 +53,20 @@ class TcpMonitorActions(
     private val integrationIdValidator: IntegrationIdValidator,
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
-    private val statCalculator: StatCalculator,
-    private val maintenanceWindowService: MaintenanceWindowService,
+    statCalculator: StatCalculator,
+    maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
 ) : StatusPageMonitorDataProvider,
-    MonitorActions<TcpMonitorRecord>(dslContext, appConfig, statusPageRepository, monitorRepository, eventDispatcher) {
+    MonitorActions<TcpMonitorRecord, TcpMonitorDetailsDto>(
+        dslContext,
+        appConfig,
+        statusPageRepository,
+        monitorRepository,
+        eventDispatcher,
+        statCalculator,
+        maintenanceWindowService,
+    ) {
 
     private val objectMapper: ObjectMapper = jacksonMapperBuilder()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -167,55 +174,33 @@ class TcpMonitorActions(
             }
 
     fun getMonitorStats(monitorId: Long, period: Duration): TcpMonitorStatsDto =
-        monitorRepository.findById(monitorId, null)
-            .orThrowNotFound(monitorId)
-            .let { monitor ->
-                val uptimeHistory = statCalculator.calculateHistoricalTcpUptimeStats(period, monitorId)
-                val statsDto = TcpMonitorStatsDto(
-                    id = monitor.id,
-                    metricsHistoryEnabled = monitor.metricsHistoryEnabled,
-                    uptimeHistory = uptimeHistory,
-                    latencyStats = null,
-                    metricsLogs = emptyList(),
-                )
-                if (!monitor.metricsHistoryEnabled) {
-                    return statsDto
-                }
-                val latencyMetrics = metricsLogRepository.getLatencyMetrics(monitor.id, period)
-                statsDto.copy(
-                    latencyStats = latencyMetrics?.let {
-                        LatencyStatsDto(
-                            averageLatencyInMs = latencyMetrics.avg,
-                            minLatencyInMs = latencyMetrics.min,
-                            maxLatencyInMs = latencyMetrics.max,
-                            p90LatencyInMs = latencyMetrics.p90,
-                            p95LatencyInMs = latencyMetrics.p95,
-                            p99LatencyInMs = latencyMetrics.p99,
-                        )
-                    },
-                    metricsLogs = metricsLogRepository.fetchLatestByMonitorId(monitor.id, period),
-                )
+        withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->
+            val statsDto = TcpMonitorStatsDto(
+                id = monitor.id,
+                metricsHistoryEnabled = monitor.metricsHistoryEnabled,
+                uptimeHistory = uptimeHistory,
+                latencyStats = null,
+                metricsLogs = emptyList(),
+            )
+            if (!monitor.metricsHistoryEnabled) {
+                return@withUptimeHistory statsDto
             }
+            statsDto.copy(
+                latencyStats = metricsLogRepository.getLatencyMetrics(monitor.id, period)?.toStatsDto(),
+                metricsLogs = metricsLogRepository.fetchLatestByMonitorId(monitor.id, period),
+            )
+        }
 
     fun getTcpMonitorsExport(): List<TcpMonitorRecord> = monitorRepository.fetchAll()
 
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
-    ): List<StatusPageTcpMonitorDetailsDto> {
-        val tcpMonitorNames = monitorIds?.filter { it.type == MonitorType.TCP }?.map { it.name }
-        val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = tcpMonitorNames)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
-
-        return enabledMonitors.map { monitor ->
-            val uptimeHistory = statCalculator.calculateHistoricalTcpUptimeStats(period, monitor.id)
-            val statusHistory = statCalculator.generateUptimeHistoryOverview(
-                period = period,
-                uptimeEvents = uptimeEventRepository.fetchAllInPeriod(
-                    period = period,
-                    monitorId = monitor.id,
-                )
-            )
+    ): List<StatusPageTcpMonitorDetailsDto> =
+        buildStatusPageData(
+            period = period,
+            monitorIds = monitorIds,
+        ) { monitor, uptime ->
             val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
                 ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }
 
@@ -223,11 +208,10 @@ class TcpMonitorActions(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = latencyMetrics?.avg,
-                uptimeRatio = uptimeHistory.uptimeRatio,
+                uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
-                uptimeStatusHistory = statusHistory,
-                inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
+                uptimeStatusHistory = uptime.uptimeStatusHistory,
+                inMaintenance = uptime.inMaintenance,
             )
         }
-    }
 }

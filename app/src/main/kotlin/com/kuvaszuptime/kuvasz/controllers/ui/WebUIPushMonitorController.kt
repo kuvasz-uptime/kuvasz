@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
@@ -65,7 +66,8 @@ class WebUIPushMonitorController(
         return renderPushMonitorDetailsPage(
             appGlobals,
             monitor,
-            stats = statCalculator.calculateHistoricalPushUptimeStats(
+            stats = statCalculator.calculateHistoricalUptimeStats(
+                monitorType = MonitorType.PUSH,
                 period = Duration.ofDays(UIDefaults.PUSH_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                 monitorId = monitor.id,
             ),
@@ -93,7 +95,8 @@ class WebUIPushMonitorController(
             append(
                 renderPushUptimeSummary(
                     monitor = monitor,
-                    stats = statCalculator.calculateHistoricalPushUptimeStats(
+                    stats = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.PUSH,
                         period = Duration.ofDays(UIDefaults.PUSH_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                         monitorId = monitor.id,
                     )

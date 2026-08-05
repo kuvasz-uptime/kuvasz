@@ -29,7 +29,7 @@ import java.util.concurrent.ScheduledFuture
  */
 abstract class UptimeCheckScheduler<R : SchedulableMonitorRecord>(
     protected val taskScheduler: TaskScheduler,
-    private val monitorRepository: MonitorRepository<R>,
+    private val monitorRepository: MonitorRepository<R, *>,
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
     protected val maintenanceWindowService: MaintenanceWindowService,

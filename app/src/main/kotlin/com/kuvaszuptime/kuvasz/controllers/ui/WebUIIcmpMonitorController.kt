@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
@@ -65,7 +66,8 @@ class WebUIIcmpMonitorController(
         return renderIcmpMonitorDetailsPage(
             appGlobals,
             monitor,
-            stats = statCalculator.calculateHistoricalIcmpUptimeStats(
+            stats = statCalculator.calculateHistoricalUptimeStats(
+                monitorType = MonitorType.ICMP,
                 period = Duration.ofDays(UIDefaults.ICMP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                 monitorId = monitor.id,
             ),
@@ -93,7 +95,8 @@ class WebUIIcmpMonitorController(
             append(
                 renderIcmpUptimeSummary(
                     monitor = monitor,
-                    stats = statCalculator.calculateHistoricalIcmpUptimeStats(
+                    stats = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.ICMP,
                         period = Duration.ofDays(UIDefaults.ICMP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                         monitorId = monitor.id,
                     )

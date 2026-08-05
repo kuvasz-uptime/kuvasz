@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent.DNS_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -25,9 +24,14 @@ import org.jooq.impl.DSL
 
 @Singleton
 @Suppress("TooManyFunctions")
-class DnsMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<DnsMonitorRecord> {
+class DnsMonitorRepository(
+    private val dslContext: DSLContext,
+) : MonitorRepository<DnsMonitorRecord, DnsMonitorDetailsDto> {
 
     private val matcherListConverter = JsonNodeToMatcherListConverter()
+
+    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<DnsMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): DnsMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DNS_MONITOR)
@@ -192,7 +196,7 @@ class DnsMonitorRepository(private val dslContext: DSLContext) : MonitorReposito
         .on(
             monitorNameField
                 .eq(
-                    DSL.`val`(MonitorType.DNS.identifier)
+                    DSL.`val`(monitorType.identifier)
                         .concat(":")
                         .concat(DNS_MONITOR.NAME)
                 )

@@ -780,7 +780,8 @@ class HttpMonitorControllerTest(
 
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalHttpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.HTTP_SSL,
                             period = Duration.ofDays(1),
                             monitorId = monitor.id,
                         )
@@ -832,7 +833,8 @@ class HttpMonitorControllerTest(
                     val testPeriod = Duration.ofMinutes(4)
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalHttpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.HTTP_SSL,
                             period = testPeriod,
                             monitorId = monitor.id,
                         )
@@ -875,7 +877,8 @@ class HttpMonitorControllerTest(
                 then("it should return null for the latency stats and an empty list for the logs") {
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalHttpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.HTTP_SSL,
                             period = Duration.ofDays(1),
                             monitorId = monitor.id,
                         )
@@ -918,7 +921,8 @@ class HttpMonitorControllerTest(
 
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalHttpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.HTTP_SSL,
                             period = Duration.ofDays(1),
                             monitorId = monitor.id,
                         )

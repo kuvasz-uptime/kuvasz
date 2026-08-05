@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.util.toPersistenceException
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -16,12 +17,20 @@ import org.jooq.impl.SQLDataType
 
 /**
  * A generic repository interface for common, non-specific monitor operations.
+ *
+ * Decisions are worth knowing about here:
+ *
+ * - [monitorType] is an extension property instead of a member, so it keeps working on the implementations even when
+ *   they are mocked in the tests. A mocked member would return nothing and break every consumer that collects these
+ *   repositories as a bean list, like [com.kuvaszuptime.kuvasz.services.StatCalculator].
  */
-interface MonitorRepository<R : MonitorRecord> {
+sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
 
     companion object {
         const val MONITOR_NAME_FIELD_NAME = "monitor_name"
     }
+
+    fun fetchAllWithDetails(enabled: Boolean? = null, monitorNames: List<String>? = null): List<D>
 
     fun findById(monitorId: Long, txCtx: DSLContext?): R?
     fun deleteById(monitorId: Long, txCtx: DSLContext?): Int

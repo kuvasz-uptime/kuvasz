@@ -18,7 +18,7 @@ import java.time.OffsetDateTime
 
 @Suppress("TooManyFunctions")
 @Singleton
-class DnsUptimeEventRepository(private val dslContext: DSLContext) {
+class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private fun DnsMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
@@ -108,7 +108,7 @@ class DnsUptimeEventRepository(private val dslContext: DSLContext) {
         .fetchInto(DnsUptimeEventDto::class.java)
 
     @Suppress("IgnoredReturnValue")
-    fun fetchAllInPeriod(period: Duration, monitorId: Long? = null): List<UptimeEventCalculationContext> {
+    override fun fetchAllInPeriod(period: Duration, monitorId: Long?): List<UptimeEventCalculationContext> {
         val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
@@ -128,7 +128,7 @@ class DnsUptimeEventRepository(private val dslContext: DSLContext) {
             .fetchInto(UptimeEventCalculationContext::class.java)
     }
 
-    fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
         .select(DSL.max(DSL.coalesce(DNS_UPTIME_EVENT.UPDATED_AT, DNS_UPTIME_EVENT.STARTED_AT)))
         .from(DNS_UPTIME_EVENT)
         .join(DNS_MONITOR).on(DNS_UPTIME_EVENT.MONITOR_ID.eq(DNS_MONITOR.ID))

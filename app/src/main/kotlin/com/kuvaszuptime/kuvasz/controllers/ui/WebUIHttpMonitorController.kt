@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
@@ -71,7 +72,8 @@ class WebUIHttpMonitorController(
         return renderHttpMonitorDetailsPage(
             appGlobals,
             monitor,
-            stats = statCalculator.calculateHistoricalHttpUptimeStats(
+            stats = statCalculator.calculateHistoricalUptimeStats(
+                monitorType = MonitorType.HTTP_SSL,
                 period = Duration.ofDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                 monitorId = monitor.id,
             ),
@@ -99,7 +101,8 @@ class WebUIHttpMonitorController(
             append(
                 renderHttpUptimeSummary(
                     monitor = monitor,
-                    stats = statCalculator.calculateHistoricalHttpUptimeStats(
+                    stats = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.HTTP_SSL,
                         period = Duration.ofDays(UIDefaults.HTTP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                         monitorId = monitor.id,
                     )
