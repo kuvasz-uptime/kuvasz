@@ -1,6 +1,6 @@
 [versions]
 buildconfig = "6.0.10"
-detekt = "2.0.0-alpha.5"
+detekt = "2.0.0-alpha.6"
 detektFormatting = "1.23.8"
 dnsjava = "3.6.5"
 flywayPlugin = "13.1.0"
