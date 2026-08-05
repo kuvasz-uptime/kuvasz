@@ -17,7 +17,7 @@ import java.time.Duration
 import java.time.OffsetDateTime
 
 @Singleton
-class PushUptimeEventRepository(private val dslContext: DSLContext) {
+class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private fun PushMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
@@ -107,11 +107,11 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
         }
         .fetchInto(PushUptimeEventDto::class.java)
 
-    /**
-     * Fetches all uptime events that have ended or was open within the specified period.
-     */
     @Suppress("IgnoredReturnValue")
-    fun fetchAllInPeriod(period: Duration, monitorId: Long? = null): List<UptimeEventCalculationContext> {
+    override fun fetchAllInPeriod(
+        period: Duration,
+        monitorIds: List<Long>?,
+    ): List<UptimeEventCalculationContext> {
         val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
@@ -126,15 +126,12 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) {
             .join(PUSH_MONITOR).on(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))
             .where(DSL.coalesce(PUSH_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
             .apply {
-                monitorId?.let { and(PUSH_UPTIME_EVENT.MONITOR_ID.eq(it)) }
+                monitorIds?.let { and(PUSH_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
             }
             .fetchInto(UptimeEventCalculationContext::class.java)
     }
 
-    /**
-     * Fetches the timestamp of the latest incident (DOWN status) for enabled monitors.
-     */
-    fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
         .select(DSL.max(DSL.coalesce(PUSH_UPTIME_EVENT.UPDATED_AT, PUSH_UPTIME_EVENT.STARTED_AT)))
         .from(PUSH_UPTIME_EVENT)
         .join(PUSH_MONITOR).on(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))

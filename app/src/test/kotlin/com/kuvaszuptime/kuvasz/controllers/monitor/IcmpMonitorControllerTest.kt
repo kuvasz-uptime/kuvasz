@@ -615,7 +615,8 @@ class IcmpMonitorControllerTest(
                 then("it should return the correct latency stats, packet loss stats and latency logs") {
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalIcmpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.ICMP,
                             period = Duration.ofDays(1),
                             monitorId = monitor.id,
                         )
@@ -683,7 +684,8 @@ class IcmpMonitorControllerTest(
                     val testPeriod = Duration.ofMinutes(4)
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalIcmpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.ICMP,
                             period = testPeriod,
                             monitorId = monitor.id,
                         )
@@ -717,7 +719,8 @@ class IcmpMonitorControllerTest(
                 then("it should return null for latency and packet loss stats and an empty list for logs") {
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalIcmpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.ICMP,
                             period = Duration.ofDays(1),
                             monitorId = monitor.id,
                         )
@@ -750,7 +753,8 @@ class IcmpMonitorControllerTest(
                 then("it should return stats with metricsHistoryEnabled=false and no latency data") {
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalIcmpUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.ICMP,
                             period = Duration.ofDays(1),
                             monitorId = monitor.id,
                         )

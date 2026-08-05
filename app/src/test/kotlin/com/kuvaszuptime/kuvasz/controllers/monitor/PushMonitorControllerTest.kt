@@ -482,7 +482,8 @@ class PushMonitorControllerTest(
                     val testPeriod = Duration.ofMinutes(4)
                     val statCalculatorMock = getMock(statCalculator)
                     every {
-                        statCalculatorMock.calculateHistoricalPushUptimeStats(
+                        statCalculatorMock.calculateHistoricalUptimeStats(
+                            monitorType = MonitorType.PUSH,
                             period = testPeriod,
                             monitorId = monitor.id,
                         )

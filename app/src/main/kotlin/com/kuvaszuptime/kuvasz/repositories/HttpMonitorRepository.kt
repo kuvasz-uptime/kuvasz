@@ -9,7 +9,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -27,9 +26,14 @@ import org.jooq.impl.DSL
 
 @Singleton
 @Suppress("TooManyFunctions")
-class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<HttpMonitorRecord> {
+class HttpMonitorRepository(
+    private val dslContext: DSLContext,
+) : MonitorRepository<HttpMonitorRecord, HttpMonitorDetailsDto> {
 
     private val jsonToMapConverter = JsonNodeToMapConverter()
+
+    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<HttpMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): HttpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(HTTP_MONITOR)
@@ -221,7 +225,7 @@ class HttpMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .on(
             monitorNameField
                 .eq(
-                    DSL.`val`(MonitorType.HTTP_SSL.identifier)
+                    DSL.`val`(monitorType.identifier)
                         .concat(":")
                         .concat(HTTP_MONITOR.NAME)
                 )

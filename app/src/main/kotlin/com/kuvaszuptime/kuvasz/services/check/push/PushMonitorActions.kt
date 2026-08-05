@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.PushMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
@@ -57,14 +56,22 @@ class PushMonitorActions(
     private val integrationIdValidator: IntegrationIdValidator,
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
-    private val statCalculator: StatCalculator,
-    private val maintenanceWindowService: MaintenanceWindowService,
+    statCalculator: StatCalculator,
+    maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
     private val databaseEventHandler: DatabaseEventHandler,
     private val pendingFailureRepository: PendingFailureRepository,
 ) : StatusPageMonitorDataProvider,
-    MonitorActions<PushMonitorRecord>(dslContext, appConfig, statusPageRepository, monitorRepository, eventDispatcher) {
+    MonitorActions<PushMonitorRecord, PushMonitorDetailsDto>(
+        dslContext,
+        appConfig,
+        statusPageRepository,
+        monitorRepository,
+        eventDispatcher,
+        statCalculator,
+        maintenanceWindowService,
+    ) {
 
     private val objectMapper: ObjectMapper = jacksonMapperBuilder()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -172,46 +179,33 @@ class PushMonitorActions(
             }
 
     fun getMonitorStats(monitorId: Long, period: Duration): PushMonitorStatsDto =
-        monitorRepository.findById(monitorId, null)
-            .orThrowNotFound(monitorId)
-            .let { monitor ->
-                val uptimeHistory = statCalculator.calculateHistoricalPushUptimeStats(period, monitorId)
-                PushMonitorStatsDto(
-                    id = monitor.id,
-                    uptimeHistory = uptimeHistory,
-                )
-            }
+        withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->
+            PushMonitorStatsDto(
+                id = monitor.id,
+                uptimeHistory = uptimeHistory,
+            )
+        }
 
     fun getPushMonitorsExport(): List<PushMonitorRecord> = monitorRepository.fetchAll()
 
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
-    ): List<StatusPagePushMonitorDetailsDto> {
-        val pushMonitorNames = monitorIds?.filter { it.type == MonitorType.PUSH }?.map { it.name }
-        val enabledMonitors = monitorRepository.getMonitorsWithDetails(enabled = true, monitorNames = pushMonitorNames)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
-
-        return enabledMonitors.map { monitor ->
-            val uptimeHistory = statCalculator.calculateHistoricalPushUptimeStats(period, monitor.id)
-            val statusHistory = statCalculator.generateUptimeHistoryOverview(
-                period = period,
-                uptimeEvents = uptimeEventRepository.fetchAllInPeriod(
-                    period = period,
-                    monitorId = monitor.id,
-                )
-            )
+    ): List<StatusPagePushMonitorDetailsDto> =
+        buildStatusPageData(
+            period = period,
+            monitorIds = monitorIds,
+        ) { monitor, uptime ->
             StatusPagePushMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                uptimeRatio = uptimeHistory.uptimeRatio,
+                uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
-                uptimeStatusHistory = statusHistory,
-                inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
+                uptimeStatusHistory = uptime.uptimeStatusHistory,
+                inMaintenance = uptime.inMaintenance,
                 lastHeartbeat = monitor.lastHeartbeat,
             )
         }
-    }
 
     /**
      * Matches an enabled push monitor by the given client secret and dispatches a DOWN event with the given error.

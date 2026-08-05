@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -27,7 +26,12 @@ import java.time.OffsetDateTime
 
 @Singleton
 @Suppress("TooManyFunctions")
-class PushMonitorRepository(private val dslContext: DSLContext) : MonitorRepository<PushMonitorRecord> {
+class PushMonitorRepository(
+    private val dslContext: DSLContext,
+) : MonitorRepository<PushMonitorRecord, PushMonitorDetailsDto> {
+
+    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<PushMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): PushMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(PUSH_MONITOR)
@@ -193,7 +197,7 @@ class PushMonitorRepository(private val dslContext: DSLContext) : MonitorReposit
         .on(
             monitorNameField
                 .eq(
-                    DSL.`val`(MonitorType.PUSH.identifier)
+                    DSL.`val`(monitorType.identifier)
                         .concat(":")
                         .concat(PUSH_MONITOR.NAME)
                 )

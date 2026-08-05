@@ -5,16 +5,15 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
-import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
-import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
 import com.kuvaszuptime.kuvasz.repositories.PacketLossMetricResult
 import com.kuvaszuptime.kuvasz.services.StatCalculator
-import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
+import com.kuvaszuptime.kuvasz.services.UptimeOverview
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forOne
@@ -27,13 +26,10 @@ import io.mockk.every
 import io.mockk.mockk
 import java.time.Duration
 import java.time.LocalDate
-import java.time.OffsetDateTime
-import kotlin.random.Random
 
 @MicronautTest
 class IcmpMonitorActionsTest(
     private val icmpMonitorActions: IcmpMonitorActions,
-    private val uptimeEventRepository: IcmpUptimeEventRepository,
     private val statCalculator: StatCalculator,
     private val metricsLogRepository: IcmpMetricsLogRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
@@ -41,15 +37,6 @@ class IcmpMonitorActionsTest(
     init {
 
         given("the getStatusPageDataOfEnabledMonitors() method") {
-
-            fun randomUptimeEventCalculationContext() = UptimeEventCalculationContext(
-                monitorId = Random.nextLong(),
-                isMonitorEnabled = true,
-                status = UptimeStatus.entries.toTypedArray().random(),
-                startedAt = getCurrentTimestamp().minusDays((1..10).random().toLong()),
-                endedAt = null as OffsetDateTime?,
-                updatedAt = getCurrentTimestamp().minusDays((1..10).random().toLong()),
-            )
 
             `when`("it is called without monitorIds") {
 
@@ -68,24 +55,6 @@ class IcmpMonitorActionsTest(
                 )
 
                 val statCalculatorMock = getMock(statCalculator)
-                every {
-                    statCalculatorMock.calculateHistoricalIcmpUptimeStats(testPeriod, enabledMonitor.id)
-                } returns HistoricalUptimeStatsDto(
-                    period = "irrelevant",
-                    incidents = 432,
-                    affectedMonitors = 2343,
-                    uptimeRatio = 0.2312,
-                    totalDowntimeSeconds = 342342,
-                )
-                every {
-                    statCalculatorMock.calculateHistoricalIcmpUptimeStats(testPeriod, enabledMonitor2.id)
-                } returns HistoricalUptimeStatsDto(
-                    period = "irrelevant",
-                    incidents = 0,
-                    affectedMonitors = 0,
-                    uptimeRatio = 0.0123,
-                    totalDowntimeSeconds = 14,
-                )
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
                     metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
@@ -129,19 +98,22 @@ class IcmpMonitorActionsTest(
                     updatedAt = getCurrentTimestamp().minusDays(2),
                 )
 
-                val uptimeEventRepoMock = getMock(uptimeEventRepository)
-                val firstMonitorsUptimeCalcContexts = listOf(randomUptimeEventCalculationContext())
-                val secondMonitorsUptimeCalcContexts = listOf(randomUptimeEventCalculationContext())
-                every { uptimeEventRepoMock.fetchAllInPeriod(testPeriod, enabledMonitor.id) } returns
-                    firstMonitorsUptimeCalcContexts
-                every { uptimeEventRepoMock.fetchAllInPeriod(testPeriod, enabledMonitor2.id) } returns
-                    secondMonitorsUptimeCalcContexts
                 every {
-                    statCalculator.generateUptimeHistoryOverview(testPeriod, firstMonitorsUptimeCalcContexts)
-                } returns listOf(StatusHistoryDto(LocalDate.now(), 12))
-                every {
-                    statCalculator.generateUptimeHistoryOverview(testPeriod, secondMonitorsUptimeCalcContexts)
-                } returns listOf(StatusHistoryDto(LocalDate.now(), 34))
+                    statCalculatorMock.calculateUptimeOverviews(
+                        monitorType = MonitorType.ICMP,
+                        period = testPeriod,
+                        monitorIds = match { it.toSet() == setOf(enabledMonitor.id, enabledMonitor2.id) },
+                    )
+                } returns mapOf(
+                    enabledMonitor.id to UptimeOverview(
+                        uptimeRatio = 0.2312,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    ),
+                    enabledMonitor2.id to UptimeOverview(
+                        uptimeRatio = 0.0123,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 34)),
+                    ),
+                )
 
                 // Executing the method under test
                 val result = icmpMonitorActions.getStatusPageDataOfEnabledMonitors(
@@ -196,15 +168,6 @@ class IcmpMonitorActionsTest(
                 )
 
                 val statCalculatorMock = getMock(statCalculator)
-                every {
-                    statCalculatorMock.calculateHistoricalIcmpUptimeStats(testPeriod, enabledMonitor.id)
-                } returns HistoricalUptimeStatsDto(
-                    period = "irrelevant",
-                    incidents = 432,
-                    affectedMonitors = 2343,
-                    uptimeRatio = 0.2312,
-                    totalDowntimeSeconds = 342342,
-                )
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
                     metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
@@ -247,13 +210,18 @@ class IcmpMonitorActionsTest(
                     updatedAt = getCurrentTimestamp().minusDays(2),
                 )
 
-                val uptimeEventRepoMock = getMock(uptimeEventRepository)
-                val firstMonitorsUptimeCalcContexts = listOf(randomUptimeEventCalculationContext())
-                every { uptimeEventRepoMock.fetchAllInPeriod(testPeriod, enabledMonitor.id) } returns
-                    firstMonitorsUptimeCalcContexts
                 every {
-                    statCalculator.generateUptimeHistoryOverview(testPeriod, firstMonitorsUptimeCalcContexts)
-                } returns listOf(StatusHistoryDto(LocalDate.now(), 12))
+                    statCalculatorMock.calculateUptimeOverviews(
+                        monitorType = MonitorType.ICMP,
+                        period = testPeriod,
+                        monitorIds = listOf(enabledMonitor.id),
+                    )
+                } returns mapOf(
+                    enabledMonitor.id to UptimeOverview(
+                        uptimeRatio = 0.2312,
+                        statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                    ),
+                )
 
                 // Executing the method under test
                 val result = icmpMonitorActions.getStatusPageDataOfEnabledMonitors(
@@ -280,9 +248,6 @@ class IcmpMonitorActionsTest(
             }
         }
     }
-
-    @MockBean(IcmpUptimeEventRepository::class)
-    fun icmpUptimeEventRepository(): IcmpUptimeEventRepository = mockk()
 
     @MockBean(StatCalculator::class)
     fun statCalculator(): StatCalculator = mockk()

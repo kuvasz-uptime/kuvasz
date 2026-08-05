@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.tcp
 
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.LatencyStatsDto
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime

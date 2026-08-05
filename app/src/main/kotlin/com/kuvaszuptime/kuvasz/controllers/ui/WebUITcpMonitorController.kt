@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
@@ -65,7 +66,8 @@ class WebUITcpMonitorController(
         return renderTcpMonitorDetailsPage(
             appGlobals,
             monitor,
-            stats = statCalculator.calculateHistoricalTcpUptimeStats(
+            stats = statCalculator.calculateHistoricalUptimeStats(
+                monitorType = MonitorType.TCP,
                 period = Duration.ofDays(UIDefaults.TCP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                 monitorId = monitor.id,
             ),
@@ -93,7 +95,8 @@ class WebUITcpMonitorController(
             append(
                 renderTcpUptimeSummary(
                     monitor = monitor,
-                    stats = statCalculator.calculateHistoricalTcpUptimeStats(
+                    stats = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.TCP,
                         period = Duration.ofDays(UIDefaults.TCP_MONITOR_UPTIME_STATS_PERIOD_DAYS),
                         monitorId = monitor.id,
                     )

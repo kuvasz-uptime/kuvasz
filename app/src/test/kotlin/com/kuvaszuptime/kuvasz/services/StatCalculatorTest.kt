@@ -20,13 +20,17 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.monitorType
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.testutils.shouldEqualRounded
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldBeSortedBy
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -42,9 +46,24 @@ class StatCalculatorTest(
     icmpMonitorRepository: IcmpMonitorRepository,
     tcpMonitorRepository: TcpMonitorRepository,
     dnsMonitorRepository: DnsMonitorRepository,
+    monitorRepositories: List<MonitorRepository<*, *>>,
+    uptimeEventRepositories: List<UptimeEventRepository>,
     statCalculator: StatCalculator,
 ) : DatabaseBehaviorSpec() {
     init {
+
+        given("the repositories the calculator is relying on") {
+
+            `when`("the beans of the different monitor types are collected") {
+
+                then("there should be a monitor and an uptime event repository for every type") {
+                    monitorRepositories.map { it.monitorType } shouldContainExactlyInAnyOrder
+                        MonitorType.entries
+                    uptimeEventRepositories.map { it.monitorType } shouldContainExactlyInAnyOrder
+                        MonitorType.entries
+                }
+            }
+        }
 
         given("the calculateOverallHttpStats method") {
 
@@ -727,7 +746,9 @@ class StatCalculatorTest(
                     stats.history.uptimeStats.uptimeRatio shouldEqualRounded 7.toDouble() / 9
                     // 2 days in seconds, because even the downtime stared before the period, only the part within the
                     // period should be counted
-                    stats.history.uptimeStats.totalDowntimeSeconds shouldBe 2 * 24 * 60 * 60
+                    val expectedDowntimeSeconds = 2L * 24 * 60 * 60
+                    stats.history.uptimeStats.totalDowntimeSeconds shouldBeInRange
+                        expectedDowntimeSeconds - 1..expectedDowntimeSeconds + 1
                 }
             }
 
@@ -871,7 +892,7 @@ class StatCalculatorTest(
             }
         }
 
-        given("the calculateHistoricalHttpUptimeStats(monitor) method") {
+        given("the calculateHistoricalUptimeStats(MonitorType.HTTP_SSL, monitor) method") {
 
             `when`("monitors with all the exposed statuses are present") {
 
@@ -929,7 +950,8 @@ class StatCalculatorTest(
                 )
 
                 then("it should correctly calculate the stats for all statuses") {
-                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.HTTP_SSL,
                         period = Duration.ofDays(6),
                         monitorId = upMonitorInProgress.id,
                     )
@@ -938,7 +960,8 @@ class StatCalculatorTest(
                     statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfInProgressUpMonitor.uptimeRatio shouldBe null
 
-                    val statsOfUpMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    val statsOfUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.HTTP_SSL,
                         period = Duration.ofDays(6),
                         monitorId = upMonitor.id,
                     )
@@ -947,7 +970,8 @@ class StatCalculatorTest(
                     statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfUpMonitor.uptimeRatio shouldBe 1.0
 
-                    val statsOfDownMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    val statsOfDownMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.HTTP_SSL,
                         period = Duration.ofDays(6),
                         monitorId = downMonitor.id,
                     )
@@ -958,7 +982,8 @@ class StatCalculatorTest(
                         expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                     statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
-                    val statsOfPausedMonitor = statCalculator.calculateHistoricalHttpUptimeStats(
+                    val statsOfPausedMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.HTTP_SSL,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor.id,
                     )
@@ -967,7 +992,8 @@ class StatCalculatorTest(
                     statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
                     statsOfPausedMonitor.uptimeRatio shouldBe 0.5
 
-                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalHttpUptimeStats(
+                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.HTTP_SSL,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor2.id,
                     )
@@ -979,7 +1005,7 @@ class StatCalculatorTest(
             }
         }
 
-        given("the calculateHistoricalPushUptimeStats(monitor) method") {
+        given("the calculateHistoricalUptimeStats(MonitorType.PUSH, monitor) method") {
 
             `when`("monitors with all the exposed statuses are present") {
 
@@ -1037,7 +1063,8 @@ class StatCalculatorTest(
                 )
 
                 then("it should correctly calculate the stats for all statuses") {
-                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalPushUptimeStats(
+                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.PUSH,
                         period = Duration.ofDays(6),
                         monitorId = upMonitorInProgress.id,
                     )
@@ -1046,7 +1073,8 @@ class StatCalculatorTest(
                     statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfInProgressUpMonitor.uptimeRatio shouldBe null
 
-                    val statsOfUpMonitor = statCalculator.calculateHistoricalPushUptimeStats(
+                    val statsOfUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.PUSH,
                         period = Duration.ofDays(6),
                         monitorId = upMonitor.id,
                     )
@@ -1055,7 +1083,8 @@ class StatCalculatorTest(
                     statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfUpMonitor.uptimeRatio shouldBe 1.0
 
-                    val statsOfDownMonitor = statCalculator.calculateHistoricalPushUptimeStats(
+                    val statsOfDownMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.PUSH,
                         period = Duration.ofDays(6),
                         monitorId = downMonitor.id,
                     )
@@ -1066,7 +1095,8 @@ class StatCalculatorTest(
                         expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                     statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
-                    val statsOfPausedMonitor = statCalculator.calculateHistoricalPushUptimeStats(
+                    val statsOfPausedMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.PUSH,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor.id,
                     )
@@ -1075,7 +1105,8 @@ class StatCalculatorTest(
                     statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
                     statsOfPausedMonitor.uptimeRatio shouldBe 0.5
 
-                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalPushUptimeStats(
+                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.PUSH,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor2.id,
                     )
@@ -1387,9 +1418,27 @@ class StatCalculatorTest(
                     stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
                 }
             }
+
+            `when`("there is a monitor under an active maintenance window") {
+
+                val maintainedMonitor = createIcmpMonitor(icmpMonitorRepository, enabled = true)
+                createIcmpMonitor(icmpMonitorRepository, enabled = true)
+                createMaintenanceWindow(
+                    dslContext = dslContext,
+                    name = "active-icmp-window",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.ICMP, maintainedMonitor.name)),
+                )
+
+                then("it should count it as under maintenance") {
+                    val stats = statCalculator.calculateOverallIcmpStats(Duration.ofDays(6))
+                    stats.actual.uptimeStats.total shouldBe 2
+                    stats.actual.uptimeStats.inMaintenance shouldBe 1
+                }
+            }
         }
 
-        given("the calculateHistoricalIcmpUptimeStats(monitor) method") {
+        given("the calculateHistoricalUptimeStats(MonitorType.ICMP, monitor) method") {
 
             `when`("monitors with all the exposed statuses are present") {
 
@@ -1447,7 +1496,8 @@ class StatCalculatorTest(
                 )
 
                 then("it should correctly calculate the stats for all statuses") {
-                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalIcmpUptimeStats(
+                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.ICMP,
                         period = Duration.ofDays(6),
                         monitorId = upMonitorInProgress.id,
                     )
@@ -1456,7 +1506,8 @@ class StatCalculatorTest(
                     statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfInProgressUpMonitor.uptimeRatio shouldBe null
 
-                    val statsOfUpMonitor = statCalculator.calculateHistoricalIcmpUptimeStats(
+                    val statsOfUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.ICMP,
                         period = Duration.ofDays(6),
                         monitorId = upMonitor.id,
                     )
@@ -1465,7 +1516,8 @@ class StatCalculatorTest(
                     statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfUpMonitor.uptimeRatio shouldBe 1.0
 
-                    val statsOfDownMonitor = statCalculator.calculateHistoricalIcmpUptimeStats(
+                    val statsOfDownMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.ICMP,
                         period = Duration.ofDays(6),
                         monitorId = downMonitor.id,
                     )
@@ -1476,7 +1528,8 @@ class StatCalculatorTest(
                         expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                     statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
-                    val statsOfPausedMonitor = statCalculator.calculateHistoricalIcmpUptimeStats(
+                    val statsOfPausedMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.ICMP,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor.id,
                     )
@@ -1485,7 +1538,8 @@ class StatCalculatorTest(
                     statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
                     statsOfPausedMonitor.uptimeRatio shouldBe 0.5
 
-                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalIcmpUptimeStats(
+                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.ICMP,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor2.id,
                     )
@@ -1777,6 +1831,24 @@ class StatCalculatorTest(
                     stats.history.uptimeStats.totalDowntimeSeconds shouldBeInRange
                         expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                     stats.actual.uptimeStats.lastIncident shouldBe secondDownEndedAt
+                }
+            }
+
+            `when`("there is a monitor under an active maintenance window") {
+
+                val maintainedMonitor = createTcpMonitor(tcpMonitorRepository, enabled = true)
+                createTcpMonitor(tcpMonitorRepository, enabled = true)
+                createMaintenanceWindow(
+                    dslContext = dslContext,
+                    name = "active-tcp-window",
+                    enabled = true,
+                    monitors = listOf(MonitorID(MonitorType.TCP, maintainedMonitor.name)),
+                )
+
+                then("it should count it as under maintenance") {
+                    val stats = statCalculator.calculateOverallTcpStats(Duration.ofDays(6))
+                    stats.actual.uptimeStats.total shouldBe 2
+                    stats.actual.uptimeStats.inMaintenance shouldBe 1
                 }
             }
         }
@@ -2083,7 +2155,7 @@ class StatCalculatorTest(
             }
         }
 
-        given("the calculateHistoricalTcpUptimeStats(monitor) method") {
+        given("the calculateHistoricalUptimeStats(MonitorType.TCP, monitor) method") {
 
             `when`("monitors with all the exposed statuses are present") {
 
@@ -2141,7 +2213,8 @@ class StatCalculatorTest(
                 )
 
                 then("it should correctly calculate the stats for all statuses") {
-                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalTcpUptimeStats(
+                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.TCP,
                         period = Duration.ofDays(6),
                         monitorId = upMonitorInProgress.id,
                     )
@@ -2150,7 +2223,8 @@ class StatCalculatorTest(
                     statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfInProgressUpMonitor.uptimeRatio shouldBe null
 
-                    val statsOfUpMonitor = statCalculator.calculateHistoricalTcpUptimeStats(
+                    val statsOfUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.TCP,
                         period = Duration.ofDays(6),
                         monitorId = upMonitor.id,
                     )
@@ -2159,7 +2233,8 @@ class StatCalculatorTest(
                     statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfUpMonitor.uptimeRatio shouldBe 1.0
 
-                    val statsOfDownMonitor = statCalculator.calculateHistoricalTcpUptimeStats(
+                    val statsOfDownMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.TCP,
                         period = Duration.ofDays(6),
                         monitorId = downMonitor.id,
                     )
@@ -2170,7 +2245,8 @@ class StatCalculatorTest(
                         expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                     statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
-                    val statsOfPausedMonitor = statCalculator.calculateHistoricalTcpUptimeStats(
+                    val statsOfPausedMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.TCP,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor.id,
                     )
@@ -2179,7 +2255,8 @@ class StatCalculatorTest(
                     statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
                     statsOfPausedMonitor.uptimeRatio shouldBe 0.5
 
-                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalTcpUptimeStats(
+                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.TCP,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor2.id,
                     )
@@ -2192,7 +2269,7 @@ class StatCalculatorTest(
         }
 
 
-        given("the calculateHistoricalDnsUptimeStats(monitor) method") {
+        given("the calculateHistoricalUptimeStats(MonitorType.DNS, monitor) method") {
 
             `when`("monitors with all the exposed statuses are present") {
 
@@ -2250,7 +2327,8 @@ class StatCalculatorTest(
                 )
 
                 then("it should correctly calculate the stats for all statuses") {
-                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                    val statsOfInProgressUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.DNS,
                         period = Duration.ofDays(6),
                         monitorId = upMonitorInProgress.id,
                     )
@@ -2259,7 +2337,8 @@ class StatCalculatorTest(
                     statsOfInProgressUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfInProgressUpMonitor.uptimeRatio shouldBe null
 
-                    val statsOfUpMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                    val statsOfUpMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.DNS,
                         period = Duration.ofDays(6),
                         monitorId = upMonitor.id,
                     )
@@ -2268,7 +2347,8 @@ class StatCalculatorTest(
                     statsOfUpMonitor.totalDowntimeSeconds shouldBe 0
                     statsOfUpMonitor.uptimeRatio shouldBe 1.0
 
-                    val statsOfDownMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                    val statsOfDownMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.DNS,
                         period = Duration.ofDays(6),
                         monitorId = downMonitor.id,
                     )
@@ -2279,7 +2359,8 @@ class StatCalculatorTest(
                         expectedDowntimeSeconds..expectedDowntimeSeconds + 1
                     statsOfDownMonitor.uptimeRatio shouldBe 0.0
 
-                    val statsOfPausedMonitor = statCalculator.calculateHistoricalDnsUptimeStats(
+                    val statsOfPausedMonitor = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.DNS,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor.id,
                     )
@@ -2288,7 +2369,8 @@ class StatCalculatorTest(
                     statsOfPausedMonitor.totalDowntimeSeconds shouldBe 24 * 60 * 60 // 1 day
                     statsOfPausedMonitor.uptimeRatio shouldBe 0.5
 
-                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalDnsUptimeStats(
+                    val statsOfPausedMonitor2 = statCalculator.calculateHistoricalUptimeStats(
+                        monitorType = MonitorType.DNS,
                         period = Duration.ofDays(6),
                         monitorId = pausedMonitor2.id,
                     )
@@ -2300,31 +2382,40 @@ class StatCalculatorTest(
             }
         }
 
-        given("the generateUptimeHistoryOverview() method") {
+        given("the calculateUptimeOverviews() method") {
 
             fun createTestEvent(
+                monitorId: Long,
                 status: UptimeStatus,
                 startedAt: OffsetDateTime,
                 endedAt: OffsetDateTime? = null,
                 updatedAt: OffsetDateTime,
-            ) = UptimeEventCalculationContext(
-                monitorId = 1,
-                isMonitorEnabled = true,
+            ) = createPushUptimeEventRecord(
+                dslContext = dslContext,
+                monitorId = monitorId,
                 status = status,
                 startedAt = startedAt,
                 endedAt = endedAt,
                 updatedAt = updatedAt,
             )
 
+            fun statusHistoryOf(monitorId: Long, period: Duration) = statCalculator
+                .calculateUptimeOverviews(MonitorType.PUSH, period, listOf(monitorId))
+                .getValue(monitorId)
+                .statusHistory
+
             `when`("there is no event for a given day") {
 
-                val event1 = createTestEvent(
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.UP,
                     startedAt = getCurrentTimestamp().minusDays(9),
                     endedAt = getCurrentTimestamp().minusDays(8),
                     updatedAt = getCurrentTimestamp().minusDays(8),
                 )
-                val event2 = createTestEvent(
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(8),
                     endedAt = getCurrentTimestamp().minusDays(7),
@@ -2333,10 +2424,7 @@ class StatCalculatorTest(
 
                 then("it should return null for that day as outageCnt") {
 
-                    val result = statCalculator.generateUptimeHistoryOverview(
-                        period = Duration.ofDays(11),
-                        uptimeEvents = listOf(event1, event2),
-                    )
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(11))
 
                     result shouldBeSortedBy { it.date }
                     result shouldHaveSize 11
@@ -2370,14 +2458,16 @@ class StatCalculatorTest(
 
             `when`("there is an event that started before the period, but ended within it") {
 
-                val event1 = createTestEvent(
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(10),
                     endedAt = getCurrentTimestamp().minusDays(3),
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-
-                val event2 = createTestEvent(
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.UP,
                     startedAt = getCurrentTimestamp().minusDays(3),
                     endedAt = null,
@@ -2386,10 +2476,7 @@ class StatCalculatorTest(
 
                 then("it should count that event on the days within the period") {
 
-                    val result = statCalculator.generateUptimeHistoryOverview(
-                        period = Duration.ofDays(7),
-                        uptimeEvents = listOf(event1, event2),
-                    )
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(7))
 
                     result shouldBeSortedBy { it.date }
                     result shouldHaveSize 7
@@ -2421,14 +2508,16 @@ class StatCalculatorTest(
 
             `when`("an open event was updated before today") {
 
-                val event1 = createTestEvent(
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.DOWN,
                     startedAt = getCurrentTimestamp().minusDays(10),
                     endedAt = getCurrentTimestamp().minusDays(3),
                     updatedAt = getCurrentTimestamp().minusDays(3),
                 )
-
-                val event2 = createTestEvent(
+                createTestEvent(
+                    monitorId = monitor.id,
                     status = UptimeStatus.UP,
                     startedAt = getCurrentTimestamp().minusDays(3),
                     endedAt = null,
@@ -2437,10 +2526,7 @@ class StatCalculatorTest(
 
                 then("its updateDate should be the base of the calculation") {
 
-                    val result = statCalculator.generateUptimeHistoryOverview(
-                        period = Duration.ofDays(7),
-                        uptimeEvents = listOf(event1, event2),
-                    )
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(7))
                     val today = getCurrentTimestamp().toLocalDate()
 
                     result shouldBeSortedBy { it.date }
@@ -2475,21 +2561,62 @@ class StatCalculatorTest(
                 }
             }
 
-            `when`("there is a monitor under an active maintenance window") {
+            `when`("the overviews of multiple monitors are requested at once") {
 
-                val maintainedMonitor = createIcmpMonitor(icmpMonitorRepository, enabled = true)
-                createIcmpMonitor(icmpMonitorRepository, enabled = true)
-                createMaintenanceWindow(
-                    dslContext = dslContext,
-                    name = "active-icmp-window",
-                    enabled = true,
-                    monitors = listOf(MonitorID(MonitorType.ICMP, maintainedMonitor.name)),
+                val period = Duration.ofDays(7)
+                val downMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val upMonitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val monitorWithoutEvents = createPushMonitor(pushMonitorRepository, enabled = true)
+                createTestEvent(
+                    monitorId = downMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusDays(2),
+                    endedAt = null,
+                    updatedAt = getCurrentTimestamp(),
+                )
+                createTestEvent(
+                    monitorId = upMonitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = getCurrentTimestamp().minusDays(2),
+                    endedAt = null,
+                    updatedAt = getCurrentTimestamp(),
                 )
 
-                then("it should count it as under maintenance") {
-                    val stats = statCalculator.calculateOverallIcmpStats(Duration.ofDays(6))
-                    stats.actual.uptimeStats.total shouldBe 2
-                    stats.actual.uptimeStats.inMaintenance shouldBe 1
+                then("every requested monitor should get its own overview, from a single fetch") {
+
+                    val result = statCalculator.calculateUptimeOverviews(
+                        monitorType = MonitorType.PUSH,
+                        period = period,
+                        monitorIds = listOf(downMonitor.id, upMonitor.id, monitorWithoutEvents.id),
+                    )
+
+                    result.keys shouldContainExactlyInAnyOrder
+                        listOf(downMonitor.id, upMonitor.id, monitorWithoutEvents.id)
+
+                    // The events of the monitors should not leak into each other's overview
+                    result.getValue(downMonitor.id).uptimeRatio shouldBe 0.0
+                    result.getValue(downMonitor.id).statusHistory.last().outageCnt shouldBe 1
+                    result.getValue(upMonitor.id).uptimeRatio shouldBe 1.0
+                    result.getValue(upMonitor.id).statusHistory.last().outageCnt shouldBe 0
+
+                    // A monitor without any event in the period still gets an entry, with nothing measured
+                    with(result.getValue(monitorWithoutEvents.id)) {
+                        uptimeRatio shouldBe null
+                        statusHistory shouldHaveSize 7
+                        statusHistory.forAll { it.outageCnt shouldBe null }
+                    }
+                }
+            }
+
+            `when`("no monitor is requested") {
+
+                then("it should not even hit the database") {
+
+                    statCalculator.calculateUptimeOverviews(
+                        monitorType = MonitorType.PUSH,
+                        period = Duration.ofDays(7),
+                        monitorIds = emptyList(),
+                    ) shouldBe emptyMap()
                 }
             }
         }

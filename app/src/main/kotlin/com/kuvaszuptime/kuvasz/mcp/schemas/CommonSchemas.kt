@@ -1,12 +1,12 @@
 package com.kuvaszuptime.kuvasz.mcp.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyLogDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.PacketLossStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMetricsLogDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMetricsLogDto
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.jsonschema.JsonSchema
