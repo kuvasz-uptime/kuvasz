@@ -27,7 +27,7 @@ playwright = "1.61.0"
 shadow = "9.6.1"
 simpleJavaMail = "9.1.0"
 testcontainers = "2.0.5"
-versionCatalogUpdate = "1.1.0"
+versionCatalogUpdate = "1.1.1"
 
 [libraries]
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detektFormatting" }
