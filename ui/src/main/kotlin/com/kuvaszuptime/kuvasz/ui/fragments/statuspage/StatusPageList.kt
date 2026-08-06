@@ -33,6 +33,8 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                             classes(D_NONE, D_MD_TABLE_CELL)
                             +Messages.slug()
                         }
+                        // Preview
+                        th {}
                         // Visibility
                         th {
                             classes(TEXT_CENTER)
@@ -76,13 +78,15 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                         // Slug
                         td {
                             classes(D_NONE, D_MD_TABLE_CELL)
-                            a(href = UIDefaults.STATUS_PAGE_PATH) {
-                                classes(TEXT_RESET, TEXT_DECORATION_NONE)
-                                targetBlank()
-                                code {
-                                    +UIDefaults.STATUS_PAGE_PATH
-                                }
+                            code {
+                                +UIDefaults.STATUS_PAGE_PATH
                             }
+                        }
+                        // Preview
+                        td {
+                            classes(TEXT_CENTER)
+                            // Preview button
+                            statusPagePreviewButton(slug = "")
                         }
                         // Visibility
                         td {
@@ -144,16 +148,17 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
             }
         }
         // Slug
-        val assembledSlug = "/status/${page.slug.urlEncode()}"
         td {
             classes(D_NONE, D_MD_TABLE_CELL)
-            a(href = assembledSlug) {
-                classes(TEXT_RESET, TEXT_DECORATION_NONE)
-                targetBlank()
-                code {
-                    +assembledSlug
-                }
+            code {
+                +"/status/${page.slug.urlEncode()}"
             }
+        }
+        // Preview
+        td {
+            classes(TEXT_CENTER)
+            // Preview button
+            statusPagePreviewButton(slug = page.slug)
         }
         // Visibility
         td {
