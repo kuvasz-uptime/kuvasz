@@ -273,6 +273,7 @@ internal enum class CSSClass(val className: String) {
     TEXT_CYAN_LT_FG("text-cyan-lt-fg"),
     TEXT_DECORATION_NONE("text-decoration-none"),
     TEXT_DEFAULT_FG("text-default-fg"),
+    TEXT_END("text-end"),
     TEXT_GREEN("text-green"),
     TEXT_GREEN_FG("text-green-fg"),
     TEXT_GREEN_LT_FG("text-green-lt-fg"),

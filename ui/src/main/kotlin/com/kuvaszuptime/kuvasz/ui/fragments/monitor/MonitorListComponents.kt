@@ -139,7 +139,7 @@ private fun TR.monitorListRowActions(
 ) {
     val deleteModalId = "delete-monitor-modal-${monitor.id}"
     td {
-        classes(TEXT_CENTER)
+        classes(TEXT_END)
         div {
             classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
             compactIconButton(Icon.COPY) {

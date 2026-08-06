@@ -168,7 +168,7 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
         // Actions
         if (!isReadOnlyMode) {
             td {
-                classes(TEXT_CENTER)
+                classes(TEXT_END)
                 val deleteModalId = "delete-status-page-modal-${page.id}"
                 div {
                     classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)

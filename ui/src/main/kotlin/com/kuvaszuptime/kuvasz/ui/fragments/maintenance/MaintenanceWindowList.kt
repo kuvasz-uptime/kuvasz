@@ -115,7 +115,7 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
         // Actions
         if (!isReadOnlyMode) {
             td {
-                classes(TEXT_CENTER)
+                classes(TEXT_END)
                 val deleteModalId = "delete-maintenance-window-modal-${window.id}"
                 div {
                     classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
