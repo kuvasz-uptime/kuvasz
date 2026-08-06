@@ -16,6 +16,9 @@ import kotlinx.html.*
 import kotlinx.html.stream.*
 import java.time.OffsetDateTime
 
+internal const val UPTIME_ISSUES_BLOCK_TEST_ID = "uptime-issues-block"
+internal const val SSL_ISSUES_BLOCK_TEST_ID = "ssl-issues-block"
+
 internal fun renderStatsSectionOfType(actualStats: ActualUptimeStats, section: DIV.() -> Unit): String =
     if (actualStats.total == 0) {
         ""
@@ -98,12 +101,14 @@ internal fun <T : MonitorDetailsDto> FlowContent.monitorsWithIssuesBlock(
     typeUiConfig: MonitorTypeUiConfig,
     statusCell: FlowContent.(T) -> Unit,
     columns: List<MonitorListColumn<T>>,
+    blockTestId: String,
     nameTooltip: (T) -> String? = { null },
 ) {
     if (monitors.isEmpty()) return
 
     h3 {
         classes(MT_3, MB_0)
+        testId(blockTestId)
         +Messages.monitorsWithIssues()
     }
     div {
@@ -191,6 +196,7 @@ internal fun <T : MonitorDetailsDto> FlowContent.uptimeStatsSection(
             typeUiConfig = typeUiConfig,
             statusCell = { monitor -> uptimeBadgeOfMonitor(monitor, withTooltip = true) },
             columns = columns,
+            blockTestId = UPTIME_ISSUES_BLOCK_TEST_ID,
             nameTooltip = nameTooltip,
         )
     }

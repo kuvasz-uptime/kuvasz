@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.uitest.pages
 
-import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.uitest.pages.common.byRole
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
@@ -25,8 +24,7 @@ class DashboardPage(private val page: Page) {
     val sslSectionHeader: Locator get() = sectionHeaderOf("http", "SSL")
 
     // The table of the monitors currently having issues, rendered only when a section has something to call out
-    fun issuesBlockOf(type: String): Locator =
-        statsRegionOf(type).byRole(AriaRole.HEADING, Messages.monitorsWithIssues())
+    fun issuesBlockOf(type: String): Locator = statsRegionOf(type).getByTestId("uptime-issues-block")
 
     fun navigate() {
         page.navigate("/")

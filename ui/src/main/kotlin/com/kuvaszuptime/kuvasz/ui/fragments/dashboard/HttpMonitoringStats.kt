@@ -87,6 +87,7 @@ private fun FlowContent.sslStatsSection(
                 timestampColumn(Messages.lastCheck(), D_LG_TABLE_CELL) { it.lastSSLCheck },
                 timestampColumn(Messages.nextCheck(), D_MD_TABLE_CELL) { it.nextSSLCheck },
             ),
+            blockTestId = SSL_ISSUES_BLOCK_TEST_ID,
             nameTooltip = { it.url.toString() },
         )
     }
