@@ -2,6 +2,10 @@
 
     Also, **don't forget to restart** the _Kuvasz_ container after modifying the _YAML_ file for the changes to take effect!
 
+!!! tip "Don't want your webhook URLs and API keys in your YAML file?"
+
+    Since integrations are typically full of sensitive data, you might want to check the [**Keeping secrets out of your configuration file**](examples.md#keeping-secrets-out-of-your-configuration-file) recipe, which shows you how to reference environment variables from your _YAML_ file, or how to move your integrations into a separate, secret file.
+
 Your integrations are the **channels** through which
 _Kuvasz_ **sends notifications** about the status of your monitors. You can use
 _Kuvasz_ without any integrations, but it won't make much sense in most of the cases, because you won't be notified about any issues with your monitors.
