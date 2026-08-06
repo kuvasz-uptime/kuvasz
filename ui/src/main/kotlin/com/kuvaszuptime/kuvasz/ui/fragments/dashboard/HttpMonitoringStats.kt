@@ -50,32 +50,32 @@ private fun FlowContent.sslStatsSection(
             colorClasses = setOf(BG_YELLOW_LT, TEXT_YELLOW_LT_FG)
         )
         // SSL summary
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.LOCK_CLOSED,
             iconBackground = BG_GREEN_LT,
-            text = sslStats.valid.toString(),
+            value = sslStats.valid.toLong(),
             secondaryText = Messages.valid()
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.LOCK_OPEN,
             iconBackground = BG_RED_LT,
-            text = sslStats.invalid.toString(),
+            value = sslStats.invalid.toLong(),
             secondaryText = Messages.invalid(),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.TIMER,
             iconBackground = BG_YELLOW_LT,
-            text = sslStats.willExpire.toString(),
+            value = sslStats.willExpire.toLong(),
             secondaryText = Messages.expiresSoon(),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.LOCK_QUESTION,
             iconBackground = BG_ORANGE_LT,
-            text = sslStats.inProgress.toString(),
+            value = sslStats.inProgress.toLong(),
             secondaryText = Messages.inProgress(),
         )
         // SSL issues table

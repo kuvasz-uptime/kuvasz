@@ -9,6 +9,8 @@ import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
 import kotlinx.html.*
 
+private val DEFAULT_ICON_COLOR = BG_GRAY_700
+
 internal fun FlowContent.statCard(
     cssClasses: Set<CSSClass>,
     icon: Icon,
@@ -35,7 +37,7 @@ internal fun FlowContent.statCard(
                     div {
                         classes(CSSClass.COL)
                         div {
-                            classes(CSSClass.H2)
+                            classes(H2)
                             +text
                         }
                         div {
@@ -49,30 +51,40 @@ internal fun FlowContent.statCard(
     }
 }
 
+internal fun FlowContent.numericStatCard(
+    cssClasses: Set<CSSClass>,
+    icon: Icon,
+    iconBackground: CSSClass,
+    value: Long,
+    secondaryText: String,
+) = statCard(
+    cssClasses,
+    icon = icon,
+    iconBackground = if (value > 0) iconBackground else DEFAULT_ICON_COLOR,
+    text = value.toString(),
+    secondaryText = secondaryText,
+)
+
 internal fun FlowContent.incidentsStatsCards(cssClasses: Set<CSSClass>, stats: HistoricalUptimeStatsDto) =
     statCard(
         cssClasses,
         icon = Icon.ALERT_TRIANGLE,
-        iconBackground = BG_RED_LT,
+        iconBackground = if (stats.incidents > 0) BG_RED_LT else DEFAULT_ICON_COLOR,
         text = stats.incidents.toString(),
         secondaryText = Messages.incidents()
     )
 
-internal fun FlowContent.affectedMonitorsStatsCards(cssClasses: Set<CSSClass>, stats: HistoricalUptimeStatsDto) =
-    statCard(
-        cssClasses,
-        icon = Icon.BINOCULARS,
-        iconBackground = BG_RED_LT,
-        text = stats.affectedMonitors.toString(),
-        secondaryText = Messages.affectedMonitors(),
-    )
-
 internal fun FlowContent.uptimeRatioStatsCards(cssClasses: Set<CSSClass>, stats: HistoricalUptimeStatsDto) {
     val uptimeRatioText = stats.uptimeRatio?.formatAsPercentage() ?: Messages.noData()
+    val defaultedRatio = stats.uptimeRatio ?: 1.0 // Consider unknown as "good"
     statCard(
         cssClasses,
         icon = Icon.PERCENTAGE,
-        iconBackground = BG_GREEN_LT,
+        iconBackground = when {
+            defaultedRatio < 0.5 -> BG_RED_LT
+            defaultedRatio < 1.0 -> BG_ORANGE_LT
+            else -> DEFAULT_ICON_COLOR
+        },
         text = uptimeRatioText,
         secondaryText = Messages.uptimeRatio(),
     )
@@ -86,7 +98,7 @@ internal fun FlowContent.totalDowntimeStatsCards(cssClasses: Set<CSSClass>, stat
     statCard(
         cssClasses,
         icon = Icon.SUM,
-        iconBackground = BG_RED_LT,
+        iconBackground = if (stats.totalDowntimeSeconds > 0) BG_RED_LT else DEFAULT_ICON_COLOR,
         text = totalDowntimeText,
         secondaryText = Messages.totalDowntime(),
     )

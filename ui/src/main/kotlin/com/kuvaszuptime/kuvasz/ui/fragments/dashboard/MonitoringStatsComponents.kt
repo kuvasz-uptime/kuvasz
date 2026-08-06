@@ -141,32 +141,32 @@ internal fun <T : MonitorDetailsDto> FlowContent.uptimeStatsSection(
             icon = typeUiConfig.icon,
             colorClasses = setOf(typeUiConfig.color.bgColor, typeUiConfig.color.textColor),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.HEART,
             iconBackground = BG_GREEN_LT,
-            text = actualStats.up.toString(),
+            value = actualStats.up.toLong(),
             secondaryText = Messages.up()
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.HEART_BROKEN,
             iconBackground = BG_RED_LT,
-            text = actualStats.down.toString(),
+            value = actualStats.down.toLong(),
             secondaryText = Messages.down(),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.HEART_OFF,
             iconBackground = BG_CYAN_LT,
-            text = actualStats.paused.toString(),
+            value = actualStats.paused.toLong(),
             secondaryText = Messages.paused(),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.TOOL,
             iconBackground = BG_GRAY_300,
-            text = actualStats.inMaintenance.toString(),
+            value = actualStats.inMaintenance.toLong(),
             secondaryText = Messages.maintenance(),
         )
         // Historical stats
@@ -176,7 +176,13 @@ internal fun <T : MonitorDetailsDto> FlowContent.uptimeStatsSection(
             inlineBadge(Messages.lastXDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS))
         }
         incidentsStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
-        affectedMonitorsStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
+        numericStatCard(
+            cssClasses = setOf(COL_6, COL_MD_3),
+            icon = Icon.BINOCULARS,
+            iconBackground = BG_RED_LT,
+            value = historyStats.affectedMonitors.toLong(),
+            secondaryText = Messages.affectedMonitors(),
+        )
         uptimeRatioStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
         totalDowntimeStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
         // Down monitors table
