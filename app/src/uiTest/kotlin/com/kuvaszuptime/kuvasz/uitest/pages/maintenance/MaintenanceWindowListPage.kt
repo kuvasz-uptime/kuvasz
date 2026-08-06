@@ -10,6 +10,9 @@ class MaintenanceWindowListPage(private val page: Page) {
 
     val rows: Locator get() = page.getByTestId("maintenance-window-row")
 
+    // Replaces the table entirely while there isn't a single maintenance window
+    val emptyState: Locator get() = page.getByTestId("empty-state")
+
     val names: List<String> get() = rows.locator("td:first-of-type").allInnerTexts().map { it.trim() }
 
     fun navigate() {

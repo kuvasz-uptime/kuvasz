@@ -13,7 +13,15 @@ import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
+import kotlinx.html.stream.*
 import java.time.OffsetDateTime
+
+internal fun renderStatsSectionOfType(actualStats: ActualUptimeStats, section: DIV.() -> Unit): String =
+    if (actualStats.total == 0) {
+        ""
+    } else {
+        createHTML(prettyPrint = false, xhtmlCompatible = false).div(block = section)
+    }
 
 internal fun FlowContent.statsSectionHeader(
     title: String,
@@ -85,15 +93,15 @@ private fun <T : MonitorDetailsDto> FlowContent.monitorIssuesTable(
         }
     }
 
-/** The "monitors with issues" block of a dashboard section, with its empty state. */
 internal fun <T : MonitorDetailsDto> FlowContent.monitorsWithIssuesBlock(
     monitors: List<T>,
     typeUiConfig: MonitorTypeUiConfig,
-    noIssuesText: String,
     statusCell: FlowContent.(T) -> Unit,
     columns: List<MonitorListColumn<T>>,
     nameTooltip: (T) -> String? = { null },
 ) {
+    if (monitors.isEmpty()) return
+
     h3 {
         classes(MT_3, MB_0)
         +Messages.monitorsWithIssues()
@@ -102,19 +110,9 @@ internal fun <T : MonitorDetailsDto> FlowContent.monitorsWithIssuesBlock(
         classes(COL_12)
         div {
             classes(CARD)
-            if (monitors.isNotEmpty()) {
-                div {
-                    classes(CARD_TABLE, TABLE_RESPONSIVE)
-                    monitorIssuesTable(monitors, typeUiConfig, statusCell, columns, nameTooltip)
-                }
-            } else {
-                div {
-                    classes(CARD_BODY)
-                    p {
-                        classes(TEXT_SECONDARY, TEXT_CENTER)
-                        +noIssuesText
-                    }
-                }
+            div {
+                classes(CARD_TABLE, TABLE_RESPONSIVE)
+                monitorIssuesTable(monitors, typeUiConfig, statusCell, columns, nameTooltip)
             }
         }
     }
@@ -185,7 +183,6 @@ internal fun <T : MonitorDetailsDto> FlowContent.uptimeStatsSection(
         monitorsWithIssuesBlock(
             monitors = downMonitors,
             typeUiConfig = typeUiConfig,
-            noIssuesText = Messages.noUptimeIssues(),
             statusCell = { monitor -> uptimeBadgeOfMonitor(monitor, withTooltip = true) },
             columns = columns,
             nameTooltip = nameTooltip,

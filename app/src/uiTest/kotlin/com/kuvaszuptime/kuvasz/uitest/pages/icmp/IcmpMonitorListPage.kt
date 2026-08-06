@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.uitest.pages.icmp
 
-import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 
@@ -13,7 +12,7 @@ class IcmpMonitorListPage(private val page: Page) {
 
     val names: List<String> get() = rows.locator("td:first-of-type").allInnerTexts().map { it.trim() }
 
-    val emptyState: Locator get() = page.getByText(Messages.noMonitors())
+    val emptyState: Locator get() = page.getByTestId("empty-state")
 
     fun navigate() {
         page.navigate("/icmp-monitors")

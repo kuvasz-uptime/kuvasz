@@ -9,35 +9,38 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
-import kotlinx.html.stream.*
 
 fun renderHttpMonitoringStats(
     monitoringStats: HttpMonitoringStatsDto,
     downMonitors: List<HttpMonitorDetailsDto>,
     problematicSslMonitors: List<HttpMonitorDetailsDto>,
-): String = createHTML(prettyPrint = false, xhtmlCompatible = false)
-    .div {
-        uptimeStatsSection(
-            typeUiConfig = MonitorTypeUiConfig.HTTP,
-            actualStats = monitoringStats.actual.uptimeStats,
-            historyStats = monitoringStats.history.uptimeStats,
-            downMonitors = downMonitors,
-            columns = listOf(
-                lastCheckColumn(),
-                timestampColumn(Messages.nextCheck(), D_MD_TABLE_CELL) { it.nextUptimeCheck },
-            ),
-            // This is the first section of the dashboard, so it needs less room above it than the ones following it
-            topMargin = MT_1,
-            nameTooltip = { it.url.toString() },
-        )
-        sslStatsSection(monitoringStats.actual.sslStats, problematicSslMonitors)
-    }
+): String = renderStatsSectionOfType(monitoringStats.actual.uptimeStats) {
+    uptimeStatsSection(
+        typeUiConfig = MonitorTypeUiConfig.HTTP,
+        actualStats = monitoringStats.actual.uptimeStats,
+        historyStats = monitoringStats.history.uptimeStats,
+        downMonitors = downMonitors,
+        columns = listOf(
+            lastCheckColumn(),
+            timestampColumn(Messages.nextCheck(), D_MD_TABLE_CELL) { it.nextUptimeCheck },
+        ),
+        // This is the first section of the dashboard, so it needs less room above it than the ones following it
+        topMargin = MT_1,
+        nameTooltip = { it.url.toString() },
+    )
+    sslStatsSection(monitoringStats.actual.sslStats, problematicSslMonitors)
+}
+
+private val HttpMonitoringStatsDto.ActualMonitoringStats.SslStats.checkedMonitors: Int
+    get() = valid + invalid + willExpire + inProgress
 
 // SSL is checked by HTTP monitors only, so it gets a section of its own instead of a place in the shared one
 private fun FlowContent.sslStatsSection(
     sslStats: HttpMonitoringStatsDto.ActualMonitoringStats.SslStats,
     problematicSslMonitors: List<HttpMonitorDetailsDto>,
 ) {
+    if (sslStats.checkedMonitors == 0) return
+
     div {
         classes(ROW, ROW_CARDS, BORDER_TOP, MT_6)
         statsSectionHeader(
@@ -79,7 +82,6 @@ private fun FlowContent.sslStatsSection(
         monitorsWithIssuesBlock(
             monitors = problematicSslMonitors,
             typeUiConfig = MonitorTypeUiConfig.HTTP,
-            noIssuesText = Messages.noSSLIssues(),
             statusCell = { monitor -> sslStatusOfMonitor(monitor, withTooltip = true) },
             columns = listOf(
                 timestampColumn(Messages.lastCheck(), D_LG_TABLE_CELL) { it.lastSSLCheck },

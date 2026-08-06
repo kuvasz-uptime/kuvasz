@@ -22,6 +22,18 @@ fun renderDashboard(globals: AppGlobals) =
         title = Messages.dashboard(),
         pageTitle = { dashboardHeader(globals) }
     ) {
+        // Only renders anything as long as there isn't a single monitor of any type, see renderDashboardEmptyState()
+        div {
+            hx {
+                get("/fragments/dashboard-empty-state")
+                trigger {
+                    load()
+                    every(30.seconds)
+                    event("refresh-dashboard")
+                }
+            }
+            id = "dashboard-empty-state"
+        }
         div {
             hx {
                 get("/http-monitors/fragments/stats")
@@ -184,7 +196,9 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                                     }
                                 }
                             }
-                            compactIconButton(Icon.REFRESH, onClick = "refreshDashboard()") {}
+                            compactIconButton(Icon.REFRESH, onClick = "refreshDashboard()") {
+                                testId("dashboard-refresh-button")
+                            }
                         }
                     }
                 }

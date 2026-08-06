@@ -49,6 +49,7 @@ class DisabledWebUIAuthenticationTest(
             table(
                 headers("url"),
                 row("/"),
+                row("/fragments/dashboard-empty-state"),
                 row("/http-monitors"),
                 row("/http-monitors/${httpMonitor.id}"),
                 row("/http-monitors/fragments/list"),

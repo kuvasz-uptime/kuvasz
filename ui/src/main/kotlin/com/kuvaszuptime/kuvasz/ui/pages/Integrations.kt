@@ -182,13 +182,11 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                             }
                         }
                     } else {
-                        div {
-                            classes(CARD_BODY)
-                            p {
-                                classes(TEXT_SECONDARY, TEXT_CENTER)
-                                +Messages.noIntegrations()
-                            }
-                        }
+                        emptyState(
+                            icon = Icon.PLUG,
+                            title = Messages.noIntegrationsYet(),
+                            subtitle = Messages.noIntegrationsDescription(),
+                        )
                     }
                 }
             }

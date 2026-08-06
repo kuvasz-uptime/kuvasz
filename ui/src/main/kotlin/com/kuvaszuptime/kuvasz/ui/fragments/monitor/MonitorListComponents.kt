@@ -45,11 +45,15 @@ internal fun <T : MonitorDetailsDto> renderMonitorList(
         val isReadOnlyMode = editabilityState.areMonitorsReadOnly(typeUiConfig.type)
         if (monitors.isEmpty()) {
             div {
-                classes(CARD_BODY)
-                p {
-                    classes(TEXT_SECONDARY, TEXT_CENTER)
-                    +Messages.noMonitors()
-                }
+                emptyState(
+                    icon = typeUiConfig.icon,
+                    title = Messages.noMonitorsYet(),
+                    subtitle = if (isReadOnlyMode) {
+                        Messages.noMonitorsReadOnlyDescription()
+                    } else {
+                        Messages.noMonitorsDescription()
+                    },
+                )
             }
         } else {
             div {

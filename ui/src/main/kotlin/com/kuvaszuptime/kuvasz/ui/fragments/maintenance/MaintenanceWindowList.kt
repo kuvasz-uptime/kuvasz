@@ -16,48 +16,50 @@ fun renderMaintenanceWindowList(maintenanceWindows: List<MaintenanceWindowDetail
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
         val isReadOnlyMode = appGlobals.editabilityState.areMaintenanceWindowsReadOnly()
         div {
-            classes(CARD_TABLE, TABLE_RESPONSIVE)
-            table {
-                classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
-                thead {
-                    tr {
-                        th {
-                            classes(TEXT_CENTER)
-                            +"ID"
-                        }
-                        th { +Messages.name() }
-                        th {
-                            classes(D_NONE, D_MD_TABLE_CELL)
-                            +Messages.maintenanceWindowTypeLabel()
-                        }
-                        th {
-                            classes(D_NONE, D_MD_TABLE_CELL)
-                            +Messages.schedule()
-                        }
-                        th {
-                            classes(TEXT_CENTER)
-                            +Messages.status()
-                        }
-                        th {
-                            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
-                            +Messages.monitors()
-                        }
-                        // Actions
-                        if (!isReadOnlyMode) {
-                            th {}
-                        }
-                    }
-                }
-                tbody {
-                    if (maintenanceWindows.isEmpty()) {
+            if (maintenanceWindows.isEmpty()) {
+                emptyState(
+                    icon = Icon.TOOL,
+                    title = Messages.noMaintenanceWindowsYet(),
+                    subtitle = if (isReadOnlyMode) {
+                        Messages.noMaintenanceWindowsReadOnlyDescription()
+                    } else {
+                        Messages.noMaintenanceWindowsDescription()
+                    },
+                )
+            } else {
+                classes(CARD_TABLE, TABLE_RESPONSIVE)
+                table {
+                    classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
+                    thead {
                         tr {
-                            td {
-                                attributes["colspan"] = if (isReadOnlyMode) "6" else "7"
-                                classes(TEXT_CENTER, TEXT_MUTED, P_3)
-                                +Messages.noMaintenanceWindows()
+                            th {
+                                classes(TEXT_CENTER)
+                                +"ID"
+                            }
+                            th { +Messages.name() }
+                            th {
+                                classes(D_NONE, D_MD_TABLE_CELL)
+                                +Messages.maintenanceWindowTypeLabel()
+                            }
+                            th {
+                                classes(D_NONE, D_MD_TABLE_CELL)
+                                +Messages.schedule()
+                            }
+                            th {
+                                classes(TEXT_CENTER)
+                                +Messages.status()
+                            }
+                            th {
+                                classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                                +Messages.monitors()
+                            }
+                            // Actions
+                            if (!isReadOnlyMode) {
+                                th {}
                             }
                         }
-                    } else {
+                    }
+                    tbody {
                         maintenanceWindows.forEach { window -> maintenanceWindowListItem(isReadOnlyMode, window) }
                     }
                 }

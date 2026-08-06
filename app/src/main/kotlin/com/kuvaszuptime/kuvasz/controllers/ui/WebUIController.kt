@@ -4,9 +4,11 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.UnauthenticatedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
 import io.micronaut.http.MediaType
@@ -26,10 +28,12 @@ class WebUIController(
     private val settingsRepository: SettingsRepository,
     private val integrationsRepository: IntegrationRepository,
     private val incidentRepository: IncidentRepository,
+    private val sharedMonitorRepository: SharedMonitorRepository,
 ) {
 
     companion object {
         const val DASHBOARD_PATH = "/"
+        const val DASHBOARD_EMPTY_STATE_FRAGMENT_PATH = "/fragments/dashboard-empty-state"
         const val LOGIN_PATH = "/login"
     }
 
@@ -38,6 +42,12 @@ class WebUIController(
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
     fun dashboard() = renderDashboard(appGlobals)
+
+    @Get(DASHBOARD_EMPTY_STATE_FRAGMENT_PATH)
+    @WebSecured
+    @Produces(MediaType.TEXT_HTML)
+    @ExecuteOn(TaskExecutors.BLOCKING)
+    fun dashboardEmptyState() = if (sharedMonitorRepository.hasAnyMonitor()) "" else renderDashboardEmptyState()
 
     @Get(LOGIN_PATH)
     @UnauthenticatedOnly
