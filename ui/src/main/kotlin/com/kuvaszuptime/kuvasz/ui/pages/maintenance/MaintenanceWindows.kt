@@ -33,10 +33,7 @@ fun renderMaintenanceWindowsPage(globals: AppGlobals) =
                             onSwapReinitTooltips()
                         }
                         id = "maintenance-window-list"
-                        div {
-                            classes(SPINNER_GROW, HTMX_INDICATOR)
-                            role = "status"
-                        }
+                        htmxLoadingIndicator()
                     }
                 }
             }

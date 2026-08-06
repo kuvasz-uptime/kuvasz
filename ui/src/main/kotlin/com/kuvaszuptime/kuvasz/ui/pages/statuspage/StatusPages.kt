@@ -33,10 +33,7 @@ fun renderStatusPagesPage(globals: AppGlobals) =
                             onSwapReinitTooltips()
                         }
                         id = "status-page-list"
-                        div {
-                            classes(SPINNER_GROW, HTMX_INDICATOR)
-                            role = "status"
-                        }
+                        htmxLoadingIndicator()
                     }
                 }
             }

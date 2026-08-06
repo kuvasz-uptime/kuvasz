@@ -43,10 +43,7 @@ internal fun renderMonitorsPage(
                         onSwapReinitTooltips()
                     }
                     id = typeUiConfig.listElementId
-                    div {
-                        classes(SPINNER_GROW, HTMX_INDICATOR)
-                        role = "status"
-                    }
+                    htmxLoadingIndicator()
                 }
             }
         }

@@ -33,10 +33,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "http-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -49,10 +46,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "push-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -65,10 +59,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "icmp-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -81,10 +72,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "tcp-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -97,10 +85,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "dns-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
     }
 

@@ -203,6 +203,7 @@ internal enum class CSSClass(val className: String) {
     MT_4("mt-4"),
     MT_6("mt-6"),
     MT_LG_0("mt-lg-0"),
+    MY_5("my-5"),
     M_0("m-0"),
     NATIVE_DATETIME_INPUT("native-datetime-input"),
     NAVBAR("navbar"),
