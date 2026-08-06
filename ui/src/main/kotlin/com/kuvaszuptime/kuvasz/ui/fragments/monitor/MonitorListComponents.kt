@@ -137,7 +137,7 @@ private fun TR.monitorListRowActions(
     td {
         classes(TEXT_CENTER)
         div {
-            classes(FLEX_NOWRAP, BTN_GROUP)
+            classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
             compactIconButton(Icon.COPY) {
                 testId(typeUiConfig.testId("clone-button"))
                 modalOpener(typeUiConfig.createModalId)

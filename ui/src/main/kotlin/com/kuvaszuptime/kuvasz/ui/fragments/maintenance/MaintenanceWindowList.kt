@@ -116,7 +116,7 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
                 classes(TEXT_CENTER)
                 val deleteModalId = "delete-maintenance-window-modal-${window.id}"
                 div {
-                    classes(FLEX_NOWRAP, BTN_GROUP)
+                    classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
                     val toggleIcon = if (window.enabled) Icon.PAUSE else Icon.PLAY
                     compactIconButton(toggleIcon) {
                         testId("maintenance-window-toggle-button")

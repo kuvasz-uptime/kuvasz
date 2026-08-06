@@ -33,8 +33,6 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                             classes(D_NONE, D_MD_TABLE_CELL)
                             +Messages.slug()
                         }
-                        // Preview
-                        th {}
                         // Visibility
                         th {
                             classes(TEXT_CENTER)
@@ -78,15 +76,13 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                         // Slug
                         td {
                             classes(D_NONE, D_MD_TABLE_CELL)
-                            code {
-                                +UIDefaults.STATUS_PAGE_PATH
+                            a(href = UIDefaults.STATUS_PAGE_PATH) {
+                                classes(TEXT_RESET, TEXT_DECORATION_NONE)
+                                targetBlank()
+                                code {
+                                    +UIDefaults.STATUS_PAGE_PATH
+                                }
                             }
-                        }
-                        // Preview
-                        td {
-                            classes(TEXT_CENTER)
-                            // Preview button
-                            statusPagePreviewButton(slug = "")
                         }
                         // Visibility
                         td {
@@ -148,17 +144,16 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
             }
         }
         // Slug
+        val assembledSlug = "/status/${page.slug.urlEncode()}"
         td {
             classes(D_NONE, D_MD_TABLE_CELL)
-            code {
-                +"/status/${page.slug.urlEncode()}"
+            a(href = assembledSlug) {
+                classes(TEXT_RESET, TEXT_DECORATION_NONE)
+                targetBlank()
+                code {
+                    +assembledSlug
+                }
             }
-        }
-        // Preview
-        td {
-            classes(TEXT_CENTER)
-            // Preview button
-            statusPagePreviewButton(slug = page.slug)
         }
         // Visibility
         td {
@@ -176,7 +171,7 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
                 classes(TEXT_CENTER)
                 val deleteModalId = "delete-status-page-modal-${page.id}"
                 div {
-                    classes(FLEX_NOWRAP, BTN_GROUP)
+                    classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
                     // Publish / Unpublish button
                     toggleVisibilityButton(
                         isPublic = page.public,
@@ -201,7 +196,7 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
 fun FlowContent.statusPagePreviewButton(slug: String) {
     a(href = "/status/${slug.urlEncode()}") {
         targetBlank()
-        classes(setOf(BTN, BTN_ICON))
+        classes(setOf(BTN, BTN_SM, BTN_ICON))
         icon(Icon.EXTERNAL_LINK)
     }
 }
