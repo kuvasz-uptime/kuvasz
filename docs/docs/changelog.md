@@ -14,7 +14,7 @@
 
 - [**DNS monitors**](features/dns-monitoring.md) arrived as well! They check whether a name resolves, and you can assert on the records it resolves to. A monitor holds a list of **record matchers** (`A`, `AAAA`, `CNAME`, `MX`, `NS`, `TXT`, `SOA`, `SRV`, `CAA`, `PTR`) matched as `EXACT`, `CONTAINS` or `REGEX`, can expect a specific **response code** (so _"this name must **not** resolve"_ checks work too), and can query a custom nameserver over `UDP` or `TCP`. On top of that, an opt-in **drift detection** notifies you when the resolved records change, without flipping the monitor to DOWN. See the [**Managing DNS monitors**](management/dns-monitors.md) section for further details.
 
-![DNS assertions](../images/features/dns_monitor_settings.webp)
+![DNS assertions](images/features/dns_monitor_settings.webp)
 
 Both new types are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/managing-monitors/index.md), participate in **incidents**, **uptime & latency stats**, **notifications** (including generic webhook templating), the **metrics** exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
 
