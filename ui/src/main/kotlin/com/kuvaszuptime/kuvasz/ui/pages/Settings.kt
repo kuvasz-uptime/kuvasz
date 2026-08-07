@@ -68,6 +68,15 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         value = Messages.xSeconds(settings.app.httpCheckTimeoutSeconds.toString())
                     )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
+                }
+            }
+            // Editability
+            settingsCard(
+                title = Messages.editabilitySettings(),
+                icon = Icon.EDIT,
+            ) {
+                div {
+                    classes(DIVIDE_Y)
                     settingsToggle(
                         label = Messages.httpMonitorsReadOnlyMode(),
                         checked = settings.app.editabilityState.areHttpMonitorsReadOnly
@@ -169,21 +178,13 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
             }
             // Integration settings
             settingsCard(
-                title = Messages.integrationSettings(),
-                icon = Icon.PLUG,
+                title = Messages.smtpSettings(),
+                icon = Icon.ENVELOPE,
             ) {
                 div {
                     classes(DIVIDE_Y)
                     // SMTP settings
                     div {
-                        div {
-                            classes(FORM_LABEL)
-                            icon(Icon.SMTP)
-                            span {
-                                classes(MS_2)
-                                +"SMTP"
-                            }
-                        }
                         div {
                             classes(MT_3)
                             settings.smtp?.let { smtpConfig ->

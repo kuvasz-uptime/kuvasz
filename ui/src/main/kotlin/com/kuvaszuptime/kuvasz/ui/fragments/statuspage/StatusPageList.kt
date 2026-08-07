@@ -173,10 +173,10 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
         // Actions
         if (!isReadOnlyMode) {
             td {
-                classes(TEXT_CENTER)
+                classes(TEXT_END)
                 val deleteModalId = "delete-status-page-modal-${page.id}"
                 div {
-                    classes(FLEX_NOWRAP, BTN_GROUP)
+                    classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
                     // Publish / Unpublish button
                     toggleVisibilityButton(
                         isPublic = page.public,
@@ -201,7 +201,7 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
 fun FlowContent.statusPagePreviewButton(slug: String) {
     a(href = "/status/${slug.urlEncode()}") {
         targetBlank()
-        classes(setOf(BTN, BTN_ICON))
+        classes(setOf(BTN, BTN_SM, BTN_ICON))
         icon(Icon.EXTERNAL_LINK)
     }
 }

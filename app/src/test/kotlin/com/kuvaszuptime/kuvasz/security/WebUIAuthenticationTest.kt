@@ -59,6 +59,7 @@ class WebUIAuthenticationTest(
             table(
                 headers("url"),
                 row("/"),
+                row("/fragments/dashboard-empty-state"),
                 row("/http-monitors"),
                 row("/http-monitors/1"),
                 row("/http-monitors/fragments/list"),
@@ -116,6 +117,7 @@ class WebUIAuthenticationTest(
             val cases = table(
                 headers("url"),
                 row("/"),
+                row("/fragments/dashboard-empty-state"),
                 row("/http-monitors"),
                 row("/http-monitors/1"),
                 row("/http-monitors/fragments/list"),
@@ -193,6 +195,7 @@ class WebUIAuthenticationTest(
             table(
                 headers("url"),
                 row("/"),
+                row("/fragments/dashboard-empty-state"),
                 row("/http-monitors"),
                 row("/http-monitors/${httpMonitor.id}"),
                 row("/http-monitors/fragments/list"),

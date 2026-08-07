@@ -1,0 +1,5 @@
+---
+# Explicitly empty YAML lists: the given type is managed through the config file, but it declares zero entries, so the
+# UI ends up with a read-only *and* empty list
+http-monitors: []
+maintenance-windows: []

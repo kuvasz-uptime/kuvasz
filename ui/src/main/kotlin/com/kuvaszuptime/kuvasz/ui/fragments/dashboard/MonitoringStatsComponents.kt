@@ -13,7 +13,18 @@ import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
+import kotlinx.html.stream.*
 import java.time.OffsetDateTime
+
+internal const val UPTIME_ISSUES_BLOCK_TEST_ID = "uptime-issues-block"
+internal const val SSL_ISSUES_BLOCK_TEST_ID = "ssl-issues-block"
+
+internal fun renderStatsSectionOfType(actualStats: ActualUptimeStats, section: DIV.() -> Unit): String =
+    if (actualStats.total == 0) {
+        ""
+    } else {
+        createHTML(prettyPrint = false, xhtmlCompatible = false).div(block = section)
+    }
 
 internal fun FlowContent.statsSectionHeader(
     title: String,
@@ -85,36 +96,28 @@ private fun <T : MonitorDetailsDto> FlowContent.monitorIssuesTable(
         }
     }
 
-/** The "monitors with issues" block of a dashboard section, with its empty state. */
 internal fun <T : MonitorDetailsDto> FlowContent.monitorsWithIssuesBlock(
     monitors: List<T>,
     typeUiConfig: MonitorTypeUiConfig,
-    noIssuesText: String,
     statusCell: FlowContent.(T) -> Unit,
     columns: List<MonitorListColumn<T>>,
+    blockTestId: String,
     nameTooltip: (T) -> String? = { null },
 ) {
+    if (monitors.isEmpty()) return
+
     h3 {
         classes(MT_3, MB_0)
+        testId(blockTestId)
         +Messages.monitorsWithIssues()
     }
     div {
         classes(COL_12)
         div {
             classes(CARD)
-            if (monitors.isNotEmpty()) {
-                div {
-                    classes(CARD_TABLE, TABLE_RESPONSIVE)
-                    monitorIssuesTable(monitors, typeUiConfig, statusCell, columns, nameTooltip)
-                }
-            } else {
-                div {
-                    classes(CARD_BODY)
-                    p {
-                        classes(TEXT_SECONDARY, TEXT_CENTER)
-                        +noIssuesText
-                    }
-                }
+            div {
+                classes(CARD_TABLE, TABLE_RESPONSIVE)
+                monitorIssuesTable(monitors, typeUiConfig, statusCell, columns, nameTooltip)
             }
         }
     }
@@ -143,32 +146,32 @@ internal fun <T : MonitorDetailsDto> FlowContent.uptimeStatsSection(
             icon = typeUiConfig.icon,
             colorClasses = setOf(typeUiConfig.color.bgColor, typeUiConfig.color.textColor),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.HEART,
             iconBackground = BG_GREEN_LT,
-            text = actualStats.up.toString(),
+            value = actualStats.up.toLong(),
             secondaryText = Messages.up()
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.HEART_BROKEN,
             iconBackground = BG_RED_LT,
-            text = actualStats.down.toString(),
+            value = actualStats.down.toLong(),
             secondaryText = Messages.down(),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.HEART_OFF,
             iconBackground = BG_CYAN_LT,
-            text = actualStats.paused.toString(),
+            value = actualStats.paused.toLong(),
             secondaryText = Messages.paused(),
         )
-        statCard(
+        numericStatCard(
             cssClasses = setOf(COL_6, COL_MD_3),
             icon = Icon.TOOL,
             iconBackground = BG_GRAY_300,
-            text = actualStats.inMaintenance.toString(),
+            value = actualStats.inMaintenance.toLong(),
             secondaryText = Messages.maintenance(),
         )
         // Historical stats
@@ -178,16 +181,22 @@ internal fun <T : MonitorDetailsDto> FlowContent.uptimeStatsSection(
             inlineBadge(Messages.lastXDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS))
         }
         incidentsStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
-        affectedMonitorsStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
+        numericStatCard(
+            cssClasses = setOf(COL_6, COL_MD_3),
+            icon = Icon.BINOCULARS,
+            iconBackground = BG_RED_LT,
+            value = historyStats.affectedMonitors.toLong(),
+            secondaryText = Messages.affectedMonitors(),
+        )
         uptimeRatioStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
         totalDowntimeStatsCards(cssClasses = setOf(COL_6, COL_MD_3), historyStats)
         // Down monitors table
         monitorsWithIssuesBlock(
             monitors = downMonitors,
             typeUiConfig = typeUiConfig,
-            noIssuesText = Messages.noUptimeIssues(),
             statusCell = { monitor -> uptimeBadgeOfMonitor(monitor, withTooltip = true) },
             columns = columns,
+            blockTestId = UPTIME_ISSUES_BLOCK_TEST_ID,
             nameTooltip = nameTooltip,
         )
     }

@@ -16,6 +16,6 @@ fun renderDnsMonitorList(
         editabilityState = editabilityState,
         columns = listOf(
             uptimeStatusChangedColumn(),
-            timestampColumn(Messages.lastCheck(), D_SM_TABLE_CELL) { it.lastUptimeCheck },
+            timestampColumn(Messages.nextCheck(), D_SM_TABLE_CELL) { it.nextUptimeCheck },
         ),
     )

@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
@@ -113,13 +114,11 @@ fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<I
                             }
                         }
                     } else {
-                        div {
-                            classes(CARD_BODY)
-                            p {
-                                classes(TEXT_SECONDARY, TEXT_CENTER)
-                                +Messages.noIncidentsInPeriod()
-                            }
-                        }
+                        emptyState(
+                            icon = Icon.FLAME,
+                            title = Messages.noIncidents(),
+                            subtitle = Messages.noIncidentsInPeriod(),
+                        )
                     }
                 }
             }

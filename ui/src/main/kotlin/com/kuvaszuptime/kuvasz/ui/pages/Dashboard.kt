@@ -22,6 +22,18 @@ fun renderDashboard(globals: AppGlobals) =
         title = Messages.dashboard(),
         pageTitle = { dashboardHeader(globals) }
     ) {
+        // Only renders anything as long as there isn't a single monitor of any type, see renderDashboardEmptyState()
+        div {
+            hx {
+                get("/fragments/dashboard-empty-state")
+                trigger {
+                    load()
+                    every(30.seconds)
+                    event("refresh-dashboard")
+                }
+            }
+            id = "dashboard-empty-state"
+        }
         div {
             hx {
                 get("/http-monitors/fragments/stats")
@@ -33,10 +45,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "http-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -49,10 +58,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "push-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -65,10 +71,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "icmp-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -81,10 +84,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "tcp-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
         div {
             hx {
@@ -97,10 +97,7 @@ fun renderDashboard(globals: AppGlobals) =
                 onSwapReinitTooltips()
             }
             id = "dns-monitoring-dashboard"
-            div {
-                classes(SPINNER_GROW, HTMX_INDICATOR)
-                role = "status"
-            }
+            htmxLoadingIndicator()
         }
     }
 
@@ -199,7 +196,9 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                                     }
                                 }
                             }
-                            compactIconButton(Icon.REFRESH, onClick = "refreshDashboard()") {}
+                            compactIconButton(Icon.REFRESH, onClick = "refreshDashboard()") {
+                                testId("dashboard-refresh-button")
+                            }
                         }
                     }
                 }

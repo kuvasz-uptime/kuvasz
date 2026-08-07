@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
-import com.kuvaszuptime.kuvasz.ui.CSSClass
+import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.timeAgo
@@ -19,7 +19,9 @@ internal class MonitorListColumn<in T : MonitorDetailsDto>(
     val cell: FlowContent.(T) -> Unit,
 )
 
-/** A column showing a timestamp as a "time ago" label with the exact value in a tooltip. */
+/**
+ * A column showing a timestamp as a "time ago" label with the exact value in a tooltip.
+ */
 internal fun <T : MonitorDetailsDto> timestampColumn(
     header: String,
     breakpoint: CSSClass,
@@ -38,6 +40,8 @@ internal fun <T : MonitorDetailsDto> timestampColumn(
     },
 )
 
-/** The column showing since when the monitor has been in its current uptime status. */
+/**
+ * The column showing since when the monitor has been in its current uptime status.
+ */
 internal fun <T : MonitorDetailsDto> uptimeStatusChangedColumn() =
     timestampColumn<T>(Messages.changed(), D_LG_TABLE_CELL) { it.uptimeStatusStartedAt }

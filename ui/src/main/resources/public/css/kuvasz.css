@@ -5,6 +5,7 @@
     font-display: swap;
     src: url('/public/ext/fonts/Inter-Light.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -12,6 +13,7 @@
     font-display: swap;
     src: url('/public/ext/fonts/Inter-Regular.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -19,6 +21,7 @@
     font-display: swap;
     src: url('/public/ext/fonts/Inter-Medium.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -75,4 +78,14 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
     width: 42px;
     padding: 5px; /* Leaves 32 x 32px for the image */
     object-fit: contain;
+}
+
+/* Tabler btn-icon + btn-sm sizing fix */
+.btn.btn-icon.btn-sm {
+    min-width: 1.9rem;
+    min-height: 1.9rem;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+    --tblr-btn-line-height: 1.2rem;
 }

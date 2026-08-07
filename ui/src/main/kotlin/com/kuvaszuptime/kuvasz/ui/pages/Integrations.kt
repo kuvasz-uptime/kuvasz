@@ -139,7 +139,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 templateTag {
                                                     xIf("!isTestRequestLoading && !wasTestRequestExecuted")
                                                     button {
-                                                        classes(setOf(BTN, BTN_ICON))
+                                                        classes(setOf(BTN, BTN_SM, BTN_ICON))
                                                         if (issue != null) disabled = true
                                                         xOnClick("sendTestRequest()")
                                                         icon(Icon.CIRCLE_DASHED_CHECK)
@@ -182,13 +182,11 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                             }
                         }
                     } else {
-                        div {
-                            classes(CARD_BODY)
-                            p {
-                                classes(TEXT_SECONDARY, TEXT_CENTER)
-                                +Messages.noIntegrations()
-                            }
-                        }
+                        emptyState(
+                            icon = Icon.PLUG,
+                            title = Messages.noIntegrationsYet(),
+                            subtitle = Messages.noIntegrationsDescription(),
+                        )
                     }
                 }
             }

@@ -196,6 +196,7 @@ const refreshStatusPageList = () => sendHtmxEvent('#status-page-list', 'refresh-
 
 // Refreshes the dashboard by triggering an HTMX event
 const refreshDashboard = () => {
+    sendHtmxEvent('#dashboard-empty-state', 'refresh-dashboard');
     sendHtmxEvent('#http-monitoring-dashboard', 'refresh-dashboard');
     sendHtmxEvent('#push-monitoring-dashboard', 'refresh-dashboard');
     sendHtmxEvent('#icmp-monitoring-dashboard', 'refresh-dashboard');

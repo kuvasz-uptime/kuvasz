@@ -45,11 +45,15 @@ internal fun <T : MonitorDetailsDto> renderMonitorList(
         val isReadOnlyMode = editabilityState.areMonitorsReadOnly(typeUiConfig.type)
         if (monitors.isEmpty()) {
             div {
-                classes(CARD_BODY)
-                p {
-                    classes(TEXT_SECONDARY, TEXT_CENTER)
-                    +Messages.noMonitors()
-                }
+                emptyState(
+                    icon = typeUiConfig.icon,
+                    title = Messages.noMonitorsYet(),
+                    subtitle = if (isReadOnlyMode) {
+                        Messages.noMonitorsReadOnlyDescription()
+                    } else {
+                        Messages.noMonitorsDescription()
+                    },
+                )
             }
         } else {
             div {
@@ -135,9 +139,9 @@ private fun TR.monitorListRowActions(
 ) {
     val deleteModalId = "delete-monitor-modal-${monitor.id}"
     td {
-        classes(TEXT_CENTER)
+        classes(TEXT_END)
         div {
-            classes(FLEX_NOWRAP, BTN_GROUP)
+            classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
             compactIconButton(Icon.COPY) {
                 testId(typeUiConfig.testId("clone-button"))
                 modalOpener(typeUiConfig.createModalId)

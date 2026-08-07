@@ -23,7 +23,7 @@ fun renderHttpMonitorList(
                 cell = { monitor -> sslStatusOfMonitor(monitor, withTooltip = true) },
             ),
             uptimeStatusChangedColumn(),
-            timestampColumn(Messages.nextUptimeCheck(), D_LG_TABLE_CELL) { it.nextUptimeCheck },
+            timestampColumn(Messages.nextCheck(), D_LG_TABLE_CELL) { it.nextUptimeCheck },
         ),
         nameTooltip = { it.url.toString() },
     )

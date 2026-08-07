@@ -10,9 +10,15 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.Table
 
 @Singleton
 class SharedMonitorRepository(private val dslContext: DSLContext) {
+
+    /**
+     * Tells whether there is at least one monitor - of any type - set up
+     */
+    fun hasAnyMonitor(ctx: DSLContext = dslContext): Boolean = MONITOR_TABLES.any { ctx.fetchExists(it) }
 
     /**
      * A generic getter for monitors by their numeric ID. Not fully typesafe because of the implicit cast at the end,
@@ -50,4 +56,9 @@ class SharedMonitorRepository(private val dslContext: DSLContext) {
                     .fetchOne()
             }
         } as R?
+
+    companion object {
+        private val MONITOR_TABLES: List<Table<*>> =
+            listOf(HTTP_MONITOR, PUSH_MONITOR, ICMP_MONITOR, TCP_MONITOR, DNS_MONITOR)
+    }
 }

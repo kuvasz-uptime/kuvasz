@@ -57,6 +57,17 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(list.monitorsCell("Scoped Window")).hasText("2")
         }
 
+        "the list shows a placeholder instead of an empty table when there is no maintenance window" {
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+
+            list.navigate()
+
+            assertThat(list.emptyState).isVisible()
+            assertThat(list.emptyState).containsText(Messages.noMaintenanceWindowsYet())
+            assertThat(list.rows).hasCount(0)
+        }
+
         "the maintenance window list is sorted by name, regardless of its casing" {
             val names = listOf("Charlie", "bravo", "Delta", "alpha")
             names.forEach { createMaintenanceWindow(dslContext, name = it) }
