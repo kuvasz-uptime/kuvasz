@@ -21,6 +21,7 @@ import java.util.List;
 import org.jooq.Check;
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.PlainSQL;
@@ -63,7 +64,7 @@ public class MaintenanceWindow extends TableImpl<MaintenanceWindowRecord> {
     /**
      * The column <code>kuvasz.maintenance_window.id</code>.
      */
-    public final TableField<MaintenanceWindowRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<MaintenanceWindowRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.maintenance_window.name</code>.
@@ -162,6 +163,11 @@ public class MaintenanceWindow extends TableImpl<MaintenanceWindowRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.MAINTENANCE_ENABLED_IDX, Indexes.MAINTENANCE_MONITORS_IDX);
+    }
+
+    @Override
+    public Identity<MaintenanceWindowRecord, Long> getIdentity() {
+        return (Identity<MaintenanceWindowRecord, Long>) super.getIdentity();
     }
 
     @Override

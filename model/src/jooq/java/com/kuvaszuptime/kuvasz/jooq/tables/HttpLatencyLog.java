@@ -18,6 +18,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -63,7 +64,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
     /**
      * The column <code>kuvasz.http_latency_log.id</code>.
      */
-    public final TableField<HttpLatencyLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<HttpLatencyLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.http_latency_log.monitor_id</code>.
@@ -150,6 +151,11 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.LATENCY_LOG_LATENCY_IDX, Indexes.LATENCY_LOG_MONITOR_IDX);
+    }
+
+    @Override
+    public Identity<HttpLatencyLogRecord, Long> getIdentity() {
+        return (Identity<HttpLatencyLogRecord, Long>) super.getIdentity();
     }
 
     @Override

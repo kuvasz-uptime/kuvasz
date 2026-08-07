@@ -19,6 +19,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -64,7 +65,7 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     /**
      * The column <code>kuvasz.ssl_event.id</code>.
      */
-    public final TableField<SslEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<SslEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.ssl_event.monitor_id</code>.
@@ -173,6 +174,11 @@ public class SslEvent extends TableImpl<SslEventRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.SSL_EVENT_ENDED_AT_IDX, Indexes.SSL_EVENT_MONITOR_IDX);
+    }
+
+    @Override
+    public Identity<SslEventRecord, Long> getIdentity() {
+        return (Identity<SslEventRecord, Long>) super.getIdentity();
     }
 
     @Override

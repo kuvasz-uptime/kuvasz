@@ -18,6 +18,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -63,7 +64,7 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
     /**
      * The column <code>kuvasz.icmp_metrics_log.id</code>.
      */
-    public final TableField<IcmpMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<IcmpMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.icmp_metrics_log.monitor_id</code>.
@@ -155,6 +156,11 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.ICMP_METRICS_LOG_CREATED_AT_IDX, Indexes.ICMP_METRICS_LOG_MONITOR_ID_IDX);
+    }
+
+    @Override
+    public Identity<IcmpMetricsLogRecord, Long> getIdentity() {
+        return (Identity<IcmpMetricsLogRecord, Long>) super.getIdentity();
     }
 
     @Override
