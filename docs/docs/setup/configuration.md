@@ -16,6 +16,10 @@ _Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or vi
 
     If you modify your configuration (via _YAML_ or _ENV_, it doesn't matter), you need to restart the _Kuvasz_ container for the changes to take effect. In certain cases if you changed an environment variable, **you might need to rebuild the container** as well.
 
+!!! tip "Handling secrets"
+
+    If you'd like to keep your credentials, webhook URLs and other sensitive settings out of your _YAML_ configuration file, take a look at the [**Keeping secrets out of your configuration file**](../management/examples.md#keeping-secrets-out-of-your-configuration-file) recipe.
+
 ## Authentication
 
 ### Toggling authentication

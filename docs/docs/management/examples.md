@@ -10,6 +10,114 @@ logger:
 
 1. You can also use `DEBUG`, but it won't log the request and response bodies, only the headers and status codes.
 
+## Keeping secrets out of your configuration file
+
+Your `kuvasz.yml` is a good candidate for **version control**, but it's also the place where quite a lot of **sensitive data** tends to end up: webhook URLs, _PagerDuty_ integration keys, SMTP credentials, your OIDC client secret, and so on.
+
+There are two built-in mechanisms to keep those out of the file you commit, and **you can freely combine them**.
+
+### Referencing environment variables from the YAML
+
+**Any** value in your _YAML_ configuration can reference an environment variable with the `${VARIABLE_NAME}` syntax. This works everywhere, not only for the settings that have a dedicated environment variable, so it's a good fit for [integrations](integrations.md), which can be configured **only via the YAML file**.
+
+```yaml title="kuvasz.yml"
+integrations:
+  slack:
+    - name: alerts
+      webhook-url: ${SLACK_WEBHOOK_URL}
+  pagerduty:
+    - name: oncall
+      integration-key: ${PAGERDUTY_INTEGRATION_KEY}
+smtp-config:
+  host: 'smtp.your-domain.com'
+  port: ${SMTP_PORT:`465`} # (1)!
+  username: 'kuvasz@your-domain.com'
+  password: ${SMTP_PASSWORD}
+```
+
+1.  With the `${VARIABLE_NAME:`fallback`}` syntax you can provide a **default value** that is used when the variable isn't set. Placeholders are resolved **before** the value is converted to its target type, so they work for numbers and booleans too, even if you quote them.
+
+The variables themselves can then come from wherever your orchestrator takes them, e.g. from an `.env` file that is **not** committed:
+
+```yaml title="docker-compose.yml"
+services:
+  kuvasz:
+    # ...
+    env_file:
+      - ./kuvasz.env # (1)!
+```
+
+1.  Keep this file out of your repository (e.g. by adding it to your `.gitignore`).
+
+!!! warning "Missing variables are fatal"
+
+    If a referenced variable is **not set** and you didn't provide a default for it, _Kuvasz_ **refuses to start**. This is intentional: it's much better to fail fast than to silently run with a half-configured integration.
+
+Keep in mind that environment variables are **readable for anyone who has access to your Docker daemon** (e.g. via `docker inspect`). If you'd like your secrets to live on the disk only, take a look at the next option.
+
+### Splitting your configuration into multiple files
+
+The official _Docker_ image presets the `MICRONAUT_CONFIG_FILES` environment variable to `/config/kuvasz.yml`, which is why that's the path where your configuration file **should be mounted** by default. However, you can **override this variable from the outside** with a **comma-separated list of files**, and _Kuvasz_ will load and merge all of them.
+
+This lets you keep your regular configuration in a file you're happy to commit, and your secrets in a separate one that is provided as a [_Docker_ secret](https://docs.docker.com/compose/how-tos/use-secrets/):
+
+```yaml title="docker-compose.yml" hl_lines="7 10 11 12 13 14"
+services:
+  kuvasz:
+    image: kuvaszmonitoring/kuvasz:latest
+    # ...
+    environment:
+      # ...
+      MICRONAUT_CONFIG_FILES: /config/kuvasz.yml,/run/secrets/kuvasz-secrets.yml # (1)!
+    volumes:
+      - ./kuvasz.yml:/config/kuvasz.yml
+    secrets:
+      - kuvasz-secrets.yml # (2)!
+secrets:
+  kuvasz-secrets.yml: # (3)!
+    file: ./kuvasz-secrets.yml
+```
+
+1.  The order matters: if the very same setting is present in more than one file, **the last one wins**.
+2.  _Docker_ mounts it into the container as `/run/secrets/kuvasz-secrets.yml`.
+3.  The **name of the secret** determines the file name inside the container, so it has to end with `.yml` (or `.yaml`), see the note about the extension below.
+
+```yaml title="kuvasz.yml (committed)"
+app-config:
+  event-data-retention-days: 365
+http-monitors:
+  - name: my_website
+    url: https://your-domain.com
+    uptime-check-interval: 60
+    integrations:
+      - 'slack:alerts' # (1)!
+```
+
+1.  Referencing an integration that is defined in the **other** file works perfectly fine, the two files are merged before anything is validated.
+
+```yaml title="kuvasz-secrets.yml (not committed)"
+integrations:
+  slack:
+    - name: alerts
+      webhook-url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX'
+  pagerduty:
+    - name: oncall
+      integration-key: YourOwnIntegrationKey
+```
+
+!!! tip
+
+    Make sure that the file is readable inside the container, otherwise _Kuvasz_ won't start!
+
+    This approach isn't tied to _Docker_ secrets at all: any **additional file that is readable inside the container** works, no matter whether it comes from a plain bind mount, an encrypted volume, a _Kubernetes_ `Secret` mounted as a file, or a secret manager that renders it to the disk.
+
+### Things to keep in mind
+
+- **Every file in the list must exist**, otherwise _Kuvasz_ won't start (`Failed to read configuration file: ...`). The image ships an empty placeholder at `/config/kuvasz.yml`, so keeping that entry in the list is safe even if you don't mount anything there.
+- **The extension matters**: every file must end with `.yml` or `.yaml`, otherwise the startup fails with an `Unsupported properties file format` error. This is especially important for _Docker_ secrets, where the file name is derived from the name of the secret.
+- **Later files win** over the earlier ones for the settings that are present in more than one of them, and the _YAML_ configuration as a whole takes precedence over the environment variables.
+- **Never split the very same list across multiple files!** Lists (e.g. `integrations.slack`, `http-monitors`, `status-pages`) are merged **by their position**, so if `integrations.slack` is present in two files, the entries of the last one will overwrite the entries of the first one **one by one**, and the extra entries of the first file are dropped entirely. A given list should always live in **exactly one** file, but different lists (even under the same parent key, like `integrations.slack` and `integrations.pagerduty`) can be spread across different files without any problem.
+
 ## Home Assistant RESTful integration
 
 !!! warning
