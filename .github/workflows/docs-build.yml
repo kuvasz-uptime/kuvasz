@@ -25,5 +25,5 @@ jobs:
             mkdocs-material-
       - run: pip install -r requirements.txt
         working-directory: docs
-      - run: mkdocs build
+      - run: mkdocs build --strict
         working-directory: docs
