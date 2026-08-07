@@ -24,19 +24,18 @@ There are two built-in mechanisms to keep those out of the file you commit, and 
 integrations:
   slack:
     - name: alerts
-      webhook-url: '${SLACK_WEBHOOK_URL}' # (1)!
+      webhook-url: ${SLACK_WEBHOOK_URL}
   pagerduty:
     - name: oncall
-      integration-key: '${PAGERDUTY_INTEGRATION_KEY}'
+      integration-key: ${PAGERDUTY_INTEGRATION_KEY}
 smtp-config:
   host: 'smtp.your-domain.com'
-  port: ${SMTP_PORT:465} # (2)!
+  port: ${SMTP_PORT:`465`} # (1)!
   username: 'kuvasz@your-domain.com'
-  password: '${SMTP_PASSWORD}'
+  password: ${SMTP_PASSWORD}
 ```
 
-1.  Quote the value, otherwise _YAML_ parsers can be confused by the leading `$`. Placeholders are resolved before the value is converted to its target type, so they work for numbers and booleans too.
-2.  With the `${VARIABLE_NAME:fallback}` syntax you can provide a **default value** that is used when the variable isn't set.
+1.  With the `${VARIABLE_NAME:`fallback`}` syntax you can provide a **default value** that is used when the variable isn't set. Placeholders are resolved **before** the value is converted to its target type, so they work for numbers and booleans too, even if you quote them.
 
 The variables themselves can then come from wherever your orchestrator takes them, e.g. from an `.env` file that is **not** committed:
 
@@ -62,7 +61,7 @@ The official _Docker_ image presets the `MICRONAUT_CONFIG_FILES` environment var
 
 This lets you keep your regular configuration in a file you're happy to commit, and your secrets in a separate one that is provided as a [_Docker_ secret](https://docs.docker.com/compose/how-tos/use-secrets/):
 
-```yaml title="docker-compose.yml" hl_lines="8 10 12 13"
+```yaml title="docker-compose.yml" hl_lines="7 10 11 12 13 14"
 services:
   kuvasz:
     image: kuvaszmonitoring/kuvasz:latest
@@ -108,7 +107,7 @@ integrations:
 
 !!! tip
 
-    Since the secret file is copied into the container, you can safely `chmod 600` it on the host, _Kuvasz_ will still be able to read it.
+    Make sure that the file is readable inside the container, otherwise _Kuvasz_ won't start!
 
     This approach isn't tied to _Docker_ secrets at all: any **additional file that is readable inside the container** works, no matter whether it comes from a plain bind mount, an encrypted volume, a _Kubernetes_ `Secret` mounted as a file, or a secret manager that renders it to the disk.
 
