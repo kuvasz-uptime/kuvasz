@@ -23,6 +23,8 @@ Instead of a single expected value, a DNS monitor holds a **list of record match
 
 This model covers the everyday cases without any extra configuration: `CONTAINS` is enough for an SPF or DKIM fragment inside a long `TXT` record, two `EXACT` matchers express *"both of these IPs must be present"*, and [`REGEX`](../management/dns-monitors.md#regex-patterns) - using the **Java / Kotlin regular expression syntax** - handles everything else.
 
+![DNS assertions](../images/features/dns_monitor_settings.webp)
+
 ### Drift detection
 
 Beyond up/down, _Kuvasz_ can tell you when the **resolved records change** - a hijacked delegation, an accidental `NS` switch during a migration, or an `MX` record someone edited without telling you.

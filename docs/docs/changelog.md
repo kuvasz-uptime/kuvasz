@@ -1,26 +1,45 @@
 ## 4.2.0 <small>2026-08-xx</small> { id="4.2.0" data-toc-label="4.2.0" }
 
-### Features
-
-**TCP port monitoring** and **DNS monitoring** are here!
-
-- You can now create [**TCP monitors**](features/tcp-monitoring.md) that check whether a **TCP service is accepting connections** — a database, an SMTP or SSH server, a message broker, a game server, or any other `host:port` endpoint — by periodically opening a TCP connection to it. For each check _Kuvasz_ measures **reachability** and **connect latency**, and marks the monitor as DOWN (notifying you through your configured channels) if the connection can't be established within the configured **timeout** or, when set, exceeds the optional **latency threshold**.
-
-- [**DNS monitors**](features/dns-monitoring.md) arrived as well! They check whether a name resolves, and you can assert on the records it resolves to. A monitor holds a list of **record matchers** (`A`, `AAAA`, `CNAME`, `MX`, `NS`, `TXT`, `SOA`, `SRV`, `CAA`, `PTR`) matched as `EXACT`, `CONTAINS` or `REGEX`, can expect a specific **response code** (so _"this name must **not** resolve"_ checks work too), and can query a custom nameserver over `UDP` or `TCP`. On top of that, an opt-in **drift detection** notifies you when the resolved records change, without flipping the monitor to DOWN. See the [**Managing DNS monitors**](management/dns-monitors.md) section for further details.
-
-Both new types are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/managing-monitors/index.md), participate in **incidents**, **uptime & latency stats**, **notifications** (including generic webhook templating), the **metrics** exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
-
-### Fixes
-
-- **ICMP latest-latency metric**: the `icmp-latest-latency` exporter now also updates when a monitor goes DOWN due to **partial packet loss** while some replies still arrived, instead of freezing on the last successful check. The exported gauge now stays consistent with the recorded latency history in this degraded state.
-
-## 4.1.0 <small>2026-07-14</small> { id="4.1.0" data-toc-label="4.1.0" }
-
 !!! question "Make your voice heard!"
 
     There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9){ target="_blank" }.
 
     _Thanks, Adam_
+
+### Features
+
+**TCP** and **DNS monitors** are here!
+
+- You can now create [**TCP monitors**](features/tcp-monitoring.md) that check whether a **TCP service is accepting connections** — a database, an SMTP or SSH server, a message broker, a game server, or any other `host:port` endpoint — by periodically opening a TCP connection to it. For each check _Kuvasz_ measures **reachability** and **connect latency**, and marks the monitor as DOWN (notifying you through your configured channels) if the connection can't be established within the configured **timeout** or, when set, exceeds the optional **latency threshold**.
+
+- [**DNS monitors**](features/dns-monitoring.md) arrived as well! They check whether a name resolves, and you can assert on the records it resolves to. A monitor holds a list of **record matchers** (`A`, `AAAA`, `CNAME`, `MX`, `NS`, `TXT`, `SOA`, `SRV`, `CAA`, `PTR`) matched as `EXACT`, `CONTAINS` or `REGEX`, can expect a specific **response code** (so _"this name must **not** resolve"_ checks work too), and can query a custom nameserver over `UDP` or `TCP`. On top of that, an opt-in **drift detection** notifies you when the resolved records change, without flipping the monitor to DOWN. See the [**Managing DNS monitors**](management/dns-monitors.md) section for further details.
+
+![DNS assertions](../images/features/dns_monitor_settings.webp)
+
+Both new types are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/managing-monitors/index.md), participate in **incidents**, **uptime & latency stats**, **notifications** (including generic webhook templating), the **metrics** exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
+
+### Enhancements
+
+- **The UI got a facelift**:
+    - the **dashboard** was cleaned up and its stat cards now use **conditional colors**, so a glance is enough to tell whether everything is fine. 
+    - the **columns of the monitor lists** were streamlined with consistent sizing.
+    - fixed the positioning of the **loading spinners** on the UI.
+
+- **Nicer empty states** everywhere: the dashboard, the monitor lists, the incidents, the integrations, the maintenance windows and the status pages all have a proper empty state now.
+- The **Settings page was revamped**: the read-only flags of your resources moved to their own **_"Editability"_** card, and the **SMTP** settings got a dedicated card as well, instead of being the only entry under the old integration settings.
+- **Faster status page details**: the uptime statistics of the status pages (and of the `GET /api/v2/status-pages/{statusPageId}/details` endpoint) are calculated with **batched queries** now, instead of querying the uptime events of every monitor one by one. The bigger your status page is, the more noticeable it is.
+
+### Fixes
+
+- **ICMP latest-latency metric**: the `icmp-latest-latency` exporter now also updates when a monitor goes DOWN due to **partial packet loss** while some replies still arrived, instead of freezing on the last successful check. The exported gauge now stays consistent with the recorded latency history in this degraded state.
+- **Case-insensitive sorting across the UI**: monitors, maintenance windows, status pages and integrations were sorted by their name in a case-sensitive way, which pushed every lowercase name after the uppercase ones. They are ordered **case-insensitively** from now on.
+
+### Docs
+
+- **Documented the SMTP related environment variables** (`SMTP_CONFIG_HOST`, `SMTP_CONFIG_PORT`, and the rest): the [**SMTP configuration**](setup/configuration.md#smtp) doesn't have to be provided via YAML, it can be set through environment variables as well.
+- Added a new recipe about [**keeping secrets out of your configuration file**](management/examples.md#keeping-secrets-out-of-your-configuration-file), covering both the `${VARIABLE_NAME}` placeholders (with default values) inside the YAML, and splitting your configuration into multiple files via `MICRONAUT_CONFIG_FILES`, so your secrets can come from a _Docker_ secret.
+
+## 4.1.0 <small>2026-07-14</small> { id="4.1.0" data-toc-label="4.1.0" }
 
 ### Features
 
