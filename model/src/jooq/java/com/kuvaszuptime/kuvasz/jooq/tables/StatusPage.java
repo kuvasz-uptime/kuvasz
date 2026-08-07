@@ -18,6 +18,7 @@ import java.util.List;
 
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.PlainSQL;
@@ -60,7 +61,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
     /**
      * The column <code>kuvasz.status_page.id</code>.
      */
-    public final TableField<StatusPageRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<StatusPageRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.status_page.title</code>.
@@ -139,6 +140,11 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.STATUS_PAGE_MONITORS_IDX);
+    }
+
+    @Override
+    public Identity<StatusPageRecord, Long> getIdentity() {
+        return (Identity<StatusPageRecord, Long>) super.getIdentity();
     }
 
     @Override

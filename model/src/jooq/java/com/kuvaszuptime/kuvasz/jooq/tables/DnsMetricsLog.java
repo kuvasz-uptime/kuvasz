@@ -18,6 +18,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -63,7 +64,7 @@ public class DnsMetricsLog extends TableImpl<DnsMetricsLogRecord> {
     /**
      * The column <code>kuvasz.dns_metrics_log.id</code>.
      */
-    public final TableField<DnsMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<DnsMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.dns_metrics_log.monitor_id</code>.
@@ -150,6 +151,11 @@ public class DnsMetricsLog extends TableImpl<DnsMetricsLogRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.DNS_METRICS_LOG_CREATED_AT_IDX, Indexes.DNS_METRICS_LOG_MONITOR_ID_IDX);
+    }
+
+    @Override
+    public Identity<DnsMetricsLogRecord, Long> getIdentity() {
+        return (Identity<DnsMetricsLogRecord, Long>) super.getIdentity();
     }
 
     @Override

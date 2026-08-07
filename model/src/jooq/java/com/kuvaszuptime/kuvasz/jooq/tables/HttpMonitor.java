@@ -22,6 +22,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
 import org.jooq.Path;
@@ -69,7 +70,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     /**
      * The column <code>kuvasz.http_monitor.id</code>.
      */
-    public final TableField<HttpMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<HttpMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.http_monitor.name</code>. Monitor's name
@@ -255,6 +256,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     @Override
     public Schema getSchema() {
         return aliased() ? null : Kuvasz.KUVASZ;
+    }
+
+    @Override
+    public Identity<HttpMonitorRecord, Long> getIdentity() {
+        return (Identity<HttpMonitorRecord, Long>) super.getIdentity();
     }
 
     @Override
