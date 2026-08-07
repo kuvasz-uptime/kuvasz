@@ -18,6 +18,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -63,7 +64,7 @@ public class TcpMetricsLog extends TableImpl<TcpMetricsLogRecord> {
     /**
      * The column <code>kuvasz.tcp_metrics_log.id</code>.
      */
-    public final TableField<TcpMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<TcpMetricsLogRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.tcp_metrics_log.monitor_id</code>.
@@ -150,6 +151,11 @@ public class TcpMetricsLog extends TableImpl<TcpMetricsLogRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.TCP_METRICS_LOG_CREATED_AT_IDX, Indexes.TCP_METRICS_LOG_MONITOR_ID_IDX);
+    }
+
+    @Override
+    public Identity<TcpMetricsLogRecord, Long> getIdentity() {
+        return (Identity<TcpMetricsLogRecord, Long>) super.getIdentity();
     }
 
     @Override

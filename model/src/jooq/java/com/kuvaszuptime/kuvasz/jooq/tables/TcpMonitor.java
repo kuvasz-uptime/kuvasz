@@ -21,6 +21,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -66,7 +67,7 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
     /**
      * The column <code>kuvasz.tcp_monitor.id</code>.
      */
-    public final TableField<TcpMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<TcpMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.tcp_monitor.name</code>.
@@ -198,6 +199,11 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.TCP_MONITOR_ENABLED_IDX);
+    }
+
+    @Override
+    public Identity<TcpMonitorRecord, Long> getIdentity() {
+        return (Identity<TcpMonitorRecord, Long>) super.getIdentity();
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -65,7 +66,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
     /**
      * The column <code>kuvasz.push_monitor.id</code>.
      */
-    public final TableField<PushMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<PushMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.push_monitor.name</code>.
@@ -187,6 +188,11 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.PUSH_MONITOR_EFFECTIVE_MONITORS_IDX);
+    }
+
+    @Override
+    public Identity<PushMonitorRecord, Long> getIdentity() {
+        return (Identity<PushMonitorRecord, Long>) super.getIdentity();
     }
 
     @Override

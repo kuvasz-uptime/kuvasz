@@ -26,6 +26,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -74,7 +75,7 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
     /**
      * The column <code>kuvasz.dns_monitor.id</code>.
      */
-    public final TableField<DnsMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<DnsMonitorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.dns_monitor.name</code>.
@@ -236,6 +237,11 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.DNS_MONITOR_ENABLED_IDX);
+    }
+
+    @Override
+    public Identity<DnsMonitorRecord, Long> getIdentity() {
+        return (Identity<DnsMonitorRecord, Long>) super.getIdentity();
     }
 
     @Override

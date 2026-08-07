@@ -19,6 +19,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -64,7 +65,7 @@ public class DnsUptimeEvent extends TableImpl<DnsUptimeEventRecord> {
     /**
      * The column <code>kuvasz.dns_uptime_event.id</code>.
      */
-    public final TableField<DnsUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<DnsUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.dns_uptime_event.monitor_id</code>.
@@ -166,6 +167,11 @@ public class DnsUptimeEvent extends TableImpl<DnsUptimeEventRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.DNS_UPTIME_EVENT_ENDED_AT_IDX, Indexes.DNS_UPTIME_EVENT_MONITOR_IDX);
+    }
+
+    @Override
+    public Identity<DnsUptimeEventRecord, Long> getIdentity() {
+        return (Identity<DnsUptimeEventRecord, Long>) super.getIdentity();
     }
 
     @Override

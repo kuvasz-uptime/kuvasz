@@ -19,6 +19,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -64,7 +65,7 @@ public class PushUptimeEvent extends TableImpl<PushUptimeEventRecord> {
     /**
      * The column <code>kuvasz.push_uptime_event.id</code>.
      */
-    public final TableField<PushUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<PushUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.push_uptime_event.monitor_id</code>.
@@ -166,6 +167,11 @@ public class PushUptimeEvent extends TableImpl<PushUptimeEventRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.PUSH_UPTIME_EVENT_ENDED_AT_IDX, Indexes.PUSH_UPTIME_EVENT_MONITOR_IDX);
+    }
+
+    @Override
+    public Identity<PushUptimeEventRecord, Long> getIdentity() {
+        return (Identity<PushUptimeEventRecord, Long>) super.getIdentity();
     }
 
     @Override

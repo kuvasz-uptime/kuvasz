@@ -19,6 +19,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
@@ -64,7 +65,7 @@ public class HttpUptimeEvent extends TableImpl<HttpUptimeEventRecord> {
     /**
      * The column <code>kuvasz.http_uptime_event.id</code>.
      */
-    public final TableField<HttpUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<HttpUptimeEventRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).generatedByDefaultAsIdentity(), this, "");
 
     /**
      * The column <code>kuvasz.http_uptime_event.monitor_id</code>.
@@ -169,6 +170,11 @@ public class HttpUptimeEvent extends TableImpl<HttpUptimeEventRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(Indexes.UPTIME_EVENT_ENDED_AT_IDX, Indexes.UPTIME_EVENT_MONITOR_IDX);
+    }
+
+    @Override
+    public Identity<HttpUptimeEventRecord, Long> getIdentity() {
+        return (Identity<HttpUptimeEventRecord, Long>) super.getIdentity();
     }
 
     @Override
