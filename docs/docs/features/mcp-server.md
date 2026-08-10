@@ -1,5 +1,4 @@
 <!-- md:version 4.0.0 -->
-<!-- md:flag experimental -->
 
 _Kuvasz_ ships with a built-in [**Model Context Protocol (MCP)**](https://modelcontextprotocol.io/){ target="_blank" } server, which exposes your monitoring data and management operations as **tools that AI assistants can call directly**. This lets you query monitor status, view incidents, and create or toggle monitors through natural language — right inside Claude, Cursor, or any MCP-compatible client.
 

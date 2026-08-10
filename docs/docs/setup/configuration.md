@@ -651,7 +651,6 @@ The language to use. If you would like to translate _Kuvasz_ to your desired lan
 ### MCP server
 
 <!-- md:version 4.0.0 -->
-<!-- md:flag experimental -->
 <!-- md:default `false` -->
 <!-- md:type `boolean` -->
 
