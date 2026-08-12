@@ -84,8 +84,6 @@ jobs:
           node-version: 24
       - name: Run JS unit tests
         run: ./gradlew :ui:jsTest
-      - name: Install Playwright Chromium
-        run: ./gradlew :app:installPlaywrightChromium
       - name: Run UI E2E suite
         run: ./gradlew :app:uiTest
       - name: Upload UI E2E artifacts
