@@ -25,7 +25,7 @@ mockserver = "7.5.0"
 pebble = "4.1.2"
 playwright = "1.62.0"
 shadow = "9.6.1"
-simpleJavaMail = "9.1.7"
+simpleJavaMail = "9.3.0"
 testcontainers = "2.0.5"
 versionCatalogUpdate = "1.1.1"
 
