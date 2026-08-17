@@ -13,4 +13,5 @@ class PushMonitorImportAdapter(dto: PushMonitorExportDto) : PushMonitorCreator {
     override val enabled: Boolean = dto.enabled
     override val integrations: List<String> = dto.integrations.map { it.toString() }
     override val failureCountThreshold: Long = dto.failureCountThreshold
+    override val category: String? = dto.category
 }

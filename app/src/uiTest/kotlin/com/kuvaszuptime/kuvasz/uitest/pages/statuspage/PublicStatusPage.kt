@@ -30,4 +30,26 @@ class PublicStatusPage(private val page: Page) {
     fun monitorMaintenanceBadge(name: String): Locator = monitorCardBody(name).locator(".status.status-gray")
 
     fun title(title: String): Locator = page.getByText(title)
+
+    // The category filter bar with a toggleable chip per category (only rendered when there are categories at all)
+    val categoryFilter: Locator get() = page.getByTestId("category-filter")
+
+    val categoryChips: Locator get() = page.getByTestId("category-chip")
+
+    fun categoryChip(label: String): Locator =
+        categoryChips.filter(Locator.FilterOptions().setHasText(label))
+
+    val categorySections: Locator get() = page.getByTestId("category-section")
+
+    fun categorySection(label: String): Locator =
+        categorySections.filter(
+            Locator.FilterOptions().setHas(page.locator("h2", Page.LocatorOptions().setHasText(label)))
+        )
+
+    fun categoryStatusBadge(label: String): Locator =
+        categorySection(label).getByTestId("category-status-badge")
+
+    fun selectAllCategories(): Locator = page.getByTestId("category-select-all")
+
+    fun selectNoCategories(): Locator = page.getByTestId("category-select-none")
 }

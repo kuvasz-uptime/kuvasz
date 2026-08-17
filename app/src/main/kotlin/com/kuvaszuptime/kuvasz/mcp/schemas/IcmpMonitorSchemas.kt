@@ -16,6 +16,7 @@ import java.time.OffsetDateTime
 
 @JsonSchema
 @Introspected
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class IcmpMonitorSchema(
     val id: Long,
     val name: String,
@@ -30,6 +31,7 @@ data class IcmpMonitorSchema(
     val integrations: Set<String>,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: IcmpMonitorDto) = IcmpMonitorSchema(
@@ -46,6 +48,7 @@ data class IcmpMonitorSchema(
             integrations = dto.integrations.map { it.toString() }.toSet(),
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
         )
     }
 }
@@ -66,6 +69,7 @@ data class IcmpMonitorDetailsSchema(
     val enabled: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -90,6 +94,7 @@ data class IcmpMonitorDetailsSchema(
             enabled = dto.enabled,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -169,6 +174,7 @@ data class IcmpMonitorCreatorSchema(
     val timeoutSeconds: Int?,
     val packetLossThreshold: Int?,
     val failureCountThreshold: Long?,
+    val category: String? = null,
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
@@ -181,6 +187,7 @@ data class IcmpMonitorCreatorSchema(
         timeoutSeconds = timeoutSeconds ?: IcmpMonitorDefaults.TIMEOUT_SECONDS,
         packetLossThreshold = packetLossThreshold ?: IcmpMonitorDefaults.PACKET_LOSS_THRESHOLD,
         failureCountThreshold = failureCountThreshold ?: IcmpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
+        category = category,
         enabled = enabled ?: IcmpMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: IcmpMonitorDefaults.METRICS_HISTORY_ENABLED

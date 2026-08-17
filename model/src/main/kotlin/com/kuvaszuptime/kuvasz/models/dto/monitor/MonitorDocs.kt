@@ -23,4 +23,7 @@ object MonitorDocs {
         "List of enabled maintenance windows affecting the monitor, including their current activity status"
     const val UNDER_MAINTENANCE =
         "Whether the monitor is currently affected by an active maintenance window"
+    const val CATEGORY =
+        "Optional, free-form category of the monitor (e.g. a product or service name), used to group monitors " +
+            "on the status pages"
 }

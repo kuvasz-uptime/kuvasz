@@ -129,6 +129,11 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
      */
     public final TableField<TcpMonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
+    /**
+     * The column <code>kuvasz.tcp_monitor.category</code>.
+     */
+    public final TableField<TcpMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
+
     private TcpMonitor(Name alias, Table<TcpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

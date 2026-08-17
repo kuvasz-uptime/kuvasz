@@ -472,6 +472,7 @@ class DnsMonitorControllerTest(
                     .put("resolverHost", "8.8.8.8")
                     .put("resolverPort", 5353)
                     .put("transport", DnsTransport.TCP.name)
+                    .put("category", "New category")
                 updateNode.replace("recordMatchers", mapper.valueToTree(newMatchers))
                 updateNode.replace("driftRecordTypes", mapper.valueToTree(listOf(DnsRecordType.NS, DnsRecordType.MX)))
                 val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
@@ -484,6 +485,7 @@ class DnsMonitorControllerTest(
                     persisted.transport shouldBe DnsTransport.TCP
                     persisted.driftRecordTypes.toList() shouldBe listOf(DnsRecordType.NS, DnsRecordType.MX)
                     persisted.recordMatchersAsList() shouldBe newMatchers
+                    persisted.category shouldBe "New category"
                 }
 
                 then("it should reschedule checks") {

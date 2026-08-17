@@ -16,4 +16,5 @@ class TcpMonitorImportAdapter(dto: TcpMonitorExportDto) : TcpMonitorCreator {
     override val enabled: Boolean = dto.enabled
     override val integrations: List<String> = dto.integrations.map { it.toString() }
     override val metricsHistoryEnabled: Boolean = dto.metricsHistoryEnabled
+    override val category: String? = dto.category
 }

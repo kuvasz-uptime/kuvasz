@@ -58,6 +58,7 @@ sealed interface StatusPageMonitorDetailsDto {
     val uptimeStatus: UptimeStatus?
     val uptimeStatusHistory: List<StatusHistoryDto>
     val inMaintenance: Boolean
+    val category: String?
 }
 
 sealed interface WithLatency {
@@ -72,6 +73,7 @@ data class StatusPagePushMonitorDetailsDto(
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
     override val inMaintenance: Boolean = false,
+    override val category: String? = null,
     val lastHeartbeat: OffsetDateTime?,
 ) : StatusPageMonitorDetailsDto
 
@@ -84,6 +86,7 @@ data class StatusPageHttpMonitorDetailsDto(
     override val uptimeStatusHistory: List<StatusHistoryDto>,
     override val averageLatencyInMs: Int?,
     override val inMaintenance: Boolean = false,
+    override val category: String? = null,
 ) : StatusPageMonitorDetailsDto, WithLatency
 
 data class StatusPageIcmpMonitorDetailsDto(
@@ -96,6 +99,7 @@ data class StatusPageIcmpMonitorDetailsDto(
     override val averageLatencyInMs: Int?,
     val lastPacketLossPercentage: Int?,
     override val inMaintenance: Boolean = false,
+    override val category: String? = null,
 ) : StatusPageMonitorDetailsDto, WithLatency
 
 data class StatusPageTcpMonitorDetailsDto(
@@ -107,6 +111,7 @@ data class StatusPageTcpMonitorDetailsDto(
     override val uptimeStatusHistory: List<StatusHistoryDto>,
     override val averageLatencyInMs: Int?,
     override val inMaintenance: Boolean = false,
+    override val category: String? = null,
 ) : StatusPageMonitorDetailsDto, WithLatency
 
 data class StatusPageDnsMonitorDetailsDto(
@@ -118,6 +123,7 @@ data class StatusPageDnsMonitorDetailsDto(
     override val uptimeStatusHistory: List<StatusHistoryDto>,
     override val averageLatencyInMs: Int?,
     override val inMaintenance: Boolean = false,
+    override val category: String? = null,
 ) : StatusPageMonitorDetailsDto, WithLatency
 
 /**

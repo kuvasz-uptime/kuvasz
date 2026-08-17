@@ -28,6 +28,7 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         createTitle = Messages.createNewDnsMonitor(),
         errorMessages = mapOf(
             "nameRequired" to Messages.errorNameRequired(),
+            "categoryTooLong" to Messages.errorCategoryTooLong(),
             "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
             "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
             "uptimeCheckIntervalInvalid" to Messages.errorUptimeCheckIntervalInvalid(),

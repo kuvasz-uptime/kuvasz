@@ -12,6 +12,9 @@ class HttpMonitorDetailsPage(private val page: Page) {
 
     val configureButton: Locator get() = page.getByTestId("configure-button")
 
+    // The badge in the header showing the monitor's category, if it has one
+    val categoryBadge: Locator get() = page.getByTestId("monitor-category-badge")
+
     // The pause/resume control in the header: shows a pause icon while running, a play icon once paused.
     val toggleButton: Locator get() = page.getByTestId("toggle-monitor-button")
     val pauseControl: Locator get() = toggleButton.locator(".icon-tabler-player-pause")

@@ -28,4 +28,5 @@ class HttpMonitorImportAdapter(dto: HttpMonitorExportDto) : HttpMonitorCreator {
     override val requestHeaders: Map<String, String> = dto.requestHeaders
     override val expectedHeaders: Map<String, String> = dto.expectedHeaders
     override val requestBody: String? = dto.requestBody
+    override val category: String? = dto.category
 }

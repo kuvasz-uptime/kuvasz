@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 
 @Introspected
 data class IcmpMonitorUpdateDto(
@@ -66,4 +67,8 @@ data class IcmpMonitorUpdateDto(
     @get:NotNull
     @param:Schema(description = IcmpMonitorDocs.METRICS_HISTORY_ENABLED, required = false, nullable = false)
     val metricsHistoryEnabled: Boolean?,
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    val category: String?,
 )

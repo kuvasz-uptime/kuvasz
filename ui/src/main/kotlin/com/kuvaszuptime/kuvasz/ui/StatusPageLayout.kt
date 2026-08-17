@@ -63,6 +63,8 @@ internal fun withStatusPageLayout(
                         }
                     }
                     commonScripts(globals.appVersion)
+                    // Alpine.js drives the client-side category filtering of the monitors
+                    script(src = "/public/ext/js/alpine.3.16.1.min.js") {}
                 }
             }
 }

@@ -16,6 +16,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
+import jakarta.validation.constraints.Size
 
 @Suppress("ComplexInterface")
 interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
@@ -68,6 +69,10 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
     @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     val failureCountThreshold: Long
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    val category: String?
+
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
         HttpMonitorRecord()
             .setName(name)
@@ -91,4 +96,5 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
             .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
             .setRequestBody(requestBody)
             .setFailureCountThreshold(failureCountThreshold)
+            .setCategory(category?.trim()?.takeIf { it.isNotEmpty() })
 }

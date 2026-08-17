@@ -2450,8 +2450,16 @@ components:
           type: boolean
           description: Whether metrics history is enabled for the monitor
           default: true
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     DnsMonitorDetailsDto:
       required:
+      - category
       - createdAt
       - driftDetectionEnabled
       - driftRecordTypes
@@ -2632,8 +2640,14 @@ components:
           type: boolean
           description: Whether the monitor is currently affected by an active maintenance
             window
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     DnsMonitorDto:
       required:
+      - category
       - createdAt
       - driftDetectionEnabled
       - driftRecordTypes
@@ -2758,6 +2772,11 @@ components:
           type: string
           description: The last updated timestamp of the monitor
           format: date-time
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     DnsMonitorStatsDto:
       required:
       - id
@@ -2919,6 +2938,13 @@ components:
           type: boolean
           description: Whether metrics history is enabled for the monitor
           nullable: false
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     DnsMonitoringStatsDto:
       required:
       - actual
@@ -3286,8 +3312,16 @@ components:
           default: 1
           x-minimum-message: Failure count threshold must be greater than 0
           x-not-null-message: Failure count threshold must not be null
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     HttpMonitorDetailsDto:
       required:
+      - category
       - createdAt
       - effectiveIntegrations
       - enabled
@@ -3522,8 +3556,14 @@ components:
           type: boolean
           description: Whether the monitor is currently affected by an active maintenance
             window
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     HttpMonitorDto:
       required:
+      - category
       - createdAt
       - enabled
       - expectedHeaders
@@ -3664,6 +3704,11 @@ components:
           type: string
           description: The last updated timestamp of the monitor
           format: date-time
+          nullable: true
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
           nullable: true
     HttpMonitorStatsDto:
       required:
@@ -3838,6 +3883,13 @@ components:
           format: int64
           nullable: false
           x-minimum-message: Failure count threshold must be greater than 0
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     HttpMonitoringStatsDto:
       required:
       - actual
@@ -4048,8 +4100,16 @@ components:
           type: boolean
           description: Whether metrics history is enabled for the monitor
           default: true
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     IcmpMonitorDetailsDto:
       required:
+      - category
       - createdAt
       - effectiveIntegrations
       - enabled
@@ -4177,8 +4237,14 @@ components:
           type: boolean
           description: Whether the monitor is currently affected by an active maintenance
             window
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     IcmpMonitorDto:
       required:
+      - category
       - createdAt
       - enabled
       - failureCountThreshold
@@ -4250,6 +4316,11 @@ components:
           type: string
           description: The last updated timestamp of the monitor
           format: date-time
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     IcmpMonitorStatsDto:
       required:
       - id
@@ -4370,6 +4441,13 @@ components:
           type: boolean
           description: Whether metrics history is enabled for the monitor
           nullable: false
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     IcmpMonitoringStatsDto:
       required:
       - actual
@@ -5155,8 +5233,16 @@ components:
           default: 1
           x-minimum-message: Failure count threshold must be greater than 0
           x-not-null-message: Failure count threshold must not be null
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     PushMonitorDetailsDto:
       required:
+      - category
       - clientSecret
       - createdAt
       - effectiveIntegrations
@@ -5277,8 +5363,14 @@ components:
           type: boolean
           description: Whether the monitor is currently affected by an active maintenance
             window
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     PushMonitorDto:
       required:
+      - category
       - clientSecret
       - createdAt
       - enabled
@@ -5343,6 +5435,11 @@ components:
           description: The threshold for consecutive failures before the monitor is
             marked as DOWN
           format: int64
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     PushMonitorFailureDetailsDto:
       type: object
       properties:
@@ -5422,6 +5519,13 @@ components:
           format: int64
           nullable: false
           x-minimum-message: Failure count threshold must be greater than 0
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     PushMonitoringStatsDto:
       required:
       - actual
@@ -6112,6 +6216,9 @@ components:
           nullable: true
         inMaintenance:
           type: boolean
+        category:
+          type: string
+          nullable: true
     StatusPageIcmpMonitorDetailsDto:
       required:
       - inMaintenance
@@ -6150,6 +6257,9 @@ components:
           nullable: true
         inMaintenance:
           type: boolean
+        category:
+          type: string
+          nullable: true
     StatusPageImportResultDto:
       required:
       - deleted
@@ -6231,6 +6341,9 @@ components:
             $ref: "#/components/schemas/StatusHistoryDto"
         inMaintenance:
           type: boolean
+        category:
+          type: string
+          nullable: true
       oneOf:
       - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
@@ -6266,6 +6379,9 @@ components:
             $ref: "#/components/schemas/StatusHistoryDto"
         inMaintenance:
           type: boolean
+        category:
+          type: string
+          nullable: true
         lastHeartbeat:
           type: string
           format: date-time
@@ -6304,6 +6420,9 @@ components:
           nullable: true
         inMaintenance:
           type: boolean
+        category:
+          type: string
+          nullable: true
     StatusPageUpdateDto:
       type: object
       properties:
@@ -6453,8 +6572,16 @@ components:
           type: boolean
           description: Whether metrics history is enabled for the monitor
           default: true
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     TcpMonitorDetailsDto:
       required:
+      - category
       - createdAt
       - effectiveIntegrations
       - enabled
@@ -6583,8 +6710,14 @@ components:
           type: boolean
           description: Whether the monitor is currently affected by an active maintenance
             window
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     TcpMonitorDto:
       required:
+      - category
       - createdAt
       - enabled
       - failureCountThreshold
@@ -6657,6 +6790,11 @@ components:
           type: string
           description: The last updated timestamp of the monitor
           format: date-time
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
     TcpMonitorStatsDto:
       required:
       - id
@@ -6767,6 +6905,13 @@ components:
           type: boolean
           description: Whether metrics history is enabled for the monitor
           nullable: false
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
     TcpMonitoringStatsDto:
       required:
       - actual

@@ -50,4 +50,6 @@ data class IcmpMonitorCreateDto(
         defaultValue = IcmpMonitorDefaults.METRICS_HISTORY_ENABLED.toString()
     )
     override val metricsHistoryEnabled: Boolean = IcmpMonitorDefaults.METRICS_HISTORY_ENABLED,
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    override val category: String? = null,
 ) : IcmpMonitorCreator

@@ -15,6 +15,7 @@ sealed interface MonitorDetailsDto {
     val uptimeError: String?
     val inMaintenance: Boolean
     val statusPages: Set<String>
+    val category: String?
 }
 
 fun MonitorDetailsDto.monitorType(): MonitorType = when (this) {

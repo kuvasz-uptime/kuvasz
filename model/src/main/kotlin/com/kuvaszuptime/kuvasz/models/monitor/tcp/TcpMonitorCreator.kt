@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 
 @Suppress("ComplexInterface")
 interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
@@ -43,6 +44,10 @@ interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
     val enabled: Boolean
     override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    val category: String?
+
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): TcpMonitorRecord =
         TcpMonitorRecord()
             .setName(name)
@@ -55,4 +60,5 @@ interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
             .setEnabled(enabled)
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
+            .setCategory(category?.trim()?.takeIf { it.isNotEmpty() })
 }

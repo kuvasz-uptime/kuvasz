@@ -24,6 +24,15 @@ internal fun SystemStatus.color(): CSSClass = when (this) {
     SystemStatus.PENDING -> TEXT_SECONDARY
 }
 
+internal fun SystemStatus.statusBadgeColor(): CSSClass = when (this) {
+    SystemStatus.OPERATIONAL -> STATUS_GREEN
+    SystemStatus.PARTIAL_OUTAGE -> STATUS_YELLOW
+    SystemStatus.MAJOR_OUTAGE -> STATUS_RED
+    SystemStatus.PARTIAL_MAINTENANCE -> STATUS_GRAY
+    SystemStatus.MAINTENANCE -> STATUS_GRAY
+    SystemStatus.PENDING -> STATUS_GRAY
+}
+
 internal fun SystemStatus.title(): String = when (this) {
     SystemStatus.OPERATIONAL -> Messages.statusPageSystemStatusOperational()
     SystemStatus.PARTIAL_OUTAGE -> Messages.statusPageSystemStatusPartialOutage()

@@ -27,6 +27,7 @@ data class DnsMonitorExportDto(
     val enabled: Boolean,
     val integrations: Set<IntegrationID>,
     val metricsHistoryEnabled: Boolean,
+    val category: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: DnsMonitorRecord): DnsMonitorExportDto {
@@ -47,6 +48,7 @@ data class DnsMonitorExportDto(
                 enabled = record.enabled,
                 integrations = record.integrations.toSet(),
                 metricsHistoryEnabled = record.metricsHistoryEnabled,
+                category = record.category,
             )
         }
     }

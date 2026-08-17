@@ -15,6 +15,7 @@
     ```yaml title="YAML monitor reference"
     http-monitors:
     - name: "My Monitor" # (1)!
+      category: "Core services" # (22)!
       url: "https://kuvasz-uptime.dev" # (2)!
       sensitive-url: false # (21)!
       uptime-check-interval: 60 # (3)!
@@ -65,6 +66,7 @@
     19. **Request body**: The JSON request body to send with the request.
     20. **Failure count threshold**: The number of consecutive failures that should occur before the monitor is considered down. Defaults to 1.
     21. **Sensitive URL**: Whether the URL of the monitor is considered sensitive or not. If it's set to `true`, the URL will be masked in the metrics, logs and notifications/integrations.
+    22. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
 
 === "API (expert)"
 
@@ -87,6 +89,14 @@
 <!-- md:yaml_prop `name` -->
 
 The name of the monitor, which **must be unique** across all HTTP monitors.
+
+### Category
+
+<!-- md:version 4.3.0 -->
+<!-- md:type string -->
+<!-- md:yaml_prop `category` -->
+
+An optional, free-form category (up to 100 characters), e.g. the name of a product or a service, that is used to group the monitor on the [status pages](../features/status-pages.md). Monitors that share the same category are displayed together in a dedicated section there, with an aggregated status per category, and the visitors of the page can filter the monitors by their categories. The default is `null`, which means that the monitor is not categorized.
 
 ### URL
 

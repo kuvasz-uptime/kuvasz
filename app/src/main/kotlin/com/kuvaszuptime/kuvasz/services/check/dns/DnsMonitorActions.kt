@@ -177,6 +177,7 @@ class DnsMonitorActions(
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
                 inMaintenance = uptime.inMaintenance,
+                category = monitor.category,
             )
         }
 }

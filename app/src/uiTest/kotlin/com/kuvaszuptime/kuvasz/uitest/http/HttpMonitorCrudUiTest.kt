@@ -22,17 +22,25 @@ class HttpMonitorCrudUiTest : UiTestSpec() {
             list.openCreateModal()
                 .setName(originalName)
                 .setUrl("https://example.com")
+                .setCategory("Payments")
                 .save()
             page.waitForURL("**/http-monitors/*")
             val details = HttpMonitorDetailsPage(page)
             assertThat(details.heading(originalName)).isVisible()
+            // The category is shown as a badge in the header
+            assertThat(details.categoryBadge).containsText("Payments")
 
             // Renaming is allowed since the monitor isn't on a status page.
             val updatedName = "E2E Monitor Renamed"
-            details.openConfigureModal()
+            val configureModal = details.openConfigureModal()
+            // The category is pre-filled from the monitor and can be cleared
+            assertThat(configureModal.categoryInput).hasValue("Payments")
+            configureModal
                 .setName(updatedName)
+                .setCategory("")
                 .save()
             assertThat(details.heading(updatedName)).isVisible()
+            assertThat(details.categoryBadge).hasCount(0)
 
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()

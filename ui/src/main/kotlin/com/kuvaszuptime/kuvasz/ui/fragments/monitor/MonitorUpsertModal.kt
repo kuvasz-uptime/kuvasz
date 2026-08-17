@@ -95,6 +95,19 @@ internal fun FlowContent.monitorUpsertModal(
                             disabledIf = "$isReadOnlyMode || $isMonitorNameReadOnly",
                         )
                     }
+                    // Category
+                    div {
+                        classes(MB_3)
+                        validatedInput(
+                            propName = "category",
+                            label = Messages.monitorCategoryLabel(),
+                            placeholder = Messages.monitorCategoryPlaceholder(),
+                            description = Messages.monitorCategoryDescription(),
+                            required = false,
+                            onInput = "validateCategory()",
+                            disabledIf = "$isReadOnlyMode",
+                        )
+                    }
                     fields(isReadOnlyMode)
 
                     // Accordion for all the specific settings
