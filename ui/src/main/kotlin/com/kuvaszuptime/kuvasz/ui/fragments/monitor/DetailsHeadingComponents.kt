@@ -61,6 +61,17 @@ internal fun FlowContent.monitorDetailsHeading(
                                 color = typeUiConfig.color
                             )
                         }
+                        monitor.category?.let { category ->
+                            li {
+                                classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
+                                testId("monitor-category-badge")
+                                inlineStatusBadge(
+                                    text = category.abbreviate(MONITOR_TARGET_MAX_LENGTH),
+                                    icon = Icon.TAG,
+                                    color = Color.DEFAULT,
+                                )
+                            }
+                        }
                         extraBadges()
                     }
                 }

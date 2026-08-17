@@ -217,6 +217,21 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
         return (OffsetDateTime) get(12);
     }
 
+    /**
+     * Setter for <code>kuvasz.tcp_monitor.category</code>.
+     */
+    public TcpMonitorRecord setCategory(String value) {
+        set(13, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.tcp_monitor.category</code>.
+     */
+    public String getCategory() {
+        return (String) get(13);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -240,7 +255,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
     /**
      * Create a detached, initialised TcpMonitorRecord
      */
-    public TcpMonitorRecord(Long id, String name, String host, Integer port, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public TcpMonitorRecord(Long id, String name, String host, Integer port, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category) {
         super(TcpMonitor.TCP_MONITOR);
 
         setId(id);
@@ -256,6 +271,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
         setIntegrations(integrations);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
+        setCategory(category);
         resetTouchedOnNotNull();
     }
 
@@ -279,6 +295,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
             setIntegrations(value.getIntegrations());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setCategory(value.getCategory());
             resetTouchedOnNotNull();
         }
     }

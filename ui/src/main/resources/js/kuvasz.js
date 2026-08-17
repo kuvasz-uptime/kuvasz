@@ -835,6 +835,7 @@ const upsertHttpMonitorForm = (
             this.followRedirects = (source?.followRedirects != null ? source?.followRedirects : true);
             this.requestMethod = source?.requestMethod || 'GET';
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
             this.selectedHttpStatusCodes = source?.expectedStatusCodes?.map(code => code.toString()) || [];
             this.expectedKeyword = source?.expectedKeyword || null;
             this.expectedKeywordCaseSensitive = source?.expectedKeywordCaseSensitive || false;
@@ -927,6 +928,7 @@ const upsertHttpMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateUrl();
             this.validateSslExpiryThreshold();
             this.validateFailureCountThreshold();
@@ -939,6 +941,14 @@ const upsertHttpMonitorForm = (
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1024,6 +1034,7 @@ const upsertHttpMonitorForm = (
                     uptimeCheckInterval: this.uptimeCheckInterval,
                     requestMethod: this.requestMethod,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     expectedStatusCodes: this.selectedHttpStatusCodes,
                     expectedKeyword: sanitizeTextInput(this.expectedKeyword),
                     expectedKeywordCaseSensitive: this.expectedKeywordCaseSensitive,
@@ -1111,6 +1122,7 @@ const upsertPushMonitorForm = (
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.clientSecret = source?.clientSecret || createRandomSecret();
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
             this.errors = {};
             this.formError = null;
         },
@@ -1146,6 +1158,7 @@ const upsertPushMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHeartbeatInterval();
             this.validateGracePeriod();
             this.validateClientSecret();
@@ -1157,6 +1170,14 @@ const upsertPushMonitorForm = (
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1212,6 +1233,7 @@ const upsertPushMonitorForm = (
                     gracePeriod: this.gracePeriod,
                     clientSecret: this.clientSecret,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     failureCountThreshold: this.failureCountThreshold
                 };
                 if (!this.isUpdate) {
@@ -1295,6 +1317,7 @@ const upsertIcmpMonitorForm = (
             this.packetLossThreshold = source?.packetLossThreshold || 100;
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
             this.formError = null;
@@ -1318,6 +1341,7 @@ const upsertIcmpMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHost();
             this.validateUptimeCheckInterval();
             this.validatePacketCount();
@@ -1331,6 +1355,14 @@ const upsertIcmpMonitorForm = (
                 this.errors.name = this.errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1403,6 +1435,7 @@ const upsertIcmpMonitorForm = (
                     packetLossThreshold: this.packetLossThreshold,
                     failureCountThreshold: this.failureCountThreshold,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     metricsHistoryEnabled: this.metricsHistoryEnabled,
                 };
                 if (!this.isUpdate) {
@@ -1485,6 +1518,7 @@ const upsertTcpMonitorForm = (
             this.latencyThresholdMs = source?.latencyThresholdMs != null ? source.latencyThresholdMs : '';
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
             this.formError = null;
@@ -1508,6 +1542,7 @@ const upsertTcpMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHost();
             this.validatePort();
             this.validateUptimeCheckInterval();
@@ -1521,6 +1556,14 @@ const upsertTcpMonitorForm = (
                 this.errors.name = this.errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1595,6 +1638,7 @@ const upsertTcpMonitorForm = (
                     latencyThresholdMs: (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) ? null : parseInt(this.latencyThresholdMs),
                     failureCountThreshold: this.failureCountThreshold,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     metricsHistoryEnabled: this.metricsHistoryEnabled,
                 };
                 if (!this.isUpdate) {
@@ -1683,6 +1727,7 @@ const upsertDnsMonitorForm = (
             this.latencyThresholdMs = source?.latencyThresholdMs != null ? source.latencyThresholdMs : '';
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.newMatcherRecordType = 'A';
             this.newMatcherMatchType = 'CONTAINS';
@@ -1710,6 +1755,7 @@ const upsertDnsMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHost();
             this.validateResolverPort();
             this.validateUptimeCheckInterval();
@@ -1724,6 +1770,14 @@ const upsertDnsMonitorForm = (
                 this.errors.name = this.errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1860,6 +1914,7 @@ const upsertDnsMonitorForm = (
                     latencyThresholdMs: (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) ? null : parseInt(this.latencyThresholdMs),
                     failureCountThreshold: this.failureCountThreshold,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     metricsHistoryEnabled: this.metricsHistoryEnabled,
                 };
                 if (!this.isUpdate) {
@@ -2531,6 +2586,71 @@ const upsertMaintenanceWindowForm = (
     }
 };
 
+const statusPageCategoryFilter = (categories) => {
+    const allCategories = categories || [];
+    // The selection survives the periodic meta-refresh of the status page within the browser session
+    const storageKey = typeof window !== 'undefined'
+        ? `kuvasz-status-category-filter:${window.location.pathname}`
+        : 'kuvasz-status-category-filter';
+    return {
+        categories: allCategories,
+        selected: [...allCategories],
+
+        init() {
+            if (typeof sessionStorage === 'undefined') return;
+            try {
+                const stored = JSON.parse(sessionStorage.getItem(storageKey));
+                if (Array.isArray(stored)) {
+                    // Drop the categories that no longer exist on the page
+                    this.selected = stored.filter((category) => this.categories.includes(category));
+                }
+            } catch (error) {
+                // A corrupted stored state is simply ignored
+            }
+        },
+
+        persistSelection() {
+            if (typeof sessionStorage === 'undefined') return;
+            try {
+                sessionStorage.setItem(storageKey, JSON.stringify(this.selected));
+            } catch (error) {
+                // Storage can be unavailable (e.g. blocked), filtering still works without persistence
+            }
+        },
+
+        isSelected(category) {
+            return this.selected.includes(category);
+        },
+
+        toggle(category) {
+            if (this.isSelected(category)) {
+                this.selected = this.selected.filter((selectedCategory) => selectedCategory !== category);
+            } else {
+                this.selected = [...this.selected, category];
+            }
+            this.persistSelection();
+        },
+
+        selectAll() {
+            this.selected = [...this.categories];
+            this.persistSelection();
+        },
+
+        selectNone() {
+            this.selected = [];
+            this.persistSelection();
+        },
+
+        get allSelected() {
+            return this.selected.length === this.categories.length;
+        },
+
+        get noneSelected() {
+            return this.selected.length === 0;
+        },
+    };
+};
+
 // Exposes helpers and Alpine x-data factories for the Node-based unit tests (see ui/src/jsTest and the :ui:jsTest task)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -2557,5 +2677,6 @@ if (typeof module !== 'undefined' && module.exports) {
         icmpMetricsBlock,
         tcpMetricsBlock,
         dnsMetricsBlock,
+        statusPageCategoryFilter,
     };
 }

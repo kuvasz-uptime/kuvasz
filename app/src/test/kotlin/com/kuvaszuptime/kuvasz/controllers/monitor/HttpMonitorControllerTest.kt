@@ -1008,6 +1008,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.requestHeadersAsMap().shouldBeEmpty()
                     monitorInDb.expectedHeadersAsMap().shouldBeEmpty()
                     monitorInDb.requestBody.shouldBeNull()
+                    monitorInDb.category.shouldBeNull()
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1043,6 +1044,7 @@ class HttpMonitorControllerTest(
                     requestBody = "{\"key\": \"value\"}",
                     failureCountThreshold = 4,
                     sensitiveUrl = true,
+                    category = "Backend services",
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -1088,6 +1090,7 @@ class HttpMonitorControllerTest(
                         "X-Expected-Header" to "ExpectedValue"
                     )
                     monitorInDb.requestBody shouldBe "{\"key\": \"value\"}"
+                    monitorInDb.category shouldBe "Backend services"
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1136,6 +1139,24 @@ class HttpMonitorControllerTest(
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     response.message shouldContain MonitorValidationMessages.URL_PATTERN
+                }
+            }
+
+            `when`("it is called with a too long category") {
+                val monitorToCreate = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    category = "a".repeat(101),
+                )
+                val request = HttpRequest.POST("/api/v2/http-monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.message shouldContain "category must be at most"
                 }
             }
 
@@ -1579,6 +1600,7 @@ class HttpMonitorControllerTest(
                     )
                     .put(HttpMonitorUpdateDto::requestBody.name, "{\"newKey\": \"newValue\"}")
                     .put(HttpMonitorUpdateDto::sensitiveUrl.name, true)
+                    .put(HttpMonitorUpdateDto::category.name, "Updated category")
 
                 val subscriber = TestSubscriber<MonitorLifecycleEvent>()
                 eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
@@ -1614,6 +1636,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.requestHeadersAsMap() shouldContainExactly mapOf("X-New-Header" to "UpdatedValue")
                     monitorInDb.expectedHeadersAsMap().shouldBeEmpty()
                     monitorInDb.requestBody shouldBe "{\"newKey\": \"newValue\"}"
+                    monitorInDb.category shouldBe "Updated category"
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1714,6 +1737,27 @@ class HttpMonitorControllerTest(
 
                 then("it should remove all the integrations") {
                     monitorInDb.integrations.shouldNotBeNull().shouldBeEmpty()
+                }
+            }
+
+            `when`("it is called to clear the previously set category") {
+                val createDto = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = false,
+                    category = "Backend services",
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+                createdMonitor.category shouldBe "Backend services"
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .putNull(HttpMonitorUpdateDto::category.name)
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
+
+                then("it should remove the category") {
+                    monitorInDb.category.shouldBeNull()
                 }
             }
 

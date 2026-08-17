@@ -217,6 +217,21 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
         return (OffsetDateTime) get(12);
     }
 
+    /**
+     * Setter for <code>kuvasz.icmp_monitor.category</code>.
+     */
+    public IcmpMonitorRecord setCategory(String value) {
+        set(13, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.icmp_monitor.category</code>.
+     */
+    public String getCategory() {
+        return (String) get(13);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -240,7 +255,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
     /**
      * Create a detached, initialised IcmpMonitorRecord
      */
-    public IcmpMonitorRecord(Long id, String name, String host, Integer uptimeCheckInterval, Integer packetCount, Integer timeoutSeconds, Integer packetLossThreshold, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public IcmpMonitorRecord(Long id, String name, String host, Integer uptimeCheckInterval, Integer packetCount, Integer timeoutSeconds, Integer packetLossThreshold, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category) {
         super(IcmpMonitor.ICMP_MONITOR);
 
         setId(id);
@@ -256,6 +271,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
         setIntegrations(integrations);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
+        setCategory(category);
         resetTouchedOnNotNull();
     }
 
@@ -279,6 +295,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
             setIntegrations(value.getIntegrations());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setCategory(value.getCategory());
             resetTouchedOnNotNull();
         }
     }

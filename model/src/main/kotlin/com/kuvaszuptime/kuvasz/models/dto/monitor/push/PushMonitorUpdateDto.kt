@@ -47,4 +47,8 @@ data class PushMonitorUpdateDto(
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
     val failureCountThreshold: Long?,
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    val category: String?,
 )

@@ -116,6 +116,7 @@ class PushMonitorRepository(
                 .set(PUSH_MONITOR.CLIENT_SECRET, updatedMonitor.clientSecret)
                 .set(PUSH_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(PUSH_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
+                .set(PUSH_MONITOR.CATEGORY, updatedMonitor.category)
                 .set(PUSH_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(PUSH_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(PUSH_MONITOR.asterisk())
@@ -168,6 +169,7 @@ class PushMonitorRepository(
         .select(
             PUSH_MONITOR.ID.`as`(PushMonitorDetailsDto::id.name),
             PUSH_MONITOR.NAME.`as`(PushMonitorDetailsDto::name.name),
+            PUSH_MONITOR.CATEGORY.`as`(PushMonitorDetailsDto::category.name),
             PUSH_MONITOR.HEARTBEAT_INTERVAL.`as`(PushMonitorDetailsDto::heartbeatInterval.name),
             PUSH_MONITOR.GRACE_PERIOD.`as`(PushMonitorDetailsDto::gracePeriod.name),
             PUSH_MONITOR.CLIENT_SECRET.`as`(PushMonitorDetailsDto::clientSecret.name),

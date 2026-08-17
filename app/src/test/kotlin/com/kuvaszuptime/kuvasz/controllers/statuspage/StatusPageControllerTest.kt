@@ -432,6 +432,7 @@ class StatusPageControllerTest(
                             uptimeStatus = UptimeStatus.UP,
                             uptimeStatusHistory = emptyList(),
                             averageLatencyInMs = 123,
+                            category = "Mock category",
                         )
                     ),
                     activeMaintenanceWindows = listOf(
@@ -470,6 +471,7 @@ class StatusPageControllerTest(
                             monitorDetails.name shouldBe mockDetails.name
                             monitorDetails.type shouldBe mockDetails.type
                             monitorDetails.lastCheck shouldBe mockDetails.lastCheck.shouldNotBeNull()
+                            monitorDetails.category shouldBe mockDetails.category
                         }
                     }
 
@@ -508,6 +510,7 @@ class StatusPageControllerTest(
                             uptimeStatus = UptimeStatus.UP,
                             uptimeStatusHistory = emptyList(),
                             averageLatencyInMs = 123,
+                            category = "Mock category",
                         )
                     ),
                     activeMaintenanceWindows = listOf(
@@ -546,6 +549,7 @@ class StatusPageControllerTest(
                             monitorDetails.name shouldBe mockDetails.name
                             monitorDetails.type shouldBe mockDetails.type
                             monitorDetails.lastCheck shouldBe mockDetails.lastCheck.shouldNotBeNull()
+                            monitorDetails.category shouldBe mockDetails.category
                         }
                     }
 

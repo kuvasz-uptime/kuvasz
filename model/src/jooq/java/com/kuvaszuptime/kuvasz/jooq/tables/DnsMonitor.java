@@ -167,6 +167,11 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
      */
     public final TableField<DnsMonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
+    /**
+     * The column <code>kuvasz.dns_monitor.category</code>.
+     */
+    public final TableField<DnsMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
+
     private DnsMonitor(Name alias, Table<DnsMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

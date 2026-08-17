@@ -42,6 +42,7 @@ data class DnsMonitorSchema(
     val integrations: Set<String>,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: DnsMonitorDto) = DnsMonitorSchema(
@@ -64,6 +65,7 @@ data class DnsMonitorSchema(
             integrations = dto.integrations.map { it.toString() }.toSet(),
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
         )
     }
 }
@@ -90,6 +92,7 @@ data class DnsMonitorDetailsSchema(
     val enabled: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -120,6 +123,7 @@ data class DnsMonitorDetailsSchema(
             enabled = dto.enabled,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -213,6 +217,7 @@ data class DnsMonitorCreatorSchema(
     val timeoutMs: Int?,
     val latencyThresholdMs: Int?,
     val failureCountThreshold: Long?,
+    val category: String? = null,
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
@@ -231,6 +236,7 @@ data class DnsMonitorCreatorSchema(
         timeoutMs = timeoutMs ?: DnsMonitorDefaults.TIMEOUT_MS,
         latencyThresholdMs = latencyThresholdMs,
         failureCountThreshold = failureCountThreshold ?: DnsMonitorDefaults.FAILURE_COUNT_THRESHOLD,
+        category = category,
         enabled = enabled ?: DnsMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: DnsMonitorDefaults.METRICS_HISTORY_ENABLED,

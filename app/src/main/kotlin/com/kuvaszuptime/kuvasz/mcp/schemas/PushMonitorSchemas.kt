@@ -31,6 +31,7 @@ data class PushMonitorSchema(
     val integrations: Set<String>,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
     val failureCountThreshold: Long,
 ) {
     companion object {
@@ -45,6 +46,7 @@ data class PushMonitorSchema(
             integrations = dto.integrations.map { it.toString() }.toSet(),
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
             failureCountThreshold = dto.failureCountThreshold,
         )
     }
@@ -62,6 +64,7 @@ data class PushMonitorDetailsSchema(
     val enabled: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -84,6 +87,7 @@ data class PushMonitorDetailsSchema(
             enabled = dto.enabled,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -145,6 +149,7 @@ data class PushMonitorCreatorSchema(
     val integrations: List<String>?,
     @get:Positive
     val failureCountThreshold: Long?,
+    val category: String? = null,
 ) {
     fun toDto() = PushMonitorCreateDto(
         name = name,
@@ -154,6 +159,7 @@ data class PushMonitorCreatorSchema(
         integrations = integrations,
         clientSecret = clientSecret,
         failureCountThreshold = failureCountThreshold ?: PushMonitorDefaults.FAILURE_COUNT_THRESHOLD,
+        category = category,
     )
 }
 

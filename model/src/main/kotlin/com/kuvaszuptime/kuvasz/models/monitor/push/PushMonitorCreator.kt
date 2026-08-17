@@ -35,6 +35,9 @@ interface PushMonitorCreator {
     @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     val failureCountThreshold: Long
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    val category: String?
 }
 
 fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): PushMonitorRecord =
@@ -46,3 +49,4 @@ fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setClientSecret(clientSecret)
         .setIntegrations(validatedIntegrations.toTypedArray())
         .setFailureCountThreshold(failureCountThreshold)
+        .setCategory(category?.trim()?.takeIf { it.isNotEmpty() })

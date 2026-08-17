@@ -307,13 +307,16 @@ class IcmpMonitorControllerTest(
 
         given("PATCH /api/v2/icmp-monitors/{id}") {
             `when`("a monitor is updated") {
-                val monitor = createIcmpMonitor(monitorRepository, host = "1.1.1.1")
+                val monitor = createIcmpMonitor(monitorRepository, host = "1.1.1.1", category = "Old category")
 
-                val updateNode = mapper.createObjectNode().put("host", "8.8.8.8")
+                val updateNode = mapper.createObjectNode()
+                    .put("host", "8.8.8.8")
+                    .put("category", "New category")
                 val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
 
                 then("it should update the monitor") {
                     updatedMonitor.host shouldBe "8.8.8.8"
+                    updatedMonitor.category shouldBe "New category"
                 }
 
                 then("it should reschedule checks") {
