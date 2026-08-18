@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.toNormalizedCategory
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -49,5 +50,5 @@ interface PushMonitorCreator : MonitorCreator<PushMonitorRecord> {
             .setClientSecret(clientSecret)
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setFailureCountThreshold(failureCountThreshold)
-            .setCategory(category?.trim()?.takeIf { it.isNotEmpty() })
+            .setCategory(category.toNormalizedCategory())
 }

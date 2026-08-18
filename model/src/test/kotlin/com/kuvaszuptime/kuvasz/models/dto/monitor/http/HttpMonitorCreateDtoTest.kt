@@ -346,4 +346,21 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.failureCountThreshold shouldBe 1
         }
     }
+
+    given("the toMonitorRecord() mapping of the category") {
+        val baseDto = HttpMonitorCreateDto(
+            name = "Test Monitor",
+            url = "https://example.com",
+            uptimeCheckInterval = 60,
+        )
+
+        `when`("the category is null, blank or padded with whitespace") {
+            then("it should be persisted as null or trimmed") {
+                baseDto.copy(category = null).toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = "   ").toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = " Core services ").toMonitorRecord(emptySet()).category shouldBe
+                    "Core services"
+            }
+        }
+    }
 })

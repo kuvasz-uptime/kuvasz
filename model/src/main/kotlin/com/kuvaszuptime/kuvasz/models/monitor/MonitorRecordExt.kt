@@ -21,6 +21,14 @@ fun MonitorRecord.monitorId(): MonitorID = when (this) {
     else -> error("Unknown monitor type: ${this::class}")
 }
 
+/**
+ * Normalizes a raw monitor category to its persisted form: a trimmed value, or null if it's blank.
+ */
+fun String?.toNormalizedCategory(): String? {
+    val trimmed = this?.trim()
+    return if (trimmed.isNullOrEmpty()) null else trimmed
+}
+
 val MonitorRecord.relativeDetailsUrl: String
     get() = when (this) {
         is HttpMonitorRecord -> "/http-monitors/${this.id}"
