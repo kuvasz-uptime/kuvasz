@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
+import com.kuvaszuptime.kuvasz.models.monitor.http.toMonitorRecord
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldBeEmpty
@@ -344,6 +345,23 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.expectedHeaders.shouldBeEmpty()
             dto.requestBody shouldBe null
             dto.failureCountThreshold shouldBe 1
+        }
+    }
+
+    given("the toMonitorRecord() mapping of the category") {
+        val baseDto = HttpMonitorCreateDto(
+            name = "Test Monitor",
+            url = "https://example.com",
+            uptimeCheckInterval = 60,
+        )
+
+        `when`("the category is null, blank or padded with whitespace") {
+            then("it should be persisted as null or trimmed") {
+                baseDto.copy(category = null).toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = "   ").toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = " Core services ").toMonitorRecord(emptySet()).category shouldBe
+                    "Core services"
+            }
         }
     }
 })

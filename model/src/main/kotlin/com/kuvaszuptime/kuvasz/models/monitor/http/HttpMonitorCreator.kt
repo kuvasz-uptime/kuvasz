@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.toNormalizedCategory
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
@@ -96,4 +97,4 @@ fun HttpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
         .setRequestBody(requestBody)
         .setFailureCountThreshold(failureCountThreshold)
-        .setCategory(category?.trim()?.takeIf { it.isNotEmpty() })
+        .setCategory(category.toNormalizedCategory())

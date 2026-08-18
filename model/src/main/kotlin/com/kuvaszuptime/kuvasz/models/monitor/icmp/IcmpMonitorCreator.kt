@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.toNormalizedCategory
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -68,4 +69,4 @@ fun IcmpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setEnabled(enabled)
         .setIntegrations(validatedIntegrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
-        .setCategory(category?.trim()?.takeIf { it.isNotEmpty() })
+        .setCategory(category.toNormalizedCategory())

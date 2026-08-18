@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.toNormalizedCategory
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -49,4 +50,4 @@ fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setClientSecret(clientSecret)
         .setIntegrations(validatedIntegrations.toTypedArray())
         .setFailureCountThreshold(failureCountThreshold)
-        .setCategory(category?.trim()?.takeIf { it.isNotEmpty() })
+        .setCategory(category.toNormalizedCategory())

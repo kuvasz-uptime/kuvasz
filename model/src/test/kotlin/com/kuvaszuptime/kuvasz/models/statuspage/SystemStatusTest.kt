@@ -79,5 +79,22 @@ class SystemStatusTest : BehaviorSpec({
                 SystemStatus.fromMonitors(monitors) shouldBe SystemStatus.PENDING
             }
         }
+
+        `when`("a DOWN monitor is accompanied only by monitors without a status") {
+            val monitors = listOf(monitor(UptimeStatus.DOWN), monitor(null))
+            then("it should be PENDING") {
+                SystemStatus.fromMonitors(monitors) shouldBe SystemStatus.PENDING
+            }
+        }
+
+        `when`("every monitor is DOWN while all of them are under maintenance") {
+            val monitors = listOf(
+                monitor(UptimeStatus.DOWN, inMaintenance = true),
+                monitor(UptimeStatus.DOWN, inMaintenance = true),
+            )
+            then("the outage should take precedence over the maintenance") {
+                SystemStatus.fromMonitors(monitors) shouldBe SystemStatus.MAJOR_OUTAGE
+            }
+        }
     }
 })
