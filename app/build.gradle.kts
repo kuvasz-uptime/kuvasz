@@ -187,6 +187,11 @@ testing {
                     jvmArgs("-Xmx2048M")
                     // Always run after the fast unit/integration suite when both are requested
                     shouldRunAfter(tasks.named("test"))
+                    // `Playwright.create()` would otherwise shell out to a bare `playwright install`, which downloads
+                    // *every* browser (Firefox, WebKit) even though the suite only ever drives Chromium. Skipping it
+                    // means the browser has to be there already, hence the explicit install task below.
+                    dependsOn("installPlaywrightChromium")
+                    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
                     // Lets local debugging open a headed browser: `./gradlew :app:uiTest -Dui.headed=true`
                     systemProperty("ui.headed", System.getProperty("ui.headed", "false"))
                     // Point Kotest straight at this source set's project config (which registers the Micronaut
@@ -220,16 +225,18 @@ kover {
 }
 
 /**
- * Installs the headless Chromium that the Playwright-driven `uiTest` suite drives. Locally Playwright downloads the
- * browser automatically on first launch, so this is mostly for CI, where `--with-deps` also pulls in the required OS
- * libraries.
+ * Installs the headless Chromium that the Playwright-driven `uiTest` suite drives. `uiTest` depends on it, since the
+ * automatic download on `Playwright.create()` is disabled there (it would pull in Firefox and WebKit as well).
  */
 tasks.register<JavaExec>("installPlaywrightChromium") {
     group = "verification"
     description = "Installs the headless Chromium used by the Playwright-driven uiTest suite."
     classpath = sourceSets["uiTest"].runtimeClasspath
     mainClass.set("com.microsoft.playwright.CLI")
-    args("install", "--with-deps", "chromium")
+    // `--with-deps` pulls in the OS libraries Chromium needs via `sudo apt-get`, so it's restricted to the CI runners
+    // on purpose: locally it would either block on a sudo prompt or fail outright on a non-Debian distro.
+    val withDeps = System.getProperty("os.name").contains("linux", ignoreCase = true) && System.getenv("CI") != null
+    args(listOf("install") + (if (withDeps) listOf("--with-deps") else emptyList()) + listOf("chromium"))
 }
 
 tasks.withType<JavaExec> {
