@@ -226,5 +226,6 @@ private fun IntegrationType.toCssColor(): CSSClass? = when (this) {
     IntegrationType.PAGERDUTY -> TEXT_GREEN
     IntegrationType.EMAIL -> null
     IntegrationType.DISCORD -> TEXT_INDIGO
+    IntegrationType.MS_TEAMS -> TEXT_BLUE
     IntegrationType.WEBHOOK -> TEXT_YELLOW
 }

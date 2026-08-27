@@ -204,7 +204,7 @@ internal fun FlowContent.integrationsAccordionItem(
                     icon(type.icon)
                     span {
                         classes(MS_2)
-                        +type.identifier.capitalize()
+                        +type.displayName
                     }
                 }
                 div {
