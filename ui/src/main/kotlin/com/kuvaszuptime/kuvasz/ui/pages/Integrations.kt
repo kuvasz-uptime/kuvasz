@@ -149,7 +149,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 templateTag {
                                                     xIf("isTestRequestLoading")
                                                     button {
-                                                        classes(BTN, BTN_ICON)
+                                                        classes(setOf(BTN, BTN_SM, BTN_ICON))
                                                         disabled = true
                                                         span {
                                                             classes(SPINNER_GROW, SPINNER_GROW_SM)
@@ -161,7 +161,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 templateTag {
                                                     xIf("wasTestRequestExecuted && !testRequestError")
                                                     button {
-                                                        classes(TEXT_GREEN, BTN, BTN_ICON)
+                                                        classes(TEXT_GREEN, BTN, BTN_SM, BTN_ICON)
                                                         disabled = true
                                                         icon(Icon.CIRCLE_CHECK_FILLED)
                                                     }
@@ -170,7 +170,7 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                                 templateTag {
                                                     xIf("wasTestRequestExecuted && testRequestError")
                                                     button {
-                                                        classes(TEXT_RED, BTN, BTN_ICON)
+                                                        classes(TEXT_RED, BTN, BTN_SM, BTN_ICON)
                                                         disabled = true
                                                         icon(Icon.CIRCLE_EXCLAMATION_FILLED)
                                                     }
