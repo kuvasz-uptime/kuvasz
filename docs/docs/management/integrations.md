@@ -177,6 +177,62 @@ integrations:
     # ... other Discord integrations
 ```
 
+## Microsoft Teams
+
+**Configuration alias**: `ms-teams`
+
+The Microsoft Teams integration sends notifications to a Teams channel or chat as an
+[**Adaptive Card**](https://adaptivecards.io/){target="_blank"}, color-coded by the severity of the event.
+
+!!! warning "Workflows only, not the retired Microsoft 365 Connectors"
+
+    Microsoft is retiring **Microsoft 365 (Office 365) Connectors**, so their `https://<tenant>.webhook.office.com/...`
+    URLs are **not** supported. Use the **Workflows** app (powered by Power Automate) instead, as described below.
+
+### Webhook URL
+
+<!-- md:version 4.3.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `webhook-url` -->
+
+The URL of the Teams workflow the notifications will be sent to. To create one:
+
+1. In **Microsoft Teams**, go to the team and channel where you want to receive the notifications
+2. Select **More options (...)** next to the channel, then **Workflows**
+3. Search for and select the **Send webhook alerts to a channel** template
+4. Configure the workflow parameters, then select **Save**
+5. Copy the **webhook URL** the workflow generated
+
+For more information, see the
+[**official documentation**](https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498){target="_blank"}.
+
+!!! danger "Treat the URL as a secret"
+
+    Anyone who has the URL can post messages to the channel, since it carries its own signature and needs no
+    further authentication. Check the [**examples**](examples.md#keeping-secrets-out-of-your-configuration-file)
+    on how to keep it out of your configuration file.
+
+---
+
+```yaml title="Microsoft Teams integration example"
+integrations:
+  ms-teams:
+    - name: ms-teams-example
+      webhook-url: 'https://prod-11.westeurope.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?...'
+    - name: ms-teams-global
+      webhook-url: 'https://prod-22.westeurope.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?...'
+      global: true
+    # ... other Microsoft Teams integrations
+```
+
+!!! info "A successful request doesn't guarantee a delivered message"
+
+    The workflow's trigger accepts the request **eagerly**, answering with an empty `202 Accepted` before the
+    flow itself runs. _Kuvasz_ therefore logs the notification as sent even when the flow fails afterwards, for
+    example because it was turned off. If a card never shows up in the channel despite a successful test, check
+    the **run history of the workflow** in Power Automate.
+
 ## Email
 
 **Configuration alias**: `email`

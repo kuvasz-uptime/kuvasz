@@ -73,6 +73,14 @@ _Slack_ as a notification channel for your monitors. This allows you to receive 
 The _Discord_ integration allows you to send notifications **to Discord channels
 **. This allows you to receive notifications about the status of your monitors directly in your Discord channels.
 
+## Microsoft Teams <!-- md:config ../management/integrations.md#microsoft-teams -->
+
+The _Microsoft Teams_ integration posts notifications to your Teams channels and chats as **Adaptive Cards**,
+color-coded by the severity of the event. It uses the **Workflows** app, so it is unaffected by the retirement
+of the Microsoft 365 Connectors.
+
+![Teams integration](../images/integrations/teams.webp)
+
 ## Email <!-- md:config ../management/integrations.md#email -->
 
 The email integration lets you to configure an _SMTP_ connection, with which
