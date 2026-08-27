@@ -22,7 +22,7 @@ class SMTPMailerConfigTest : BehaviorSpec(
                     val exception = shouldThrow<BeanInstantiationException> {
                         testAppContext(properties, "full-integrations-setup")
                     }
-                    exception.message shouldContain "Error when trying to open connection to the server"
+                    exception.message shouldContain "Unable to claim an SMTP transport"
                 }
             }
         }
