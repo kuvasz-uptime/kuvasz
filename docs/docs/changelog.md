@@ -1,4 +1,4 @@
-## 4.3.0 <small>2026-08-27</small> { id="4.3.0" data-toc-label="4.3.0" }
+## 4.3.0 <small>2026-08-xx</small> { id="4.3.0" data-toc-label="4.3.0" }
 
 ### Features
 
