@@ -43,6 +43,7 @@ object IntegrationValidationMessages {
     const val EMAIL_INTEGRATION_FROM_NOT_BLANK = "Email integration 'from' address must not be blank"
     const val SLACK_WEBHOOK_URL_NOT_BLANK = "Slack integration webhook URL must not be blank"
     const val DISCORD_WEBHOOK_URL_NOT_BLANK = "Discord integration webhook URL must not be blank"
+    const val MS_TEAMS_WEBHOOK_URL_NOT_BLANK = "Microsoft Teams integration webhook URL must not be blank"
     const val TELEGRAM_CHAT_ID_NOT_BLANK = "Telegram integration chat ID must not be blank"
     const val TELEGRAM_BOT_TOKEN_NOT_BLANK = "Telegram integration bot token must not be blank"
     const val WEBHOOK_URL_NOT_BLANK = "Webhook integration URL must not be blank"

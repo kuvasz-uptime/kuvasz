@@ -6,6 +6,7 @@ enum class IntegrationType(val identifier: String) {
     SLACK(SlackNotificationConfig.IDENTIFIER),
     TELEGRAM(TelegramNotificationConfig.IDENTIFIER),
     DISCORD(DiscordNotificationConfig.IDENTIFIER),
+    MS_TEAMS(MsTeamsNotificationConfig.IDENTIFIER),
     WEBHOOK(WebhookNotificationConfig.IDENTIFIER);
 
     companion object {

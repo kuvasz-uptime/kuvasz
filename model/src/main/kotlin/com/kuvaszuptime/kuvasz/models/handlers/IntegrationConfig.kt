@@ -78,6 +78,19 @@ interface DiscordNotificationConfig : IntegrationConfig {
     }
 }
 
+@EachProperty(MsTeamsNotificationConfig.CONFIG_PREFIX, list = true)
+@Introspected
+interface MsTeamsNotificationConfig : IntegrationConfig {
+
+    @get:NotBlank(message = IntegrationValidationMessages.MS_TEAMS_WEBHOOK_URL_NOT_BLANK)
+    val webhookUrl: String
+
+    companion object {
+        const val IDENTIFIER = "ms-teams"
+        const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
+    }
+}
+
 @EachProperty(TelegramNotificationConfig.CONFIG_PREFIX, list = true)
 @Introspected
 interface TelegramNotificationConfig : IntegrationConfig {
@@ -129,6 +142,7 @@ val IntegrationConfig.type: IntegrationType
         is SlackNotificationConfig -> IntegrationType.SLACK
         is TelegramNotificationConfig -> IntegrationType.TELEGRAM
         is DiscordNotificationConfig -> IntegrationType.DISCORD
+        is MsTeamsNotificationConfig -> IntegrationType.MS_TEAMS
         is WebhookNotificationConfig -> IntegrationType.WEBHOOK
     }
 
