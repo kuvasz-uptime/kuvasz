@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
@@ -13,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
@@ -46,10 +48,10 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 24
-            enabledIntegrations shouldHaveSize 17
-            enabledIntegrationsByType shouldHaveSize 7
-            globallyEnabledIntegrationsByType shouldHaveSize 7
+            configuredIntegrations shouldHaveSize 27
+            enabledIntegrations shouldHaveSize 19
+            enabledIntegrationsByType shouldHaveSize 8
+            globallyEnabledIntegrationsByType shouldHaveSize 8
 
             // Check that all integrations are loaded correctly
             with(configuredIntegrations) {
@@ -110,6 +112,44 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.type shouldBe IntegrationType.MS_TEAMS
                     config.webhookUrl shouldBe
                         "https://prod-33.westeurope.logic.azure.com:443/workflows/ccc/triggers/manual/paths/invoke?sig=ccc"
+                    config.enabled shouldBe false
+                    config.global shouldBe false
+                }
+                // Apprise
+                forOne { implicitlyEnabledApprise ->
+                    implicitlyEnabledApprise.key shouldBe
+                        IntegrationID(IntegrationType.APPRISE, "test_implicitly_enabled")
+                    val config = implicitlyEnabledApprise.value as AppriseNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.APPRISE
+                    config.url shouldBe "http://apprise-host:8000/notify/kuvasz"
+                    config.tag shouldBe "devops"
+                    config.targetUrls shouldBe null
+                    config.requestHeaders shouldBe emptyMap()
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledApprise ->
+                    globallyEnabledApprise.key shouldBe IntegrationID(IntegrationType.APPRISE, "global")
+                    val config = globallyEnabledApprise.value as AppriseNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.APPRISE
+                    config.url shouldBe "http://apprise-host:8000/notify"
+                    config.tag shouldBe null
+                    config.targetUrls shouldBe listOf("slack://TokenA/TokenB/TokenC", "mailto://user:pass@gmail.com")
+                    config.requestHeaders shouldBe mapOf(
+                        "Authorization" to "Bearer apprise-token",
+                        "X-Custom-Header" to "custom-value",
+                    )
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
+                forOne { disabledApprise ->
+                    disabledApprise.key shouldBe IntegrationID(IntegrationType.APPRISE, "disabled")
+                    val config = disabledApprise.value as AppriseNotificationConfig
+                    config.name shouldBe "disabled"
+                    config.type shouldBe IntegrationType.APPRISE
+                    config.url shouldBe "http://apprise-host:8000/notify/disabled"
                     config.enabled shouldBe false
                     config.global shouldBe false
                 }
@@ -337,6 +377,35 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
+                // Apprise
+                forOne { implicitlyEnabledApprise ->
+                    implicitlyEnabledApprise.key shouldBe
+                        IntegrationID(IntegrationType.APPRISE, "test_implicitly_enabled")
+                    val config = implicitlyEnabledApprise.value as AppriseNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.APPRISE
+                    config.url shouldBe "http://apprise-host:8000/notify/kuvasz"
+                    config.tag shouldBe "devops"
+                    config.targetUrls shouldBe null
+                    config.requestHeaders shouldBe emptyMap()
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledApprise ->
+                    globallyEnabledApprise.key shouldBe IntegrationID(IntegrationType.APPRISE, "global")
+                    val config = globallyEnabledApprise.value as AppriseNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.APPRISE
+                    config.url shouldBe "http://apprise-host:8000/notify"
+                    config.tag shouldBe null
+                    config.targetUrls shouldBe listOf("slack://TokenA/TokenB/TokenC", "mailto://user:pass@gmail.com")
+                    config.requestHeaders shouldBe mapOf(
+                        "Authorization" to "Bearer apprise-token",
+                        "X-Custom-Header" to "custom-value",
+                    )
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
                 // Email
                 forOne { implicitlyEnabledEmail ->
                     implicitlyEnabledEmail.key shouldBe IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")
@@ -444,6 +513,7 @@ class IntegrationBootstrappingTest : StringSpec({
             // Enabled integrations by type
             enabledIntegrationsByType[IntegrationType.SLACK].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.MS_TEAMS].shouldNotBeNull().shouldHaveSize(2)
+            enabledIntegrationsByType[IntegrationType.APPRISE].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.EMAIL].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.TELEGRAM].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.PAGERDUTY].shouldNotBeNull().shouldHaveSize(2)
@@ -463,6 +533,14 @@ class IntegrationBootstrappingTest : StringSpec({
                 enabled shouldBe true
                 webhookUrl shouldBe
                     "https://prod-22.westeurope.logic.azure.com:443/workflows/bbb/triggers/manual/paths/invoke?sig=bbb"
+            }
+
+            with(
+                globallyEnabledIntegrationsByType[IntegrationType.APPRISE]?.single() as AppriseNotificationConfig
+            ) {
+                name shouldBe "global"
+                enabled shouldBe true
+                url shouldBe "http://apprise-host:8000/notify"
             }
 
             with(globallyEnabledIntegrationsByType[IntegrationType.EMAIL]?.single() as EmailNotificationConfig) {
@@ -516,6 +594,7 @@ class IntegrationBootstrappingTest : StringSpec({
             ctx.getBeansOfType(TestableNotificationService::class.java)
         }
         testServices.forNone { it should beInstanceOf<MsTeamsWebhookService>() }
+        testServices.forNone { it should beInstanceOf<AppriseService>() }
         testServices.forNone { it should beInstanceOf<GenericWebhookService>() }
     }
 
@@ -621,10 +700,10 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 24
-            enabledIntegrations shouldHaveSize 15 // Email configs should not be enabled without SMTP config
-            enabledIntegrationsByType shouldHaveSize 6 // Email type should not be present
-            globallyEnabledIntegrationsByType shouldHaveSize 6 // Email type should not be present
+            configuredIntegrations shouldHaveSize 27
+            enabledIntegrations shouldHaveSize 17 // Email configs should not be enabled without SMTP config
+            enabledIntegrationsByType shouldHaveSize 7 // Email type should not be present
+            globallyEnabledIntegrationsByType shouldHaveSize 7 // Email type should not be present
 
             // Check that Email configs are not loaded as enabled
             val implicitlyEnabledId = IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")

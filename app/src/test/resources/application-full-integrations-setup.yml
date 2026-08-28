@@ -26,6 +26,22 @@ integrations:
     - name: disabled
       webhook-url: https://prod-33.westeurope.logic.azure.com:443/workflows/ccc/triggers/manual/paths/invoke?sig=ccc
       enabled: false
+  apprise:
+    - name: test_implicitly_enabled
+      url: http://apprise-host:8000/notify/kuvasz
+      tag: devops
+    - name: global
+      url: http://apprise-host:8000/notify
+      global: true
+      target-urls:
+        - slack://TokenA/TokenB/TokenC
+        - mailto://user:pass@gmail.com
+      request-headers:
+        Authorization: "Bearer apprise-token"
+        X-Custom-Header: "custom-value"
+    - name: disabled
+      url: http://apprise-host:8000/notify/disabled
+      enabled: false
   email:
     - name: test_implicitly_enabled
       from-address: noreply@other.dev
