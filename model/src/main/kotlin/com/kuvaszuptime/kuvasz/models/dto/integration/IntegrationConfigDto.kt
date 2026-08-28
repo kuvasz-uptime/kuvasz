@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema
         DiscordNotificationConfigDto::class,
         MsTeamsNotificationConfigDto::class,
         AppriseNotificationConfigDto::class,
+        PushoverNotificationConfigDto::class,
         PagerdutyConfigDto::class,
         EmailNotificationConfigDto::class,
         TelegramNotificationConfigDto::class,
@@ -41,6 +43,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     JsonSubTypes.Type(value = DiscordNotificationConfigDto::class, name = "DISCORD"),
     JsonSubTypes.Type(value = MsTeamsNotificationConfigDto::class, name = "MS_TEAMS"),
     JsonSubTypes.Type(value = AppriseNotificationConfigDto::class, name = "APPRISE"),
+    JsonSubTypes.Type(value = PushoverNotificationConfigDto::class, name = "PUSHOVER"),
     JsonSubTypes.Type(value = PagerdutyConfigDto::class, name = "PAGERDUTY"),
     JsonSubTypes.Type(value = EmailNotificationConfigDto::class, name = "EMAIL"),
     JsonSubTypes.Type(value = TelegramNotificationConfigDto::class, name = "TELEGRAM"),
@@ -154,6 +157,43 @@ data class AppriseNotificationConfigDto(
         global = config.global,
         excludedEvents = config.excludedEvents.orEmpty(),
         tag = config.tag,
+    )
+}
+
+@Introspected
+data class PushoverNotificationConfigDto(
+    override val id: IntegrationID,
+    @param:Schema(description = IntegrationDocs.TYPE, required = true)
+    override val type: IntegrationType,
+    @param:Schema(description = IntegrationDocs.NAME, required = true)
+    override val name: String,
+    @param:Schema(description = IntegrationDocs.ENABLED, required = true)
+    override val enabled: Boolean,
+    @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
+    override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENTS, required = true)
+    override val excludedEvents: List<IntegrationEventType>,
+    @param:Schema(description = "The devices the notifications are delivered to, instead of all of them")
+    val device: String?,
+    @param:Schema(description = "The sound the notifications are played with, instead of the user's default")
+    val sound: String?,
+    @param:Schema(
+        description = "Whether the critical events are sent with emergency priority, repeating until they are " +
+            "acknowledged",
+        required = true,
+    )
+    val emergencyEnabled: Boolean,
+) : IntegrationConfigDto {
+    constructor(integrationID: IntegrationID, config: PushoverNotificationConfig) : this(
+        id = integrationID,
+        type = integrationID.type,
+        name = config.name,
+        enabled = config.enabled,
+        global = config.global,
+        excludedEvents = config.excludedEvents.orEmpty(),
+        device = config.device,
+        sound = config.sound,
+        emergencyEnabled = config.emergencyEnabled,
     )
 }
 

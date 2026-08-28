@@ -127,6 +127,35 @@ interface AppriseNotificationConfig : IntegrationConfig {
     }
 }
 
+@EachProperty(PushoverNotificationConfig.CONFIG_PREFIX, list = true)
+@Introspected
+interface PushoverNotificationConfig : IntegrationConfig {
+
+    @get:NotBlank(message = IntegrationValidationMessages.PUSHOVER_API_TOKEN_NOT_BLANK)
+    val apiToken: String
+
+    @get:NotBlank(message = IntegrationValidationMessages.PUSHOVER_USER_KEY_NOT_BLANK)
+    val userKey: String
+
+    val device: String?
+
+    val sound: String?
+
+    @get:Bindable(defaultValue = "false")
+    val emergencyEnabled: Boolean
+
+    @get:Bindable(defaultValue = "60")
+    val emergencyRetrySeconds: Int
+
+    @get:Bindable(defaultValue = "1800")
+    val emergencyExpireSeconds: Int
+
+    companion object {
+        const val IDENTIFIER = "pushover"
+        const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
+    }
+}
+
 @EachProperty(WebhookNotificationConfig.CONFIG_PREFIX, list = true)
 @Introspected
 interface WebhookNotificationConfig : IntegrationConfig {
@@ -164,6 +193,7 @@ val IntegrationConfig.type: IntegrationType
         is DiscordNotificationConfig -> IntegrationType.DISCORD
         is MsTeamsNotificationConfig -> IntegrationType.MS_TEAMS
         is AppriseNotificationConfig -> IntegrationType.APPRISE
+        is PushoverNotificationConfig -> IntegrationType.PUSHOVER
         is WebhookNotificationConfig -> IntegrationType.WEBHOOK
     }
 

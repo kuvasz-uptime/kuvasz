@@ -47,6 +47,8 @@ object IntegrationValidationMessages {
     const val TELEGRAM_CHAT_ID_NOT_BLANK = "Telegram integration chat ID must not be blank"
     const val TELEGRAM_BOT_TOKEN_NOT_BLANK = "Telegram integration bot token must not be blank"
     const val APPRISE_URL_NOT_BLANK = "Apprise integration URL must not be blank"
+    const val PUSHOVER_API_TOKEN_NOT_BLANK = "Pushover integration API token must not be blank"
+    const val PUSHOVER_USER_KEY_NOT_BLANK = "Pushover integration user key must not be blank"
     const val WEBHOOK_URL_NOT_BLANK = "Webhook integration URL must not be blank"
 }
 
