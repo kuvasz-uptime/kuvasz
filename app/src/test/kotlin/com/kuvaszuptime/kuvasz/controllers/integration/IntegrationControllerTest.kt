@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.controllers.integration
 
 import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.AppriseNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.PushoverNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.MsTeamsNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
@@ -13,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
@@ -24,6 +26,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
+import com.kuvaszuptime.kuvasz.services.integrations.PushoverService
 import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.NotificationTestResult
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyTestService
@@ -59,6 +62,7 @@ class IntegrationControllerTest(
     private val discordWebhookService: DiscordWebhookService,
     private val msTeamsWebhookService: MsTeamsWebhookService,
     private val appriseService: AppriseService,
+    private val pushoverService: PushoverService,
     private val genericWebhookService: GenericWebhookService,
     private val integrationRepository: IntegrationRepository,
 ) : ShouldSpec({
@@ -67,7 +71,7 @@ class IntegrationControllerTest(
         should("return all the configured integrations, ordered by their names") {
             val response = integrationClient.getIntegrations()
 
-            response shouldHaveSize 27
+            response shouldHaveSize 30
             response.shouldBeSortedBy { it.name }
 
             response.forOne { implicitlyEnabledSlack ->
@@ -144,6 +148,36 @@ class IntegrationControllerTest(
                 disabledApprise.name shouldBe "disabled"
                 disabledApprise.enabled shouldBe false
                 disabledApprise.global shouldBe false
+            }
+            response.forOne { implicitlyEnabledPushover ->
+                implicitlyEnabledPushover.shouldBeInstanceOf<PushoverNotificationConfigDto>()
+                implicitlyEnabledPushover.id shouldBe IntegrationID(
+                    IntegrationType.PUSHOVER,
+                    "test_implicitly_enabled",
+                )
+                implicitlyEnabledPushover.name shouldBe "test_implicitly_enabled"
+                implicitlyEnabledPushover.enabled shouldBe true
+                implicitlyEnabledPushover.global shouldBe false
+                implicitlyEnabledPushover.device shouldBe "iphone,desk"
+                implicitlyEnabledPushover.sound shouldBe "siren"
+                implicitlyEnabledPushover.emergencyEnabled shouldBe false
+            }
+            response.forOne { globalPushover ->
+                globalPushover.shouldBeInstanceOf<PushoverNotificationConfigDto>()
+                globalPushover.id shouldBe IntegrationID(IntegrationType.PUSHOVER, "global")
+                globalPushover.name shouldBe "global"
+                globalPushover.enabled shouldBe true
+                globalPushover.global shouldBe true
+                globalPushover.device shouldBe null
+                globalPushover.sound shouldBe null
+                globalPushover.emergencyEnabled shouldBe true
+            }
+            response.forOne { disabledPushover ->
+                disabledPushover.shouldBeInstanceOf<PushoverNotificationConfigDto>()
+                disabledPushover.id shouldBe IntegrationID(IntegrationType.PUSHOVER, "disabled")
+                disabledPushover.name shouldBe "disabled"
+                disabledPushover.enabled shouldBe false
+                disabledPushover.global shouldBe false
             }
 
             response.forOne { implicitlyEnabledEmail ->
@@ -417,6 +451,19 @@ class IntegrationControllerTest(
             }
         }
 
+        should("return success when the integration ID is found (even if it's disabled) - Pushover") {
+            val integrationId = IntegrationID(IntegrationType.PUSHOVER, "disabled")
+            val mockedService = getMock(pushoverService)
+            every { mockedService.sendTestMessage(any()) } returns successResponse(integrationId)
+            val response = integrationClient.sendTestNotification(integrationId).blockingGet()
+
+            response.success shouldBe true
+            response.message shouldBe "OK: $integrationId"
+            verify(exactly = 1) {
+                mockedService.sendTestMessage(integrationConfig(integrationId) as PushoverNotificationConfig)
+            }
+        }
+
         should("return success when the integration ID is found (even if it's disabled) - Webhook") {
             val integrationId = IntegrationID(IntegrationType.WEBHOOK, "disabled")
             val mockedService = getMock(genericWebhookService)
@@ -451,6 +498,9 @@ class IntegrationControllerTest(
 
     @MockBean(AppriseService::class)
     fun mockAppriseService(): AppriseService = mockk()
+
+    @MockBean(PushoverService::class)
+    fun mockPushoverService(): PushoverService = mockk()
 
     @MockBean(GenericWebhookService::class)
     fun mockGenericWebhookService(): GenericWebhookService = mockk()
