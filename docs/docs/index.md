@@ -74,7 +74,7 @@ title: The developer- and cloud-friendly uptime monitor
 
     ---
 
-    Supports multiple notification channels, currently including email, Slack, Discord, Telegram, Microsoft Teams, Apprise, PagerDuty and custom webhooks. You can configure the notification channels on a per-monitor basis.
+    Supports multiple notification channels, currently including email, Slack, Discord, Telegram, Microsoft Teams, Apprise, Pushover, PagerDuty and custom webhooks. You can configure the notification channels on a per-monitor basis.
 
     [:octicons-arrow-right-24: Notifications](features/notifications.md)
 
@@ -189,10 +189,10 @@ title: The developer- and cloud-friendly uptime monitor
 | Telegram                             |       ✅       |        ❌         |        ✅         |
 | MS Teams                             |       ✅       |        ❌         |        ✅         |
 | Apprise                              |       ✅       |        ❌         |        ❌         |
+| Pushover                             |       ✅       |        ❌         |        ✅         |
 | PagerDuty                            |       ✅       |        ❌         |        ❌         |
 | Webhook                              |       ✅       |        ❌         |        ❌         |
 | SMS / Voice call                     |     ✅^2^      |        ❌         |  10 incl./month  |
-| Google Chat, Pushover                |     ✅^2^      |        ✅         |        ✅         |
 | Mattermost                           |     ✅^2^      |        ❌         |        ✅         |
 | Signal                               |     ✅^2^      |        ❌         |        ❌         |
 
