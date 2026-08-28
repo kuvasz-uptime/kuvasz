@@ -16,6 +16,8 @@ sealed class SSLMonitorEvent : MonitorEvent<HttpMonitorRecord>() {
 
     abstract val sslStatus: SslStatus
 
+    abstract override fun toStructuredMessage(): StructuredSSLMessage
+
     fun statusNotEquals(previousEvent: SslEventRecord) = !statusEquals(previousEvent)
 
     fun getEndedEventDuration(): Duration? =

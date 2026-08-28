@@ -71,6 +71,7 @@ data class CardTextBlock(
     val text: String,
     val wrap: Boolean = true,
     val size: String? = null,
+    val weight: String? = null,
     val isSubtle: Boolean? = null,
     val spacing: String? = null,
     override val type: String = TEXT_BLOCK_TYPE,

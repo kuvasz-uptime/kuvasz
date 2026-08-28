@@ -54,7 +54,7 @@ class MsTeamsWebhookClientTest(
                 .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .withBody(
                     JsonBody.json(
-                        """{"type":"message","attachments":[{"contentType":"application/vnd.microsoft.card.adaptive","content":{"${'$'}schema":"http://adaptivecards.io/schemas/adaptive-card.json","type":"AdaptiveCard","version":"1.4","msteams":{"width":"Full"},"body":[{"type":"Container","style":"good","bleed":true,"items":[{"type":"TextBlock","text":"✅ **Your monitor \"test_monitor\" (https://test.url) is UP (200)**","wrap":true,"size":"Medium"}]},{"type":"TextBlock","text":"_Latency: 300ms_","wrap":true,"isSubtle":true,"spacing":"Small"}]}}]}"""
+                        """{"type":"message","attachments":[{"contentType":"application/vnd.microsoft.card.adaptive","content":{"${'$'}schema":"http://adaptivecards.io/schemas/adaptive-card.json","type":"AdaptiveCard","version":"1.4","msteams":{"width":"Full"},"body":[{"type":"Container","style":"good","bleed":true,"items":[{"type":"TextBlock","text":"✅ Your monitor \"test_monitor\" (https://test.url) is UP (200)","wrap":true,"size":"Medium","weight":"Bolder"}]},{"type":"TextBlock","text":"Latency: 300ms","wrap":true,"isSubtle":true,"spacing":"Small"}]}}]}"""
                     )
                 )
 

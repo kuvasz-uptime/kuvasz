@@ -309,7 +309,7 @@ class MsTeamsEventHandlerTest(
                     verify(inverse = true) { webhookServiceSpy.sendMessage(disabledMsTeamsConfig, any()) }
 
                     slot.forAll { message ->
-                        message.allText() shouldBe "🚨 **Your monitor \"${monitor.name}\" is DOWN**"
+                        message.allText() shouldBe "🚨 Your monitor \"${monitor.name}\" is DOWN"
                     }
                 }
             }
@@ -356,7 +356,7 @@ class MsTeamsEventHandlerTest(
                     val slot = slot<MsTeamsMessage>()
 
                     verify(exactly = 1) { webhookServiceSpy.sendMessage(globalMsTeamsConfig, capture(slot)) }
-                    slot.captured.allText() shouldBe "🚨 **Your monitor \"${monitor.name}\" is DOWN**"
+                    slot.captured.allText() shouldBe "🚨 Your monitor \"${monitor.name}\" is DOWN"
                 }
             }
 
@@ -387,9 +387,9 @@ class MsTeamsEventHandlerTest(
                         )
                     }
                     notificationsSent[0].allText() shouldBe
-                        "🚨 **Your monitor \"${monitor.name}\" is DOWN**"
+                        "🚨 Your monitor \"${monitor.name}\" is DOWN"
                     notificationsSent[1].allText() shouldStartWith
-                        "✅ **Your monitor \"${monitor.name}\" is UP**\nWas down for "
+                        "✅ Your monitor \"${monitor.name}\" is UP\nWas down for "
                 }
             }
 
@@ -420,7 +420,7 @@ class MsTeamsEventHandlerTest(
                         )
                     }
                     notificationSent.captured.allText() shouldStartWith
-                        "🚨 **Your monitor \"${monitor.name}\" is DOWN**\nWas up for "
+                        "🚨 Your monitor \"${monitor.name}\" is DOWN\nWas up for "
                 }
             }
         }

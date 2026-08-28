@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
-import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
@@ -8,15 +7,15 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
-import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.StructuredMaintenanceEndMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredMaintenanceStartMessage
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -101,17 +100,13 @@ object PlainTextMessageFormatter : TextMessageFormatter {
         return messageParts.assemble()
     }
 
-    override fun toFormattedMessage(event: MaintenanceWindowEvent): String {
-        val window = event.window
-        return when (event) {
-            is MaintenanceWindowStartEvent -> listOfNotNull(
-                Messages.maintenanceWindowStarted(window.name),
-                window.description?.takeIf { it.isNotBlank() },
-            )
-
-            is MaintenanceWindowEndEvent -> listOf(Messages.maintenanceWindowEnded(window.name))
+    override fun toFormattedMessage(event: MaintenanceWindowEvent): String =
+        event.toStructuredMessage().let { details ->
+            when (details) {
+                is StructuredMaintenanceStartMessage -> listOfNotNull(details.summary, details.description)
+                is StructuredMaintenanceEndMessage -> listOf(details.summary)
+            }
         }.assemble()
-    }
 
     private fun List<String>.assemble(): String = joinToString("\n")
 }
