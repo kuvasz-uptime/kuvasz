@@ -1,0 +1,7 @@
+integrations:
+  pushover:
+    - name: pushover_test
+      api-token: YourApplicationToken
+      user-key: YourUserKey
+      emergency-enabled: true
+      emergency-expire-seconds: 20000

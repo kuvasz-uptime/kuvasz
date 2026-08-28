@@ -739,6 +739,24 @@ class IntegrationBootstrappingTest : StringSpec({
             IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
 
+    "app should not start if a Pushover config has a too short emergency retry" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-pushover-retry")
+        }
+
+        ex.message shouldContain "PushoverNotificationConfig.getEmergencyRetrySeconds - " +
+            IntegrationValidationMessages.PUSHOVER_EMERGENCY_RETRY_SECONDS_MIN.replace("{value}", "30")
+    }
+
+    "app should not start if a Pushover config has a too long emergency expiration" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-pushover-expire")
+        }
+
+        ex.message shouldContain "PushoverNotificationConfig.getEmergencyExpireSeconds - " +
+            IntegrationValidationMessages.PUSHOVER_EMERGENCY_EXPIRE_SECONDS_MAX.replace("{value}", "10800")
+    }
+
     "app should not start if a webhook config contains an invalid header" {
         val ex = shouldThrow<BeanInstantiationException> {
             testAppContext("invalid-webhook-header")
