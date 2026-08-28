@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.models.dto.integration
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
@@ -21,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema
         SlackNotificationConfigDto::class,
         DiscordNotificationConfigDto::class,
         MsTeamsNotificationConfigDto::class,
+        AppriseNotificationConfigDto::class,
         PagerdutyConfigDto::class,
         EmailNotificationConfigDto::class,
         TelegramNotificationConfigDto::class,
@@ -38,6 +40,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     JsonSubTypes.Type(value = SlackNotificationConfigDto::class, name = "SLACK"),
     JsonSubTypes.Type(value = DiscordNotificationConfigDto::class, name = "DISCORD"),
     JsonSubTypes.Type(value = MsTeamsNotificationConfigDto::class, name = "MS_TEAMS"),
+    JsonSubTypes.Type(value = AppriseNotificationConfigDto::class, name = "APPRISE"),
     JsonSubTypes.Type(value = PagerdutyConfigDto::class, name = "PAGERDUTY"),
     JsonSubTypes.Type(value = EmailNotificationConfigDto::class, name = "EMAIL"),
     JsonSubTypes.Type(value = TelegramNotificationConfigDto::class, name = "TELEGRAM"),
@@ -121,6 +124,36 @@ data class MsTeamsNotificationConfigDto(
         enabled = config.enabled,
         global = config.global,
         excludedEvents = config.excludedEvents.orEmpty(),
+    )
+}
+
+@Introspected
+data class AppriseNotificationConfigDto(
+    override val id: IntegrationID,
+    @param:Schema(description = IntegrationDocs.TYPE, required = true)
+    override val type: IntegrationType,
+    @param:Schema(description = IntegrationDocs.NAME, required = true)
+    override val name: String,
+    @param:Schema(description = IntegrationDocs.ENABLED, required = true)
+    override val enabled: Boolean,
+    @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
+    override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENTS, required = true)
+    override val excludedEvents: List<IntegrationEventType>,
+    @param:Schema(
+        description = "The tag expression the notifications are sent with, to route them within an Apprise " +
+            "configuration"
+    )
+    val tag: String?,
+) : IntegrationConfigDto {
+    constructor(integrationID: IntegrationID, config: AppriseNotificationConfig) : this(
+        id = integrationID,
+        type = integrationID.type,
+        name = config.name,
+        enabled = config.enabled,
+        global = config.global,
+        excludedEvents = config.excludedEvents.orEmpty(),
+        tag = config.tag,
     )
 }
 

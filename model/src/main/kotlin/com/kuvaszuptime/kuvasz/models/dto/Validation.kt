@@ -46,6 +46,7 @@ object IntegrationValidationMessages {
     const val MS_TEAMS_WEBHOOK_URL_NOT_BLANK = "Microsoft Teams integration webhook URL must not be blank"
     const val TELEGRAM_CHAT_ID_NOT_BLANK = "Telegram integration chat ID must not be blank"
     const val TELEGRAM_BOT_TOKEN_NOT_BLANK = "Telegram integration bot token must not be blank"
+    const val APPRISE_URL_NOT_BLANK = "Apprise integration URL must not be blank"
     const val WEBHOOK_URL_NOT_BLANK = "Webhook integration URL must not be blank"
 }
 
