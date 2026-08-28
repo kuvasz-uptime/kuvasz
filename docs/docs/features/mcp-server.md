@@ -1,6 +1,6 @@
 <!-- md:version 4.0.0 -->
 
-_Kuvasz_ ships with a built-in [**Model Context Protocol (MCP)**](https://modelcontextprotocol.io/){ target="_blank" } server, which exposes your monitoring data and management operations as **tools that AI assistants can call directly**. This lets you query monitor status, view incidents, and create or toggle monitors through natural language — right inside Claude, Cursor, or any MCP-compatible client.
+_Kuvasz_ ships with a built-in [**Model Context Protocol (MCP)**](https://modelcontextprotocol.io/) server, which exposes your monitoring data and management operations as **tools that AI assistants can call directly**. This lets you query monitor status, view incidents, and create or toggle monitors through natural language — right inside Claude, Cursor, or any MCP-compatible client.
 
 !!! warning "Experimental feature"
 
@@ -22,7 +22,7 @@ _Kuvasz_'s MCP server speaks **Streamable HTTP**. Depending on your AI client's 
 
 === "Without streamable HTTP support"
 
-    Clients using the **STDIO transport** (like Claude) can still use the MCP server, but require a local bridge to translate between Streamable HTTP and STDIO. The easiest way to achieve this is to use the [`mcp-remote`](https://www.npmjs.com/package/mcp-remote){ target="_blank" } bridge (installed via `npx`, no global install required):
+    Clients using the **STDIO transport** (like Claude) can still use the MCP server, but require a local bridge to translate between Streamable HTTP and STDIO. The easiest way to achieve this is to use the [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridge (installed via `npx`, no global install required):
     
     ```json
     {
@@ -155,7 +155,7 @@ The `maintenanceWindows` affecting a monitor (and whether it is currently `inMai
 
 | Tool                | Description                                                                                                                          |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `list-integrations` | List all configured integrations (Slack, Discord, Microsoft Teams, Email, PagerDuty, Telegram, Webhook) with their type and settings |
+| `list-integrations` | List all configured integrations (Slack, Discord, Microsoft Teams, Apprise, Email, PagerDuty, Telegram, Webhook) with their type and settings |
 
 ### Application settings
 

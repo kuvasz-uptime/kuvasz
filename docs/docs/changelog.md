@@ -8,11 +8,17 @@
 - It's built on the **Workflows** app (powered by Power Automate), so it isn't affected by the retirement of the **Microsoft 365 (Office 365) Connectors**. If you were sending notifications to Teams through a custom webhook until now, you can replace that setup with a single `webhook-url` property.
 - Like every other integration, it can be **global** or assigned to specific monitors and maintenance windows, its events can be filtered with `excluded-events`, and it's testable right from the UI. It's also exposed on the REST API and through the MCP server.
 
+**Apprise** joined the family as well!
+
+- The [**`apprise` integration**](management/integrations.md#apprise) hands your notifications to a self-hosted [**Apprise API**](https://github.com/caronc/apprise-api) instance, which forwards them to **80+ services** at once — _ntfy_, _Gotify_, _Matrix_, _Pushover_, SMS providers and many more — so you don't have to wire them up one by one.
+- Both modes are supported: point it at a **stored configuration** (`/notify/{key}`) to keep every target URL out of your _Kuvasz_ config, or list them in `target-urls` and use the **stateless** endpoint. A `tag` routes the notifications to a subset of a stored configuration, and `request-headers` lets you authenticate against an _Apprise_ instance that sits behind a reverse proxy.
+- If you were reaching _Apprise_ through a custom webhook until now, you can drop the payload template and replace the whole setup with a single `url`.
+
 ## 4.2.0 <small>2026-08-10</small> { id="4.2.0" data-toc-label="4.2.0" }
 
 !!! question "Make your voice heard!"
 
-    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9){ target="_blank" }.
+    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
 
     _Thanks, Adam_
 
@@ -67,7 +73,7 @@ The long-awaited **maintenance window support** is finally here! 🎉
 
 ### Enhancements
 
-- **Helm chart**: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Also, the chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo){ target="_blank" }!
+- **Helm chart**: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Also, the chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo)!
 - A few custom [**Glance widget examples**](management/examples.md#glance-custom-widgets) were added to the documentation. 
 - Added a **proper robots.txt** that prevents search engine from indexing anything but the public status pages (e.g. the login page of Kuvasz won't be indexed anymore in case you publicly expose your instance).
 - The actual and the latest version of _Kuvasz_ is **not leaked on the login** page anymore, by hiding the version update badge for non-authenticated users.
@@ -82,7 +88,7 @@ The long-awaited **maintenance window support** is finally here! 🎉
 
 ### Enhancements
 
-- Helm chart: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo){ target="_blank" }!
+- Helm chart: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo)!
 - The notification about a maintenance window's end doesn't contain the window's description anymore, because it doesn't really make sense to include it in there.
 
 ## 4.1.0-beta <small>2026-07-04</small> { id="4.1.0-beta" data-toc-label="4.1.0-beta" }
@@ -93,7 +99,7 @@ The long-awaited **maintenance window support** is finally here! 🎉
 
 - You can now schedule [**planned downtime**](features/maintenance-windows.md) so _Kuvasz_ pauses the affected checks and suppresses false alerts while you do scheduled work. A window can be **manual** (toggled on and off by hand), **recurring** (a `cron` expression + `duration`), or a **one-off** (a `start` timestamp + `duration`), and can be scoped to specific monitors or made global. Assigned integrations receive dedicated **start and end notifications**, and windows can optionally be shown on your status pages. Manageable via the [**Web UI, REST API, or YAML**](management/maintenance-windows.md), and exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
 
-- Thanks to [**@leofvo**](https://github.com/leofvo){ target="_blank" }, the Helm chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details.
+- Thanks to [**@leofvo**](https://github.com/leofvo), the Helm chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details.
 
 Under the hood a lot of stuff was refactored (especially around notifications and status pages) to make this possible, and while the regression tests are extensive, it's still a huge change, so **a beta release seemed like a better fit**. Please give it a try and report any issues you find, so we can make the final 4.1.0 release as stable as possible!
 
@@ -139,7 +145,7 @@ Under the hood a lot of stuff was refactored (especially around notifications an
 ### Features
 
 - Added **Ping (ICMP) monitoring**: you can now create ICMP monitors to check the reachability and latency of any host by sending ICMP echo requests to it. Configurable parameters include the number of packets per check, the per-ping timeout, and the packet loss threshold that triggers a DOWN event. See the [**Managing ICMP monitors**](management/icmp-monitors.md) section for further details.
-- Published a separate, [**dedicated Home Assistant integration**](home-assistant.md), named [**ku-hass**](https://github.com/kuvasz-uptime/ku-hass#installation){ target="_blank" } that makes the integration with HA easier than ever.
+- Published a separate, [**dedicated Home Assistant integration**](home-assistant.md), named [**ku-hass**](https://github.com/kuvasz-uptime/ku-hass#installation) that makes the integration with HA easier than ever.
 
 ### Improvements
 
@@ -172,7 +178,7 @@ By adding the **webhooks support**, this release introduces a huge step towards 
 
 - **Webhooks** are in da house! 🎉 With the (optional) custom template support, and the ability to include your own headers, the number of use-cases you can cover with webhooks is pretty much endless. You can set them up just like any other integration, for further details, please refer to the [**documentation**](management/integrations.md#webhooks).
 - It's now possible to **exclude certain events from an integration's triggering conditions**, by using the new `excluded-events` attribute of the [**integration configuration**](management/integrations.md#excluded-events). 
-- Added a **new endpoint to the API** under `GET /api/v2/status-pages/{statusPageId}/details` where you can get the same **details of a status page as on the UI**, including the monitors' incident stats, so you can build your own custom status pages or integrate the details into your existing system. In case you want to get the details of a public status page, you don't even have to be authenticated, in order to be able to build publicly available status pages on your own. For further details, please refer to the [**API documentation**](https://api-docs.kuvasz-uptime.dev/#operation/getStatusPageDetails){ target="_blank" }.
+- Added a **new endpoint to the API** under `GET /api/v2/status-pages/{statusPageId}/details` where you can get the same **details of a status page as on the UI**, including the monitors' incident stats, so you can build your own custom status pages or integrate the details into your existing system. In case you want to get the details of a public status page, you don't even have to be authenticated, in order to be able to build publicly available status pages on your own. For further details, please refer to the [**API documentation**](https://api-docs.kuvasz-uptime.dev/#operation/getStatusPageDetails).
 
 ## 3.7.1 <small>2026-04-23</small> { id="3.7.1" data-toc-label="3.7.1" }
 
@@ -184,7 +190,7 @@ By adding the **webhooks support**, this release introduces a huge step towards 
 
 ### Features
 
-- Added support to optionally **use external admin credentials in the Helm chart**. Thanks for the contribution to [**@hercherf**](https://github.com/hercherf){ target="_blank" }!
+- Added support to optionally **use external admin credentials in the Helm chart**. Thanks for the contribution to [**@hercherf**](https://github.com/hercherf)!
 
 ### Chore
 
@@ -227,7 +233,7 @@ By adding the **webhooks support**, this release introduces a huge step towards 
 
 ### Features
 
-- An official **Helm chart** is available now to deploy _Kuvasz_ on Kubernetes clusters easily. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo){ target="_blank" }!
+- An official **Helm chart** is available now to deploy _Kuvasz_ on Kubernetes clusters easily. See the [**Helm deployment guide**](setup/helm-deployment.md) for more details. Thanks for the contribution to [**@leofvo**](https://github.com/leofvo)!
 - **Dark mode is the default** theme now on the UI, if you didn't change it manually before.
 
 ### Chore
@@ -268,7 +274,7 @@ By adding the **webhooks support**, this release introduces a huge step towards 
 
 ### Improvements
 
-- The HTTP checks' request and expected **headers' names are less restrictive**, and also RFC 9110 compliant. Thanks to [**@LosDrakakos**](https://github.com/LosDrakakos){ target="_blank" } for the contribution!
+- The HTTP checks' request and expected **headers' names are less restrictive**, and also RFC 9110 compliant. Thanks to [**@LosDrakakos**](https://github.com/LosDrakakos) for the contribution!
 - **Large headers** (> 8192 bytes) are handled more gracefully, and they don't end up in false positive uptime errors anymore.
 - Documentation: added [**unofficial deployment guides**](setup/installation.md#unofficial-guides)
 - Monitors are completely [**deletable via `YAML`**](management/managing-monitors/index.md#__tabbed_1_2) (previously it wasn't possible to distinguish between omitted and empty monitors in the YAML config).
@@ -292,7 +298,7 @@ By adding the **webhooks support**, this release introduces a huge step towards 
     - How to [**use a reverse proxy**](management/examples.md#exposing-status-pages-on-subdomains-behind-a-reverse-proxy) for the status pages
     - How to [**backup and restore your monitors and status pages**](management/examples.md#backup-restore-with-yaml)
     - How to [**include your custom/private certificates**](management/examples.md#providing-a-custom-root-certificate-for-ssl-checks) in the Docker image, to be able to monitor endpoints with such certs
-- The API docs are having a [**dedicated site**](https://api-docs.kuvasz-uptime.dev){ target="_blank" } now to make them easier to find and browse. 
+- The API docs are having a [**dedicated site**](https://api-docs.kuvasz-uptime.dev) now to make them easier to find and browse. 
 
 ## 3.0.2 <small>2025-08-31</small> { id="3.0.2" data-toc-label="3.0.2" }
 
@@ -358,14 +364,14 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 ![Kuvasz evaluation settings](images/features/kuvasz_new_matchers.webp)
 
 - **More details** are persisted **about the errors** that occur during the HTTP uptime checks
-- Added **French** translation, thanks to [**@waazaa-fr**](https://github.com/waazaa-fr){ target="_blank" }!
-- Added **Polish** translation, thanks to [**@nkkfs**](https://github.com/nkkfs){ target="_blank" }!
+- Added **French** translation, thanks to [**@waazaa-fr**](https://github.com/waazaa-fr)!
+- Added **Polish** translation, thanks to [**@nkkfs**](https://github.com/nkkfs)!
 - Made the **URL on details page clickable**, so you can easily open the target URL in a new tab
 
 ### Improvements
 
 - **Re-worked the logic of the HTTP uptime check configuration & evaluation** to make it easier to introduce new configuration & evaluation options in the future
-- [**@by-su**](https://github.com/by-su){ target="_blank" } **improved the validation messages** around the admin authentication configuration, and also extended the docs to clarify the usage of it, thanks for that!
+- [**@by-su**](https://github.com/by-su) **improved the validation messages** around the admin authentication configuration, and also extended the docs to clarify the usage of it, thanks for that!
 - **Other validation messages** have been improved as well, to make them more user-friendly if something goes wrong during the bootstrapping of _Kuvasz_ or during an API request.
 - **Client-related HTTP response errors are not retried** anymore, only the server-related ones. This means practically that 4xx responses will be evaluated as-is without retrying them, while 5xx responses will be retried up to 3 times with an exponential backoff strategy.
 
@@ -374,8 +380,8 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 - Translated the "...[REDACTED]" string to make it internationalization friendly
 - **Fixed the latency measurement logic** to not include the time spent on retrying failing HTTP requests
 - **Fixed the following CVEs** by upgrading 3rd party dependencies:
-    - [CVE-2025-49146](https://nvd.nist.gov/vuln/detail/CVE-2025-49146){ target="_blank" }
-    - [CVE-2025-53864](https://nvd.nist.gov/vuln/detail/CVE-2025-53864){ target="_blank" }
+    - [CVE-2025-49146](https://nvd.nist.gov/vuln/detail/CVE-2025-49146)
+    - [CVE-2025-53864](https://nvd.nist.gov/vuln/detail/CVE-2025-53864)
 
 ## 2.3.1 <small>2025-07-25</small> { id="2.3.1" data-toc-label="2.3.1" }
 

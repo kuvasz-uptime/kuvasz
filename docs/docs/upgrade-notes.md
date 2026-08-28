@@ -44,7 +44,7 @@ http-monitors:
 
 !!! warning "End of life of v1 endpoints"
 
-    The `v1` endpoints will be supported until 2025-12-31. After this date, they will be removed in the next feature release. Please make sure to **migrate to the `v2` endpoints** before then. Please refer to the [**API documentation**](https://api-docs.kuvasz-uptime.dev){target="_blank"} for more details.
+    The `v1` endpoints will be supported until 2025-12-31. After this date, they will be removed in the next feature release. Please make sure to **migrate to the `v2` endpoints** before then. Please refer to the [**API documentation**](https://api-docs.kuvasz-uptime.dev) for more details.
 
 #### Changed endpoints
 
@@ -116,7 +116,7 @@ All in all, you can use your old database, **your data will be migrated automati
 
 - _Kuvasz_ is not distributed as a **native** (GraalVM based) Docker image anymore
 - The minimum required _PostgreSQL_ version is now **12**
-- The [**REST API**](features/api.md) is versioned now, and a few **endpoints have been changed or removed**. You can find the new API documentation [here](https://api-docs.kuvasz-uptime.dev){target="_blank"}
+- The [**REST API**](features/api.md) is versioned now, and a few **endpoints have been changed or removed**. You can find the new API documentation [here](https://api-docs.kuvasz-uptime.dev)
 - [**Integrations**](management/integrations.md) are now configured via the _YAML_ file, and the old, environment-variable-based configuration is no longer supported
 - The **authentication** and its configuration **has been simplified**, read the [**Authentication**](setup/configuration.md#authentication) section carefully!
 

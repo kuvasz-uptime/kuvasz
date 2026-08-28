@@ -126,7 +126,7 @@ There are three ways to manage your maintenance windows in _Kuvasz_: through the
 
 === "API (expert)"
 
-    This section won't go into details about the API or about exact API calls, since it's **well documented and must be self-explanatory**. You can find more information about the available endpoints and their usage in the [**API documentation**](https://api-docs.kuvasz-uptime.dev){target="_blank"}.
+    This section won't go into details about the API or about exact API calls, since it's **well documented and must be self-explanatory**. You can find more information about the available endpoints and their usage in the [**API documentation**](https://api-docs.kuvasz-uptime.dev).
 
     However, here are the available endpoints:
 

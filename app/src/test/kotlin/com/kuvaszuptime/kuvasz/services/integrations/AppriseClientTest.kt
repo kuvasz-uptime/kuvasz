@@ -86,7 +86,7 @@ class AppriseClientTest(
             mockServer.verify(request, VerificationTimes.exactly(1))
         }
 
-        // Apprise answers with an empty 204 when none of its endpoints matched the tag
+        // A bodyless success must not blow up on the missing response body
         should("fall back to a synthetic body when the response has none") {
             val request = request().withMethod(HttpMethod.POST.name).withPath("/notify/kuvasz")
 

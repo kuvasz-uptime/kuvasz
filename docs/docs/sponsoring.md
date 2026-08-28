@@ -4,7 +4,7 @@ I pour a lot of late nights and caffeine into keeping this project lean, useful,
 
 You can support me via **Ko-fi**:
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L31DH59D){ target="_blank" }
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L31DH59D)
 
 ... or via **GitHub**:
 

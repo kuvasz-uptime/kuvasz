@@ -27,7 +27,7 @@ class AppriseClient(@param:Client private val client: HttpClient) {
     fun sendMessage(url: URI, headers: Map<String, String>, message: AppriseMessage): Single<String> {
         val req = HttpRequest.POST(url, message)
         headers.forEach { (name, value) -> req.header(name, value) }
-        // Apprise answers with an empty 204 when none of its endpoints matched the tag
+        // Not every Apprise response carries a body, but a bodyless one is still a success
         return Single.fromPublisher(client.exchange(req, String::class.java)).map { it.getBodyAs<String>() ?: "OK" }
     }
 }

@@ -25,7 +25,7 @@ Kuvasz can be deployed in several ways depending on your infrastructure:
 
 !!!tip "TL;DR - A very quick start"
 
-    1. Make sure you have [**Docker**](https://docs.docker.com/engine/install/){target="_blank"} & [**Docker Compose**](https://docs.docker.com/compose/install/){target="_blank"} installed.
+    1. Make sure you have [**Docker**](https://docs.docker.com/engine/install/) & [**Docker Compose**](https://docs.docker.com/compose/install/) installed.
     2. Run the following commands in your terminal
         
         === "UNIX"
@@ -53,9 +53,9 @@ Kuvasz can be deployed in several ways depending on your infrastructure:
             docker compose up -d
             ```
 
-    3. Go to [`http://0.0.0.0:8080`](http://0.0.0.0:8080){target="_blank"}, provide `YourSuperSecretUsername` and `YourSuperSecretPassword` as credentials, click "Sign in".
+    3. Go to [`http://0.0.0.0:8080`](http://0.0.0.0:8080), provide `YourSuperSecretUsername` and `YourSuperSecretPassword` as credentials, click "Sign in".
     4. Look around and make sure that you **change the** [**default values**](#2-docker-compose-file) of secrets and credentials in the `docker-compose.yml` file ASAP! Setting your **timezone** might be also necessary if you are not located in UTC. 
-    5. Read the [**Configuration reference**](configuration.md){target="_blank"} & the [**Integration setup guide**](../management/integrations.md){target="_blank"}.
+    5. Read the [**Configuration reference**](configuration.md) & the [**Integration setup guide**](../management/integrations.md).
 
 ### 1. Configuration file
 
@@ -141,7 +141,7 @@ docker compose up -d
 
 If you've done everything correctly, you should be able to access the
 web UI of _Kuvasz_ at
-[`http://0.0.0.0:8080`](http://0.0.0.0:8080){target="_blank"} (or the port you specified).
+[`http://0.0.0.0:8080`](http://0.0.0.0:8080) (or the port you specified).
 
 !!! tip
 
@@ -227,4 +227,4 @@ If you use another container orchestration system (e.g. _Kubernetes without Helm
 
 #### Cloudzy
 
-_Kuvasz_ is available as a one-click deployment on [Cloudzy](https://cloudzy.com/marketplace/kuvasz-uptime/){target="_blank"}, which allows you to get started with Kuvasz in just a few minutes without worrying about the underlying infrastructure. You can choose from various server configurations and locations to best suit your needs.
+_Kuvasz_ is available as a one-click deployment on [Cloudzy](https://cloudzy.com/marketplace/kuvasz-uptime/), which allows you to get started with Kuvasz in just a few minutes without worrying about the underlying infrastructure. You can choose from various server configurations and locations to best suit your needs.

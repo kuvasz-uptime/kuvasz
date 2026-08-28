@@ -59,7 +59,7 @@
 
 === "API (expert)"
 
-    This section won't go into details about the API or about exact API calls, since it's **well documented and must be self-explanatory**. You can find more information about the available endpoints and their usage in the [**API documentation**](https://api-docs.kuvasz-uptime.dev){target="_blank"}.
+    This section won't go into details about the API or about exact API calls, since it's **well documented and must be self-explanatory**. You can find more information about the available endpoints and their usage in the [**API documentation**](https://api-docs.kuvasz-uptime.dev).
 
     However, here are **few of the most important** endpoints:
 
@@ -280,7 +280,7 @@ The returned records and the values of your `EXACT` and `CONTAINS` matchers go t
 
 #### Regex patterns
 
-`REGEX` matchers use the **Java / Kotlin regular expression syntax** ([`java.util.regex.Pattern`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/regex/Pattern.html){target="_blank"}), which is the Perl-style flavor you know from most languages. Everything that dialect offers is available, including:
+`REGEX` matchers use the **Java / Kotlin regular expression syntax** ([`java.util.regex.Pattern`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/regex/Pattern.html)), which is the Perl-style flavor you know from most languages. Everything that dialect offers is available, including:
 
 - shorthand classes (`\d`, `\w`, `\s`, `\b`) and Unicode properties (`\p{L}`)
 - greedy, lazy and possessive quantifiers (`a+`, `a+?`, `a++`) and atomic groups (`(?>…)`)

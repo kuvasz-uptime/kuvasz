@@ -8,7 +8,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/kuvaszmonitoring/kuvasz)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
 ---
 
-**Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API + MCP server, maintenance windows and supports multiple notification channels like email, Discord, Slack, Telegram, Microsoft Teams, PagerDuty and custom webhooks.
+**Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API + MCP server, maintenance windows and supports multiple notification channels like email, Discord, Slack, Telegram, Microsoft Teams, Apprise, PagerDuty and custom webhooks.
 
 ![Kuvasz](docs/docs/images/feature_carousel.webp)
 
@@ -83,6 +83,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 | Slack                                |      ✅       |        ❌        |        ✅        |
 | Telegram                             |      ✅       |        ❌        |        ✅        |
 | MS Teams                             |      ✅       |        ❌        |        ✅        |
+| Apprise                              |      ✅       |        ❌        |        ❌        |
 | PagerDuty                            |      ✅       |        ❌        |        ❌        |
 | Webhook                              |      ✅       |        ❌        |        ❌        |
 | SMS / Voice call                     |     ✅\**     |        ❌        |  10 incl./month  |
