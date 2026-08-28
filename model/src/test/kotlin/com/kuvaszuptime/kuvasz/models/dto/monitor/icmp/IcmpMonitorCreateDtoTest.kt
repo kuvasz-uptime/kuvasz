@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.icmp
 
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.toMonitorRecord
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
@@ -217,6 +218,23 @@ class IcmpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.failureCountThreshold shouldBe IcmpMonitorDefaults.FAILURE_COUNT_THRESHOLD
             dto.metricsHistoryEnabled shouldBe IcmpMonitorDefaults.METRICS_HISTORY_ENABLED
             dto.integrations shouldBe emptyList()
+        }
+    }
+
+    given("the toMonitorRecord() mapping of the category") {
+        val baseDto = IcmpMonitorCreateDto(
+            name = "Test Monitor",
+            host = "example.com",
+            uptimeCheckInterval = 60,
+        )
+
+        `when`("the category is null, blank or padded with whitespace") {
+            then("it should be persisted as null or trimmed") {
+                baseDto.copy(category = null).toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = "   ").toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = " Core services ").toMonitorRecord(emptySet()).category shouldBe
+                    "Core services"
+            }
         }
     }
 })

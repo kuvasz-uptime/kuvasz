@@ -37,6 +37,9 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
 
             assertThat(statusPage.title(pageTitle).first()).isVisible()
             assertThat(statusPage.monitorCard(monitor.name)).isVisible()
+            // Without any categorized monitor there is no category filter at all
+            assertThat(statusPage.categoryFilter).hasCount(0)
+            assertThat(statusPage.categorySections).hasCount(0)
         }
 
         "a monitor that is currently down is rendered with a DOWN status" {
@@ -159,6 +162,68 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
 
             assertThat(statusPage.monitorCards).hasCount(monitors.size)
             statusPage.monitorNames shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
+        }
+
+        "categorized monitors are grouped into filterable sections with a per-category status" {
+            val backend = createHttpMonitor(
+                httpMonitorRepository,
+                monitorName = "Backend API",
+                category = "Backend services",
+            )
+            val web = createHttpMonitor(httpMonitorRepository, monitorName = "Website", category = "Web")
+            val other = createHttpMonitor(httpMonitorRepository, monitorName = "Some other service")
+            // An ongoing DOWN event turns the "Web" category into an outage state
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = web.id,
+                status = UptimeStatus.DOWN,
+                startedAt = OffsetDateTime.now(),
+                endedAt = null,
+            )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = backend.id,
+                status = UptimeStatus.UP,
+                startedAt = OffsetDateTime.now(),
+                endedAt = null,
+            )
+            val slug = "categorized-status"
+            createStatusPage(
+                dslContext,
+                title = "Categorized Status",
+                slug = slug,
+                public = true,
+                monitors = listOf(backend, web, other).map { MonitorID(MonitorType.HTTP_SSL, it.name) },
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate(slug)
+
+            // A chip is rendered for each of the two categories, plus one for the uncategorized monitors
+            val expectedSectionCnt = listOf(backend, web, other).size
+            assertThat(statusPage.categoryFilter).isVisible()
+            assertThat(statusPage.categoryChips).hasCount(expectedSectionCnt)
+            // Every section is visible by default, with its own aggregated status badge
+            assertThat(statusPage.categorySections).hasCount(expectedSectionCnt)
+            assertThat(statusPage.categorySection("Backend services")).isVisible()
+            assertThat(statusPage.categoryStatusBadge("Backend services")).containsText("Operational")
+            assertThat(statusPage.categoryStatusBadge("Web")).containsText("Major outage")
+            assertThat(statusPage.categorySection("Uncategorized")).isVisible()
+
+            // Toggling a chip off hides only its section
+            statusPage.categoryChip("Backend services").click()
+            assertThat(statusPage.categorySection("Backend services")).isHidden()
+            assertThat(statusPage.monitorCard("Backend API")).isHidden()
+            assertThat(statusPage.categorySection("Web")).isVisible()
+
+            // "None" hides every section, "All" brings everything back
+            statusPage.selectNoCategories().click()
+            assertThat(statusPage.categorySections.locator("visible=true")).hasCount(0)
+            statusPage.selectAllCategories().click()
+            assertThat(statusPage.categorySection("Backend services")).isVisible()
+            assertThat(statusPage.categorySection("Web")).isVisible()
+            assertThat(statusPage.categorySection("Uncategorized")).isVisible()
         }
     }
 }

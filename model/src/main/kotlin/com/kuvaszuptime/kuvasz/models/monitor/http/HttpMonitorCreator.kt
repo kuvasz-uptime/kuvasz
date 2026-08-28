@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.toNormalizedCategory
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
@@ -15,6 +16,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
+import jakarta.validation.constraints.Size
 
 @Suppress("ComplexInterface")
 interface HttpMonitorCreator {
@@ -67,6 +69,9 @@ interface HttpMonitorCreator {
     @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     val failureCountThreshold: Long
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    val category: String?
 }
 
 fun HttpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
@@ -92,3 +97,4 @@ fun HttpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
         .setRequestBody(requestBody)
         .setFailureCountThreshold(failureCountThreshold)
+        .setCategory(category.toNormalizedCategory())

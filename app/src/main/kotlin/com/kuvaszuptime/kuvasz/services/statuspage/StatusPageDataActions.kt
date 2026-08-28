@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
@@ -64,26 +63,7 @@ class StatusPageDataActions(
         )
     }
 
-    private fun calculateSystemStatus(monitors: List<StatusPageMonitorDetailsDto>) =
-        if (monitors.isEmpty()) {
-            SystemStatus.PENDING
-        } else {
-            val monitorStatusMap = monitors.groupBy { it.uptimeStatus }
-            val monitorCnt = monitors.size
-            val upCnt = monitorStatusMap[UptimeStatus.UP]?.size ?: 0
-            val downCnt = monitorStatusMap[UptimeStatus.DOWN]?.size ?: 0
-            val maintenanceCnt = monitors.count { it.inMaintenance }
-            when {
-                // Outages always take precedence over maintenance
-                downCnt == monitorCnt -> SystemStatus.MAJOR_OUTAGE
-                upCnt > 0 && downCnt > 0 -> SystemStatus.PARTIAL_OUTAGE
-                // Maintenance takes precedence over the operational/pending states
-                downCnt == 0 && maintenanceCnt == monitorCnt -> SystemStatus.MAINTENANCE
-                downCnt == 0 && maintenanceCnt > 0 -> SystemStatus.PARTIAL_MAINTENANCE
-                upCnt == monitorCnt -> SystemStatus.OPERATIONAL
-                else -> SystemStatus.PENDING
-            }
-        }
+    private fun calculateSystemStatus(monitors: List<StatusPageMonitorDetailsDto>) = SystemStatus.fromMonitors(monitors)
 
     @Cacheable(STATUS_PAGES_CACHE_NAME)
     fun getCachedStatusPageData(statusPageId: Long) = getStatusPageData(statusPageId)

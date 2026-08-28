@@ -105,6 +105,7 @@ class TcpMonitorRepository(
                 .set(TCP_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(TCP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(TCP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
+                .set(TCP_MONITOR.CATEGORY, updatedMonitor.category)
                 .set(TCP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(TCP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(TCP_MONITOR.asterisk())
@@ -151,6 +152,7 @@ class TcpMonitorRepository(
         .select(
             TCP_MONITOR.ID.`as`(TcpMonitorDetailsDto::id.name),
             TCP_MONITOR.NAME.`as`(TcpMonitorDetailsDto::name.name),
+            TCP_MONITOR.CATEGORY.`as`(TcpMonitorDetailsDto::category.name),
             TCP_MONITOR.HOST.`as`(TcpMonitorDetailsDto::host.name),
             TCP_MONITOR.PORT.`as`(TcpMonitorDetailsDto::port.name),
             TCP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(TcpMonitorDetailsDto::uptimeCheckInterval.name),

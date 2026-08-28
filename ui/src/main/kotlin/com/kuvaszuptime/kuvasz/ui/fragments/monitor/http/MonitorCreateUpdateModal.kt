@@ -29,6 +29,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
         createTitle = Messages.createNewHttpMonitor(),
         errorMessages = mapOf(
             "nameRequired" to Messages.errorNameRequired(),
+            "categoryTooLong" to Messages.errorCategoryTooLong(),
             "urlRequired" to Messages.errorMissingUrl(),
             "urlInvalid" to Messages.errorInvalidUrl(),
             "nameAlreadyExists" to Messages.errorNameAlreadyExists(),

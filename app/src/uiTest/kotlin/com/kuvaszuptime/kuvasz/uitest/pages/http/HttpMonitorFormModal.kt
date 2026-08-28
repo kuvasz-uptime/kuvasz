@@ -13,9 +13,15 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
     val nameInput: Locator get() = modal.locator("#name-input")
     val urlInput: Locator get() = modal.locator("#url-input")
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#uptimeCheckInterval-input")
+    val categoryInput: Locator get() = modal.locator("#category-input")
 
     fun setName(value: String): HttpMonitorFormModal {
         nameInput.fill(value)
+        return this
+    }
+
+    fun setCategory(value: String): HttpMonitorFormModal {
+        categoryInput.fill(value)
         return this
     }
 

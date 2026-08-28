@@ -558,6 +558,7 @@ class PushMonitorControllerTest(
                     clientSecret = randomClientSecret(),
                     enabled = false,
                     integrations = setUpIntegrations.map { it.toString() },
+                    category = "Push category",
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -577,6 +578,8 @@ class PushMonitorControllerTest(
                     monitorInDb.updatedAt shouldBe createdMonitor.createdAt
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
                         setUpIntegrations.toTypedArray()
+                    monitorInDb.category shouldBe "Push category"
+                    monitorInDb.category shouldBe createdMonitor.category
                 }
             }
 

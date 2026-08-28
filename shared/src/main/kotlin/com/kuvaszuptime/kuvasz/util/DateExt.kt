@@ -28,9 +28,11 @@ import com.kuvaszuptime.kuvasz.i18n.Messages.monthsAgo
 import com.kuvaszuptime.kuvasz.i18n.Messages.secondsAgo
 import com.kuvaszuptime.kuvasz.i18n.Messages.weeksAgo
 import com.kuvaszuptime.kuvasz.i18n.Messages.yearsAgo
+import java.time.Clock
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import kotlin.math.abs
 import kotlin.time.Duration
@@ -39,7 +41,12 @@ import kotlin.time.toDuration
 import kotlin.time.toKotlinDuration
 import java.time.Duration as JavaDuration
 
-fun getCurrentTimestamp(): OffsetDateTime = OffsetDateTime.now(ZoneId.systemDefault())
+/**
+ * Timestamps are persisted in PostgreSQL columns with microsecond precision, so anything finer coming from the
+ * system clock must be dropped here to guarantee that a persisted timestamp reads back equal to the original.
+ */
+fun getCurrentTimestamp(clock: Clock = Clock.systemDefaultZone()): OffsetDateTime =
+    OffsetDateTime.now(clock).truncatedTo(ChronoUnit.MICROS)
 
 fun Duration?.toDurationString(): String? = this?.toComponents { days, hours, minutes, seconds, _ ->
     Messages.durationParts(days, hours, minutes, seconds)

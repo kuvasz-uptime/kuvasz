@@ -32,6 +32,7 @@ data class TcpMonitorSchema(
     val integrations: Set<String>,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: TcpMonitorDto) = TcpMonitorSchema(
@@ -48,6 +49,7 @@ data class TcpMonitorSchema(
             integrations = dto.integrations.map { it.toString() }.toSet(),
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
         )
     }
 }
@@ -68,6 +70,7 @@ data class TcpMonitorDetailsSchema(
     val enabled: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    val category: String?,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -92,6 +95,7 @@ data class TcpMonitorDetailsSchema(
             enabled = dto.enabled,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -179,6 +183,7 @@ data class TcpMonitorCreatorSchema(
     val timeoutMs: Int?,
     val latencyThresholdMs: Int?,
     val failureCountThreshold: Long?,
+    val category: String? = null,
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
@@ -191,6 +196,7 @@ data class TcpMonitorCreatorSchema(
         timeoutMs = timeoutMs ?: TcpMonitorDefaults.TIMEOUT_MS,
         latencyThresholdMs = latencyThresholdMs,
         failureCountThreshold = failureCountThreshold ?: TcpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
+        category = category,
         enabled = enabled ?: TcpMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: TcpMonitorDefaults.METRICS_HISTORY_ENABLED

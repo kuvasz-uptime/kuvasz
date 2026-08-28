@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.toNormalizedCategory
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -35,6 +36,9 @@ interface PushMonitorCreator {
     @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     val failureCountThreshold: Long
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    val category: String?
 }
 
 fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): PushMonitorRecord =
@@ -46,3 +50,4 @@ fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>
         .setClientSecret(clientSecret)
         .setIntegrations(validatedIntegrations.toTypedArray())
         .setFailureCountThreshold(failureCountThreshold)
+        .setCategory(category.toNormalizedCategory())

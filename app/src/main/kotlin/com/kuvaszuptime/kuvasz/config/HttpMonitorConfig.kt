@@ -61,4 +61,6 @@ interface HttpMonitorConfig : HttpMonitorCreator, MonitorConfig {
 
     @get:Bindable(defaultValue = HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD.toString())
     override val failureCountThreshold: Long
+
+    override val category: String?
 }

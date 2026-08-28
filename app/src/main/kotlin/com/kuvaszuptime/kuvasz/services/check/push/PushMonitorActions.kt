@@ -203,6 +203,7 @@ class PushMonitorActions(
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
                 inMaintenance = uptime.inMaintenance,
+                category = monitor.category,
                 lastHeartbeat = monitor.lastHeartbeat,
             )
         }

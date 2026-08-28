@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.push
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.shouldHaveError
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
+import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -132,6 +133,23 @@ class PushMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.gracePeriod shouldBe PushMonitorDefaults.GRACE_PERIOD_SECONDS
             dto.integrations shouldBe emptyList()
             dto.failureCountThreshold shouldBe 1
+        }
+    }
+
+    given("the toMonitorRecord() mapping of the category") {
+        val baseDto = PushMonitorCreateDto(
+            name = "Test Monitor",
+            heartbeatInterval = 20,
+            clientSecret = randomClientSecret(),
+        )
+
+        `when`("the category is null, blank or padded with whitespace") {
+            then("it should be persisted as null or trimmed") {
+                baseDto.copy(category = null).toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = "   ").toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = " Core services ").toMonitorRecord(emptySet()).category shouldBe
+                    "Core services"
+            }
         }
     }
 })

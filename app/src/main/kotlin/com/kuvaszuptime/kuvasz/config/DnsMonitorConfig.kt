@@ -61,4 +61,6 @@ interface DnsMonitorConfig : DnsMonitorCreator, MonitorConfig {
 
     @get:Bindable(defaultValue = DnsMonitorDefaults.METRICS_HISTORY_ENABLED.toString())
     override val metricsHistoryEnabled: Boolean
+
+    override val category: String?
 }

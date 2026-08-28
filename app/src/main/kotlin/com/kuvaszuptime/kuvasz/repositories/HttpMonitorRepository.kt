@@ -126,6 +126,7 @@ class HttpMonitorRepository(
                 .set(HTTP_MONITOR.REQUEST_HEADERS, updatedMonitor.requestHeaders)
                 .set(HTTP_MONITOR.EXPECTED_HEADERS, updatedMonitor.expectedHeaders)
                 .set(HTTP_MONITOR.REQUEST_BODY, updatedMonitor.requestBody)
+                .set(HTTP_MONITOR.CATEGORY, updatedMonitor.category)
                 .where(HTTP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(HTTP_MONITOR.asterisk())
                 .fetchOneOrThrow<HttpMonitorRecord>()
@@ -211,6 +212,7 @@ class HttpMonitorRepository(
             HTTP_MONITOR.REQUEST_HEADERS.`as`(HttpMonitorDetailsDto::requestHeaders.name).convert(jsonToMapConverter),
             HTTP_MONITOR.EXPECTED_HEADERS.`as`(HttpMonitorDetailsDto::expectedHeaders.name).convert(jsonToMapConverter),
             HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
+            HTTP_MONITOR.CATEGORY.`as`(HttpMonitorDetailsDto::category.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
                 .`as`(HttpMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL

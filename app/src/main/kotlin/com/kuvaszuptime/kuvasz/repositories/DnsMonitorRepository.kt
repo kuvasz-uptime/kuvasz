@@ -122,6 +122,7 @@ class DnsMonitorRepository(
                 .set(DNS_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(DNS_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(DNS_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
+                .set(DNS_MONITOR.CATEGORY, updatedMonitor.category)
                 .set(DNS_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(DNS_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(DNS_MONITOR.asterisk())
@@ -160,6 +161,7 @@ class DnsMonitorRepository(
         .select(
             DNS_MONITOR.ID.`as`(DnsMonitorDetailsDto::id.name),
             DNS_MONITOR.NAME.`as`(DnsMonitorDetailsDto::name.name),
+            DNS_MONITOR.CATEGORY.`as`(DnsMonitorDetailsDto::category.name),
             DNS_MONITOR.HOST.`as`(DnsMonitorDetailsDto::host.name),
             DNS_MONITOR.RESOLVER_HOST.`as`(DnsMonitorDetailsDto::resolverHost.name),
             DNS_MONITOR.RESOLVER_PORT.`as`(DnsMonitorDetailsDto::resolverPort.name),

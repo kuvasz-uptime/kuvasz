@@ -54,4 +54,6 @@ data class TcpMonitorDetailsDto(
     val maintenanceWindows: List<MaintenanceWindowDetailsDto>,
     @param:Schema(description = MonitorDocs.UNDER_MAINTENANCE, required = true)
     override val inMaintenance: Boolean,
+    @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
+    override val category: String? = null,
 ) : MonitorDetailsDto
