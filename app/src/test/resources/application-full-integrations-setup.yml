@@ -42,6 +42,23 @@ integrations:
     - name: disabled
       url: http://apprise-host:8000/notify/disabled
       enabled: false
+  pushover:
+    - name: test_implicitly_enabled
+      api-token: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      user-key: uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+      device: iphone,desk
+      sound: siren
+    - name: global
+      api-token: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      user-key: gggggggggggggggggggggggggggggg
+      global: true
+      emergency-enabled: true
+      emergency-retry-seconds: 90
+      emergency-expire-seconds: 600
+    - name: disabled
+      api-token: cccccccccccccccccccccccccccccc
+      user-key: dddddddddddddddddddddddddddddd
+      enabled: false
   email:
     - name: test_implicitly_enabled
       from-address: noreply@other.dev

@@ -55,7 +55,7 @@ class AppriseClientTest(
                 .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .withBody(
                     JsonBody.json(
-                        """{"title":"✅ Your monitor \"test_monitor\" (https://test.url) is UP (200)","body":"Latency: 300ms","type":"success","format":"text"}"""
+                        """{"title":"✅ test_monitor","body":"Your monitor \"test_monitor\" (https://test.url) is UP (200)\nLatency: 300ms","type":"success","format":"text"}"""
                     )
                 )
 

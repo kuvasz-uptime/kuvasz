@@ -271,6 +271,7 @@ internal enum class CSSClass(val className: String) {
     TEXT_BLUE_LT_FG("text-blue-lt-fg"),
     TEXT_BREAK("text-break"),
     TEXT_CENTER("text-center"),
+    TEXT_CYAN("text-cyan"),
     TEXT_CYAN_LT_FG("text-cyan-lt-fg"),
     TEXT_DECORATION_NONE("text-decoration-none"),
     TEXT_DEFAULT_FG("text-default-fg"),

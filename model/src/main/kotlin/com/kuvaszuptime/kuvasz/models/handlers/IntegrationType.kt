@@ -11,6 +11,7 @@ enum class IntegrationType(
     DISCORD(DiscordNotificationConfig.IDENTIFIER),
     MS_TEAMS(MsTeamsNotificationConfig.IDENTIFIER, displayName = "Microsoft Teams"),
     APPRISE(AppriseNotificationConfig.IDENTIFIER),
+    PUSHOVER(PushoverNotificationConfig.IDENTIFIER),
     WEBHOOK(WebhookNotificationConfig.IDENTIFIER);
 
     companion object {

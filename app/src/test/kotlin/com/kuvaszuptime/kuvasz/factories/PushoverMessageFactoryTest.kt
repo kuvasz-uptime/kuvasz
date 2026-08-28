@@ -27,9 +27,8 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseFormat
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseType
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverPriority
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.diffToDuration
@@ -38,6 +37,7 @@ import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.http.HttpStatus
 import io.micronaut.json.JsonMapper
@@ -45,8 +45,8 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import tools.jackson.module.kotlin.jacksonObjectMapper
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
-class AppriseMessageFactoryTest(
-    private val factory: AppriseMessageFactory,
+class PushoverMessageFactoryTest(
+    private val factory: PushoverMessageFactory,
     private val jsonMapper: JsonMapper,
 ) : ShouldSpec({
 
@@ -59,21 +59,20 @@ class AppriseMessageFactoryTest(
         .setSensitiveUrl(false)
 
     // The body always leads with the summary of the event, and the details follow it line by line
-    fun AppriseMessage.summaryLine(): String = body.substringBefore("\n")
+    fun PushoverMessage.summaryLine(): String = message.substringBefore("\n")
 
-    fun AppriseMessage.detailLines(): List<String> = body.split("\n").drop(1)
+    fun PushoverMessage.detailLines(): List<String> = message.split("\n").drop(1)
 
     context("the notification payload") {
 
-        should("serialize into exactly the payload the Apprise API expects") {
+        should("serialize into exactly the payload the Pushover API expects") {
             val message = factory.fromUptimeEvent(HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null))
 
             val expected = """
                 {
                   "title": "✅ test_monitor",
-                  "body": "Your monitor \"test_monitor\" (https://test.url) is UP (200)\nLatency: 300ms",
-                  "type": "success",
-                  "format": "text"
+                  "message": "Your monitor \"test_monitor\" (https://test.url) is UP (200)\nLatency: 300ms",
+                  "priority": 0
                 }
             """.trimIndent()
 
@@ -82,17 +81,19 @@ class AppriseMessageFactoryTest(
             treeMapper.readTree(actual) shouldBe treeMapper.readTree(expected)
         }
 
-        should("leave the tag and the target URLs to the service, so they never leak into the factory") {
-            val message = factory.fromUptimeEvent(HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null))
+        should("leave the credentials and the emergency parameters to the service") {
+            val message = factory.fromUptimeEvent(
+                HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception("Boom"), null)
+            )
 
-            message.tag shouldBe null
-            message.urls shouldBe null
+            message.token shouldBe null
+            message.user shouldBe null
+            message.device shouldBe null
+            message.sound shouldBe null
+            message.retry shouldBe null
+            message.expire shouldBe null
+            message.tags shouldBe null
             jsonMapper.writeValueAsString(message) shouldNotContain "null"
-        }
-
-        should("declare the payload as plain text, since it never carries any markup") {
-            factory.fromUptimeEvent(HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null)).format shouldBe
-                AppriseFormat.TEXT
         }
     }
 
@@ -117,8 +118,15 @@ class AppriseMessageFactoryTest(
             )
 
             message.title shouldBe "🚨 test_monitor"
-            message.body shouldContain "Your monitor \"test_monitor\" (https://test.url) is DOWN (500)"
+            message.message shouldContain "Your monitor \"test_monitor\" (https://test.url) is DOWN (500)"
             message.detailLines() shouldBe emptyList()
+        }
+
+        should("name the maintenance window in the title of a maintenance event") {
+            factory.fromMaintenanceEvent(MaintenanceWindowStartEvent(maintenanceWindow())).title shouldBe
+                "🔧 Planned upgrade"
+            factory.fromMaintenanceEvent(MaintenanceWindowEndEvent(maintenanceWindow())).title shouldBe
+                "✅ Planned upgrade"
         }
 
         should("keep the newlines of a multi-line detail as they are") {
@@ -147,7 +155,43 @@ class AppriseMessageFactoryTest(
                 )
             )
 
+            message.title shouldBe "ℹ️ drift_monitor"
             message.detailLines() shouldBe listOf("A: [1.1.1.1] → [2.2.2.2]", "MX: [mx1.test] → [mx2.test]")
+        }
+    }
+
+    context("the limits of the Pushover API") {
+
+        should("truncate a title that is longer than the limit") {
+            val longName = "a".repeat(300)
+            val message = factory.fromUptimeEvent(
+                HttpMonitorUpEvent(
+                    HttpMonitorRecord().setId(1).setName(longName).setUrl("https://test.url").setSensitiveUrl(false),
+                    HttpStatus.OK,
+                    300,
+                    null,
+                )
+            )
+
+            message.title.length shouldBe 250
+            message.title shouldEndWith "…"
+        }
+
+        should("truncate a body that is longer than the limit") {
+            val longDescription = "b".repeat(1200)
+            val message = factory.fromMaintenanceEvent(
+                MaintenanceWindowStartEvent(maintenanceWindow().setDescription(longDescription))
+            )
+
+            message.message.length shouldBe 1024
+            message.message shouldEndWith "…"
+        }
+
+        should("leave a title and a body that fit as they are") {
+            val message = factory.fromUptimeEvent(HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null))
+
+            message.title shouldNotContain "…"
+            message.message shouldNotContain "…"
         }
     }
 
@@ -203,56 +247,62 @@ class AppriseMessageFactoryTest(
             val message = factory.fromUptimeEvent(PushMonitorUpEvent(pushMonitor, null))
 
             message.title shouldBe "✅ test_push_monitor"
-            message.body shouldBe "Your monitor \"test_push_monitor\" is UP"
+            message.message shouldBe "Your monitor \"test_push_monitor\" is UP"
             message.detailLines() shouldBe emptyList()
         }
     }
 
-    context("the type of the notification") {
+    context("the priority of the notification") {
 
-        should("be SUCCESS for a recovery") {
-            factory.fromUptimeEvent(HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null)).type shouldBe
-                AppriseType.SUCCESS
-            factory.fromSSLEvent(SSLValidEvent(monitor, generateCertificateInfo(), null)).type shouldBe
-                AppriseType.SUCCESS
-            factory.fromMaintenanceEvent(MaintenanceWindowEndEvent(maintenanceWindow())).type shouldBe
-                AppriseType.SUCCESS
-        }
-
-        should("be FAILURE for an outage") {
+        should("be HIGH for an outage, so that it breaks through the quiet hours") {
             factory.fromUptimeEvent(
                 HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception("Boom"), null)
-            ).type shouldBe AppriseType.FAILURE
-            factory.fromSSLEvent(SSLInvalidEvent(monitor, SSLValidationError("Chain error"), null)).type shouldBe
-                AppriseType.FAILURE
+            ).priority shouldBe PushoverPriority.HIGH
+            factory.fromSSLEvent(SSLInvalidEvent(monitor, SSLValidationError("Chain error"), null)).priority shouldBe
+                PushoverPriority.HIGH
         }
 
-        should("be WARNING for an upcoming SSL expiry") {
-            factory.fromSSLEvent(SSLWillExpireEvent(monitor, generateCertificateInfo(), null)).type shouldBe
-                AppriseType.WARNING
+        should("be NORMAL for a recovery") {
+            factory.fromUptimeEvent(HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, null)).priority shouldBe
+                PushoverPriority.NORMAL
+            factory.fromSSLEvent(SSLValidEvent(monitor, generateCertificateInfo(), null)).priority shouldBe
+                PushoverPriority.NORMAL
+            factory.fromMaintenanceEvent(MaintenanceWindowEndEvent(maintenanceWindow())).priority shouldBe
+                PushoverPriority.NORMAL
         }
 
-        should("be INFO for the informational events") {
+        should("be NORMAL for the warnings and the informational events") {
+            factory.fromSSLEvent(SSLWillExpireEvent(monitor, generateCertificateInfo(), null)).priority shouldBe
+                PushoverPriority.NORMAL
             factory.fromDnsRecordsChangedEvent(
                 DnsRecordsChangedEvent(
                     monitor = DnsMonitorRecord().setId(2222).setName("drift_monitor"),
                     previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
                     currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
                 )
-            ).type shouldBe AppriseType.INFO
-            factory.fromMaintenanceEvent(MaintenanceWindowStartEvent(maintenanceWindow())).type shouldBe
-                AppriseType.INFO
+            ).priority shouldBe PushoverPriority.NORMAL
+            factory.fromMaintenanceEvent(MaintenanceWindowStartEvent(maintenanceWindow())).priority shouldBe
+                PushoverPriority.NORMAL
+        }
+
+        // The escalation to the emergency priority depends on the integration's configuration, so it's the
+        // service's business, not the factory's
+        should("never be EMERGENCY, whatever the event is") {
+            factory.fromUptimeEvent(
+                HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception("Boom"), null)
+            ).priority shouldBe PushoverPriority.HIGH
+            factory.testMessage().priority shouldBe PushoverPriority.NORMAL
         }
     }
 
     context("testMessage") {
 
-        should("render the localized test message as an informational notification") {
+        should("render the localized test message as a normal priority notification") {
             val message = factory.testMessage()
 
-            message.type shouldBe AppriseType.INFO
+            message.priority shouldBe PushoverPriority.NORMAL
             message.title shouldBe "ℹ️ Kuvasz Uptime"
-            message.body shouldBe Messages.integrationTestMessage()
+            message.message shouldBe Messages.integrationTestMessage()
             message.detailLines() shouldBe emptyList()
         }
     }

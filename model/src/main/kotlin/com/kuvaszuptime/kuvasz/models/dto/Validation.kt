@@ -18,6 +18,8 @@ object Validation {
     const val MIN_PORT = 1L
     const val MAX_PORT = 65535L
     const val MIN_LATENCY_THRESHOLD_MILLIS = 1L
+    const val MIN_PUSHOVER_EMERGENCY_RETRY_SECONDS = 30L
+    const val MAX_PUSHOVER_EMERGENCY_EXPIRE_SECONDS = 10800L
 
     // Matches only strings carrying at least one non-whitespace character. Null values are skipped by @Pattern, so
     // it enforces "not blank when it is set" on optional fields.
@@ -47,6 +49,12 @@ object IntegrationValidationMessages {
     const val TELEGRAM_CHAT_ID_NOT_BLANK = "Telegram integration chat ID must not be blank"
     const val TELEGRAM_BOT_TOKEN_NOT_BLANK = "Telegram integration bot token must not be blank"
     const val APPRISE_URL_NOT_BLANK = "Apprise integration URL must not be blank"
+    const val PUSHOVER_API_TOKEN_NOT_BLANK = "Pushover integration API token must not be blank"
+    const val PUSHOVER_USER_KEY_NOT_BLANK = "Pushover integration user key must not be blank"
+    const val PUSHOVER_EMERGENCY_RETRY_SECONDS_MIN = "Pushover integration emergency retry must be at least " +
+        "{value} seconds"
+    const val PUSHOVER_EMERGENCY_EXPIRE_SECONDS_MAX = "Pushover integration emergency expiration cannot be " +
+        "higher than {value} seconds"
     const val WEBHOOK_URL_NOT_BLANK = "Webhook integration URL must not be blank"
 }
 

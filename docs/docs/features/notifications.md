@@ -88,6 +88,14 @@ The _Apprise_ integration hands your notifications to a self-hosted
 **80+ services** at once - from _ntfy_ and _Gotify_ through _Matrix_ and _Pushover_ to SMS providers. The
 severity of the event travels with the notification, so the targets can color and prioritize it accordingly.
 
+## Pushover <!-- md:config ../management/integrations.md#pushover -->
+
+The _Pushover_ integration sends **push notifications to your phone, tablet and desktop**. The severity of the
+event decides the priority of the notification, so an outage is allowed to break through the quiet hours of the
+recipient, while a recovery isn't. Critical events can optionally be escalated to the **emergency priority**,
+which repeats the notification until it's acknowledged - and _Kuvasz_ calls it off automatically once the monitor
+recovers.
+
 ## Email <!-- md:config ../management/integrations.md#email -->
 
 The email integration lets you to configure an _SMTP_ connection, with which

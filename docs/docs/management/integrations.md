@@ -359,6 +359,145 @@ integrations:
     # ... other Apprise integrations
 ```
 
+## Pushover
+
+**Configuration alias**: `pushover`
+
+[**Pushover**](https://pushover.net) delivers **push notifications to your phone, tablet and desktop**, without you
+having to run anything yourself.
+
+The notifications carry a **title** that names the monitor or the maintenance window the event belongs to, and a
+**body** that leads with the summary of the event, followed by its details. The severity decides the **priority**,
+which is what tells _Pushover_ whether the notification is allowed to break through the quiet hours of the recipient.
+
+| Event                                             | Priority                                   |
+|---------------------------------------------------|--------------------------------------------|
+| A monitor went down, a certificate became invalid | `1` (high), or `2` (emergency, if enabled) |
+| Everything else                                   | `0` (normal)                               |
+
+!!! info "Getting your user key and API token"
+
+    1. Sign up at [**pushover.net**](https://pushover.net) and copy your **User Key** from the dashboard. This is
+       your `user-key`. A **group key** works just as well, if you want to notify a whole team.
+    2. Create a new application at the bottom of the dashboard, under _Your Applications_. The token you get
+       there is your `api-token`.
+
+### API token
+
+<!-- md:version 4.3.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `api-token` -->
+
+The **API token of the _Pushover_ application** that sends the notifications. You get it when you register a new
+application on the _Pushover_ dashboard.
+
+### User key
+
+<!-- md:version 4.3.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `user-key` -->
+
+The **user key or group key** the notifications are delivered to. Your user key is on your _Pushover_ dashboard;
+a group key comes from a delivery group, and lets you notify several people with one integration.
+
+### Device
+
+<!-- md:version 4.3.0 -->
+<!-- md:default empty -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `device` -->
+
+Limits the delivery to **specific devices** instead of every device of the user. Separate the device names with
+commas, exactly as _Pushover_ expects them:
+
+```yaml
+device: 'iphone,desk'
+```
+
+Leave it empty to reach every device, which is what you usually want for an uptime alert.
+
+### Sound
+
+<!-- md:version 4.3.0 -->
+<!-- md:default empty -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `sound` -->
+
+The **notification sound** to play, instead of the recipient's default. The list of the available names is in the
+[**Pushover API documentation**](https://pushover.net/api#sounds) - `siren`, `alien` and `persistent` are the
+ones that stand out from an ordinary notification.
+
+### Emergency priority
+
+<!-- md:version 4.3.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+<!-- md:yaml_prop `emergency-enabled` -->
+
+Sends the **critical events with emergency priority** (`2`), which makes _Pushover_ **repeat the notification
+until someone acknowledges it**. Only the events that would otherwise get the high priority are escalated: a
+monitor going down, and a certificate becoming invalid. Recoveries, expiry warnings, DNS drift, maintenance
+windows and the test notification are never escalated.
+
+!!! tip "Kuvasz calls the alert off when the monitor recovers"
+
+    You don't have to acknowledge an emergency notification just because the service came back on its own. When
+    the monitor recovers - or the certificate becomes valid again - _Kuvasz_ **cancels the outstanding
+    notification** for you, and the repeating stops.
+
+    It does that without storing anything: the notification is tagged with an identifier derived from the monitor
+    (`kuvasz_uptime_<monitor id>` and `kuvasz_ssl_<monitor id>`), and the recovery cancels that same tag.
+
+    Two consequences are worth knowing about:
+
+    - If you **exclude the recovery event** of a monitor with [**`excluded-events`**](#excluded-events), there is
+      nothing left to trigger the cancellation, so the notification keeps repeating until it expires.
+
+### Emergency retry seconds
+
+<!-- md:version 4.3.0 -->
+<!-- md:default `60` -->
+<!-- md:type `integer` -->
+<!-- md:yaml_prop `emergency-retry-seconds` -->
+
+How often an emergency notification is **repeated**, in seconds. Only has an effect when
+[**`emergency-enabled`**](#emergency-priority) is turned on. _Pushover_ requires **at least 30 seconds** here, so
+_Kuvasz_ **refuses to start** with anything lower.
+
+### Emergency expire seconds
+
+<!-- md:version 4.3.0 -->
+<!-- md:default `1800` -->
+<!-- md:type `integer` -->
+<!-- md:yaml_prop `emergency-expire-seconds` -->
+
+How long _Pushover_ **keeps repeating** an unacknowledged emergency notification, in seconds. Only has an effect
+when [**`emergency-enabled`**](#emergency-priority) is turned on. The maximum is **10800 seconds** (3 hours), and
+_Kuvasz_ **refuses to start** above it. _Pushover_ stops after 50 attempts regardless of this value.
+
+---
+
+```yaml title="Pushover integration example"
+integrations:
+  pushover:
+    # The simplest setup: every device of the user, default sound
+    - name: pushover-example
+      api-token: 'YourApplicationToken'
+      user-key: 'YourUserKey'
+      global: true
+    # An on-call setup that nags until someone acknowledges it, but calls itself off on recovery
+    - name: pushover-oncall
+      api-token: 'YourApplicationToken'
+      user-key: 'YourGroupKey'
+      sound: 'siren'
+      emergency-enabled: true
+      emergency-retry-seconds: 60
+      emergency-expire-seconds: 1800
+    # ... other Pushover integrations
+```
+
 ## Email
 
 **Configuration alias**: `email`
@@ -782,29 +921,11 @@ integrations:
 
 ### Pushover
 
-This example sends a push notification via [**Pushover**](https://pushover.net) — a simple, cross-platform push notification service supporting Android, iOS, and desktop.
+!!! tip "_Pushover_ has a first-class integration since version 4.3.0..."
 
-**Pushover setup:**
-
-1. Sign up at [**pushover.net**](https://pushover.net) and copy your **User Key** from the dashboard.
-2. Create a new **application** under _Your Applications_ and copy the resulting **API Token**.
-
-```yaml title="Kuvasz configuration"
-integrations:
-  webhook:
-    - name: pushover
-      url: 'https://api.pushover.net/1/messages.json'
-      payload-template: |
-        {
-          "token":    "your_app_api_token",
-          "user":     "your_user_or_group_key",
-          "title":    "{{ ctx.monitorName | escape(strategy="js") }}",
-          "message":  "{{ ctx.eventDetails | escape(strategy="js") }}",
-          "priority": {% if ctx.type == 'HTTP_DOWN' or ctx.type == 'ICMP_DOWN' or ctx.type == 'TCP_DOWN' or ctx.type == 'DNS_DOWN' or ctx.type == 'PUSH_DOWN' or ctx.type == 'SSL_INVALID' %}1{% else %}0{% endif %}
-        }
-```
-
-The `priority` field is set to `1` (high — bypasses quiet hours) for "down" and "invalid" events, and `0` (normal) for everything else. You can raise it to `2` (emergency — requires acknowledgement) for truly critical alerts, but that requires additional `retry` and `expire` fields in the payload — see the [**Pushover API documentation**](https://pushover.net/api) for details.
+    ... so there is no need to hand-craft a webhook payload for it anymore. See the
+    [**Pushover section**](#pushover) above: it sends a proper title, body and priority, it can escalate an outage
+    to the emergency priority, and it calls that alert off by itself once the monitor recovers.
 
 ### Home Assistant — webhook automation
 

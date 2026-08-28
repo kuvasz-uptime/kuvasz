@@ -1,4 +1,5 @@
 integrations:
   ms-teams:
   apprise:
+  pushover:
   webhook:

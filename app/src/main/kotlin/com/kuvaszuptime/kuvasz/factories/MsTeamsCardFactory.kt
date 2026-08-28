@@ -25,7 +25,7 @@ import com.kuvaszuptime.kuvasz.models.events.StructuredTcpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
-import com.kuvaszuptime.kuvasz.models.events.formatters.getSeverity
+import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
 import com.kuvaszuptime.kuvasz.models.handlers.AdaptiveCard
 import com.kuvaszuptime.kuvasz.models.handlers.CardContainer
 import com.kuvaszuptime.kuvasz.models.handlers.CardTextBlock
@@ -55,12 +55,12 @@ class MsTeamsCardFactory {
 
     fun fromUptimeEvent(event: UptimeMonitorEvent): MsTeamsMessage =
         event.toStructuredMessage().let {
-            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.getSeverity())
+            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
     fun fromSSLEvent(event: SSLMonitorEvent): MsTeamsMessage =
         event.toStructuredMessage().let {
-            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.getSeverity())
+            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
     fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): MsTeamsMessage =
@@ -70,7 +70,7 @@ class MsTeamsCardFactory {
 
     fun fromMaintenanceEvent(event: MaintenanceWindowEvent): MsTeamsMessage =
         event.toStructuredMessage().let {
-            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.getSeverity())
+            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
     fun testMessage(): MsTeamsMessage = buildCard(Messages.integrationTestMessage(), emptyList(), MessageSeverity.INFO)

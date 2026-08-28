@@ -2,17 +2,13 @@
 
 ### Features
 
-**Microsoft Teams** is a first-class integration now!
+**Three new integrations** joined the family, so you can reach more places without hand-crafting a webhook payload for them:
 
-- You can send your notifications to a Teams channel or chat through the [**`ms-teams` integration**](management/integrations.md#microsoft-teams), without having to hand-craft a webhook payload. The messages are posted as **Adaptive Cards**, color-coded by the severity of the event.
-- It's built on the **Workflows** app (powered by Power Automate), so it isn't affected by the retirement of the **Microsoft 365 (Office 365) Connectors**. If you were sending notifications to Teams through a custom webhook until now, you can replace that setup with a single `webhook-url` property.
-- Like every other integration, it can be **global** or assigned to specific monitors and maintenance windows, its events can be filtered with `excluded-events`, and it's testable right from the UI. It's also exposed on the REST API and through the MCP server.
+- [**Microsoft Teams**](management/integrations.md#microsoft-teams) posts **Adaptive Cards** to a channel or a chat, color-coded by the severity of the event. It's built on the **Workflows** app, so it isn't affected by the retirement of the _Microsoft 365 (Office 365) Connectors_.
+- [**Apprise**](management/integrations.md#apprise) hands your notifications to a self-hosted [**Apprise API**](https://github.com/caronc/apprise-api) instance, which forwards them to **80+ services** at once — _ntfy_, _Gotify_, _Matrix_, SMS providers and many more — so you don't have to wire them up one by one.
+- [**Pushover**](management/integrations.md#pushover) sends **push notifications** to your phone, tablet and desktop, and can escalate an outage to its **emergency priority**, which repeats until someone acknowledges it.
 
-**Apprise** joined the family as well!
-
-- The [**`apprise` integration**](management/integrations.md#apprise) hands your notifications to a self-hosted [**Apprise API**](https://github.com/caronc/apprise-api) instance, which forwards them to **80+ services** at once — _ntfy_, _Gotify_, _Matrix_, _Pushover_, SMS providers and many more — so you don't have to wire them up one by one.
-- Both modes are supported: point it at a **stored configuration** (`/notify/{key}`) to keep every target URL out of your _Kuvasz_ config, or list them in `target-urls` and use the **stateless** endpoint. A `tag` routes the notifications to a subset of a stored configuration, and `request-headers` lets you authenticate against an _Apprise_ instance that sits behind a reverse proxy.
-- If you were reaching _Apprise_ through a custom webhook until now, you can drop the payload template and replace the whole setup with a single `url`.
+All three behave like every other integration: they can be **global** or assigned to specific monitors and maintenance windows, their events can be filtered with `excluded-events`, and they're testable right from the UI, the REST API and the MCP server. If you were reaching any of them through a custom webhook until now, you can drop the payload template and replace the whole setup with a handful of properties.
 
 ## 4.2.0 <small>2026-08-10</small> { id="4.2.0" data-toc-label="4.2.0" }
 

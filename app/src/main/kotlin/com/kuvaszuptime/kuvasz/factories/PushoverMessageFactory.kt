@@ -27,44 +27,44 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.Emoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseType
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverPriority
 import com.kuvaszuptime.kuvasz.util.AppInfo
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 
 /**
- * Turns the notifiable events into Apprise notifications. The title names the subject of the event - the monitor
+ * Turns the notifiable events into Pushover notifications. The title names the subject of the event - the monitor
  * or the maintenance window it belongs to - while the summary and the remaining parts of its structured message
- * become the body. The severity is mapped onto the notification type Apprise translates to the target services,
- * so the texts never carry any markup.
+ * become the body, without any markup. The severity is mapped onto the priority of the notification, which decides
+ * whether it's allowed to break through the quiet hours of the recipient.
  **/
 @Singleton
-@Requires(bean = AppriseNotificationConfig::class)
-class AppriseMessageFactory {
+@Requires(bean = PushoverNotificationConfig::class)
+class PushoverMessageFactory {
 
-    fun fromUptimeEvent(event: UptimeMonitorEvent): AppriseMessage =
+    fun fromUptimeEvent(event: UptimeMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
             buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
-    fun fromSSLEvent(event: SSLMonitorEvent): AppriseMessage =
+    fun fromSSLEvent(event: SSLMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
             buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
-    fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): AppriseMessage =
+    fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): PushoverMessage =
         event.toStructuredMessage().let {
             buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), MessageSeverity.INFO)
         }
 
-    fun fromMaintenanceEvent(event: MaintenanceWindowEvent): AppriseMessage =
+    fun fromMaintenanceEvent(event: MaintenanceWindowEvent): PushoverMessage =
         event.toStructuredMessage().let {
             buildMessage("${event.getEmoji()} ${event.window.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
-    fun testMessage(): AppriseMessage =
+    fun testMessage(): PushoverMessage =
         buildMessage(
             title = "${Emoji.INFO} ${AppInfo.NAME}",
             summary = Messages.integrationTestMessage(),
@@ -77,20 +77,22 @@ class AppriseMessageFactory {
         summary: String,
         details: List<String>,
         severity: MessageSeverity,
-    ): AppriseMessage =
-        AppriseMessage(
-            title = title,
+    ): PushoverMessage =
+        PushoverMessage(
+            title = title.truncatedTo(TITLE_MAX_LENGTH),
             // The title only names the subject of the event, so the summary has to lead the body
-            body = (listOf(summary) + details).joinToString("\n"),
-            type = severity.toAppriseType(),
+            message = (listOf(summary) + details).joinToString("\n").truncatedTo(MESSAGE_MAX_LENGTH),
+            priority = severity.toPushoverPriority(),
         )
 
-    private fun MessageSeverity.toAppriseType(): AppriseType = when (this) {
-        MessageSeverity.CRITICAL -> AppriseType.FAILURE
-        MessageSeverity.WARNING -> AppriseType.WARNING
-        MessageSeverity.OK -> AppriseType.SUCCESS
-        MessageSeverity.INFO -> AppriseType.INFO
+    private fun MessageSeverity.toPushoverPriority(): PushoverPriority = when (this) {
+        MessageSeverity.CRITICAL -> PushoverPriority.HIGH
+        MessageSeverity.WARNING, MessageSeverity.OK, MessageSeverity.INFO -> PushoverPriority.NORMAL
     }
+
+    // Pushover answers with a 4xx instead of trimming, and a long enough monitor URL fits into a summary easily
+    private fun String.truncatedTo(maxLength: Int): String =
+        if (length <= maxLength) this else take(maxLength - 1).trimEnd() + "…"
 
     private fun StructuredMonitorMessage.toDetails(): List<String> = when (this) {
         is StructuredHttpMonitorUpMessage -> listOfNotNull(latency, previousDownTime)
@@ -117,4 +119,9 @@ class AppriseMessageFactory {
 
     private fun StructuredDnsRecordsChangedMessage.toDetails(): List<String> =
         listOfNotNull(details.takeIf { it.isNotBlank() })
+
+    companion object {
+        private const val TITLE_MAX_LENGTH = 250
+        private const val MESSAGE_MAX_LENGTH = 1024
+    }
 }

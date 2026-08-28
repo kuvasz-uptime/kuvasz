@@ -1,6 +1,6 @@
 package com.kuvaszuptime.kuvasz.handlers
 
-import com.kuvaszuptime.kuvasz.factories.AppriseMessageFactory
+import com.kuvaszuptime.kuvasz.factories.PushoverMessageFactory
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
@@ -24,8 +24,9 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -41,8 +42,8 @@ import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
-import com.kuvaszuptime.kuvasz.services.integrations.AppriseClient
-import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
+import com.kuvaszuptime.kuvasz.services.integrations.PushoverClient
+import com.kuvaszuptime.kuvasz.services.integrations.PushoverService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -65,7 +66,7 @@ import io.mockk.verify
 import io.reactivex.rxjava3.core.Single
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
-class AppriseEventHandlerTest(
+class PushoverEventHandlerTest(
     private val httpMonitorRepository: HttpMonitorRepository,
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
@@ -78,24 +79,24 @@ class AppriseEventHandlerTest(
     private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     integrationRepository: IntegrationRepository,
-    appriseNotificationConfigs: List<AppriseNotificationConfig>,
+    pushoverNotificationConfigs: List<PushoverNotificationConfig>,
     databaseEventHandler: DatabaseEventHandler,
 ) : EventHandlerTest(databaseEventHandler) {
 
-    private val mockClient = mockk<AppriseClient>()
+    private val mockClient = mockk<PushoverClient>()
 
-    private val globalAppriseConfig = appriseNotificationConfigs.first { it.enabled && it.global }
-    private val otherAppriseConfig = appriseNotificationConfigs.first { it.enabled && !it.global }
-    private val disabledAppriseConfig = appriseNotificationConfigs.first { !it.enabled }
+    private val globalPushoverConfig = pushoverNotificationConfigs.first { it.enabled && it.global }
+    private val otherPushoverConfig = pushoverNotificationConfigs.first { it.enabled && !it.global }
+    private val disabledPushoverConfig = pushoverNotificationConfigs.first { !it.enabled }
 
     init {
         val eventDispatcher = EventDispatcher()
-        val appriseService = AppriseService(mockClient, AppriseMessageFactory())
-        val appriseServiceSpy = spyk(appriseService, recordPrivateCalls = true)
+        val pushoverService = PushoverService(mockClient, PushoverMessageFactory())
+        val pushoverServiceSpy = spyk(pushoverService, recordPrivateCalls = true)
 
-        AppriseEventHandler(eventDispatcher, appriseServiceSpy, integrationRepository)
+        PushoverEventHandler(eventDispatcher, pushoverServiceSpy, integrationRepository)
 
-        given("the AppriseEventHandler - HTTP UPTIME events") {
+        given("the PushoverEventHandler - HTTP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorUpEvent(
@@ -108,7 +109,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -116,9 +123,9 @@ class AppriseEventHandlerTest(
                 val monitor = createHttpMonitor(
                     httpMonitorRepository,
                     integrations = listOf(
-                        globalAppriseConfig.id,
-                        otherAppriseConfig.id,
-                        disabledAppriseConfig.id,
+                        globalPushoverConfig.id,
+                        otherPushoverConfig.id,
+                        disabledPushoverConfig.id,
                     ),
                     sensitiveUrl = true,
                 )
@@ -133,11 +140,29 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event to all enabled integrations") {
-                    val slot = mutableListOf<AppriseMessage>()
+                    val slot = mutableListOf<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
 
                     slot.forAll { message ->
                         message.allText() shouldContain "Your monitor \"${monitor.name}\" (MASKED URL) is DOWN"
@@ -165,7 +190,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -190,9 +221,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain "(500)"
                 }
             }
@@ -218,12 +255,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<AppriseMessage>()
+                    val notificationsSent = mutableListOf<PushoverMessage>()
 
                     verify(exactly = 2) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationsSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationsSent),
+                            any<String>(),
                         )
                     }
                     notificationsSent[0].allText() shouldContain "is DOWN (500)"
@@ -253,12 +291,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the down event") {
-                    val notificationSent = slot<AppriseMessage>()
+                    val notificationSent = slot<PushoverMessage>()
 
                     verify(exactly = 1) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationSent),
+                            any<String>(),
                         )
                     }
                     notificationSent.captured.allText() shouldContain "is DOWN (500)"
@@ -266,7 +305,7 @@ class AppriseEventHandlerTest(
             }
         }
 
-        given("the AppriseEventHandler - PUSH UPTIME events") {
+        given("the PushoverEventHandler - PUSH UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createPushMonitor(pushMonitorRepository)
                 val event = PushMonitorUpEvent(
@@ -277,7 +316,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -285,9 +330,9 @@ class AppriseEventHandlerTest(
                 val monitor = createPushMonitor(
                     pushMonitorRepository,
                     integrations = listOf(
-                        globalAppriseConfig.id,
-                        otherAppriseConfig.id,
-                        disabledAppriseConfig.id,
+                        globalPushoverConfig.id,
+                        otherPushoverConfig.id,
+                        disabledPushoverConfig.id,
                     )
                 )
                 val event = PushMonitorDownEvent(
@@ -300,11 +345,29 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event to all enabled integrations") {
-                    val slot = mutableListOf<AppriseMessage>()
+                    val slot = mutableListOf<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
 
                     slot.forAll { message ->
                         message.allText() shouldBe "🚨 ${monitor.name}\nYour monitor \"${monitor.name}\" is DOWN"
@@ -328,7 +391,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -351,9 +420,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldBe "🚨 ${monitor.name}\nYour monitor \"${monitor.name}\" is DOWN"
                 }
             }
@@ -376,12 +451,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<AppriseMessage>()
+                    val notificationsSent = mutableListOf<PushoverMessage>()
 
                     verify(exactly = 2) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationsSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationsSent),
+                            any<String>(),
                         )
                     }
                     notificationsSent[0].allText() shouldBe
@@ -409,12 +485,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the down event") {
-                    val notificationSent = slot<AppriseMessage>()
+                    val notificationSent = slot<PushoverMessage>()
 
                     verify(exactly = 1) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationSent),
+                            any<String>(),
                         )
                     }
                     notificationSent.captured.allText() shouldStartWith
@@ -423,7 +500,7 @@ class AppriseEventHandlerTest(
             }
         }
 
-        given("the AppriseEventHandler - ICMP UPTIME events") {
+        given("the PushoverEventHandler - ICMP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createIcmpMonitor(icmpMonitorRepository)
                 val event = IcmpMonitorUpEvent(
@@ -436,7 +513,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -444,9 +527,9 @@ class AppriseEventHandlerTest(
                 val monitor = createIcmpMonitor(
                     icmpMonitorRepository,
                     integrations = listOf(
-                        globalAppriseConfig.id,
-                        otherAppriseConfig.id,
-                        disabledAppriseConfig.id,
+                        globalPushoverConfig.id,
+                        otherPushoverConfig.id,
+                        disabledPushoverConfig.id,
                     )
                 )
                 val event = IcmpMonitorDownEvent(
@@ -460,11 +543,29 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event to all enabled integrations") {
-                    val slot = mutableListOf<AppriseMessage>()
+                    val slot = mutableListOf<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
 
                     slot.forAll { message ->
                         message.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -492,7 +593,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -517,9 +624,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
                 }
             }
@@ -545,12 +658,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<AppriseMessage>()
+                    val notificationsSent = mutableListOf<PushoverMessage>()
 
                     verify(exactly = 2) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationsSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationsSent),
+                            any<String>(),
                         )
                     }
                     notificationsSent[0].allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -579,12 +693,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the down event") {
-                    val notificationSent = slot<AppriseMessage>()
+                    val notificationSent = slot<PushoverMessage>()
 
                     verify(exactly = 1) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationSent),
+                            any<String>(),
                         )
                     }
                     notificationSent.captured.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -592,7 +707,7 @@ class AppriseEventHandlerTest(
             }
         }
 
-        given("the AppriseEventHandler - TCP UPTIME events") {
+        given("the PushoverEventHandler - TCP UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createTcpMonitor(tcpMonitorRepository)
                 val event = TcpMonitorUpEvent(
@@ -604,7 +719,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -612,9 +733,9 @@ class AppriseEventHandlerTest(
                 val monitor = createTcpMonitor(
                     tcpMonitorRepository,
                     integrations = listOf(
-                        globalAppriseConfig.id,
-                        otherAppriseConfig.id,
-                        disabledAppriseConfig.id,
+                        globalPushoverConfig.id,
+                        otherPushoverConfig.id,
+                        disabledPushoverConfig.id,
                     )
                 )
                 val event = TcpMonitorDownEvent(
@@ -627,11 +748,29 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event to all enabled integrations") {
-                    val slot = mutableListOf<AppriseMessage>()
+                    val slot = mutableListOf<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
 
                     slot.forAll { message ->
                         message.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -657,7 +796,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -680,9 +825,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
                 }
             }
@@ -706,12 +857,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<AppriseMessage>()
+                    val notificationsSent = mutableListOf<PushoverMessage>()
 
                     verify(exactly = 2) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationsSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationsSent),
+                            any<String>(),
                         )
                     }
                     notificationsSent[0].allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -738,12 +890,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the down event") {
-                    val notificationSent = slot<AppriseMessage>()
+                    val notificationSent = slot<PushoverMessage>()
 
                     verify(exactly = 1) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationSent),
+                            any<String>(),
                         )
                     }
                     notificationSent.captured.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -751,7 +904,7 @@ class AppriseEventHandlerTest(
             }
         }
 
-        given("the AppriseEventHandler - DNS UPTIME events") {
+        given("the PushoverEventHandler - DNS UPTIME events") {
             `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
                 val monitor = createDnsMonitor(dnsMonitorRepository)
                 val event = DnsMonitorUpEvent(
@@ -763,7 +916,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -771,9 +930,9 @@ class AppriseEventHandlerTest(
                 val monitor = createDnsMonitor(
                     dnsMonitorRepository,
                     integrations = listOf(
-                        globalAppriseConfig.id,
-                        otherAppriseConfig.id,
-                        disabledAppriseConfig.id,
+                        globalPushoverConfig.id,
+                        otherPushoverConfig.id,
+                        disabledPushoverConfig.id,
                     )
                 )
                 val event = DnsMonitorDownEvent(
@@ -786,11 +945,29 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event to all enabled integrations") {
-                    val slot = mutableListOf<AppriseMessage>()
+                    val slot = mutableListOf<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
 
                     slot.forAll { message ->
                         message.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -816,7 +993,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -839,9 +1022,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
                 }
             }
@@ -865,12 +1054,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<AppriseMessage>()
+                    val notificationsSent = mutableListOf<PushoverMessage>()
 
                     verify(exactly = 2) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationsSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationsSent),
+                            any<String>(),
                         )
                     }
                     notificationsSent[0].allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -897,12 +1087,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the down event") {
-                    val notificationSent = slot<AppriseMessage>()
+                    val notificationSent = slot<PushoverMessage>()
 
                     verify(exactly = 1) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationSent),
+                            any<String>(),
                         )
                     }
                     notificationSent.captured.allText() shouldContain "Your monitor \"${monitor.name}\" is DOWN"
@@ -910,14 +1101,14 @@ class AppriseEventHandlerTest(
             }
         }
 
-        given("the AppriseEventHandler - DNS drift events") {
+        given("the PushoverEventHandler - DNS drift events") {
             `when`("it receives a DnsRecordsChangedEvent") {
                 val monitor = createDnsMonitor(
                     dnsMonitorRepository,
                     integrations = listOf(
-                        globalAppriseConfig.id,
-                        otherAppriseConfig.id,
-                        disabledAppriseConfig.id,
+                        globalPushoverConfig.id,
+                        otherPushoverConfig.id,
+                        disabledPushoverConfig.id,
                     )
                 )
                 val event = DnsRecordsChangedEvent(
@@ -930,11 +1121,29 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a drift notification to all enabled integrations") {
-                    val slot = mutableListOf<AppriseMessage>()
+                    val slot = mutableListOf<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
 
                     slot.forAll { message ->
                         message.allText() shouldContain "DNS records changed for monitor \"${monitor.name}\""
@@ -943,7 +1152,7 @@ class AppriseEventHandlerTest(
             }
         }
 
-        given("the AppriseEventHandler - SSL events") {
+        given("the PushoverEventHandler - SSL events") {
             `when`("it receives an SSLValidEvent and there is no previous event for the monitor") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = SSLValidEvent(
@@ -955,7 +1164,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should not send a webhook message about the event") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -963,9 +1178,9 @@ class AppriseEventHandlerTest(
                 val monitor = createHttpMonitor(
                     httpMonitorRepository,
                     integrations = listOf(
-                        globalAppriseConfig.id,
-                        otherAppriseConfig.id,
-                        disabledAppriseConfig.id,
+                        globalPushoverConfig.id,
+                        otherPushoverConfig.id,
+                        disabledPushoverConfig.id,
                     )
                 )
                 val event = SSLInvalidEvent(
@@ -978,11 +1193,29 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event to all enabled integrations") {
-                    val slot = mutableListOf<AppriseMessage>()
+                    val slot = mutableListOf<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                     slot.forAll { message ->
                         message.allText() shouldContain
                             "Your site \"${monitor.name}\" (${monitor.url}) has an INVALID certificate"
@@ -1008,7 +1241,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should not send notifications about them") {
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(any(), any()) }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            any<IntegrationConfig>(),
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
                 }
             }
 
@@ -1031,9 +1270,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain "ssl error1"
                 }
             }
@@ -1057,12 +1302,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send two different notifications about them") {
-                    val notificationsSent = mutableListOf<AppriseMessage>()
+                    val notificationsSent = mutableListOf<PushoverMessage>()
 
                     verify(exactly = 2) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationsSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationsSent),
+                            any<String>(),
                         )
                     }
                     notificationsSent[0].allText() shouldContain "has an INVALID certificate"
@@ -1089,12 +1335,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the invalid event") {
-                    val notificationSent = slot<AppriseMessage>()
+                    val notificationSent = slot<PushoverMessage>()
 
                     verify(exactly = 1) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationSent),
+                            any<String>(),
                         )
                     }
                     notificationSent.captured.allText() shouldContain "has an INVALID certificate"
@@ -1113,9 +1360,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a webhook message about the event") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain
                         "Your SSL certificate for \"${monitor.name}\" will expire soon"
                 }
@@ -1141,9 +1394,15 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification about them") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain originalValidTo.toString()
                 }
             }
@@ -1167,12 +1426,13 @@ class AppriseEventHandlerTest(
                 eventDispatcher.testDispatch(secondEvent)
 
                 then("it should send only one notification, about the expiration") {
-                    val notificationSent = slot<AppriseMessage>()
+                    val notificationSent = slot<PushoverMessage>()
 
                     verify(exactly = 1) {
-                        appriseServiceSpy.sendMessage(
-                            globalAppriseConfig,
-                            capture(notificationSent)
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            capture(notificationSent),
+                            any<String>(),
                         )
                     }
                     notificationSent.captured.allText() shouldContain
@@ -1181,23 +1441,41 @@ class AppriseEventHandlerTest(
             }
         }
 
-        given("the AppriseEventHandler - maintenance window events") {
+        given("the PushoverEventHandler - maintenance window events") {
             `when`("it receives a MaintenanceWindowStartEvent with explicitly assigned integrations") {
                 val window = createMaintenanceWindow(
                     dslContext,
                     description = "Planned upgrade",
-                    integrations = listOf(otherAppriseConfig.id, disabledAppriseConfig.id),
+                    integrations = listOf(otherPushoverConfig.id, disabledPushoverConfig.id),
                 )
                 mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(MaintenanceWindowStartEvent(window))
 
                 then("it should notify only the assigned & enabled integrations, ignoring global ones") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(globalAppriseConfig, any()) }
-                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            globalPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
+                    verify(inverse = true) {
+                        pushoverServiceSpy["sendMessage"](
+                            disabledPushoverConfig,
+                            any<PushoverMessage>(),
+                            any<String>(),
+                        )
+                    }
 
                     slot.captured.allText() shouldContain "Maintenance \"${window.name}\" has started"
                     slot.captured.allText() shouldContain "Planned upgrade"
@@ -1207,22 +1485,108 @@ class AppriseEventHandlerTest(
             `when`("it receives a MaintenanceWindowEndEvent with explicitly assigned integrations") {
                 val window = createMaintenanceWindow(
                     dslContext,
-                    integrations = listOf(otherAppriseConfig.id),
+                    integrations = listOf(otherPushoverConfig.id),
                 )
                 mockSuccessfulHttpResponse()
 
                 eventDispatcher.dispatch(MaintenanceWindowEndEvent(window))
 
                 then("it should notify the assigned integration with an end message") {
-                    val slot = slot<AppriseMessage>()
+                    val slot = slot<PushoverMessage>()
 
-                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) {
+                        pushoverServiceSpy["sendMessage"](
+                            otherPushoverConfig,
+                            capture(slot),
+                            any<String>(),
+                        )
+                    }
                     slot.captured.allText() shouldContain "Maintenance \"${window.name}\" has ended"
                 }
             }
         }
 
-        given("the AppriseEventHandler - error handling logic") {
+        given("the PushoverEventHandler - the cancellation of the emergency notifications") {
+            `when`("a monitor recovers") {
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    integrations = listOf(globalPushoverConfig.id, otherPushoverConfig.id),
+                )
+                mockSuccessfulHttpResponse()
+                mockSuccessfulCancellation()
+                eventDispatcher.testDispatch(
+                    HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception("error"), null)
+                )
+                val downRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                eventDispatcher.testDispatch(HttpMonitorUpEvent(monitor, HttpStatus.OK, 1000, downRecord))
+
+                then("it should call off the outstanding notifications of the escalating integration only") {
+                    // The globally enabled fixture is the one with emergency-enabled: true
+                    verify(exactly = 1) {
+                        mockClient.cancelEmergency(globalPushoverConfig.apiToken, "kuvasz_uptime_${monitor.id}")
+                    }
+                    verify(inverse = true) {
+                        mockClient.cancelEmergency(otherPushoverConfig.apiToken, any())
+                    }
+                }
+            }
+
+            `when`("a monitor goes down") {
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    integrations = listOf(globalPushoverConfig.id),
+                )
+                mockSuccessfulHttpResponse()
+                mockSuccessfulCancellation()
+
+                eventDispatcher.testDispatch(
+                    HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception("error"), null)
+                )
+
+                then("it should not cancel anything, as the outage is the very thing that raises the alert") {
+                    verify(inverse = true) { mockClient.cancelEmergency(any(), any()) }
+                }
+            }
+
+            `when`("a certificate becomes valid again") {
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    integrations = listOf(globalPushoverConfig.id),
+                )
+                mockSuccessfulHttpResponse()
+                mockSuccessfulCancellation()
+                eventDispatcher.testDispatch(
+                    SSLInvalidEvent(monitor = monitor, previousEvent = null, error = SSLValidationError("ssl error"))
+                )
+                val invalidRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+
+                eventDispatcher.testDispatch(SSLValidEvent(monitor, generateCertificateInfo(), invalidRecord))
+
+                then("it should call it off under the certificate's own tag") {
+                    verify(exactly = 1) {
+                        mockClient.cancelEmergency(globalPushoverConfig.apiToken, "kuvasz_ssl_${monitor.id}")
+                    }
+                }
+            }
+
+            `when`("a maintenance window ends") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    integrations = listOf(globalPushoverConfig.id),
+                )
+                mockSuccessfulHttpResponse()
+                mockSuccessfulCancellation()
+
+                eventDispatcher.dispatch(MaintenanceWindowEndEvent(window))
+
+                then("it should not cancel anything, as a maintenance window never escalates") {
+                    verify(inverse = true) { mockClient.cancelEmergency(any(), any()) }
+                }
+            }
+        }
+
+        given("the PushoverEventHandler - error handling logic") {
             `when`("it receives an event but an error happens when it calls the webhook") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
                 val event = HttpMonitorDownEvent(
@@ -1247,7 +1611,13 @@ class AppriseEventHandlerTest(
 
     private fun mockSuccessfulHttpResponse() {
         every {
-            mockClient.sendMessage(any(), any(), any())
+            mockClient.sendMessage(any())
+        } returns Single.just("ok")
+    }
+
+    private fun mockSuccessfulCancellation() {
+        every {
+            mockClient.cancelEmergency(any(), any())
         } returns Single.just("ok")
     }
 
@@ -1255,11 +1625,11 @@ class AppriseEventHandlerTest(
      * The notification flattened back into the very same text the other chat integrations would send,
      * so the expectations can stay comparable with theirs.
      **/
-    private fun AppriseMessage.allText(): String = "$title\n$body"
+    private fun PushoverMessage.allText(): String = "$title\n$message"
 
     private fun mockHttpErrorResponse() {
         every {
-            mockClient.sendMessage(any(), any(), any())
+            mockClient.sendMessage(any())
         } returns Single.error(
             HttpClientResponseException("error", HttpResponse.badRequest("bad_request"))
         )

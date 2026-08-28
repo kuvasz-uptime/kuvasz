@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
@@ -18,6 +19,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
+import com.kuvaszuptime.kuvasz.services.integrations.PushoverService
 import com.kuvaszuptime.kuvasz.services.integrations.TestableNotificationService
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
@@ -48,10 +50,10 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 27
-            enabledIntegrations shouldHaveSize 19
-            enabledIntegrationsByType shouldHaveSize 8
-            globallyEnabledIntegrationsByType shouldHaveSize 8
+            configuredIntegrations shouldHaveSize 30
+            enabledIntegrations shouldHaveSize 21
+            enabledIntegrationsByType shouldHaveSize 9
+            globallyEnabledIntegrationsByType shouldHaveSize 9
 
             // Check that all integrations are loaded correctly
             with(configuredIntegrations) {
@@ -150,6 +152,47 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "disabled"
                     config.type shouldBe IntegrationType.APPRISE
                     config.url shouldBe "http://apprise-host:8000/notify/disabled"
+                    config.enabled shouldBe false
+                    config.global shouldBe false
+                }
+                // Pushover
+                forOne { implicitlyEnabledPushover ->
+                    implicitlyEnabledPushover.key shouldBe
+                        IntegrationID(IntegrationType.PUSHOVER, "test_implicitly_enabled")
+                    val config = implicitlyEnabledPushover.value as PushoverNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.PUSHOVER
+                    config.apiToken shouldBe "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    config.userKey shouldBe "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+                    config.device shouldBe "iphone,desk"
+                    config.sound shouldBe "siren"
+                    config.emergencyEnabled shouldBe false
+                    config.emergencyRetrySeconds shouldBe 60
+                    config.emergencyExpireSeconds shouldBe 1800
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledPushover ->
+                    globallyEnabledPushover.key shouldBe IntegrationID(IntegrationType.PUSHOVER, "global")
+                    val config = globallyEnabledPushover.value as PushoverNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.PUSHOVER
+                    config.apiToken shouldBe "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    config.userKey shouldBe "gggggggggggggggggggggggggggggg"
+                    config.device shouldBe null
+                    config.sound shouldBe null
+                    config.emergencyEnabled shouldBe true
+                    config.emergencyRetrySeconds shouldBe 90
+                    config.emergencyExpireSeconds shouldBe 600
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
+                forOne { disabledPushover ->
+                    disabledPushover.key shouldBe IntegrationID(IntegrationType.PUSHOVER, "disabled")
+                    val config = disabledPushover.value as PushoverNotificationConfig
+                    config.name shouldBe "disabled"
+                    config.type shouldBe IntegrationType.PUSHOVER
+                    config.apiToken shouldBe "cccccccccccccccccccccccccccccc"
                     config.enabled shouldBe false
                     config.global shouldBe false
                 }
@@ -406,6 +449,30 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
+                // Pushover
+                forOne { implicitlyEnabledPushover ->
+                    implicitlyEnabledPushover.key shouldBe
+                        IntegrationID(IntegrationType.PUSHOVER, "test_implicitly_enabled")
+                    val config = implicitlyEnabledPushover.value as PushoverNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.PUSHOVER
+                    config.device shouldBe "iphone,desk"
+                    config.sound shouldBe "siren"
+                    config.emergencyEnabled shouldBe false
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledPushover ->
+                    globallyEnabledPushover.key shouldBe IntegrationID(IntegrationType.PUSHOVER, "global")
+                    val config = globallyEnabledPushover.value as PushoverNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.PUSHOVER
+                    config.emergencyEnabled shouldBe true
+                    config.emergencyRetrySeconds shouldBe 90
+                    config.emergencyExpireSeconds shouldBe 600
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
                 // Email
                 forOne { implicitlyEnabledEmail ->
                     implicitlyEnabledEmail.key shouldBe IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")
@@ -514,6 +581,7 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType[IntegrationType.SLACK].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.MS_TEAMS].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.APPRISE].shouldNotBeNull().shouldHaveSize(2)
+            enabledIntegrationsByType[IntegrationType.PUSHOVER].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.EMAIL].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.TELEGRAM].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.PAGERDUTY].shouldNotBeNull().shouldHaveSize(2)
@@ -541,6 +609,15 @@ class IntegrationBootstrappingTest : StringSpec({
                 name shouldBe "global"
                 enabled shouldBe true
                 url shouldBe "http://apprise-host:8000/notify"
+            }
+
+            with(
+                globallyEnabledIntegrationsByType[IntegrationType.PUSHOVER]?.single() as PushoverNotificationConfig
+            ) {
+                name shouldBe "global"
+                enabled shouldBe true
+                apiToken shouldBe "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                emergencyEnabled shouldBe true
             }
 
             with(globallyEnabledIntegrationsByType[IntegrationType.EMAIL]?.single() as EmailNotificationConfig) {
@@ -595,6 +672,7 @@ class IntegrationBootstrappingTest : StringSpec({
         }
         testServices.forNone { it should beInstanceOf<MsTeamsWebhookService>() }
         testServices.forNone { it should beInstanceOf<AppriseService>() }
+        testServices.forNone { it should beInstanceOf<PushoverService>() }
         testServices.forNone { it should beInstanceOf<GenericWebhookService>() }
     }
 
@@ -661,6 +739,24 @@ class IntegrationBootstrappingTest : StringSpec({
             IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
 
+    "app should not start if a Pushover config has a too short emergency retry" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-pushover-retry")
+        }
+
+        ex.message shouldContain "PushoverNotificationConfig.getEmergencyRetrySeconds - " +
+            IntegrationValidationMessages.PUSHOVER_EMERGENCY_RETRY_SECONDS_MIN.replace("{value}", "30")
+    }
+
+    "app should not start if a Pushover config has a too long emergency expiration" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-pushover-expire")
+        }
+
+        ex.message shouldContain "PushoverNotificationConfig.getEmergencyExpireSeconds - " +
+            IntegrationValidationMessages.PUSHOVER_EMERGENCY_EXPIRE_SECONDS_MAX.replace("{value}", "10800")
+    }
+
     "app should not start if a webhook config contains an invalid header" {
         val ex = shouldThrow<BeanInstantiationException> {
             testAppContext("invalid-webhook-header")
@@ -700,10 +796,10 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 27
-            enabledIntegrations shouldHaveSize 17 // Email configs should not be enabled without SMTP config
-            enabledIntegrationsByType shouldHaveSize 7 // Email type should not be present
-            globallyEnabledIntegrationsByType shouldHaveSize 7 // Email type should not be present
+            configuredIntegrations shouldHaveSize 30
+            enabledIntegrations shouldHaveSize 19 // Email configs should not be enabled without SMTP config
+            enabledIntegrationsByType shouldHaveSize 8 // Email type should not be present
+            globallyEnabledIntegrationsByType shouldHaveSize 8 // Email type should not be present
 
             // Check that Email configs are not loaded as enabled
             val implicitlyEnabledId = IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")

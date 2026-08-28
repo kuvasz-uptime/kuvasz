@@ -1,10 +1,13 @@
 package com.kuvaszuptime.kuvasz.models.handlers
 
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.core.bind.annotation.Bindable
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 
 sealed interface IntegrationConfig {
@@ -127,6 +130,43 @@ interface AppriseNotificationConfig : IntegrationConfig {
     }
 }
 
+@EachProperty(PushoverNotificationConfig.CONFIG_PREFIX, list = true)
+@Introspected
+interface PushoverNotificationConfig : IntegrationConfig {
+
+    @get:NotBlank(message = IntegrationValidationMessages.PUSHOVER_API_TOKEN_NOT_BLANK)
+    val apiToken: String
+
+    @get:NotBlank(message = IntegrationValidationMessages.PUSHOVER_USER_KEY_NOT_BLANK)
+    val userKey: String
+
+    val device: String?
+
+    val sound: String?
+
+    @get:Bindable(defaultValue = "false")
+    val emergencyEnabled: Boolean
+
+    @get:Bindable(defaultValue = "60")
+    @get:Min(
+        Validation.MIN_PUSHOVER_EMERGENCY_RETRY_SECONDS,
+        message = IntegrationValidationMessages.PUSHOVER_EMERGENCY_RETRY_SECONDS_MIN,
+    )
+    val emergencyRetrySeconds: Int
+
+    @get:Bindable(defaultValue = "1800")
+    @get:Max(
+        Validation.MAX_PUSHOVER_EMERGENCY_EXPIRE_SECONDS,
+        message = IntegrationValidationMessages.PUSHOVER_EMERGENCY_EXPIRE_SECONDS_MAX,
+    )
+    val emergencyExpireSeconds: Int
+
+    companion object {
+        const val IDENTIFIER = "pushover"
+        const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
+    }
+}
+
 @EachProperty(WebhookNotificationConfig.CONFIG_PREFIX, list = true)
 @Introspected
 interface WebhookNotificationConfig : IntegrationConfig {
@@ -164,6 +204,7 @@ val IntegrationConfig.type: IntegrationType
         is DiscordNotificationConfig -> IntegrationType.DISCORD
         is MsTeamsNotificationConfig -> IntegrationType.MS_TEAMS
         is AppriseNotificationConfig -> IntegrationType.APPRISE
+        is PushoverNotificationConfig -> IntegrationType.PUSHOVER
         is WebhookNotificationConfig -> IntegrationType.WEBHOOK
     }
 

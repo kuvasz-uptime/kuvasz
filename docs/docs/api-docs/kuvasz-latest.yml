@@ -4530,6 +4530,7 @@ components:
       - $ref: "#/components/schemas/DiscordNotificationConfigDto"
       - $ref: "#/components/schemas/MsTeamsNotificationConfigDto"
       - $ref: "#/components/schemas/AppriseNotificationConfigDto"
+      - $ref: "#/components/schemas/PushoverNotificationConfigDto"
       - $ref: "#/components/schemas/PagerdutyConfigDto"
       - $ref: "#/components/schemas/EmailNotificationConfigDto"
       - $ref: "#/components/schemas/TelegramNotificationConfigDto"
@@ -4597,6 +4598,7 @@ components:
       - DISCORD
       - MS_TEAMS
       - APPRISE
+      - PUSHOVER
       - WEBHOOK
     LatencyLogDto:
       required:
@@ -5489,6 +5491,55 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
+    PushoverNotificationConfigDto:
+      required:
+      - emergencyEnabled
+      - enabled
+      - excludedEvents
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
+        device:
+          type: string
+          description: "The devices the notifications are delivered to, instead of\
+            \ all of them"
+          nullable: true
+        sound:
+          type: string
+          description: "The sound the notifications are played with, instead of the\
+            \ user's default"
+          nullable: true
+        emergencyEnabled:
+          type: boolean
+          description: "Whether the critical events are sent with emergency priority,\
+            \ repeating until they are acknowledged"
     SSLEventDto:
       required:
       - endedAt
