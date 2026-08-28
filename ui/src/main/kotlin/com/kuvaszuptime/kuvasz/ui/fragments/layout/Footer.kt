@@ -27,6 +27,11 @@ internal fun FlowContent.footer(versionInfo: VersionInfo) {
                             icon = Icon.HEART,
                         )
                         footerListItem(
+                            label = Messages.feedback(),
+                            link = "https://forms.gle/tLEem28oFVCJmhHW9",
+                            externalLink = true,
+                        )
+                        footerListItem(
                             label = Messages.documentation(),
                             link = "https://kuvasz-uptime.dev",
                             externalLink = true,

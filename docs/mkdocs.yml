@@ -129,12 +129,13 @@ nav:
   - API docs: https://api-docs.kuvasz-uptime.dev
   - Changelog: changelog.md
   - Upgrade notes: upgrade-notes.md
-  - Roadmap: https://github.com/orgs/kuvasz-uptime/projects/2/views/1
   - Conventions: conventions.md
+  - Roadmap: https://github.com/orgs/kuvasz-uptime/projects/2/views/1
   - Localization: localization.md
   - Contributing: https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md
   - License: https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE
-  - Sponsoring ♥: sponsoring.md
+  - 📢 Feedback: https://forms.gle/tLEem28oFVCJmhHW9
+  - ❤️ Sponsoring: sponsoring.md
 copyright: >
   Copyright &copy; 2020 - 2026 Kuvasz Uptime - 
   <a href="#__consent">Change cookie settings</a>
