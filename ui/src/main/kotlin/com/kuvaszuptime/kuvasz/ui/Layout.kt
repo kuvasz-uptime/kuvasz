@@ -4,10 +4,11 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.AppInfo
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-private const val DEFAULT_TITLE = "Kuvasz Uptime"
+private const val DEFAULT_TITLE = AppInfo.NAME
 internal const val DOCTYPE_NOTATION = "<!DOCTYPE html>"
 
 internal fun withLayout(

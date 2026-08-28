@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.AppInfo
 import kotlinx.html.*
 import java.time.OffsetDateTime
 
@@ -36,7 +37,7 @@ internal fun FlowContent.statusPageFooter(statusPageGeneratedAt: OffsetDateTime)
                                 ) {
                                     classes(LINK_SECONDARY)
                                     targetBlank()
-                                    +"Kuvasz Uptime"
+                                    +AppInfo.NAME
                                 }
                             }
                         }

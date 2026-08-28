@@ -6,10 +6,11 @@ import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.AppInfo
 import kotlinx.html.*
 
 internal const val DEFAULT_SITE_LOGO_URL = "/public/kuvasz-avatar.png"
-internal const val DEFAULT_SITE_LOGO_ALT = "Kuvasz Uptime"
+internal const val DEFAULT_SITE_LOGO_ALT = AppInfo.NAME
 
 internal fun FlowContent.mainHeader(
     isAuthenticated: Boolean,

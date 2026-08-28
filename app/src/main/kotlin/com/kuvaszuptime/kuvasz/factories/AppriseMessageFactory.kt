@@ -23,19 +23,22 @@ import com.kuvaszuptime.kuvasz.models.events.StructuredSSLWillExpireMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredTcpMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredTcpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.formatters.Emoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseType
+import com.kuvaszuptime.kuvasz.util.AppInfo
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 
 /**
- * Turns the notifiable events into Apprise notifications. The summary of the event becomes the title, and the
- * remaining parts of its structured message become the body. The severity is mapped onto the notification type
- * Apprise translates to the target services, so the texts never carry any markup.
+ * Turns the notifiable events into Apprise notifications. The title names the subject of the event - the monitor
+ * or the maintenance window it belongs to - while the summary and the remaining parts of its structured message
+ * become the body. The severity is mapped onto the notification type Apprise translates to the target services,
+ * so the texts never carry any markup.
  **/
 @Singleton
 @Requires(bean = AppriseNotificationConfig::class)
@@ -43,32 +46,42 @@ class AppriseMessageFactory {
 
     fun fromUptimeEvent(event: UptimeMonitorEvent): AppriseMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun fromSSLEvent(event: SSLMonitorEvent): AppriseMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): AppriseMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), MessageSeverity.INFO)
+            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), MessageSeverity.INFO)
         }
 
     fun fromMaintenanceEvent(event: MaintenanceWindowEvent): AppriseMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${event.window.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun testMessage(): AppriseMessage =
-        buildMessage(Messages.integrationTestMessage(), emptyList(), MessageSeverity.INFO)
+        buildMessage(
+            title = "${Emoji.INFO} ${AppInfo.NAME}",
+            summary = Messages.integrationTestMessage(),
+            details = emptyList(),
+            severity = MessageSeverity.INFO,
+        )
 
-    private fun buildMessage(title: String, details: List<String>, severity: MessageSeverity): AppriseMessage =
+    private fun buildMessage(
+        title: String,
+        summary: String,
+        details: List<String>,
+        severity: MessageSeverity,
+    ): AppriseMessage =
         AppriseMessage(
             title = title,
-            // Apprise rejects a payload without a body, so an event without any detail repeats its title there
-            body = details.joinToString("\n").ifBlank { title },
+            // The title only names the subject of the event, so the summary has to lead the body
+            body = (listOf(summary) + details).joinToString("\n"),
             type = severity.toAppriseType(),
         )
 

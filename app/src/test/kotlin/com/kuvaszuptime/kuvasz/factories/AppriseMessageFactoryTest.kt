@@ -58,8 +58,10 @@ class AppriseMessageFactoryTest(
         .setUrl("https://test.url")
         .setSensitiveUrl(false)
 
-    // The factory repeats the title in the body of an event without any detail, since Apprise needs a non-empty body
-    fun AppriseMessage.detailLines(): List<String> = if (body == title) emptyList() else body.split("\n")
+    // The body always leads with the summary of the event, and the details follow it line by line
+    fun AppriseMessage.summaryLine(): String = body.substringBefore("\n")
+
+    fun AppriseMessage.detailLines(): List<String> = body.split("\n").drop(1)
 
     context("the notification payload") {
 
@@ -68,8 +70,8 @@ class AppriseMessageFactoryTest(
 
             val expected = """
                 {
-                  "title": "✅ Your monitor \"test_monitor\" (https://test.url) is UP (200)",
-                  "body": "Latency: 300ms",
+                  "title": "✅ test_monitor",
+                  "body": "Your monitor \"test_monitor\" (https://test.url) is UP (200)\nLatency: 300ms",
                   "type": "success",
                   "format": "text"
                 }
@@ -96,25 +98,27 @@ class AppriseMessageFactoryTest(
 
     context("the title and the body") {
 
-        should("render the summary as the title and the rest of the message as the body") {
+        should("name the subject of the event in the title, and lead the body with its summary") {
             val previousEvent = SslEventRecord().setStartedAt(getCurrentTimestamp().minusMinutes(30))
             val message = factory.fromSSLEvent(
                 SSLInvalidEvent(monitor, SSLValidationError("Chain error"), previousEvent)
             )
 
-            message.title shouldContain
+            message.title shouldBe "🚨 test_monitor"
+            message.summaryLine() shouldContain
                 "Your site \"test_monitor\" (https://test.url) has an INVALID certificate"
             message.detailLines().size shouldBe 2
             message.detailLines().first() shouldContain "Chain error"
         }
 
-        should("repeat the title in the body of an event without any detail, as Apprise rejects an empty body") {
+        should("carry nothing but the summary in the body of an event without any detail") {
             val message = factory.fromUptimeEvent(
                 HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception("Boom"), null)
             )
 
-            message.title shouldContain "Your monitor \"test_monitor\" (https://test.url) is DOWN (500)"
-            message.body shouldBe message.title
+            message.title shouldBe "🚨 test_monitor"
+            message.body shouldContain "Your monitor \"test_monitor\" (https://test.url) is DOWN (500)"
+            message.detailLines() shouldBe emptyList()
         }
 
         should("keep the newlines of a multi-line detail as they are") {
@@ -124,7 +128,7 @@ class AppriseMessageFactoryTest(
                 )
             )
 
-            message.body shouldBe "Rolling restart\nExpect a short downtime"
+            message.detailLines() shouldBe listOf("Rolling restart", "Expect a short downtime")
         }
 
         should("join the drifted DNS records into the body") {
@@ -143,7 +147,7 @@ class AppriseMessageFactoryTest(
                 )
             )
 
-            message.body shouldBe "A: [1.1.1.1] → [2.2.2.2]\nMX: [mx1.test] → [mx2.test]"
+            message.detailLines() shouldBe listOf("A: [1.1.1.1] → [2.2.2.2]", "MX: [mx1.test] → [mx2.test]")
         }
     }
 
@@ -198,7 +202,8 @@ class AppriseMessageFactoryTest(
         should("render a push event that has nothing but its summary") {
             val message = factory.fromUptimeEvent(PushMonitorUpEvent(pushMonitor, null))
 
-            message.title shouldBe "✅ Your monitor \"test_push_monitor\" is UP"
+            message.title shouldBe "✅ test_push_monitor"
+            message.body shouldBe "Your monitor \"test_push_monitor\" is UP"
             message.detailLines() shouldBe emptyList()
         }
     }
@@ -246,7 +251,8 @@ class AppriseMessageFactoryTest(
             val message = factory.testMessage()
 
             message.type shouldBe AppriseType.INFO
-            message.title shouldBe Messages.integrationTestMessage()
+            message.title shouldBe "ℹ️ Kuvasz Uptime"
+            message.body shouldBe Messages.integrationTestMessage()
             message.detailLines() shouldBe emptyList()
         }
     }

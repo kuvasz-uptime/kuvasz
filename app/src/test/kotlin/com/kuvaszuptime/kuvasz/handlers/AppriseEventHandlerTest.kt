@@ -307,7 +307,7 @@ class AppriseEventHandlerTest(
                     verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
 
                     slot.forAll { message ->
-                        message.allText() shouldBe "🚨 Your monitor \"${monitor.name}\" is DOWN"
+                        message.allText() shouldBe "🚨 ${monitor.name}\nYour monitor \"${monitor.name}\" is DOWN"
                     }
                 }
             }
@@ -354,7 +354,7 @@ class AppriseEventHandlerTest(
                     val slot = slot<AppriseMessage>()
 
                     verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
-                    slot.captured.allText() shouldBe "🚨 Your monitor \"${monitor.name}\" is DOWN"
+                    slot.captured.allText() shouldBe "🚨 ${monitor.name}\nYour monitor \"${monitor.name}\" is DOWN"
                 }
             }
 
@@ -385,9 +385,9 @@ class AppriseEventHandlerTest(
                         )
                     }
                     notificationsSent[0].allText() shouldBe
-                        "🚨 Your monitor \"${monitor.name}\" is DOWN"
+                        "🚨 ${monitor.name}\nYour monitor \"${monitor.name}\" is DOWN"
                     notificationsSent[1].allText() shouldStartWith
-                        "✅ Your monitor \"${monitor.name}\" is UP\nWas down for "
+                        "✅ ${monitor.name}\nYour monitor \"${monitor.name}\" is UP\nWas down for "
                 }
             }
 
@@ -418,7 +418,7 @@ class AppriseEventHandlerTest(
                         )
                     }
                     notificationSent.captured.allText() shouldStartWith
-                        "🚨 Your monitor \"${monitor.name}\" is DOWN\nWas up for "
+                        "🚨 ${monitor.name}\nYour monitor \"${monitor.name}\" is DOWN\nWas up for "
                 }
             }
         }
@@ -1253,10 +1253,9 @@ class AppriseEventHandlerTest(
 
     /**
      * The notification flattened back into the very same text the other chat integrations would send,
-     * so the expectations can stay comparable with theirs. An event without any detail repeats its title
-     * in the body, since Apprise rejects an empty one.
+     * so the expectations can stay comparable with theirs.
      **/
-    private fun AppriseMessage.allText(): String = if (body == title) title else "$title\n$body"
+    private fun AppriseMessage.allText(): String = "$title\n$body"
 
     private fun mockHttpErrorResponse() {
         every {

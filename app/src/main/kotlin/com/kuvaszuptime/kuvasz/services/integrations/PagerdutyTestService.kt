@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
+import com.kuvaszuptime.kuvasz.util.AppInfo
 import io.micronaut.context.annotation.Requires
 import io.reactivex.rxjava3.core.Single
 import jakarta.inject.Singleton
@@ -22,7 +23,7 @@ class PagerdutyTestService(private val pagerdutyAPIClient: PagerdutyAPIClient) :
             dedupKey = testDedupKey,
             payload = PagerdutyTriggerPayload(
                 summary = Messages.integrationTestMessage(),
-                source = "Kuvasz Uptime",
+                source = AppInfo.NAME,
                 severity = PagerdutySeverity.WARNING,
             )
         )

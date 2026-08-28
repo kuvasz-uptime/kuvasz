@@ -23,20 +23,22 @@ import com.kuvaszuptime.kuvasz.models.events.StructuredSSLWillExpireMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredTcpMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredTcpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.formatters.Emoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverPriority
+import com.kuvaszuptime.kuvasz.util.AppInfo
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 
 /**
- * Turns the notifiable events into Pushover notifications. The summary of the event becomes the title, and the
- * remaining parts of its structured message become the body, without any markup. The severity is mapped onto the
- * priority of the notification, which decides whether it's allowed to break through the quiet hours of the
- * recipient.
+ * Turns the notifiable events into Pushover notifications. The title names the subject of the event - the monitor
+ * or the maintenance window it belongs to - while the summary and the remaining parts of its structured message
+ * become the body, without any markup. The severity is mapped onto the priority of the notification, which decides
+ * whether it's allowed to break through the quiet hours of the recipient.
  **/
 @Singleton
 @Requires(bean = PushoverNotificationConfig::class)
@@ -44,32 +46,42 @@ class PushoverMessageFactory {
 
     fun fromUptimeEvent(event: UptimeMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun fromSSLEvent(event: SSLMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), MessageSeverity.INFO)
+            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), MessageSeverity.INFO)
         }
 
     fun fromMaintenanceEvent(event: MaintenanceWindowEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${event.window.name}", it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun testMessage(): PushoverMessage =
-        buildMessage(Messages.integrationTestMessage(), emptyList(), MessageSeverity.INFO)
+        buildMessage(
+            title = "${Emoji.INFO} ${AppInfo.NAME}",
+            summary = Messages.integrationTestMessage(),
+            details = emptyList(),
+            severity = MessageSeverity.INFO,
+        )
 
-    private fun buildMessage(title: String, details: List<String>, severity: MessageSeverity): PushoverMessage =
+    private fun buildMessage(
+        title: String,
+        summary: String,
+        details: List<String>,
+        severity: MessageSeverity,
+    ): PushoverMessage =
         PushoverMessage(
             title = title.truncatedTo(TITLE_MAX_LENGTH),
-            // Pushover rejects a payload without a message, so an event without any detail repeats its title there
-            message = details.joinToString("\n").ifBlank { title }.truncatedTo(MESSAGE_MAX_LENGTH),
+            // The title only names the subject of the event, so the summary has to lead the body
+            message = (listOf(summary) + details).joinToString("\n").truncatedTo(MESSAGE_MAX_LENGTH),
             priority = severity.toPushoverPriority(),
         )
 
