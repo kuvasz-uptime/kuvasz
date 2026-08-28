@@ -88,6 +88,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 | PagerDuty                            |      ✅       |        ❌        |        ❌        |
 | Webhook                              |      ✅       |        ❌        |        ❌        |
 | SMS / Voice call                     |     ✅\**     |        ❌        |  10 incl./month  |
+| Google Chat                          |     ✅\**     |        ✅        |        ✅        |
 | Mattermost                           |     ✅\**     |        ❌        |        ✅        |
 | Signal                               |     ✅\**     |        ❌        |        ❌        |
 
