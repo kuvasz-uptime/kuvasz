@@ -25,21 +25,18 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
 
     abstract fun italic(input: String): String
 
-    override fun toFormattedMessage(event: UptimeMonitorEvent): String = toMessageParts(event).assemble()
-
-    fun toMessageParts(event: UptimeMonitorEvent): List<String> =
-        when (event) {
-            is HttpMonitorUpEvent -> event.toParts()
-            is HttpMonitorDownEvent -> event.toParts()
-            is PushMonitorDownEvent -> event.toParts()
-            is PushMonitorUpEvent -> event.toParts()
-            is IcmpMonitorUpEvent -> event.toParts()
-            is IcmpMonitorDownEvent -> event.toParts()
-            is TcpMonitorUpEvent -> event.toParts()
-            is TcpMonitorDownEvent -> event.toParts()
-            is DnsMonitorUpEvent -> event.toParts()
-            is DnsMonitorDownEvent -> event.toParts()
-        }
+    override fun toFormattedMessage(event: UptimeMonitorEvent): String = when (event) {
+        is HttpMonitorUpEvent -> event.toParts()
+        is HttpMonitorDownEvent -> event.toParts()
+        is PushMonitorDownEvent -> event.toParts()
+        is PushMonitorUpEvent -> event.toParts()
+        is IcmpMonitorUpEvent -> event.toParts()
+        is IcmpMonitorDownEvent -> event.toParts()
+        is TcpMonitorUpEvent -> event.toParts()
+        is TcpMonitorDownEvent -> event.toParts()
+        is DnsMonitorUpEvent -> event.toParts()
+        is DnsMonitorDownEvent -> event.toParts()
+    }.assemble()
 
     private fun HttpMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
         listOfNotNull(getEmoji() + " " + bold(details.summary), italic(details.latency), details.previousDownTime)
@@ -94,46 +91,38 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
         listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
     }
 
-    fun toFormattedMessage(event: DnsRecordsChangedEvent): String = toMessageParts(event).assemble()
+    fun toFormattedMessage(event: DnsRecordsChangedEvent): String = event.toStructuredMessage().let { details ->
+        listOfNotNull(
+            event.getEmoji() + " " + bold(details.summary),
+            details.details.takeIf { it.isNotBlank() },
+        )
+    }.assemble()
 
-    fun toMessageParts(event: DnsRecordsChangedEvent): List<String> =
-        event.toStructuredMessage().let { details ->
+    override fun toFormattedMessage(event: SSLMonitorEvent): String = when (event) {
+        is SSLValidEvent -> event.toStructuredMessage().let { details ->
             listOfNotNull(
                 event.getEmoji() + " " + bold(details.summary),
-                details.details.takeIf { it.isNotBlank() },
+                details.previousInvalidEvent
             )
         }
 
-    override fun toFormattedMessage(event: SSLMonitorEvent): String = toMessageParts(event).assemble()
-
-    fun toMessageParts(event: SSLMonitorEvent): List<String> =
-        when (event) {
-            is SSLValidEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    details.previousInvalidEvent
-                )
-            }
-
-            is SSLWillExpireEvent -> event.toStructuredMessage().let { details ->
-                listOf(
-                    event.getEmoji() + " " + bold(details.summary),
-                    italic(details.validUntil)
-                )
-            }
-
-            is SSLInvalidEvent -> event.toStructuredMessage().let { details ->
-                listOfNotNull(
-                    event.getEmoji() + " " + bold(details.summary),
-                    italic(details.error),
-                    details.previousValidEvent
-                )
-            }
+        is SSLWillExpireEvent -> event.toStructuredMessage().let { details ->
+            listOf(
+                event.getEmoji() + " " + bold(details.summary),
+                italic(details.validUntil)
+            )
         }
 
-    override fun toFormattedMessage(event: MaintenanceWindowEvent): String = toMessageParts(event).assemble()
+        is SSLInvalidEvent -> event.toStructuredMessage().let { details ->
+            listOfNotNull(
+                event.getEmoji() + " " + bold(details.summary),
+                italic(details.error),
+                details.previousValidEvent
+            )
+        }
+    }.assemble()
 
-    fun toMessageParts(event: MaintenanceWindowEvent): List<String> =
+    override fun toFormattedMessage(event: MaintenanceWindowEvent): String =
         event.toStructuredMessage().let { details ->
             val headline = event.getEmoji() + " " + bold(details.summary)
             when (details) {
@@ -142,7 +131,7 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
 
                 is StructuredMaintenanceEndMessage -> listOf(headline)
             }
-        }
+        }.assemble()
 
     private fun List<String>.assemble(): String = joinToString("\n")
 }
