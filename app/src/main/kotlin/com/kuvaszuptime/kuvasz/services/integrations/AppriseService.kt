@@ -44,7 +44,10 @@ class AppriseService(
         return client.sendMessage(
             url = appriseConfig.url.toUri(),
             headers = appriseConfig.requestHeaders.orEmpty(),
-            message = message.copy(tag = appriseConfig.tag, urls = appriseConfig.targetUrls),
+            message = message.copy(
+                tag = appriseConfig.tag,
+                urls = appriseConfig.targetUrls?.takeIf { it.isNotEmpty() },
+            ),
         )
     }
 

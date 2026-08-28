@@ -114,7 +114,7 @@ interface AppriseNotificationConfig : IntegrationConfig {
     @get:NotBlank(message = IntegrationValidationMessages.APPRISE_URL_NOT_BLANK)
     val url: String
 
-    val targetUrls: String?
+    val targetUrls: List<String>?
 
     val tag: String?
 

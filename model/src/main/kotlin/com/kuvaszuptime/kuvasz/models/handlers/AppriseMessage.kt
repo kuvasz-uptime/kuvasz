@@ -12,7 +12,7 @@ data class AppriseMessage(
     val type: AppriseType,
     val format: AppriseFormat = AppriseFormat.TEXT,
     val tag: String? = null,
-    val urls: String? = null,
+    val urls: List<String>? = null,
 )
 
 @Introspected
