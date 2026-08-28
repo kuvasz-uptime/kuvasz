@@ -10,6 +10,7 @@ enum class IntegrationType(
     TELEGRAM(TelegramNotificationConfig.IDENTIFIER),
     DISCORD(DiscordNotificationConfig.IDENTIFIER),
     MS_TEAMS(MsTeamsNotificationConfig.IDENTIFIER, displayName = "Microsoft Teams"),
+    APPRISE(AppriseNotificationConfig.IDENTIFIER),
     WEBHOOK(WebhookNotificationConfig.IDENTIFIER);
 
     companion object {

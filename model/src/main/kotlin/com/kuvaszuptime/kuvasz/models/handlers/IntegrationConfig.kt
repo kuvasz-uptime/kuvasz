@@ -107,6 +107,26 @@ interface TelegramNotificationConfig : IntegrationConfig {
     }
 }
 
+@EachProperty(AppriseNotificationConfig.CONFIG_PREFIX, list = true)
+@Introspected
+interface AppriseNotificationConfig : IntegrationConfig {
+
+    @get:NotBlank(message = IntegrationValidationMessages.APPRISE_URL_NOT_BLANK)
+    val url: String
+
+    val targetUrls: List<String>?
+
+    val tag: String?
+
+    @get:ValidHeaderNames
+    val requestHeaders: Map<String, String>?
+
+    companion object {
+        const val IDENTIFIER = "apprise"
+        const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
+    }
+}
+
 @EachProperty(WebhookNotificationConfig.CONFIG_PREFIX, list = true)
 @Introspected
 interface WebhookNotificationConfig : IntegrationConfig {
@@ -143,6 +163,7 @@ val IntegrationConfig.type: IntegrationType
         is TelegramNotificationConfig -> IntegrationType.TELEGRAM
         is DiscordNotificationConfig -> IntegrationType.DISCORD
         is MsTeamsNotificationConfig -> IntegrationType.MS_TEAMS
+        is AppriseNotificationConfig -> IntegrationType.APPRISE
         is WebhookNotificationConfig -> IntegrationType.WEBHOOK
     }
 

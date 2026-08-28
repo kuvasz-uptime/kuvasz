@@ -54,7 +54,7 @@ Drift notifications behave differently from uptime events:
 Maintenance notifications behave differently from monitor events:
 
 - They are sent **only to the integrations explicitly assigned to the maintenance window**. Unlike monitor events, **globally-enabled integrations are intentionally ignored** here, so a global integration only receives maintenance notifications when it is explicitly assigned to the window.
-- All integration types are supported (Slack, Discord, Microsoft Teams, Email, PagerDuty, Telegram and custom webhooks). On PagerDuty a start event triggers a `warning` alert and the end event resolves it.
+- All integration types are supported. On PagerDuty a start event triggers a `warning` alert and the end event resolves it.
 - For **custom webhooks**, maintenance events reuse the same payload contract as monitor events, but the monitor-specific fields are blank, because a maintenance window is not tied to a single monitor: `monitorId` is `0` and `monitorUrn`, `monitorName` and `monitorDetailsUrl` are empty strings. The `type`, `timestamp` and `eventDetails` fields are populated as usual, and any existing `payloadTemplate` keeps working (the blank monitor variables simply render as empty).
 
 !!! tip "Excluding certain events"
@@ -80,6 +80,13 @@ color-coded by the severity of the event. It uses the **Workflows** app, so it i
 of the Microsoft 365 Connectors.
 
 ![Teams integration](../images/integrations/teams.webp)
+
+## Apprise <!-- md:config ../management/integrations.md#apprise -->
+
+The _Apprise_ integration hands your notifications to a self-hosted
+[**Apprise API**](https://github.com/caronc/apprise-api) instance, which forwards them to
+**80+ services** at once - from _ntfy_ and _Gotify_ through _Matrix_ and _Pushover_ to SMS providers. The
+severity of the event travels with the notification, so the targets can color and prioritize it accordingly.
 
 ## Email <!-- md:config ../management/integrations.md#email -->
 
@@ -113,4 +120,4 @@ Since you can configure which events the webhook should watch, and also the payl
 
 !!! tip "Do you miss an integration?"
 
-    If you **miss an integration**, please [open an issue](https://github.com/kuvasz-uptime/kuvasz/issues/new?template=feature_request.md){target="_blank"}, or consider contributing it yourself! We are always open to new integrations and **would love to see your contribution**.
+    If you **miss an integration**, please [open an issue](https://github.com/kuvasz-uptime/kuvasz/issues/new?template=feature_request.md), or consider contributing it yourself! We are always open to new integrations and **would love to see your contribution**.

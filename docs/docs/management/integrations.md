@@ -126,7 +126,7 @@ The Slack integration allows you to send notifications to a Slack channel **via 
 <!-- md:type `string` -->
 <!-- md:yaml_prop `webhook-url` -->
 
-The webhook URL of the Slack channel where the notifications will be sent. You can create a webhook URL in your Slack workspace by following the [**official documentation**](https://api.slack.com/messaging/webhooks){target="_blank"}.
+The webhook URL of the Slack channel where the notifications will be sent. You can create a webhook URL in your Slack workspace by following the [**official documentation**](https://api.slack.com/messaging/webhooks).
 
 ---
 
@@ -162,7 +162,7 @@ The webhook URL of the Discord channel where the notifications will be sent. You
 4. Configure the webhook name and select the target channel
 5. Copy the **Webhook URL**
 
-For more information, see the [**official Discord documentation**](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks){target="_blank"}.
+For more information, see the [**official Discord documentation**](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
 
 ---
 
@@ -182,7 +182,7 @@ integrations:
 **Configuration alias**: `ms-teams`
 
 The Microsoft Teams integration sends notifications to a Teams channel or chat as an
-[**Adaptive Card**](https://adaptivecards.io/){target="_blank"}, color-coded by the severity of the event.
+[**Adaptive Card**](https://adaptivecards.io/), color-coded by the severity of the event.
 
 !!! warning "Workflows only, not the retired Microsoft 365 Connectors"
 
@@ -205,7 +205,7 @@ The URL of the Teams workflow the notifications will be sent to. To create one:
 5. Copy the **webhook URL** the workflow generated
 
 For more information, see the
-[**official documentation**](https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498){target="_blank"}.
+[**official documentation**](https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498).
 
 !!! danger "Treat the URL as a secret"
 
@@ -232,6 +232,132 @@ integrations:
     flow itself runs. _Kuvasz_ therefore logs the notification as sent even when the flow fails afterwards, for
     example because it was turned off. If a card never shows up in the channel despite a successful test, check
     the **run history of the workflow** in Power Automate.
+
+## Apprise
+
+**Configuration alias**: `apprise`
+
+[**Apprise API**](https://github.com/caronc/apprise-api) is a self-hosted REST gateway that
+forwards a single notification to **80+ services** at once - Slack, Discord, Telegram, ntfy, Gotify, Matrix,
+Pushover, email, SMS providers and many more. Instead of configuring each of them in _Kuvasz_ separately, you
+can hand the notification to _Apprise_ and let it fan out.
+
+The notifications are sent with a **title**, a **body** and a **type** that carries the severity of the event,
+which _Apprise_ translates to whatever the target service understands: the color of a _Discord_ embed, the
+priority of an _ntfy_ message, or the icon of a desktop notification.
+
+| Event                                                            | Apprise type |
+|------------------------------------------------------------------|--------------|
+| A monitor or a certificate recovered, a maintenance window ended | `success`    |
+| A monitor went down, a certificate became invalid                | `failure`    |
+| A certificate is about to expire                                 | `warning`    |
+| DNS records drifted, a maintenance window started                | `info`       |
+
+### URL
+
+<!-- md:version 4.3.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `url` -->
+
+The **notify endpoint** of your _Apprise API_ instance. _Apprise_ can be used in two ways, and this URL decides
+which one you get:
+
+- **Stateful**: you store your service URLs in _Apprise_ under a key (e.g. `POST /add/kuvasz`), then point
+  _Kuvasz_ at `http://your-apprise-host:8000/notify/kuvasz`. **No secrets end up in the _Kuvasz_ configuration**,
+  which is why this is the recommended setup.
+- **Stateless**: you point _Kuvasz_ at `http://your-apprise-host:8000/notify` and list the target services in
+  [**`target-urls`**](#target-urls) instead. Nothing is persisted on the _Apprise_ side, so it needs no volume.
+
+### Target URLs
+
+<!-- md:version 4.3.0 -->
+<!-- md:default empty -->
+<!-- md:type list -->
+<!-- md:yaml_prop `target-urls` -->
+
+The **_Apprise_ service URLs** the notifications should be delivered to, for the **stateless** mode. Leave it
+empty when you use a stored configuration.
+
+Every entry is an _Apprise_ URL, not a regular one - `slack://TokenA/TokenB/TokenC`, `tgram://bottoken/ChatID`,
+`ntfy://topic`, and so on. The full list of the supported formats is in the
+[**Apprise wiki**](https://appriseit.com/).
+
+!!! danger "Treat these URLs as secrets"
+
+    _Apprise_ service URLs embed the tokens of the target services, so anyone who has them can post messages in
+    your name. Check the [**examples**](examples.md#keeping-secrets-out-of-your-configuration-file) on how to
+    keep them out of your configuration file, or avoid the problem entirely by using the **stateful** mode.
+
+### Tag
+
+<!-- md:version 4.3.0 -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `tag` -->
+
+Routes the notifications to a **subset of a stored _Apprise_ configuration**, for the **stateful** mode. Only
+makes sense if the entries of your configuration are tagged.
+
+_Apprise_ has its own little grammar here, where a **comma means OR** and a **space means AND**:
+
+| Value | Matches |
+|-------|---------|
+| `devops` | the entries tagged `devops` |
+| `devops, oncall` | the entries tagged `devops` **or** `oncall` |
+| `devops critical` | the entries tagged `devops` **and** `critical` |
+| `devops critical, oncall` | the entries tagged (`devops` **and** `critical`) **or** `oncall` |
+| `all` | **every** entry, tagged or not |
+
+!!! warning "Leaving it empty does not mean *everything*"
+
+    When no tag is given, _Apprise_ matches the notification against the **untagged entries only**. So if every
+    entry of your stored configuration is tagged, **nothing is delivered** and _Apprise_ answers with a
+    `424 Failed Dependency`, which shows up as a failed notification in the _Kuvasz_ logs.
+
+    Set **`tag: all`** to reach every entry regardless of its tags.
+
+    Note that this only affects the **stateful** mode: on the stateless endpoint _Apprise_ itself defaults to
+    `all`, so the same _Kuvasz_ configuration behaves differently in the two modes.
+
+### Request headers
+
+<!-- md:version 4.3.0 -->
+<!-- md:default empty -->
+<!-- md:type map -->
+<!-- md:yaml_prop `request-headers` -->
+
+Optional **HTTP headers that will be included in the requests** sent to your _Apprise_ instance.
+
+_Apprise API_ ships **no authentication of its own**, so unlike a _Slack_ or a _Discord_ webhook URL - which
+carries its own signature - an _Apprise_ endpoint is only as protected as the network it sits on. If you put
+yours behind a reverse proxy that requires a token, you can pass it here.
+
+```yaml
+request-headers:
+  Authorization: "Bearer YourToken"
+```
+
+---
+
+```yaml title="Apprise integration example"
+integrations:
+  apprise:
+    # Stateful: the target services are stored in Apprise under the "kuvasz" key
+    - name: apprise-example
+      url: 'http://your-apprise-host:8000/notify/kuvasz'
+    # ...routing to a subset of that stored configuration
+    - name: apprise-devops
+      url: 'http://your-apprise-host:8000/notify/kuvasz'
+      tag: 'devops, oncall'
+      global: true
+    # Stateless: the target services travel in every request
+    - name: apprise-stateless
+      url: 'http://your-apprise-host:8000/notify'
+      target-urls:
+        - 'slack://TokenA/TokenB/TokenC'
+        - 'tgram://bottoken/ChatID'
+    # ... other Apprise integrations
+```
 
 ## Email
 
@@ -289,7 +415,7 @@ The _PagerDuty_ integration allows you to **trigger incidents in PagerDuty** whe
     1. From the **Configuration** menu, select **Services**.
     2. There are two ways to add an integration to a service:
        * **If you are adding your integration to an existing service**: Click the **name** of the service you want to add the integration to. Then, select the **Integrations** tab and click the **New Integration** button.
-       * **If you are creating a new service for your integration**: Please read our documentation in section [Configuring Services and Integrations](https://support.pagerduty.com/docs/services-and-integrations#section-configuring-services-and-integrations){target="_blank"} and follow the steps outlined in the [Create a New Service](https://support.pagerduty.com/docs/services-and-integrations#section-create-a-new-service){target="_blank"} section, selecting "Kuvasz" as the **Integration Type** in step 4. Continue with the "In Kuvasz"  section (below) once you have finished these steps.
+       * **If you are creating a new service for your integration**: Please read our documentation in section [Configuring Services and Integrations](https://support.pagerduty.com/docs/services-and-integrations#section-configuring-services-and-integrations) and follow the steps outlined in the [Create a New Service](https://support.pagerduty.com/docs/services-and-integrations#section-create-a-new-service) section, selecting "Kuvasz" as the **Integration Type** in step 4. Continue with the "In Kuvasz"  section (below) once you have finished these steps.
     3. Enter an **Integration Name** in the format `monitoring-tool-service-name` (e.g.  Kuvasz-Your-Service) and select "Kuvasz" from the Integration Type menu.
     4. Click the **Add Integration** button to save your new integration. You will be redirected to the Integrations tab for your service.
     5. An **Integration Key** will be generated on this screen. Keep this key saved in a safe place, as it will be used when you configure the integration with Kuvasz in the next section.
@@ -461,9 +587,9 @@ The generic webhook message (if you don't use a custom template) has the followi
 
 ### Header & payload templates
 
-_Kuvasz_ uses the [**Pebble**](https://pebbletemplates.io/){target="_blank"} templating engine, so you can use all the features provided by Pebble in your templates, including conditionals, loops, filters, and more. Pebble is very similar to Twig (PHP) and Jinja (Python) in order to make it easy to use and understand, even if you didn't work with a JVM templating engine before.
+_Kuvasz_ uses the [**Pebble**](https://pebbletemplates.io/) templating engine, so you can use all the features provided by Pebble in your templates, including conditionals, loops, filters, and more. Pebble is very similar to Twig (PHP) and Jinja (Python) in order to make it easy to use and understand, even if you didn't work with a JVM templating engine before.
 
-For further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
+For further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/).
 
 !!! warning "Strict variables"
 
@@ -573,15 +699,15 @@ webhook:
 ## Webhook examples
 
 Here are some examples of webhook configurations that you can use for different 3rd party services as a starting point.
-_Kuvasz_ is using _Pebble_ as a templating engine under the hood, for further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/){target="_blank"}.
+_Kuvasz_ is using _Pebble_ as a templating engine under the hood, for further information on how to use Pebble templates, please refer to the [**official documentation**](https://pebbletemplates.io/wiki/guide/basic-usage/).
 
 !!! tip "Sharing is caring!"
 
-    Did you make a cool webhook configuration that you would like to share with the community? Feel free to open a PR on [GitHub](https://github.com/kuvasz-uptime/kuvasz){target="_blank"} with your example, and we will add it to the documentation!
+    Did you make a cool webhook configuration that you would like to share with the community? Feel free to open a PR on [GitHub](https://github.com/kuvasz-uptime/kuvasz) with your example, and we will add it to the documentation!
 
 ### Signal (via signal-cli-rest-api)
 
-This example sends notifications to a _Signal_ chat using [**signal-cli-rest-api**](https://github.com/bbernhard/signal-cli-rest-api){target="_blank"} — a self-hosted, dockerized REST wrapper around `signal-cli`. You need a dedicated Signal number registered with the container (see the project's README for setup).
+This example sends notifications to a _Signal_ chat using [**signal-cli-rest-api**](https://github.com/bbernhard/signal-cli-rest-api) — a self-hosted, dockerized REST wrapper around `signal-cli`. You need a dedicated Signal number registered with the container (see the project's README for setup).
 
 ```yaml
 integrations:
@@ -598,7 +724,7 @@ integrations:
 
 ### Twilio — SMS
 
-This example sends an SMS via the [**Twilio Messaging API**](https://www.twilio.com/docs/messaging/api/message-resource){target="_blank"}.
+This example sends an SMS via the [**Twilio Messaging API**](https://www.twilio.com/docs/messaging/api/message-resource).
 
 !!! info "Content type"
 
@@ -606,7 +732,7 @@ This example sends an SMS via the [**Twilio Messaging API**](https://www.twilio.
 
 **Twilio setup:**
 
-1. Log in to the [**Twilio Console**](https://console.twilio.com){target="_blank"}.
+1. Log in to the [**Twilio Console**](https://console.twilio.com).
 2. On the dashboard, note your **Account SID** and **Auth Token**.
 3. Make sure you have a Twilio phone number capable of sending SMS. You can get one under **Phone Numbers → Manage → Buy a number**.
 4. Compute your Base64-encoded credentials by running the following command, then copy the output:
@@ -631,7 +757,7 @@ Replace `%2B15551234567` with your Twilio number and `%2B15550005678` with the r
 
 ### ntfy
 
-This example sends notifications to an [**ntfy**](https://ntfy.sh){target="_blank"} topic — a lightweight, self-hostable push notification service. ntfy supports both the hosted `ntfy.sh` server and self-hosted instances.
+This example sends notifications to an [**ntfy**](https://ntfy.sh) topic — a lightweight, self-hostable push notification service. ntfy supports both the hosted `ntfy.sh` server and self-hosted instances.
 
 ```yaml title="Kuvasz configuration"
 integrations:
@@ -656,11 +782,11 @@ integrations:
 
 ### Pushover
 
-This example sends a push notification via [**Pushover**](https://pushover.net){target="_blank"} — a simple, cross-platform push notification service supporting Android, iOS, and desktop.
+This example sends a push notification via [**Pushover**](https://pushover.net) — a simple, cross-platform push notification service supporting Android, iOS, and desktop.
 
 **Pushover setup:**
 
-1. Sign up at [**pushover.net**](https://pushover.net){target="_blank"} and copy your **User Key** from the dashboard.
+1. Sign up at [**pushover.net**](https://pushover.net) and copy your **User Key** from the dashboard.
 2. Create a new **application** under _Your Applications_ and copy the resulting **API Token**.
 
 ```yaml title="Kuvasz configuration"
@@ -678,11 +804,11 @@ integrations:
         }
 ```
 
-The `priority` field is set to `1` (high — bypasses quiet hours) for "down" and "invalid" events, and `0` (normal) for everything else. You can raise it to `2` (emergency — requires acknowledgement) for truly critical alerts, but that requires additional `retry` and `expire` fields in the payload — see the [**Pushover API documentation**](https://pushover.net/api){target="_blank"} for details.
+The `priority` field is set to `1` (high — bypasses quiet hours) for "down" and "invalid" events, and `0` (normal) for everything else. You can raise it to `2` (emergency — requires acknowledgement) for truly critical alerts, but that requires additional `retry` and `expire` fields in the payload — see the [**Pushover API documentation**](https://pushover.net/api) for details.
 
 ### Home Assistant — webhook automation
 
-This example triggers a [**Home Assistant webhook automation**](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger){target="_blank"} when a monitor event occurs, letting you react to uptime events natively within Home Assistant — for example, to send a mobile notification, toggle a switch, or run a script.
+This example triggers a [**Home Assistant webhook automation**](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger) when a monitor event occurs, letting you react to uptime events natively within Home Assistant — for example, to send a mobile notification, toggle a switch, or run a script.
 
 !!! tip
 
@@ -722,7 +848,7 @@ integrations:
 
 ### Google Chat
 
-This example posts a message to a [**Google Chat**](https://chat.google.com){target="_blank"} space via an incoming webhook.
+This example posts a message to a [**Google Chat**](https://chat.google.com) space via an incoming webhook.
 
 **Google Chat setup:**
 
@@ -743,47 +869,15 @@ integrations:
 
 ### Apprise API
 
-
-[**Apprise API**](https://github.com/caronc/apprise-api) is a self-hosted REST wrapper around 80+ notification services (Slack, Discord, Telegram, email, and many more). One _Kuvasz_ webhook config can fan out to multiple targets at once.
-
-**Apprise API setup:**
-
-Deploy the Apprise API server (Docker image: `caronc/apprise`). You can then use it in two ways:
-
-- **Stateless**: pass one or more notification URLs directly in the payload.
-- **Stateful**: persist a set of URLs under a named key in Apprise, then reference that key in the webhook URL — no secrets in the _Kuvasz_ config.
-
-```yaml title="Kuvasz configuration — stateless"
-integrations:
-  webhook:
-    - name: apprise-stateless
-      url: 'http://your-apprise-host/notify/'
-      payload-template: |
-        {
-          "urls":  "slack://TokenA/TokenB/TokenC",
-          "title": "{{ ctx.monitorName | escape(strategy="js") }}",
-          "body":  "{{ ctx.eventDetails | escape(strategy="js") }}"
-        }
-```
-
-```yaml title="Kuvasz configuration — stateful (recommended)"
-# Pre-configure your notification URLs in Apprise under a key (e.g. `kuvasz`) via `POST /add/kuvasz`, then:
-integrations:
-  webhook:
-    - name: apprise-stateful
-      url: 'http://your-apprise-host/notify/kuvasz'
-      payload-template: |
-        {
-          "title": "{{ ctx.monitorName | escape(strategy="js") }}",
-          "body":  "{{ ctx.eventDetails | escape(strategy="js") }}"
-        }
-```
-
-For the full list of supported service URL formats, see the [**Apprise wiki**](https://github.com/caronc/apprise/wiki){target="_blank"}.
+!!! tip "_Apprise_ has a first-class integration since version 4.3.0..."
+    
+    ... so there is no need to hand-craft a webhook
+    payload for it anymore. See the [**Apprise section**](#apprise) above: it sends a proper title, body and
+    severity, and it supports both the stateful and the stateless mode.
 
 ### Mattermost
 
-This example posts a message to a [**Mattermost**](https://mattermost.com){target="_blank"} channel via an incoming webhook. Mattermost's webhook format is **compatible with Slack's**, so the payload is identical.
+This example posts a message to a [**Mattermost**](https://mattermost.com) channel via an incoming webhook. Mattermost's webhook format is **compatible with Slack's**, so the payload is identical.
 
 **Mattermost setup:**
 
@@ -824,7 +918,7 @@ integrations:
 
 ### Rocket.Chat
 
-This example posts a message to a [**Rocket.Chat**](https://www.rocket.chat){target="_blank"} channel via an incoming webhook. Like Mattermost, Rocket.Chat uses a **Slack-compatible** webhook format.
+This example posts a message to a [**Rocket.Chat**](https://www.rocket.chat) channel via an incoming webhook. Like Mattermost, Rocket.Chat uses a **Slack-compatible** webhook format.
 
 **Rocket.Chat setup:**
 
@@ -850,7 +944,7 @@ Rocket.Chat supports the same optional fields as Mattermost (`channel`, `usernam
 It's vital to ensure that your integrations are correctly set up to receive notifications. You can **test your integrations** (even the disabled ones) directly either:
 
 - From the **web interface** by navigating to the _Integrations_ page and clicking the :octicons-check-circle-16: button next to the integration you want to test. In this case you'll see the result in a visual way, at the same place where you initiated the test.
-- Via the [**API**](https://api-docs.kuvasz-uptime.dev){target="_blank"} by sending a `POST` request to `/api/v2/integrations/{integrationId}/test`, where `{integrationId}` is the ID of the integration you want to test (for example, `slack:your-desired-name`). In this case the payload of the response should be straightforward to understand whether the test was successful or not.
+- Via the [**API**](https://api-docs.kuvasz-uptime.dev) by sending a `POST` request to `/api/v2/integrations/{integrationId}/test`, where `{integrationId}` is the ID of the integration you want to test (for example, `slack:your-desired-name`). In this case the payload of the response should be straightforward to understand whether the test was successful or not.
 
 !!!info "Testing PagerDuty integrations"
 
@@ -864,4 +958,4 @@ It's vital to ensure that your integrations are correctly set up to receive noti
 
 ## Do you miss an integration?
 
-If you miss an integration, please [**open an issue**](https://github.com/kuvasz-uptime/kuvasz/issues/new?template=feature_request.md){target="_blank"}, or consider contributing it yourself! We are always open to new integrations and would love to see your contribution.
+If you miss an integration, please [**open an issue**](https://github.com/kuvasz-uptime/kuvasz/issues/new?template=feature_request.md), or consider contributing it yourself! We are always open to new integrations and would love to see your contribution.

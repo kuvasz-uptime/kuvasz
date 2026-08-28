@@ -281,6 +281,7 @@ internal enum class CSSClass(val className: String) {
     TEXT_INDIGO("text-indigo"),
     TEXT_MUTED("text-muted"),
     TEXT_NOWRAP("text-nowrap"),
+    TEXT_ORANGE("text-orange"),
     TEXT_ORANGE_LT_FG("text-orange-lt-fg"),
     TEXT_PURPLE_LT_FG("text-purple-lt-fg"),
     TEXT_PRIMARY_FG("text-primary-fg"),

@@ -74,7 +74,7 @@ title: The developer- and cloud-friendly uptime monitor
 
     ---
 
-    Supports multiple notification channels, currently including email, Slack, Discord, Telegram, Microsoft Teams, PagerDuty and custom webhooks. You can configure the notification channels on a per-monitor basis.
+    Supports multiple notification channels, currently including email, Slack, Discord, Telegram, Microsoft Teams, Apprise, PagerDuty and custom webhooks. You can configure the notification channels on a per-monitor basis.
 
     [:octicons-arrow-right-24: Notifications](features/notifications.md)
 
@@ -108,13 +108,13 @@ title: The developer- and cloud-friendly uptime monitor
 
     Kuvasz is licensed under _AGPL-3.0_, it's free and it always will be.
 
-    [:octicons-arrow-right-24: Sponsoring](https://ko-fi.com/L4L31DH59D){ target="_blank" }
+    [:octicons-arrow-right-24: Sponsoring](https://ko-fi.com/L4L31DH59D)
 
 -  :loudspeaker:{ .lg .card-header-icon } __Status Pages__
 
     ---
 
-    You can create public and also private, brandable [status pages](https://demo.kuvasz-uptime.dev/status){ target="_blank" } for your monitors, to keep your customers or your internal team informed about the status of your services.
+    You can create public and also private, brandable [status pages](https://demo.kuvasz-uptime.dev/status) for your monitors, to keep your customers or your internal team informed about the status of your services.
 
     [:octicons-arrow-right-24: Status Pages](features/status-pages.md)
 
@@ -146,7 +146,7 @@ title: The developer- and cloud-friendly uptime monitor
 
     ---
 
-    Kuvasz ships with a built-in [**Model Context Protocol (MCP)**](https://modelcontextprotocol.io/){ target="_blank" } server, which exposes your monitoring data and management operations as **tools that AI assistants can call directly**. This lets you query monitor status, view incidents, and create or toggle monitors through natural language — right inside Claude, Cursor, or any MCP-compatible client.
+    Kuvasz ships with a built-in [**Model Context Protocol (MCP)**](https://modelcontextprotocol.io/) server, which exposes your monitoring data and management operations as **tools that AI assistants can call directly**. This lets you query monitor status, view incidents, and create or toggle monitors through natural language — right inside Claude, Cursor, or any MCP-compatible client.
 
     [:octicons-arrow-right-24: MCP server](features/mcp-server.md)
 
@@ -188,6 +188,7 @@ title: The developer- and cloud-friendly uptime monitor
 | Slack                                |       ✅       |        ❌         |        ✅         |
 | Telegram                             |       ✅       |        ❌         |        ✅         |
 | MS Teams                             |       ✅       |        ❌         |        ✅         |
+| Apprise                              |       ✅       |        ❌         |        ❌         |
 | PagerDuty                            |       ✅       |        ❌         |        ❌         |
 | Webhook                              |       ✅       |        ❌         |        ❌         |
 | SMS / Voice call                     |     ✅^2^      |        ❌         |  10 incl./month  |
@@ -204,14 +205,14 @@ title: The developer- and cloud-friendly uptime monitor
 
 First and foremost, if you want to **stay up-to-date with the latest news**, features, and updates about _Kuvasz_, please consider:
 
-- starring the project on [**GitHub**](https://github.com/kuvasz-uptime/kuvasz){ target="_blank" } and on [**Docker Hub**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz){ target="_blank" }
-- following us on [**X**](https://x.com/KuvaszUptime){ target="_blank" }
+- starring the project on [**GitHub**](https://github.com/kuvasz-uptime/kuvasz) and on [**Docker Hub**](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
+- following us on [**X**](https://x.com/KuvaszUptime)
 - following us on [**Mastodon**](https://techhub.social/@KuvaszUptime){ target="_blank", rel="me" }
 
 ## Where does the name come from?
 
 Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & guard dog. You can read more about them
-on [**Wikipedia**](https://en.wikipedia.org/wiki/Kuvasz){ target="_blank" }.
+on [**Wikipedia**](https://en.wikipedia.org/wiki/Kuvasz).
 
 ## Do you like it?
 

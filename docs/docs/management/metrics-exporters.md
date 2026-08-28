@@ -515,7 +515,7 @@ The **headers** to be sent with the metrics export request. This is useful for a
     OTLP_EXPORT_STEP=PT1M
     ```
 
-The **frequency** of exporting the metrics to _OpenTelemetry_. The default is **1 minute**. More about ISO-8601 durations [**here**](https://en.wikipedia.org/wiki/ISO_8601#Durations){ target="_blank" }.
+The **frequency** of exporting the metrics to _OpenTelemetry_. The default is **1 minute**. More about ISO-8601 durations [**here**](https://en.wikipedia.org/wiki/ISO_8601#Durations).
 
 ### Example output
 

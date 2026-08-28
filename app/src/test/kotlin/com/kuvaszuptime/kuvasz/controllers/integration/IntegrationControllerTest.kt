@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.controllers.integration
 
 import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.AppriseNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.MsTeamsNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
@@ -21,6 +23,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
 import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.NotificationTestResult
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyTestService
@@ -55,6 +58,7 @@ class IntegrationControllerTest(
     private val telegramAPIService: TelegramAPIService,
     private val discordWebhookService: DiscordWebhookService,
     private val msTeamsWebhookService: MsTeamsWebhookService,
+    private val appriseService: AppriseService,
     private val genericWebhookService: GenericWebhookService,
     private val integrationRepository: IntegrationRepository,
 ) : ShouldSpec({
@@ -63,7 +67,7 @@ class IntegrationControllerTest(
         should("return all the configured integrations, ordered by their names") {
             val response = integrationClient.getIntegrations()
 
-            response shouldHaveSize 24
+            response shouldHaveSize 27
             response.shouldBeSortedBy { it.name }
 
             response.forOne { implicitlyEnabledSlack ->
@@ -114,6 +118,32 @@ class IntegrationControllerTest(
                 disabledMsTeams.name shouldBe "disabled"
                 disabledMsTeams.enabled shouldBe false
                 disabledMsTeams.global shouldBe false
+            }
+            response.forOne { implicitlyEnabledApprise ->
+                implicitlyEnabledApprise.shouldBeInstanceOf<AppriseNotificationConfigDto>()
+                implicitlyEnabledApprise.id shouldBe IntegrationID(
+                    IntegrationType.APPRISE,
+                    "test_implicitly_enabled"
+                )
+                implicitlyEnabledApprise.name shouldBe "test_implicitly_enabled"
+                implicitlyEnabledApprise.enabled shouldBe true
+                implicitlyEnabledApprise.global shouldBe false
+                implicitlyEnabledApprise.tag shouldBe "devops"
+            }
+            response.forOne { globalApprise ->
+                globalApprise.shouldBeInstanceOf<AppriseNotificationConfigDto>()
+                globalApprise.id shouldBe IntegrationID(IntegrationType.APPRISE, "global")
+                globalApprise.name shouldBe "global"
+                globalApprise.enabled shouldBe true
+                globalApprise.global shouldBe true
+                globalApprise.tag shouldBe null
+            }
+            response.forOne { disabledApprise ->
+                disabledApprise.shouldBeInstanceOf<AppriseNotificationConfigDto>()
+                disabledApprise.id shouldBe IntegrationID(IntegrationType.APPRISE, "disabled")
+                disabledApprise.name shouldBe "disabled"
+                disabledApprise.enabled shouldBe false
+                disabledApprise.global shouldBe false
             }
 
             response.forOne { implicitlyEnabledEmail ->
@@ -374,6 +404,19 @@ class IntegrationControllerTest(
             }
         }
 
+        should("return success when the integration ID is found (even if it's disabled) - Apprise") {
+            val integrationId = IntegrationID(IntegrationType.APPRISE, "disabled")
+            val mockedService = getMock(appriseService)
+            every { mockedService.sendTestMessage(any()) } returns successResponse(integrationId)
+            val response = integrationClient.sendTestNotification(integrationId).blockingGet()
+
+            response.success shouldBe true
+            response.message shouldBe "OK: $integrationId"
+            verify(exactly = 1) {
+                mockedService.sendTestMessage(integrationConfig(integrationId) as AppriseNotificationConfig)
+            }
+        }
+
         should("return success when the integration ID is found (even if it's disabled) - Webhook") {
             val integrationId = IntegrationID(IntegrationType.WEBHOOK, "disabled")
             val mockedService = getMock(genericWebhookService)
@@ -405,6 +448,9 @@ class IntegrationControllerTest(
 
     @MockBean(MsTeamsWebhookService::class)
     fun mockMsTeamsWebhookService(): MsTeamsWebhookService = mockk()
+
+    @MockBean(AppriseService::class)
+    fun mockAppriseService(): AppriseService = mockk()
 
     @MockBean(GenericWebhookService::class)
     fun mockGenericWebhookService(): GenericWebhookService = mockk()

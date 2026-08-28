@@ -3,7 +3,7 @@
 Status pages are one of the key features of a proper monitoring system. They help you **communicate the status of your services** to your customers or internal teams, and can also be used to display historical uptime and incident information.
 
 !!! info "An example status page"
-    You can see a live demo of the publicly available, default status page created with Kuvasz at the demo site under [**https://demo.kuvasz-uptime.dev/status**](https://demo.kuvasz-uptime.dev/status){ target="_blank" }.
+    You can see a live demo of the publicly available, default status page created with Kuvasz at the demo site under [**https://demo.kuvasz-uptime.dev/status**](https://demo.kuvasz-uptime.dev/status).
 
 ![Status pages](../images/ui/status_page_list.webp)
 

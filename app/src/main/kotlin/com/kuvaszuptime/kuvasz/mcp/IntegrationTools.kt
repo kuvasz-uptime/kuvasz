@@ -13,8 +13,8 @@ class IntegrationTools(
 
     @Tool(
         name = ToolNames.LIST_INTEGRATIONS,
-        description = "Lists all configured integrations (Slack, Discord, Microsoft Teams, Email, PagerDuty, " +
-            "Telegram, Webhook) with their type, enabled state, global flag, and excluded event types",
+        description = "Lists all configured integrations (Slack, Discord, Microsoft Teams, Apprise, Email, " +
+            "PagerDuty, Telegram, Webhook) with their type, enabled state, global flag, and excluded event types",
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
     fun listIntegrations(): IntegrationListSchema =

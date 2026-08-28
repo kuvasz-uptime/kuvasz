@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
+import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
@@ -15,6 +16,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
+import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
 import com.kuvaszuptime.kuvasz.services.integrations.DiscordWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.EmailTestService
@@ -78,6 +80,7 @@ class IntegrationController(
         val result = when (config) {
             is DiscordNotificationConfig -> sendTestMessage<DiscordNotificationConfig, DiscordWebhookService>(config)
             is MsTeamsNotificationConfig -> sendTestMessage<MsTeamsNotificationConfig, MsTeamsWebhookService>(config)
+            is AppriseNotificationConfig -> sendTestMessage<AppriseNotificationConfig, AppriseService>(config)
             is EmailNotificationConfig -> sendTestMessage<EmailNotificationConfig, EmailTestService>(config)
             is PagerdutyConfig -> sendTestMessage<PagerdutyConfig, PagerdutyTestService>(config)
             is SlackNotificationConfig -> sendTestMessage<SlackNotificationConfig, SlackWebhookService>(config)
