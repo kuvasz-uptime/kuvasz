@@ -26,7 +26,7 @@ enum class MessageSeverity {
     INFO,
 }
 
-fun UptimeMonitorEvent.getSeverity(): MessageSeverity =
+fun UptimeMonitorEvent.toSeverity(): MessageSeverity =
     when (this) {
         is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent,
         is DnsMonitorUpEvent ->
@@ -36,14 +36,14 @@ fun UptimeMonitorEvent.getSeverity(): MessageSeverity =
             MessageSeverity.CRITICAL
     }
 
-fun SSLMonitorEvent.getSeverity(): MessageSeverity =
+fun SSLMonitorEvent.toSeverity(): MessageSeverity =
     when (this) {
         is SSLValidEvent -> MessageSeverity.OK
         is SSLInvalidEvent -> MessageSeverity.CRITICAL
         is SSLWillExpireEvent -> MessageSeverity.WARNING
     }
 
-fun MaintenanceWindowEvent.getSeverity(): MessageSeverity =
+fun MaintenanceWindowEvent.toSeverity(): MessageSeverity =
     when (this) {
         is MaintenanceWindowStartEvent -> MessageSeverity.INFO
         is MaintenanceWindowEndEvent -> MessageSeverity.OK

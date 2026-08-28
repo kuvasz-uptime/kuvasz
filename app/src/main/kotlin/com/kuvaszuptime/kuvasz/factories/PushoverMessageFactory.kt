@@ -26,68 +26,61 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
-import com.kuvaszuptime.kuvasz.models.handlers.AdaptiveCard
-import com.kuvaszuptime.kuvasz.models.handlers.CardContainer
-import com.kuvaszuptime.kuvasz.models.handlers.CardTextBlock
-import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsMessage
-import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.containerStyle
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverPriority
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 
 /**
- * Turns the notifiable events into Adaptive Cards. The summary of the event becomes the title of a
- * severity-colored container, and the remaining parts of its structured message are rendered as subtle text
- * blocks below it. The emphasis comes from the card itself, so the texts never carry any markdown.
+ * Turns the notifiable events into Pushover notifications. The summary of the event becomes the title, and the
+ * remaining parts of its structured message become the body, without any markup. The severity is mapped onto the
+ * priority of the notification, which decides whether it's allowed to break through the quiet hours of the
+ * recipient.
  **/
 @Singleton
-@Requires(bean = MsTeamsNotificationConfig::class)
-class MsTeamsCardFactory {
+@Requires(bean = PushoverNotificationConfig::class)
+class PushoverMessageFactory {
 
-    companion object {
-        private const val TITLE_SIZE = "Medium"
-        private const val TITLE_WEIGHT = "Bolder"
-        private const val DETAIL_SPACING = "Small"
-
-        // Teams renders a line break inside a TextBlock only for a double newline
-        private val NEWLINES = Regex("\n+")
-    }
-
-    fun fromUptimeEvent(event: UptimeMonitorEvent): MsTeamsMessage =
+    fun fromUptimeEvent(event: UptimeMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
-    fun fromSSLEvent(event: SSLMonitorEvent): MsTeamsMessage =
+    fun fromSSLEvent(event: SSLMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
-    fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): MsTeamsMessage =
+    fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), MessageSeverity.INFO)
+            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), MessageSeverity.INFO)
         }
 
-    fun fromMaintenanceEvent(event: MaintenanceWindowEvent): MsTeamsMessage =
+    fun fromMaintenanceEvent(event: MaintenanceWindowEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
+            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
-    fun testMessage(): MsTeamsMessage = buildCard(Messages.integrationTestMessage(), emptyList(), MessageSeverity.INFO)
+    fun testMessage(): PushoverMessage =
+        buildMessage(Messages.integrationTestMessage(), emptyList(), MessageSeverity.INFO)
 
-    private fun buildCard(title: String, details: List<String>, severity: MessageSeverity): MsTeamsMessage {
-        val titleBlock = CardContainer(
-            items = listOf(
-                CardTextBlock(text = title.toCardText(), size = TITLE_SIZE, weight = TITLE_WEIGHT),
-            ),
-            style = severity.containerStyle,
+    private fun buildMessage(title: String, details: List<String>, severity: MessageSeverity): PushoverMessage =
+        PushoverMessage(
+            title = title.truncatedTo(TITLE_MAX_LENGTH),
+            // Pushover rejects a payload without a message, so an event without any detail repeats its title there
+            message = details.joinToString("\n").ifBlank { title }.truncatedTo(MESSAGE_MAX_LENGTH),
+            priority = severity.toPushoverPriority(),
         )
-        val detailBlocks = details.map { detail ->
-            CardTextBlock(text = detail.toCardText(), isSubtle = true, spacing = DETAIL_SPACING)
-        }
 
-        return MsTeamsMessage.of(AdaptiveCard(body = listOf(titleBlock) + detailBlocks))
+    private fun MessageSeverity.toPushoverPriority(): PushoverPriority = when (this) {
+        MessageSeverity.CRITICAL -> PushoverPriority.HIGH
+        MessageSeverity.WARNING, MessageSeverity.OK, MessageSeverity.INFO -> PushoverPriority.NORMAL
     }
+
+    // Pushover answers with a 4xx instead of trimming, and a long enough monitor URL fits into a summary easily
+    private fun String.truncatedTo(maxLength: Int): String =
+        if (length <= maxLength) this else take(maxLength - 1).trimEnd() + "…"
 
     private fun StructuredMonitorMessage.toDetails(): List<String> = when (this) {
         is StructuredHttpMonitorUpMessage -> listOfNotNull(latency, previousDownTime)
@@ -115,5 +108,8 @@ class MsTeamsCardFactory {
     private fun StructuredDnsRecordsChangedMessage.toDetails(): List<String> =
         listOfNotNull(details.takeIf { it.isNotBlank() })
 
-    private fun String.toCardText(): String = replace(NEWLINES, "\n\n")
+    companion object {
+        private const val TITLE_MAX_LENGTH = 250
+        private const val MESSAGE_MAX_LENGTH = 1024
+    }
 }

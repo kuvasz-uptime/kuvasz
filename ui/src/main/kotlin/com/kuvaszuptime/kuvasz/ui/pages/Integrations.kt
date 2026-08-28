@@ -228,5 +228,6 @@ private fun IntegrationType.toCssColor(): CSSClass? = when (this) {
     IntegrationType.DISCORD -> TEXT_INDIGO
     IntegrationType.MS_TEAMS -> TEXT_BLUE
     IntegrationType.APPRISE -> TEXT_ORANGE
+    IntegrationType.PUSHOVER -> TEXT_CYAN
     IntegrationType.WEBHOOK -> TEXT_YELLOW
 }

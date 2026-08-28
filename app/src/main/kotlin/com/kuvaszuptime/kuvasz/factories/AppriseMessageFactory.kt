@@ -25,7 +25,7 @@ import com.kuvaszuptime.kuvasz.models.events.StructuredTcpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
-import com.kuvaszuptime.kuvasz.models.events.formatters.getSeverity
+import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseType
@@ -43,12 +43,12 @@ class AppriseMessageFactory {
 
     fun fromUptimeEvent(event: UptimeMonitorEvent): AppriseMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.getSeverity())
+            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
     fun fromSSLEvent(event: SSLMonitorEvent): AppriseMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.getSeverity())
+            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
     fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): AppriseMessage =
@@ -58,7 +58,7 @@ class AppriseMessageFactory {
 
     fun fromMaintenanceEvent(event: MaintenanceWindowEvent): AppriseMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.getSeverity())
+            buildMessage("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
         }
 
     fun testMessage(): AppriseMessage =

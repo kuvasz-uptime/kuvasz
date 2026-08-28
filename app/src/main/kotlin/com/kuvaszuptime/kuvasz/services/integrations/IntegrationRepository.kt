@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.DiscordNotificationConfigD
 import com.kuvaszuptime.kuvasz.models.dto.integration.MsTeamsNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.PushoverNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfigDto
@@ -20,6 +21,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
+import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
@@ -163,6 +165,7 @@ class IntegrationRepository(
             is DiscordNotificationConfig -> DiscordNotificationConfigDto(config.id, config)
             is MsTeamsNotificationConfig -> MsTeamsNotificationConfigDto(config.id, config)
             is AppriseNotificationConfig -> AppriseNotificationConfigDto(config.id, config)
+            is PushoverNotificationConfig -> PushoverNotificationConfigDto(config.id, config)
             is PagerdutyConfig -> PagerdutyConfigDto(config.id, config)
             is EmailNotificationConfig -> EmailNotificationConfigDto(config.id, config)
             is TelegramNotificationConfig -> TelegramNotificationConfigDto(config.id, config)

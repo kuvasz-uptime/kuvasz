@@ -20,6 +20,11 @@ data class PushoverMessage(
 )
 
 @Introspected
+data class PushoverCancelRequest(
+    val token: String,
+)
+
+@Introspected
 enum class PushoverPriority(@field:JsonValue val value: Int) {
     NORMAL(0),
     HIGH(1),
