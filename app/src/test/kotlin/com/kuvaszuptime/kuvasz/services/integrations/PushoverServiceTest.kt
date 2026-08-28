@@ -96,7 +96,7 @@ class PushoverServiceTest(
             val messageSlot = slot<PushoverMessage>()
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
 
-            pushoverService.sendTestMessage(config(emergencyEnabled = true)).blockingGet()
+            pushoverService.sendTestMessage(config(emergencyEnabled = true)).blockingGet().success shouldBe true
 
             messageSlot.captured.priority shouldBe PushoverPriority.NORMAL
             messageSlot.captured.tags.shouldBeNull()
@@ -122,7 +122,8 @@ class PushoverServiceTest(
             val messageSlot = slot<PushoverMessage>()
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
 
-            pushoverService.sendEvent(config(device = "iphone,desk", sound = "siren"), upEvent).blockingGet()
+            pushoverService.sendEvent(config(device = "iphone,desk", sound = "siren"), upEvent)
+                .blockingGet() shouldBe "OK"
 
             with(messageSlot.captured) {
                 token shouldBe apiToken
@@ -137,7 +138,7 @@ class PushoverServiceTest(
             val messageSlot = slot<PushoverMessage>()
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
 
-            pushoverService.sendEvent(config(), upEvent).blockingGet()
+            pushoverService.sendEvent(config(), upEvent).blockingGet() shouldBe "OK"
 
             messageSlot.captured.device.shouldBeNull()
             messageSlot.captured.sound.shouldBeNull()
@@ -152,7 +153,7 @@ class PushoverServiceTest(
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
 
             val target = config(emergencyEnabled = true, retrySeconds = 90, expireSeconds = 600)
-            pushoverService.sendEvent(target, downEvent).blockingGet()
+            pushoverService.sendEvent(target, downEvent).blockingGet() shouldBe "OK"
 
             with(messageSlot.captured) {
                 priority shouldBe PushoverPriority.EMERGENCY
@@ -168,7 +169,7 @@ class PushoverServiceTest(
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
 
             val event = SSLInvalidEvent(monitor, SSLValidationError("Chain error"), null)
-            pushoverService.sendEvent(config(emergencyEnabled = true), event).blockingGet()
+            pushoverService.sendEvent(config(emergencyEnabled = true), event).blockingGet() shouldBe "OK"
 
             messageSlot.captured.priority shouldBe PushoverPriority.EMERGENCY
             messageSlot.captured.tags shouldBe "kuvasz_ssl_1111"
@@ -179,7 +180,7 @@ class PushoverServiceTest(
             val messageSlot = slot<PushoverMessage>()
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
 
-            pushoverService.sendEvent(config(emergencyEnabled = false), downEvent).blockingGet()
+            pushoverService.sendEvent(config(emergencyEnabled = false), downEvent).blockingGet() shouldBe "OK"
 
             with(messageSlot.captured) {
                 priority shouldBe PushoverPriority.HIGH
@@ -194,7 +195,7 @@ class PushoverServiceTest(
             val messageSlot = slot<PushoverMessage>()
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
 
-            pushoverService.sendEvent(config(emergencyEnabled = true), upEvent).blockingGet()
+            pushoverService.sendEvent(config(emergencyEnabled = true), upEvent).blockingGet() shouldBe "OK"
 
             messageSlot.captured.priority shouldBe PushoverPriority.NORMAL
             messageSlot.captured.tags.shouldBeNull()
@@ -207,7 +208,8 @@ class PushoverServiceTest(
             every { mockClient.sendMessage(capture(messageSlot)) } returns Single.just("OK")
             val target = config(emergencyEnabled = true)
 
-            pushoverService.sendEvent(target, MaintenanceWindowStartEvent(maintenanceWindow())).blockingGet()
+            pushoverService.sendEvent(target, MaintenanceWindowStartEvent(maintenanceWindow()))
+                .blockingGet() shouldBe "OK"
             messageSlot.captured.priority shouldBe PushoverPriority.NORMAL
             messageSlot.captured.tags.shouldBeNull()
 
@@ -218,7 +220,7 @@ class PushoverServiceTest(
                     previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
                     currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
                 ),
-            ).blockingGet()
+            ).blockingGet() shouldBe "OK"
             messageSlot.captured.priority shouldBe PushoverPriority.NORMAL
             messageSlot.captured.tags.shouldBeNull()
         }
@@ -230,7 +232,8 @@ class PushoverServiceTest(
             val mockClient = getMock(client)
             every { mockClient.cancelEmergency(any(), any()) } returns Single.just("""{"status":1}""")
 
-            pushoverService.cancelEmergency(config(emergencyEnabled = true), upEvent)?.blockingGet()
+            pushoverService.cancelEmergency(config(emergencyEnabled = true), upEvent)
+                ?.blockingGet() shouldBe """{"status":1}"""
 
             verify(exactly = 1) { mockClient.cancelEmergency(apiToken, "kuvasz_uptime_1111") }
         }
@@ -240,7 +243,8 @@ class PushoverServiceTest(
             every { mockClient.cancelEmergency(any(), any()) } returns Single.just("""{"status":1}""")
 
             val event = SSLValidEvent(monitor, generateCertificateInfo(), null)
-            pushoverService.cancelEmergency(config(emergencyEnabled = true), event)?.blockingGet()
+            pushoverService.cancelEmergency(config(emergencyEnabled = true), event)
+                ?.blockingGet() shouldBe """{"status":1}"""
 
             verify(exactly = 1) { mockClient.cancelEmergency(apiToken, "kuvasz_ssl_1111") }
         }
