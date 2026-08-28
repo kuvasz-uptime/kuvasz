@@ -1,4 +1,6 @@
-_Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or via environment variables**. Most of the configuration options are available in both formats, but some are only available in one of them.
+_Kuvasz_ can be configured in two ways: via a **_YAML_ configuration file, or via environment variables**, and the two can be **freely combined**. Practically every option on this page is available in both formats, and the examples below show both wherever that's the case.
+
+The notable exceptions are the **structured, list-based settings** - [integrations](../management/integrations.md), and the monitors, [status pages](../management/status-pages.md) or [maintenance windows](../management/maintenance-windows.md) you define in your configuration - which can only be expressed in _YAML_.
 
 !!! info
 
@@ -78,9 +80,15 @@ The **maximum age of the authentication token** in seconds, default is 24 hours 
     micronaut.security.token.jwt.signatures.secret.generator.secret: your-very-long-random-secret
     ```
 
+=== "ENV"
+
+    ```bash
+    MICRONAUT_SECURITY_TOKEN_JWT_SIGNATURES_SECRET_GENERATOR_SECRET=your-very-long-random-secret
+    ```
+
 The secret used to **sign the JWT** that backs the web UI session. By default _Kuvasz_ generates a **new random secret on every startup**, which makes the **sessions don't survive a restart** - every logged in user has to log in again after _Kuvasz_ is restarted.
 
-If you want sessions to survive restarts, you can set a fixed one, but only via YAML.
+If you want sessions to survive restarts, you can set a fixed one.
 
 !!! warning "Keep it secret, keep it strong"
     Anyone who knows this secret can forge valid sessions. Use a **long, random** value (at least 32 characters / 256 bits is required), keep it out of version control, and rotate it if you suspect it leaked (rotating invalidates all existing sessions, forcing a re-login).
@@ -363,7 +371,15 @@ This setting only has an effect when the [email allowlist](#oidc-email-allowlist
 
 _Kuvasz_ uses a _PostgreSQL_ database to store its data. You can use an existing _PostgreSQL_ instance, and point _Kuvasz_ to a separate database in it, the only thing you should watch out for is that **the database user has the necessary permissions** to create schemas and tables.
 
-The database connection can be configured **only via environment variables**.
+The environment variables below are the **recommended way** to point _Kuvasz_ to your database. If you'd rather keep everything in your _YAML_ file, you can set the underlying `datasources.default.*` properties directly instead - the **host, port and database name** are combined into a single JDBC `url` there:
+
+```yaml title="kuvasz.yml"
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: change_me
+    password: change_me
+```
 
 !!! info
 
