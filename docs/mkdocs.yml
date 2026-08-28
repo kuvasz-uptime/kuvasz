@@ -126,14 +126,14 @@ nav:
       - Metrics exporters: management/metrics-exporters.md
       - Recipes & examples: management/examples.md
   - Home Assistant: home-assistant.md
-  - API docs ⏏: https://api-docs.kuvasz-uptime.dev
+  - API docs: https://api-docs.kuvasz-uptime.dev
   - Changelog: changelog.md
   - Upgrade notes: upgrade-notes.md
-  - Roadmap ⏏: https://github.com/orgs/kuvasz-uptime/projects/2/views/1
+  - Roadmap: https://github.com/orgs/kuvasz-uptime/projects/2/views/1
   - Conventions: conventions.md
   - Localization: localization.md
-  - Contributing ⏏: https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md
-  - License ⏏: https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE
+  - Contributing: https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md
+  - License: https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE
   - Sponsoring ♥: sponsoring.md
 copyright: >
   Copyright &copy; 2020 - 2026 Kuvasz Uptime - 
