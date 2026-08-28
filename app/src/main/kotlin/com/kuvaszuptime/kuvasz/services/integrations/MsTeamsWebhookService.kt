@@ -19,7 +19,7 @@ import jakarta.inject.Singleton
 import java.net.URI
 
 @Singleton
-@Requires(property = MsTeamsNotificationConfig.CONFIG_PREFIX)
+@Requires(bean = MsTeamsNotificationConfig::class)
 class MsTeamsWebhookClient(@param:Client private val client: HttpClient) {
 
     @Retryable

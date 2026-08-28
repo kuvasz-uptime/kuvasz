@@ -13,13 +13,17 @@ import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
+import com.kuvaszuptime.kuvasz.services.integrations.TestableNotificationService
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -29,8 +33,10 @@ import io.kotest.matchers.maps.shouldContainAll
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.beInstanceOf
 import io.micronaut.context.exceptions.BeanInstantiationException
 
 @SMTPTest
@@ -496,6 +502,21 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType shouldHaveSize 0
             globallyEnabledIntegrationsByType shouldHaveSize 0
         }
+    }
+
+    "app should be able to start if an integration config prefix is present without any entry" {
+        val ctx = shouldNotThrowAny {
+            testAppContext("integrations-without-entries")
+        }
+
+        ctx.getBean<IntegrationRepository>().configuredIntegrations.shouldBeEmpty()
+        // Every bean of a given integration must be gated on the presence of its config bean, otherwise resolving the
+        // testable services (like IntegrationController does) fails on a half-enabled service
+        val testServices = shouldNotThrowAny {
+            ctx.getBeansOfType(TestableNotificationService::class.java)
+        }
+        testServices.forNone { it should beInstanceOf<MsTeamsWebhookService>() }
+        testServices.forNone { it should beInstanceOf<GenericWebhookService>() }
     }
 
     "app should be able to start with complex integration names" {
