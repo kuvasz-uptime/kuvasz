@@ -11,6 +11,8 @@ sealed class UptimeMonitorEvent : MonitorEvent<MonitorRecord>() {
 
     abstract val uptimeStatus: UptimeStatus
 
+    abstract override fun toStructuredMessage(): StructuredMonitorMessage
+
     fun isUp() = uptimeStatus == UptimeStatus.UP
 
     fun wasUpWithThreshold(): Boolean = previousEvent?.status != UptimeStatus.DOWN && monitor.failureCountThreshold > 1

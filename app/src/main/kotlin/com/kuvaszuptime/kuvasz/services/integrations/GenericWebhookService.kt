@@ -47,7 +47,7 @@ import jakarta.inject.Singleton
 import java.net.URI
 
 @Singleton
-@Requires(property = WebhookNotificationConfig.CONFIG_PREFIX)
+@Requires(bean = WebhookNotificationConfig::class)
 class GenericWebhookClient(@param:Client private val client: HttpClient) {
 
     companion object {

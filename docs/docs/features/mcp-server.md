@@ -153,9 +153,9 @@ The `maintenanceWindows` affecting a monitor (and whether it is currently `inMai
 
 <!-- md:version 4.0.0 -->
 
-| Tool                | Description                                                                                                         |
-|---------------------|---------------------------------------------------------------------------------------------------------------------|
-| `list-integrations` | List all configured integrations (Slack, Discord, Email, PagerDuty, Telegram, Webhook) with their type and settings |
+| Tool                | Description                                                                                                                          |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `list-integrations` | List all configured integrations (Slack, Discord, Microsoft Teams, Email, PagerDuty, Telegram, Webhook) with their type and settings |
 
 ### Application settings
 

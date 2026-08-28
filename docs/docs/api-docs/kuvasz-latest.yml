@@ -4489,6 +4489,7 @@ components:
       oneOf:
       - $ref: "#/components/schemas/SlackNotificationConfigDto"
       - $ref: "#/components/schemas/DiscordNotificationConfigDto"
+      - $ref: "#/components/schemas/MsTeamsNotificationConfigDto"
       - $ref: "#/components/schemas/PagerdutyConfigDto"
       - $ref: "#/components/schemas/EmailNotificationConfigDto"
       - $ref: "#/components/schemas/TelegramNotificationConfigDto"
@@ -4554,6 +4555,7 @@ components:
       - SLACK
       - TELEGRAM
       - DISCORD
+      - MS_TEAMS
       - WEBHOOK
     LatencyLogDto:
       required:
@@ -4935,6 +4937,40 @@ components:
             \ because they are not configured"
           items:
             type: string
+    MsTeamsNotificationConfigDto:
+      required:
+      - enabled
+      - excludedEvents
+      - global
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
     NotificationTestResult:
       required:
       - message

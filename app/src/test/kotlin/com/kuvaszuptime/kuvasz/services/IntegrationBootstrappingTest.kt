@@ -6,19 +6,24 @@ import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
+import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
+import com.kuvaszuptime.kuvasz.services.integrations.TestableNotificationService
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -28,8 +33,10 @@ import io.kotest.matchers.maps.shouldContainAll
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.beInstanceOf
 import io.micronaut.context.exceptions.BeanInstantiationException
 
 @SMTPTest
@@ -39,10 +46,10 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 21
-            enabledIntegrations shouldHaveSize 15
-            enabledIntegrationsByType shouldHaveSize 6
-            globallyEnabledIntegrationsByType shouldHaveSize 6
+            configuredIntegrations shouldHaveSize 24
+            enabledIntegrations shouldHaveSize 17
+            enabledIntegrationsByType shouldHaveSize 7
+            globallyEnabledIntegrationsByType shouldHaveSize 7
 
             // Check that all integrations are loaded correctly
             with(configuredIntegrations) {
@@ -71,6 +78,38 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "disabled"
                     config.type shouldBe IntegrationType.SLACK
                     config.webhookUrl shouldBe "https://hooks.slack.com/services/T00000000/B00000000/ZZZZZZZZZZ"
+                    config.enabled shouldBe false
+                    config.global shouldBe false
+                }
+                // Microsoft Teams
+                forOne { implicitlyEnabledMsTeams ->
+                    implicitlyEnabledMsTeams.key shouldBe
+                        IntegrationID(IntegrationType.MS_TEAMS, "test_implicitly_enabled")
+                    val config = implicitlyEnabledMsTeams.value as MsTeamsNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.MS_TEAMS
+                    config.webhookUrl shouldBe
+                        "https://prod-11.westeurope.logic.azure.com:443/workflows/aaa/triggers/manual/paths/invoke?sig=aaa"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledMsTeams ->
+                    globallyEnabledMsTeams.key shouldBe IntegrationID(IntegrationType.MS_TEAMS, "global")
+                    val config = globallyEnabledMsTeams.value as MsTeamsNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.MS_TEAMS
+                    config.webhookUrl shouldBe
+                        "https://prod-22.westeurope.logic.azure.com:443/workflows/bbb/triggers/manual/paths/invoke?sig=bbb"
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
+                forOne { disabledMsTeams ->
+                    disabledMsTeams.key shouldBe IntegrationID(IntegrationType.MS_TEAMS, "disabled")
+                    val config = disabledMsTeams.value as MsTeamsNotificationConfig
+                    config.name shouldBe "disabled"
+                    config.type shouldBe IntegrationType.MS_TEAMS
+                    config.webhookUrl shouldBe
+                        "https://prod-33.westeurope.logic.azure.com:443/workflows/ccc/triggers/manual/paths/invoke?sig=ccc"
                     config.enabled shouldBe false
                     config.global shouldBe false
                 }
@@ -276,6 +315,28 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
+                // Microsoft Teams
+                forOne { implicitlyEnabledMsTeams ->
+                    implicitlyEnabledMsTeams.key shouldBe
+                        IntegrationID(IntegrationType.MS_TEAMS, "test_implicitly_enabled")
+                    val config = implicitlyEnabledMsTeams.value as MsTeamsNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.MS_TEAMS
+                    config.webhookUrl shouldBe
+                        "https://prod-11.westeurope.logic.azure.com:443/workflows/aaa/triggers/manual/paths/invoke?sig=aaa"
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledMsTeams ->
+                    globallyEnabledMsTeams.key shouldBe IntegrationID(IntegrationType.MS_TEAMS, "global")
+                    val config = globallyEnabledMsTeams.value as MsTeamsNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.MS_TEAMS
+                    config.webhookUrl shouldBe
+                        "https://prod-22.westeurope.logic.azure.com:443/workflows/bbb/triggers/manual/paths/invoke?sig=bbb"
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
                 // Email
                 forOne { implicitlyEnabledEmail ->
                     implicitlyEnabledEmail.key shouldBe IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")
@@ -382,6 +443,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
             // Enabled integrations by type
             enabledIntegrationsByType[IntegrationType.SLACK].shouldNotBeNull().shouldHaveSize(2)
+            enabledIntegrationsByType[IntegrationType.MS_TEAMS].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.EMAIL].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.TELEGRAM].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.PAGERDUTY].shouldNotBeNull().shouldHaveSize(2)
@@ -392,6 +454,15 @@ class IntegrationBootstrappingTest : StringSpec({
                 name shouldBe "Global2"
                 enabled shouldBe true
                 webhookUrl shouldBe "https://hooks.slack.com/services/T00000000/B00000000/YYYYYYYYYY"
+            }
+
+            with(
+                globallyEnabledIntegrationsByType[IntegrationType.MS_TEAMS]?.single() as MsTeamsNotificationConfig
+            ) {
+                name shouldBe "global"
+                enabled shouldBe true
+                webhookUrl shouldBe
+                    "https://prod-22.westeurope.logic.azure.com:443/workflows/bbb/triggers/manual/paths/invoke?sig=bbb"
             }
 
             with(globallyEnabledIntegrationsByType[IntegrationType.EMAIL]?.single() as EmailNotificationConfig) {
@@ -431,6 +502,21 @@ class IntegrationBootstrappingTest : StringSpec({
             enabledIntegrationsByType shouldHaveSize 0
             globallyEnabledIntegrationsByType shouldHaveSize 0
         }
+    }
+
+    "app should be able to start if an integration config prefix is present without any entry" {
+        val ctx = shouldNotThrowAny {
+            testAppContext("integrations-without-entries")
+        }
+
+        ctx.getBean<IntegrationRepository>().configuredIntegrations.shouldBeEmpty()
+        // Every bean of a given integration must be gated on the presence of its config bean, otherwise resolving the
+        // testable services (like IntegrationController does) fails on a half-enabled service
+        val testServices = shouldNotThrowAny {
+            ctx.getBeansOfType(TestableNotificationService::class.java)
+        }
+        testServices.forNone { it should beInstanceOf<MsTeamsWebhookService>() }
+        testServices.forNone { it should beInstanceOf<GenericWebhookService>() }
     }
 
     "app should be able to start with complex integration names" {
@@ -535,10 +621,10 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 21
-            enabledIntegrations shouldHaveSize 13 // Email configs should not be enabled without SMTP config
-            enabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
-            globallyEnabledIntegrationsByType shouldHaveSize 5 // Email type should not be present
+            configuredIntegrations shouldHaveSize 24
+            enabledIntegrations shouldHaveSize 15 // Email configs should not be enabled without SMTP config
+            enabledIntegrationsByType shouldHaveSize 6 // Email type should not be present
+            globallyEnabledIntegrationsByType shouldHaveSize 6 // Email type should not be present
 
             // Check that Email configs are not loaded as enabled
             val implicitlyEnabledId = IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")

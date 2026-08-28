@@ -87,3 +87,14 @@ data class StructuredSSLWillExpireMessage(
     override val summary: String,
     val validUntil: String,
 ) : StructuredSSLMessage()
+
+sealed class StructuredMaintenanceMessage : StructuredMessage()
+
+data class StructuredMaintenanceStartMessage(
+    override val summary: String,
+    val description: String?,
+) : StructuredMaintenanceMessage()
+
+data class StructuredMaintenanceEndMessage(
+    override val summary: String,
+) : StructuredMaintenanceMessage()

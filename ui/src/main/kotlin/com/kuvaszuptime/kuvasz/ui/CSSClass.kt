@@ -267,6 +267,7 @@ internal enum class CSSClass(val className: String) {
     TABLE_SM("table-sm"),
     TABLE_VCENTER("table-vcenter"),
     TEXT_AZURE("text-azure"),
+    TEXT_BLUE("text-blue"),
     TEXT_BLUE_LT_FG("text-blue-lt-fg"),
     TEXT_BREAK("text-break"),
     TEXT_CENTER("text-center"),

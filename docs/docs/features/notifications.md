@@ -54,7 +54,7 @@ Drift notifications behave differently from uptime events:
 Maintenance notifications behave differently from monitor events:
 
 - They are sent **only to the integrations explicitly assigned to the maintenance window**. Unlike monitor events, **globally-enabled integrations are intentionally ignored** here, so a global integration only receives maintenance notifications when it is explicitly assigned to the window.
-- All integration types are supported (Slack, Discord, Email, PagerDuty, Telegram and custom webhooks). On PagerDuty a start event triggers a `warning` alert and the end event resolves it.
+- All integration types are supported (Slack, Discord, Microsoft Teams, Email, PagerDuty, Telegram and custom webhooks). On PagerDuty a start event triggers a `warning` alert and the end event resolves it.
 - For **custom webhooks**, maintenance events reuse the same payload contract as monitor events, but the monitor-specific fields are blank, because a maintenance window is not tied to a single monitor: `monitorId` is `0` and `monitorUrn`, `monitorName` and `monitorDetailsUrl` are empty strings. The `type`, `timestamp` and `eventDetails` fields are populated as usual, and any existing `payloadTemplate` keeps working (the blank monitor variables simply render as empty).
 
 !!! tip "Excluding certain events"
@@ -72,6 +72,14 @@ _Slack_ as a notification channel for your monitors. This allows you to receive 
 
 The _Discord_ integration allows you to send notifications **to Discord channels
 **. This allows you to receive notifications about the status of your monitors directly in your Discord channels.
+
+## Microsoft Teams <!-- md:config ../management/integrations.md#microsoft-teams -->
+
+The _Microsoft Teams_ integration posts notifications to your Teams channels and chats as **Adaptive Cards**,
+color-coded by the severity of the event. It uses the **Workflows** app, so it is unaffected by the retirement
+of the Microsoft 365 Connectors.
+
+![Teams integration](../images/integrations/teams.webp)
 
 ## Email <!-- md:config ../management/integrations.md#email -->
 

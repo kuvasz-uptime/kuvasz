@@ -1,3 +1,13 @@
+## 4.3.0 <small>2026-08-xx</small> { id="4.3.0" data-toc-label="4.3.0" }
+
+### Features
+
+**Microsoft Teams** is a first-class integration now!
+
+- You can send your notifications to a Teams channel or chat through the [**`ms-teams` integration**](management/integrations.md#microsoft-teams), without having to hand-craft a webhook payload. The messages are posted as **Adaptive Cards**, color-coded by the severity of the event.
+- It's built on the **Workflows** app (powered by Power Automate), so it isn't affected by the retirement of the **Microsoft 365 (Office 365) Connectors**. If you were sending notifications to Teams through a custom webhook until now, you can replace that setup with a single `webhook-url` property.
+- Like every other integration, it can be **global** or assigned to specific monitors and maintenance windows, its events can be filtered with `excluded-events`, and it's testable right from the UI. It's also exposed on the REST API and through the MCP server.
+
 ## 4.2.0 <small>2026-08-10</small> { id="4.2.0" data-toc-label="4.2.0" }
 
 !!! question "Make your voice heard!"

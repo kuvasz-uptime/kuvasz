@@ -28,7 +28,7 @@ class IntegrationToolsTest(
                     response.isError shouldBe false
 
                     val integrationList = response.structuredContentAs<IntegrationListSchema>().shouldNotBeNull()
-                    integrationList.integrations.shouldHaveSize(21)
+                    integrationList.integrations.shouldHaveSize(24)
 
                     // Checking only one since the mapping should be the same for all of them
                     integrationList.integrations.forOne { integration ->
