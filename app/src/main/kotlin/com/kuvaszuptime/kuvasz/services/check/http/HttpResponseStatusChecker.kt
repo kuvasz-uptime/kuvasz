@@ -1,10 +1,12 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.IneligibleStatusCodeException
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
+import com.kuvaszuptime.kuvasz.models.TooManyRedirectsException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.checks.RawHttpResponse
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -26,6 +28,7 @@ class HttpResponseStatusChecker(
     uptimeEventRepository: HttpUptimeEventRepository,
     databaseEventHandler: DatabaseEventHandler,
     pendingFailureRepository: PendingFailureRepository,
+    private val appConfig: AppConfig,
 ) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler, pendingFailureRepository) {
 
     companion object {
@@ -74,11 +77,18 @@ class HttpResponseStatusChecker(
 
     /**
      * Checks if the response is a redirect and dispatches a RedirectEvent if it is.
-     * It is also responsible for checking if the redirection URI has already been visited to prevent redirect loops.
+     * It is also responsible for capping the length of the redirect chain, and for checking if the redirection URI
+     * has already been visited to prevent redirect loops.
      * If the redirection URI is valid and not visited, it returns a [HttpCheckResult.Redirected] result.
      */
     private fun checkRedirection(ctx: HttpResponseCheckContext): HttpCheckResult {
-        val redirectionUri = ctx.response.httpResponse.getRedirectionUri(originalUrl = ctx.monitor.url)
+        val maxRedirects = appConfig.httpCheckMaxRedirects
+        // visitedUrls already contains the current hop, so its size is the number of the redirect we are about to
+        // follow. Chains that never repeat a URI are not caught by the loop detection below, so they need this cap.
+        if (ctx.visitedUrls.size > maxRedirects) {
+            return dispatchDownEvent(ctx, TooManyRedirectsException(maxRedirects))
+        }
+        val redirectionUri = ctx.response.httpResponse.getRedirectionUri(currentUri = ctx.currentUri)
 
         return if (redirectionUri != null) {
             eventDispatcher.dispatch(
@@ -99,14 +109,14 @@ class HttpResponseStatusChecker(
         }
     }
 
-    private fun HttpResponse<*>.getRedirectionUri(originalUrl: String): URI? =
+    private fun HttpResponse<*>.getRedirectionUri(currentUri: URI): URI? =
         header(HttpHeaders.LOCATION)?.let { locationHeader ->
             // If the location header starts with "http", it's probably an absolute URL, we can use it as is
             if (locationHeader.startsWith("http")) {
                 locationHeader.toUri()
             } else {
-                // Otherwise, we need to resolve it against the original URL as a relative path
-                URI(originalUrl).resolve(locationHeader)
+                // Otherwise, we need to resolve it against the URL of the hop that returned it, as a relative path
+                currentUri.resolve(locationHeader)
             }
         }
 

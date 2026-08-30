@@ -44,4 +44,12 @@ data class HttpResponseCheckContext(
     val monitor: HttpMonitorRecord,
     val response: HttpCheckResponse,
     val visitedUrls: MutableList<URI>,
-)
+) {
+    /**
+     * The URI that actually produced [response]. The checker appends every hop to [visitedUrls] right before it
+     * sends the request, so the last entry is the current one; it falls back to the monitor's own URL when no hop
+     * has been recorded yet. A relative Location header has to be resolved against this and not against
+     * [monitor]'s URL, otherwise a later hop could silently retarget the request to an unrelated host.
+     */
+    val currentUri: URI get() = visitedUrls.lastOrNull() ?: URI(monitor.url)
+}

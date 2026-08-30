@@ -7,6 +7,7 @@ import io.micronaut.context.annotation.Context
 import io.micronaut.core.annotation.Introspected
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.PositiveOrZero
 
 @Suppress("TooManyFunctions")
 @ConfigurationProperties("app-config")
@@ -20,6 +21,7 @@ class AppConfig {
         private const val DEFAULT_LATENCY_RETENTION_DAYS = 7
         private const val DEFAULT_LANGUAGE = "en"
         private const val UPTIME_CHECK_LOCK_TIMEOUT_MS = 300_000L // 5 minutes
+        private const val DEFAULT_HTTP_CHECK_MAX_REDIRECTS = 10
     }
 
     @Min(MIN_EVENT_RETENTION_DAYS, message = ValidationMessages.APP_CONFIG_EVENT_RETENTION_DAYS_MIN)
@@ -48,6 +50,9 @@ class AppConfig {
 
     @Max(DEFAULT_READ_TIMEOUT_SECONDS, message = ValidationMessages.APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX)
     var httpCheckTimeoutSeconds: Long = DEFAULT_READ_TIMEOUT_SECONDS
+
+    @PositiveOrZero(message = ValidationMessages.APP_CONFIG_HTTP_CHECK_MAX_REDIRECTS_POSITIVE_OR_ZERO)
+    var httpCheckMaxRedirects: Int = DEFAULT_HTTP_CHECK_MAX_REDIRECTS
 
     fun disableHttpMonitorExternalWrite() {
         isHttpMonitorExternalWriteDisabled = true

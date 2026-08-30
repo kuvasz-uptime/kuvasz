@@ -171,6 +171,7 @@ app-config:
   language: ${APP_LANGUAGE:`en`}
   check-updates: ${ENABLE_CHECK_UPDATES:`true`}
   http-check-timeout-seconds: ${HTTP_CHECK_TIMEOUT_SECONDS:`30`}
+  http-check-max-redirects: ${HTTP_CHECK_MAX_REDIRECTS:`10`}
 ---
 admin-auth:
   username: ${ADMIN_USER}

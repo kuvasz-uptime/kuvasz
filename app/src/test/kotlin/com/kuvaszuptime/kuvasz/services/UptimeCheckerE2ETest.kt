@@ -457,6 +457,102 @@ class UptimeCheckerE2ETest(
                 }
             }
 
+            `when`("it checks a monitor that is redirected - relative redirect returned by a later hop") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/base/start",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+                val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+                eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                val request1 = getRequest("/base/start")
+                val request2 = getRequest("/other/second")
+                val request3 = getRequest("/other/final")
+
+                mockServer.`when`(request1).respond(
+                    response()
+                        .withStatusCode(HttpStatus.PERMANENT_REDIRECT.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/other/second")
+                )
+                // A document-relative Location returned by the second hop, which has a different base path than the
+                // monitor's own URL
+                mockServer.`when`(request2).respond(
+                    response()
+                        .withStatusCode(HttpStatus.TEMPORARY_REDIRECT.code)
+                        .withHeader(HttpHeaders.LOCATION, "final")
+                )
+                mockServer.`when`(request3).respond(
+                    response()
+                        .withStatusCode(HttpStatus.OK.code)
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should resolve the relative location against the hop that returned it") {
+                    val expectedRedirectEvents = redirectSubscriber.awaitCount(2).values()
+                    val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                    downSubscriber.assertNoValues()
+
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+
+                    expectedRedirectEvents.forAll { it.monitor.id shouldBe monitor.id }
+                    expectedRedirectEvents[0].redirectLocation shouldBeUriOf "$mockServerUrl/other/second"
+                    expectedRedirectEvents[1].redirectLocation shouldBeUriOf "$mockServerUrl/other/final"
+
+                    mockServer.verifyRequest(request1)
+                    mockServer.verifyRequest(request2)
+                    mockServer.verifyRequest(request3)
+                    // Resolving against the monitor's URL instead would have targeted this path
+                    mockServer.verifyRequest(getRequest("/base/final"), exactly = 0)
+                }
+            }
+
+            `when`("it checks a monitor whose redirect chain is longer than the allowed maximum") {
+                // The default of app-config.http-check-max-redirects
+                val maxRedirects = 10
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/hop-0",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                )
+                val redirectSubscriber = TestSubscriber<HttpRedirectEvent>()
+                val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpRedirectEvents { it.forwardToSubscriber(redirectSubscriber) }
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                // Every hop is a distinct URI, so the redirect loop detection alone would never stop this chain
+                (0..maxRedirects).forEach { hop ->
+                    mockServer.`when`(getRequest("/hop-$hop")).respond(
+                        response()
+                            .withStatusCode(HttpStatus.FOUND.code)
+                            .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/hop-${hop + 1}")
+                    )
+                }
+
+                uptimeChecker.check(monitor)
+
+                then("it should stop following the chain and dispatch a MonitorDownEvent") {
+                    val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
+
+                    expectedDownEvent.monitor.id shouldBe monitor.id
+                    expectedDownEvent.error.message shouldBe
+                        "The redirect chain was longer than the allowed maximum of $maxRedirects redirect(s)"
+
+                    redirectSubscriber.values().size shouldBe maxRedirects
+                    // The hop right after the limit must never be requested
+                    mockServer.verifyRequest(getRequest("/hop-${maxRedirects + 1}"), exactly = 0)
+                }
+            }
+
             `when`("it checks a monitor that is redirected - following redirects is disabled") {
                 val monitor = createHttpMonitor(
                     repository = monitorRepository,

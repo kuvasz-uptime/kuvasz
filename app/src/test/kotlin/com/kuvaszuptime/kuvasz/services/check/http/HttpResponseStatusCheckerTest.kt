@@ -1,9 +1,11 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.models.IneligibleStatusCodeException
 import com.kuvaszuptime.kuvasz.models.InvalidRedirectionException
 import com.kuvaszuptime.kuvasz.models.RedirectLoopException
+import com.kuvaszuptime.kuvasz.models.TooManyRedirectsException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -32,7 +34,16 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
     val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
     val mockPendingFailureRepo = mockk<PendingFailureRepository>(relaxed = true)
     val dispatcher = EventDispatcher()
-    val checker = HttpResponseStatusChecker(dispatcher, mockUptimeRepo, mockDbEventHandler, mockPendingFailureRepo)
+    val checker =
+        HttpResponseStatusChecker(dispatcher, mockUptimeRepo, mockDbEventHandler, mockPendingFailureRepo, AppConfig())
+
+    fun checkerWithMaxRedirects(maxRedirects: Int) = HttpResponseStatusChecker(
+        dispatcher,
+        mockUptimeRepo,
+        mockDbEventHandler,
+        mockPendingFailureRepo,
+        AppConfig().apply { httpCheckMaxRedirects = maxRedirects },
+    )
 
     fun mockResponse(mockStatus: HttpStatus, redirectLocation: String? = null): HttpCheckResponse {
         val mockHttpResponse = SimpleHttpResponseFactory()
@@ -197,6 +208,137 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             result shouldBe HttpCheckResult.Finished
             verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
         }
+
+        should("resolve a relative Location header against the most recently visited hop") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "/somewhere-else?marker=proof")
+            val visited = mutableListOf(
+                "http://example.com".toUri(),
+                "http://intermediate.test/deep/path".toUri(),
+            )
+
+            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+
+            // It must NOT be resolved against the monitor's own URL (http://example.com), otherwise a hop could
+            // retarget the request to a host that was never configured
+            redirectSubscriber.assertSingleValue(mockMonitor.id, "http://intermediate.test/somewhere-else?marker=proof")
+            result shouldBe HttpCheckResult.Redirected(
+                redirectionUri = "http://intermediate.test/somewhere-else?marker=proof".toUri(),
+                visitedUrls = visited,
+            )
+            upSubscriber.assertNoValues()
+            downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
+        }
+
+        should("resolve a document-relative Location header against the path of the most recently visited hop") {
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            val response = mockResponse(HttpStatus.FOUND, "sibling")
+            val visited = mutableListOf(
+                "http://example.com".toUri(),
+                "http://intermediate.test/a/b".toUri(),
+            )
+
+            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+
+            redirectSubscriber.assertSingleValue(mockMonitor.id, "http://intermediate.test/a/sibling")
+            result shouldBe HttpCheckResult.Redirected(
+                redirectionUri = "http://intermediate.test/a/sibling".toUri(),
+                visitedUrls = visited,
+            )
+            downSubscriber.assertNoValues()
+        }
+
+        should("resolve a relative Location header against the monitor's URL when there is no visited hop yet") {
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "/redirect")
+
+            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+
+            redirectSubscriber.assertSingleValue(mockMonitor.id, "http://example.com/redirect")
+            result shouldBe HttpCheckResult.Redirected(
+                redirectionUri = "http://example.com/redirect".toUri(),
+                visitedUrls = mutableListOf(),
+            )
+            downSubscriber.assertNoValues()
+        }
+
+        should("return Finished and dispatch a DOWN event when the redirect chain exceeds the configured maximum") {
+            val upSubscriber = dispatcher.upSubscriber()
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            // Every hop has a distinct URI, so the redirect loop detection would never stop this chain
+            val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "http://attacker.test/4")
+            val visited = mutableListOf(
+                "http://example.com".toUri(),
+                "http://attacker.test/1".toUri(),
+                "http://attacker.test/2".toUri(),
+            )
+
+            val result = checkerWithMaxRedirects(2)
+                .evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+
+            result shouldBe HttpCheckResult.Finished
+            upSubscriber.assertNoValues()
+            redirectSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<TooManyRedirectsException>(
+                "The redirect chain was longer than the allowed maximum of 2 redirect(s)"
+            )
+            verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
+        }
+
+        should("return Redirected for the last redirect that still fits into the configured maximum") {
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "http://attacker.test/2")
+            val visited = mutableListOf(
+                "http://example.com".toUri(),
+                "http://attacker.test/1".toUri(),
+            )
+
+            val result = checkerWithMaxRedirects(2)
+                .evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+
+            redirectSubscriber.assertSingleValue(mockMonitor.id, "http://attacker.test/2")
+            result shouldBe HttpCheckResult.Redirected(
+                redirectionUri = "http://attacker.test/2".toUri(),
+                visitedUrls = visited,
+            )
+            downSubscriber.assertNoValues()
+            verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
+        }
+
+        should("never follow a redirect when the configured maximum is zero") {
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "http://attacker.test/1")
+
+            val result = checkerWithMaxRedirects(0).evaluate(
+                HttpResponseCheckContext(mockMonitor, response, mutableListOf("http://example.com".toUri()))
+            )
+
+            result shouldBe HttpCheckResult.Finished
+            redirectSubscriber.assertNoValues()
+            downSubscriber.assertSingleError<TooManyRedirectsException>(
+                "The redirect chain was longer than the allowed maximum of 0 redirect(s)"
+            )
+        }
     }
 
     context("expected status is explicitly set") {
@@ -287,7 +429,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                     HttpResponseCheckContext(
                         monitor = mockMonitor,
                         response = response,
-                        visitedUrls = mutableListOf("/something".toUri())
+                        visitedUrls = mutableListOf("http://example.com".toUri())
                     )
                 )
 
@@ -296,7 +438,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 downSubscriber.assertNoValues()
                 result shouldBe HttpCheckResult.Redirected(
                     redirectionUri = "http://example.com/redirect".toUri(),
-                    visitedUrls = mutableListOf("/something".toUri())
+                    visitedUrls = mutableListOf("http://example.com".toUri())
                 )
                 verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
             }

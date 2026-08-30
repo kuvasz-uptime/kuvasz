@@ -31,6 +31,8 @@ object ValidationMessages {
     const val APP_CONFIG_EVENT_RETENTION_DAYS_MIN = "Event data retention must be at least {value} days"
     const val APP_CONFIG_LATENCY_RETENTION_DAYS_MIN = "Latency data retention must be at least {value} days"
     const val APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX = "Read timeout for HTTP checks cannot be higher than {value} seconds"
+    const val APP_CONFIG_HTTP_CHECK_MAX_REDIRECTS_POSITIVE_OR_ZERO =
+        "The maximum number of redirects to follow must be greater than or equal to 0"
     const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
         "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
     const val VALID_DNS_RECORD_MATCHERS = "Each DNS record matcher must have a non-blank value, and REGEX matchers " +
