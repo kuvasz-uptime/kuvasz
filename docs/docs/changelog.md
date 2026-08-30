@@ -10,6 +10,14 @@
 
 All three behave like every other integration: they can be **global** or assigned to specific monitors and maintenance windows, their events can be filtered with `excluded-events`, and they're testable right from the UI, the REST API and the MCP server. If you were reaching any of them through a custom webhook until now, you can drop the payload template and replace the whole setup with a handful of properties.
 
+### Security
+
+- **Relative redirects were resolved against the wrong hop** ([GHSA-jq3w-22qh-gf8w](https://github.com/kuvasz-uptime/kuvasz/security/advisories/GHSA-jq3w-22qh-gf8w)): when an HTTP monitor followed a chain of redirects, a **relative** `Location` header was always resolved against the **monitor's own URL** instead of the URL of the hop that actually returned it. A chain like `https://a.example → https://b.example/deep/path → Location: /next` was followed to `https://a.example/next` rather than `https://b.example/next`. Besides checking a completely different resource than the one the hop pointed at, this let an intermediate hop steer the check to an **arbitrary path on the monitored origin** - with the monitor's own request method, body and custom headers attached - even when that origin is only reachable from _Kuvasz_ itself. Relative locations now follow [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#field.location) and are resolved against the hop that returned them. Reported by [@CaptBoykin](https://github.com/CaptBoykin).
+
+### Enhancements
+
+- **Redirect chains are capped**: the new [`app-config.http-check-max-redirects`](setup/configuration.md#http-check-max-redirects) property (**10** by default) limits how many redirects a single HTTP check follows. Redirect loop detection only recognizes a repeated URL, so a chain where every hop is different was previously followed without an upper bound. Exceeding the limit now marks the monitor DOWN with a dedicated error.
+
 ## 4.2.0 <small>2026-08-10</small> { id="4.2.0" data-toc-label="4.2.0" }
 
 !!! question "Make your voice heard!"

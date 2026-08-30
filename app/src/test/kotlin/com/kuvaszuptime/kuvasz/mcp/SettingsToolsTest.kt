@@ -18,6 +18,7 @@ import io.modelcontextprotocol.client.McpSyncClient
 @Property(name = "app-config.language", value = "en")
 @Property(name = "app-config.log-event-handler", value = "true")
 @Property(name = "app-config.http-check-timeout-seconds", value = "15")
+@Property(name = "app-config.http-check-max-redirects", value = "3")
 class SettingsToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val appGlobals: AppGlobals,
@@ -43,6 +44,7 @@ class SettingsToolsTest(
                         eventLoggingEnabled shouldBe true
                         updateChecksEnabled shouldBe false
                         httpCheckTimeoutSeconds shouldBe 15L
+                        httpCheckMaxRedirects shouldBe 3
                         with(editabilityState) {
                             areHttpMonitorsReadOnly shouldBe false
                             arePushMonitorsReadOnly shouldBe false

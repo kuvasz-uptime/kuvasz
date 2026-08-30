@@ -60,6 +60,11 @@ data class SettingsDto(
         val updateChecksEnabled: Boolean,
         @param:Schema(description = "The HTTP uptime checks' read timeout", required = true)
         val httpCheckTimeoutSeconds: Long,
+        @param:Schema(
+            description = "The maximum number of redirects the HTTP uptime checks follow",
+            required = true,
+        )
+        val httpCheckMaxRedirects: Int,
     ) {
         data class EditabilityStateDto(
             @param:Schema(description = "Whether the HTTP monitors are in read-only mode", required = true)

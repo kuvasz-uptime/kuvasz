@@ -724,6 +724,28 @@ Toggles the automatic check for new versions of _Kuvasz_. If it's enabled, the a
 
 The **global read timeout limit** for HTTP monitors (the default and the maximum value are both 30 seconds). Useful if you would like to use a relatively low [response time threshold](../management/http-monitors.md#response-time-threshold) or [uptime check interval](../management/http-monitors.md#uptime-check-interval) on your monitors, and you want to **make sure that consecutive checks don't wait for slow responses**. For example, if you use a low uptime check interval on all of your monitors (like 10 seconds), then it makes sense to also set a global timeout lower than the default, otherwise the checks won't really happen every 10 seconds because the HTTP client will wait more than that until it eventually fails.
 
+### HTTP check max redirects
+
+<!-- md:version 4.3.0 -->
+<!-- md:default 10 -->
+<!-- md:type `number` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.http-check-max-redirects: 10
+    ```
+
+=== "ENV"
+
+    ```bash
+    HTTP_CHECK_MAX_REDIRECTS=10
+    ```
+
+The **maximum number of redirects** an HTTP monitor with [follow redirects](../management/http-monitors.md#follow-redirects) enabled will follow in a single check. When a chain is longer than this, the check **stops and the monitor goes DOWN** with a `The redirect chain was longer than the allowed maximum of N redirect(s)` error.
+
+_Kuvasz_ also detects [redirect loops](../management/http-monitors.md#follow-redirects), but a loop is only recognized when the very same URL is visited twice. A chain where every hop is a **different** URL is not a loop, so this limit is what keeps such a chain from going on indefinitely. Setting it to `0` means that **no redirect is followed at all**, but it does not silently turn the feature off: a monitor with [follow redirects](../management/http-monitors.md#follow-redirects) enabled goes **DOWN** on the very first `3xx` response, and its alerts fire accordingly.
+
 ## Full configuration example
 
 You can find the full configuration example below, which includes all the options currently available. You can use it as a starting point for your own configuration.
@@ -791,6 +813,7 @@ You can find the full configuration example below, which includes all the option
       language: en
       check-updates: true
       http-check-timeout-seconds: 30
+      http-check-max-redirects: 10
     ---
     smtp-config:
       host: 'your.smtp.server'
@@ -828,6 +851,7 @@ You can find the full configuration example below, which includes all the option
     APP_LANGUAGE=en
     ENABLE_CHECK_UPDATES=true
     HTTP_CHECK_TIMEOUT_SECONDS=30
+    HTTP_CHECK_MAX_REDIRECTS=10
     ENABLE_MCP_SERVER=false
     TZ=UTC
     ENABLE_METRICS_EXPORT=true

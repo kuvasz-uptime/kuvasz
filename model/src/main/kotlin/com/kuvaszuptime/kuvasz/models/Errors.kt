@@ -41,6 +41,11 @@ class InvalidRedirectionException(
     override val message: String
 ) : UptimeCheckException()
 
+class TooManyRedirectsException(
+    val limit: Int,
+    override val message: String? = "The redirect chain was longer than the allowed maximum of $limit redirect(s)"
+) : UptimeCheckException()
+
 class IneligibleStatusCodeException(
     val statusCode: Int,
     override val message: String? = "Response status code [$statusCode] was unexpected"

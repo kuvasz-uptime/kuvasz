@@ -44,6 +44,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 @Property(name = "app-config.language", value = "en")
 @Property(name = "app-config.log-event-handler", value = "true")
 @Property(name = "app-config.http-check-timeout-seconds", value = "10")
+@Property(name = "app-config.http-check-max-redirects", value = "7")
 class SettingsControllerTest(
     settingsClient: SettingsClient,
     appGlobals: AppGlobals,
@@ -82,6 +83,7 @@ class SettingsControllerTest(
                 result.app.editabilityState.areMaintenanceWindowsReadOnly shouldBe true
                 result.app.updateChecksEnabled shouldBe false
                 result.app.httpCheckTimeoutSeconds shouldBe 10
+                result.app.httpCheckMaxRedirects shouldBe 7
 
                 with(result.smtp.shouldNotBeNull()) {
                     host shouldBe "localhost"

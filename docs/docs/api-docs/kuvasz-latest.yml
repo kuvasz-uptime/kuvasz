@@ -5628,6 +5628,7 @@ components:
       - editabilityState
       - eventDataRetentionDays
       - eventLoggingEnabled
+      - httpCheckMaxRedirects
       - httpCheckTimeoutSeconds
       - language
       - latencyDataRetentionDays
@@ -5664,6 +5665,10 @@ components:
           type: integer
           description: The HTTP uptime checks' read timeout
           format: int64
+        httpCheckMaxRedirects:
+          type: integer
+          description: The maximum number of redirects the HTTP uptime checks follow
+          format: int32
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areDnsMonitorsReadOnly

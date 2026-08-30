@@ -30,6 +30,7 @@ data class ApplicationSettingsSchema(
     val eventLoggingEnabled: Boolean,
     val updateChecksEnabled: Boolean,
     val httpCheckTimeoutSeconds: Long,
+    val httpCheckMaxRedirects: Int,
     val editabilityState: EditabilityStateSchema,
 ) {
     companion object {
@@ -41,6 +42,7 @@ data class ApplicationSettingsSchema(
             eventLoggingEnabled = dto.eventLoggingEnabled,
             updateChecksEnabled = dto.updateChecksEnabled,
             httpCheckTimeoutSeconds = dto.httpCheckTimeoutSeconds,
+            httpCheckMaxRedirects = dto.httpCheckMaxRedirects,
             editabilityState = EditabilityStateSchema.fromDto(dto.editabilityState),
         )
     }

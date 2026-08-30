@@ -166,6 +166,10 @@ The **HTTP method** to use for the uptime checks.
 
 Whether the monitor **should follow redirects** or not. If it's disabled, the monitor will **not follow HTTP redirects** (`3xx` responses) and will only check the initial URL. Multiple redirects will be followed, and the final response will be checked, however if a redirect loop is detected, the monitor will fail and alert you about it.
 
+The number of redirects followed in a single check is capped by the global [HTTP check max redirects](../setup/configuration.md#http-check-max-redirects) setting (10 by default), so a chain that never repeats a URL cannot go on indefinitely.
+
+A **relative** `Location` header is resolved against the URL of the hop that returned it, following [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#field.location) — not against the monitor's own URL.
+
 ### Force no-cache header
 
 <!-- md:version 2.0.0 -->
