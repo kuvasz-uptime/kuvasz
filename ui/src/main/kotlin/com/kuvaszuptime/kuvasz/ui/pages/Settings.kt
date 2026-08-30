@@ -67,6 +67,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                         label = Messages.httpCheckTimeout(),
                         value = Messages.xSeconds(settings.app.httpCheckTimeoutSeconds.toString())
                     )
+                    settingsLabel(
+                        label = Messages.httpCheckMaxRedirects(),
+                        value = settings.app.httpCheckMaxRedirects.toString()
+                    )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
                 }
             }
