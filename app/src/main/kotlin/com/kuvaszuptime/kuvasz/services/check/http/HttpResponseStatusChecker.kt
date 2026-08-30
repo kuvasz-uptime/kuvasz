@@ -15,7 +15,6 @@ import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.isSuccess
 import com.kuvaszuptime.kuvasz.util.loggerFor
-import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
@@ -111,13 +110,9 @@ class HttpResponseStatusChecker(
 
     private fun HttpResponse<*>.getRedirectionUri(currentUri: URI): URI? =
         header(HttpHeaders.LOCATION)?.let { locationHeader ->
-            // If the location header starts with "http", it's probably an absolute URL, we can use it as is
-            if (locationHeader.startsWith("http")) {
-                locationHeader.toUri()
-            } else {
-                // Otherwise, we need to resolve it against the URL of the hop that returned it, as a relative path
-                currentUri.resolve(locationHeader)
-            }
+            // Absolute locations are returned by resolve() as they are, relative ones are resolved against the URL of
+            // the hop that returned them
+            currentUri.resolve(locationHeader)
         }
 
     /**

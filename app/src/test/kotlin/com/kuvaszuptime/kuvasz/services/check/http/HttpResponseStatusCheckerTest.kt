@@ -223,8 +223,8 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
 
             val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
 
-            // It must NOT be resolved against the monitor's own URL (http://example.com), otherwise a hop could
-            // retarget the request to a host that was never configured
+            // It must NOT be resolved against the monitor's own URL (http://example.com), otherwise the check would
+            // be sent back to the monitor's own host instead of the resource the hop pointed at
             redirectSubscriber.assertSingleValue(mockMonitor.id, "http://intermediate.test/somewhere-else?marker=proof")
             result shouldBe HttpCheckResult.Redirected(
                 redirectionUri = "http://intermediate.test/somewhere-else?marker=proof".toUri(),
@@ -251,6 +251,46 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             redirectSubscriber.assertSingleValue(mockMonitor.id, "http://intermediate.test/a/sibling")
             result shouldBe HttpCheckResult.Redirected(
                 redirectionUri = "http://intermediate.test/a/sibling".toUri(),
+                visitedUrls = visited,
+            )
+            downSubscriber.assertNoValues()
+        }
+
+        should("resolve a relative Location header that starts with the http prefix as a relative reference") {
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            // A perfectly legal document-relative reference that happens to start with "http"
+            val response = mockResponse(HttpStatus.FOUND, "httpdocs/index.html")
+            val visited = mutableListOf(
+                "http://example.com".toUri(),
+                "http://intermediate.test/a/b".toUri(),
+            )
+
+            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+
+            redirectSubscriber.assertSingleValue(mockMonitor.id, "http://intermediate.test/a/httpdocs/index.html")
+            result shouldBe HttpCheckResult.Redirected(
+                redirectionUri = "http://intermediate.test/a/httpdocs/index.html".toUri(),
+                visitedUrls = visited,
+            )
+            downSubscriber.assertNoValues()
+        }
+
+        should("keep an absolute Location header with an uppercase scheme as it is") {
+            val downSubscriber = dispatcher.downSubscriber()
+            val redirectSubscriber = dispatcher.redirectSubscriber()
+
+            val mockMonitor = mockMonitor(followRedirects = true)
+            val response = mockResponse(HttpStatus.FOUND, "HTTP://else.com/redirect")
+            val visited = mutableListOf("http://example.com".toUri())
+
+            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+
+            redirectSubscriber.assertSingleValue(mockMonitor.id, "HTTP://else.com/redirect")
+            result shouldBe HttpCheckResult.Redirected(
+                redirectionUri = "HTTP://else.com/redirect".toUri(),
                 visitedUrls = visited,
             )
             downSubscriber.assertNoValues()

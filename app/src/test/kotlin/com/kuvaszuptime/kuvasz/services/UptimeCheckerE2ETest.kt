@@ -547,7 +547,7 @@ class UptimeCheckerE2ETest(
                     expectedDownEvent.error.message shouldBe
                         "The redirect chain was longer than the allowed maximum of $maxRedirects redirect(s)"
 
-                    redirectSubscriber.values().size shouldBe maxRedirects
+                    redirectSubscriber.awaitCount(maxRedirects).values().size shouldBe maxRedirects
                     // The hop right after the limit must never be requested
                     mockServer.verifyRequest(getRequest("/hop-${maxRedirects + 1}"), exactly = 0)
                 }
