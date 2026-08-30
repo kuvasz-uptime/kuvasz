@@ -1436,6 +1436,7 @@ app-config:
   language: en
   check-updates: true
   http-check-timeout-seconds: 30
+  http-check-max-redirects: 10
 ---
 smtp-config:
   host: 'your.smtp.server'
