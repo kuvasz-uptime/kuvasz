@@ -3,6 +3,7 @@
 ### Fixes
 
 - **Push monitors burned through their failure count threshold in seconds**: a missed heartbeat was counted as a **new failure on every check**, and since _Kuvasz_ evaluates the push monitors **every 5 seconds**, a [**failure count threshold**](management/push-monitors.md#failure-count-threshold) higher than 1 only delayed the alert by a few seconds, instead of tolerating as many missed heartbeats as it was set to. From now on **every missed heartbeat counts only once**.
+- **Push monitors could go down right after a maintenance window or a restart**: the deadline of the next countable missed heartbeat was calculated from the **last heartbeat** only, so whenever that heartbeat was already long overdue - after a [**maintenance window**](management/maintenance-windows.md) of the monitor, after a restart or a longer downtime of _Kuvasz_ itself, or after a monitor was paused for a while - the checks credited **all the heartbeats missed in the meantime at once**, burning through the whole [**failure count threshold**](management/push-monitors.md#failure-count-threshold) within seconds. A missed heartbeat is now counted **at most once per heartbeat interval**, no matter how far behind the last heartbeat is.
 
 ## 4.3.0 <small>2026-08-31</small> { id="4.3.0" data-toc-label="4.3.0" }
 

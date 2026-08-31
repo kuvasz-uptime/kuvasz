@@ -92,6 +92,8 @@ The grace **period in seconds after the heartbeat interval** during which a miss
 
 The number of **consecutive failures** that should occur before the monitor is considered down. Defaults to 1, which means that the monitor will be considered down after the first failure. If you set it to a higher value, for example 3, the monitor will be considered down only after 3 consecutive failures, which can help to reduce false positives in case of temporary network issues or other transient problems.
 
+For push monitors a failure means a **missed heartbeat**, which is counted **at most once per heartbeat interval**, even if the last heartbeat was received a long time ago. So with a threshold of 3 the monitor goes down roughly after three heartbeat intervals of silence, regardless of how often _Kuvasz_ evaluates it in the meantime.
+
 ### Client secret
 
 <!-- md:version 3.2.0 -->

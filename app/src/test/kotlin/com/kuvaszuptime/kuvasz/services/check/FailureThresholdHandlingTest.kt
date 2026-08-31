@@ -73,7 +73,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
         `when`("the previous event was null, threshold > 1, threshold is not reached") {
 
             then("it should return false after checking the pending failures") {
-                every { mockFailureRepo.createOrIncrement(any()) } returns
+                every { mockFailureRepo.createOrIncrement(any(), any()) } returns
                     PendingFailureRecord().apply {
                         this.monitorId = 1
                         this.failureCount = 1
@@ -91,7 +91,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
         `when`("the previous event was UP, threshold > 1, threshold is not reached") {
 
             then("it should return false after checking the pending failures") {
-                every { mockFailureRepo.createOrIncrement(any()) } returns
+                every { mockFailureRepo.createOrIncrement(any(), any()) } returns
                     PendingFailureRecord().apply {
                         this.monitorId = 1
                         this.failureCount = 1
@@ -109,7 +109,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
         `when`("the previous event was null, threshold > 1, threshold is reached") {
 
             then("it should return false after checking the pending failures") {
-                every { mockFailureRepo.createOrIncrement(any()) } returns
+                every { mockFailureRepo.createOrIncrement(any(), any()) } returns
                     PendingFailureRecord().apply {
                         this.monitorId = 1
                         this.failureCount = 2
@@ -128,7 +128,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
         `when`("the previous event was UP, threshold > 1, threshold is reached") {
 
             then("it should return false after checking the pending failures") {
-                every { mockFailureRepo.createOrIncrement(any()) } returns
+                every { mockFailureRepo.createOrIncrement(any(), any()) } returns
                     PendingFailureRecord().apply {
                         this.monitorId = 1
                         this.failureCount = 2

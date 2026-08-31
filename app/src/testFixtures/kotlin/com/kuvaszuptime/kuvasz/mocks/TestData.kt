@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog.ICMP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
@@ -23,6 +24,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.PendingFailureRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
@@ -125,6 +127,22 @@ fun createPushMonitor(
         .setFailureCountThreshold(failureCountThreshold)
     return repository.returningInsert(monitor)
 }
+
+fun createPendingFailure(
+    dslContext: DSLContext,
+    monitorId: Long,
+    failureCount: Long = 1,
+    updatedAt: OffsetDateTime = getCurrentTimestamp(),
+) = dslContext
+    .insertInto(PENDING_FAILURE)
+    .set(
+        PendingFailureRecord()
+            .setMonitorId(monitorId)
+            .setFailureCount(failureCount)
+            .setUpdatedAt(updatedAt)
+    )
+    .returning(PENDING_FAILURE.asterisk())
+    .fetchOneOrThrow<PendingFailureRecord>()
 
 fun createHttpUptimeEventRecord(
     dslContext: DSLContext,

@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.mocks.createPendingFailure
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -16,7 +17,6 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 @MicronautTest(startApplication = false)
 class PushMonitorRepositoryTest(
     private val pushMonitorRepository: PushMonitorRepository,
-    private val pendingFailureRepository: PendingFailureRepository,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -116,15 +116,16 @@ class PushMonitorRepositoryTest(
             }
 
             `when`("a monitor has a pending failure, but its next heartbeat is not missed yet") {
+                val lastHeartbeat = getCurrentTimestamp().minusSeconds(6)
                 val monitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
                     heartbeatInterval = 3,
                     gracePeriod = 1,
                     failureCountThreshold = 3,
-                    lastHeartbeat = getCurrentTimestamp().minusSeconds(6),
+                    lastHeartbeat = lastHeartbeat,
                 )
-                pendingFailureRepository.createOrIncrement(monitor.id)
+                createPendingFailure(dslContext, monitor.id, updatedAt = lastHeartbeat.plusSeconds(4))
 
                 then("it should not return it") {
                     pushMonitorRepository.fetchWithMissedHeartbeats(null).shouldBeEmpty()
@@ -132,15 +133,16 @@ class PushMonitorRepositoryTest(
             }
 
             `when`("a monitor has a pending failure and its next heartbeat is missed, too") {
+                val lastHeartbeat = getCurrentTimestamp().minusSeconds(8)
                 val monitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
                     heartbeatInterval = 3,
                     gracePeriod = 1,
                     failureCountThreshold = 3,
-                    lastHeartbeat = getCurrentTimestamp().minusSeconds(7),
+                    lastHeartbeat = lastHeartbeat,
                 )
-                pendingFailureRepository.createOrIncrement(monitor.id)
+                createPendingFailure(dslContext, monitor.id, updatedAt = lastHeartbeat.plusSeconds(4))
 
                 then("it should return it") {
                     pushMonitorRepository.fetchWithMissedHeartbeats(null) shouldHaveSingleElement monitor
@@ -148,15 +150,21 @@ class PushMonitorRepositoryTest(
             }
 
             `when`("a monitor has multiple pending failures, but its next heartbeat is not missed yet") {
+                val lastHeartbeat = getCurrentTimestamp().minusSeconds(9)
                 val monitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
                     heartbeatInterval = 3,
                     gracePeriod = 1,
                     failureCountThreshold = 3,
-                    lastHeartbeat = getCurrentTimestamp().minusSeconds(9),
+                    lastHeartbeat = lastHeartbeat,
                 )
-                repeat(2) { pendingFailureRepository.createOrIncrement(monitor.id) }
+                createPendingFailure(
+                    dslContext,
+                    monitor.id,
+                    failureCount = 2,
+                    updatedAt = lastHeartbeat.plusSeconds(7),
+                )
 
                 then("it should not return it") {
                     pushMonitorRepository.fetchWithMissedHeartbeats(null).shouldBeEmpty()
@@ -164,15 +172,53 @@ class PushMonitorRepositoryTest(
             }
 
             `when`("a monitor has multiple pending failures and its next heartbeat is missed, too") {
+                val lastHeartbeat = getCurrentTimestamp().minusSeconds(11)
                 val monitor = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
                     heartbeatInterval = 3,
                     gracePeriod = 1,
                     failureCountThreshold = 3,
-                    lastHeartbeat = getCurrentTimestamp().minusSeconds(10),
+                    lastHeartbeat = lastHeartbeat,
                 )
-                repeat(2) { pendingFailureRepository.createOrIncrement(monitor.id) }
+                createPendingFailure(
+                    dslContext,
+                    monitor.id,
+                    failureCount = 2,
+                    updatedAt = lastHeartbeat.plusSeconds(7),
+                )
+
+                then("it should return it") {
+                    pushMonitorRepository.fetchWithMissedHeartbeats(null) shouldHaveSingleElement monitor
+                }
+            }
+
+            `when`("a monitor's heartbeat is long overdue, but its last failure was recorded recently") {
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    heartbeatInterval = 3,
+                    gracePeriod = 1,
+                    failureCountThreshold = 3,
+                    lastHeartbeat = getCurrentTimestamp().minusSeconds(60),
+                )
+                createPendingFailure(dslContext, monitor.id, updatedAt = getCurrentTimestamp().minusSeconds(1))
+
+                then("it should not return it before a whole heartbeat interval elapses") {
+                    pushMonitorRepository.fetchWithMissedHeartbeats(null).shouldBeEmpty()
+                }
+            }
+
+            `when`("a monitor's heartbeat is long overdue and its last failure was recorded long ago") {
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    heartbeatInterval = 3,
+                    gracePeriod = 1,
+                    failureCountThreshold = 3,
+                    lastHeartbeat = getCurrentTimestamp().minusSeconds(60),
+                )
+                createPendingFailure(dslContext, monitor.id, updatedAt = getCurrentTimestamp().minusSeconds(4))
 
                 then("it should return it") {
                     pushMonitorRepository.fetchWithMissedHeartbeats(null) shouldHaveSingleElement monitor
@@ -180,22 +226,23 @@ class PushMonitorRepositoryTest(
             }
 
             `when`("only one of the monitors has a pending failure") {
+                val lastHeartbeat = getCurrentTimestamp().minusSeconds(5)
                 val withPendingFailure = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
                     heartbeatInterval = 3,
                     gracePeriod = 1,
                     failureCountThreshold = 2,
-                    lastHeartbeat = getCurrentTimestamp().minusSeconds(5),
+                    lastHeartbeat = lastHeartbeat,
                 )
-                pendingFailureRepository.createOrIncrement(withPendingFailure.id)
+                createPendingFailure(dslContext, withPendingFailure.id, updatedAt = lastHeartbeat.plusSeconds(4))
                 val withoutPendingFailure = createPushMonitor(
                     pushMonitorRepository,
                     enabled = true,
                     heartbeatInterval = 3,
                     gracePeriod = 1,
                     failureCountThreshold = 2,
-                    lastHeartbeat = getCurrentTimestamp().minusSeconds(5),
+                    lastHeartbeat = lastHeartbeat,
                 )
 
                 then("it should return only the one without a pending failure") {
