@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
@@ -24,6 +25,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -41,6 +43,7 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.date.shouldBeAfter
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -71,10 +74,16 @@ class PushMonitorControllerTest(
     private val statCalculator: StatCalculator,
     private val eventDispatcher: EventDispatcher,
     private val statusPageRepository: StatusPageRepository,
+    private val pendingFailureRepository: PendingFailureRepository,
     private val appConfig: AppConfig,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
+
+    private fun pendingFailureOf(monitorId: Long) = dslContext
+        .selectFrom(PENDING_FAILURE)
+        .where(PENDING_FAILURE.MONITOR_ID.eq(monitorId))
+        .fetchOne()
 
     init {
         given("the getMonitorsWithDetails() endpoint") {
@@ -991,6 +1000,53 @@ class PushMonitorControllerTest(
                     // An update event should be dispatched
                     val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.monitor shouldBe NumericMonitorID(MonitorType.PUSH, createdMonitor.id)
+                }
+            }
+
+            listOf(
+                PushMonitorUpdateDto::failureCountThreshold.name to 2,
+                PushMonitorUpdateDto::heartbeatInterval.name to 60,
+                PushMonitorUpdateDto::gracePeriod.name to 5,
+            ).forEach { (settingName, newValue) ->
+
+                `when`("the $settingName of a monitor with pending failures is updated") {
+                    val createDto = PushMonitorCreateDto(
+                        name = "test_monitor",
+                        heartbeatInterval = 10,
+                        gracePeriod = 0,
+                        failureCountThreshold = 3,
+                        clientSecret = randomClientSecret(),
+                    )
+                    val createdMonitor = monitorClient.createMonitor(createDto)
+                    pendingFailureRepository.createOrIncrement(createdMonitor.id)
+
+                    val updateDto = JsonNodeFactory.instance.objectNode().put(settingName, newValue)
+                    monitorClient.updateMonitor(createdMonitor.id, updateDto)
+
+                    then("it should reset the already recorded failures of it") {
+                        pendingFailureOf(createdMonitor.id).shouldBeNull()
+                    }
+                }
+            }
+
+            `when`("a setting that doesn't affect the failure counting is updated") {
+                val createDto = PushMonitorCreateDto(
+                    name = "test_monitor",
+                    heartbeatInterval = 10,
+                    gracePeriod = 0,
+                    failureCountThreshold = 3,
+                    clientSecret = randomClientSecret(),
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+                pendingFailureRepository.createOrIncrement(createdMonitor.id)
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(PushMonitorUpdateDto::name.name, "updated_test_monitor")
+                    .put(PushMonitorUpdateDto::failureCountThreshold.name, 3)
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
+
+                then("it should keep the already recorded failures of it") {
+                    pendingFailureOf(createdMonitor.id).shouldNotBeNull().failureCount shouldBe 1L
                 }
             }
 

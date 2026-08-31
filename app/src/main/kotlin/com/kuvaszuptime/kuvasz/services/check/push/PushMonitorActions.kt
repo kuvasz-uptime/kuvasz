@@ -104,7 +104,7 @@ class PushMonitorActions(
                         monitor = updatedMonitor,
                         previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(updatedMonitor.id, txCtx),
                     ).also { event ->
-                        pendingFailureRepository.deleteByMonitorId(event.monitor.id)
+                        pendingFailureRepository.deleteByMonitorId(event.monitor.id, txCtx)
                         databaseEventHandler.handleUptimeMonitorEvent(event)
                         eventDispatcher.dispatch(event)
                     }
@@ -166,10 +166,26 @@ class PushMonitorActions(
             // Validate the raw integrations from the DTO
             updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
 
-            monitorRepository.returningUpdate(PushMonitorRecord(updatedMonitor), txCtx)
+            monitorRepository.returningUpdate(PushMonitorRecord(updatedMonitor), txCtx).also {
+                if (updatedMonitor.affectsFailureCounting(existingById)) {
+                    // The already recorded failures were counted against the previous settings of the monitor, so
+                    // they are not comparable to the updated ones anymore
+                    pendingFailureRepository.deleteByMonitorId(monitorId, txCtx)
+                }
+            }
         }.also { updatedMonitorRecord ->
             eventDispatcher.dispatch(MonitorUpdateEvent(updatedMonitorRecord.numericMonitorId()))
         }
+
+    /**
+     * The settings that the already recorded failures of a monitor were counted against: how often a heartbeat is
+     * expected, how long it can be late, and how many missed ones are tolerated. Changing any of them invalidates the
+     * failures recorded so far, everything else (e.g. the name or the integrations of the monitor) leaves them intact.
+     */
+    private fun PushMonitor.affectsFailureCounting(existing: PushMonitorRecord): Boolean =
+        heartbeatInterval != existing.heartbeatInterval ||
+            gracePeriod != existing.gracePeriod ||
+            failureCountThreshold != existing.failureCountThreshold
 
     fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<PushUptimeEventDto> =
         monitorRepository.findById(monitorId, null)
