@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_PUSH_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
@@ -221,16 +222,37 @@ class PushMonitorRepository(
     )
 
     /**
+     * Calculates the deadline of the next heartbeat that can be counted as a missed one, by taking the already
+     * recorded pending failures of the monitor into account: the Nth missed heartbeat is due at
+     * lastHeartbeat + N * heartbeatInterval + gracePeriod.
+     *
+     * Without it every single scheduled check would count as a separate failure for the monitors with a failure count
+     * threshold greater than 1, instead of counting every missed heartbeat only once.
+     *
+     * The result can be NULL in case the last heartbeat is also NULL
+     */
+    private val nextCountableHeartbeatField: Field<OffsetDateTime?> = DSL.field(
+        "{0} + ((coalesce({1}, 0) + 1) * {2} + {3}) * interval '1 second'",
+        SQLDataType.TIMESTAMPWITHTIMEZONE,
+        PUSH_MONITOR.LAST_HEARTBEAT,
+        PENDING_FAILURE.FAILURE_COUNT,
+        PUSH_MONITOR.HEARTBEAT_INTERVAL,
+        PUSH_MONITOR.GRACE_PERIOD,
+    )
+
+    /**
      * Fetches the push monitors that:
      * - are enabled
-     * - have an already recorded heartbeat, and the next expected heartbeat is behind us
+     * - have an already recorded heartbeat, and the deadline of their next countable missed heartbeat is behind us
      */
     fun fetchWithMissedHeartbeats(txCtx: DSLContext?): List<PushMonitorRecord> = (txCtx ?: dslContext)
-        .selectFrom(PUSH_MONITOR)
+        .select(PUSH_MONITOR.asterisk())
+        .from(PUSH_MONITOR)
+        .leftJoin(PENDING_FAILURE).on(PENDING_FAILURE.MONITOR_ID.eq(PUSH_MONITOR.ID))
         .where(PUSH_MONITOR.ENABLED.isTrue)
         .and(PUSH_MONITOR.LAST_HEARTBEAT.isNotNull)
-        .and(nextExpectedHeartbeatField.le(DSL.currentOffsetDateTime()))
-        .fetch()
+        .and(nextCountableHeartbeatField.le(DSL.currentOffsetDateTime()))
+        .fetchInto(PUSH_MONITOR)
 
     /**
      * Updates a push monitor's last heartbeat to the provided timestamp by matching its client secret.

@@ -3,9 +3,11 @@ package com.kuvaszuptime.kuvasz.services.check.push
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PendingFailureRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
@@ -15,8 +17,11 @@ import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -29,6 +34,9 @@ import org.jooq.DSLContext
 @MicronautTest(startApplication = false)
 class HeartbeatCheckerTest(
     dslContext: DSLContext,
+    pushMonitorRepository: PushMonitorRepository,
+    pushUptimeEventRepository: PushUptimeEventRepository,
+    pendingFailureRepository: PendingFailureRepository,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -126,6 +134,61 @@ class HeartbeatCheckerTest(
                     }
 
                     verify(exactly = 3) { mockDbEventHandler.handleUptimeMonitorEvent(any<PushMonitorDownEvent>()) }
+                }
+            }
+
+            `when`("a monitor with a failure count threshold misses its heartbeats") {
+                val checkerWithRealRepos = HeartbeatChecker(
+                    dslCtx = dslContext,
+                    eventDispatcher = dispatcher,
+                    pushMonitorRepository = pushMonitorRepository,
+                    uptimeEventRepository = pushUptimeEventRepository,
+                    databaseEventHandler = mockDbEventHandler,
+                    pendingFailureRepository = pendingFailureRepository,
+                    maintenanceWindowService = maintenanceWindowServiceMock,
+                )
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                dispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    heartbeatInterval = 3,
+                    failureCountThreshold = 3,
+                    lastHeartbeat = getCurrentTimestamp().minusSeconds(4),
+                )
+
+                fun pendingFailureCountOf(monitorId: Long): Long? = dslContext
+                    .select(PENDING_FAILURE.FAILURE_COUNT)
+                    .from(PENDING_FAILURE)
+                    .where(PENDING_FAILURE.MONITOR_ID.eq(monitorId))
+                    .fetchOne(PENDING_FAILURE.FAILURE_COUNT)
+
+                // Simulating the scheduled checks that are running way more frequently than the heartbeat interval
+                fun simulateChecksOfWindow() = repeat(3) { checkerWithRealRepos.checkHeartbeats() }
+
+                // Simulating the passing of time by moving the last heartbeat backwards
+                fun elapseHeartbeatInterval(elapsedSeconds: Long) = pushMonitorRepository.updateLastHeartbeat(
+                    clientSecret = monitor.clientSecret,
+                    timestamp = getCurrentTimestamp().minusSeconds(elapsedSeconds),
+                )
+
+                then("it should count every missed heartbeat only once and go down after the threshold") {
+                    simulateChecksOfWindow()
+                    pendingFailureCountOf(monitor.id) shouldBe 1L
+                    testSubscriber.values().shouldBeEmpty()
+
+                    elapseHeartbeatInterval(7)
+                    simulateChecksOfWindow()
+                    pendingFailureCountOf(monitor.id) shouldBe 2L
+                    testSubscriber.values().shouldBeEmpty()
+
+                    elapseHeartbeatInterval(10)
+                    checkerWithRealRepos.checkHeartbeats()
+
+                    val events = testSubscriber.awaitCount(1).values()
+                    events.single().shouldBeInstanceOf<PushMonitorDownEvent>().monitor.id shouldBe monitor.id
+                    pendingFailureCountOf(monitor.id).shouldBeNull()
                 }
             }
 

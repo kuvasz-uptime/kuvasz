@@ -1,3 +1,9 @@
+## 4.x.x <small>2026-09-xx</small> { id="4.3.1" data-toc-label="4.3.1" }
+
+### Fixes
+
+- **Push monitors burned through their failure count threshold in seconds**: a missed heartbeat was counted as a **new failure on every check**, and since _Kuvasz_ evaluates the push monitors **every 5 seconds**, a [**failure count threshold**](management/push-monitors.md#failure-count-threshold) higher than 1 only delayed the alert by a few seconds, instead of tolerating as many missed heartbeats as it was set to. From now on **every missed heartbeat counts only once**.
+
 ## 4.3.0 <small>2026-08-31</small> { id="4.3.0" data-toc-label="4.3.0" }
 
 ### Features

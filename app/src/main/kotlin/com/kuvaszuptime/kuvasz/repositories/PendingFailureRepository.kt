@@ -26,7 +26,7 @@ class PendingFailureRepository(private val dslContext: DSLContext) {
                     .returning(PENDING_FAILURE.asterisk())
                     .fetchOneOrThrow<PendingFailureRecord>()
             } else {
-                dslContext.insertInto(PENDING_FAILURE)
+                txCtx.insertInto(PENDING_FAILURE)
                     .set(PENDING_FAILURE.MONITOR_ID, monitorId)
                     .set(PENDING_FAILURE.FAILURE_COUNT, 1)
                     .returning(PENDING_FAILURE.asterisk())
