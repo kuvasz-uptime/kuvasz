@@ -341,7 +341,7 @@ class PushMonitorActionsTest(
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns null
                 every { eventRepoMock.insertFromMonitorEvent(any(), any()) } returns uptimeEventRecord
-                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id) } returns
+                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id, any()) } returns
                     PendingFailureRecord().apply {
                         monitorId = testMonitor.id
                         failureCount = 1
@@ -409,7 +409,7 @@ class PushMonitorActionsTest(
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
                 every { eventRepoMock.updateEvent(any(), any()) } returns 1
-                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id) } returns
+                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id, any()) } returns
                     PendingFailureRecord().apply {
                         monitorId = testMonitor.id
                         failureCount = 2
@@ -446,7 +446,7 @@ class PushMonitorActionsTest(
                 every { eventRepoMock.updateEvent(any(), any()) } returns 1
                 every { eventRepoMock.endEventById(any(), any(), any()) } returns 1
                 every { eventRepoMock.insertFromMonitorEvent(any(), any()) } returns mockk()
-                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id) } returns
+                every { pendingFailureRepoMock.createOrIncrement(testMonitor.id, any()) } returns
                     PendingFailureRecord().apply {
                         monitorId = testMonitor.id
                         failureCount = 2

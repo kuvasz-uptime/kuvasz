@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.Keys.UNIQUE_PUSH_MONITOR_NAME
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
@@ -205,32 +206,67 @@ class PushMonitorRepository(
         .where(DSL.trueCondition())
 
     /**
-     * Calculates the next expected heartbeat's timestamp as an OffsetDateTime by adding the heartbeat interval and
-     * the grace period to the last heartbeat's timestamp.
-     * Uses a quite ugly concatenation of query parts, because jOOQ doesn't support adding intervals to TIMESTAMPTZ
-     * fields yet.
+     * Adds the given amount of seconds to a TIMESTAMPTZ field, which is the only part of the deadlines below that
+     * can't be expressed with jOOQ's own DSL, because it doesn't support adding intervals to TIMESTAMPTZ fields yet.
      *
-     * The result can be NULL in case the last heartbeat is also NULL
+     * The result can be NULL in case the timestamp itself is also NULL
      */
-    val nextExpectedHeartbeatField: Field<OffsetDateTime?> = DSL.field(
-        PUSH_MONITOR.LAST_HEARTBEAT.name + "+(" +
-            PUSH_MONITOR.HEARTBEAT_INTERVAL.name + "+" +
-            PUSH_MONITOR.GRACE_PERIOD.name +
-            ") * interval '1 second'",
-        SQLDataType.TIMESTAMPWITHTIMEZONE
+    private fun Field<OffsetDateTime?>.plusSeconds(seconds: Field<out Number>): Field<OffsetDateTime?> = DSL.field(
+        "{0} + {1} * interval '1 second'",
+        SQLDataType.TIMESTAMPWITHTIMEZONE,
+        this,
+        seconds,
     )
+
+    /**
+     * The next expected heartbeat's timestamp: the heartbeat interval and the grace period after the last heartbeat.
+     */
+    val nextExpectedHeartbeatField: Field<OffsetDateTime?> = PUSH_MONITOR.LAST_HEARTBEAT
+        .plusSeconds(PUSH_MONITOR.HEARTBEAT_INTERVAL.plus(PUSH_MONITOR.GRACE_PERIOD))
+
+    /**
+     * The deadline of the next heartbeat that can be counted as a missed one, calculated by taking the already
+     * recorded pending failures of the monitor into account: the Nth missed heartbeat is due at
+     * lastHeartbeat + N * heartbeatInterval + gracePeriod.
+     *
+     * Without it every single scheduled check would count as a separate failure for the monitors with a failure count
+     * threshold greater than 1, instead of counting every missed heartbeat only once.
+     */
+    private val nextCountableHeartbeat: Field<OffsetDateTime?> = PUSH_MONITOR.LAST_HEARTBEAT
+        .plusSeconds(
+            DSL.coalesce(PENDING_FAILURE.FAILURE_COUNT, 0L)
+                .plus(1)
+                .times(PUSH_MONITOR.HEARTBEAT_INTERVAL)
+                .plus(PUSH_MONITOR.GRACE_PERIOD)
+        )
+
+    /**
+     * The deadline of the next failure that can be recorded at all, which is one heartbeat interval after the last
+     * recorded one. Since every deadline that is derived from the last heartbeat is already behind us when that
+     * heartbeat is long overdue, the checks would burn through the whole threshold of such a monitor within seconds
+     * without it - which is exactly what happens after a maintenance window (where the missed heartbeats are not
+     * counted at all), or after a restart of Kuvasz itself. In a steady state it is the same as
+     * [nextCountableHeartbeat], because a pending failure is recorded exactly at the deadline of the heartbeat it
+     * belongs to.
+     */
+    private val nextCountableFailure: Field<OffsetDateTime?> =
+        DSL.coalesce(PENDING_FAILURE.UPDATED_AT, PUSH_MONITOR.LAST_HEARTBEAT)
+            .plusSeconds(PUSH_MONITOR.HEARTBEAT_INTERVAL)
 
     /**
      * Fetches the push monitors that:
      * - are enabled
-     * - have an already recorded heartbeat, and the next expected heartbeat is behind us
+     * - have an already recorded heartbeat, and the deadline of their next countable missed heartbeat is behind us
      */
     fun fetchWithMissedHeartbeats(txCtx: DSLContext?): List<PushMonitorRecord> = (txCtx ?: dslContext)
-        .selectFrom(PUSH_MONITOR)
+        .select(PUSH_MONITOR.asterisk())
+        .from(PUSH_MONITOR)
+        .leftJoin(PENDING_FAILURE).on(PENDING_FAILURE.MONITOR_ID.eq(PUSH_MONITOR.ID))
         .where(PUSH_MONITOR.ENABLED.isTrue)
         .and(PUSH_MONITOR.LAST_HEARTBEAT.isNotNull)
-        .and(nextExpectedHeartbeatField.le(DSL.currentOffsetDateTime()))
-        .fetch()
+        .and(nextCountableHeartbeat.le(DSL.currentOffsetDateTime()))
+        .and(nextCountableFailure.le(DSL.currentOffsetDateTime()))
+        .fetchInto(PUSH_MONITOR)
 
     /**
      * Updates a push monitor's last heartbeat to the provided timestamp by matching its client secret.

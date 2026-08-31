@@ -42,7 +42,7 @@ class HeartbeatChecker(
                     error = Messages.missedHeartbeat(),
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
                 ).also { event ->
-                    if (event.isDownNow(pendingFailureRepository)) {
+                    if (event.isDownNow(pendingFailureRepository, txCtx)) {
                         databaseEventHandler.handleUptimeMonitorEvent(event)
                         eventDispatcher.dispatch(event)
                     }

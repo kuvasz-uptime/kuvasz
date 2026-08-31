@@ -3,9 +3,11 @@ package com.kuvaszuptime.kuvasz.services.check.push
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PendingFailureRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
@@ -15,8 +17,11 @@ import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -29,6 +34,9 @@ import org.jooq.DSLContext
 @MicronautTest(startApplication = false)
 class HeartbeatCheckerTest(
     dslContext: DSLContext,
+    pushMonitorRepository: PushMonitorRepository,
+    pushUptimeEventRepository: PushUptimeEventRepository,
+    pendingFailureRepository: PendingFailureRepository,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -49,16 +57,52 @@ class HeartbeatCheckerTest(
             pendingFailureRepository = mockPendingFailureRepo,
             maintenanceWindowService = maintenanceWindowServiceMock,
         )
+        val checkerWithRealRepos = HeartbeatChecker(
+            dslCtx = dslContext,
+            eventDispatcher = dispatcher,
+            pushMonitorRepository = pushMonitorRepository,
+            uptimeEventRepository = pushUptimeEventRepository,
+            databaseEventHandler = mockDbEventHandler,
+            pendingFailureRepository = pendingFailureRepository,
+            maintenanceWindowService = maintenanceWindowServiceMock,
+        )
+
+        fun pendingFailureCountOf(monitorId: Long): Long? = dslContext
+            .select(PENDING_FAILURE.FAILURE_COUNT)
+            .from(PENDING_FAILURE)
+            .where(PENDING_FAILURE.MONITOR_ID.eq(monitorId))
+            .fetchOne(PENDING_FAILURE.FAILURE_COUNT)
+
+        // Simulating the passing of time by moving the monitor's last heartbeat and its already recorded failures
+        // backwards, since both of them are taken into account when the next countable heartbeat is calculated
+        fun elapse(monitor: PushMonitorRecord, seconds: Long) {
+            pushMonitorRepository.findById(monitor.id, null)?.lastHeartbeat?.let { lastHeartbeat ->
+                pushMonitorRepository.updateLastHeartbeat(
+                    clientSecret = monitor.clientSecret,
+                    timestamp = lastHeartbeat.minusSeconds(seconds),
+                )
+            }
+            dslContext.selectFrom(PENDING_FAILURE)
+                .where(PENDING_FAILURE.MONITOR_ID.eq(monitor.id))
+                .fetchOne()
+                ?.let { pendingFailure ->
+                    dslContext.update(PENDING_FAILURE)
+                        .set(PENDING_FAILURE.UPDATED_AT, pendingFailure.updatedAt.minusSeconds(seconds))
+                        .where(PENDING_FAILURE.MONITOR_ID.eq(monitor.id))
+                        .execute()
+                }
+        }
 
         given("the HeartbeatChecker logic") {
 
             `when`("the checker is called") {
 
                 fun mockPendingFailure(monitorId: Long, failureCount: Long) {
-                    every { mockPendingFailureRepo.createOrIncrement(monitorId) } returns PendingFailureRecord().apply {
-                        this.monitorId = monitorId
-                        this.failureCount = failureCount
-                    }
+                    every { mockPendingFailureRepo.createOrIncrement(monitorId, any()) } returns
+                        PendingFailureRecord().apply {
+                            this.monitorId = monitorId
+                            this.failureCount = failureCount
+                        }
                 }
 
                 val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
@@ -126,6 +170,69 @@ class HeartbeatCheckerTest(
                     }
 
                     verify(exactly = 3) { mockDbEventHandler.handleUptimeMonitorEvent(any<PushMonitorDownEvent>()) }
+                }
+            }
+
+            `when`("a monitor with a failure count threshold misses its heartbeats") {
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                dispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    heartbeatInterval = 3,
+                    failureCountThreshold = 3,
+                    lastHeartbeat = getCurrentTimestamp().minusSeconds(4),
+                )
+
+                // Simulating the scheduled checks that are running way more frequently than the heartbeat interval
+                fun simulateChecksOfWindow() = repeat(3) { checkerWithRealRepos.checkHeartbeats() }
+
+                then("it should count every missed heartbeat only once and go down after the threshold") {
+                    simulateChecksOfWindow()
+                    pendingFailureCountOf(monitor.id) shouldBe 1L
+                    testSubscriber.values().shouldBeEmpty()
+
+                    elapse(monitor, 4)
+                    simulateChecksOfWindow()
+                    pendingFailureCountOf(monitor.id) shouldBe 2L
+                    testSubscriber.values().shouldBeEmpty()
+
+                    elapse(monitor, 4)
+                    checkerWithRealRepos.checkHeartbeats()
+
+                    val events = testSubscriber.awaitCount(1).values()
+                    events.single().shouldBeInstanceOf<PushMonitorDownEvent>().monitor.id shouldBe monitor.id
+                    pendingFailureCountOf(monitor.id).shouldBeNull()
+                }
+            }
+
+            `when`("a monitor with a failure count threshold has a long overdue heartbeat") {
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                dispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                // The state Kuvasz is in after a maintenance window of the monitor, or after a restart of its own:
+                // every heartbeat deadline that is derived from the last heartbeat is already behind us
+                val monitor = createPushMonitor(
+                    pushMonitorRepository,
+                    enabled = true,
+                    heartbeatInterval = 3,
+                    failureCountThreshold = 3,
+                    lastHeartbeat = getCurrentTimestamp().minusSeconds(60),
+                )
+
+                then("it should not burn through its threshold, but count a single failure only") {
+                    repeat(5) { checkerWithRealRepos.checkHeartbeats() }
+
+                    pendingFailureCountOf(monitor.id) shouldBe 1L
+                    testSubscriber.values().shouldBeEmpty()
+
+                    // The next missed heartbeat is only countable a whole heartbeat interval later
+                    elapse(monitor, 4)
+                    repeat(5) { checkerWithRealRepos.checkHeartbeats() }
+
+                    pendingFailureCountOf(monitor.id) shouldBe 2L
+                    testSubscriber.values().shouldBeEmpty()
                 }
             }
 
