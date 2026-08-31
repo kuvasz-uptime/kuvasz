@@ -8,8 +8,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -35,7 +35,7 @@ class TcpMonitorRepository(
         .where(TCP_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String): TcpMonitorRecord? = dslContext
+    fun findByName(name: String, txCtx: DSLContext = this.dslContext): TcpMonitorRecord? = txCtx
         .selectFrom(TCP_MONITOR)
         .where(TCP_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -123,12 +123,13 @@ class TcpMonitorRepository(
         .returning(TCP_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
-        .deleteFrom(TCP_MONITOR)
-        .where(TCP_MONITOR.ID.notIn(ignoredIds))
-        .returning(TCP_MONITOR.NAME)
-        .fetch()
-        .map { it.monitorId() }
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
+        txCtx
+            .deleteFrom(TCP_MONITOR)
+            .where(TCP_MONITOR.ID.notIn(ignoredIds))
+            .returning(TCP_MONITOR.ID, TCP_MONITOR.NAME)
+            .fetch()
+            .map { it.idWithName() }
 
     fun updateIntegrations(monitorId: Long, newIntegrations: Array<IntegrationID>) {
         dslContext

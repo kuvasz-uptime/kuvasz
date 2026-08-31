@@ -157,7 +157,7 @@ class IcmpMonitorActions(
             }
             // If the metrics history is disabled, we need to delete all the existing logs
             if (!updatedMonitor.metricsHistoryEnabled && existingMonitor.metricsHistoryEnabled) {
-                metricsLogRepository.deleteAllByMonitorId(existingMonitor.id)
+                metricsLogRepository.deleteAllByMonitorId(existingMonitor.id, txCtx)
             }
         }
 

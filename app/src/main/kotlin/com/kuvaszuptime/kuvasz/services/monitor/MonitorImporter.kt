@@ -160,7 +160,7 @@ class MonitorImporter(
             monitorType = MonitorType.HTTP_SSL,
             receivedCnt = monitorConfigs.size,
             imported = upsertedMonitors.map { it.monitorId() },
-            deleted = deleted,
+            deleted = deleted.map { it.monitorId },
             ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }
@@ -190,7 +190,7 @@ class MonitorImporter(
             monitorType = MonitorType.PUSH,
             receivedCnt = monitorConfigs.size,
             imported = upsertedMonitors.map { it.monitorId() },
-            deleted = deleted,
+            deleted = deleted.map { it.monitorId },
             ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }
@@ -220,7 +220,7 @@ class MonitorImporter(
             monitorType = MonitorType.ICMP,
             receivedCnt = monitorConfigs.size,
             imported = upsertedMonitors.map { it.monitorId() },
-            deleted = deleted,
+            deleted = deleted.map { it.monitorId },
             ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }
@@ -250,7 +250,7 @@ class MonitorImporter(
             monitorType = MonitorType.TCP,
             receivedCnt = monitorConfigs.size,
             imported = upsertedMonitors.map { it.monitorId() },
-            deleted = deleted,
+            deleted = deleted.map { it.monitorId },
             ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }
@@ -280,7 +280,7 @@ class MonitorImporter(
             monitorType = MonitorType.DNS,
             receivedCnt = monitorConfigs.size,
             imported = upsertedMonitors.map { it.monitorId() },
-            deleted = deleted,
+            deleted = deleted.map { it.monitorId },
             ignoredIntegrations = ignoredIntegrations.toList(),
         )
     }

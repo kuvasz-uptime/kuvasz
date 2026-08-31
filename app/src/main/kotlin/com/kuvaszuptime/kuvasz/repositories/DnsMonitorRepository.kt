@@ -9,8 +9,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
+import com.kuvaszuptime.kuvasz.models.monitor.dns.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -38,7 +38,7 @@ class DnsMonitorRepository(
         .where(DNS_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String): DnsMonitorRecord? = dslContext
+    fun findByName(name: String, txCtx: DSLContext = this.dslContext): DnsMonitorRecord? = txCtx
         .selectFrom(DNS_MONITOR)
         .where(DNS_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -140,12 +140,13 @@ class DnsMonitorRepository(
         .returning(DNS_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
-        .deleteFrom(DNS_MONITOR)
-        .where(DNS_MONITOR.ID.notIn(ignoredIds))
-        .returning(DNS_MONITOR.NAME)
-        .fetch()
-        .map { it.monitorId() }
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
+        txCtx
+            .deleteFrom(DNS_MONITOR)
+            .where(DNS_MONITOR.ID.notIn(ignoredIds))
+            .returning(DNS_MONITOR.ID, DNS_MONITOR.NAME)
+            .fetch()
+            .map { it.idWithName() }
 
     val latestUptimeEventSelect: Table<DnsUptimeEventRecord?> = DSL.table(
         DSL.selectFrom(DNS_UPTIME_EVENT)

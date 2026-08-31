@@ -92,7 +92,7 @@ class IcmpMetricsLogRepository(private val dslContext: DSLContext) {
         .where(ICMP_METRICS_LOG.CREATED_AT.lessThan(limit))
         .execute()
 
-    fun deleteAllByMonitorId(monitorId: Long) = dslContext
+    fun deleteAllByMonitorId(monitorId: Long, txCtx: DSLContext? = null) = (txCtx ?: dslContext)
         .delete(ICMP_METRICS_LOG)
         .where(ICMP_METRICS_LOG.MONITOR_ID.eq(monitorId))
         .execute()

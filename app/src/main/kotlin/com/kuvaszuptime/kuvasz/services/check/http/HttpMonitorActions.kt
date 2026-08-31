@@ -175,7 +175,7 @@ class HttpMonitorActions(
             }
             // If the latency history is disabled, we need to delete all the existing logs
             if (!updatedMonitor.latencyHistoryEnabled && existingMonitor.latencyHistoryEnabled) {
-                latencyLogRepository.deleteAllByMonitorId(existingMonitor.id)
+                latencyLogRepository.deleteAllByMonitorId(existingMonitor.id, txCtx)
             }
         }
 

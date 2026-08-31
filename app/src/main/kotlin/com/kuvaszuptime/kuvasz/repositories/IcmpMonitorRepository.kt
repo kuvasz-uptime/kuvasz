@@ -8,8 +8,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
+import com.kuvaszuptime.kuvasz.models.monitor.icmp.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -35,7 +35,7 @@ class IcmpMonitorRepository(
         .where(ICMP_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String): IcmpMonitorRecord? = dslContext
+    fun findByName(name: String, txCtx: DSLContext = this.dslContext): IcmpMonitorRecord? = txCtx
         .selectFrom(ICMP_MONITOR)
         .where(ICMP_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -123,12 +123,13 @@ class IcmpMonitorRepository(
         .returning(ICMP_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
-        .deleteFrom(ICMP_MONITOR)
-        .where(ICMP_MONITOR.ID.notIn(ignoredIds))
-        .returning(ICMP_MONITOR.NAME)
-        .fetch()
-        .map { it.monitorId() }
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
+        txCtx
+            .deleteFrom(ICMP_MONITOR)
+            .where(ICMP_MONITOR.ID.notIn(ignoredIds))
+            .returning(ICMP_MONITOR.ID, ICMP_MONITOR.NAME)
+            .fetch()
+            .map { it.idWithName() }
 
     fun updateIntegrations(monitorId: Long, newIntegrations: Array<IntegrationID>) {
         dslContext

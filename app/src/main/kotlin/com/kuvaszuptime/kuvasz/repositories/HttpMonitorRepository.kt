@@ -11,8 +11,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
+import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -40,7 +40,7 @@ class HttpMonitorRepository(
         .where(HTTP_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String): HttpMonitorRecord? = dslContext
+    fun findByName(name: String, txCtx: DSLContext = this.dslContext): HttpMonitorRecord? = txCtx
         .selectFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -154,15 +154,13 @@ class HttpMonitorRepository(
             .execute()
     }
 
-    /**
-     * Deletes all monitors except the ones with the given IDs and returns the deleted monitors' IDs.
-     */
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
-        .deleteFrom(HTTP_MONITOR)
-        .where(HTTP_MONITOR.ID.notIn(ignoredIds))
-        .returning(HTTP_MONITOR.NAME)
-        .fetch()
-        .map { it.monitorId() }
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
+        txCtx
+            .deleteFrom(HTTP_MONITOR)
+            .where(HTTP_MONITOR.ID.notIn(ignoredIds))
+            .returning(HTTP_MONITOR.ID, HTTP_MONITOR.NAME)
+            .fetch()
+            .map { it.idWithName() }
 
     val latestUptimeEventSelect: Table<HttpUptimeEventRecord?> = DSL.table(
         DSL.selectFrom(HTTP_UPTIME_EVENT)
