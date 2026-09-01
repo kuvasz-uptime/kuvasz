@@ -19,6 +19,7 @@ import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.push.affectsFailureCounting
 import com.kuvaszuptime.kuvasz.models.monitor.push.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
@@ -166,8 +167,8 @@ class PushMonitorActions(
             // Validate the raw integrations from the DTO
             updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
 
-            monitorRepository.returningUpdate(PushMonitorRecord(updatedMonitor), txCtx).also {
-                if (updatedMonitor.affectsFailureCounting(existingById)) {
+            monitorRepository.returningUpdate(PushMonitorRecord(updatedMonitor), txCtx).also { updated ->
+                if (updated.affectsFailureCounting(existingById)) {
                     // The already recorded failures were counted against the previous settings of the monitor, so
                     // they are not comparable to the updated ones anymore
                     pendingFailureRepository.deleteByMonitorId(monitorId, txCtx)
@@ -176,16 +177,6 @@ class PushMonitorActions(
         }.also { updatedMonitorRecord ->
             eventDispatcher.dispatch(MonitorUpdateEvent(updatedMonitorRecord.numericMonitorId()))
         }
-
-    /**
-     * The settings that the already recorded failures of a monitor were counted against: how often a heartbeat is
-     * expected, how long it can be late, and how many missed ones are tolerated. Changing any of them invalidates the
-     * failures recorded so far, everything else (e.g. the name or the integrations of the monitor) leaves them intact.
-     */
-    private fun PushMonitor.affectsFailureCounting(existing: PushMonitorRecord): Boolean =
-        heartbeatInterval != existing.heartbeatInterval ||
-            gracePeriod != existing.gracePeriod ||
-            failureCountThreshold != existing.failureCountThreshold
 
     fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<PushUptimeEventDto> =
         monitorRepository.findById(monitorId, null)
