@@ -134,15 +134,15 @@ jooq {
                                 }
                                 table {
                                     expression = "ICMP_MONITOR"
-                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MetricsHistoryMonitorRecord"
                                 }
                                 table {
                                     expression = "TCP_MONITOR"
-                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MetricsHistoryMonitorRecord"
                                 }
                                 table {
                                     expression = "DNS_MONITOR"
-                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MetricsHistoryMonitorRecord"
                                 }
                             }
                         }
