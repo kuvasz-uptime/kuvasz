@@ -1,0 +1,3103 @@
+<!DOCTYPE html><html lang="en" class="no-js"><head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.">
+      
+      
+      
+        <link rel="canonical" href="https://kuvasz-uptime.dev/management/dns-monitors/">
+      
+      
+        <link rel="prev" href="../tcp-monitors/">
+      
+      
+        <link rel="next" href="../status-pages/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DNS monitors - Kuvasz Uptime</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/custom.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+<meta property="og:type" content="website">
+<meta property="og:title" content="DNS monitors - Kuvasz Uptime">
+<meta property="og:description" content="Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.">
+<meta property="og:image" content="https://kuvasz-uptime.dev/assets/images/social/management/dns-monitors.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://kuvasz-uptime.dev/management/dns-monitors/">
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="DNS monitors - Kuvasz Uptime">
+<meta property="twitter:description" content="Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.">
+<meta property="twitter:image" content="https://kuvasz-uptime.dev/assets/images/social/management/dns-monitors.png">
+<link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            .gscrollbar-fixer { padding-right: 15px; }
+            .gdesc-inner { font-size: 0.75rem; }
+            body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color); }
+            body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color); }
+            body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color); }
+        </style></head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#management-methods" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Kuvasz Uptime" class="md-header__button md-logo" aria-label="Kuvasz Uptime" data-md-component="logo">
+      
+  <img src="../../images/kuvasz-logo.webp" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Kuvasz Uptime
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DNS monitors
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo" aria-label="Switch to light mode" type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom" aria-label="Switch to dark mode" type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom" aria-label="Switch to system preference" type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required="">
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix="">
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/kuvasz-uptime/kuvasz" title="Go to repository" class="md-source" data-md-component="source" target="_blank" rel="noopener">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Kuvasz Uptime" class="md-nav__button md-logo" aria-label="Kuvasz Uptime" data-md-component="logo">
+      
+  <img src="../../images/kuvasz-logo.webp" alt="logo">
+
+    </a>
+    Kuvasz Uptime
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kuvasz-uptime/kuvasz" title="Go to repository" class="md-source" data-md-component="source" target="_blank" rel="noopener">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix="">
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/http-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ssl-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSL monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/push-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Push monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/icmp-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ping (ICMP) monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/tcp-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TCP port monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/dns-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DNS monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/status-pages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Status pages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/maintenance-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maintenance windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/mcp-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/flexibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flexibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4">
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/helm-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official Helm chart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked="">
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Management
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Management
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked="">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../managing-monitors/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing monitors
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Managing monitors
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../http-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP &amp; SSL monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../push-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Push monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../icmp-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ICMP monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tcp-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TCP monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DNS monitors
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DNS monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#management-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Management methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uptime-check-interval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uptime check interval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failure-count-threshold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure count threshold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metrics-history-enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics history enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integrations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolver-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolver settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolver settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-resolver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom resolver
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolver-port" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolver port
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transport
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#latency-threshold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Latency threshold
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#record-matchers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Record matchers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Record matchers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regex-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regex patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-response-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected response code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drift-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drift detection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Drift detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drift-detection-enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drift detection enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drift-record-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drift record types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#toggling-a-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Toggling a monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deleting-a-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deleting a monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modifying-the-assigned-integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modifying the assigned integrations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../status-pages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Status pages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../maintenance-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maintenance windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics-exporters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics exporters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recipes &amp; examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../home-assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home Assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://api-docs.kuvasz-uptime.dev" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API docs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upgrade-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrade notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/orgs/kuvasz-uptime/projects/2/views/1" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../localization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Localization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://forms.gle/tLEem28oFVCJmhHW9" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📢 Feedback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sponsoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ❤️ Sponsoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#management-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Management methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uptime-check-interval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uptime check interval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failure-count-threshold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure count threshold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metrics-history-enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics history enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integrations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolver-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolver settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolver settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-resolver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom resolver
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolver-port" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolver port
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transport
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#latency-threshold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Latency threshold
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#record-matchers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Record matchers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Record matchers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regex-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regex patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-response-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected response code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drift-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drift detection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Drift detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drift-detection-enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drift detection enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drift-record-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drift record types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#toggling-a-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Toggling a monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deleting-a-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deleting a monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modifying-the-assigned-integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modifying the assigned integrations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>DNS monitors</h1>
+
+<div class="admonition tip">
+<p class="admonition-title">Before you start...</p>
+<p>Make sure that you <strong>carefully read the</strong> <a href="../managing-monitors/"><strong>common documentation</strong></a> about managing the monitors!</p>
+</div>
+<h2 id="management-methods">Management methods</h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio"><input id="__tabbed_1_2" name="__tabbed_1" type="radio"><input id="__tabbed_1_3" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="__tabbed_1_1">Web UI (recommended)</label><label for="__tabbed_1_2">YAML (advanced)</label><label for="__tabbed_1_3">API (expert)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>If you navigate to the Web UI of <em>Kuvasz</em>, you can create a new monitor on the <strong>Dashboard</strong>, or on the <strong>DNS monitors</strong> page, by clicking the "+ New Monitor" button in the page header.</p>
+</div>
+<div class="tabbed-block">
+<div class="language-yaml highlight"><span class="filename">YAML monitor reference</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">dns-monitors</span><span class="p">:</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor"</span><span class="w"> </span><span class="c1"># (1)!</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">"example.com"</span><span class="w"> </span><span class="c1"># (2)!</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">uptime-check-interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span><span class="w"> </span><span class="c1"># (3)!</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">resolver-host</span><span class="p">:</span><span class="w"> </span><span class="s">"1.1.1.1"</span><span class="w"> </span><span class="c1"># (4)!</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">resolver-port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">53</span><span class="w"> </span><span class="c1"># (5)!</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">transport</span><span class="p">:</span><span class="w"> </span><span class="s">"UDP"</span><span class="w"> </span><span class="c1"># (6)!</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">record-matchers</span><span class="p">:</span><span class="w"> </span><span class="c1"># (7)!</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"A"</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">      </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"93.184.216.34"</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"TXT"</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CONTAINS"</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"v=spf1"</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="nt">expected-response-code</span><span class="p">:</span><span class="w"> </span><span class="s">"NOERROR"</span><span class="w"> </span><span class="c1"># (8)!</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nt">drift-detection-enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"> </span><span class="c1"># (9)!</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nt">drift-record-types</span><span class="p">:</span><span class="w"> </span><span class="c1"># (10)!</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"NS"</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"MX"</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">  </span><span class="nt">timeout-ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"> </span><span class="c1"># (11)!</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="nt">latency-threshold-ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w"> </span><span class="c1"># (12)!</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="nt">failure-count-threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"> </span><span class="c1"># (13)!</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># (14)!</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">  </span><span class="nt">metrics-history-enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># (15)!</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="nt">integrations</span><span class="p">:</span><span class="w"> </span><span class="c1"># (16)!</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"slack:devops_channel"</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="c1"># ... other monitors</span>
+</span></code></pre></div>
+<ol>
+<li><strong>Name</strong>: The name of the monitor, which must be unique across all DNS monitors.</li>
+<li><strong>Host</strong>: The domain name to query (e.g. <code>example.com</code>).</li>
+<li><strong>Uptime check interval</strong>: The interval in seconds at which the uptime checks will be performed. The <strong>minimum value is 5 seconds</strong>.</li>
+<li><strong>Resolver host</strong>: Optional. The nameserver to send the queries to. If unset, the <strong>system resolver</strong> is used.</li>
+<li><strong>Resolver port</strong>: The port of the nameserver. Must be between 1 and 65535. Defaults to 53.</li>
+<li><strong>Transport</strong>: <code>UDP</code> (the default, with an automatic TCP fallback on truncated responses) or <code>TCP</code> (forced for every query).</li>
+<li><strong>Record matchers</strong>: The assertions to evaluate against the resolved records. Each matcher has a <code>record-type</code>, a <code>match-type</code> (<code>EXACT</code>, <code>CONTAINS</code> or <code>REGEX</code>, defaults to <code>CONTAINS</code>) and a <code>value</code>. <strong>All matchers must pass</strong>, and a single matcher passes if <strong>any</strong> record of its type satisfies it. If you leave it empty, the check falls back to a plain <code>A</code> lookup and the up/down status is decided by the response code alone.</li>
+<li><strong>Expected response code</strong>: The response code the resolver is expected to return: <code>NOERROR</code> (default), <code>NXDOMAIN</code>, <code>SERVFAIL</code> or <code>REFUSED</code>. Anything other than <code>NOERROR</code> requires the record matchers to be <strong>empty</strong>.</li>
+<li><strong>Drift detection enabled</strong>: Whether a <strong>dedicated notification</strong> is sent when the resolved records change between two checks, without affecting the up/down status. Defaults to false.</li>
+<li><strong>Drift record types</strong>: Optional. The record types drift detection watches. When empty, it watches exactly the types your record matchers cover; naming types here <strong>replaces</strong> that default with the listed ones. Ignored when drift detection is disabled.</li>
+<li><strong>Timeout (ms)</strong>: The timeout of a whole check in milliseconds, shared as a budget by every query it makes. Must be between 1 and 30000. Defaults to 5000.</li>
+<li><strong>Latency threshold (ms)</strong>: Optional. If set, the check is considered DOWN when resolving the name takes longer than this value. Leave it unset to only alert on failed resolutions.</li>
+<li><strong>Failure count threshold</strong>: The number of consecutive failures that should occur before the monitor is considered down. Defaults to 1.</li>
+<li><strong>Enabled</strong>: Whether the monitor is enabled or not. If it's disabled, it won't be checked, and <strong>no events will be recorded</strong> for it.</li>
+<li><strong>Metrics history enabled</strong>: Whether metrics history (resolution latency) is recorded for the monitor. Defaults to true.</li>
+<li><strong>Integrations</strong>: A list of integrations to assign to the monitor. The format is <code>"{integration-type}:{integration-name}"</code>, where <code>integration-type</code> is the type of the integration (e.g. <code>email</code>, <code>slack</code>, etc.), and <code>integration-name</code> is the name of the integration as defined in the <code>integrations</code> section of your YAML file. Example: <code>email:my-email-integration</code>.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<p>This section won't go into details about the API or about exact API calls, since it's <strong>well documented and must be self-explanatory</strong>. You can find more information about the available endpoints and their usage in the <a href="https://api-docs.kuvasz-uptime.dev" target="_blank" rel="noopener"><strong>API documentation</strong></a>.</p>
+<p>However, here are <strong>few of the most important</strong> endpoints:</p>
+<ul>
+<li><code>GET /api/v2/dns-monitors</code> - List all DNS monitors</li>
+<li><code>GET /api/v2/dns-monitors/{id}</code> - Get a specific DNS monitor by its ID</li>
+<li><code>POST /api/v2/dns-monitors</code> - Create a new DNS monitor</li>
+<li><code>PATCH /api/v2/dns-monitors/{id}</code> - Update an existing DNS monitor</li>
+<li><code>DELETE /api/v2/dns-monitors/{id}</code> - Delete a DNS monitor</li>
+</ul>
+</div>
+</div>
+</div>
+<h2 id="settings">Settings</h2>
+<h3 id="name">Name</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#required" title="Required"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z"></path></svg></span></a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">string</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>name</code></span></span></p>
+<p>The name of the monitor, which <strong>must be unique</strong> across all DNS monitors.</p>
+<h3 id="host">Host</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#required" title="Required"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z"></path></svg></span></a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">string</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>host</code></span></span></p>
+<p>The <strong>domain name to query</strong> (e.g. <code>example.com</code>). This is the name the queries are sent for, not the nameserver that answers them - see the <a href="#custom-resolver">custom resolver</a> for that.</p>
+<h3 id="uptime-check-interval">Uptime check interval</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#required" title="Required"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z"></path></svg></span></a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">number</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>uptime-check-interval</code></span></span></p>
+<p>The interval <strong>in seconds</strong> at which the uptime checks will be performed. The <strong>minimum value is 5 seconds</strong>.</p>
+<h3 id="enabled">Enabled</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>true</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">boolean</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>enabled</code></span></span></p>
+<p>Whether the monitor is enabled or not. If it's disabled, it won't be checked, and <strong>no events will be recorded</strong> for it.</p>
+<h3 id="failure-count-threshold">Failure count threshold</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>1</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">number</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>failure-count-threshold</code></span></span></p>
+<p>The number of <strong>consecutive failures</strong> that should occur before the monitor is considered down. Defaults to 1, which means that the monitor will be considered down after the first failure. If you set it to a higher value, for example 3, the monitor will be considered down only after 3 consecutive failures, which can help to reduce false positives in case of temporary network issues or other transient problems.</p>
+<h3 id="metrics-history-enabled">Metrics history enabled</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>true</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">boolean</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>metrics-history-enabled</code></span></span></p>
+<p>Whether the metrics history (resolution latency over time) is enabled or not. If it's disabled, the monitor <strong>won't record the measured metrics</strong>. If you disable it on a monitor that has already recorded metrics history, the <strong>existing history will be deleted</strong>.</p>
+<h3 id="integrations">Integrations <span class="mdx-badge"><span class="mdx-badge__icon"><a href="../integrations/" title="Configuration"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64z"></path></svg></span></a></span></span></h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text">empty</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">list</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>integrations</code></span></span></p>
+<p>A list of <strong>integrations to assign</strong> to the monitor.</p>
+<p>If you're using YAML, or the API, the format is <code>"{type}:{name}"</code>, where <code>type</code> is the alias of the integration (e.g. <code>email</code>, <code>slack</code>, etc.), and <code>name</code> is the name of the integration as defined in the <a href="../integrations/"><strong><code>integrations</code> section of your YAML file</strong></a>. Example: <code>email:my-email-integration</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You can add/keep <strong>disabled integrations in the list</strong>, but they will not be used for the monitor. This is useful if you want to enable them later without modifying the monitor's configuration.</p>
+<p><strong>Global integrations</strong> can be explicitly added too, which is handy if you're about to <strong>make them non-global later</strong>, but you want to make sure that they will be assigned to certain monitors even after the change.</p>
+</div>
+<h2 id="resolver-settings">Resolver settings</h2>
+<h3 id="custom-resolver">Custom resolver</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text">empty</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">string</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>resolver-host</code></span></span></p>
+<p>The <strong>nameserver to send the queries to</strong>, either as a hostname or as an IP address (e.g. <code>1.1.1.1</code>). If you leave it unset, the <strong>system resolver</strong> of the container is used, which is the right choice when you want to monitor the name the way your infrastructure sees it.</p>
+<p>Setting it explicitly is useful when you want to <strong>verify a specific nameserver</strong>: your authoritative servers, your internal DNS, or a public resolver like <code>1.1.1.1</code> or <code>8.8.8.8</code> to see what the outside world gets.</p>
+<div class="admonition tip">
+<p class="admonition-title">Monitoring multiple resolvers</p>
+<p>Since a monitor queries exactly one resolver, the way to <strong>compare resolvers</strong> is to create one monitor per resolver with the same host and the same matchers. That also gives you separate incidents, latency history and notifications per resolver.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Prefer an IP address over a hostname</p>
+<p>A hostname has to be <strong>resolved first</strong>, before the check can send a single query to it - and that lookup goes through the <strong>system resolver</strong>, on <strong>every check</strong>. Two consequences worth knowing about:</p>
+<ul>
+<li>It is <strong>not covered by the <a href="#timeout">timeout</a></strong>. The timeout budget applies to the queries the check sends to your nameserver, not to finding that nameserver in the first place. If the system resolver is slow or unreachable, the check can take considerably longer than <code>timeout-ms</code> before it gives up.</li>
+<li>When it does give up, the monitor goes DOWN with a <strong>timeout or network error from the queries</strong>, not with one naming the resolver - so a broken <code>resolver-host</code> looks like a broken monitored name.</li>
+</ul>
+<p>Giving an <strong>IP address</strong> (<code>1.1.1.1</code>, <code>10.0.0.53</code>, ...) skips the lookup entirely and keeps the whole check inside its budget. Use a hostname only when the address genuinely isn't stable, and keep in mind that you are then also monitoring the system resolver's ability to resolve it.</p>
+</div>
+<h3 id="resolver-port">Resolver port</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>53</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">number</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>resolver-port</code></span></span></p>
+<p>The <strong>port of the nameserver</strong>. Must be between 1 and 65535. You only need to change it if your nameserver listens on a non-standard port (e.g. a local resolver on <code>5353</code>).</p>
+<h3 id="transport">Transport</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>UDP</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">enum</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>transport</code></span></span></p>
+<p>The <strong>transport used for the queries</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UDP</code></td>
+<td>Queries are sent over UDP, and are <strong>automatically retried over TCP</strong> when the response comes back truncated. The default, and what a normal resolver does.</td>
+</tr>
+<tr>
+<td><code>TCP</code></td>
+<td><strong>Every</strong> query is sent over TCP. Useful when you want to verify that your nameserver accepts TCP queries at all - which it is required to, even though it is often overlooked.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Encrypted transports</p>
+<p>DNS over TLS/HTTPS/QUIC (<code>DoT</code> / <code>DoH</code> / <code>DoQ</code>) is <strong>not supported yet</strong>.</p>
+</div>
+<h3 id="timeout">Timeout</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>5000</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">number</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>timeout-ms</code></span></span></p>
+<p>The <strong>timeout of a whole check in milliseconds</strong>. Must be between 1 and 30000. If the resolver doesn't answer within this time, the check is considered a failure.</p>
+<p>Note that this is a <strong>budget shared by every query the check makes</strong>, not a per-query limit. A monitor with matchers on three different record types sends three queries, and each of them gets whatever the previous ones left over - so <strong>asserting on more record types never extends the time a check may take</strong>. The <a href="#drift-record-types">lookups made only for drift detection</a> draw from the same budget, and are made last: a slow assertion phase starves them, which skips the drift comparison for that round instead of letting the check run longer.</p>
+<p>The budget covers the queries sent to your nameserver. It does <strong>not</strong> cover looking up the nameserver itself when <a href="#custom-resolver"><code>resolver-host</code></a> is given as a hostname rather than an IP address - see the warning there.</p>
+<h3 id="latency-threshold">Latency threshold</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text">empty</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">number</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>latency-threshold-ms</code></span></span></p>
+<p>An <strong>optional resolution-latency threshold in milliseconds</strong>. If set, the check is considered DOWN when resolving the name takes longer than this value, even if the answer itself is correct. Leave it unset to only alert when the resolution fails.</p>
+<p>This works <strong>together with</strong> the timeout, not instead of it. The <a href="#timeout">timeout</a> is the hard ceiling that decides whether the name <strong>resolves at all</strong>, while the latency threshold is a lower bar that flags resolutions which succeed but are <strong>too slow</strong>. For example, with <code>timeout-ms: 5000</code> and <code>latency-threshold-ms: 500</code>, a resolution that takes 800 ms still returns a valid answer, but it breaches your latency SLA, so the monitor is marked DOWN with a dedicated latency error.</p>
+<p>The measured latency is the <strong>total wall-clock time of the check's assertion queries</strong>: a monitor asserting on three record types measures all three lookups together, so adding a matcher on a type you didn't query before raises the reading even though nothing got slower. Revisit the threshold when you add matchers. Lookups performed only for <a href="#drift-record-types">drift detection</a> are deliberately <strong>excluded</strong> from the reading, so widening your drift watch list can never push a monitor over its latency threshold.</p>
+<div class="admonition warning">
+<p class="admonition-title">Keep it well below the timeout</p>
+<p>Since the <a href="#timeout">timeout</a> is a budget for the <strong>whole check</strong>, a check can never measure more latency than the timeout allows: once the budget is gone, the next query fails and the monitor goes DOWN with a <strong>timeout error</strong> rather than a latency error.</p>
+<p>A <code>latency-threshold-ms</code> set at or above <code>timeout-ms</code> therefore <strong>never fires</strong>. Leave the threshold a comfortable margin below the timeout - and remember that the margin is shared by every record type you assert on.</p>
+</div>
+<h2 id="evaluation-settings">Evaluation settings</h2>
+<h3 id="record-matchers">Record matchers</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text">empty</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">list</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>record-matchers</code></span></span></p>
+<p>The <strong>assertions to evaluate</strong> against the resolved records. Each matcher consists of three fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>record-type</code></td>
+<td><code>A</code>, <code>AAAA</code>, <code>CNAME</code>, <code>MX</code>, <code>NS</code>, <code>TXT</code>, <code>SOA</code>, <code>SRV</code>, <code>CAA</code>, <code>PTR</code></td>
+<td>The record type the matcher is evaluated against</td>
+</tr>
+<tr>
+<td><code>match-type</code></td>
+<td><code>EXACT</code>, <code>CONTAINS</code> (default), <code>REGEX</code></td>
+<td>How the value is compared to the records</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>any non-blank string</td>
+<td>The expected value. For <code>REGEX</code> it must be a valid <a href="#regex-patterns">Java / Kotlin regex</a></td>
+</tr>
+</tbody>
+</table>
+<p>The evaluation rules are the following:</p>
+<ul>
+<li><strong>Every matcher must pass</strong> - they are ANDed.</li>
+<li>A <strong>single matcher passes if at least one record</strong> of its type satisfies it. This is what makes multi-value answers (round-robin <code>A</code> records, multiple <code>MX</code> or <code>NS</code> entries) work naturally: asserting on one of them doesn't require you to enumerate the rest.</li>
+<li>A matcher whose record type returned <strong>no records at all</strong> fails, and the resulting DOWN event names the failing matchers.</li>
+<li>Only the record types your matchers cover are <strong>actually queried</strong>, one query per distinct type. (An explicit <a href="#drift-record-types">drift watch list</a> can add further lookups.)</li>
+<li>If the list is <strong>empty</strong>, the check falls back to a plain <code>A</code> lookup, and the up/down status is decided by the <a href="#expected-response-code">response code</a> alone.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">An empty answer is not a failure on its own</p>
+<p>With no matchers, only the <strong>response code</strong> is evaluated. A name that exists but has <strong>no <code>A</code> record</strong> answers <code>NOERROR</code> with an empty answer section, so such a monitor is <strong>UP</strong> even though nothing was resolved. A name that doesn't exist answers <code>NXDOMAIN</code> and is correctly marked DOWN.</p>
+<p>If you want to require that the answer actually contains something, add a matcher that any record satisfies - a <code>REGEX</code> matcher with the value <code>.</code> is the shortest way, since it matches any non-empty record and fails when there are none.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Requiring <em>all</em> of several values</p>
+<p>Because a matcher passes when <em>any</em> record satisfies it, <em>"the answer must contain </em><em>both</em><em> <code>1.2.3.4</code> and <code>5.6.7.8</code>"</em> is expressed as <strong>two <code>EXACT</code> matchers</strong>, one per required value. Each of them has to find its own record, and since all matchers are ANDed, both values must be present.</p>
+<p>This does <strong>not</strong> assert that <em>nothing else</em> is in the answer - use <a href="#drift-detection">drift detection</a> if you want to know about records you didn't expect.</p>
+</div>
+<h4 id="normalization">Normalization</h4>
+<p>The returned records and the values of your <code>EXACT</code> and <code>CONTAINS</code> matchers go through the <strong>same normalization</strong> before they are compared, so you can paste <code>dig</code> output verbatim without worrying about formatting details. (A <code>REGEX</code> pattern is deliberately left untouched - see <a href="#regex-patterns">regex patterns</a>.) The normalization:</p>
+<ul>
+<li>Records are rendered in their <strong>canonical <code>dig</code> presentation format</strong>, which for the multi-field types means:<ul>
+<li><code>MX</code> → <code>{priority} {exchange}</code>, e.g. <code>10 mail.example.com</code></li>
+<li><code>SRV</code> → <code>{priority} {weight} {port} {target}</code>, e.g. <code>10 5 5060 sip.example.com</code></li>
+<li><code>CAA</code> → <code>{flags} {tag} {value}</code>, e.g. <code>0 issue letsencrypt.org</code></li>
+<li><code>SOA</code> → <code>{mname} {rname} {serial} {refresh} {retry} {expire} {minimum}</code></li>
+</ul>
+</li>
+<li>A <strong>trailing dot is stripped</strong> from the end of the value, so <code>mail.example.com.</code> and <code>mail.example.com</code> are the same thing. Note that this only applies to the very end: in a multi-field type where a name is <em>not</em> the last field - the <code>mname</code> and <code>rname</code> of an <code>SOA</code> - the dot after the name stays, so match those with <code>CONTAINS</code> rather than spelling out the whole record.</li>
+<li>Everything is <strong>lowercased</strong>, since DNS names are case-insensitive.</li>
+<li><strong>Double quotes are removed</strong> and <strong>internal whitespace is collapsed</strong> to single spaces.</li>
+<li><code>TXT</code> records are <strong>rejoined from their 255-byte chunks</strong> into the single logical value they represent. This matters for long records: a DKIM key or a long SPF record is split into chunks on the wire, and comparing them chunk by chunk would make any assertion on them impossible. In <em>Kuvasz</em> you simply assert on the whole value.</li>
+</ul>
+<h4 id="regex-patterns">Regex patterns</h4>
+<p><code>REGEX</code> matchers use the <strong>Java / Kotlin regular expression syntax</strong> (<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/regex/Pattern.html" target="_blank" rel="noopener"><code>java.util.regex.Pattern</code></a>), which is the Perl-style flavor you know from most languages. Everything that dialect offers is available, including:</p>
+<ul>
+<li>shorthand classes (<code>\d</code>, <code>\w</code>, <code>\s</code>, <code>\b</code>) and Unicode properties (<code>\p{L}</code>)</li>
+<li>greedy, lazy and possessive quantifiers (<code>a+</code>, <code>a+?</code>, <code>a++</code>) and atomic groups (<code>(?&gt;…)</code>)</li>
+<li>alternation, grouping, backreferences and named groups (<code>(?&lt;label&gt;…)</code>)</li>
+<li>lookahead and lookbehind (<code>(?=…)</code>, <code>(?&lt;!…)</code>)</li>
+</ul>
+<p>Two dialects it is <strong>not</strong>:</p>
+<ul>
+<li>It is not <strong>POSIX</strong>, and this one bites silently: a bracket expression like <code>[[:alpha:]]</code> <strong>does not fail</strong>, it is read as a character class containing the literal characters <code>:</code>, <code>a</code>, <code>l</code>, <code>p</code> and <code>h</code>. Write <code>\p{Alpha}</code> or <code>[a-z]</code> instead.</li>
+<li>It is not <strong>PCRE</strong>. PCRE-only extensions such as recursion (<code>(?R)</code>) or <code>\K</code> don't exist and are rejected by the server when you save the monitor.</li>
+</ul>
+<p>The way a pattern is evaluated:</p>
+<ul>
+<li>It is matched <strong>against the <a href="#normalization">normalized</a> record</strong>, but the pattern itself is <strong>used as-is</strong> - so write it against the normalized form: no trailing dot, no surrounding quotes, single spaces between fields.</li>
+<li>It only has to match <strong>somewhere inside</strong> the record, like a "contains" match. Anchor it with <code>^</code> and <code>$</code> when you mean the whole record. Multiline mode is off, so those anchors refer to the beginning and the end of the whole record value - which is a single line anyway, since normalization collapses every whitespace character into a space.</li>
+<li>It is always compiled <strong>case-insensitively</strong>, so there is no need for an inline <code>(?i)</code> flag. Records are lowercased by the normalization anyway.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Escaping backslashes</p>
+<p>A regex is a plain string in YAML and JSON, so the quoting style decides whether your backslashes survive:</p>
+<ul>
+<li><strong>single-quoted YAML</strong> (recommended) passes them through as-is: <code>'^[a-z0-9-]+\.example\.com$'</code></li>
+<li><strong>double-quoted YAML</strong> and <strong>JSON</strong> (the REST API) process escape sequences, so every backslash must be doubled: <code>"^[a-z0-9-]+\\.example\\.com$"</code></li>
+</ul>
+<p>An unescaped <code>\.</code> in a double-quoted string is not a literal dot - it may be rejected as an invalid escape or silently become something else.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Invalid patterns are rejected when you save</p>
+<p>A pattern that doesn't compile is refused by every write path (Web UI, REST API, YAML import and YAML bootstrap config), so a typo can never silently turn into an assertion that matches nothing.</p>
+<p>The Web UI additionally pre-checks your pattern <strong>in the browser</strong>, using the JavaScript regex engine, to give you an inline error while you type. The two dialects are nearly identical, but they disagree at the edges in <strong>both directions</strong>:</p>
+<ul>
+<li>Java-only constructs - possessive quantifiers like <code>a*+</code>, atomic groups <code>(?&gt;…)</code> - are <strong>valid on the server</strong> while the in-browser check rejects them. Configure those through the API or YAML if you need them.</li>
+<li>Patterns that JavaScript accepts but Java doesn't - an empty character class <code>[]</code>, or a PCRE-ism like <code>\K</code> - pass the in-browser check and are then <strong>rejected by the server</strong>, so you get the error on save rather than while typing.</li>
+</ul>
+</div>
+<h4 id="examples">Examples</h4>
+<div class="language-yaml highlight"><span class="filename">The name must resolve to a specific pair of IPs</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"A"</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"93.184.216.34"</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"A"</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"93.184.216.35"</span>
+</span></code></pre></div>
+<div class="language-yaml highlight"><span class="filename">Mail is intact: the MX points to us and SPF is published</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"MX"</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"10</span><span class="nv"> </span><span class="s">mail.example.com"</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"TXT"</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CONTAINS"</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"v=spf1"</span>
+</span></code></pre></div>
+<div class="language-yaml highlight"><span class="filename">The CNAME still points somewhere inside our CDN account</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CNAME"</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"REGEX"</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="c1"># Single-quoted, so the backslashes are taken literally. Anchored, so the</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="c1"># whole record must match, not just a part of it.</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">'^[a-z0-9-]+\.our-cdn\.net$'</span>
+</span></code></pre></div>
+<div class="language-yaml highlight"><span class="filename">The same pattern, double-quoted: every backslash has to be doubled</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CNAME"</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"REGEX"</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"^[a-z0-9-]+\\.our-cdn\\.net$"</span>
+</span></code></pre></div>
+<div class="language-yaml highlight"><span class="filename">Unanchored: the DKIM record must contain an RSA key of any length</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"TXT"</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"REGEX"</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">'v=dkim1;.*p=[a-z0-9+/]{100,}={0,2}'</span>
+</span></code></pre></div>
+<h3 id="expected-response-code">Expected response code</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>NOERROR</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">enum</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>expected-response-code</code></span></span></p>
+<p>The <strong>DNS response code</strong> the resolver is expected to return. The monitor is DOWN whenever the observed code differs from it.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NOERROR</code></td>
+<td>The query was answered successfully. The default.</td>
+</tr>
+<tr>
+<td><code>NXDOMAIN</code></td>
+<td>The name <strong>does not exist</strong></td>
+</tr>
+<tr>
+<td><code>SERVFAIL</code></td>
+<td>The nameserver <strong>failed to process</strong> the query</td>
+</tr>
+<tr>
+<td><code>REFUSED</code></td>
+<td>The nameserver <strong>refused</strong> to answer the query</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Other response codes</p>
+<p>Any response code not listed above (<code>NOTIMP</code>, <code>FORMERR</code>, etc.) is reported as <code>SERVFAIL</code>, since from a monitor's point of view they are all the same kind of server-side failure.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Non-<code>NOERROR</code> codes require empty matchers</p>
+<p>Setting this to anything other than <code>NOERROR</code> requires the <a href="#record-matchers">record matchers</a> to be <strong>empty</strong>, and the monitor will be rejected otherwise: you cannot assert on the records of a name that you expect not to resolve.</p>
+<p>This is what makes <strong>negative monitoring</strong> possible: point a monitor at a name that must <em>not</em> exist (a decommissioned host, or a wildcard that shouldn't be there) with <code>expected-response-code: "NXDOMAIN"</code>, and you'll be notified as soon as it starts resolving.</p>
+</div>
+<h2 id="drift-detection">Drift detection</h2>
+<h3 id="drift-detection-enabled">Drift detection enabled</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text"><code>false</code></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">boolean</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>drift-detection-enabled</code></span></span></p>
+<p>Whether <em>Kuvasz</em> should notify you when the <strong>resolved records change</strong> between two checks.</p>
+<p>When enabled, the monitor keeps the <strong>last resolved answer set</strong> as a baseline, and whenever a check returns a different one, a dedicated <strong><code>DNS_RECORDS_CHANGED</code></strong> notification is sent to the assigned integrations, and the baseline is replaced with the new answer. The stored baseline is also shown on the monitor's detail page in the Web UI, under <em>Resolved records</em>.</p>
+<p>Some important properties of this mechanism:</p>
+<ul>
+<li>Drift is evaluated <strong>independently of the up/down status</strong>. A monitor can be perfectly UP and still report drift - which is exactly the point, since a hijacked delegation or an accidental record change resolves just fine.</li>
+<li>Drift <strong>never marks a monitor DOWN</strong> and <strong>never creates an incident</strong>. It is a notification-only event, similar in spirit to the HTTP redirect notification.</li>
+<li>The <strong>first successful check is silent</strong>: it only seeds the baseline, since there is nothing to compare against yet.</li>
+<li>A check that <strong>failed or returned a non-<code>NOERROR</code> response</strong> is never compared, because an empty answer section would otherwise look like every watched record having disappeared at once. This means drift detection is effectively inert on a monitor whose <a href="#expected-response-code">expected response code</a> is not <code>NOERROR</code>: such a monitor is UP exactly when there are no records to compare.</li>
+<li>Record order <strong>doesn't matter</strong>: answer sets are sorted before comparison, so a resolver rotating its round-robin answers won't trigger a notification.</li>
+</ul>
+<div class="admonition question">
+<p class="admonition-title">Why it's off by default?</p>
+<p>Plenty of answer sets <strong>legitimately rotate</strong> - CDN endpoints, short-TTL load balancers, cloud provider IPs. Enabling drift detection on those would only produce noise, so it's an explicit, per-monitor decision.</p>
+</div>
+<h3 id="drift-record-types">Drift record types</h3>
+<p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"></path></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"></path></svg></span></a></span><span class="mdx-badge__text">empty</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"></path></svg></span></a></span><span class="mdx-badge__text">list</span></span>
+<span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"></path></svg></span></a></span><span class="mdx-badge__text"><code>drift-record-types</code></span></span></p>
+<p>The <strong>record types drift detection watches</strong>. Ignored unless <a href="#drift-detection-enabled">drift detection</a> is enabled.</p>
+<ul>
+<li>When <strong>empty</strong> (the default), drift detection watches exactly the record types your <a href="#record-matchers">record matchers</a> cover (or <code>A</code>, when there are no matchers). This costs <strong>no extra lookups</strong>, since those types are queried anyway.</li>
+<li>When you <strong>name types explicitly</strong>, they <strong>replace</strong> that default: exactly the listed types are watched, whether or not your matchers cover them. This is how a monitor watches something it doesn't assert on - watching <code>NS</code> and <code>MX</code>, for example, gets you a notification when your delegation or your mail routing changes, without making either of them a reason to mark the monitor DOWN.</li>
+</ul>
+<p>Each named type that isn't already covered by your matchers <strong>adds one query per check</strong>. These extra lookups are <strong>not counted</strong> towards the measured latency or the <a href="#latency-threshold">latency threshold</a>, and if one of them fails, only the drift comparison is skipped for that round - the up/down evaluation is unaffected.</p>
+<p>They do, however, draw from the check's <a href="#timeout">timeout budget</a>, and they run <strong>after</strong> the assertion queries. A watch list wide enough to exhaust what the assertions left over doesn't slow the check down or endanger its status - it simply means the round ends without a drift comparison. If you see drift notifications go quiet on a monitor with many watched types, raise the timeout.</p>
+<h2 id="common-operations">Common operations</h2>
+<h3 id="toggling-a-monitor">Toggling a monitor</h3>
+<p>You can <strong>enable or disable a monitor</strong> at any time, which is useful if you want to temporarily stop monitoring a specific name without deleting it.</p>
+<p>Disabled monitors <strong>won't be counted in the cumulated metrics</strong>, like uptime ratio.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio"><input id="__tabbed_2_2" name="__tabbed_2" type="radio"><input id="__tabbed_2_3" name="__tabbed_2" type="radio"><div class="tabbed-labels"><label for="__tabbed_2_1">Web UI (recommended)</label><label for="__tabbed_2_2">YAML (advanced)</label><label for="__tabbed_2_3">API (expert)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Look for the <strong>toggle switches</strong> with the <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 19h4V5h-4M6 19h4V5H6z"></path></svg></span> sign.</p>
+</div>
+<div class="tabbed-block">
+<p>Set the <code>enabled</code> field to <code>true</code> or <code>false</code> in your YAML file.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">dns-monitors</span><span class="p">:</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor"</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">"example.com"</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="hll"><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span></span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Use the <code>PATCH /api/v2/dns-monitors/{id}</code> endpoint to update the <code>enabled</code> field of the monitor.</p>
+</div>
+</div>
+</div>
+<h3 id="deleting-a-monitor">Deleting a monitor</h3>
+<p>If you delete a monitor, it will be <strong>removed</strong> from the database, and <strong>all of its recorded events and metrics</strong> (i.e. metrics history, uptime checks, the stored drift baseline, etc.) will be deleted as well. This is a <strong>destructive operation</strong>, so make sure you really want to delete the monitor.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio"><input id="__tabbed_3_2" name="__tabbed_3" type="radio"><input id="__tabbed_3_3" name="__tabbed_3" type="radio"><div class="tabbed-labels"><label for="__tabbed_3_1">Web UI (recommended)</label><label for="__tabbed_3_2">YAML (advanced)</label><label for="__tabbed_3_3">API (expert)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Look for the <strong>delete button</strong> with the <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 3v1H4v2h1v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1V4h-5V3zm0 5h2v9H9zm4 0h2v9h-2z"></path></svg></span> sign next to the monitor you want to delete.</p>
+</div>
+<div class="tabbed-block">
+<p><strong>Remove the monitor from your YAML</strong> file, and then restart <em>Kuvasz</em> to apply the changes.</p>
+</div>
+<div class="tabbed-block">
+<p>Use the <code>DELETE /api/v2/dns-monitors/{id}</code> endpoint to delete the monitor by its ID.</p>
+</div>
+</div>
+</div>
+<h3 id="modifying-the-assigned-integrations">Modifying the assigned integrations</h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio"><input id="__tabbed_4_2" name="__tabbed_4" type="radio"><input id="__tabbed_4_3" name="__tabbed_4" type="radio"><div class="tabbed-labels"><label for="__tabbed_4_1">Web UI (recommended)</label><label for="__tabbed_4_2">YAML (advanced)</label><label for="__tabbed_4_3">API (expert)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>You can modify the assigned integrations of a monitor by clicking on the <strong>configure button</strong> with the <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64z"></path></svg></span> sign on the <strong>monitor's detail page</strong> (look for the <em>Integrations</em> block), where you can add or remove integrations as needed.</p>
+</div>
+<div class="tabbed-block">
+<p>Modify the <code>integrations</code> property of your affected monitor, by adding or removing list items, and then restart <em>Kuvasz</em> to apply the changes.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">dns-monitors</span><span class="p">:</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor"</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">"example.com"</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">uptime-check-interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">integrations</span><span class="p">:</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="hll"><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"slack:devops_channel"</span>
+</span></span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"email:my-email-integration"</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Use the <code>PATCH /api/v2/dns-monitors/{id}</code> endpoint to update the <code>integrations</code> field of the monitor. You can add or remove integrations as needed.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"integrations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="s2">"email:my-email-integration"</span><span class="p">,</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="s2">"slack:my-slack-integration"</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="p">]</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden="">
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer">
+        
+          
+          <a href="../tcp-monitors/" class="md-footer__link md-footer__link--prev" aria-label="Previous: TCP monitors">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                TCP monitors
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../status-pages/" class="md-footer__link md-footer__link--next" aria-label="Next: Status pages">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Status pages
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"></path></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright © 2020 - 2026 Kuvasz Uptime -  <a href="#__consent">Change cookie settings</a>
+
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden="">
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+
+<h4>Cookie consent</h4>
+<p>We use cookies to render the GitHub widget in the header of this documentation.  With your consent, you're helping us to make our documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings">
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked="">
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+      <button type="reset" class="md-button md-button--primary">Reject</button>
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": {"json": [".s2"]}, "base": "../..", "features": ["navigation.top", "navigation.footer", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">
+</script>
+
+  
+<script id="init-glightbox">document.querySelectorAll('.glightbox').forEach(function(element) {
+    try {
+        var img = element.querySelector('img');
+        if (img && img.src) {
+            element.setAttribute('href', img.src);
+        } else {
+            console.log('No img element with src attribute found');
+        }
+    } catch (error) {
+        console.log('Error:', error);
+    }
+});
+const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(()=>{ lightbox.reload(); });
+</script></body></html>

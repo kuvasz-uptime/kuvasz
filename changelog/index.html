@@ -1,0 +1,5026 @@
+<!DOCTYPE html><html lang="en" class="no-js"><head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.">
+      
+      
+      
+        <link rel="canonical" href="https://kuvasz-uptime.dev/changelog/">
+      
+      
+        <link rel="prev" href="../home-assistant/">
+      
+      
+        <link rel="next" href="../upgrade-notes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Changelog - Kuvasz Uptime</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/custom.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+<meta property="og:type" content="website">
+<meta property="og:title" content="Changelog - Kuvasz Uptime">
+<meta property="og:description" content="Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.">
+<meta property="og:image" content="https://kuvasz-uptime.dev/assets/images/social/changelog.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://kuvasz-uptime.dev/changelog/">
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="Changelog - Kuvasz Uptime">
+<meta property="twitter:description" content="Kuvasz is an open-source, self-hosted uptime monitoring solution that provides comprehensive monitoring capabilities for websites and services.">
+<meta property="twitter:image" content="https://kuvasz-uptime.dev/assets/images/social/changelog.png">
+<link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            .gscrollbar-fixer { padding-right: 15px; }
+            .gdesc-inner { font-size: 0.75rem; }
+            body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color); }
+            body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color); }
+            body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color); }
+        </style></head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#4.3.2" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Kuvasz Uptime" class="md-header__button md-logo" aria-label="Kuvasz Uptime" data-md-component="logo">
+      
+  <img src="../images/kuvasz-logo.webp" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Kuvasz Uptime
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo" aria-label="Switch to light mode" type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom" aria-label="Switch to dark mode" type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom" aria-label="Switch to system preference" type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden="">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required="">
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix="">
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/kuvasz-uptime/kuvasz" title="Go to repository" class="md-source" data-md-component="source" target="_blank" rel="noopener">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Kuvasz Uptime" class="md-nav__button md-logo" aria-label="Kuvasz Uptime" data-md-component="logo">
+      
+  <img src="../images/kuvasz-logo.webp" alt="logo">
+
+    </a>
+    Kuvasz Uptime
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kuvasz-uptime/kuvasz" title="Go to repository" class="md-source" data-md-component="source" target="_blank" rel="noopener">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix="">
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/http-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/ssl-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSL monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/push-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Push monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/icmp-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ping (ICMP) monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/tcp-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TCP port monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/dns-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DNS monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/status-pages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Status pages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/maintenance-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maintenance windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/mcp-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/flexibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flexibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4">
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/helm-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official Helm chart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5">
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Management
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Management
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../management/managing-monitors/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing monitors
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Managing monitors
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/http-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP &amp; SSL monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/push-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Push monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/icmp-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ICMP monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/tcp-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TCP monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/dns-monitors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DNS monitors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/status-pages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Status pages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/maintenance-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maintenance windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/metrics-exporters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics exporters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../management/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recipes &amp; examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../home-assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home Assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://api-docs.kuvasz-uptime.dev" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API docs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#4.3.2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.3.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.3.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.2.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.1.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.1.0-rc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1.0-rc
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1.0-rc">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.1.0-beta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1.0-beta
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1.0-beta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.0.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.0.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.0.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.0.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.0.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.0.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.11.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.11.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.11.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.10.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.10.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.10.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.9.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.9.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.9.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.8.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.8.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.7.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.7.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.7.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.7.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.6.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.6.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.5.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.5.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.5.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.5.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.4.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.4.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.3.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.3
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.1.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.0.2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.0.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.0.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.0.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.0.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.0.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.5.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.5.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.4.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.3.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.3.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.3.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.3.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.2.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.1.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.0.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.0.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.0.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrade-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrade notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/orgs/kuvasz-uptime/projects/2/views/1" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../localization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Localization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/kuvasz-uptime/kuvasz/blob/main/CONTRIBUTING.md" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/kuvasz-uptime/kuvasz/blob/main/LICENSE" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://forms.gle/tLEem28oFVCJmhHW9" class="md-nav__link" target="_blank" rel="noopener">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📢 Feedback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sponsoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ❤️ Sponsoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#4.3.2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.3.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.3.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.2.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.1.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.1.0-rc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1.0-rc
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1.0-rc">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhancements_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhancements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.1.0-beta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1.0-beta
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1.0-beta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.0.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.0.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.0.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4.0.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.0.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.0.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.11.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.11.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.11.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.10.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.10.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.10.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.9.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.9.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.9.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.8.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.8.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.7.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.7.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.7.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.7.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.6.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.6.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.5.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.5.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.5.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.5.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.4.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.4.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.3.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.3
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.2.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.1.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.0.2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.0.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.0.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3.0.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.0.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.0.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.5.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.5.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.4.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improvements_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.3.1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.3.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixes_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.3.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.3.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.2.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixes_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.1.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2.0.0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.0.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.0.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chore_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Changelog</h1>
+
+<h2 id="4.3.2">4.3.2 <small>2026-09-04</small></h2>
+<h3 id="fixes">Fixes</h3>
+<ul>
+<li><strong>Importing monitors left the exported metrics describing the state before the import</strong>: after a <a href="../management/examples/#backup-restore-with-yaml"><strong>YAML import</strong></a>, the <a href="../management/metrics-exporters/"><strong>exported metrics</strong></a> still reported the monitors as they were beforehand. A monitor <strong>deleted</strong> by the import kept being exported forever, frozen at its last known value; a <strong>renamed</strong> one kept its old <code>name</code> and <code>target</code> labels, and picked up a <strong>second series</strong> under its new name as soon as it was checked again; and a monitor the import <strong>disabled</strong> - or turned the SSL check off on - went on being exported, even though a disabled monitor never is otherwise. Only a restart cleaned this up. The exported metrics now follow an import immediately.</li>
+<li><strong>Status pages could keep showing an outdated set of monitors</strong>: the cached <a href="../management/status-pages/"><strong>status page</strong></a> data wasn't dropped when the monitors behind it changed - neither on a YAML import, nor when a monitor was created, edited or deleted on the UI, through the API or over MCP. A page could serve a monitor set that didn't exist any more, or leave out one that had just been added, until its cache expired on its own. Every one of these changes now invalidates it right away.</li>
+<li><strong>Turning the latency or the metrics history off in an import kept the already recorded logs</strong>: doing the very same thing on the UI or through the API deletes them, because they aren't reachable any more once the history is off. An import left them behind in the database instead, and they reappeared the moment the history was turned back on. They are now dropped either way.</li>
+<li><strong>Importing a push monitor kept its recorded failures even when its failure counting changed</strong>: the same problem the previous release fixed for the UI and the API. The failures recorded so far were counted against the monitor's <strong>previous settings</strong>, so once an import changed its <strong>heartbeat interval</strong>, its <strong>grace period</strong> or its <a href="../management/push-monitors/#failure-count-threshold"><strong>failure count threshold</strong></a>, they weren't comparable to the new ones any more. An import now clears them too, exactly like an edit does.</li>
+</ul>
+<h2 id="4.3.1">4.3.1 <small>2026-08-31</small></h2>
+<h3 id="fixes_1">Fixes</h3>
+<ul>
+<li><strong>Push monitors burned through their failure count threshold in seconds</strong>: a missed heartbeat was counted as a <strong>new failure on every check</strong>, and since <em>Kuvasz</em> evaluates the push monitors <strong>every 5 seconds</strong>, a <a href="../management/push-monitors/#failure-count-threshold"><strong>failure count threshold</strong></a> higher than 1 only delayed the alert by a few seconds, instead of tolerating as many missed heartbeats as it was set to. From now on <strong>every missed heartbeat counts only once</strong>.</li>
+<li><strong>Push monitors could go down right after a maintenance window or a restart</strong>: the deadline of the next countable missed heartbeat was calculated from the <strong>last heartbeat</strong> only, so whenever that heartbeat was already long overdue - after a <a href="../management/maintenance-windows/"><strong>maintenance window</strong></a> of the monitor, after a restart or a longer downtime of <em>Kuvasz</em> itself, or after a monitor was paused for a while - the checks credited <strong>all the heartbeats missed in the meantime at once</strong>, burning through the whole <a href="../management/push-monitors/#failure-count-threshold"><strong>failure count threshold</strong></a> within seconds. A missed heartbeat is now counted <strong>at most once per heartbeat interval</strong>, no matter how far behind the last heartbeat is.</li>
+<li><strong>Changing the failure counting of a push monitor resets its pending failures</strong>: the failures recorded so far were counted against the monitor's <strong>previous settings</strong>, so they weren't comparable to the updated ones - lowering the <a href="../management/push-monitors/#failure-count-threshold"><strong>failure count threshold</strong></a> below the number of already recorded failures even left behind a counter that nothing consumed any more, delaying the detection of the next outage. Updating the <strong>heartbeat interval</strong>, the <strong>grace period</strong> or the <strong>failure count threshold</strong> of a monitor now clears them, and its failure counting starts from scratch. Every other setting (its name or integrations, for example) leaves the already recorded failures intact, so editing a monitor during an outage doesn't delay its alert.</li>
+</ul>
+<h2 id="4.3.0">4.3.0 <small>2026-08-31</small></h2>
+<h3 id="features">Features</h3>
+<p><strong>Three new integrations</strong> joined the family, so you can reach more places without hand-crafting a webhook payload for them:</p>
+<ul>
+<li><a href="../management/integrations/#microsoft-teams"><strong>Microsoft Teams</strong></a> posts <strong>Adaptive Cards</strong> to a channel or a chat, color-coded by the severity of the event. It's built on the <strong>Workflows</strong> app, so it isn't affected by the retirement of the <em>Microsoft 365 (Office 365) Connectors</em>.</li>
+<li><a href="../management/integrations/#apprise"><strong>Apprise</strong></a> hands your notifications to a self-hosted <a href="https://github.com/caronc/apprise-api" target="_blank" rel="noopener"><strong>Apprise API</strong></a> instance, which forwards them to <strong>80+ services</strong> at once — <em>ntfy</em>, <em>Gotify</em>, <em>Matrix</em>, SMS providers and many more — so you don't have to wire them up one by one.</li>
+<li><a href="../management/integrations/#pushover"><strong>Pushover</strong></a> sends <strong>push notifications</strong> to your phone, tablet and desktop, and can escalate an outage to its <strong>emergency priority</strong>, which repeats until someone acknowledges it.</li>
+</ul>
+<p>All three behave like every other integration: they can be <strong>global</strong> or assigned to specific monitors and maintenance windows, their events can be filtered with <code>excluded-events</code>, and they're testable right from the UI, the REST API and the MCP server. If you were reaching any of them through a custom webhook until now, you can drop the payload template and replace the whole setup with a handful of properties.</p>
+<h3 id="security">Security</h3>
+<ul>
+<li><strong>Relative redirects were resolved against the wrong hop</strong> (<a href="https://github.com/kuvasz-uptime/kuvasz/security/advisories/GHSA-jq3w-22qh-gf8w" target="_blank" rel="noopener">GHSA-jq3w-22qh-gf8w</a>): when an HTTP monitor followed a chain of redirects, a <strong>relative</strong> <code>Location</code> header was always resolved against the <strong>monitor's own URL</strong> instead of the URL of the hop that actually returned it. A chain like <code>https://a.example → https://b.example/deep/path → Location: /next</code> was followed to <code>https://a.example/next</code> rather than <code>https://b.example/next</code>. Besides checking a completely different resource than the one the hop pointed at, this let an intermediate hop steer the check to an <strong>arbitrary path on the monitored origin</strong> - with the monitor's own request method, body and custom headers attached - even when that origin is only reachable from <em>Kuvasz</em> itself. Relative locations now follow <a href="https://www.rfc-editor.org/rfc/rfc9110#field.location" target="_blank" rel="noopener">RFC 9110</a> and are resolved against the hop that returned them. Reported by <a href="https://github.com/CaptBoykin" target="_blank" rel="noopener">@CaptBoykin</a>.</li>
+</ul>
+<h3 id="enhancements">Enhancements</h3>
+<ul>
+<li><strong>Redirect chains are capped</strong>: the new <a href="../setup/configuration/#http-check-max-redirects"><code>app-config.http-check-max-redirects</code></a> property (<strong>10</strong> by default) limits how many redirects a single HTTP check follows. Redirect loop detection only recognizes a repeated URL, so a chain where every hop is different was previously followed without an upper bound. Exceeding the limit now marks the monitor DOWN with a dedicated error.</li>
+</ul>
+<h2 id="4.2.0">4.2.0 <small>2026-08-10</small></h2>
+<div class="admonition question">
+<p class="admonition-title">Make your voice heard!</p>
+<p>There is a <strong>short questionnaire about Kuvasz</strong> in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it <a href="https://forms.gle/Lb1q6CmW8eUgVbNr9" target="_blank" rel="noopener"><strong>here</strong></a>.</p>
+<p><em>Thanks, Adam</em></p>
+</div>
+<h3 id="features_1">Features</h3>
+<p><strong>TCP</strong> and <strong>DNS monitors</strong> are here!</p>
+<ul>
+<li>
+<p>You can now create <a href="../features/tcp-monitoring/"><strong>TCP monitors</strong></a> that check whether a <strong>TCP service is accepting connections</strong> — a database, an SMTP or SSH server, a message broker, a game server, or any other <code>host:port</code> endpoint — by periodically opening a TCP connection to it. For each check <em>Kuvasz</em> measures <strong>reachability</strong> and <strong>connect latency</strong>, and marks the monitor as DOWN (notifying you through your configured channels) if the connection can't be established within the configured <strong>timeout</strong> or, when set, exceeds the optional <strong>latency threshold</strong>.</p>
+</li>
+<li>
+<p><a href="../features/dns-monitoring/"><strong>DNS monitors</strong></a> arrived as well! They check whether a name resolves, and you can assert on the records it resolves to. A monitor holds a list of <strong>record matchers</strong> (<code>A</code>, <code>AAAA</code>, <code>CNAME</code>, <code>MX</code>, <code>NS</code>, <code>TXT</code>, <code>SOA</code>, <code>SRV</code>, <code>CAA</code>, <code>PTR</code>) matched as <code>EXACT</code>, <code>CONTAINS</code> or <code>REGEX</code>, can expect a specific <strong>response code</strong> (so <em>"this name must <strong>not</strong> resolve"</em> checks work too), and can query a custom nameserver over <code>UDP</code> or <code>TCP</code>. On top of that, an opt-in <strong>drift detection</strong> notifies you when the resolved records change, without flipping the monitor to DOWN. See the <a href="../management/dns-monitors/"><strong>Managing DNS monitors</strong></a> section for further details.</p>
+</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="DNS assertions" src="../images/features/dns_monitor_settings.webp"></a></p>
+<p>Both new types are fully integrated across <em>Kuvasz</em>: they're manageable via the <a href="../management/managing-monitors/"><strong>Web UI, REST API, or YAML</strong></a>, participate in <strong>incidents</strong>, <strong>uptime &amp; latency stats</strong>, <strong>notifications</strong> (including generic webhook templating), the <strong>metrics</strong> exporter, <strong>YAML import/restore</strong>, and are exposed to AI assistants through the <a href="../features/mcp-server/"><strong>MCP server</strong></a>.</p>
+<h3 id="enhancements_1">Enhancements</h3>
+<ul>
+<li>
+<p><strong>The UI got a facelift</strong>:</p>
+<ul>
+<li>the <strong>dashboard</strong> was cleaned up and its stat cards now use <strong>conditional colors</strong>, so a glance is enough to tell whether everything is fine. </li>
+<li>the <strong>columns of the monitor lists</strong> were streamlined with consistent sizing.</li>
+<li>fixed the positioning of the <strong>loading spinners</strong> on the UI.</li>
+</ul>
+</li>
+<li>
+<p><strong>Nicer empty states</strong> everywhere: the dashboard, the monitor lists, the incidents, the integrations, the maintenance windows and the status pages all have a proper empty state now.</p>
+</li>
+<li>The <strong>Settings page was revamped</strong>: the read-only flags of your resources moved to their own <strong><em>"Editability"</em></strong> card, and the <strong>SMTP</strong> settings got a dedicated card as well, instead of being the only entry under the old integration settings.</li>
+<li><strong>Faster status page details</strong>: the uptime statistics of the status pages (and of the <code>GET /api/v2/status-pages/{statusPageId}/details</code> endpoint) are calculated with <strong>batched queries</strong> now, instead of querying the uptime events of every monitor one by one. The bigger your status page is, the more noticeable it is.</li>
+</ul>
+<h3 id="fixes_2">Fixes</h3>
+<ul>
+<li><strong>ICMP latest-latency metric</strong>: the <code>icmp-latest-latency</code> exporter now also updates when a monitor goes DOWN due to <strong>partial packet loss</strong> while some replies still arrived, instead of freezing on the last successful check. The exported gauge now stays consistent with the recorded latency history in this degraded state.</li>
+<li><strong>Case-insensitive sorting across the UI</strong>: monitors, maintenance windows, status pages and integrations were sorted by their name in a case-sensitive way, which pushed every lowercase name after the uppercase ones. They are ordered <strong>case-insensitively</strong> from now on.</li>
+</ul>
+<h3 id="docs">Docs</h3>
+<ul>
+<li><strong>Documented the SMTP related environment variables</strong> (<code>SMTP_CONFIG_HOST</code>, <code>SMTP_CONFIG_PORT</code>, and the rest): the <a href="../setup/configuration/#smtp"><strong>SMTP configuration</strong></a> doesn't have to be provided via YAML, it can be set through environment variables as well.</li>
+<li>Added a new recipe about <a href="../management/examples/#keeping-secrets-out-of-your-configuration-file"><strong>keeping secrets out of your configuration file</strong></a>, covering both the <code>${VARIABLE_NAME}</code> placeholders (with default values) inside the YAML, and splitting your configuration into multiple files via <code>MICRONAUT_CONFIG_FILES</code>, so your secrets can come from a <em>Docker</em> secret.</li>
+</ul>
+<h2 id="4.1.0">4.1.0 <small>2026-07-14</small></h2>
+<h3 id="features_2">Features</h3>
+<p>The long-awaited <strong>maintenance window support</strong> is finally here! 🎉</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Maintenance windows" src="../images/maintenance/maintenance_list.webp"></a></p>
+<ul>
+<li>
+<p>You can now schedule <a href="../features/maintenance-windows/"><strong>planned downtime</strong></a> so <em>Kuvasz</em> pauses the affected checks and suppresses false alerts while you do scheduled work. A window can be <strong>manual</strong> (toggled on and off by hand), <strong>recurring</strong> (a <code>cron</code> expression + <code>duration</code>), or a <strong>one-off</strong> (a <code>start</code> timestamp + <code>duration</code>), and can be scoped to specific monitors or made global. Assigned integrations receive dedicated <strong>start and end notifications</strong>, and windows can optionally be shown on your status pages. Manageable via the <a href="../management/maintenance-windows/"><strong>Web UI, REST API, or YAML</strong></a>, and exposed to AI assistants through the <a href="../features/mcp-server/"><strong>MCP server</strong></a>.</p>
+</li>
+<li>
+<p><strong>YAML import/restore</strong> is now available for your whole configuration: on top of monitors, you can restore <strong>maintenance windows</strong> and <strong>status pages</strong> from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire <em>Kuvasz</em> setup. To try it out, head to the <em>"Settings"</em> page and click the <em>"Backup &amp; Restore"</em> button! Thanks for the monitor imports to <a href="https://github.com/visorcraft" target="_blank" rel="noopener"><strong>@visorcraft</strong></a>!</p>
+</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Kuvasz backup &amp; restore UI" src="../images/features/monitor-imports.webp"></a></p>
+<ul>
+<li><strong>Clonable monitors</strong>: you can now duplicate an existing monitor straight from the Web UI, so creating similar checks no longer means filling out the whole form from scratch.</li>
+</ul>
+<h3 id="enhancements_2">Enhancements</h3>
+<ul>
+<li><strong>Helm chart</strong>: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Also, the chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the <a href="../setup/helm-deployment/"><strong>Helm deployment guide</strong></a> for more details. Thanks for the contribution to <a href="https://github.com/leofvo" target="_blank" rel="noopener"><strong>@leofvo</strong></a>!</li>
+<li>A few custom <a href="../management/examples/#glance-custom-widgets"><strong>Glance widget examples</strong></a> were added to the documentation. </li>
+<li>Added a <strong>proper robots.txt</strong> that prevents search engine from indexing anything but the public status pages (e.g. the login page of Kuvasz won't be indexed anymore in case you publicly expose your instance).</li>
+<li>The actual and the latest version of <em>Kuvasz</em> is <strong>not leaked on the login</strong> page anymore, by hiding the version update badge for non-authenticated users.</li>
+</ul>
+<h2 id="4.1.0-rc">4.1.0-rc <small>2026-07-09</small></h2>
+<h3 id="features_3">Features</h3>
+<ul>
+<li>
+<p><strong>YAML import/restore</strong> is now available for your whole configuration: on top of monitors, you can restore <strong>maintenance windows</strong> and <strong>status pages</strong> from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire <em>Kuvasz</em> setup. To try it out, head to the <em>"Settings"</em> page and click the <em>"Backup &amp; Restore"</em> button! Thanks for the monitor imports to <a href="https://github.com/visorcraft" target="_blank" rel="noopener"><strong>@visorcraft</strong></a>!</p>
+</li>
+<li>
+<p><strong>Clonable monitors</strong>: you can now duplicate an existing monitor straight from the Web UI, so creating similar checks no longer means filling out the whole form from scratch.</p>
+</li>
+</ul>
+<h3 id="enhancements_3">Enhancements</h3>
+<ul>
+<li>Helm chart: removed the hard-coded default image tags so the image tag correctly falls back to the chart version. Thanks for the contribution to <a href="https://github.com/leofvo" target="_blank" rel="noopener"><strong>@leofvo</strong></a>!</li>
+<li>The notification about a maintenance window's end doesn't contain the window's description anymore, because it doesn't really make sense to include it in there.</li>
+</ul>
+<h2 id="4.1.0-beta">4.1.0-beta <small>2026-07-04</small></h2>
+<h3 id="features_4">Features</h3>
+<p>The long-awaited <strong>maintenance window support</strong> is finally here! 🎉</p>
+<ul>
+<li>
+<p>You can now schedule <a href="../features/maintenance-windows/"><strong>planned downtime</strong></a> so <em>Kuvasz</em> pauses the affected checks and suppresses false alerts while you do scheduled work. A window can be <strong>manual</strong> (toggled on and off by hand), <strong>recurring</strong> (a <code>cron</code> expression + <code>duration</code>), or a <strong>one-off</strong> (a <code>start</code> timestamp + <code>duration</code>), and can be scoped to specific monitors or made global. Assigned integrations receive dedicated <strong>start and end notifications</strong>, and windows can optionally be shown on your status pages. Manageable via the <a href="../management/maintenance-windows/"><strong>Web UI, REST API, or YAML</strong></a>, and exposed to AI assistants through the <a href="../features/mcp-server/"><strong>MCP server</strong></a>.</p>
+</li>
+<li>
+<p>Thanks to <a href="https://github.com/leofvo" target="_blank" rel="noopener"><strong>@leofvo</strong></a>, the Helm chart now supports setting up OIDC authentication and its current state also reflects the latest changes related to API keys. See the <a href="../setup/helm-deployment/"><strong>Helm deployment guide</strong></a> for more details.</p>
+</li>
+</ul>
+<p>Under the hood a lot of stuff was refactored (especially around notifications and status pages) to make this possible, and while the regression tests are extensive, it's still a huge change, so <strong>a beta release seemed like a better fit</strong>. Please give it a try and report any issues you find, so we can make the final 4.1.0 release as stable as possible!</p>
+<h2 id="4.0.1">4.0.1 <small>2026-06-17</small></h2>
+<h3 id="fixes_3">Fixes</h3>
+<ul>
+<li><strong>Push monitors no longer deleted on startup when a status page YAML config is present</strong>: a copy-paste bug caused the app to treat a non-empty status page YAML config as if push monitors were also configured via YAML. This triggered an import of an empty push monitor list on startup, deleting every externally (API/UI) managed push monitor.</li>
+</ul>
+<h2 id="4.0.0">4.0.0 <small>2026-06-16</small></h2>
+<h3 id="features_5">Features</h3>
+<ul>
+<li><strong>Built-in MCP server</strong> (experimental): <em>Kuvasz</em> now ships with a <a href="../features/mcp-server/"><strong>Model Context Protocol server</strong></a> that exposes your monitors and incidents as tools AI assistants can call directly. Enabled via the <code>ENABLE_MCP_SERVER</code> environment variable (disabled by default), the server is available at <code>/mcp</code>. Supported tools cover listing, inspecting, creating, deleting and toggling your monitors, as well as querying incidents, status pages, the configured integrations, and other configs. Compatible with practically every MCP client via the <code>mcp-remote</code> bridge.</li>
+<li><strong>OIDC authentication</strong>: as an alternative to the built-in username/password login, you can now authenticate the web UI against any <a href="../setup/configuration/#oidc-authentication-optional"><strong>OpenID Connect provider</strong></a> (Keycloak, Auth0, Okta, etc.). When enabled, the login page offers an OIDC login button, the form-based login is disabled, and the <code>ADMIN_USER</code> / <code>ADMIN_PASSWORD</code> credentials are no longer needed.</li>
+<li><strong>Optional &amp; separated API keys</strong>: API key authentication is now fully <strong>optional</strong> — if you don't configure a key, key-based access is simply disabled and the REST API stays reachable only via a web UI / OIDC session. The <a href="../setup/configuration/#api-key">REST API</a> and the <a href="../setup/configuration/#mcp-api-key">MCP server</a> are now protected by <strong>two separate keys</strong>, so you can grant, rotate, or revoke MCP access independently from REST API access.</li>
+</ul>
+<h3 id="chore">Chore</h3>
+<ul>
+<li>The project has been upgraded to use Micronaut 5 and Kotlin 2.4.0 under the hood</li>
+</ul>
+<h2 id="3.11.0">3.11.0 <small>2026-05-30</small></h2>
+<h3 id="features_6">Features</h3>
+<ul>
+<li><strong>Webhook URLs are templatized</strong> now, so you can include dynamic values in the URL as well, based on the context of the event that triggered the webhook. For further details, please refer to the <a href="../management/integrations/#url"><strong>documentation</strong></a>.</li>
+<li>The <a href="../management/integrations/#http-method"><strong>HTTP method</strong></a> used for a given webhook can be configured now as well, so you are not limited to sending <code>POST</code> requests, but you can choose the most appropriate method (GET, POST, PUT or PATCH) for your use case.</li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul>
+<li><a href="../management/integrations/#webhook-examples"><strong>Documented the integration</strong></a> with the following external notification services:<ul>
+<li>Signal</li>
+<li>Twilio SMS</li>
+<li>Pushover</li>
+<li>Home Assistant webhooks</li>
+<li>Google Chat</li>
+<li>Apprise</li>
+<li>Mattermost</li>
+<li>Rocket.chat</li>
+</ul>
+</li>
+</ul>
+<h2 id="3.10.0">3.10.0 <small>2026-05-23</small></h2>
+<h3 id="features_7">Features</h3>
+<ul>
+<li>Added <strong>Ping (ICMP) monitoring</strong>: you can now create ICMP monitors to check the reachability and latency of any host by sending ICMP echo requests to it. Configurable parameters include the number of packets per check, the per-ping timeout, and the packet loss threshold that triggers a DOWN event. See the <a href="../management/icmp-monitors/"><strong>Managing ICMP monitors</strong></a> section for further details.</li>
+<li>Published a separate, <a href="../home-assistant/"><strong>dedicated Home Assistant integration</strong></a>, named <a href="https://github.com/kuvasz-uptime/ku-hass#installation" target="_blank" rel="noopener"><strong>ku-hass</strong></a> that makes the integration with HA easier than ever.</li>
+</ul>
+<h3 id="improvements">Improvements</h3>
+<ul>
+<li>Monitor lists are periodically updated on the UI, there is no need to manually refresh the pages to see the latest status updates</li>
+</ul>
+<h3 id="fixes_4">Fixes</h3>
+<ul>
+<li>Fixed a UI bug that made the tooltips "burn in" in case a tooltip was visible during a data update</li>
+</ul>
+<h2 id="3.9.0">3.9.0 <small>2026-05-08</small></h2>
+<h3 id="features_8">Features</h3>
+<ul>
+<li>Added a <strong>new property called <code>monitorDetailsUrl</code></strong> to the <a href="../management/integrations/#webhooks">webhook messages</a> (also available in the webhook templates as <code>ctx.monitorDetailsUrl</code>), which is a relative URL to the affected monitor's details page on the UI. This allows you to easily include a direct link to the monitor's details page in your webhook notifications, so you or your team can quickly access more information about the incident and take necessary actions.</li>
+<li>The webhook <a href="../management/integrations/#request-headers"><strong>request headers</strong></a> <strong>can be templated</strong> from now on, so you can include dynamic values in the headers as well, based on the context of the event that triggered the webhook.</li>
+</ul>
+<h3 id="fixes_5">Fixes</h3>
+<ul>
+<li>Fixed a bug in the webhook templating logic that caused templates fail to render in case the <code>ctx.monitorUrn</code> variable was referenced inside.</li>
+</ul>
+<h3 id="docs_1">Docs</h3>
+<ul>
+<li>Added a <a href="../management/integrations/#webhook-examples"><strong>dedicated section</strong></a> <strong>of webhook examples</strong> for 3rd party services (with <a href="https://ntfy.sh/" target="_blank" rel="noopener">ntfy</a> included).</li>
+</ul>
+<h2 id="3.8.0">3.8.0 <small>2026-05-07</small></h2>
+<p>By adding the <strong>webhooks support</strong>, this release introduces a huge step towards making <em>Kuvasz</em> more extensible and integrable with other systems. Webhooks allow you to send real-time notifications about monitor status changes to any 3rd party service, or even to your own custom-built solutions, without the need for a built-in integration.</p>
+<h3 id="features_9">Features</h3>
+<ul>
+<li><strong>Webhooks</strong> are in da house! 🎉 With the (optional) custom template support, and the ability to include your own headers, the number of use-cases you can cover with webhooks is pretty much endless. You can set them up just like any other integration, for further details, please refer to the <a href="../management/integrations/#webhooks"><strong>documentation</strong></a>.</li>
+<li>It's now possible to <strong>exclude certain events from an integration's triggering conditions</strong>, by using the new <code>excluded-events</code> attribute of the <a href="../management/integrations/#excluded-events"><strong>integration configuration</strong></a>. </li>
+<li>Added a <strong>new endpoint to the API</strong> under <code>GET /api/v2/status-pages/{statusPageId}/details</code> where you can get the same <strong>details of a status page as on the UI</strong>, including the monitors' incident stats, so you can build your own custom status pages or integrate the details into your existing system. In case you want to get the details of a public status page, you don't even have to be authenticated, in order to be able to build publicly available status pages on your own. For further details, please refer to the <a href="https://api-docs.kuvasz-uptime.dev/#operation/getStatusPageDetails" target="_blank" rel="noopener"><strong>API documentation</strong></a>.</li>
+</ul>
+<h2 id="3.7.1">3.7.1 <small>2026-04-23</small></h2>
+<h3 id="fixes_6">Fixes</h3>
+<ul>
+<li>Reverted the base image change from 3.7.0, because it caused incompatibility issues with older CPUs that don't support <code>x86-64-v3</code></li>
+</ul>
+<h2 id="3.7.0">3.7.0 <small>2026-04-22</small></h2>
+<h3 id="features_10">Features</h3>
+<ul>
+<li>Added support to optionally <strong>use external admin credentials in the Helm chart</strong>. Thanks for the contribution to <a href="https://github.com/hercherf" target="_blank" rel="noopener"><strong>@hercherf</strong></a>!</li>
+</ul>
+<h3 id="chore_1">Chore</h3>
+<ul>
+<li>Bumped dependencies to their latest versions and changed the base image to <code>eclipse-temurin:25-jre-ubi10-minimal</code> which also results in a few security fixes</li>
+</ul>
+<h2 id="3.6.0">3.6.0 <small>2026-04-02</small></h2>
+<h3 id="features_11">Features</h3>
+<ul>
+<li>Added an option to <strong>flag certain HTTP monitors with a sensitive/secret URL</strong>, so the URL can be redacted in the metrics, logs and integrations/notifications related to these monitors, to prevent leaking sensitive information. See the <a href="../management/http-monitors/#sensitive-url"><strong>Sensitive URL</strong></a> configuration option for more details.</li>
+<li>The <strong>navigation bar is sticky now</strong>, so you can easily navigate through the UI even on long pages without the need to scroll back to the top.</li>
+</ul>
+<h3 id="fixes_7">Fixes</h3>
+<ul>
+<li>Fixed a few minor UI glitches regarding the custom fonts, and navbar states.</li>
+</ul>
+<h2 id="3.5.1">3.5.1 <small>2026-02-17</small></h2>
+<h3 id="fixes_8">Fixes</h3>
+<ul>
+<li>Fixed a bug that caused silent alerts on monitors with a higher (&gt;1) <code>failure-count-threshold</code> value, and marked them as <code>DOWN</code> immediately after the first failure, instead of waiting for the configured number of consecutive failures to occur</li>
+</ul>
+<h2 id="3.5.0">3.5.0 <small>2026-02-15</small></h2>
+<h3 id="features_12">Features</h3>
+<ul>
+<li>Added a new attribute to the monitors (both HTTP and push) called <code>failure-count-threshold</code>, which allows you to configure the number of consecutive failures that should occur before the monitor is considered down. This can help to reduce false positives in case of temporary network issues or other transient problems.</li>
+</ul>
+<h2 id="3.4.0">3.4.0 <small>2026-01-11</small></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The previously deprecated <code>v1</code> endpoints are not available anymore on the API. Please refer to the <a href="../upgrade-notes/#upgrade-from-v2xx-to-v3xx">upgrade notes</a> for further details.</p>
+</div>
+<h3 id="features_13">Features</h3>
+<ul>
+<li>Added a <a href="../setup/configuration/#http-check-timeout"><strong>configurable read timeout for HTTP monitors</strong></a></li>
+</ul>
+<h2 id="3.3.0">3.3.0 <small>2025-12-11</small></h2>
+<h3 id="features_14">Features</h3>
+<ul>
+<li>An official <strong>Helm chart</strong> is available now to deploy <em>Kuvasz</em> on Kubernetes clusters easily. See the <a href="../setup/helm-deployment/"><strong>Helm deployment guide</strong></a> for more details. Thanks for the contribution to <a href="https://github.com/leofvo" target="_blank" rel="noopener"><strong>@leofvo</strong></a>!</li>
+<li><strong>Dark mode is the default</strong> theme now on the UI, if you didn't change it manually before.</li>
+</ul>
+<h3 id="chore_2">Chore</h3>
+<ul>
+<li>Bumped dependencies to their latest versions</li>
+</ul>
+<h2 id="3.2.4">3.2.4 <small>2025-10-30</small></h2>
+<h3 id="fixes_9">Fixes</h3>
+<ul>
+<li>Fixed a bug that was introduced in 3.2.3 and caused push monitors to stuck in DOWN mode.</li>
+</ul>
+<h2 id="3.2.3">3.2.3 <small>2025-10-30</small></h2>
+<h3 id="fixes_10">Fixes</h3>
+<ul>
+<li>Fixed a bug that caused to create conflicting uptime event records in the database in case of a rare race condition between consecutive uptime checks of the same monitor. The fix also takes care of repairing the corrupted state of these monitors upon the next check.</li>
+</ul>
+<h2 id="3.2.2">3.2.2 <small>2025-10-23</small></h2>
+<h3 id="fixes_11">Fixes</h3>
+<ul>
+<li>Fixed a memory leak that caused instable memory usage, and changed the base image to <code>eclipse-temurin:21-jre-ubi9-minimal</code>. Due to the base image change, if you're <strong>using your own certificates</strong>, attached to the container, you'll need to <strong>update your volume mapping accordingly</strong>. (See <em>"Providing a custom root certificate for SSL checks"</em> in the documentation for more details)</li>
+</ul>
+<h2 id="3.2.1">3.2.1 <small>2025-10-23</small></h2>
+<h3 id="fixes_12">Fixes</h3>
+<ul>
+<li>Reverted the large-header handling change from 3.2.0 that causes stability issues due to the higher usage of memory.</li>
+</ul>
+<h2 id="3.2.0">3.2.0 <small>2025-10-23</small></h2>
+<h3 id="new-features">New features</h3>
+<ul>
+<li><a href="../features/push-monitoring/"><strong>Push monitors</strong></a>: Also known as <em>cron</em> or <em>heartbeat</em> monitors. You can create monitors to watch your services or scheduled jobs that are not accessible via HTTP, but you still want to keep an eye on them.</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Creating a push monitor" src="../images/ui/create_push_monitor.webp"></a></p>
+<h3 id="improvements_1">Improvements</h3>
+<ul>
+<li>The HTTP checks' request and expected <strong>headers' names are less restrictive</strong>, and also RFC 9110 compliant. Thanks to <a href="https://github.com/LosDrakakos" target="_blank" rel="noopener"><strong>@LosDrakakos</strong></a> for the contribution!</li>
+<li><strong>Large headers</strong> (&gt; 8192 bytes) are handled more gracefully, and they don't end up in false positive uptime errors anymore.</li>
+<li>Documentation: added <a href="../setup/installation/#unofficial-guides"><strong>unofficial deployment guides</strong></a></li>
+<li>Monitors are completely <a href="../management/managing-monitors/#__tabbed_1_2"><strong>deletable via <code>YAML</code></strong></a> (previously it wasn't possible to distinguish between omitted and empty monitors in the YAML config).</li>
+</ul>
+<h3 id="fixes_13">Fixes</h3>
+<ul>
+<li>SSL checks are using now a logic that is not bound to HTTP requests, so it's possible to check the certificate of endpoints, that are not accessible via HTTP.</li>
+</ul>
+<h2 id="3.1.0">3.1.0 <small>2025-09-23</small></h2>
+<h3 id="new-features_1">New features</h3>
+<ul>
+<li><a href="../features/status-pages/"><strong>Status pages</strong></a>: You can create public and also private, brandable status pages for your monitors, to keep your customers or your own team informed about the status of your services. See the <a href="../management/status-pages/"><strong>Managing status pages</strong></a> section for more details regarding the configuration options.</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Status page in Kuvasz" src="../images/ui/status_page.webp"></a></p>
+<h3 id="improvements_2">Improvements</h3>
+<ul>
+<li><a href="../management/integrations/#name"><strong>Integration names</strong></a> can be totally <strong>arbitrary</strong> now, the previous restriction of containing only alphanumeric characters, hyphens and underscores has been lifted.</li>
+<li><strong>Added recipes &amp; examples</strong>:<ul>
+<li>How to <a href="../management/examples/#exposing-status-pages-on-subdomains-behind-a-reverse-proxy"><strong>use a reverse proxy</strong></a> for the status pages</li>
+<li>How to <a href="../management/examples/#backup-restore-with-yaml"><strong>backup and restore your monitors and status pages</strong></a></li>
+<li>How to <a href="../management/examples/#providing-a-custom-root-certificate-for-ssl-checks"><strong>include your custom/private certificates</strong></a> in the Docker image, to be able to monitor endpoints with such certs</li>
+</ul>
+</li>
+<li>The API docs are having a <a href="https://api-docs.kuvasz-uptime.dev" target="_blank" rel="noopener"><strong>dedicated site</strong></a> now to make them easier to find and browse. </li>
+</ul>
+<h2 id="3.0.2">3.0.2 <small>2025-08-31</small></h2>
+<h3 id="fixes_14">Fixes</h3>
+<ul>
+<li>Fixed a bug where the historical HTTP uptime stats could contain incorrect values in case a paused monitor's ongoing incident was updated before the requested time range of stats</li>
+<li>Fixed a bug where the monitor-specific incidents were not returned in case of a paused monitor</li>
+</ul>
+<h2 id="3.0.1">3.0.1 <small>2025-08-31</small></h2>
+<h3 id="breaking-changes">Breaking changes</h3>
+<p>This is a major release that paths the way for <strong>new monitor types</strong> in the future, by handling the already existing HTTP monitors in a more explicit way. There are a few breaking changes in there, so please <strong>refer to the</strong> <a href="../upgrade-notes/#upgrade-from-v2xx-to-v3xx"><strong>Upgrade notes</strong></a> for more details. 
+Don't be afraid, the upgrade process is straightforward and well-documented, and if you follow the steps, everything should go smoothly.</p>
+<h3 id="new-features_2">New features</h3>
+<ul>
+<li><strong>Integrations</strong> have their own section on the UI now, and they are also exposed under a new API endpoint (<code>GET /api/v2/integrations</code>). Furthermore, <a href="../management/integrations/#testing-integrations"><strong>you can test them</strong></a> directly from the UI, or via the API to make sure that they are working as expected, before you would enable them or assign them to monitors.</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Kuvasz integrations management UI" src="../images/integrations/integrations_list.webp"></a></p>
+<ul>
+<li><strong>Update notifications</strong>: you can now <a href="../setup/installation/#keeping-kuvasz-up-to-date"><strong>get notified about new releases</strong></a> of <em>Kuvasz</em> on the UI and through the API on <code>GET /api/v2/settings</code>. This way, it's easier to stay up-to-date with the latest features and improvements.</li>
+<li><strong>Monitor-level metrics</strong>: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI &amp; via the v2 <a href="https://api-docs.kuvasz-uptime.dev" target="_blank" rel="noopener">API</a>), not just as cumulated metrics across all monitors.</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Kuvasz monitor-level metrics UI" src="../images/features/monitor-metrics.webp"></a></p>
+<ul>
+<li><strong>Incidents</strong>: there is a brand new section on the UI, and a dedicated endpoint under <code>GET /api/v2/incidents</code> to see/fetch <strong>all your incidents in one single place</strong>, where you can also filter them by a monitor, or by a time range.</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Kuvasz incident list UI" src="../images/ui/incident_list.webp"></a></p>
+<h3 id="fixes_15">Fixes</h3>
+<ul>
+<li>Clear the expected status code select's search value after selecting an option (by <a href="https://github.com/WasixXD" target="_blank" rel="noopener">WasixXD</a>)</li>
+<li>Fix the background color of the active option inside the expected status codes select</li>
+</ul>
+<h2 id="2.5.1">2.5.1 <small>2025-08-23</small></h2>
+<h3 id="fixes_16">Fixes</h3>
+<ul>
+<li>Fixed a bug where the historical uptime stats could contain misleading values in case of prolonging incidents that overlap with the requested time range of stats.</li>
+</ul>
+<h2 id="2.5.0">2.5.0 <small>2025-08-22</small></h2>
+<h3 id="new-features_3">New features</h3>
+<ul>
+<li><strong>Custom request headers</strong>: you can now specify custom headers to be sent with the HTTP requests, allowing for more flexible and tailored monitoring setups. See the <a href="../management/http-monitors/#request-headers"><strong>HTTP monitors &gt; Request headers</strong></a> section for more details.</li>
+<li><strong>Custom request body</strong>: you can send your own JSON body to the monitored HTTP endpoint, which can be useful for testing APIs that require a specific payload. See the <a href="../management/http-monitors/#request-body"><strong>HTTP monitors &gt; Request body</strong></a> section for more details.</li>
+<li><strong>Expected headers</strong>: this is a brand new evaluation option that allows you to specify expected headers in the HTTP response. If the response does not contain the expected headers, the monitor will be marked as <code>DOWN</code>. You can find more details in the <a href="../management/http-monitors/#expected-headers"><strong>HTTP monitors &gt; Expected headers</strong></a> section.</li>
+<li><strong>New HTTP request methods</strong>: <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code> and <code>OPTIONS</code> are now supported in addition to the existing <code>GET</code> and <code>HEAD</code>. This allows you to monitor endpoints that require different HTTP methods, such as APIs that expect a <code>POST</code> request with a specific payload. See the <a href="../management/http-monitors/#request-method"><strong>HTTP monitors &gt; Request method</strong></a> section for more details.</li>
+<li><strong>Revamped UI for creating and editing HTTP monitors</strong>: the UI of the existing modal has been slightly redesigned to make it easier and more convenient to configure HTTP monitors with the new features. The fresh look is hopefully more intuitive and user-friendlier by having a <strong>better structure</strong>.</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Kuvasz HTTP monitor creation modal" src="../images/features/new_monitor_modal.webp"></a></p>
+<h2 id="2.4.0">2.4.0 <small>2025-08-15</small></h2>
+<h3 id="new-features_4">New features</h3>
+<ul>
+<li><strong>New HTTP response evaluation options</strong>: you can now configure your HTTP monitors to:<ul>
+<li>accept only <a href="../management/http-monitors/#expected-status-codes"><strong>specific HTTP status codes</strong></a> as valid responses</li>
+<li>check for a <a href="../management/http-monitors/#expected-keyword"><strong>keyword in the response body</strong></a>, and you can make the check optionally <a href="../management/http-monitors/#expected-keyword-case-sensitivity"><strong>case-sensitive</strong></a>, or also <a href="../management/http-monitors/#expected-keyword-negation"><strong>reversed</strong></a> to check for the absence of the keyword</li>
+<li><strong><a href="../management/http-monitors/#response-time-threshold">check the response time</a></strong> against a <strong>threshold</strong> (in milliseconds) to ensure that the response is not only valid but also fast enough</li>
+</ul>
+</li>
+</ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Kuvasz evaluation settings" src="../images/features/kuvasz_new_matchers.webp"></a></p>
+<ul>
+<li><strong>More details</strong> are persisted <strong>about the errors</strong> that occur during the HTTP uptime checks</li>
+<li>Added <strong>French</strong> translation, thanks to <a href="https://github.com/waazaa-fr" target="_blank" rel="noopener"><strong>@waazaa-fr</strong></a>!</li>
+<li>Added <strong>Polish</strong> translation, thanks to <a href="https://github.com/nkkfs" target="_blank" rel="noopener"><strong>@nkkfs</strong></a>!</li>
+<li>Made the <strong>URL on details page clickable</strong>, so you can easily open the target URL in a new tab</li>
+</ul>
+<h3 id="improvements_3">Improvements</h3>
+<ul>
+<li><strong>Re-worked the logic of the HTTP uptime check configuration &amp; evaluation</strong> to make it easier to introduce new configuration &amp; evaluation options in the future</li>
+<li><a href="https://github.com/by-su" target="_blank" rel="noopener"><strong>@by-su</strong></a> <strong>improved the validation messages</strong> around the admin authentication configuration, and also extended the docs to clarify the usage of it, thanks for that!</li>
+<li><strong>Other validation messages</strong> have been improved as well, to make them more user-friendly if something goes wrong during the bootstrapping of <em>Kuvasz</em> or during an API request.</li>
+<li><strong>Client-related HTTP response errors are not retried</strong> anymore, only the server-related ones. This means practically that 4xx responses will be evaluated as-is without retrying them, while 5xx responses will be retried up to 3 times with an exponential backoff strategy.</li>
+</ul>
+<h3 id="fixes_17">Fixes</h3>
+<ul>
+<li>Translated the "...[REDACTED]" string to make it internationalization friendly</li>
+<li><strong>Fixed the latency measurement logic</strong> to not include the time spent on retrying failing HTTP requests</li>
+<li><strong>Fixed the following CVEs</strong> by upgrading 3rd party dependencies:<ul>
+<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2025-49146" target="_blank" rel="noopener">CVE-2025-49146</a></li>
+<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2025-53864" target="_blank" rel="noopener">CVE-2025-53864</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="2.3.1">2.3.1 <small>2025-07-25</small></h2>
+<h3 id="fixes_18">Fixes</h3>
+<ul>
+<li>Make sure that no deadlocks can occur during the uptime checks by introducing an expiry for every single lock as a fail-safe fallback mechanism</li>
+<li>UI: Align the cards on the settings page better, by not having gaps between them</li>
+</ul>
+<h3 id="chore_3">Chore</h3>
+<ul>
+<li>Dependencies: bumped i18n4k to 0.11.0</li>
+</ul>
+<h2 id="2.3.0">2.3.0 <small>2025-07-19</small></h2>
+<h3 id="features_15">Features</h3>
+<ul>
+<li><strong>Discord integration</strong>: Added support for sending notifications to Discord channels via webhooks. Configure Discord integrations in your YAML file and receive real-time alerts about monitor status changes directly in your Discord server.</li>
+</ul>
+<h2 id="2.2.0">2.2.0 <small>2025-07-17</small></h2>
+<h3 id="features_16">Features</h3>
+<ul>
+<li><strong>Metrics exporter settings</strong> are exposed both on the API (under <code>GET /api/v1/settings</code>) and on the UI, so you can easily get an overview of the effective configuration.</li>
+<li>A <strong>live demo</strong> is available at <a href="https://demo.kuvasz-uptime.dev" target="_blank" rel="noopener"><strong>demo.kuvasz-uptime.dev</strong></a> where you can try out the latest features of <em>Kuvasz</em> without setting up your own instance. Further details, credentials <a href="../demo/"><strong>here</strong></a>.</li>
+</ul>
+<h3 id="fixes_19">Fixes</h3>
+<ul>
+<li>Fixed the glitch on the UI regarding read-only mode in case the underlying logic was initialized before YAML monitors were loaded. This caused the UI to not show the read-only mode correctly, even though the backend was working as expected.</li>
+</ul>
+<h2 id="2.1.0">2.1.0 <small>2025-07-11</small></h2>
+<h3 id="features_17">Features</h3>
+<ul>
+<li><strong>Metrics exporters</strong>: Added support for exporting metrics to <em>OpenTelemetry</em> and <em>Prometheus</em>. See the <a href="../management/metrics-exporters/"><strong>Metrics exporters</strong></a> section for more details. With this feature, you easily integrate <em>Kuvasz</em> with your existing observability stack. Currently exposed metrics are:<ul>
+<li>Uptime status</li>
+<li>Latest latency</li>
+<li>SSL status</li>
+<li>SSL expiry date</li>
+</ul>
+</li>
+<li><strong>Bearer token authentication</strong>: Added support for <a href="../features/api/#authentication"><strong>Bearer token authentication on the API</strong></a>, along with the existing API key authentication. This allows you to use the same authentication mechanism as other modern APIs, making it easier to integrate with your existing systems.</li>
+</ul>
+<h2 id="2.0.0">2.0.0 <small>2025-07-02</small></h2>
+<h3 id="breaking-changes_1">Breaking changes</h3>
+<ul>
+<li><strong>Native image build logic has been removed</strong>: Native images will not be supported in the future due to their higher level of unpredictability, and the achieved performance gain/resource saving in exchange is not so significant.</li>
+<li><strong>PostgreSQL 12+</strong> is the minimum supported DB version.</li>
+<li><strong>The HTTP communication log has been removed</strong>, because it was an unnecessary overhead in the network pipeline, and a built-in solution is also available now.</li>
+<li><strong>Authentication</strong> has been fully reworked, read the <a href="../setup/configuration/#authentication"><strong>Authentication</strong></a> section for more details.</li>
+<li>The <strong>latency data</strong> (avg, p95, p99) of the monitors are not returned under <code>MonitorDetailsDto</code>, because a new endpoint is introduced for metrics like this under <code>/api/v1/monitors/{monitorId}/stats</code></li>
+<li>(might be breaking, but not necessarily): SSL validation now takes <strong>intermediate certs</strong> into account</li>
+<li>The <code>DELETE /monitors/{monitorId}/pagerduty-integration-key</code> and <code>PUT /monitors/{monitorId}/pagerduty-integration-key</code> endpoints are gone, because the PATCH endpoint is now flexible enough to support both use-cases.</li>
+</ul>
+<h3 id="features_18">Features</h3>
+<ul>
+<li><strong>New Monitor attributes</strong> (every default value also applies for the existing monitors):<ul>
+<li><code>requestMethod</code>: <code>GET</code> or <code>HEAD</code>. The latter is generally faster, but be aware that certain targets might not support it (default <code>GET</code>)</li>
+<li><code>latencyHistoryEnabled</code>: <code>true</code> or <code>false</code>. If set to <code>false</code> latency will be not logged or returned in the monitors' metrics -&gt; Better for a snappier experience on a slow machine (default <code>true</code>)</li>
+<li><code>forceNoCache</code>: <code>true</code> or <code>false</code>. If set to <code>true</code>, a <code>Cache-Control: no-cache</code> header will be sent with the request (default <code>true</code>)</li>
+<li><code>followRedirects</code>: <code>true</code> or <code>false</code>. If set to <code>true</code>, Kuvasz will follow redirects during uptime checks, and the last, non-redirected URL will be evaluated (default <code>true</code>)</li>
+<li><code>sslExpiryThreshold</code>: The number of days before the SSL certificate expires when a notification should be sent.</li>
+</ul>
+</li>
+<li><strong>Option to disable authentication</strong> (useful in a home-lab, for example) via <code>ENABLE_AUTH</code>. <code>true</code> or <code>false</code>, default <code>true</code></li>
+<li><strong>Optimization of the check scheduling logic</strong>: the first uptime check will be scheduled randomly between 1 second and the configured interval of the monitor to prevent hitting the HTTP client with a lot of requests right after the startup.</li>
+<li><strong>Optimization of the uptime checker</strong>:<ul>
+<li>Made the error handling more robust by handling exceptions that come from invalid response format (e.g. invalid status code)</li>
+<li>Increased the client's read timeout to 30s</li>
+<li>Added support for non-absolute redirect URLs (a redirect location of <code>/path/something-else</code> on <code>https://example.com</code> will be resolved as <code>https://example.com/path/something-else</code></li>
+<li>Detect and avoid redirect loops</li>
+</ul>
+</li>
+<li><strong>Improvement of the <code>DOWN</code> event's error formatting</strong> both for showing and saving it. Non-visible/printable characters, and long response errors are now sanitised and might be redacted. If the uptime check fails with a standard HTTP status code and a standard error response, then the HTTP status and its name will be the error's "label" (e.g. <code>403 Forbidden</code>)</li>
+<li>Initial (i.e. <strong>if there is no previous state for a given monitor</strong>) UP &amp; VALID states of uptime &amp; SSL checks are not sent to RTC &amp; SMPT event handlers to prevent sending irrelevant notifications upon the first startup</li>
+<li>The <strong>latency metrics</strong> calculation logic <strong>has been optimized</strong> to handle large datasets efficiently</li>
+<li>✨A brand-new <strong>Web UI</strong> has been introduced, which is more modern, responsive, and user-friendly</li>
+<li>Monitors are configurable via a <strong>YAML file</strong> besides the UI and the API ("<em>infrastructure as code</em>" way)</li>
+<li>Exposed <code>nextUptimeCheck</code> and <code>nextSSLCheck</code> on the API</li>
+<li>Made <code>sslValidUntil</code> persisted on the SSL events, and exposed it on the API</li>
+<li><code>sslExpiryThreshold</code> is configurable now on a per monitor basis</li>
+<li>Uptime &amp; latency data retention are separetely configurable now</li>
+<li>Made the whole project translatable (the only language set up is English, as of now, but future translations are already super-easy)</li>
+<li>Monitor filtering on the API was greatly improved with new filters: <code>enabled: Boolean?</code>, <code>sslCheckEnabeld: Boolean?</code>, <code>uptimeStatus: UptimeStatus[]?</code> and <code>sslStatus: SSLStatus[]?</code></li>
+<li>App and integration settings are exposed now both on the UI and on the API (under <code>GET /api/v1/settings</code>)</li>
+<li>Added more latency metrics to <code>GET /api/v1/monitors/{monitorId}/stats</code>: min, max and p90</li>
+<li>The integration setup has been completely reworked, making it smarter and more flexible. From now on, you can set up <strong>multiple integrations per type</strong> (Slack, E-mail, etc.) in your YAML config. Then you can make them global (that is in effect for all your monitors without further configuration), or <strong>you can assign them on a per monitor basis</strong>.</li>
+</ul>
+<h3 id="chore_4">Chore</h3>
+<ul>
+<li>Simplified and streamlined the things around jOOQ</li>
+<li>Simplified the logging configuration by moving it to Micronaut's own config file</li>
+<li>Changed the base image to <code>liberica-runtime-container:jre-17</code> and reduced the compressed image size by ~23%</li>
+<li>Build <code>arm64</code> images too</li>
+<li>Bumped the 3rd party dependencies to their latest versions</li>
+<li>Use Java 21</li>
+<li>Switched to a multi-module project layout (should have done it at the beginning 🤦 )</li>
+<li>Switched to kover from JaCoCo</li>
+</ul>
+<p>The <strong>full changelog</strong> is available on <a href="https://github.com/kuvasz-uptime/kuvasz/releases/tag/2.0.0" target="_blank" rel="noopener"><strong>GitHub</strong></a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden="">
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer">
+        
+          
+          <a href="../home-assistant/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Home Assistant">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Home Assistant
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../upgrade-notes/" class="md-footer__link md-footer__link--next" aria-label="Next: Upgrade notes">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Upgrade notes
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"></path></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright © 2020 - 2026 Kuvasz Uptime -  <a href="#__consent">Change cookie settings</a>
+
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden="">
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+
+<h4>Cookie consent</h4>
+<p>We use cookies to render the GitHub widget in the header of this documentation.  With your consent, you're helping us to make our documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings">
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked="">
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+      <button type="reset" class="md-button md-button--primary">Reject</button>
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": {"json": [".s2"]}, "base": "..", "features": ["navigation.top", "navigation.footer", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "announce.dismiss"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">
+</script>
+
+  
+<script id="init-glightbox">document.querySelectorAll('.glightbox').forEach(function(element) {
+    try {
+        var img = element.querySelector('img');
+        if (img && img.src) {
+            element.setAttribute('href', img.src);
+        } else {
+            console.log('No img element with src attribute found');
+        }
+    } catch (error) {
+        console.log('Error:', error);
+    }
+});
+const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(()=>{ lightbox.reload(); });
+</script></body></html>
