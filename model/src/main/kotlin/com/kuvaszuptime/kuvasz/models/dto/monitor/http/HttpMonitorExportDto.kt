@@ -40,7 +40,7 @@ data class HttpMonitorExportDto(
                 uptimeCheckInterval = record.uptimeCheckInterval,
                 enabled = record.enabled,
                 sslCheckEnabled = record.sslCheckEnabled,
-                latencyHistoryEnabled = record.latencyHistoryEnabled,
+                latencyHistoryEnabled = record.metricsHistoryEnabled,
                 requestMethod = record.requestMethod,
                 followRedirects = record.followRedirects,
                 forceNoCache = record.forceNoCache,

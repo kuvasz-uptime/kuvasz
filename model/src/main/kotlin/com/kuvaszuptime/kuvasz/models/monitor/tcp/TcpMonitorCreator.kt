@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -11,7 +12,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 
 @Suppress("ComplexInterface")
-interface TcpMonitorCreator {
+interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String
 
@@ -40,19 +41,18 @@ interface TcpMonitorCreator {
     val failureCountThreshold: Long
 
     val enabled: Boolean
-    val integrations: List<String>?
+    override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
+    override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): TcpMonitorRecord =
+        TcpMonitorRecord()
+            .setName(name)
+            .setHost(host)
+            .setPort(port)
+            .setUptimeCheckInterval(uptimeCheckInterval)
+            .setTimeoutMs(timeoutMs)
+            .setLatencyThresholdMs(latencyThresholdMs)
+            .setFailureCountThreshold(failureCountThreshold)
+            .setEnabled(enabled)
+            .setIntegrations(validatedIntegrations.toTypedArray())
+            .setMetricsHistoryEnabled(metricsHistoryEnabled)
 }
-
-fun TcpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): TcpMonitorRecord =
-    TcpMonitorRecord()
-        .setName(name)
-        .setHost(host)
-        .setPort(port)
-        .setUptimeCheckInterval(uptimeCheckInterval)
-        .setTimeoutMs(timeoutMs)
-        .setLatencyThresholdMs(latencyThresholdMs)
-        .setFailureCountThreshold(failureCountThreshold)
-        .setEnabled(enabled)
-        .setIntegrations(validatedIntegrations.toTypedArray())
-        .setMetricsHistoryEnabled(metricsHistoryEnabled)

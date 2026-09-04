@@ -96,7 +96,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             firstMonitor.enabled shouldBe false
             firstMonitor.sslCheckEnabled shouldBe true
             firstMonitor.requestMethod shouldBe HttpMethod.HEAD
-            firstMonitor.latencyHistoryEnabled shouldBe false
+            firstMonitor.metricsHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
             firstMonitor.sslExpiryThreshold shouldBe 0
@@ -114,7 +114,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             secondMonitor.sensitiveUrl shouldBe true
             secondMonitor.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
             secondMonitor.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
-            secondMonitor.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
+            secondMonitor.metricsHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
             secondMonitor.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
             secondMonitor.sslExpiryThreshold shouldBe 10
@@ -132,7 +132,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             thirdMonitor.enabled shouldBe true
             thirdMonitor.sslCheckEnabled shouldBe true
             thirdMonitor.requestMethod shouldBe HttpMethod.GET
-            thirdMonitor.latencyHistoryEnabled shouldBe true
+            thirdMonitor.metricsHistoryEnabled shouldBe true
             thirdMonitor.forceNoCache shouldBe false
             thirdMonitor.followRedirects shouldBe true
             thirdMonitor.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
@@ -185,7 +185,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             firstMonitor.enabled shouldBe true
             firstMonitor.sslCheckEnabled shouldBe true
             firstMonitor.requestMethod shouldBe HttpMethod.HEAD
-            firstMonitor.latencyHistoryEnabled shouldBe false
+            firstMonitor.metricsHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
             firstMonitor.sslExpiryThreshold shouldBe 15
@@ -220,7 +220,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             secondMonitor.sensitiveUrl shouldBe false
             secondMonitor.sslCheckEnabled shouldBe HttpMonitorDefaults.SSL_CHECK_ENABLED
             secondMonitor.requestMethod shouldBe HttpMethod.valueOf(HttpMonitorDefaults.REQUEST_METHOD)
-            secondMonitor.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
+            secondMonitor.metricsHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
             secondMonitor.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
             secondMonitor.updatedAt.shouldNotBeNull() shouldBeAfter secondMonitor.createdAt
@@ -238,7 +238,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             thirdMonitor.enabled shouldBe true
             thirdMonitor.sslCheckEnabled shouldBe false
             thirdMonitor.requestMethod shouldBe HttpMethod.GET
-            thirdMonitor.latencyHistoryEnabled shouldBe true
+            thirdMonitor.metricsHistoryEnabled shouldBe true
             thirdMonitor.forceNoCache shouldBe true
             thirdMonitor.followRedirects shouldBe true
 

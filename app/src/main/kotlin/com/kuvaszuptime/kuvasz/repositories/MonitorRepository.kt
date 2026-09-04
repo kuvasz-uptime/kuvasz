@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.util.toPersistenceException
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -24,6 +25,7 @@ import org.jooq.impl.SQLDataType
  *   they are mocked in the tests. A mocked member would return nothing and break every consumer that collects these
  *   repositories as a bean list, like [com.kuvaszuptime.kuvasz.services.StatCalculator].
  */
+@Suppress("ComplexInterface")
 sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
 
     companion object {
@@ -31,10 +33,13 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
     }
 
     fun fetchAllWithDetails(enabled: Boolean? = null, monitorNames: List<String>? = null): List<D>
-
     fun findById(monitorId: Long, txCtx: DSLContext?): R?
+    fun findByName(name: String, txCtx: DSLContext? = null): R?
     fun deleteById(monitorId: Long, txCtx: DSLContext?): Int
     fun fetchByEnabled(enabled: Boolean): List<R>
+    fun returningUpdate(updatedMonitor: R, txCtx: DSLContext? = null): R
+    fun upsert(monitor: R, txCtx: DSLContext? = null): R
+    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext? = null): List<MonitorIDWithName>
 
     val monitorNameField: Field<String?>
         get() = DSL.field("t.monitor_name", SQLDataType.VARCHAR).`as`(MONITOR_NAME_FIELD_NAME)

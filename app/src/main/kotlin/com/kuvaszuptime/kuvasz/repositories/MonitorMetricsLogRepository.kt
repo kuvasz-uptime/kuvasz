@@ -25,6 +25,13 @@ data class MetricsLogTable<R : Record>(
     val latency: TableField<R, Int>,
 )
 
+/**
+ * The queries that are the same for every monitor type's metrics log, parameterized with the table they run against.
+ *
+ * [getLatencyMetrics] is explicitly `open` because the tests mock it on the inheriting repositories. Unlike them,
+ * this base is not a `@Singleton`, so the `allOpen` plugin does not reach it, and a final method inherited from here
+ * would silently fall through to the real query instead of the stub.
+ */
 abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
     protected val dslContext: DSLContext,
     private val logTable: MetricsLogTable<R>,
@@ -63,7 +70,7 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
         .where(logTable.monitorId.eq(monitorId))
         .execute()
 
-    fun getLatencyMetrics(monitorId: Long, period: Duration): LatencyMetricResult? =
+    open fun getLatencyMetrics(monitorId: Long, period: Duration): LatencyMetricResult? =
         aggregate(logTable.latency, monitorId, period, LatencyMetricResult::class.java)
 
     /**

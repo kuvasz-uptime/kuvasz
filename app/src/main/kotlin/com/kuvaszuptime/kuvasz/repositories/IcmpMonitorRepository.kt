@@ -35,7 +35,7 @@ class IcmpMonitorRepository(
         .where(ICMP_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String, txCtx: DSLContext = this.dslContext): IcmpMonitorRecord? = txCtx
+    override fun findByName(name: String, txCtx: DSLContext?): IcmpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(ICMP_MONITOR)
         .where(ICMP_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -88,12 +88,12 @@ class IcmpMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun returningUpdate(
+    override fun returningUpdate(
         updatedMonitor: IcmpMonitorRecord,
-        txCtx: DSLContext = dslContext,
+        txCtx: DSLContext?,
     ): IcmpMonitorRecord =
         try {
-            txCtx
+            (txCtx ?: dslContext)
                 .update(ICMP_MONITOR)
                 .set(ICMP_MONITOR.NAME, updatedMonitor.name)
                 .set(ICMP_MONITOR.HOST, updatedMonitor.host)
@@ -113,7 +113,7 @@ class IcmpMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun upsert(monitor: IcmpMonitorRecord, txCtx: DSLContext = this.dslContext): IcmpMonitorRecord = txCtx
+    override fun upsert(monitor: IcmpMonitorRecord, txCtx: DSLContext?): IcmpMonitorRecord = (txCtx ?: dslContext)
         .insertInto(ICMP_MONITOR)
         .set(monitor)
         .onConflictOnConstraint(UNIQUE_ICMP_MONITOR_NAME)
@@ -123,8 +123,8 @@ class IcmpMonitorRepository(
         .returning(ICMP_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
-        txCtx
+    override fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext?): List<MonitorIDWithName> =
+        (txCtx ?: dslContext)
             .deleteFrom(ICMP_MONITOR)
             .where(ICMP_MONITOR.ID.notIn(ignoredIds))
             .returning(ICMP_MONITOR.ID, ICMP_MONITOR.NAME)

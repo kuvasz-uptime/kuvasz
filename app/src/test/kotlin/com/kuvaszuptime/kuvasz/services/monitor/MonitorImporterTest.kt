@@ -48,7 +48,7 @@ import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
-import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
@@ -85,7 +85,7 @@ class MonitorImporterTest(
     private val tcpMetricsLogRepository: TcpMetricsLogRepository,
     private val dnsMetricsLogRepository: DnsMetricsLogRepository,
     private val eventDispatcher: EventDispatcher,
-    private val statusPageDataActions: StatusPageDataActions,
+    private val statusPageCacheInvalidator: StatusPageCacheInvalidator,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -479,7 +479,7 @@ class MonitorImporterTest(
                         MonitorUpdateEvent(NumericMonitorID(MonitorType.DNS, dnsKept.id)),
                         MonitorDeleteEvent(NumericMonitorID(MonitorType.HTTP_SSL, toDelete.id)),
                     )
-                    verify(exactly = 1) { getMock(statusPageDataActions).invalidateAllCaches() }
+                    verify(exactly = 1) { getMock(statusPageCacheInvalidator).invalidateAllCaches() }
                 }
             }
 
@@ -496,7 +496,7 @@ class MonitorImporterTest(
                     subscriber.awaitCount(1).values() shouldContainExactlyInAnyOrder listOf(
                         MonitorUpdateEvent(NumericMonitorID(MonitorType.ICMP, imported.id)),
                     )
-                    verify(exactly = 1) { getMock(statusPageDataActions).invalidateAllCaches() }
+                    verify(exactly = 1) { getMock(statusPageCacheInvalidator).invalidateAllCaches() }
                 }
             }
 
@@ -520,7 +520,7 @@ class MonitorImporterTest(
                     )
 
                     subscriber.values().shouldBeEmpty()
-                    verify(exactly = 0) { getMock(statusPageDataActions).invalidateAllCaches() }
+                    verify(exactly = 0) { getMock(statusPageCacheInvalidator).invalidateAllCaches() }
                     latencyLogRepository.fetchLastByMonitorId(http.id).shouldNotBeNull()
                     pendingFailureCountOf(push.id) shouldBe 1L
                 }
@@ -615,8 +615,8 @@ class MonitorImporterTest(
         .fetchOne()
         ?.failureCount
 
-    @MockBean(StatusPageDataActions::class)
-    fun statusPageDataActionsMock(): StatusPageDataActions = mockk(relaxUnitFun = true)
+    @MockBean(StatusPageCacheInvalidator::class)
+    fun statusPageCacheInvalidatorMock(): StatusPageCacheInvalidator = mockk(relaxUnitFun = true)
 
     private fun dnsAdapter(
         name: String,

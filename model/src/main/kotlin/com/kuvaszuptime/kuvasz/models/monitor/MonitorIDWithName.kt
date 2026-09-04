@@ -7,6 +7,6 @@ data class MonitorIDWithName(
     val id: Long,
     val name: String,
 ) {
-    val monitorId: MonitorID by lazy { MonitorID(type, name) }
-    val numericMonitorId: NumericMonitorID by lazy { NumericMonitorID(type, id) }
+    val monitorId: MonitorID = MonitorID(type, name)
+    val numericMonitorId: NumericMonitorID = NumericMonitorID(type, id)
 }

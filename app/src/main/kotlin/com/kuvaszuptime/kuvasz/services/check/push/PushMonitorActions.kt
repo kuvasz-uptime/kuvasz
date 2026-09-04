@@ -7,7 +7,6 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.PushMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
@@ -15,15 +14,9 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.push.affectsFailureCounting
-import com.kuvaszuptime.kuvasz.models.monitor.push.numericMonitorId
-import com.kuvaszuptime.kuvasz.models.monitor.push.toMonitorRecord
-import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
-import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -32,29 +25,24 @@ import com.kuvaszuptime.kuvasz.services.check.isDownNow
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
-import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
-import tools.jackson.module.kotlin.convertValue
-import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Duration
 import java.time.OffsetDateTime
 
 @Singleton
 class PushMonitorActions(
-    private val monitorRepository: PushMonitorRepository,
     private val uptimeEventRepository: PushUptimeEventRepository,
     private val dslContext: DSLContext,
-    private val validator: Validator,
-    private val integrationIdValidator: IntegrationIdValidator,
+    validator: Validator,
+    integrationIdValidator: IntegrationIdValidator,
     private val integrationRepository: IntegrationRepository,
     private val eventDispatcher: EventDispatcher,
     statCalculator: StatCalculator,
@@ -62,21 +50,24 @@ class PushMonitorActions(
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
     private val databaseEventHandler: DatabaseEventHandler,
-    private val pendingFailureRepository: PendingFailureRepository,
+    monitorTypeSupport: PushMonitorTypeSupport,
+    statusPageCacheInvalidator: StatusPageCacheInvalidator,
 ) : StatusPageMonitorDataProvider,
     MonitorActions<PushMonitorRecord, PushMonitorDetailsDto>(
         dslContext,
         appConfig,
         statusPageRepository,
-        monitorRepository,
         eventDispatcher,
         statCalculator,
         maintenanceWindowService,
+        monitorTypeSupport,
+        validator,
+        integrationIdValidator,
+        statusPageCacheInvalidator,
     ) {
 
-    private val objectMapper: ObjectMapper = jacksonMapperBuilder()
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .build()
+    private val monitorRepository = monitorTypeSupport.repository
+    private val pendingFailureRepository = monitorTypeSupport.pendingFailureRepository
 
     fun getMonitorDetails(monitorId: Long): PushMonitorDetailsDto {
         val monitorFromRepo =
@@ -137,46 +128,23 @@ class PushMonitorActions(
             integrationIdValidator.validateIntegrationIds(monitorCreateDto.integrations.orEmpty())
 
         return monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord(validatedIntegrations))
+            .also { announceCreation() }
     }
 
     fun updateMonitor(monitorId: Long, updates: ObjectNode): PushMonitorRecord =
-        dslContext.transactionResultWithError { config ->
-            val txCtx = config.dsl()
-            val existingById = monitorRepository.findById(monitorId, txCtx).orThrowNotFound(monitorId)
-            val toUpdate = existingById.into(PushMonitor::class.java)
-            val filteredUpdates = updates.propertyNames()
-                .fold(objectMapper.createObjectNode()) { acc, fieldName ->
-                    acc.set(fieldName, updates.get(fieldName))
-                }
-            val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
-            // Check if name is present in a non-writable status page as reference
-            if (updatedMonitor.name != existingById.name && !isMonitorChangeable(existingById)) {
-                throw ReadOnlyMonitorNameException()
-            }
-            // Check if the client secret already exists. Need to do it before the actual update, because the
-            // constraint is deferred on the client_secret column in PG, and it would be more cumbersome to juggle
-            // with nested transactions, than checking it in advance
-            val existingBySecret = monitorRepository.findByClientSecret(updatedMonitor.clientSecret)
-            if (existingBySecret != null && existingBySecret.id != existingById.id) {
-                throw MonitorDuplicatedException()
-            }
-
-            objectMapper.convertValue<PushMonitorUpdateDto>(updatedMonitor).let { toValidate ->
-                validator.validate(toValidate).throwIfNotEmpty()
-            }
-            // Validate the raw integrations from the DTO
-            updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
-
-            monitorRepository.returningUpdate(PushMonitorRecord(updatedMonitor), txCtx).also { updated ->
-                if (updated.affectsFailureCounting(existingById)) {
-                    // The already recorded failures were counted against the previous settings of the monitor, so
-                    // they are not comparable to the updated ones anymore
-                    pendingFailureRepository.deleteByMonitorId(monitorId, txCtx)
-                }
-            }
-        }.also { updatedMonitorRecord ->
-            eventDispatcher.dispatch(MonitorUpdateEvent(updatedMonitorRecord.numericMonitorId()))
+        updateMonitor(monitorId, updates, PushMonitor::class.java, PushMonitorUpdateDto::class.java) {
+            PushMonitorRecord(it)
         }
+
+    override fun checkUpdateConstraints(existingMonitor: PushMonitorRecord, updatedMonitor: PushMonitorRecord) {
+        // Check if the client secret already exists. Need to do it before the actual update, because the
+        // constraint is deferred on the client_secret column in PG, and it would be more cumbersome to juggle
+        // with nested transactions, than checking it in advance
+        val existingBySecret = monitorRepository.findByClientSecret(updatedMonitor.clientSecret)
+        if (existingBySecret != null && existingBySecret.id != existingMonitor.id) {
+            throw MonitorDuplicatedException()
+        }
+    }
 
     fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<PushUptimeEventDto> =
         monitorRepository.findById(monitorId, null)

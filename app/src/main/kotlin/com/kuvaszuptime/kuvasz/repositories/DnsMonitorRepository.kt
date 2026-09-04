@@ -38,7 +38,7 @@ class DnsMonitorRepository(
         .where(DNS_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String, txCtx: DSLContext = this.dslContext): DnsMonitorRecord? = txCtx
+    override fun findByName(name: String, txCtx: DSLContext?): DnsMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DNS_MONITOR)
         .where(DNS_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -99,12 +99,12 @@ class DnsMonitorRepository(
             .and(DNS_MONITOR.ID.eq(monitorId))
             .fetchOneInto(DnsMonitorDetailsDto::class.java)
 
-    fun returningUpdate(
+    override fun returningUpdate(
         updatedMonitor: DnsMonitorRecord,
-        txCtx: DSLContext = dslContext,
+        txCtx: DSLContext?,
     ): DnsMonitorRecord =
         try {
-            txCtx
+            (txCtx ?: dslContext)
                 .update(DNS_MONITOR)
                 .set(DNS_MONITOR.NAME, updatedMonitor.name)
                 .set(DNS_MONITOR.HOST, updatedMonitor.host)
@@ -130,7 +130,7 @@ class DnsMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun upsert(monitor: DnsMonitorRecord, txCtx: DSLContext = this.dslContext): DnsMonitorRecord = txCtx
+    override fun upsert(monitor: DnsMonitorRecord, txCtx: DSLContext?): DnsMonitorRecord = (txCtx ?: dslContext)
         .insertInto(DNS_MONITOR)
         .set(monitor)
         .onConflictOnConstraint(UNIQUE_DNS_MONITOR_NAME)
@@ -140,8 +140,8 @@ class DnsMonitorRepository(
         .returning(DNS_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
-        txCtx
+    override fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext?): List<MonitorIDWithName> =
+        (txCtx ?: dslContext)
             .deleteFrom(DNS_MONITOR)
             .where(DNS_MONITOR.ID.notIn(ignoredIds))
             .returning(DNS_MONITOR.ID, DNS_MONITOR.NAME)

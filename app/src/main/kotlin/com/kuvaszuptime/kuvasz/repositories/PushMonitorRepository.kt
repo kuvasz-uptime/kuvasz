@@ -39,7 +39,7 @@ class PushMonitorRepository(
         .where(PUSH_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String, txCtx: DSLContext = this.dslContext): PushMonitorRecord? = txCtx
+    override fun findByName(name: String, txCtx: DSLContext?): PushMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -103,12 +103,12 @@ class PushMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun returningUpdate(
+    override fun returningUpdate(
         updatedMonitor: PushMonitorRecord,
-        txCtx: DSLContext = dslContext,
+        txCtx: DSLContext?,
     ): PushMonitorRecord =
         try {
-            txCtx
+            (txCtx ?: dslContext)
                 .update(PUSH_MONITOR)
                 .set(PUSH_MONITOR.NAME, updatedMonitor.name)
                 .set(PUSH_MONITOR.HEARTBEAT_INTERVAL, updatedMonitor.heartbeatInterval)
@@ -125,10 +125,7 @@ class PushMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    /**
-     * Inserts a new monitor or updates an existing one if the name already exists.
-     */
-    fun upsert(monitor: PushMonitorRecord, txCtx: DSLContext = this.dslContext): PushMonitorRecord = txCtx
+    override fun upsert(monitor: PushMonitorRecord, txCtx: DSLContext?): PushMonitorRecord = (txCtx ?: dslContext)
         .insertInto(PUSH_MONITOR)
         .set(monitor)
         .onConflictOnConstraint(UNIQUE_PUSH_MONITOR_NAME)
@@ -146,8 +143,8 @@ class PushMonitorRepository(
             .execute()
     }
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
-        txCtx
+    override fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext?): List<MonitorIDWithName> =
+        (txCtx ?: dslContext)
             .deleteFrom(PUSH_MONITOR)
             .where(PUSH_MONITOR.ID.notIn(ignoredIds))
             .returning(PUSH_MONITOR.ID, PUSH_MONITOR.NAME)

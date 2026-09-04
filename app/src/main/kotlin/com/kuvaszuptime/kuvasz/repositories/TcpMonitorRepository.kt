@@ -35,7 +35,7 @@ class TcpMonitorRepository(
         .where(TCP_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String, txCtx: DSLContext = this.dslContext): TcpMonitorRecord? = txCtx
+    override fun findByName(name: String, txCtx: DSLContext?): TcpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(TCP_MONITOR)
         .where(TCP_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -88,12 +88,12 @@ class TcpMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun returningUpdate(
+    override fun returningUpdate(
         updatedMonitor: TcpMonitorRecord,
-        txCtx: DSLContext = dslContext,
+        txCtx: DSLContext?,
     ): TcpMonitorRecord =
         try {
-            txCtx
+            (txCtx ?: dslContext)
                 .update(TCP_MONITOR)
                 .set(TCP_MONITOR.NAME, updatedMonitor.name)
                 .set(TCP_MONITOR.HOST, updatedMonitor.host)
@@ -113,7 +113,7 @@ class TcpMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun upsert(monitor: TcpMonitorRecord, txCtx: DSLContext = this.dslContext): TcpMonitorRecord = txCtx
+    override fun upsert(monitor: TcpMonitorRecord, txCtx: DSLContext?): TcpMonitorRecord = (txCtx ?: dslContext)
         .insertInto(TCP_MONITOR)
         .set(monitor)
         .onConflictOnConstraint(UNIQUE_TCP_MONITOR_NAME)
@@ -123,8 +123,8 @@ class TcpMonitorRepository(
         .returning(TCP_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
-        txCtx
+    override fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext?): List<MonitorIDWithName> =
+        (txCtx ?: dslContext)
             .deleteFrom(TCP_MONITOR)
             .where(TCP_MONITOR.ID.notIn(ignoredIds))
             .returning(TCP_MONITOR.ID, TCP_MONITOR.NAME)

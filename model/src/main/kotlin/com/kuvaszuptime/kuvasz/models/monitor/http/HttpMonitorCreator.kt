@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
@@ -17,7 +18,7 @@ import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 
 @Suppress("ComplexInterface")
-interface HttpMonitorCreator {
+interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String
 
@@ -40,7 +41,7 @@ interface HttpMonitorCreator {
     @get:PositiveOrZero(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
     val sslExpiryThreshold: Int
 
-    val integrations: List<String>?
+    override val integrations: List<String>?
 
     @get:SupportedStatusCodes
     val expectedStatusCodes: List<Int>?
@@ -67,28 +68,27 @@ interface HttpMonitorCreator {
     @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     val failureCountThreshold: Long
+    override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
+        HttpMonitorRecord()
+            .setName(name)
+            .setUrl(url)
+            .setSensitiveUrl(sensitiveUrl)
+            .setEnabled(enabled)
+            .setUptimeCheckInterval(uptimeCheckInterval)
+            .setSslCheckEnabled(sslCheckEnabled)
+            .setRequestMethod(requestMethod)
+            .setMetricsHistoryEnabled(latencyHistoryEnabled)
+            .setForceNoCache(forceNoCache)
+            .setFollowRedirects(followRedirects)
+            .setSslExpiryThreshold(sslExpiryThreshold)
+            .setIntegrations(validatedIntegrations.toTypedArray())
+            .setExpectedStatusCodes(expectedStatusCodes?.toSet()?.toTypedArray().orEmpty())
+            .setResponseTimeThresholdMillis(responseTimeThresholdMillis)
+            .setExpectedKeyword(expectedKeyword)
+            .setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive)
+            .setExpectedKeywordNegated(expectedKeywordNegated)
+            .setRequestHeaders(requestHeaders.orEmpty().toJsonNode())
+            .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
+            .setRequestBody(requestBody)
+            .setFailureCountThreshold(failureCountThreshold)
 }
-
-fun HttpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
-    HttpMonitorRecord()
-        .setName(name)
-        .setUrl(url)
-        .setSensitiveUrl(sensitiveUrl)
-        .setEnabled(enabled)
-        .setUptimeCheckInterval(uptimeCheckInterval)
-        .setSslCheckEnabled(sslCheckEnabled)
-        .setRequestMethod(requestMethod)
-        .setLatencyHistoryEnabled(latencyHistoryEnabled)
-        .setForceNoCache(forceNoCache)
-        .setFollowRedirects(followRedirects)
-        .setSslExpiryThreshold(sslExpiryThreshold)
-        .setIntegrations(validatedIntegrations.toTypedArray())
-        .setExpectedStatusCodes(expectedStatusCodes?.toSet()?.toTypedArray().orEmpty())
-        .setResponseTimeThresholdMillis(responseTimeThresholdMillis)
-        .setExpectedKeyword(expectedKeyword)
-        .setExpectedKeywordCaseSensitive(expectedKeywordCaseSensitive)
-        .setExpectedKeywordNegated(expectedKeywordNegated)
-        .setRequestHeaders(requestHeaders.orEmpty().toJsonNode())
-        .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
-        .setRequestBody(requestBody)
-        .setFailureCountThreshold(failureCountThreshold)

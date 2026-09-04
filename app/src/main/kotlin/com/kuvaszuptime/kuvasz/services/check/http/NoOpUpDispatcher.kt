@@ -23,7 +23,7 @@ class NoOpUpDispatcher(
      * pipeline when all checks have passed.
      */
     override fun evaluate(ctx: HttpResponseCheckContext): HttpCheckResult.Finished {
-        if (ctx.monitor.latencyHistoryEnabled) {
+        if (ctx.monitor.metricsHistoryEnabled) {
             latencyLogRepository.insertLatencyForMonitor(ctx.monitor.id, ctx.response.latency)
         }
 

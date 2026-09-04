@@ -174,7 +174,7 @@ class MonitorRoundTripE2ETest(
                     restoredHttp.uptimeCheckInterval shouldBe httpMonitor.uptimeCheckInterval
                     restoredHttp.enabled shouldBe httpMonitor.enabled
                     restoredHttp.sslCheckEnabled shouldBe httpMonitor.sslCheckEnabled
-                    restoredHttp.latencyHistoryEnabled shouldBe httpMonitor.latencyHistoryEnabled
+                    restoredHttp.metricsHistoryEnabled shouldBe httpMonitor.metricsHistoryEnabled
                     restoredHttp.forceNoCache shouldBe httpMonitor.forceNoCache
                     restoredHttp.followRedirects shouldBe httpMonitor.followRedirects
                     restoredHttp.sslExpiryThreshold shouldBe httpMonitor.sslExpiryThreshold

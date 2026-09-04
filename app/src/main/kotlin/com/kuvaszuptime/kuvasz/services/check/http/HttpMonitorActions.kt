@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
@@ -15,12 +14,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.http.numericMonitorId
-import com.kuvaszuptime.kuvasz.models.monitor.http.toMonitorRecord
-import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
-import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
@@ -30,51 +24,48 @@ import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
-import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
-import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
-import tools.jackson.module.kotlin.convertValue
-import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Duration
 
 @Singleton
 class HttpMonitorActions(
-    private val monitorRepository: HttpMonitorRepository,
-    private val latencyLogRepository: HttpLatencyLogRepository,
+    monitorTypeSupport: HttpMonitorTypeSupport,
     private val checkScheduler: HttpCheckScheduler,
     private val uptimeEventRepository: HttpUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
-    private val dslContext: DSLContext,
-    private val validator: Validator,
-    private val integrationIdValidator: IntegrationIdValidator,
+    dslContext: DSLContext,
+    validator: Validator,
+    integrationIdValidator: IntegrationIdValidator,
     private val integrationRepository: IntegrationRepository,
-    private val eventDispatcher: EventDispatcher,
+    eventDispatcher: EventDispatcher,
     statCalculator: StatCalculator,
     maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
+    statusPageCacheInvalidator: StatusPageCacheInvalidator,
 ) : StatusPageMonitorDataProvider,
     MonitorActions<HttpMonitorRecord, HttpMonitorDetailsDto>(
         dslContext,
         appConfig,
         statusPageRepository,
-        monitorRepository,
         eventDispatcher,
         statCalculator,
         maintenanceWindowService,
+        monitorTypeSupport,
+        validator,
+        integrationIdValidator,
+        statusPageCacheInvalidator,
     ) {
 
-    private val objectMapper: ObjectMapper = jacksonMapperBuilder()
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .build()
+    private val monitorRepository = monitorTypeSupport.repository
+    private val latencyLogRepository = monitorTypeSupport.metricsLogRepository
 
     fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
@@ -128,56 +119,32 @@ class HttpMonitorActions(
                         throw schedulingError
                     }
                 }
+                announceCreation()
             }
     }
 
-    fun deleteMonitorById(monitorId: Long) =
-        super.deleteMonitorById(monitorId) { deletedMonitor ->
-            // Remove any scheduled checks
-            checkScheduler.removeChecksOfMonitor(deletedMonitor)
-        }
+    override fun afterDelete(deletedMonitor: HttpMonitorRecord) {
+        // Remove any scheduled checks
+        checkScheduler.removeChecksOfMonitor(deletedMonitor)
+    }
+
+    // HTTP monitors expose their metrics history flag as `latencyHistoryEnabled`, which is part of the public API,
+    // the YAML config and the backup format alike, while it is stored in the same column as for every other type
+    override val patchAliases = mapOf(HttpMonitorUpdateDto::latencyHistoryEnabled.name to "metricsHistoryEnabled")
 
     fun updateMonitor(monitorId: Long, updates: ObjectNode): HttpMonitorRecord =
-        dslContext.transactionResultWithError { config ->
-            val txCtx = config.dsl()
-            val existingMonitor = monitorRepository.findById(monitorId, txCtx).orThrowNotFound(monitorId)
-            val toUpdate = existingMonitor.into(HttpMonitor::class.java)
-            val filteredUpdates = updates.propertyNames()
-                .fold(objectMapper.createObjectNode()) { acc, fieldName ->
-                    acc.set(fieldName, updates.get(fieldName))
-                }
-            val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
-            // Check if name is present in a non-writable status page as reference
-            if (updatedMonitor.name != existingMonitor.name && !isMonitorChangeable(existingMonitor)) {
-                throw ReadOnlyMonitorNameException()
-            }
-
-            objectMapper.convertValue<HttpMonitorUpdateDto>(updatedMonitor).let { toValidate ->
-                validator.validate(toValidate).throwIfNotEmpty()
-            }
-            // Validate the raw integrations from the DTO
-            updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
-
-            HttpMonitorRecord(updatedMonitor).saveAndReschedule(existingMonitor, txCtx)
-        }.also { updatedMonitorRecord ->
-            eventDispatcher.dispatch(MonitorUpdateEvent(updatedMonitorRecord.numericMonitorId()))
+        updateMonitor(monitorId, updates, HttpMonitor::class.java, HttpMonitorUpdateDto::class.java) {
+            HttpMonitorRecord(it)
         }
 
-    private fun HttpMonitorRecord.saveAndReschedule(
-        existingMonitor: HttpMonitorRecord,
-        txCtx: DSLContext,
-    ): HttpMonitorRecord =
-        monitorRepository.returningUpdate(this, txCtx).also { updatedMonitor ->
-            if (updatedMonitor.enabled) {
-                checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
-            } else {
-                checkScheduler.removeChecksOfMonitor(existingMonitor)
-            }
-            // If the latency history is disabled, we need to delete all the existing logs
-            if (!updatedMonitor.latencyHistoryEnabled && existingMonitor.latencyHistoryEnabled) {
-                latencyLogRepository.deleteAllByMonitorId(existingMonitor.id, txCtx)
-            }
+    override fun afterUpdate(existingMonitor: HttpMonitorRecord, updatedMonitor: HttpMonitorRecord, txCtx: DSLContext) {
+        if (updatedMonitor.enabled) {
+            checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
+        } else {
+            checkScheduler.removeChecksOfMonitor(existingMonitor)
         }
+        super.afterUpdate(existingMonitor, updatedMonitor, txCtx)
+    }
 
     fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> =
         monitorRepository.findById(monitorId, null)
@@ -198,11 +165,11 @@ class HttpMonitorActions(
             val statsDto = HttpMonitorStatsDto(
                 id = monitor.id,
                 uptimeHistory = uptimeHistory,
-                latencyHistoryEnabled = monitor.latencyHistoryEnabled,
+                latencyHistoryEnabled = monitor.metricsHistoryEnabled,
                 latencyStats = null,
                 latencyLogs = emptyList()
             )
-            if (!monitor.latencyHistoryEnabled) {
+            if (!monitor.metricsHistoryEnabled) {
                 return@withUptimeHistory statsDto
             }
 

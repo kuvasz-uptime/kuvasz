@@ -1,5 +1,5 @@
 package com.kuvaszuptime.kuvasz.jooq;
 
-public interface MetricsHistoryMonitorRecord {
+public interface MonitorWithMetricsHistory {
     Boolean getMetricsHistoryEnabled();
 }

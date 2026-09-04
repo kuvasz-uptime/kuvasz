@@ -5,7 +5,7 @@ import com.kuvaszuptime.kuvasz.models.maintenance.MaintenanceWindowCreator
 import com.kuvaszuptime.kuvasz.models.maintenance.toMaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
-import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
@@ -27,7 +27,7 @@ class MaintenanceWindowImporter(
     private val integrationIdValidator: IntegrationIdValidator,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
     private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
-    private val statusPageDataActions: StatusPageDataActions,
+    private val statusPageCacheInvalidator: StatusPageCacheInvalidator,
     private val dslContext: DSLContext,
 ) {
     companion object {
@@ -84,7 +84,7 @@ class MaintenanceWindowImporter(
         val result = importMaintenanceWindowConfigs(maintenanceWindowConfigs, dryRun)
         if (!dryRun) {
             maintenanceWindowScheduler.reschedule()
-            statusPageDataActions.invalidateAllCaches()
+            statusPageCacheInvalidator.invalidateAllCaches()
         }
         return result
     }

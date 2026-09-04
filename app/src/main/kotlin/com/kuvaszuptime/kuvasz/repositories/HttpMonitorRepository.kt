@@ -40,7 +40,7 @@ class HttpMonitorRepository(
         .where(HTTP_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String, txCtx: DSLContext = this.dslContext): HttpMonitorRecord? = txCtx
+    override fun findByName(name: String, txCtx: DSLContext?): HttpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -97,12 +97,12 @@ class HttpMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun returningUpdate(
+    override fun returningUpdate(
         updatedMonitor: HttpMonitorRecord,
-        txCtx: DSLContext = dslContext,
+        txCtx: DSLContext?,
     ): HttpMonitorRecord =
         try {
-            txCtx
+            (txCtx ?: dslContext)
                 .update(HTTP_MONITOR)
                 .set(HTTP_MONITOR.NAME, updatedMonitor.name)
                 .set(HTTP_MONITOR.URL, updatedMonitor.url)
@@ -113,7 +113,7 @@ class HttpMonitorRepository(
                 .set(HTTP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .set(HTTP_MONITOR.REQUEST_METHOD, updatedMonitor.requestMethod)
                 .set(HTTP_MONITOR.FOLLOW_REDIRECTS, updatedMonitor.followRedirects)
-                .set(HTTP_MONITOR.LATENCY_HISTORY_ENABLED, updatedMonitor.latencyHistoryEnabled)
+                .set(HTTP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
                 .set(HTTP_MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
                 .set(HTTP_MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
                 .set(HTTP_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
@@ -133,10 +133,7 @@ class HttpMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    /**
-     * Inserts a new monitor or updates an existing one if the name already exists.
-     */
-    fun upsert(monitor: HttpMonitorRecord, txCtx: DSLContext = this.dslContext): HttpMonitorRecord = txCtx
+    override fun upsert(monitor: HttpMonitorRecord, txCtx: DSLContext?): HttpMonitorRecord = (txCtx ?: dslContext)
         .insertInto(HTTP_MONITOR)
         .set(monitor)
         .onConflictOnConstraint(UNIQUE_MONITOR_NAME)
@@ -154,8 +151,8 @@ class HttpMonitorRepository(
             .execute()
     }
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorIDWithName> =
-        txCtx
+    override fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext?): List<MonitorIDWithName> =
+        (txCtx ?: dslContext)
             .deleteFrom(HTTP_MONITOR)
             .where(HTTP_MONITOR.ID.notIn(ignoredIds))
             .returning(HTTP_MONITOR.ID, HTTP_MONITOR.NAME)
@@ -193,7 +190,7 @@ class HttpMonitorRepository(
             SSL_EVENT.SSL_EXPIRY_DATE.`as`(HttpMonitorDetailsDto::sslValidUntil.name),
             latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.ERROR)!!.`as`(HttpMonitorDetailsDto::uptimeError.name),
             SSL_EVENT.ERROR.`as`(HttpMonitorDetailsDto::sslError.name),
-            HTTP_MONITOR.LATENCY_HISTORY_ENABLED.`as`(HttpMonitorDetailsDto::latencyHistoryEnabled.name),
+            HTTP_MONITOR.METRICS_HISTORY_ENABLED.`as`(HttpMonitorDetailsDto::latencyHistoryEnabled.name),
             HTTP_MONITOR.FORCE_NO_CACHE.`as`(HttpMonitorDetailsDto::forceNoCache.name),
             HTTP_MONITOR.FOLLOW_REDIRECTS.`as`(HttpMonitorDetailsDto::followRedirects.name),
             HTTP_MONITOR.REQUEST_METHOD.`as`(HttpMonitorDetailsDto::requestMethod.name),

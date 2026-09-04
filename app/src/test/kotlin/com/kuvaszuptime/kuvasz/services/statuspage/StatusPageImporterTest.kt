@@ -28,7 +28,7 @@ class StatusPageImporterTest(
     private val statusPageImporter: StatusPageImporter,
     private val statusPageRepository: StatusPageRepository,
     private val httpMonitorRepository: HttpMonitorRepository,
-    private val statusPageDataActions: StatusPageDataActions,
+    private val statusPageCacheInvalidator: StatusPageCacheInvalidator,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -96,7 +96,7 @@ class StatusPageImporterTest(
                 val configs = listOf(StatusPageImportAdapter(exportDto(slug = "backup")))
 
                 then("caches are invalidated only for the real import, not the dry-run") {
-                    val dataMock = getMock(statusPageDataActions)
+                    val dataMock = getMock(statusPageCacheInvalidator)
                     every { dataMock.invalidateAllCaches() } just Runs
 
                     statusPageImporter.importStatusPagesFromBackup(configs, dryRun = true)
@@ -119,7 +119,7 @@ class StatusPageImporterTest(
                     result.imported.shouldBeEmpty()
                     result.deleted.shouldBeEmpty()
                     statusPageRepository.findById(existing.id).shouldNotBeNull()
-                    verify(exactly = 0) { getMock(statusPageDataActions).invalidateAllCaches() }
+                    verify(exactly = 0) { getMock(statusPageCacheInvalidator).invalidateAllCaches() }
                 }
             }
         }
@@ -138,6 +138,6 @@ class StatusPageImporterTest(
         monitors = monitors,
     )
 
-    @MockBean(StatusPageDataActions::class)
-    fun statusPageDataActionsMock(): StatusPageDataActions = mockk()
+    @MockBean(StatusPageCacheInvalidator::class)
+    fun statusPageCacheInvalidatorMock(): StatusPageCacheInvalidator = mockk()
 }

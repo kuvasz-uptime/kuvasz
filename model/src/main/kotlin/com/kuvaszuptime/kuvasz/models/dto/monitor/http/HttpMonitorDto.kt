@@ -72,7 +72,7 @@ data class HttpMonitorDto(
                 enabled = record.enabled,
                 sslCheckEnabled = record.sslCheckEnabled,
                 requestMethod = record.requestMethod,
-                latencyHistoryEnabled = record.latencyHistoryEnabled,
+                latencyHistoryEnabled = record.metricsHistoryEnabled,
                 forceNoCache = record.forceNoCache,
                 followRedirects = record.followRedirects,
                 sslExpiryThreshold = record.sslExpiryThreshold,

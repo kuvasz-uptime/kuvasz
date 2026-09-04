@@ -246,7 +246,7 @@ class MonitorControllerTest(
                         firstMonitor.enabled shouldBe httpMonitor.enabled
                         firstMonitor.sslCheckEnabled shouldBe httpMonitor.sslCheckEnabled
                         firstMonitor.requestMethod shouldBe httpMonitor.requestMethod
-                        firstMonitor.latencyHistoryEnabled shouldBe httpMonitor.latencyHistoryEnabled
+                        firstMonitor.latencyHistoryEnabled shouldBe httpMonitor.metricsHistoryEnabled
                         firstMonitor.forceNoCache shouldBe httpMonitor.forceNoCache
                         firstMonitor.followRedirects shouldBe httpMonitor.followRedirects
                         firstMonitor.sslExpiryThreshold shouldBe httpMonitor.sslExpiryThreshold
@@ -260,7 +260,7 @@ class MonitorControllerTest(
                         secondMonitor.enabled shouldBe httpMonitor2.enabled
                         secondMonitor.sslCheckEnabled shouldBe httpMonitor2.sslCheckEnabled
                         secondMonitor.requestMethod shouldBe httpMonitor2.requestMethod
-                        secondMonitor.latencyHistoryEnabled shouldBe httpMonitor2.latencyHistoryEnabled
+                        secondMonitor.latencyHistoryEnabled shouldBe httpMonitor2.metricsHistoryEnabled
                         secondMonitor.forceNoCache shouldBe httpMonitor2.forceNoCache
                         secondMonitor.followRedirects shouldBe httpMonitor2.followRedirects
                         secondMonitor.sslExpiryThreshold shouldBe httpMonitor2.sslExpiryThreshold

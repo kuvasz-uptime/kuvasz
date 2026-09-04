@@ -1,3 +1,12 @@
+## 4.x.x <small>2026-09-xx</small> { id="4.x.x" data-toc-label="4.x.x" }
+
+### Fixes
+
+- **Importing monitors left the exported metrics describing the state before the import**: after a [**YAML import**](management/examples.md#backup-restore-with-yaml), the [**exported metrics**](management/metrics-exporters.md) still reported the monitors as they were beforehand. A monitor **deleted** by the import kept being exported forever, frozen at its last known value; a **renamed** one kept its old `name` and `target` labels, and picked up a **second series** under its new name as soon as it was checked again; and a monitor the import **disabled** - or turned the SSL check off on - went on being exported, even though a disabled monitor never is otherwise. Only a restart cleaned this up. The exported metrics now follow an import immediately.
+- **Status pages could keep showing an outdated set of monitors**: the cached [**status page**](management/status-pages.md) data wasn't dropped when the monitors behind it changed - neither on a YAML import, nor when a monitor was created, edited or deleted on the UI, through the API or over MCP. A page could serve a monitor set that didn't exist any more, or leave out one that had just been added, until its cache expired on its own. Every one of these changes now invalidates it right away.
+- **Turning the latency or the metrics history off in an import kept the already recorded logs**: doing the very same thing on the UI or through the API deletes them, because they aren't reachable any more once the history is off. An import left them behind in the database instead, and they reappeared the moment the history was turned back on. They are now dropped either way.
+- **Importing a push monitor kept its recorded failures even when its failure counting changed**: the same problem the previous release fixed for the UI and the API. The failures recorded so far were counted against the monitor's **previous settings**, so once an import changed its **heartbeat interval**, its **grace period** or its [**failure count threshold**](management/push-monitors.md#failure-count-threshold), they weren't comparable to the new ones any more. An import now clears them too, exactly like an edit does.
+
 ## 4.3.1 <small>2026-08-31</small> { id="4.3.1" data-toc-label="4.3.1" }
 
 ### Fixes

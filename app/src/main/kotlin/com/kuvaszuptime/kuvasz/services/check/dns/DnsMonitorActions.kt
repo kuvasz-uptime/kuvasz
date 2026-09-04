@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.DnsMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
-import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.event.DnsUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorCreateDto
@@ -13,13 +12,8 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDnsMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.deduplicated
-import com.kuvaszuptime.kuvasz.models.monitor.dns.numericMonitorId
-import com.kuvaszuptime.kuvasz.models.monitor.dns.toMonitorRecord
-import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
-import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.toStatsDto
@@ -28,50 +22,47 @@ import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
-import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
-import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
-import tools.jackson.module.kotlin.convertValue
-import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Duration
 
 @Singleton
 class DnsMonitorActions(
-    private val monitorRepository: DnsMonitorRepository,
     private val checkScheduler: DnsCheckScheduler,
     private val uptimeEventRepository: DnsUptimeEventRepository,
-    private val metricsLogRepository: DnsMetricsLogRepository,
-    private val dslContext: DSLContext,
-    private val validator: Validator,
-    private val integrationIdValidator: IntegrationIdValidator,
+    monitorTypeSupport: DnsMonitorTypeSupport,
+    dslContext: DSLContext,
+    validator: Validator,
+    integrationIdValidator: IntegrationIdValidator,
     private val integrationRepository: IntegrationRepository,
-    private val eventDispatcher: EventDispatcher,
+    eventDispatcher: EventDispatcher,
     statCalculator: StatCalculator,
     maintenanceWindowService: MaintenanceWindowService,
     statusPageRepository: StatusPageRepository,
     appConfig: AppConfig,
+    statusPageCacheInvalidator: StatusPageCacheInvalidator,
 ) : StatusPageMonitorDataProvider,
     MonitorActions<DnsMonitorRecord, DnsMonitorDetailsDto>(
         dslContext,
         appConfig,
         statusPageRepository,
-        monitorRepository,
         eventDispatcher,
         statCalculator,
         maintenanceWindowService,
+        monitorTypeSupport,
+        validator,
+        integrationIdValidator,
+        statusPageCacheInvalidator,
     ) {
 
-    private val objectMapper: ObjectMapper = jacksonMapperBuilder()
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .build()
+    private val monitorRepository = monitorTypeSupport.repository
+    private val metricsLogRepository = monitorTypeSupport.metricsLogRepository
 
     fun getMonitorDetails(monitorId: Long): DnsMonitorDetailsDto {
         val monitorFromRepo =
@@ -117,55 +108,28 @@ class DnsMonitorActions(
         return monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord(validatedIntegrations))
             .also { createdMonitor ->
                 checkScheduler.createChecksForMonitor(createdMonitor)
+                announceCreation()
             }
     }
 
     fun updateMonitor(monitorId: Long, updates: ObjectNode): DnsMonitorRecord =
-        dslContext.transactionResultWithError { config ->
-            val txCtx = config.dsl()
-            val existingMonitor = monitorRepository.findById(monitorId, txCtx).orThrowNotFound(monitorId)
-            val toUpdate = existingMonitor.into(DnsMonitor::class.java)
-            val filteredUpdates = updates.propertyNames()
-                .fold(objectMapper.createObjectNode()) { acc, fieldName ->
-                    acc.set(fieldName, updates.get(fieldName))
-                }
-            val updatedMonitor = objectMapper.updateValue(toUpdate, filteredUpdates)
-            // Check if name is present in a non-writable status page as reference
-            if (updatedMonitor.name != existingMonitor.name && !isMonitorChangeable(existingMonitor)) {
-                throw ReadOnlyMonitorNameException()
-            }
-
-            objectMapper.convertValue<DnsMonitorUpdateDto>(updatedMonitor).let { toValidate ->
-                validator.validate(toValidate).throwIfNotEmpty()
-            }
-            // Validate the raw integrations from the DTO
-            updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
-
-            DnsMonitorRecord(updatedMonitor).deduplicated().saveAndReschedule(existingMonitor, txCtx)
-        }.also { updatedMonitorRecord ->
-            eventDispatcher.dispatch(MonitorUpdateEvent(updatedMonitorRecord.numericMonitorId()))
+        updateMonitor(monitorId, updates, DnsMonitor::class.java, DnsMonitorUpdateDto::class.java) {
+            DnsMonitorRecord(it).deduplicated()
         }
 
-    private fun DnsMonitorRecord.saveAndReschedule(
-        existingMonitor: DnsMonitorRecord,
-        txCtx: DSLContext,
-    ): DnsMonitorRecord =
-        monitorRepository.returningUpdate(this, txCtx).also { updatedMonitor ->
-            if (updatedMonitor.enabled) {
-                checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
-            } else {
-                checkScheduler.removeChecksOfMonitor(existingMonitor)
-            }
-            // If the metrics history is disabled, we need to delete all the existing logs
-            if (!updatedMonitor.metricsHistoryEnabled && existingMonitor.metricsHistoryEnabled) {
-                metricsLogRepository.deleteAllByMonitorId(existingMonitor.id, txCtx)
-            }
+    override fun afterUpdate(existingMonitor: DnsMonitorRecord, updatedMonitor: DnsMonitorRecord, txCtx: DSLContext) {
+        if (updatedMonitor.enabled) {
+            checkScheduler.createChecksForMonitor(updatedMonitor)?.let { throw it }
+        } else {
+            checkScheduler.removeChecksOfMonitor(existingMonitor)
         }
+        super.afterUpdate(existingMonitor, updatedMonitor, txCtx)
+    }
 
-    fun deleteMonitorById(monitorId: Long) =
-        super.deleteMonitorById(monitorId) { monitor ->
-            checkScheduler.removeChecksOfMonitor(monitor)
-        }
+    override fun afterDelete(deletedMonitor: DnsMonitorRecord) {
+        // Remove any scheduled checks
+        checkScheduler.removeChecksOfMonitor(deletedMonitor)
+    }
 
     fun getUptimeEventsByMonitorId(monitorId: Long, limit: Int? = null): List<DnsUptimeEventDto> =
         monitorRepository.findById(monitorId, null)
