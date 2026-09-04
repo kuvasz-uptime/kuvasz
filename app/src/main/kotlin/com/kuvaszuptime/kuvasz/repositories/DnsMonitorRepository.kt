@@ -9,8 +9,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
-import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
+import com.kuvaszuptime.kuvasz.models.monitor.dns.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -38,7 +38,7 @@ class DnsMonitorRepository(
         .where(DNS_MONITOR.ID.eq(monitorId))
         .fetchOne()
 
-    fun findByName(name: String): DnsMonitorRecord? = dslContext
+    override fun findByName(name: String, txCtx: DSLContext?): DnsMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DNS_MONITOR)
         .where(DNS_MONITOR.NAME.eq(name))
         .fetchOne()
@@ -99,12 +99,12 @@ class DnsMonitorRepository(
             .and(DNS_MONITOR.ID.eq(monitorId))
             .fetchOneInto(DnsMonitorDetailsDto::class.java)
 
-    fun returningUpdate(
+    override fun returningUpdate(
         updatedMonitor: DnsMonitorRecord,
-        txCtx: DSLContext = dslContext,
+        txCtx: DSLContext?,
     ): DnsMonitorRecord =
         try {
-            txCtx
+            (txCtx ?: dslContext)
                 .update(DNS_MONITOR)
                 .set(DNS_MONITOR.NAME, updatedMonitor.name)
                 .set(DNS_MONITOR.HOST, updatedMonitor.host)
@@ -130,7 +130,7 @@ class DnsMonitorRepository(
             throw e.checkForDuplication()
         }
 
-    fun upsert(monitor: DnsMonitorRecord, txCtx: DSLContext = this.dslContext): DnsMonitorRecord = txCtx
+    override fun upsert(monitor: DnsMonitorRecord, txCtx: DSLContext?): DnsMonitorRecord = (txCtx ?: dslContext)
         .insertInto(DNS_MONITOR)
         .set(monitor)
         .onConflictOnConstraint(UNIQUE_DNS_MONITOR_NAME)
@@ -140,12 +140,13 @@ class DnsMonitorRepository(
         .returning(DNS_MONITOR.asterisk())
         .fetchOneOrThrow()
 
-    fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext = this.dslContext): List<MonitorID> = txCtx
-        .deleteFrom(DNS_MONITOR)
-        .where(DNS_MONITOR.ID.notIn(ignoredIds))
-        .returning(DNS_MONITOR.NAME)
-        .fetch()
-        .map { it.monitorId() }
+    override fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext?): List<MonitorIDWithName> =
+        (txCtx ?: dslContext)
+            .deleteFrom(DNS_MONITOR)
+            .where(DNS_MONITOR.ID.notIn(ignoredIds))
+            .returning(DNS_MONITOR.ID, DNS_MONITOR.NAME)
+            .fetch()
+            .map { it.idWithName() }
 
     val latestUptimeEventSelect: Table<DnsUptimeEventRecord?> = DSL.table(
         DSL.selectFrom(DNS_UPTIME_EVENT)

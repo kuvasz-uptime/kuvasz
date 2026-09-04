@@ -110,9 +110,9 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     public final TableField<HttpMonitorRecord, Boolean> SSL_CHECK_ENABLED = createField(DSL.name("ssl_check_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
     /**
-     * The column <code>kuvasz.http_monitor.latency_history_enabled</code>.
+     * The column <code>kuvasz.http_monitor.metrics_history_enabled</code>.
      */
-    public final TableField<HttpMonitorRecord, Boolean> LATENCY_HISTORY_ENABLED = createField(DSL.name("latency_history_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
+    public final TableField<HttpMonitorRecord, Boolean> METRICS_HISTORY_ENABLED = createField(DSL.name("metrics_history_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
 
     /**
      * The column <code>kuvasz.http_monitor.follow_redirects</code>.

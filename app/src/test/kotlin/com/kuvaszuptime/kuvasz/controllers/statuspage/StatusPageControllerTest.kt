@@ -50,9 +50,7 @@ import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import io.mockk.Runs
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
@@ -107,7 +105,6 @@ class StatusPageControllerTest(
             }
 
             `when`("a valid backup is imported for real") {
-                every { getMock(statusPageDataActions).invalidateAllCaches() } just Runs
                 val existing = createStatusPage(dslContext, slug = "existing-page")
                 val yaml = buildStatusPageYaml(exportDto(slug = "imported"))
 

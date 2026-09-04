@@ -46,7 +46,7 @@ public class HttpMonitor implements Serializable {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private Boolean sslCheckEnabled;
-    private Boolean latencyHistoryEnabled;
+    private Boolean metricsHistoryEnabled;
     private Boolean followRedirects;
     private Boolean forceNoCache;
     private HttpMethod requestMethod;
@@ -74,7 +74,7 @@ public class HttpMonitor implements Serializable {
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
         this.sslCheckEnabled = value.sslCheckEnabled;
-        this.latencyHistoryEnabled = value.latencyHistoryEnabled;
+        this.metricsHistoryEnabled = value.metricsHistoryEnabled;
         this.followRedirects = value.followRedirects;
         this.forceNoCache = value.forceNoCache;
         this.requestMethod = value.requestMethod;
@@ -101,7 +101,7 @@ public class HttpMonitor implements Serializable {
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         Boolean sslCheckEnabled,
-        Boolean latencyHistoryEnabled,
+        Boolean metricsHistoryEnabled,
         Boolean followRedirects,
         Boolean forceNoCache,
         HttpMethod requestMethod,
@@ -126,7 +126,7 @@ public class HttpMonitor implements Serializable {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.sslCheckEnabled = sslCheckEnabled;
-        this.latencyHistoryEnabled = latencyHistoryEnabled;
+        this.metricsHistoryEnabled = metricsHistoryEnabled;
         this.followRedirects = followRedirects;
         this.forceNoCache = forceNoCache;
         this.requestMethod = requestMethod;
@@ -269,17 +269,17 @@ public class HttpMonitor implements Serializable {
     }
 
     /**
-     * Getter for <code>kuvasz.http_monitor.latency_history_enabled</code>.
+     * Getter for <code>kuvasz.http_monitor.metrics_history_enabled</code>.
      */
-    public Boolean getLatencyHistoryEnabled() {
-        return this.latencyHistoryEnabled;
+    public Boolean getMetricsHistoryEnabled() {
+        return this.metricsHistoryEnabled;
     }
 
     /**
-     * Setter for <code>kuvasz.http_monitor.latency_history_enabled</code>.
+     * Setter for <code>kuvasz.http_monitor.metrics_history_enabled</code>.
      */
-    public HttpMonitor setLatencyHistoryEnabled(Boolean latencyHistoryEnabled) {
-        this.latencyHistoryEnabled = latencyHistoryEnabled;
+    public HttpMonitor setMetricsHistoryEnabled(Boolean metricsHistoryEnabled) {
+        this.metricsHistoryEnabled = metricsHistoryEnabled;
         return this;
     }
 
@@ -569,11 +569,11 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.sslCheckEnabled.equals(other.sslCheckEnabled))
             return false;
-        if (this.latencyHistoryEnabled == null) {
-            if (other.latencyHistoryEnabled != null)
+        if (this.metricsHistoryEnabled == null) {
+            if (other.metricsHistoryEnabled != null)
                 return false;
         }
-        else if (!this.latencyHistoryEnabled.equals(other.latencyHistoryEnabled))
+        else if (!this.metricsHistoryEnabled.equals(other.metricsHistoryEnabled))
             return false;
         if (this.followRedirects == null) {
             if (other.followRedirects != null)
@@ -680,7 +680,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.sslCheckEnabled == null) ? 0 : this.sslCheckEnabled.hashCode());
-        result = prime * result + ((this.latencyHistoryEnabled == null) ? 0 : this.latencyHistoryEnabled.hashCode());
+        result = prime * result + ((this.metricsHistoryEnabled == null) ? 0 : this.metricsHistoryEnabled.hashCode());
         result = prime * result + ((this.followRedirects == null) ? 0 : this.followRedirects.hashCode());
         result = prime * result + ((this.forceNoCache == null) ? 0 : this.forceNoCache.hashCode());
         result = prime * result + ((this.requestMethod == null) ? 0 : this.requestMethod.hashCode());
@@ -711,7 +711,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(sslCheckEnabled);
-        sb.append(", ").append(latencyHistoryEnabled);
+        sb.append(", ").append(metricsHistoryEnabled);
         sb.append(", ").append(followRedirects);
         sb.append(", ").append(forceNoCache);
         sb.append(", ").append(requestMethod);

@@ -8,7 +8,6 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
-import com.kuvaszuptime.kuvasz.models.monitor.dns.toMonitorRecord
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty

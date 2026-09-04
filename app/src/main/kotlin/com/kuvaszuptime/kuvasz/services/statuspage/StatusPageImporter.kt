@@ -17,7 +17,7 @@ import org.jooq.DSLContext
 class StatusPageImporter(
     private val monitorIdValidator: MonitorIdValidator,
     private val statusPageRepository: StatusPageRepository,
-    private val statusPageDataActions: StatusPageDataActions,
+    private val statusPageCacheInvalidator: StatusPageCacheInvalidator,
     private val dslContext: DSLContext,
 ) {
     companion object {
@@ -67,7 +67,7 @@ class StatusPageImporter(
         }
         val result = importStatusPageConfigs(statusPageConfigs, dryRun)
         if (!dryRun) {
-            statusPageDataActions.invalidateAllCaches()
+            statusPageCacheInvalidator.invalidateAllCaches()
         }
         return result
     }

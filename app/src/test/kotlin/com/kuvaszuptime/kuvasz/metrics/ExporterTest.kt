@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.metrics
 
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.core.spec.style.BehaviorSpec
@@ -22,6 +23,7 @@ abstract class ExporterTest(private val env: String, body: BehaviorSpec.() -> Un
 
     fun meterRegistry() = appContext?.getBean<MeterRegistry>().shouldNotBeNull()
     fun eventDispatcher() = appContext?.getBean<EventDispatcher>().shouldNotBeNull()
+    fun monitorImporter() = appContext?.getBean<MonitorImporter>().shouldNotBeNull()
 
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         // Doing a final manual cleanup after each tests to make sure that we don't leave any data behind that would

@@ -187,7 +187,7 @@ class HttpMonitorToolsTest(
 
                     with(response.structuredContentAs<HttpMonitorStatsSchema>().shouldNotBeNull()) {
                         id shouldBe monitor.id
-                        latencyHistoryEnabled shouldBe monitor.latencyHistoryEnabled
+                        latencyHistoryEnabled shouldBe monitor.metricsHistoryEnabled
                         period shouldBe "PT12H"
                         response.contentAs<HttpMonitorStatsSchema>() shouldBe this
                     }

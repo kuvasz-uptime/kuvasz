@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -12,7 +13,7 @@ import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
 
 @Suppress("ComplexInterface")
-interface PushMonitorCreator {
+interface PushMonitorCreator : MonitorCreator<PushMonitorRecord> {
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String
 
@@ -30,19 +31,18 @@ interface PushMonitorCreator {
     val clientSecret: String
 
     val enabled: Boolean
-    val integrations: List<String>?
+    override val integrations: List<String>?
 
     @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     val failureCountThreshold: Long
+    override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): PushMonitorRecord =
+        PushMonitorRecord()
+            .setName(name)
+            .setHeartbeatInterval(heartbeatInterval)
+            .setGracePeriod(gracePeriod)
+            .setEnabled(enabled)
+            .setClientSecret(clientSecret)
+            .setIntegrations(validatedIntegrations.toTypedArray())
+            .setFailureCountThreshold(failureCountThreshold)
 }
-
-fun PushMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): PushMonitorRecord =
-    PushMonitorRecord()
-        .setName(name)
-        .setHeartbeatInterval(heartbeatInterval)
-        .setGracePeriod(gracePeriod)
-        .setEnabled(enabled)
-        .setClientSecret(clientSecret)
-        .setIntegrations(validatedIntegrations.toTypedArray())
-        .setFailureCountThreshold(failureCountThreshold)

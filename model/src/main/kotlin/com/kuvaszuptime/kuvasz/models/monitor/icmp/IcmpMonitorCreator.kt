@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -11,7 +12,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 
 @Suppress("ComplexInterface")
-interface IcmpMonitorCreator {
+interface IcmpMonitorCreator : MonitorCreator<IcmpMonitorRecord> {
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String
 
@@ -48,19 +49,18 @@ interface IcmpMonitorCreator {
     val failureCountThreshold: Long
 
     val enabled: Boolean
-    val integrations: List<String>?
+    override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
+    override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): IcmpMonitorRecord =
+        IcmpMonitorRecord()
+            .setName(name)
+            .setHost(host)
+            .setUptimeCheckInterval(uptimeCheckInterval)
+            .setPacketCount(packetCount)
+            .setTimeoutSeconds(timeoutSeconds)
+            .setPacketLossThreshold(packetLossThreshold)
+            .setFailureCountThreshold(failureCountThreshold)
+            .setEnabled(enabled)
+            .setIntegrations(validatedIntegrations.toTypedArray())
+            .setMetricsHistoryEnabled(metricsHistoryEnabled)
 }
-
-fun IcmpMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): IcmpMonitorRecord =
-    IcmpMonitorRecord()
-        .setName(name)
-        .setHost(host)
-        .setUptimeCheckInterval(uptimeCheckInterval)
-        .setPacketCount(packetCount)
-        .setTimeoutSeconds(timeoutSeconds)
-        .setPacketLossThreshold(packetLossThreshold)
-        .setFailureCountThreshold(failureCountThreshold)
-        .setEnabled(enabled)
-        .setIntegrations(validatedIntegrations.toTypedArray())
-        .setMetricsHistoryEnabled(metricsHistoryEnabled)

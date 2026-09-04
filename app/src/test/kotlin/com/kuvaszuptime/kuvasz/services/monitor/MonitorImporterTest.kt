@@ -1,11 +1,16 @@
 package com.kuvaszuptime.kuvasz.services.monitor
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createPendingFailure
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.DnsMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
@@ -17,23 +22,34 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.events.MonitorDeleteEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorUpdateEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
+import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
+import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
+import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -42,7 +58,14 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.micronaut.test.annotation.MockBean
+import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.mockk
+import io.mockk.verify
+import io.reactivex.rxjava3.subscribers.TestSubscriber
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 @MicronautTest
 class MonitorImporterTest(
@@ -57,6 +80,12 @@ class MonitorImporterTest(
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val tcpCheckScheduler: TcpCheckScheduler,
     private val pushMonitorRepository: PushMonitorRepository,
+    private val latencyLogRepository: HttpLatencyLogRepository,
+    private val icmpMetricsLogRepository: IcmpMetricsLogRepository,
+    private val tcpMetricsLogRepository: TcpMetricsLogRepository,
+    private val dnsMetricsLogRepository: DnsMetricsLogRepository,
+    private val eventDispatcher: EventDispatcher,
+    private val statusPageCacheInvalidator: StatusPageCacheInvalidator,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -417,12 +446,183 @@ class MonitorImporterTest(
                 }
             }
         }
+
+        given("the side effects of an import") {
+
+            `when`("a real import upserts and deletes monitors of every type") {
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val toDelete = createHttpMonitor(httpMonitorRepository, monitorName = "http-to-delete")
+                delay(1000.milliseconds)
+
+                then("every affected monitor is announced and the status page caches are dropped") {
+                    monitorImporter.batchImportMonitors(
+                        httpMonitorConfigs = listOf(httpAdapter("http-kept")),
+                        pushMonitorConfigs = listOf(pushAdapter("push-kept")),
+                        icmpMonitorConfigs = listOf(icmpAdapter("icmp-kept")),
+                        tcpMonitorConfigs = listOf(tcpAdapter("tcp-kept")),
+                        dnsMonitorConfigs = listOf(dnsAdapter("dns-kept")),
+                        dryRun = false,
+                    )
+
+                    val httpKept = httpMonitorRepository.findByName("http-kept").shouldNotBeNull()
+                    val pushKept = pushMonitorRepository.findByName("push-kept").shouldNotBeNull()
+                    val icmpKept = icmpMonitorRepository.findByName("icmp-kept").shouldNotBeNull()
+                    val tcpKept = tcpMonitorRepository.findByName("tcp-kept").shouldNotBeNull()
+                    val dnsKept = dnsMonitorRepository.findByName("dns-kept").shouldNotBeNull()
+
+                    subscriber.awaitCount(6).values() shouldContainExactlyInAnyOrder listOf(
+                        MonitorUpdateEvent(NumericMonitorID(MonitorType.HTTP_SSL, httpKept.id)),
+                        MonitorUpdateEvent(NumericMonitorID(MonitorType.PUSH, pushKept.id)),
+                        MonitorUpdateEvent(NumericMonitorID(MonitorType.ICMP, icmpKept.id)),
+                        MonitorUpdateEvent(NumericMonitorID(MonitorType.TCP, tcpKept.id)),
+                        MonitorUpdateEvent(NumericMonitorID(MonitorType.DNS, dnsKept.id)),
+                        MonitorDeleteEvent(NumericMonitorID(MonitorType.HTTP_SSL, toDelete.id)),
+                    )
+                    verify(exactly = 1) { getMock(statusPageCacheInvalidator).invalidateAllCaches() }
+                }
+            }
+
+            `when`("a single type is imported through its own entry point") {
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                delay(1000.milliseconds)
+
+                then("the change is announced the same way as from a batch import") {
+                    monitorImporter.importIcmpMonitorConfigs(listOf(icmpAdapter("icmp-announced")), dryRun = false)
+
+                    val imported = icmpMonitorRepository.findByName("icmp-announced").shouldNotBeNull()
+
+                    subscriber.awaitCount(1).values() shouldContainExactlyInAnyOrder listOf(
+                        MonitorUpdateEvent(NumericMonitorID(MonitorType.ICMP, imported.id)),
+                    )
+                    verify(exactly = 1) { getMock(statusPageCacheInvalidator).invalidateAllCaches() }
+                }
+            }
+
+            `when`("a dry-run import would change everything") {
+                val subscriber = TestSubscriber<MonitorLifecycleEvent>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                val http = createHttpMonitor(httpMonitorRepository, monitorName = "dry-run-untouched")
+                val push = createPushMonitor(pushMonitorRepository, monitorName = "dry-run-push")
+                latencyLogRepository.insertLatencyForMonitor(http.id, 100)
+                createPendingFailure(dslContext, push.id)
+                delay(1000.milliseconds)
+
+                then("nothing is announced, no cache is dropped and the derived data is rolled back with the rest") {
+                    monitorImporter.batchImportMonitors(
+                        httpMonitorConfigs = listOf(httpAdapter("dry-run-untouched", latencyHistoryEnabled = false)),
+                        pushMonitorConfigs = listOf(pushAdapter("dry-run-push", heartbeatInterval = 900)),
+                        icmpMonitorConfigs = emptyList(),
+                        tcpMonitorConfigs = emptyList(),
+                        dnsMonitorConfigs = emptyList(),
+                        dryRun = true,
+                    )
+
+                    subscriber.values().shouldBeEmpty()
+                    verify(exactly = 0) { getMock(statusPageCacheInvalidator).invalidateAllCaches() }
+                    latencyLogRepository.fetchLastByMonitorId(http.id).shouldNotBeNull()
+                    pendingFailureCountOf(push.id) shouldBe 1L
+                }
+            }
+
+            `when`("an import turns the latency and the metrics history off") {
+                val http = createHttpMonitor(httpMonitorRepository, monitorName = "http-history")
+                val icmp = createIcmpMonitor(icmpMonitorRepository, monitorName = "icmp-history")
+                val tcp = createTcpMonitor(tcpMonitorRepository, monitorName = "tcp-history")
+                val dns = createDnsMonitor(dnsMonitorRepository, monitorName = "dns-history")
+                latencyLogRepository.insertLatencyForMonitor(http.id, 100)
+                icmpMetricsLogRepository.insertLog(icmp.id, latencyMs = 100, packetLossPercentage = 0)
+                tcpMetricsLogRepository.insertLog(tcp.id, latencyMs = 100)
+                dnsMetricsLogRepository.insertLog(dns.id, latencyMs = 100)
+
+                monitorImporter.batchImportMonitors(
+                    httpMonitorConfigs = listOf(httpAdapter("http-history", latencyHistoryEnabled = false)),
+                    pushMonitorConfigs = emptyList(),
+                    icmpMonitorConfigs = listOf(icmpAdapter("icmp-history", metricsHistoryEnabled = false)),
+                    tcpMonitorConfigs = listOf(tcpAdapter("tcp-history", metricsHistoryEnabled = false)),
+                    dnsMonitorConfigs = listOf(dnsAdapter("dns-history", metricsHistoryEnabled = false)),
+                    dryRun = false,
+                )
+
+                then("the logs that are not reachable anymore are deleted") {
+                    latencyLogRepository.fetchLastByMonitorId(http.id).shouldBeNull()
+                    icmpMetricsLogRepository.fetchLastByMonitorId(icmp.id).shouldBeNull()
+                    tcpMetricsLogRepository.fetchLastByMonitorId(tcp.id).shouldBeNull()
+                    dnsMetricsLogRepository.fetchLastByMonitorId(dns.id).shouldBeNull()
+                }
+            }
+
+            `when`("an import leaves the latency and the metrics history on") {
+                val http = createHttpMonitor(httpMonitorRepository, monitorName = "http-history-kept")
+                val icmp = createIcmpMonitor(icmpMonitorRepository, monitorName = "icmp-history-kept")
+                val tcp = createTcpMonitor(tcpMonitorRepository, monitorName = "tcp-history-kept")
+                val dns = createDnsMonitor(dnsMonitorRepository, monitorName = "dns-history-kept")
+                latencyLogRepository.insertLatencyForMonitor(http.id, 100)
+                icmpMetricsLogRepository.insertLog(icmp.id, latencyMs = 100, packetLossPercentage = 0)
+                tcpMetricsLogRepository.insertLog(tcp.id, latencyMs = 100)
+                dnsMetricsLogRepository.insertLog(dns.id, latencyMs = 100)
+
+                monitorImporter.batchImportMonitors(
+                    httpMonitorConfigs = listOf(httpAdapter("http-history-kept")),
+                    pushMonitorConfigs = emptyList(),
+                    icmpMonitorConfigs = listOf(icmpAdapter("icmp-history-kept")),
+                    tcpMonitorConfigs = listOf(tcpAdapter("tcp-history-kept")),
+                    dnsMonitorConfigs = listOf(dnsAdapter("dns-history-kept")),
+                    dryRun = false,
+                )
+
+                then("the already recorded logs are kept") {
+                    latencyLogRepository.fetchLastByMonitorId(http.id).shouldNotBeNull()
+                    icmpMetricsLogRepository.fetchLastByMonitorId(icmp.id).shouldNotBeNull()
+                    tcpMetricsLogRepository.fetchLastByMonitorId(tcp.id).shouldNotBeNull()
+                    dnsMetricsLogRepository.fetchLastByMonitorId(dns.id).shouldNotBeNull()
+                }
+            }
+
+            `when`("an import changes the failure counting settings of an existing push monitor") {
+                monitorImporter.importPushMonitorConfigs(listOf(pushAdapter("push-recounted")), dryRun = false)
+                val monitor = pushMonitorRepository.findByName("push-recounted").shouldNotBeNull()
+                createPendingFailure(dslContext, monitor.id)
+
+                monitorImporter.importPushMonitorConfigs(
+                    listOf(pushAdapter("push-recounted", failureCountThreshold = 5)),
+                    dryRun = false,
+                )
+
+                then("the recorded failures are dropped, because they are not comparable to the new settings") {
+                    pendingFailureCountOf(monitor.id).shouldBeNull()
+                }
+            }
+
+            `when`("an import leaves the failure counting settings of an existing push monitor intact") {
+                monitorImporter.importPushMonitorConfigs(listOf(pushAdapter("push-untouched")), dryRun = false)
+                val monitor = pushMonitorRepository.findByName("push-untouched").shouldNotBeNull()
+                createPendingFailure(dslContext, monitor.id, failureCount = 2)
+
+                monitorImporter.importPushMonitorConfigs(listOf(pushAdapter("push-untouched")), dryRun = false)
+
+                then("the recorded failures survive the import") {
+                    pendingFailureCountOf(monitor.id) shouldBe 2L
+                }
+            }
+        }
     }
+
+    private fun pendingFailureCountOf(monitorId: Long): Long? = dslContext
+        .selectFrom(PENDING_FAILURE)
+        .where(PENDING_FAILURE.MONITOR_ID.eq(monitorId))
+        .fetchOne()
+        ?.failureCount
+
+    @MockBean(StatusPageCacheInvalidator::class)
+    fun statusPageCacheInvalidatorMock(): StatusPageCacheInvalidator = mockk(relaxUnitFun = true)
 
     private fun dnsAdapter(
         name: String,
         recordMatchers: List<DnsRecordMatcher> = emptyList(),
         driftRecordTypes: List<DnsRecordType> = emptyList(),
+        metricsHistoryEnabled: Boolean = true,
     ) = DnsMonitorImportAdapter(
         DnsMonitorExportDto(
             name = name,
@@ -440,11 +640,11 @@ class MonitorImporterTest(
             failureCountThreshold = 2,
             enabled = true,
             integrations = emptySet(),
-            metricsHistoryEnabled = true,
+            metricsHistoryEnabled = metricsHistoryEnabled,
         )
     )
 
-    private fun httpAdapter(name: String) = HttpMonitorImportAdapter(
+    private fun httpAdapter(name: String, latencyHistoryEnabled: Boolean = true) = HttpMonitorImportAdapter(
         HttpMonitorExportDto(
             name = name,
             url = "https://example.com",
@@ -452,7 +652,7 @@ class MonitorImporterTest(
             uptimeCheckInterval = 60,
             enabled = true,
             sslCheckEnabled = true,
-            latencyHistoryEnabled = true,
+            latencyHistoryEnabled = latencyHistoryEnabled,
             requestMethod = HttpMethod.GET,
             followRedirects = true,
             forceNoCache = true,
@@ -470,7 +670,7 @@ class MonitorImporterTest(
         )
     )
 
-    private fun tcpAdapter(name: String) = TcpMonitorImportAdapter(
+    private fun tcpAdapter(name: String, metricsHistoryEnabled: Boolean = true) = TcpMonitorImportAdapter(
         TcpMonitorExportDto(
             name = name,
             host = "1.2.3.4",
@@ -481,23 +681,28 @@ class MonitorImporterTest(
             failureCountThreshold = 1,
             enabled = true,
             integrations = emptySet(),
-            metricsHistoryEnabled = true,
+            metricsHistoryEnabled = metricsHistoryEnabled,
         )
     )
 
-    private fun pushAdapter(name: String) = PushMonitorImportAdapter(
+    private fun pushAdapter(
+        name: String,
+        heartbeatInterval: Long = 60,
+        gracePeriod: Long = 30,
+        failureCountThreshold: Long = 1,
+    ) = PushMonitorImportAdapter(
         PushMonitorExportDto(
             name = name,
-            heartbeatInterval = 60,
-            gracePeriod = 30,
+            heartbeatInterval = heartbeatInterval,
+            gracePeriod = gracePeriod,
             clientSecret = "secret-of-$name",
             enabled = true,
             integrations = emptySet(),
-            failureCountThreshold = 1,
+            failureCountThreshold = failureCountThreshold,
         )
     )
 
-    private fun icmpAdapter(name: String) = IcmpMonitorImportAdapter(
+    private fun icmpAdapter(name: String, metricsHistoryEnabled: Boolean = true) = IcmpMonitorImportAdapter(
         IcmpMonitorExportDto(
             name = name,
             host = "1.2.3.4",
@@ -508,7 +713,7 @@ class MonitorImporterTest(
             failureCountThreshold = 1,
             enabled = true,
             integrations = emptySet(),
-            metricsHistoryEnabled = true,
+            metricsHistoryEnabled = metricsHistoryEnabled,
         )
     )
 }

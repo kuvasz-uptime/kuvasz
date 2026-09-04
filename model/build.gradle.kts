@@ -126,7 +126,8 @@ jooq {
                                 }
                                 table {
                                     expression = "HTTP_MONITOR"
-                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord"
+                                    recordImplements =
+                                        "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
                                 }
                                 table {
                                     expression = "PUSH_MONITOR"
@@ -134,15 +135,18 @@ jooq {
                                 }
                                 table {
                                     expression = "ICMP_MONITOR"
-                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord"
+                                    recordImplements =
+                                        "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
                                 }
                                 table {
                                     expression = "TCP_MONITOR"
-                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord"
+                                    recordImplements =
+                                        "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
                                 }
                                 table {
                                     expression = "DNS_MONITOR"
-                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord"
+                                    recordImplements =
+                                        "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
                                 }
                             }
                         }

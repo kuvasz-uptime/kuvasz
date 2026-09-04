@@ -34,7 +34,10 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
+import com.kuvaszuptime.kuvasz.services.UptimeOverview
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
@@ -76,6 +79,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 import tools.jackson.databind.node.JsonNodeFactory
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 
 @MicronautTest(environments = ["full-integrations-setup"])
@@ -89,6 +93,8 @@ class HttpMonitorControllerTest(
     private val eventDispatcher: EventDispatcher,
     private val statusPageRepository: StatusPageRepository,
     private val appConfig: AppConfig,
+    private val statusPageDataActions: StatusPageDataActions,
+    private val statusPageCacheInvalidator: StatusPageCacheInvalidator,
 ) : DatabaseBehaviorSpec() {
 
     private val mapper = jacksonObjectMapper()
@@ -1037,8 +1043,8 @@ class HttpMonitorControllerTest(
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.requestMethod shouldBe HttpMethod.GET
                     monitorInDb.requestMethod shouldBe createdMonitor.requestMethod
-                    monitorInDb.latencyHistoryEnabled shouldBe true
-                    monitorInDb.latencyHistoryEnabled shouldBe createdMonitor.latencyHistoryEnabled
+                    monitorInDb.metricsHistoryEnabled shouldBe true
+                    monitorInDb.metricsHistoryEnabled shouldBe createdMonitor.latencyHistoryEnabled
                     monitorInDb.forceNoCache shouldBe true
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe true
@@ -1059,6 +1065,7 @@ class HttpMonitorControllerTest(
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
+
                 }
             }
 
@@ -1111,8 +1118,8 @@ class HttpMonitorControllerTest(
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.requestMethod shouldBe HttpMethod.HEAD
                     monitorInDb.requestMethod shouldBe createdMonitor.requestMethod
-                    monitorInDb.latencyHistoryEnabled shouldBe false
-                    monitorInDb.latencyHistoryEnabled shouldBe createdMonitor.latencyHistoryEnabled
+                    monitorInDb.metricsHistoryEnabled shouldBe false
+                    monitorInDb.metricsHistoryEnabled shouldBe createdMonitor.latencyHistoryEnabled
                     monitorInDb.forceNoCache shouldBe false
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe false
@@ -1415,6 +1422,15 @@ class HttpMonitorControllerTest(
                 val deleteRequest = HttpRequest.DELETE<Any>("/api/v2/http-monitors/${createdMonitor.id}")
                 val subscriber = TestSubscriber<MonitorLifecycleEvent>()
                 eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
+                // Reads the monitor on another connection at the moment the event is announced, so an announcement
+                // that happens before the delete is committed is visible here
+                val stillInDbWhenAnnounced = AtomicReference<Boolean>()
+                eventDispatcher.subscribeToMonitorLifecycleEvents {
+                    stillInDbWhenAnnounced.compareAndSet(
+                        null,
+                        monitorRepository.findById(createdMonitor.id, null) != null,
+                    )
+                }
 
                 val response = client.exchange(deleteRequest).awaitFirst()
                 val monitorInDb = monitorRepository.findById(createdMonitor.id, null)
@@ -1429,6 +1445,10 @@ class HttpMonitorControllerTest(
                     // A delete event should be dispatched
                     val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.monitor shouldBe NumericMonitorID(MonitorType.HTTP_SSL, createdMonitor.id)
+
+                    // ...but only once the delete is committed, otherwise the subscribers would rebuild their state
+                    // from a monitor that is still there, and a failing commit would leave them out of sync for good
+                    stillInDbWhenAnnounced.get() shouldBe false
                 }
             }
 
@@ -1552,6 +1572,7 @@ class HttpMonitorControllerTest(
 
                     // No delete event should be dispatched
                     subscriber.assertNoValues()
+
                 }
             }
         }
@@ -1644,7 +1665,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
                     monitorInDb.requestMethod shouldBe HttpMethod.GET
-                    monitorInDb.latencyHistoryEnabled shouldBe false
+                    monitorInDb.metricsHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe false
                     monitorInDb.followRedirects shouldBe false
                     monitorInDb.sslExpiryThreshold shouldBe 20
@@ -1701,7 +1722,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.createdAt shouldBe createdMonitor.createdAt
                     monitorInDb.updatedAt shouldNotBe null
                     monitorInDb.requestMethod shouldBe HttpMethod.HEAD
-                    monitorInDb.latencyHistoryEnabled shouldBe false
+                    monitorInDb.metricsHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
@@ -2315,6 +2336,47 @@ class HttpMonitorControllerTest(
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     response.message shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
                     monitorInDb.requestBody shouldBe createdMonitor.requestBody
+                }
+            }
+        }
+
+        given("the cached status page data and the monitors it is built from") {
+
+            `when`("a monitor is created, then renamed, then deleted") {
+                every { getMock(statCalculator).calculateUptimeOverviews(any(), any(), any()) } answers {
+                    thirdArg<List<Long>>().associateWith {
+                        UptimeOverview(uptimeRatio = null, statusHistory = emptyList())
+                    }
+                }
+                // Starts from a known state and populates the cache with the current, empty set of monitors, so a
+                // change that fails to drop it would keep serving this very response
+                statusPageCacheInvalidator.invalidateAllCaches()
+                statusPageDataActions.getCachedDefaultStatusPageData().monitors.shouldBeEmpty()
+
+                val createdMonitor = monitorClient.createMonitor(
+                    HttpMonitorCreateDto(
+                        name = "cached_monitor",
+                        url = "https://valid-url.com",
+                        uptimeCheckInterval = 6000,
+                    )
+                )
+                val afterCreate = statusPageDataActions.getCachedDefaultStatusPageData()
+
+                monitorClient.updateMonitor(
+                    createdMonitor.id,
+                    JsonNodeFactory.instance.objectNode().put(HttpMonitorUpdateDto::name.name, "renamed_monitor"),
+                )
+                val afterUpdate = statusPageDataActions.getCachedDefaultStatusPageData()
+
+                client.exchange(
+                    HttpRequest.DELETE<Any>("/api/v2/http-monitors/${createdMonitor.id}")
+                ).awaitFirst()
+                val afterDelete = statusPageDataActions.getCachedDefaultStatusPageData()
+
+                then("each of the changes should drop the cached data instead of serving the previous state") {
+                    afterCreate.monitors.map { it.name } shouldContainExactly listOf("cached_monitor")
+                    afterUpdate.monitors.map { it.name } shouldContainExactly listOf("renamed_monitor")
+                    afterDelete.monitors.shouldBeEmpty()
                 }
             }
         }

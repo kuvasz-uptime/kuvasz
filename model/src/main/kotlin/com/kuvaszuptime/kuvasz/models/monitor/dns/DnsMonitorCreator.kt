@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.validation.ValidDnsRecordMatchers
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -15,7 +16,7 @@ import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 
 @Suppress("ComplexInterface")
-interface DnsMonitorCreator : DnsResponseCodeMatchers {
+interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitorRecord> {
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String
 
@@ -56,25 +57,24 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers {
     val failureCountThreshold: Long
 
     val enabled: Boolean
-    val integrations: List<String>?
+    override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
+    override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): DnsMonitorRecord =
+        DnsMonitorRecord()
+            .setName(name)
+            .setHost(host)
+            .setResolverHost(resolverHost)
+            .setResolverPort(resolverPort)
+            .setTransport(transport)
+            .setRecordMatchers(recordMatchers.orEmpty().distinct().toJsonNode())
+            .setExpectedResponseCode(expectedResponseCode)
+            .setDriftDetectionEnabled(driftDetectionEnabled)
+            .setDriftRecordTypes(driftRecordTypes.orEmpty().distinct().toTypedArray())
+            .setUptimeCheckInterval(uptimeCheckInterval)
+            .setTimeoutMs(timeoutMs)
+            .setLatencyThresholdMs(latencyThresholdMs)
+            .setFailureCountThreshold(failureCountThreshold)
+            .setEnabled(enabled)
+            .setIntegrations(validatedIntegrations.toTypedArray())
+            .setMetricsHistoryEnabled(metricsHistoryEnabled)
 }
-
-fun DnsMonitorCreator.toMonitorRecord(validatedIntegrations: Set<IntegrationID>): DnsMonitorRecord =
-    DnsMonitorRecord()
-        .setName(name)
-        .setHost(host)
-        .setResolverHost(resolverHost)
-        .setResolverPort(resolverPort)
-        .setTransport(transport)
-        .setRecordMatchers(recordMatchers.orEmpty().distinct().toJsonNode())
-        .setExpectedResponseCode(expectedResponseCode)
-        .setDriftDetectionEnabled(driftDetectionEnabled)
-        .setDriftRecordTypes(driftRecordTypes.orEmpty().distinct().toTypedArray())
-        .setUptimeCheckInterval(uptimeCheckInterval)
-        .setTimeoutMs(timeoutMs)
-        .setLatencyThresholdMs(latencyThresholdMs)
-        .setFailureCountThreshold(failureCountThreshold)
-        .setEnabled(enabled)
-        .setIntegrations(validatedIntegrations.toTypedArray())
-        .setMetricsHistoryEnabled(metricsHistoryEnabled)

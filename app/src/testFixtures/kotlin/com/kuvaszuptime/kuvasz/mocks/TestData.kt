@@ -86,7 +86,7 @@ fun createHttpMonitor(
         .setSslCheckEnabled(sslCheckEnabled)
         .setCreatedAt(getCurrentTimestamp())
         .setRequestMethod(requestMethod)
-        .setLatencyHistoryEnabled(latencyHistoryEnabled)
+        .setMetricsHistoryEnabled(latencyHistoryEnabled)
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
         .setSslExpiryThreshold(sslExpiryThreshold)

@@ -243,6 +243,73 @@ class HttpUptimeStatusExporterTest : HttpExporterTest("enabled-metrics-uptime-st
                     }
                 }
             }
+
+            `when`("monitors are imported from a YAML backup after initialization") {
+
+                appContext = testAppContext()
+
+                val monitorToKeep = createHttpMonitor(
+                    httpMonitorRepository(),
+                    monitorName = "test-to-keep",
+                    url = "https://test.to-keep",
+                    enabled = true,
+                )
+                val monitorToDelete = createHttpMonitor(
+                    httpMonitorRepository(),
+                    monitorName = "test-to-delete",
+                    url = "https://test.to-delete",
+                    enabled = true,
+                )
+                val monitorToRename = createHttpMonitor(
+                    httpMonitorRepository(),
+                    monitorName = "test-to-rename",
+                    url = "https://test.to-rename",
+                    enabled = true,
+                )
+                val monitorToDisable = createHttpMonitor(
+                    httpMonitorRepository(),
+                    monitorName = "test-to-disable",
+                    url = "https://test.to-disable",
+                    enabled = true,
+                )
+                listOf(monitorToKeep, monitorToDelete, monitorToRename, monitorToDisable).forEach { monitor ->
+                    httpUptimeEventRepository().insertFromMonitorEvent(
+                        HttpMonitorUpEvent(monitor, status = HttpStatus.OK, latency = 20, previousEvent = null)
+                    )
+                }
+
+                restartAppContextWithMetrics()
+
+                meterRegistry().meters shouldHaveSize 4
+
+                monitorImporter().batchImportMonitors(
+                    httpMonitorConfigs = listOf(
+                        httpImportAdapter(monitorToKeep.name, url = monitorToKeep.url),
+                        httpImportAdapter("renamed", url = monitorToRename.url),
+                        httpImportAdapter(monitorToDisable.name, url = monitorToDisable.url, enabled = false),
+                    ),
+                    pushMonitorConfigs = emptyList(),
+                    icmpMonitorConfigs = emptyList(),
+                    tcpMonitorConfigs = emptyList(),
+                    dnsMonitorConfigs = emptyList(),
+                    dryRun = false,
+                )
+
+                val registeredMeters = meterRegistry().meters
+
+                then("it should not leave any stale meter behind, without a restart") {
+
+                    // Only the untouched monitor keeps its meter, the freshly inserted one has no status yet
+                    registeredMeters shouldHaveSize 1
+                    registeredMeters.single() shouldHaveNameTag monitorToKeep.name
+                    registeredMeters.single() shouldHaveValue 1.0
+
+                    // The deleted, the renamed and the disabled monitors' meters are all gone
+                    registeredMeters.forNone { it shouldHaveNameTag monitorToDelete.name }
+                    registeredMeters.forNone { it shouldHaveNameTag monitorToRename.name }
+                    registeredMeters.forNone { it shouldHaveNameTag monitorToDisable.name }
+                }
+            }
         }
     }
 }
