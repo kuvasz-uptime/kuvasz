@@ -92,16 +92,26 @@ const statusCodeToBadgeClass = (statusCode) => {
                 statusCode.substring(0, 1) === '4' ? 'status-red' : '';
 };
 
-// Shows a toast notification using Bootstrap's toast component
-const showToast = (header, content, backgroundClass, autoHide) => {
-    const html =
-        `<div class="toast fade ${backgroundClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="${autoHide}" ${autoHide ? 'data-bs-delay="3000"' : ''}>
+const HTML_ESCAPES = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
+
+// Escapes the HTML special characters of a text that is interpolated into a markup string
+const escapeHtml = (text) => String(text ?? '').replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
+
+// Builds the markup of a toast. Its header and body can carry remote content (e.g. the error of an integration
+// test request), so both of them have to be escaped
+const buildToastMarkup = (header, content, statusClass, autoHide) =>
+    `<div class="toast fade" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="${autoHide}" ${autoHide ? 'data-bs-delay="3000"' : ''}>
             <div class="toast-header">
-                <strong class="me-auto">${header}</strong>
+                <span class="status-dot ${statusClass} me-2"></span>
+                <strong class="me-auto">${escapeHtml(header)}</strong>
                 <button type="button" class="ms-2 btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-            <div class="toast-body">${content}</div>
+            <div class="toast-body">${escapeHtml(content)}</div>
         </div>`.trim();
+
+// Shows a toast notification using Tabler's toast component
+const showToast = (header, content, statusClass, autoHide) => {
+    const html = buildToastMarkup(header, content, statusClass, autoHide);
     const toastElement = document.createElement('template');
     toastElement.innerHTML = html;
     const toastContainer = document.querySelector("#toast-container");
@@ -2057,10 +2067,10 @@ const integrationListItem = (integrationId) => {
                 const data = await response.json();
                 if (data.success) {
                     this.testRequestError = null;
-                    showToast(this.integrationId, data.message, 'bg-success', true);
+                    showToast(this.integrationId, data.message, 'status-green', true);
                 } else {
                     this.testRequestError = data.message || 'Unknown error';
-                    showToast(this.integrationId, this.testRequestError, 'bg-danger', false);
+                    showToast(this.integrationId, this.testRequestError, 'status-red', false);
                 }
                 this.wasTestRequestExecuted = true;
                 this.isTestRequestLoading = false;
@@ -2542,6 +2552,8 @@ if (typeof module !== 'undefined' && module.exports) {
         sanitizeTextInput,
         splitWithLimit,
         statusCodeToBadgeClass,
+        escapeHtml,
+        buildToastMarkup,
         hasNonNullValue,
         isValidUrl,
         isValidSlug,

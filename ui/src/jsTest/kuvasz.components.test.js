@@ -9,6 +9,8 @@ globalThis.TomSelect = class TomSelect {};
 
 const {
     MAINTENANCE_WINDOW_TYPES,
+    escapeHtml,
+    buildToastMarkup,
     upsertHttpMonitorForm,
     upsertPushMonitorForm,
     upsertIcmpMonitorForm,
@@ -553,4 +555,59 @@ test('DNS populateFrom copies a source and falls back to defaults', () => {
     assert.equal(form.failureCountThreshold, 1);
     assert.deepEqual(form.integrations, []);
     assert.equal(form.metricsHistoryEnabled, true);
+});
+
+// --------- buildToastMarkup ---------
+
+test('buildToastMarkup renders a plain Tabler toast carrying its state in a status dot', () => {
+    const markup = buildToastMarkup('slack:alpha', 'Test notification sent', 'status-green', true);
+
+    // Tabler only styles the plain toast, so no Bootstrap background utility may leak into the markup
+    assert.match(markup, /class="toast fade"/);
+    assert.ok(!markup.includes('bg-success'));
+    assert.ok(!markup.includes('bg-danger'));
+    // The outcome is carried by the status dot instead
+    assert.match(markup, /<span class="status-dot status-green me-2"><\/span>/);
+    assert.match(markup, /<strong class="me-auto">slack:alpha<\/strong>/);
+    assert.match(markup, /<div class="toast-body">Test notification sent<\/div>/);
+});
+
+test('buildToastMarkup only auto-dismisses when asked to', () => {
+    const autoHiding = buildToastMarkup('h', 'c', 'status-green', true);
+    assert.match(autoHiding, /data-bs-autohide="true"/);
+    assert.match(autoHiding, /data-bs-delay="3000"/);
+
+    // Errors stay on screen until dismissed, so they carry no delay
+    const sticky = buildToastMarkup('h', 'c', 'status-red', false);
+    assert.match(sticky, /data-bs-autohide="false"/);
+    assert.ok(!sticky.includes('data-bs-delay'));
+    assert.match(sticky, /status-dot status-red/);
+});
+
+test('buildToastMarkup escapes the remote content it renders', () => {
+    // The body of a failed integration test carries the error of the remote endpoint, so it must not be able to
+    // inject markup into the toast that ends up in innerHTML
+    const markup = buildToastMarkup(
+        '<img src=x onerror="alert(1)">',
+        "Unexpected response: <script>alert('xss')</script>",
+        'status-red',
+        false,
+    );
+
+    assert.ok(!markup.includes('<img'));
+    assert.ok(!markup.includes('<script>'));
+    assert.match(markup, /&lt;img src=x onerror=&quot;alert\(1\)&quot;&gt;/);
+    assert.match(markup, /&lt;script&gt;alert\(&#39;xss&#39;\)&lt;\/script&gt;/);
+});
+
+// --------- escapeHtml ---------
+
+test('escapeHtml escapes every HTML special character and handles missing values', () => {
+    assert.equal(escapeHtml(`&<>"'`), '&amp;&lt;&gt;&quot;&#39;');
+    // Ampersands are escaped first, so an already escaped entity is not double-decoded on render
+    assert.equal(escapeHtml('a &amp; b'), 'a &amp;amp; b');
+    assert.equal(escapeHtml('plain text'), 'plain text');
+    assert.equal(escapeHtml(null), '');
+    assert.equal(escapeHtml(undefined), '');
+    assert.equal(escapeHtml(42), '42');
 });
