@@ -60,6 +60,27 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Run check
         run: ./gradlew check -x detekt -x detektMain -x detektTest
+      - name: Publish JVM test results
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          check_name: JVM test results
+          job_summary: true
+          detailed_summary: true
+          group_suite: true
+          include_passed: false
+          # Summary-only mode: no check run, no Checks API call, so it works on fork PRs too
+          skip_annotations: true
+          fail_on_failure: false
+          require_tests: false
+      - name: Upload JVM test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-test-reports
+          path: '**/build/reports/tests/'
+          if-no-files-found: ignore
       - name: Generate code coverage report for Codecov
         run: ./gradlew koverXmlReport
       - name: Codecov
@@ -85,7 +106,23 @@ jobs:
       - name: Run JS unit tests
         run: ./gradlew :ui:jsTest
       - name: Run UI E2E suite
+        if: ${{ !cancelled() }}
         run: ./gradlew :app:uiTest
+      - name: Publish UI test results
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: |
+            ui/build/test-results/jsTest/TEST-*.xml
+            app/build/test-results/uiTest/TEST-*.xml
+          check_name: UI test results
+          job_summary: true
+          detailed_summary: true
+          group_suite: true
+          include_passed: false
+          skip_annotations: true
+          fail_on_failure: false
+          require_tests: false
       - name: Upload UI E2E artifacts
         if: failure()
         uses: actions/upload-artifact@v4
