@@ -42,5 +42,15 @@ tasks.register<Exec>("jsTest") {
     group = "verification"
     description = "Runs the Node unit tests for the frontend JS helpers, requires Node.js on PATH."
     workingDir = project.file("src/jsTest")
-    commandLine("node", "--test")
+    // The JUnit report is what CI parses into the job summary, the spec reporter keeps the console output readable
+    val report = layout.buildDirectory.file("test-results/jsTest/TEST-jsTest.xml")
+    doFirst { report.get().asFile.parentFile.mkdirs() }
+    commandLine(
+        "node",
+        "--test",
+        "--test-reporter=spec",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=${report.get().asFile.absolutePath}",
+    )
 }
