@@ -51,6 +51,10 @@ jobs:
   check:
     name: Run tests and generate code coverage report
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Lets the report step post its sticky comment on same-repo PRs
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
@@ -70,10 +74,13 @@ jobs:
           detailed_summary: true
           group_suite: true
           include_passed: false
+          include_time_in_summary: true
           # Summary-only mode: no check run, no Checks API call, so it works on fork PRs too
           skip_annotations: true
           fail_on_failure: false
           require_tests: false
+          # Fork PRs get a read-only token, so posting there would fail the step: summary-only for them
+          comment: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
       - name: Upload JVM test reports
         if: failure()
         uses: actions/upload-artifact@v4
@@ -93,6 +100,10 @@ jobs:
   ui-tests:
     name: Run UI test suite (unit + E2E)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Lets the report step post its sticky comment on same-repo PRs
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
@@ -112,17 +123,23 @@ jobs:
         if: ${{ !cancelled() }}
         uses: mikepenz/action-junit-report@v6
         with:
+          # Each report_paths line is a separate report, so check_name needs one matching line each
           report_paths: |
             ui/build/test-results/jsTest/TEST-*.xml
             app/build/test-results/uiTest/TEST-*.xml
-          check_name: UI test results
+          check_name: |
+            JS unit tests
+            UI E2E tests
           job_summary: true
           detailed_summary: true
           group_suite: true
           include_passed: false
+          include_time_in_summary: true
           skip_annotations: true
           fail_on_failure: false
           require_tests: false
+          # Fork PRs get a read-only token, so posting there would fail the step: summary-only for them
+          comment: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
       - name: Upload UI E2E artifacts
         if: failure()
         uses: actions/upload-artifact@v4
