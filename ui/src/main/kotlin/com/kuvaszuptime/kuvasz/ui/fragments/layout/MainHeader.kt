@@ -50,7 +50,7 @@ internal fun FlowContent.mainHeader(
             }
 
             div {
-                classes(NAVBAR_NAV, FLEX_ROW, ORDER_MD_LAST)
+                classes(NAVBAR_NAV, FLEX_ROW, ORDER_MD_LAST, PX_0)
                 if (isAuthenticated) {
                     div {
                         classes(NAV_ITEM, D_MD_FLEX, ME_2)
@@ -63,18 +63,23 @@ internal fun FlowContent.mainHeader(
     }
 }
 
+/**
+ * The theme switcher of the headers. Tabler sizes an icon-only `.nav-link` to a 2.5rem tap target, but since 1.5.0 it
+ * aligns the icon to the start of that box instead of centering it, which leaves the icon floating away from the
+ * container's edge - hence the explicit centering.
+ **/
 internal fun FlowContent.darkModeToggle() {
     div {
         classes(NAV_ITEM, D_MD_FLEX)
         a(href = "#") {
-            classes(NAV_LINK, PX_0, HIDE_THEME_DARK)
+            classes(NAV_LINK, PX_0, JUSTIFY_CONTENT_CENTER, HIDE_THEME_DARK)
             ariaLabel(Messages.enableDarkMode())
             onClick = "setTheme('dark')"
             testId("theme-toggle-dark")
             icon(Icon.DARK_MODE)
         }
         a(href = "#") {
-            classes(NAV_LINK, PX_0, HIDE_THEME_LIGHT)
+            classes(NAV_LINK, PX_0, JUSTIFY_CONTENT_CENTER, HIDE_THEME_LIGHT)
             ariaLabel(Messages.enableLightMode())
             onClick = "setTheme('light')"
             testId("theme-toggle-light")

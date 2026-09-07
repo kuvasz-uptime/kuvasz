@@ -30,6 +30,11 @@
     src: url('/public/ext/fonts/Inter-SemiBold.woff2') format('woff2');
 }
 
+:root {
+    /* Tabler 1.5 defaults to the system font stack, we keep the self-hosted Inter */
+    --tblr-font-sans-serif: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
 /* Disable Tabler's default cv11 (single-storey "a") */
 body {
     font-feature-settings: "cv11" 0 !important;
@@ -61,6 +66,15 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
     background-color: var(--tblr-gray-100) !important;
 }
 
+/* Tabler 1.5 regression: the knob of an unchecked switch is white, which is invisible on the (also white) light
+   track - only the dark theme gets an override upstream. Restores the gray knob 1.4 used. Unlike the upstream dark
+   rule this covers the focused state too, which 1.4 painted blue and 1.5 leaves white.
+   see https://github.com/tabler/tabler/issues/2982
+   */
+:root:not([data-bs-theme=dark]) .form-switch .form-check-input:not(:checked) {
+    --tblr-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23e5e7eb'/%3e%3c/svg%3e");
+}
+
 /* Native date/time inputs: hide the browser's calendar icon and open the picker on a click anywhere in the field */
 .native-datetime-input::-webkit-calendar-picker-indicator {
     display: none;
@@ -78,14 +92,4 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
     width: 42px;
     padding: 5px; /* Leaves 32 x 32px for the image */
     object-fit: contain;
-}
-
-/* Tabler btn-icon + btn-sm sizing fix */
-.btn.btn-icon.btn-sm {
-    min-width: 1.9rem;
-    min-height: 1.9rem;
-}
-
-.btn-group-sm > .btn, .btn-sm {
-    --tblr-btn-line-height: 1.2rem;
 }

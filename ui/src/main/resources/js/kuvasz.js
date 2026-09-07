@@ -342,7 +342,7 @@ const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
         enabled: false,
     },
     fill: {
-        colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 16%)", "color-mix(in srgb, transparent, var(--tblr-primary) 16%)"],
+        colors: [tabler.tabler.getColor("primary", 0.16), tabler.tabler.getColor("primary", 0.16)],
         type: "solid",
     },
     stroke: {
@@ -370,7 +370,9 @@ const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
         padding: {
             top: -20,
             right: 0,
-            left: -4,
+            // ApexCharts 7 prefixes the day to the hour labels when the range crosses midnight, so the leftmost
+            // label needs room not to be clipped
+            left: 8,
             bottom: -4,
         },
         strokeDashArray: 4,
@@ -394,7 +396,8 @@ const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
         },
     },
     labels: [],
-    colors: ["color-mix(in srgb, transparent, var(--tblr-primary) 100%)"],
+    // ApexCharts can't resolve CSS color functions, so Tabler's own helper resolves the theme color for it
+    colors: [tabler.tabler.getColor("primary")],
     legend: {
         show: false,
     },
