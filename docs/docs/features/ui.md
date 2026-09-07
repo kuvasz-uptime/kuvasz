@@ -5,6 +5,20 @@ _Kuvasz_ provides a sleek and performant user interface that allows you to **man
 
 Just a **clean and responsive interface** that works well on both desktop and mobile devices!
 
+## Browser support
+
+The UI relies on modern CSS features (`light-dark()`, `color-mix()`, `@property` and `:has()`), so it needs a recent browser:
+
+| Browser             | Minimum version |
+|---------------------|-----------------|
+| Chrome / Edge       | 123             |
+| Firefox             | 128             |
+| Safari / iOS Safari | 17.5            |
+
+!!! note
+
+    Older browsers still render the pages, but colors, spacing and some interactive states will look off. This does **not** affect the [**API**](api.md) or the [**MCP server**](mcp-server.md) in any way.
+
 ## Dashboard
 
 ![Dashboard](../images/ui/dashboard.webp)

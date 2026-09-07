@@ -22,7 +22,7 @@ internal fun FlowContent.statusPageMainHeader(title: String, customLogoUrl: Stri
             }
 
             div {
-                classes(NAVBAR_NAV, FLEX_ROW, ORDER_MD_LAST)
+                classes(NAVBAR_NAV, FLEX_ROW, ORDER_MD_LAST, PX_0)
                 darkModeToggle()
             }
         }

@@ -30,10 +30,10 @@ internal fun withLayout(
                     title {
                         title?.let { +"$it | $DEFAULT_TITLE" } ?: +DEFAULT_TITLE
                     }
-                    link(rel = "stylesheet", href = "/public/ext/css/tomselect.2.4.3.bootstrap5.min.css")
-                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.4.0.min.css")
-                    script(src = "/public/ext/js/apexcharts.3.54.1.min.js") {}
-                    script(src = "/public/ext/js/tomselect.2.4.3.complete.min.js") {}
+                    link(rel = "stylesheet", href = "/public/ext/css/tomselect.2.6.2.bootstrap5.min.css")
+                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.5.0.min.css")
+                    script(src = "/public/ext/js/apexcharts.7.1.0.min.js") {}
+                    script(src = "/public/ext/js/tomselect.2.6.2.complete.min.js") {}
                 }
                 body {
                     div {
@@ -83,7 +83,7 @@ internal fun withLayout(
                     }
                     commonScripts(globals.appVersion)
                     script(src = "/public/ext/js/htmx.2.0.10.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.16.3.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.17.2.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
@@ -107,12 +107,12 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
             """.trimIndent()
         }
     }
-    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.4.0.min.css")
+    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.5.0.min.css")
     link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=$appVersion")
 }
 
 internal fun FlowOrMetaDataOrPhrasingContent.commonScripts(appVersion: String) {
-    script(src = "/public/ext/js/tabler.1.4.0.min.js") {}
+    script(src = "/public/ext/js/tabler.1.5.0.min.js") {}
     script(src = "/public/dist/js/kuvasz.min.js?cb=$appVersion") {}
 }
 
