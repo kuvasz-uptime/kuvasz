@@ -63,11 +63,6 @@ internal fun FlowContent.mainHeader(
     }
 }
 
-/**
- * The theme switcher of the headers. Tabler sizes an icon-only `.nav-link` to a 2.5rem tap target, but since 1.5.0 it
- * aligns the icon to the start of that box instead of centering it, which leaves the icon floating away from the
- * container's edge - hence the explicit centering.
- **/
 internal fun FlowContent.darkModeToggle() {
     div {
         classes(NAV_ITEM, D_MD_FLEX)

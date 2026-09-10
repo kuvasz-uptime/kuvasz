@@ -31,7 +31,7 @@ internal fun withLayout(
                         title?.let { +"$it | $DEFAULT_TITLE" } ?: +DEFAULT_TITLE
                     }
                     link(rel = "stylesheet", href = "/public/ext/css/tomselect.2.6.2.bootstrap5.min.css")
-                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.5.0.min.css")
+                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.5.1.min.css")
                     script(src = "/public/ext/js/apexcharts.7.1.0.min.js") {}
                     script(src = "/public/ext/js/tomselect.2.6.2.complete.min.js") {}
                 }
@@ -107,12 +107,12 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
             """.trimIndent()
         }
     }
-    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.5.0.min.css")
+    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.5.1.min.css")
     link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=$appVersion")
 }
 
 internal fun FlowOrMetaDataOrPhrasingContent.commonScripts(appVersion: String) {
-    script(src = "/public/ext/js/tabler.1.5.0.min.js") {}
+    script(src = "/public/ext/js/tabler.1.5.1.min.js") {}
     script(src = "/public/dist/js/kuvasz.min.js?cb=$appVersion") {}
 }
 
