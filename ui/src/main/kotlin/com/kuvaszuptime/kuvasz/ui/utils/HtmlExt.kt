@@ -1,3 +1,5 @@
+@file:Suppress("LEAKED_IN_PLACE_LAMBDA")
+
 package com.kuvaszuptime.kuvasz.ui.utils
 
 import com.kuvaszuptime.kuvasz.ui.*
@@ -67,14 +69,12 @@ internal fun A.targetBlank() {
  * Needed only because kotlinx.html doesn't support `template` tags inside divs
  * @see https://github.com/Kotlin/kotlinx.html/issues/293
  */
-@HtmlTagMarker
 @OptIn(ExperimentalContracts::class)
 inline fun FlowContent.templateTag(classes: String? = null, crossinline block: TEMPLATE.() -> Unit = {}) {
     contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
     TEMPLATE(attributesMapOf("class", classes), consumer).visit(block)
 }
 
-@HtmlTagMarker
 @OptIn(ExperimentalContracts::class)
 inline fun TBODY.templateTag(classes: String? = null, crossinline block: TEMPLATE.() -> Unit = {}) {
     contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
@@ -84,7 +84,6 @@ inline fun TBODY.templateTag(classes: String? = null, crossinline block: TEMPLAT
 /**
  * Needed only because kotlinx.html doesn't support `options` tags inside `template` tags
  */
-@HtmlTagMarker
 @OptIn(ExperimentalContracts::class)
 inline fun FlowContent.optionTag(classes: String? = null, crossinline block: OPTION.() -> Unit = {}) {
     contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
@@ -94,7 +93,6 @@ inline fun FlowContent.optionTag(classes: String? = null, crossinline block: OPT
 /**
  * Needed only because kotlinx.html doesn't support `li` tags inside `template` tags
  */
-@HtmlTagMarker
 @OptIn(ExperimentalContracts::class)
 inline fun FlowContent.liTag(classes: String? = null, crossinline block: LI.() -> Unit = {}) {
     contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
@@ -104,7 +102,6 @@ inline fun FlowContent.liTag(classes: String? = null, crossinline block: LI.() -
 /**
  * Needed only because kotlinx.html doesn't support `options` tags inside `template` tags
  */
-@HtmlTagMarker
 @OptIn(ExperimentalContracts::class)
 inline fun FlowContent.tr(classes: String? = null, crossinline block: TR.() -> Unit = {}) {
     contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
