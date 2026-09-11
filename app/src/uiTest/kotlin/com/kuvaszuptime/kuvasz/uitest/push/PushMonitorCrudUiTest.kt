@@ -19,14 +19,20 @@ class PushMonitorCrudUiTest : UiTestSpec() {
 
             // Create: only the name is required — the client secret is auto-generated and the interval defaults to 10.
             val originalName = "E2E Push Monitor"
-            list.openCreateModal().setName(originalName).save()
+            list.openCreateModal().setName(originalName).setCategory("Payments").save()
             page.waitForURL("**/push-monitors/*")
             val details = PushMonitorDetailsPage(page)
             assertThat(details.heading(originalName)).isVisible()
+            // The category is shown as a badge in the header
+            assertThat(details.categoryBadge).containsText("Payments")
 
             val updatedName = "E2E Push Monitor Renamed"
-            details.openConfigureModal().setName(updatedName).save()
+            val configureModal = details.openConfigureModal()
+            // The category is pre-filled from the monitor and can be cleared
+            assertThat(configureModal.categoryInput).hasValue("Payments")
+            configureModal.setName(updatedName).setCategory("").save()
             assertThat(details.heading(updatedName)).isVisible()
+            assertThat(details.categoryBadge).hasCount(0)
 
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()

@@ -151,6 +151,7 @@ data class DnsMonitorSummarySchema(
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: DnsMonitorDetailsDto) = DnsMonitorSummarySchema(
@@ -165,6 +166,7 @@ data class DnsMonitorSummarySchema(
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
+            category = dto.category,
         )
     }
 }

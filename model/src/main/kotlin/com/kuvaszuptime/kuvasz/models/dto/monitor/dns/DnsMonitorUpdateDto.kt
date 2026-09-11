@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.WithCategory
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsResponseCodeMatchers
@@ -96,5 +97,5 @@ data class DnsMonitorUpdateDto(
 
     @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
     @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
-    val category: String?,
-) : DnsResponseCodeMatchers
+    override val category: String?,
+) : DnsResponseCodeMatchers, WithCategory

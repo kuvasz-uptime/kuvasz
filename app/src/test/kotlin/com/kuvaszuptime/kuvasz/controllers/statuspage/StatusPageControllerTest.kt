@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
@@ -432,6 +433,10 @@ class StatusPageControllerTest(
                             category = "Mock category",
                         )
                     ),
+                    categoryStatus = listOf(
+                        CategoryStatusDto("Mock category", SystemStatus.OPERATIONAL),
+                        CategoryStatusDto(null, SystemStatus.PENDING),
+                    ),
                     activeMaintenanceWindows = listOf(
                         StatusPageMaintenanceWindowDto(
                             name = "Ongoing maintenance",
@@ -471,6 +476,7 @@ class StatusPageControllerTest(
                             monitorDetails.category shouldBe mockDetails.category
                         }
                     }
+                    response.categoryStatus shouldBe mockDataResponse.categoryStatus
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt
@@ -509,6 +515,10 @@ class StatusPageControllerTest(
                             averageLatencyInMs = 123,
                             category = "Mock category",
                         )
+                    ),
+                    categoryStatus = listOf(
+                        CategoryStatusDto("Mock category", SystemStatus.OPERATIONAL),
+                        CategoryStatusDto(null, SystemStatus.PENDING),
                     ),
                     activeMaintenanceWindows = listOf(
                         StatusPageMaintenanceWindowDto(
@@ -549,6 +559,7 @@ class StatusPageControllerTest(
                             monitorDetails.category shouldBe mockDetails.category
                         }
                     }
+                    response.categoryStatus shouldBe mockDataResponse.categoryStatus
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt

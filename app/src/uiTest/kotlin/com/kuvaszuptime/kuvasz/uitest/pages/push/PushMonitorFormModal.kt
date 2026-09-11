@@ -8,6 +8,7 @@ import com.microsoft.playwright.Page
 class PushMonitorFormModal(page: Page) : ModalView(page) {
 
     val nameInput: Locator get() = modal.locator("#name-input")
+    val categoryInput: Locator get() = modal.locator("#category-input")
     val heartbeatIntervalInput: Locator get() = modal.locator("#heartbeatInterval-input")
 
     val clientSecretInput: Locator get() = modal.locator("input[x-model='clientSecret']")
@@ -16,6 +17,11 @@ class PushMonitorFormModal(page: Page) : ModalView(page) {
 
     fun setName(value: String): PushMonitorFormModal {
         nameInput.fill(value)
+        return this
+    }
+
+    fun setCategory(value: String): PushMonitorFormModal {
+        categoryInput.fill(value)
         return this
     }
 

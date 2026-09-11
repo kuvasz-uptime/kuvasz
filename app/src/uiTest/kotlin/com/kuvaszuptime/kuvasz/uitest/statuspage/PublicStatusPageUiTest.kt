@@ -37,8 +37,8 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
 
             assertThat(statusPage.title(pageTitle).first()).isVisible()
             assertThat(statusPage.monitorCard(monitor.name)).isVisible()
-            // Without any categorized monitor there is no category filter at all
-            assertThat(statusPage.categoryFilter).hasCount(0)
+            // Without any categorized monitor the page keeps its plain list, with no cards or sections
+            assertThat(statusPage.categoryCards).hasCount(0)
             assertThat(statusPage.categorySections).hasCount(0)
         }
 
@@ -164,7 +164,7 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             statusPage.monitorNames shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
 
-        "categorized monitors are grouped into filterable sections with a per-category status" {
+        "categorized monitors are grouped into sections, reachable from the category cards" {
             val backend = createHttpMonitor(
                 httpMonitorRepository,
                 monitorName = "Backend API",
@@ -200,30 +200,27 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             val statusPage = PublicStatusPage(page)
             statusPage.navigate(slug)
 
-            // A chip is rendered for each of the two categories, plus one for the uncategorized monitors
-            val expectedSectionCnt = listOf(backend, web, other).size
-            assertThat(statusPage.categoryFilter).isVisible()
-            assertThat(statusPage.categoryChips).hasCount(expectedSectionCnt)
-            // Every section is visible by default, with its own aggregated status badge
-            assertThat(statusPage.categorySections).hasCount(expectedSectionCnt)
-            assertThat(statusPage.categorySection("Backend services")).isVisible()
-            assertThat(statusPage.categoryStatusBadge("Backend services")).containsText("Operational")
-            assertThat(statusPage.categoryStatusBadge("Web")).containsText("Major outage")
-            assertThat(statusPage.categorySection("Uncategorized")).isVisible()
+            // One card and one section per category, the uncategorized monitors landing in "Other" at the end
+            val expectedLabels = listOf("Backend services", "Web", "Other")
+            assertThat(statusPage.categoryCards).hasCount(expectedLabels.size)
+            assertThat(statusPage.categorySections).hasCount(expectedLabels.size)
+            statusPage.categoryLabels shouldBe expectedLabels
 
-            // Toggling a chip off hides only its section
-            statusPage.categoryChip("Backend services").click()
-            assertThat(statusPage.categorySection("Backend services")).isHidden()
-            assertThat(statusPage.monitorCard("Backend API")).isHidden()
-            assertThat(statusPage.categorySection("Web")).isVisible()
+            // Each card carries the aggregated status of its own category
+            assertThat(statusPage.categoryCard("Backend services")).containsText("Operational")
+            assertThat(statusPage.categoryCard("Web")).containsText("Major outage")
 
-            // "None" hides every section, "All" brings everything back
-            statusPage.selectNoCategories().click()
-            assertThat(statusPage.categorySections.locator("visible=true")).hasCount(0)
-            statusPage.selectAllCategories().click()
-            assertThat(statusPage.categorySection("Backend services")).isVisible()
-            assertThat(statusPage.categorySection("Web")).isVisible()
-            assertThat(statusPage.categorySection("Uncategorized")).isVisible()
+            // Every monitor is rendered, each one inside the section of its category
+            assertThat(statusPage.monitorCards).hasCount(listOf(backend, web, other).size)
+            assertThat(statusPage.categorySection("Backend services").getByText("Backend API")).isVisible()
+            assertThat(statusPage.categorySection("Web").getByText("Website")).isVisible()
+            assertThat(statusPage.categorySection("Other").getByText("Some other service")).isVisible()
+
+            // A card links to the anchor of its own section
+            statusPage.categoryCard("Web").click()
+            page.waitForURL("**#*")
+            val webSectionId = statusPage.categorySection("Web").getAttribute("id")
+            page.url().substringAfter("#") shouldBe webSectionId
         }
     }
 }

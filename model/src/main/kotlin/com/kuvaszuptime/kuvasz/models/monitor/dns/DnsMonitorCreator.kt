@@ -7,7 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
-import com.kuvaszuptime.kuvasz.models.monitor.toNormalizedCategory
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.validation.ValidDnsRecordMatchers
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -15,7 +15,6 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
-import jakarta.validation.constraints.Size
 
 @Suppress("ComplexInterface")
 interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitorRecord> {
@@ -62,9 +61,6 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitor
     override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
 
-    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
-    val category: String?
-
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): DnsMonitorRecord =
         DnsMonitorRecord()
             .setName(name)
@@ -83,5 +79,5 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitor
             .setEnabled(enabled)
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
-            .setCategory(category.toNormalizedCategory())
+            .setCategory(normalizedCategory)
 }

@@ -123,6 +123,7 @@ data class TcpMonitorSummarySchema(
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: TcpMonitorDetailsDto) = TcpMonitorSummarySchema(
@@ -137,6 +138,7 @@ data class TcpMonitorSummarySchema(
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
+            category = dto.category,
         )
     }
 }

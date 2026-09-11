@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.dns.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -122,7 +123,7 @@ class DnsMonitorRepository(
                 .set(DNS_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(DNS_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(DNS_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
-                .set(DNS_MONITOR.CATEGORY, updatedMonitor.category)
+                .set(DNS_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(DNS_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(DNS_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(DNS_MONITOR.asterisk())

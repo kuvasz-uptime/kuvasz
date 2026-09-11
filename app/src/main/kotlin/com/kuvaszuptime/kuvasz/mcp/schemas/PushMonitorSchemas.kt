@@ -116,6 +116,7 @@ data class PushMonitorSummarySchema(
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: PushMonitorDetailsDto) = PushMonitorSummarySchema(
@@ -129,6 +130,7 @@ data class PushMonitorSummarySchema(
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
+            category = dto.category,
         )
     }
 }

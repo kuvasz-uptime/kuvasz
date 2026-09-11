@@ -2257,6 +2257,21 @@ components:
           description: "The tag expression the notifications are sent with, to route\
             \ them within an Apprise configuration"
           nullable: true
+    CategoryStatusDto:
+      required:
+      - category
+      - status
+      type: object
+      properties:
+        category:
+          type: string
+          description: "The category of the monitors, or null for the ones that are\
+            \ not categorized"
+          nullable: true
+        status:
+          description: The cumulated status of the monitors belonging to the category
+          allOf:
+          - $ref: "#/components/schemas/SystemStatus"
     DiscordNotificationConfigDto:
       required:
       - enabled
@@ -6068,6 +6083,7 @@ components:
     StatusPageDetailsDto:
       required:
       - activeMaintenanceWindows
+      - categoryStatus
       - customFaviconUrl
       - customLogoUrl
       - generatedAt
@@ -6119,6 +6135,13 @@ components:
             \ as their uptime status and uptime ratio"
           items:
             $ref: "#/components/schemas/StatusPageMonitorDetailsDto"
+        categoryStatus:
+          type: array
+          description: "The aggregated status of every monitor category on the status\
+            \ page, ordered by the category name, with the uncategorized monitors\
+            \ last. Empty if none of the monitors is categorized"
+          items:
+            $ref: "#/components/schemas/CategoryStatusDto"
         activeMaintenanceWindows:
           type: array
           description: The maintenance windows that are shown on the status page and

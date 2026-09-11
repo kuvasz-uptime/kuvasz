@@ -8,6 +8,7 @@ import com.microsoft.playwright.Page
 class DnsMonitorFormModal(page: Page) : ModalView(page) {
 
     val nameInput: Locator get() = modal.locator("#name-input")
+    val categoryInput: Locator get() = modal.locator("#category-input")
     val hostInput: Locator get() = modal.locator("#host-input")
     val resolverHostInput: Locator get() = modal.locator("#resolverHost-input")
     val resolverPortInput: Locator get() = modal.locator("#resolverPort-input")
@@ -19,6 +20,11 @@ class DnsMonitorFormModal(page: Page) : ModalView(page) {
 
     fun setName(value: String): DnsMonitorFormModal {
         nameInput.fill(value)
+        return this
+    }
+
+    fun setCategory(value: String): DnsMonitorFormModal {
+        categoryInput.fill(value)
         return this
     }
 

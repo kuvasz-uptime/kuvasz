@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -126,7 +127,7 @@ class HttpMonitorRepository(
                 .set(HTTP_MONITOR.REQUEST_HEADERS, updatedMonitor.requestHeaders)
                 .set(HTTP_MONITOR.EXPECTED_HEADERS, updatedMonitor.expectedHeaders)
                 .set(HTTP_MONITOR.REQUEST_BODY, updatedMonitor.requestBody)
-                .set(HTTP_MONITOR.CATEGORY, updatedMonitor.category)
+                .set(HTTP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .where(HTTP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(HTTP_MONITOR.asterisk())
                 .fetchOneOrThrow<HttpMonitorRecord>()

@@ -19,14 +19,20 @@ class IcmpMonitorCrudUiTest : UiTestSpec() {
 
             // Create: name + host are required, the rest default to valid values.
             val originalName = "E2E ICMP Monitor"
-            list.openCreateModal().setName(originalName).setHost("127.0.0.1").save()
+            list.openCreateModal().setName(originalName).setHost("127.0.0.1").setCategory("Payments").save()
             page.waitForURL("**/icmp-monitors/*")
             val details = IcmpMonitorDetailsPage(page)
             assertThat(details.heading(originalName)).isVisible()
+            // The category is shown as a badge in the header
+            assertThat(details.categoryBadge).containsText("Payments")
 
             val updatedName = "E2E ICMP Monitor Renamed"
-            details.openConfigureModal().setName(updatedName).save()
+            val configureModal = details.openConfigureModal()
+            // The category is pre-filled from the monitor and can be cleared
+            assertThat(configureModal.categoryInput).hasValue("Payments")
+            configureModal.setName(updatedName).setCategory("").save()
             assertThat(details.heading(updatedName)).isVisible()
+            assertThat(details.categoryBadge).hasCount(0)
 
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()

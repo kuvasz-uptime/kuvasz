@@ -121,6 +121,7 @@ data class IcmpMonitorSummarySchema(
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: IcmpMonitorDetailsDto) = IcmpMonitorSummarySchema(
@@ -134,6 +135,7 @@ data class IcmpMonitorSummarySchema(
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
+            category = dto.category,
         )
     }
 }

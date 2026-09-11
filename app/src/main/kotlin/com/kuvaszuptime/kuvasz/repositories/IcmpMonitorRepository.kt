@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -105,7 +106,7 @@ class IcmpMonitorRepository(
                 .set(ICMP_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(ICMP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(ICMP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
-                .set(ICMP_MONITOR.CATEGORY, updatedMonitor.category)
+                .set(ICMP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(ICMP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(ICMP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(ICMP_MONITOR.asterisk())

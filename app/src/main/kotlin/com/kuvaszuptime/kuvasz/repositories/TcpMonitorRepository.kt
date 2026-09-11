@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -105,7 +106,7 @@ class TcpMonitorRepository(
                 .set(TCP_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(TCP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(TCP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
-                .set(TCP_MONITOR.CATEGORY, updatedMonitor.category)
+                .set(TCP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(TCP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(TCP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(TCP_MONITOR.asterisk())

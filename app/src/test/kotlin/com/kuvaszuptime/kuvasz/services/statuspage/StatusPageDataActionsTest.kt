@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
@@ -23,6 +24,7 @@ import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -1324,7 +1326,89 @@ class StatusPageDataActionsTest(
             }
         }
     }
+
+    given("the categoryStatus of the default status page") {
+
+        fun httpMonitor(name: String, category: String?, status: UptimeStatus?, inMaintenance: Boolean = false) =
+            StatusPageHttpMonitorDetailsDto(
+                name = name,
+                lastCheck = getCurrentTimestamp(),
+                averageLatencyInMs = null,
+                uptimeRatio = null,
+                uptimeStatus = status,
+                uptimeStatusHistory = emptyList(),
+                inMaintenance = inMaintenance,
+                category = category,
+            )
+
+        fun categoryStatusOf(monitors: List<StatusPageHttpMonitorDetailsDto>): List<CategoryStatusDto> {
+            every {
+                getMock(httpMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns monitors
+            every {
+                getMock(pushMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+            } returns emptyList()
+            return statusPageActions.getDefaultStatusPageData().categoryStatus
+        }
+
+        `when`("none of the monitors is categorized") {
+            val result = categoryStatusOf(
+                listOf(
+                    httpMonitor("a", category = null, status = UptimeStatus.UP),
+                    httpMonitor("b", category = null, status = UptimeStatus.DOWN),
+                )
+            )
+
+            then("it should stay empty, so that the status page keeps its plain monitor list") {
+                result.shouldBeEmpty()
+            }
+        }
+
+        `when`("the monitors are spread across categories, with some of them uncategorized") {
+            val result = categoryStatusOf(
+                listOf(
+                    httpMonitor("1", category = "search", status = UptimeStatus.UP),
+                    httpMonitor("2", category = "search", status = UptimeStatus.DOWN),
+                    httpMonitor("3", category = "Payments", status = UptimeStatus.UP),
+                    httpMonitor("4", category = "alerting", status = UptimeStatus.DOWN),
+                    httpMonitor("5", category = null, status = UptimeStatus.UP),
+                )
+            )
+
+            then("the named categories should come first, ordered case-insensitively, the uncategorized one last") {
+                result.map { it.category } shouldBe listOf("alerting", "Payments", "search", null)
+            }
+
+            then("every category should carry the aggregated status of its own monitors") {
+                result shouldBe listOf(
+                    CategoryStatusDto("alerting", SystemStatus.MAJOR_OUTAGE),
+                    CategoryStatusDto("Payments", SystemStatus.OPERATIONAL),
+                    CategoryStatusDto("search", SystemStatus.PARTIAL_OUTAGE),
+                    CategoryStatusDto(null, SystemStatus.OPERATIONAL),
+                )
+            }
+        }
+
+        `when`("a whole category is under maintenance while another one is not") {
+            val result = categoryStatusOf(
+                listOf(
+                    httpMonitor("1", category = "Payments", status = UptimeStatus.UP, inMaintenance = true),
+                    httpMonitor("2", category = "Payments", status = UptimeStatus.UP, inMaintenance = true),
+                    httpMonitor("3", category = "search", status = UptimeStatus.UP, inMaintenance = true),
+                    httpMonitor("4", category = "search", status = UptimeStatus.UP),
+                )
+            )
+
+            then("only the fully covered one should be MAINTENANCE, the other one PARTIAL_MAINTENANCE") {
+                result shouldBe listOf(
+                    CategoryStatusDto("Payments", SystemStatus.MAINTENANCE),
+                    CategoryStatusDto("search", SystemStatus.PARTIAL_MAINTENANCE),
+                )
+            }
+        }
+    }
 }) {
+
     @MockBean(HttpMonitorActions::class)
     fun httpMonitorActions(): HttpMonitorActions = mockk()
 

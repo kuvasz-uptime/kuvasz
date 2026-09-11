@@ -15,8 +15,20 @@ data class StatusPageDataDto(
     val systemStatus: SystemStatus,
     val generatedAt: OffsetDateTime,
     val monitors: List<StatusPageMonitorDetailsDto>,
+    val categoryStatus: List<CategoryStatusDto> = emptyList(),
     val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
+)
+
+/**
+ * The aggregated status of one monitor category of a status page. A null [category] holds the monitors that are not
+ * categorized at all.
+ */
+data class CategoryStatusDto(
+    @param:Schema(description = StatusPageDocs.CATEGORY, required = true, nullable = true)
+    val category: String?,
+    @param:Schema(description = StatusPageDocs.CATEGORY_SYSTEM_STATUS, required = true)
+    val status: SystemStatus,
 )
 
 data class StatusPageMaintenanceWindowDto(

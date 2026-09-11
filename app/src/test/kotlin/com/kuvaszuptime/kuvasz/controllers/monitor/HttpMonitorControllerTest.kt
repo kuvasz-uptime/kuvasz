@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.mocks.randomClientSecret
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
@@ -1211,7 +1212,7 @@ class HttpMonitorControllerTest(
 
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
-                    response.message shouldContain "category must be at most"
+                    response.message shouldContain "Monitor category must be at most 100 characters long"
                 }
             }
 
@@ -2600,7 +2601,90 @@ class HttpMonitorControllerTest(
                 }
             }
         }
-    }
+    
+        given("the category of a HTTP monitor") {
+            fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
+                monitorClient.createMonitor(
+                    HttpMonitorCreateDto(
+                        name = monitorName,
+                        url = "https://valid-url.com",
+                        uptimeCheckInterval = 6000,
+                        category = category,
+                    )
+                )
+
+            `when`("it is too long on creation") {
+                val ex = shouldThrow<HttpClientResponseException> { createWithCategory("a".repeat(101)) }
+
+                then("it should return a 400 with the interpolated maximum in its message") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                }
+            }
+
+            `when`("it is exactly as long as the maximum") {
+                val created = createWithCategory("a".repeat(100))
+
+                then("it should be accepted") {
+                    created.category shouldBe "a".repeat(100)
+                }
+            }
+
+            `when`("it is blank or padded on creation") {
+                val blank = createWithCategory("   ")
+                val padded = createWithCategory("  Core services  ")
+
+                then("a blank one should be persisted as null and a padded one trimmed") {
+                    monitorRepository.findById(blank.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Core services"
+                }
+            }
+
+            `when`("it is too long on update") {
+                val monitor = createHttpMonitor(monitorRepository, category = "Old category")
+                val updateNode = mapper.createObjectNode().put("category", "a".repeat(101))
+                val ex = shouldThrow<HttpClientResponseException> {
+                    monitorClient.updateMonitor(monitor.id, updateNode)
+                }
+
+                then("it should return a 400 and leave the monitor untouched") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+
+            `when`("it is blank or padded on update") {
+                val blanked = createHttpMonitor(monitorRepository, category = "Old category")
+                val padded = createHttpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(blanked.id, mapper.createObjectNode().put("category", "   "))
+                monitorClient.updateMonitor(padded.id, mapper.createObjectNode().put("category", "  Payments  "))
+
+                then("a blank one should be cleared and a padded one trimmed") {
+                    monitorRepository.findById(blanked.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Payments"
+                }
+            }
+
+            `when`("it is explicitly set to null on update") {
+                val monitor = createHttpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().putNull("category"))
+
+                then("it should be cleared") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category.shouldBeNull()
+                }
+            }
+
+            `when`("it is not part of the update at all") {
+                val monitor = createHttpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))
+
+                then("it should be left untouched") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+        }
+}
 
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         checkScheduler.removeAllChecks()

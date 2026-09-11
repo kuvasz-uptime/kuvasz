@@ -1,10 +1,11 @@
 package com.kuvaszuptime.kuvasz.jooq;
 
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
+import com.kuvaszuptime.kuvasz.models.monitor.WithCategory;
 
 import java.time.OffsetDateTime;
 
-public interface MonitorRecord {
+public interface MonitorRecord extends WithCategory {
     Long getId();
 
     String getName();

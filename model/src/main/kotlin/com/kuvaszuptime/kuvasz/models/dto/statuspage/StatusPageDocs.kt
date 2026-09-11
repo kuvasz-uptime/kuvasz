@@ -15,6 +15,11 @@ object StatusPageDocs {
     const val STATUS_GENERATED_AT = "Timestamp of when the status page was generated"
     const val MONITOR_DETAILS =
         "The details of the monitors included in the status page, such as their uptime status and uptime ratio"
+    const val CATEGORY_STATUS =
+        "The aggregated status of every monitor category on the status page, ordered by the category name, with the " +
+            "uncategorized monitors last. Empty if none of the monitors is categorized"
+    const val CATEGORY = "The category of the monitors, or null for the ones that are not categorized"
+    const val CATEGORY_SYSTEM_STATUS = "The cumulated status of the monitors belonging to the category"
     const val ACTIVE_MAINTENANCE_WINDOWS =
         "The maintenance windows that are shown on the status page and currently active for at least one of its monitors"
     const val UPCOMING_MAINTENANCE_WINDOWS =

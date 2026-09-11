@@ -35,6 +35,10 @@
     --tblr-font-sans-serif: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 /* Disable Tabler's default cv11 (single-storey "a") */
 body {
     font-feature-settings: "cv11" 0 !important;
@@ -83,4 +87,9 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
     width: 42px;
     padding: 5px; /* Leaves 32 x 32px for the image */
     object-fit: contain;
+}
+
+/* Status page category sections: the cards above them link to their anchor */
+.category-section {
+    scroll-margin-top: 1rem;
 }

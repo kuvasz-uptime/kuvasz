@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp.schemas
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
@@ -51,6 +52,7 @@ data class StatusPageDetailsSchema(
     val systemStatus: SystemStatus,
     val generatedAt: OffsetDateTime,
     val monitors: List<StatusPageMonitorSchema>,
+    val categoryStatus: List<CategoryStatusSchema>,
 ) {
     companion object {
         fun fromDto(dto: StatusPageDataDto) = StatusPageDetailsSchema(
@@ -58,6 +60,21 @@ data class StatusPageDetailsSchema(
             systemStatus = dto.systemStatus,
             generatedAt = dto.generatedAt,
             monitors = dto.monitors.map { StatusPageMonitorSchema.fromDto(it) },
+            categoryStatus = dto.categoryStatus.map { CategoryStatusSchema.fromDto(it) },
+        )
+    }
+}
+
+@Introspected
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CategoryStatusSchema(
+    val category: String?,
+    val status: SystemStatus,
+) {
+    companion object {
+        fun fromDto(dto: CategoryStatusDto) = CategoryStatusSchema(
+            category = dto.category,
+            status = dto.status,
         )
     }
 }

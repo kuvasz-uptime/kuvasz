@@ -2599,71 +2599,6 @@ const upsertMaintenanceWindowForm = (
     }
 };
 
-const statusPageCategoryFilter = (categories) => {
-    const allCategories = categories || [];
-    // The selection survives the periodic meta-refresh of the status page within the browser session
-    const storageKey = typeof window !== 'undefined'
-        ? `kuvasz-status-category-filter:${window.location.pathname}`
-        : 'kuvasz-status-category-filter';
-    return {
-        categories: allCategories,
-        selected: [...allCategories],
-
-        init() {
-            if (typeof sessionStorage === 'undefined') return;
-            try {
-                const stored = JSON.parse(sessionStorage.getItem(storageKey));
-                if (Array.isArray(stored)) {
-                    // Drop the categories that no longer exist on the page
-                    this.selected = stored.filter((category) => this.categories.includes(category));
-                }
-            } catch (error) {
-                // A corrupted stored state is simply ignored
-            }
-        },
-
-        persistSelection() {
-            if (typeof sessionStorage === 'undefined') return;
-            try {
-                sessionStorage.setItem(storageKey, JSON.stringify(this.selected));
-            } catch (error) {
-                // Storage can be unavailable (e.g. blocked), filtering still works without persistence
-            }
-        },
-
-        isSelected(category) {
-            return this.selected.includes(category);
-        },
-
-        toggle(category) {
-            if (this.isSelected(category)) {
-                this.selected = this.selected.filter((selectedCategory) => selectedCategory !== category);
-            } else {
-                this.selected = [...this.selected, category];
-            }
-            this.persistSelection();
-        },
-
-        selectAll() {
-            this.selected = [...this.categories];
-            this.persistSelection();
-        },
-
-        selectNone() {
-            this.selected = [];
-            this.persistSelection();
-        },
-
-        get allSelected() {
-            return this.selected.length === this.categories.length;
-        },
-
-        get noneSelected() {
-            return this.selected.length === 0;
-        },
-    };
-};
-
 // Exposes helpers and Alpine x-data factories for the Node-based unit tests (see ui/src/jsTest and the :ui:jsTest task)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -2692,6 +2627,5 @@ if (typeof module !== 'undefined' && module.exports) {
         icmpMetricsBlock,
         tcpMetricsBlock,
         dnsMetricsBlock,
-        statusPageCategoryFilter,
     };
 }

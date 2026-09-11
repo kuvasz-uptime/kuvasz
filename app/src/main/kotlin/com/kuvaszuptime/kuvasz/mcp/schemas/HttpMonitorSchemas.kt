@@ -122,6 +122,7 @@ data class HttpMonitorSummarySchema(
     val uptimeError: String?,
     val sslError: String?,
     val sslValidUntil: OffsetDateTime?,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: HttpMonitorDetailsDto) =
@@ -140,6 +141,7 @@ data class HttpMonitorSummarySchema(
                 uptimeError = dto.uptimeError,
                 sslError = dto.sslError,
                 sslValidUntil = dto.sslValidUntil,
+                category = dto.category,
             )
     }
 }

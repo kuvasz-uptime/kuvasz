@@ -21,7 +21,6 @@ const {
     icmpMetricsBlock,
     tcpMetricsBlock,
     dnsMetricsBlock,
-    statusPageCategoryFilter,
 } = require('../main/resources/js/kuvasz.js');
 
 // --------- #1: isValidHttpHeaderName (regex) ---------
@@ -613,46 +612,6 @@ test('escapeHtml escapes every HTML special character and handles missing values
     assert.equal(escapeHtml(42), '42');
 });
 
-// --------- Status page category filter ---------
-
-test('statusPageCategoryFilter starts with every category selected', () => {
-    const filter = statusPageCategoryFilter(['AI tools', 'Drive storage', ' uncategorized']);
-    assert.deepEqual(filter.selected, ['AI tools', 'Drive storage', ' uncategorized']);
-    assert.equal(filter.allSelected, true);
-    assert.equal(filter.noneSelected, false);
-    assert.equal(filter.isSelected('AI tools'), true);
-});
-
-test('statusPageCategoryFilter toggle removes and re-adds a single category', () => {
-    const filter = statusPageCategoryFilter(['AI tools', 'Drive storage']);
-    filter.toggle('AI tools');
-    assert.equal(filter.isSelected('AI tools'), false);
-    assert.equal(filter.isSelected('Drive storage'), true);
-    assert.equal(filter.allSelected, false);
-    filter.toggle('AI tools');
-    assert.equal(filter.isSelected('AI tools'), true);
-    assert.equal(filter.allSelected, true);
-});
-
-test('statusPageCategoryFilter selectAll and selectNone flip the whole selection', () => {
-    const filter = statusPageCategoryFilter(['AI tools', 'Drive storage']);
-    filter.selectNone();
-    assert.deepEqual(filter.selected, []);
-    assert.equal(filter.noneSelected, true);
-    assert.equal(filter.isSelected('AI tools'), false);
-    filter.selectAll();
-    assert.deepEqual(filter.selected, ['AI tools', 'Drive storage']);
-    assert.equal(filter.allSelected, true);
-});
-
-test('statusPageCategoryFilter tolerates a missing category list', () => {
-    const filter = statusPageCategoryFilter(null);
-    assert.deepEqual(filter.categories, []);
-    assert.deepEqual(filter.selected, []);
-    assert.equal(filter.allSelected, true);
-    assert.equal(filter.noneSelected, true);
-});
-
 // --------- Category on the monitor upsert forms ---------
 
 test('monitor forms populate and reset the category', () => {
@@ -683,41 +642,4 @@ test('validateCategory flags categories longer than 100 characters', () => {
     form.category = null;
     form.validateCategory();
     assert.equal(form.errors.category, null);
-});
-
-test('statusPageCategoryFilter persists and restores the selection via sessionStorage', () => {
-    const store = new Map();
-    globalThis.sessionStorage = {
-        getItem: (key) => (store.has(key) ? store.get(key) : null),
-        setItem: (key, value) => store.set(key, value),
-    };
-    try {
-        const filter = statusPageCategoryFilter(['AI tools', 'Drive storage']);
-        filter.init();
-        filter.toggle('AI tools');
-        // A fresh instance (e.g. after the periodic page refresh) picks up the stored selection
-        const refreshed = statusPageCategoryFilter(['AI tools', 'Drive storage']);
-        refreshed.init();
-        assert.deepEqual(refreshed.selected, ['Drive storage']);
-        // Stored categories that no longer exist on the page are dropped
-        const reduced = statusPageCategoryFilter(['AI tools']);
-        reduced.init();
-        assert.deepEqual(reduced.selected, []);
-    } finally {
-        delete globalThis.sessionStorage;
-    }
-});
-
-test('statusPageCategoryFilter ignores a corrupted stored selection', () => {
-    globalThis.sessionStorage = {
-        getItem: () => '{not json',
-        setItem: () => {},
-    };
-    try {
-        const filter = statusPageCategoryFilter(['AI tools']);
-        filter.init();
-        assert.deepEqual(filter.selected, ['AI tools']);
-    } finally {
-        delete globalThis.sessionStorage;
-    }
 });

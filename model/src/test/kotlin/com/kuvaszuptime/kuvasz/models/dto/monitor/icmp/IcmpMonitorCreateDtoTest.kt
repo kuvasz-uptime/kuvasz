@@ -197,6 +197,35 @@ class IcmpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 validator.validate(dto).shouldBeEmpty()
             }
         }
+
+        `when`("the category is longer than the maximum") {
+            val dto = IcmpMonitorCreateDto(
+                name = "Test Monitor",
+                host = "example.com",
+                uptimeCheckInterval = 60,
+                category = "a".repeat(101),
+            )
+
+            then("bean validation should signal an error naming the interpolated maximum") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "category",
+                    message = "Monitor category must be at most 100 characters long"
+                )
+            }
+        }
+
+        `when`("the category is exactly as long as the maximum") {
+            val dto = IcmpMonitorCreateDto(
+                name = "Test Monitor",
+                host = "example.com",
+                uptimeCheckInterval = 60,
+                category = "a".repeat(100),
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
     }
 })
 
@@ -217,6 +246,7 @@ class IcmpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.failureCountThreshold shouldBe IcmpMonitorDefaults.FAILURE_COUNT_THRESHOLD
             dto.metricsHistoryEnabled shouldBe IcmpMonitorDefaults.METRICS_HISTORY_ENABLED
             dto.integrations shouldBe emptyList()
+            dto.category shouldBe null
         }
     }
 

@@ -259,6 +259,35 @@ class DnsMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 dto.toMonitorRecord(emptySet()).recordMatchersAsList() shouldBe listOf(matcher)
             }
         }
+
+        `when`("the category is longer than the maximum") {
+            val dto = DnsMonitorCreateDto(
+                name = "Test Monitor",
+                host = "example.com",
+                uptimeCheckInterval = 60,
+                category = "a".repeat(101),
+            )
+
+            then("bean validation should signal an error naming the interpolated maximum") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "category",
+                    message = "Monitor category must be at most 100 characters long"
+                )
+            }
+        }
+
+        `when`("the category is exactly as long as the maximum") {
+            val dto = DnsMonitorCreateDto(
+                name = "Test Monitor",
+                host = "example.com",
+                uptimeCheckInterval = 60,
+                category = "a".repeat(100),
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
     }
 })
 
@@ -280,6 +309,7 @@ class DnsMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.failureCountThreshold shouldBe DnsMonitorDefaults.FAILURE_COUNT_THRESHOLD
             dto.metricsHistoryEnabled shouldBe DnsMonitorDefaults.METRICS_HISTORY_ENABLED
             dto.integrations shouldBe emptyList()
+            dto.category shouldBe null
         }
     }
 

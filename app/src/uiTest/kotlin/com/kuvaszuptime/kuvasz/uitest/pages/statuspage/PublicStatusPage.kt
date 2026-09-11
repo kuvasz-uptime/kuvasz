@@ -31,13 +31,11 @@ class PublicStatusPage(private val page: Page) {
 
     fun title(title: String): Locator = page.getByText(title)
 
-    // The category filter bar with a toggleable chip per category (only rendered when there are categories at all)
-    val categoryFilter: Locator get() = page.getByTestId("category-filter")
+    // The row of category cards at the top, each linking to its own section (only rendered when there are categories)
+    val categoryCards: Locator get() = page.getByTestId("category-card")
 
-    val categoryChips: Locator get() = page.getByTestId("category-chip")
-
-    fun categoryChip(label: String): Locator =
-        categoryChips.filter(Locator.FilterOptions().setHasText(label))
+    fun categoryCard(label: String): Locator =
+        categoryCards.filter(Locator.FilterOptions().setHasText(label))
 
     val categorySections: Locator get() = page.getByTestId("category-section")
 
@@ -46,10 +44,6 @@ class PublicStatusPage(private val page: Page) {
             Locator.FilterOptions().setHas(page.locator("h2", Page.LocatorOptions().setHasText(label)))
         )
 
-    fun categoryStatusBadge(label: String): Locator =
-        categorySection(label).getByTestId("category-status-badge")
-
-    fun selectAllCategories(): Locator = page.getByTestId("category-select-all")
-
-    fun selectNoCategories(): Locator = page.getByTestId("category-select-none")
+    val categoryLabels: List<String>
+        get() = categorySections.all().map { it.locator("h2").innerText() }
 }

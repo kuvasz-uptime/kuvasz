@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDnsMonitorDetailsDto
@@ -10,123 +11,87 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.WithLatency
-import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
+import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 
-// The filter keys are prefixed ("c:<name>" for a real category, "u" for the uncategorized section), so a real
-// category name can never collide with the uncategorized key
-private const val CATEGORY_KEY_PREFIX = "c:"
-private const val UNCATEGORIZED_KEY = "u"
-
 fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
-    val categories = pageData.monitors
-        .mapNotNull { it.category }
-        .distinct()
-        .sortedBy { it.lowercase() }
-
-    if (categories.isEmpty()) {
-        // No categories at all -> keep the plain, uncategorized list
+    if (pageData.categoryStatus.isEmpty()) {
+        // None of the monitors is categorized -> keep the plain, ungrouped list
         monitorCardGrid(pageData.monitors)
     } else {
-        categorizedMonitorList(pageData.monitors, categories)
+        categorizedMonitorList(pageData.monitors, pageData.categoryStatus)
     }
 }
 
 private fun FlowContent.categorizedMonitorList(
     monitors: List<StatusPageMonitorDetailsDto>,
-    categories: List<String>,
+    categoryStatus: List<CategoryStatusDto>,
 ) {
-    val uncategorized = monitors.filter { it.category == null }
-    val filterKeys = categories.map { CATEGORY_KEY_PREFIX + it } +
-        if (uncategorized.isNotEmpty()) listOf(UNCATEGORIZED_KEY) else emptyList()
-
+    // The sections are anchored by their index, because a category is free-form and may not survive slugification
     div {
-        xData("statusPageCategoryFilter(${filterKeys.asJsonString()})")
-        // Category filter bar with the quick all/none selectors
-        div {
-            classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_2, MB_4)
-            testId("category-filter")
-            span {
-                classes(TEXT_SECONDARY, ME_2)
-                +Messages.statusPageCategoryFilterLabel()
-            }
-            filterKeys.forEach { key ->
-                button(type = ButtonType.button) {
-                    classes(BTN, BTN_SM)
-                    attributes["data-category"] = key
-                    testId("category-chip")
-                    xBindClass(
-                        "isSelected(\$el.dataset.category) " +
-                            "? '${BTN_PRIMARY.className}' : '${BTN_GHOST_SECONDARY.className}'"
-                    )
-                    xOnClick("toggle(\$el.dataset.category)")
-                    +key.categoryLabel()
-                }
-            }
-            span {
-                classes(MS_AUTO)
-                div {
-                    classes(BTN_LIST)
-                    button(type = ButtonType.button) {
-                        classes(BTN, BTN_SM, BTN_GHOST_SECONDARY)
-                        testId("category-select-all")
-                        xBindDisabled("allSelected")
-                        xOnClick("selectAll()")
-                        +Messages.statusPageCategoryFilterAll()
-                    }
-                    button(type = ButtonType.button) {
-                        classes(BTN, BTN_SM, BTN_GHOST_SECONDARY)
-                        testId("category-select-none")
-                        xBindDisabled("noneSelected")
-                        xOnClick("selectNone()")
-                        +Messages.statusPageCategoryFilterNone()
-                    }
-                }
+        classes(ROW, ROW_CARDS, MB_4)
+        testId("category-cards")
+        categoryStatus.forEachIndexed { index, category ->
+            div {
+                classes(COL_SM_6, COL_LG_3)
+                categoryCard(index, category)
             }
         }
-        // One section per category, the uncategorized monitors go to the end
-        val sections = categories.map { category ->
-            CATEGORY_KEY_PREFIX + category to monitors.filter { monitor -> monitor.category == category }
-        } + if (uncategorized.isNotEmpty()) listOf(UNCATEGORIZED_KEY to uncategorized) else emptyList()
-        sections.forEach { (key, sectionMonitors) ->
+    }
+    categoryStatus.forEachIndexed { index, category ->
+        div {
+            id = categoryAnchorId(index)
+            classes(CATEGORY_SECTION)
+            testId("category-section")
+            h2 {
+                classes(MB_3)
+                +category.label()
+            }
+            monitorCardGrid(monitors.filter { it.category == category.category })
+        }
+    }
+}
+
+/**
+ * A compact card of a category, showing its aggregated status and linking to the section of its monitors.
+ */
+private fun FlowContent.categoryCard(index: Int, category: CategoryStatusDto) {
+    a(href = "#${categoryAnchorId(index)}") {
+        classes(CARD, CARD_SM, CARD_LINK, CARD_LINK_POP)
+        testId("category-card")
+        div {
+            classes(CARD_BODY)
             div {
-                attributes["data-category"] = key
-                xShow("isSelected(\$el.dataset.category)")
-                testId("category-section")
+                classes(D_FLEX, ALIGN_ITEMS_CENTER)
+                span {
+                    classes(ME_3, category.status.color())
+                    icon(category.status.icon())
+                }
                 div {
-                    classes(D_FLEX, ALIGN_ITEMS_CENTER, MB_3)
-                    h2 {
-                        classes(MB_0, ME_2)
-                        +key.categoryLabel()
+                    classes(TEXT_TRUNCATE)
+                    div {
+                        classes(FW_MEDIUM, TEXT_TRUNCATE)
+                        +category.label()
                     }
                     div {
-                        classes(MS_AUTO)
-                        categoryStatusBadge(SystemStatus.fromMonitors(sectionMonitors))
+                        classes(TEXT_SECONDARY, TEXT_TRUNCATE)
+                        +category.status.title()
                     }
                 }
-                monitorCardGrid(sectionMonitors)
             }
         }
     }
 }
 
-private fun String.categoryLabel(): String =
-    if (this == UNCATEGORIZED_KEY) Messages.statusPageUncategorized() else removePrefix(CATEGORY_KEY_PREFIX)
+private fun categoryAnchorId(index: Int) = "category-$index"
 
-private fun FlowContent.categoryStatusBadge(status: SystemStatus) {
-    span {
-        classes(STATUS, status.statusBadgeColor())
-        testId("category-status-badge")
-        tooltip(status.description())
-        +status.title()
-    }
-}
+private fun CategoryStatusDto.label(): String = category ?: Messages.statusPageOtherCategory()
 
 private fun FlowContent.monitorCardGrid(monitors: List<StatusPageMonitorDetailsDto>) {
     div {

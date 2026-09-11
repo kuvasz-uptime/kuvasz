@@ -60,11 +60,11 @@ The name of the monitor, which **must be unique** across all push monitors.
 
 ### Category
 
-<!-- md:version 4.3.0 -->
+<!-- md:version 4.4.0 -->
 <!-- md:type string -->
 <!-- md:yaml_prop `category` -->
 
-An optional, free-form category (up to 100 characters), e.g. the name of a product or a service, that is used to group the monitor on the [status pages](../features/status-pages.md). Monitors that share the same category are displayed together in a dedicated section there, with an aggregated status per category, and the visitors of the page can filter the monitors by their categories. The default is `null`, which means that the monitor is not categorized.
+An optional, free-form category (up to 100 characters), e.g. the name of a product or a service, that is used to group the monitor on the [status pages](../features/status-pages.md). Monitors that share the same category are displayed together in a dedicated section there, with an aggregated status per category. The default is `null`, which means that the monitor is not categorized.
 
 ### Enabled
 

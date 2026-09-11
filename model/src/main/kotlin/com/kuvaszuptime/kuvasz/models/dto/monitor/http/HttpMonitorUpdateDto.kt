@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation.MIN_UPTIME_CHECK_INTERVAL
 import com.kuvaszuptime.kuvasz.models.dto.Validation.URI_REGEX
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.WithCategory
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
@@ -117,5 +118,5 @@ data class HttpMonitorUpdateDto(
 
     @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
     @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
-    val category: String?,
-)
+    override val category: String?,
+) : WithCategory

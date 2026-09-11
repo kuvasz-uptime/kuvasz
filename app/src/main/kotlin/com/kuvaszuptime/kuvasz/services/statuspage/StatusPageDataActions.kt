@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.statuspage
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
@@ -50,7 +51,8 @@ class StatusPageDataActions(
             title = defaultStatusPageConfig.title,
             customLogoUrl = defaultStatusPageConfig.customLogoUrl,
             customFaviconUrl = defaultStatusPageConfig.customFaviconUrl,
-            systemStatus = calculateSystemStatus(monitors),
+            systemStatus = SystemStatus.fromMonitors(monitors),
+            categoryStatus = calculateCategoryStatus(monitors),
             generatedAt = getCurrentTimestamp(),
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
@@ -58,7 +60,32 @@ class StatusPageDataActions(
         )
     }
 
-    private fun calculateSystemStatus(monitors: List<StatusPageMonitorDetailsDto>) = SystemStatus.fromMonitors(monitors)
+    /**
+     * The aggregated status of every category, ordered by the category name, with the uncategorized monitors last.
+     * Stays empty as long as none of the monitors is categorized, which keeps the plain, ungrouped status page.
+     */
+    private fun calculateCategoryStatus(monitors: List<StatusPageMonitorDetailsDto>): List<CategoryStatusDto> {
+        val groups = monitors.groupBy { it.category }
+        val namedCategories = groups.keys.filterNotNull()
+        if (namedCategories.isEmpty()) return emptyList()
+
+        val calculatedNamedGroups = namedCategories
+            .sortedBy { it.lowercase() }
+            .map { category ->
+                CategoryStatusDto(
+                    category = category,
+                    status = SystemStatus.fromMonitors(groups.getValue(category)),
+                )
+            }
+
+        return if (groups.containsKey(null)) {
+            // Ungrouped monitors are present
+            calculatedNamedGroups + CategoryStatusDto(
+                category = null,
+                status = SystemStatus.fromMonitors(groups.getValue(null)),
+            )
+        } else calculatedNamedGroups
+    }
 
     @Cacheable(STATUS_PAGES_CACHE_NAME)
     fun getCachedStatusPageData(statusPageId: Long) = getStatusPageData(statusPageId)
@@ -79,7 +106,8 @@ class StatusPageDataActions(
             customLogoUrl = statusPage.customLogoUrl,
             customFaviconUrl = statusPage.customFaviconUrl,
             generatedAt = getCurrentTimestamp(),
-            systemStatus = calculateSystemStatus(monitors),
+            systemStatus = SystemStatus.fromMonitors(monitors),
+            categoryStatus = calculateCategoryStatus(monitors),
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
             upcomingMaintenanceWindows = activeAndUpcomingWindows.upcoming,

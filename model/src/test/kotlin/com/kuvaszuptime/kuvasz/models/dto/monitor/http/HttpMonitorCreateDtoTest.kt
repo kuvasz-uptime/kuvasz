@@ -313,6 +313,35 @@ class HttpMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 validator.validate(dto).shouldBeEmpty()
             }
         }
+
+        `when`("the category is longer than the maximum") {
+            val dto = HttpMonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                category = "a".repeat(101),
+            )
+
+            then("bean validation should signal an error naming the interpolated maximum") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "category",
+                    message = "Monitor category must be at most 100 characters long"
+                )
+            }
+        }
+
+        `when`("the category is exactly as long as the maximum") {
+            val dto = HttpMonitorCreateDto(
+                name = "Test Monitor",
+                url = "https://example.com",
+                uptimeCheckInterval = 60,
+                category = "a".repeat(100),
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
     }
 })
 
@@ -344,6 +373,7 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.expectedHeaders.shouldBeEmpty()
             dto.requestBody shouldBe null
             dto.failureCountThreshold shouldBe 1
+            dto.category shouldBe null
         }
     }
 

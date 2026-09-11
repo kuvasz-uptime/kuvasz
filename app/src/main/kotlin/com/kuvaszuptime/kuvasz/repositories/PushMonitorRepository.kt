@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.push.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -117,7 +118,7 @@ class PushMonitorRepository(
                 .set(PUSH_MONITOR.CLIENT_SECRET, updatedMonitor.clientSecret)
                 .set(PUSH_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(PUSH_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
-                .set(PUSH_MONITOR.CATEGORY, updatedMonitor.category)
+                .set(PUSH_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(PUSH_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(PUSH_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(PUSH_MONITOR.asterisk())
