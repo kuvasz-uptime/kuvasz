@@ -31,8 +31,12 @@ class DnsMonitorRepository(
 
     private val matcherListConverter = JsonNodeToMatcherListConverter()
 
-    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<DnsMonitorDetailsDto> =
-        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
+    override fun fetchAllWithDetails(
+        enabled: Boolean?,
+        monitorNames: List<String>?,
+        categories: List<String>?,
+    ): List<DnsMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): DnsMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DNS_MONITOR)
@@ -89,6 +93,7 @@ class DnsMonitorRepository(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
+        categories: List<String>? = null,
     ): List<DnsMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -96,7 +101,7 @@ class DnsMonitorRepository(
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let {
                     and(latestUptimeEventSelect.field(DNS_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
-                monitorNames?.let { and(DNS_MONITOR.NAME.`in`(it)) }
+                selectionCondition(DNS_MONITOR.NAME, DNS_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
                 sortedBy?.let { orderBy(it, DNS_MONITOR.ID.asc()) }
             }
             .fetchInto(DnsMonitorDetailsDto::class.java)
@@ -194,8 +199,7 @@ class DnsMonitorRepository(
             latestUptimeEventSelect.field(DNS_UPTIME_EVENT.ERROR)!!.`as`(DnsMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(DnsMonitorDetailsDto::effectiveIntegrations.name),
             DNS_MONITOR.INTEGRATIONS.`as`(DnsMonitorDetailsDto::integrations.name),
-            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
-                .`as`(DnsMonitorDetailsDto::statusPages.name),
+            statusPagesField.`as`(DnsMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(DnsMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(DnsMonitorDetailsDto::inMaintenance.name),
@@ -211,5 +215,7 @@ class DnsMonitorRepository(
                         .concat(DNS_MONITOR.NAME)
                 )
         )
+        .leftJoin(categoryStatusPagesSubselect)
+        .on(pageCategoryField.eq(DNS_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }

@@ -161,10 +161,12 @@ class DnsMonitorActions(
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
+        categories: List<String>?,
     ): List<StatusPageDnsMonitorDetailsDto> =
         buildStatusPageData(
             period = period,
             monitorIds = monitorIds,
+            categories = categories,
         ) { monitor, uptime ->
             val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
                 ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }

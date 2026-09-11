@@ -124,11 +124,11 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -193,11 +193,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -262,11 +262,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -331,11 +331,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockPushMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -354,11 +354,11 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -410,15 +410,15 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             val mockIcmpMonitorActions = getMock(icmpMonitorActions)
             every {
-                mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockIcmpMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -461,15 +461,15 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             val mockIcmpMonitorActions = getMock(icmpMonitorActions)
             every {
-                mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockIcmpMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -519,15 +519,15 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             val mockTcpMonitorActions = getMock(tcpMonitorActions)
             every {
-                mockTcpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockTcpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockTcpMonitorList
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -562,11 +562,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             val mwRepoMock = getMock(maintenanceWindowRepository)
             every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
@@ -611,11 +611,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -648,11 +648,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
 
             val result = statusPageActions.getDefaultStatusPageData()
@@ -676,11 +676,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             val mwRepoMock = getMock(maintenanceWindowRepository)
             every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
@@ -721,11 +721,11 @@ class StatusPageDataActionsTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             val mwRepoMock = getMock(maintenanceWindowRepository)
             every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
@@ -761,6 +761,8 @@ class StatusPageDataActionsTest(
                 MonitorID(MonitorType.PUSH, "test-monitor-3"),
                 MonitorID(MonitorType.PUSH, "test-monitor-4"),
             ).toTypedArray()
+            // A record coming from the DB never has a null here, the column is NOT NULL with an empty default
+            categories = emptyArray()
             createdAt = getCurrentTimestamp()
             updatedAt = getCurrentTimestamp()
         }
@@ -835,6 +837,7 @@ class StatusPageDataActionsTest(
                 mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
@@ -842,6 +845,7 @@ class StatusPageDataActionsTest(
                 mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockPushMonitorList
 
@@ -913,6 +917,7 @@ class StatusPageDataActionsTest(
                 mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
@@ -920,6 +925,7 @@ class StatusPageDataActionsTest(
                 mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockPushMonitorList
 
@@ -991,6 +997,7 @@ class StatusPageDataActionsTest(
                 mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
@@ -998,6 +1005,7 @@ class StatusPageDataActionsTest(
                 mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockPushMonitorList
 
@@ -1069,6 +1077,7 @@ class StatusPageDataActionsTest(
                 mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
@@ -1076,6 +1085,7 @@ class StatusPageDataActionsTest(
                 mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockPushMonitorList
 
@@ -1098,11 +1108,11 @@ class StatusPageDataActionsTest(
 
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), emptyList())
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), emptyList(), emptyList())
             } returns emptyList()
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), emptyList())
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), emptyList(), emptyList())
             } returns emptyList()
 
             val result = statusPageActions.getStatusPageData(statusPageRecord().id)
@@ -1128,6 +1138,7 @@ class StatusPageDataActionsTest(
                     MonitorID(MonitorType.ICMP, "icmp-monitor-1"),
                     MonitorID(MonitorType.ICMP, "icmp-monitor-2"),
                 ).toTypedArray()
+                categories = emptyArray()
                 createdAt = getCurrentTimestamp()
                 updatedAt = getCurrentTimestamp()
             }
@@ -1181,6 +1192,7 @@ class StatusPageDataActionsTest(
                 mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     icmpStatusPageRecord().monitors?.toList(),
+                    icmpStatusPageRecord().categories?.toList(),
                 )
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
@@ -1188,6 +1200,7 @@ class StatusPageDataActionsTest(
                 mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     icmpStatusPageRecord().monitors?.toList(),
+                    icmpStatusPageRecord().categories?.toList(),
                 )
             } returns emptyList()
             val mockIcmpMonitorActions = getMock(icmpMonitorActions)
@@ -1195,6 +1208,7 @@ class StatusPageDataActionsTest(
                 mockIcmpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     icmpStatusPageRecord().monitors?.toList(),
+                    icmpStatusPageRecord().categories?.toList(),
                 )
             } returns mockIcmpMonitorList
 
@@ -1236,6 +1250,7 @@ class StatusPageDataActionsTest(
                     MonitorID(MonitorType.TCP, "tcp-monitor-1"),
                     MonitorID(MonitorType.TCP, "tcp-monitor-2"),
                 ).toTypedArray()
+                categories = emptyArray()
                 createdAt = getCurrentTimestamp()
                 updatedAt = getCurrentTimestamp()
             }
@@ -1287,6 +1302,7 @@ class StatusPageDataActionsTest(
                 mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     tcpStatusPageRecord().monitors?.toList(),
+                    tcpStatusPageRecord().categories?.toList(),
                 )
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
@@ -1294,6 +1310,7 @@ class StatusPageDataActionsTest(
                 mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     tcpStatusPageRecord().monitors?.toList(),
+                    tcpStatusPageRecord().categories?.toList(),
                 )
             } returns emptyList()
             val mockTcpMonitorActions = getMock(tcpMonitorActions)
@@ -1301,6 +1318,7 @@ class StatusPageDataActionsTest(
                 mockTcpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     tcpStatusPageRecord().monitors?.toList(),
+                    tcpStatusPageRecord().categories?.toList(),
                 )
             } returns mockTcpMonitorList
 
@@ -1343,10 +1361,10 @@ class StatusPageDataActionsTest(
 
         fun categoryStatusOf(monitors: List<StatusPageHttpMonitorDetailsDto>): List<CategoryStatusDto> {
             every {
-                getMock(httpMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                getMock(httpMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns monitors
             every {
-                getMock(pushMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                getMock(pushMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns emptyList()
             return statusPageActions.getDefaultStatusPageData().categoryStatus
         }
@@ -1417,17 +1435,17 @@ class StatusPageDataActionsTest(
 
     @MockBean(IcmpMonitorActions::class)
     fun icmpMonitorActions(): IcmpMonitorActions = mockk {
-        every { getStatusPageDataOfEnabledMonitors(any(), any()) } returns emptyList()
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
     }
 
     @MockBean(TcpMonitorActions::class)
     fun tcpMonitorActions(): TcpMonitorActions = mockk {
-        every { getStatusPageDataOfEnabledMonitors(any(), any()) } returns emptyList()
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
     }
 
     @MockBean(DnsMonitorActions::class)
     fun dnsMonitorActions(): DnsMonitorActions = mockk {
-        every { getStatusPageDataOfEnabledMonitors(any(), any()) } returns emptyList()
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
     }
 
     @MockBean(StatusPageRepository::class)

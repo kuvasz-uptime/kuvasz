@@ -41,7 +41,9 @@ class StatusPageDataActions(
         val monitors = monitorDataProviders.flatMap { provider ->
             provider.getStatusPageDataOfEnabledMonitors(
                 period = Duration.parse(DEFAULT_METRICS_PERIOD),
+                // No selector at all: the default page always shows every enabled monitor
                 monitorIds = null,
+                categories = null,
             )
         }
 
@@ -96,6 +98,7 @@ class StatusPageDataActions(
             provider.getStatusPageDataOfEnabledMonitors(
                 period = Duration.parse(DEFAULT_METRICS_PERIOD),
                 monitorIds = statusPage.monitors?.toList(),
+                categories = statusPage.categories?.toList(),
             )
         }
 

@@ -184,10 +184,12 @@ class HttpMonitorActions(
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
+        categories: List<String>?,
     ): List<StatusPageHttpMonitorDetailsDto> =
         buildStatusPageData(
             period = period,
             monitorIds = monitorIds,
+            categories = categories,
         ) { monitor, uptime ->
             val latencyMetrics = if (monitor.latencyHistoryEnabled) {
                 latencyLogRepository.getLatencyMetrics(monitor.id, period)

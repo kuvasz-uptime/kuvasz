@@ -28,8 +28,12 @@ class TcpMonitorRepository(
     private val dslContext: DSLContext,
 ) : MonitorRepository<TcpMonitorRecord, TcpMonitorDetailsDto> {
 
-    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<TcpMonitorDetailsDto> =
-        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
+    override fun fetchAllWithDetails(
+        enabled: Boolean?,
+        monitorNames: List<String>?,
+        categories: List<String>?,
+    ): List<TcpMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): TcpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(TCP_MONITOR)
@@ -67,6 +71,7 @@ class TcpMonitorRepository(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
+        categories: List<String>? = null,
     ): List<TcpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -74,7 +79,7 @@ class TcpMonitorRepository(
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let {
                     and(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
-                monitorNames?.let { and(TCP_MONITOR.NAME.`in`(it)) }
+                selectionCondition(TCP_MONITOR.NAME, TCP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
                 sortedBy?.let { orderBy(it, TCP_MONITOR.ID.asc()) }
             }
             .fetchInto(TcpMonitorDetailsDto::class.java)
@@ -179,8 +184,7 @@ class TcpMonitorRepository(
             latestUptimeEventSelect.field(TCP_UPTIME_EVENT.ERROR)!!.`as`(TcpMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(TcpMonitorDetailsDto::effectiveIntegrations.name),
             TCP_MONITOR.INTEGRATIONS.`as`(TcpMonitorDetailsDto::integrations.name),
-            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
-                .`as`(TcpMonitorDetailsDto::statusPages.name),
+            statusPagesField.`as`(TcpMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(TcpMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(TcpMonitorDetailsDto::inMaintenance.name),
@@ -196,5 +200,7 @@ class TcpMonitorRepository(
                         .concat(TCP_MONITOR.NAME)
                 )
         )
+        .leftJoin(categoryStatusPagesSubselect)
+        .on(pageCategoryField.eq(TCP_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }

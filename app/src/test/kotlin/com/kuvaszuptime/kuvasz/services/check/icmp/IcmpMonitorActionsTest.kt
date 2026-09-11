@@ -119,6 +119,7 @@ class IcmpMonitorActionsTest(
                 val result = icmpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
                     monitorIds = null,
+                    categories = null,
                 )
 
                 then("it should return all the enabled monitors") {
@@ -226,7 +227,8 @@ class IcmpMonitorActionsTest(
                 // Executing the method under test
                 val result = icmpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
-                    monitorIds = listOf(enabledMonitor.monitorId())
+                    monitorIds = listOf(enabledMonitor.monitorId()),
+                    categories = null,
                 )
 
                 then("it should return only the requested monitor's data") {

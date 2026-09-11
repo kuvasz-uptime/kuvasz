@@ -58,6 +58,9 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
      * Checks if it's safe to update the monitor's name or delete it at all from the status pages' perspective.
      * If the monitor is referenced by a status page that is not writable, then we cannot change its name or delete it,
      * to preserve referential integrity.
+     *
+     * Only the monitors referenced by name are guarded: a page that picked this monitor up by its category does not
+     * hold a reference to it at all, so neither a rename nor a delete can break anything there.
      */
     fun isMonitorChangeable(existingMonitor: R): Boolean =
         if (!appConfig.isStatusPageExternalWriteDisabled()) {
@@ -180,10 +183,15 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
     protected fun <S : StatusPageMonitorDetailsDto> buildStatusPageData(
         period: Duration,
         monitorIds: List<MonitorID>?,
+        categories: List<String>?,
         buildDetails: (monitor: D, uptime: StatusPageUptimeData) -> S,
     ): List<S> {
         val monitorNames = monitorIds?.filter { it.type == monitorType }?.map { it.name }
-        val enabledMonitors = monitorRepository.fetchAllWithDetails(enabled = true, monitorNames = monitorNames)
+        val enabledMonitors = monitorRepository.fetchAllWithDetails(
+            enabled = true,
+            monitorNames = monitorNames,
+            categories = categories,
+        )
         val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
         val overviewsByMonitor = statCalculator.calculateUptimeOverviews(
             monitorType = monitorType,
