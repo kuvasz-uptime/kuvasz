@@ -110,6 +110,13 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
         return monitorsWithCategory.keys.associateWith { windowsByMonitorId[it.toString()].orEmpty() }
     }
 
+    fun fetchDistinctCategories(): List<String> = dslContext
+        .select(MAINTENANCE_WINDOW.CATEGORIES)
+        .from(MAINTENANCE_WINDOW)
+        .fetch(MAINTENANCE_WINDOW.CATEGORIES)
+        .flatMap { it.toList() }
+        .distinct()
+
     fun deleteById(id: Long, ctx: DSLContext = dslContext): Int = ctx
         .deleteFrom(MAINTENANCE_WINDOW)
         .where(MAINTENANCE_WINDOW.ID.eq(id))

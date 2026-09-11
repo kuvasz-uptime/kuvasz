@@ -2167,15 +2167,16 @@ const resetTomSelectState = (elementId, afterReset = (tomSelectInstance) => {
 };
 
 /*
- Loads the categories that are already in use by a monitor, to offer them on the monitor forms. Fails open with an
- empty list: the select takes a brand new category anyway, so an unreachable endpoint must not block the form.
+ Loads every category the instance knows about: the ones in use by a monitor, plus the ones that are only referenced
+ by a status page or a maintenance window. Fails open with an empty list: the selects take a brand new category
+ anyway, so an unreachable endpoint must not block the form.
 */
-const fetchMonitorCategories = async () => {
+const fetchCategories = async () => {
     try {
-        const response = await fetch('/api/internal/monitors/categories');
+        const response = await fetch('/api/internal/categories');
         return response.ok ? await response.json() : [];
     } catch (error) {
-        console.error('Error fetching the monitor categories:', error);
+        console.error('Error fetching the categories:', error);
         return [];
     }
 };
@@ -2194,7 +2195,7 @@ const initCategorySelect = (selector, addLabel) => {
             option_create: (data, escape) => `<div class="create">${escape(addLabel)}: <strong>${escape(data.input)}</strong></div>`
         }
     });
-    const loadOptions = () => fetchMonitorCategories().then(categories => {
+    const loadOptions = () => fetchCategories().then(categories => {
         // Already known options are ignored by TomSelect, so re-opening the modal just picks up the new ones
         tomSelect.addOptions(categories.map(category => ({value: category, text: category})));
     });
@@ -2684,7 +2685,7 @@ if (typeof module !== 'undefined' && module.exports) {
         resolveMaintenanceWindowType,
         createRandomSecret,
         // Helpers of the category select
-        fetchMonitorCategories,
+        fetchCategories,
         resetCategorySelect,
         // Alpine x-data component factories
         upsertHttpMonitorForm,

@@ -42,6 +42,13 @@ class StatusPageRepository(private val dslContext: DSLContext) {
         }
         .fetch()
 
+    fun fetchDistinctCategories(): List<String> = dslContext
+        .select(STATUS_PAGE.CATEGORIES)
+        .from(STATUS_PAGE)
+        .fetch(STATUS_PAGE.CATEGORIES)
+        .flatMap { it.toList() }
+        .distinct()
+
     fun deleteById(id: Long, ctx: DSLContext = dslContext): Int = ctx
         .deleteFrom(STATUS_PAGE)
         .where(STATUS_PAGE.ID.eq(id))

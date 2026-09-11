@@ -11,7 +11,7 @@ const {
     MAINTENANCE_WINDOW_TYPES,
     escapeHtml,
     buildToastMarkup,
-    fetchMonitorCategories,
+    fetchCategories,
     resetCategorySelect,
     upsertHttpMonitorForm,
     upsertPushMonitorForm,
@@ -709,29 +709,29 @@ const withFetch = async (stub, body) => {
     }
 };
 
-test('fetchMonitorCategories returns the categories of a successful response', async () => {
+test('fetchCategories returns the categories of a successful response', async () => {
     const categories = await withFetch(
         async () => ({ok: true, json: async () => ['alerting', 'Payments']}),
-        () => fetchMonitorCategories(),
+        () => fetchCategories(),
     );
     assert.deepEqual(categories, ['alerting', 'Payments']);
 });
 
-test('fetchMonitorCategories fails open on an error response', async () => {
+test('fetchCategories fails open on an error response', async () => {
     const categories = await withFetch(
         async () => ({ok: false, json: async () => ['alerting']}),
-        () => fetchMonitorCategories(),
+        () => fetchCategories(),
     );
     assert.deepEqual(categories, []);
 });
 
-test('fetchMonitorCategories fails open when the request throws', async () => {
+test('fetchCategories fails open when the request throws', async () => {
     const originalConsoleError = console.error;
     console.error = () => {};
     try {
         const categories = await withFetch(
             async () => { throw new Error('network down'); },
-            () => fetchMonitorCategories(),
+            () => fetchCategories(),
         );
         assert.deepEqual(categories, []);
     } finally {
