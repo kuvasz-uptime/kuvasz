@@ -58,11 +58,17 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
     val pageCategoryField: Field<String?>
         get() = DSL.field("tc.page_category", SQLDataType.VARCHAR).`as`(PAGE_CATEGORY_FIELD_NAME)
 
+    private val slugsByNameField: Field<Array<String>>
+        get() = DSL.arrayAgg(STATUS_PAGE.SLUG).`as`(SLUGS_BY_NAME_FIELD_NAME)
+
+    private val slugsByCategoryField: Field<Array<String>>
+        get() = DSL.arrayAgg(STATUS_PAGE.SLUG).`as`(SLUGS_BY_CATEGORY_FIELD_NAME)
+
     val statusPagesSubselect: SelectHavingStep<out Record>
         get() = DSL
             .select(
                 monitorNameField,
-                DSL.arrayAgg(STATUS_PAGE.SLUG).`as`(SLUGS_BY_NAME_FIELD_NAME),
+                slugsByNameField,
             )
             .from(STATUS_PAGE)
             .crossJoin(
@@ -79,7 +85,7 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
         get() = DSL
             .select(
                 pageCategoryField,
-                DSL.arrayAgg(STATUS_PAGE.SLUG).`as`(SLUGS_BY_CATEGORY_FIELD_NAME),
+                slugsByCategoryField,
             )
             .from(STATUS_PAGE)
             .crossJoin(
@@ -89,15 +95,12 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
 
     /**
      * The slugs of the status pages a monitor appears on, no matter whether it got there by its name or by its
-     * category. A page that references it both ways must contribute its slug only once, and Postgres has no
-     * array-distinct that the DSL could express, hence the raw expression.
+     * category.
      */
     val statusPagesField: Field<Array<String>>
-        get() = DSL.field(
-            "array(select distinct unnest(coalesce({0}, array[]::text[]) || coalesce({1}, array[]::text[])))",
-            SQLDataType.CLOB.array(),
-            statusPagesSubselect.field(SLUGS_BY_NAME_FIELD_NAME),
-            categoryStatusPagesSubselect.field(SLUGS_BY_CATEGORY_FIELD_NAME),
+        get() = DSL.arrayConcat(
+            DSL.coalesce(statusPagesSubselect.field(slugsByNameField), DSL.array(arrayOf<String>())),
+            DSL.coalesce(categoryStatusPagesSubselect.field(slugsByCategoryField), DSL.array(arrayOf<String>())),
         )
 
     /**

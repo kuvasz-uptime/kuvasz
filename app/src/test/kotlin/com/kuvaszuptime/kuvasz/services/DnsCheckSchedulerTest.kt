@@ -119,7 +119,7 @@ class DnsCheckSchedulerTest(
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
                 val maintenanceServiceMock = getMock(maintenanceWindowService)
-                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId()) } returns true
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId(), any()) } returns true
 
                 checkScheduler.initialize()
                 delay(4000.milliseconds) // Wait for the check to be executed
@@ -225,6 +225,6 @@ class DnsCheckSchedulerTest(
 
     @MockBean(MaintenanceWindowService::class)
     fun maintenanceWindowServiceMock(): MaintenanceWindowService = mockk {
-        every { isUnderMaintenance(any()) } returns false
+        every { isUnderMaintenance(any(), any()) } returns false
     }
 }

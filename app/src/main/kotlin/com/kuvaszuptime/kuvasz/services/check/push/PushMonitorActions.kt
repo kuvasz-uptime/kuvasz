@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
@@ -72,7 +73,8 @@ class PushMonitorActions(
     fun getMonitorDetails(monitorId: Long): PushMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
-        val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
+        val windows =
+            maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId(), monitorFromRepo.category)
         return monitorFromRepo.copy(
             effectiveIntegrations = integrationRepository
                 .getEffectiveIntegrations(monitorFromRepo.integrations)
@@ -109,7 +111,7 @@ class PushMonitorActions(
         sortedBy: SortField<*>? = null,
     ): List<PushMonitorDetailsDto> {
         val monitors = monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.map { it.monitorId() })
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
         return monitors.map { detailsDto ->
             val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
             detailsDto.copy(

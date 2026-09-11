@@ -46,7 +46,7 @@ class HeartbeatCheckerTest(
         val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
         val mockPendingFailureRepo = mockk<PendingFailureRepository>()
         val maintenanceWindowServiceMock = mockk<MaintenanceWindowService> {
-            every { isUnderMaintenance(any()) } returns false
+            every { isUnderMaintenance(any(), any()) } returns false
         }
         val heartbeatChecker = HeartbeatChecker(
             dslCtx = dslContext,
@@ -255,7 +255,9 @@ class HeartbeatCheckerTest(
                     normalMonitor
                 )
                 every { uptimeEventRepoMock.getPreviousEventByMonitorId(any(), any()) } returns null
-                every { maintenanceWindowServiceMock.isUnderMaintenance(maintainedMonitor.monitorId()) } returns true
+                every {
+                    maintenanceWindowServiceMock.isUnderMaintenance(maintainedMonitor.monitorId(), any())
+                } returns true
 
                 heartbeatChecker.checkHeartbeats()
 

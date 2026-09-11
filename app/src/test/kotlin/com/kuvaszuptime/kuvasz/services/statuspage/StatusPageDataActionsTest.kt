@@ -52,6 +52,7 @@ class StatusPageDataActionsTest(
         description: String? = null,
         global: Boolean = true,
         monitors: Array<MonitorID> = emptyArray(),
+        categories: Array<String> = emptyArray(),
         cron: String? = null,
         start: OffsetDateTime? = null,
         duration: String? = null,
@@ -66,6 +67,7 @@ class StatusPageDataActionsTest(
         this.start = start
         this.duration = duration
         this.monitors = monitors
+        this.categories = categories
         this.integrations = emptyArray<IntegrationID>()
         this.createdAt = getCurrentTimestamp()
         this.updatedAt = getCurrentTimestamp()
@@ -740,6 +742,42 @@ class StatusPageDataActionsTest(
             val result = statusPageActions.getDefaultStatusPageData()
 
             then("only the affecting window should be surfaced") {
+                result.activeMaintenanceWindows shouldHaveSize 1
+                result.activeMaintenanceWindows.first().name shouldBe "Visible"
+            }
+        }
+
+        `when`("a window is scoped to a category") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "Josh Snow",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.UP,
+                    uptimeStatusHistory = emptyList(),
+                    inMaintenance = true,
+                    category = "Payments",
+                ),
+            )
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
+            } returns emptyList()
+            val mwRepoMock = getMock(maintenanceWindowRepository)
+            every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
+                maintenanceWindowRecord(name = "Visible", global = false, categories = arrayOf("Payments")),
+                maintenanceWindowRecord(name = "Hidden", global = false, categories = arrayOf("Search")),
+            )
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("only the window covering a category represented on the page should be surfaced") {
                 result.activeMaintenanceWindows shouldHaveSize 1
                 result.activeMaintenanceWindows.first().name shouldBe "Visible"
             }

@@ -120,14 +120,15 @@ class StatusPageDataActions(
     private fun resolveMaintenanceWindows(
         monitors: List<StatusPageMonitorDetailsDto>,
     ): ActiveAndUpcomingWindows {
-        val pageMonitorIds = monitors.mapNotNullTo(mutableSetOf()) { monitor ->
+        val pageMonitorIds = monitors.mapNotNull { monitor ->
             MonitorType.fromIdentifier(monitor.type)?.let { type -> MonitorID(type, monitor.name) }
-        }
+        }.toSet()
+        val pageCategories = monitors.mapNotNull { it.category }.toSet()
         val now = getCurrentTimestamp()
         val upcomingUntil = now.plus(UPCOMING_LOOKAHEAD)
 
         val relevantWindows = maintenanceWindowRepository.fetchEnabledOnStatusPages()
-            .filter { window -> window.affectsAnyOf(pageMonitorIds) }
+            .filter { window -> window.affectsAnyOf(pageMonitorIds, pageCategories) }
 
         val active = relevantWindows
             .filter { maintenanceWindowCalculator.isActive(it, now) }
@@ -161,8 +162,10 @@ class StatusPageDataActions(
         end = interval?.end,
     )
 
-    private fun MaintenanceWindowRecord.affectsAnyOf(monitorIds: Set<MonitorID>): Boolean =
-        global || monitors.any { it in monitorIds }
+    private fun MaintenanceWindowRecord.affectsAnyOf(
+        monitorIds: Set<MonitorID>,
+        pageCategories: Set<String>,
+    ): Boolean = global || monitors.any { it in monitorIds } || categories.any { it in pageCategories }
 
     private data class ActiveAndUpcomingWindows(
         val active: List<StatusPageMaintenanceWindowDto>,

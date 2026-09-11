@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.deduplicated
@@ -67,7 +68,8 @@ class DnsMonitorActions(
     fun getMonitorDetails(monitorId: Long): DnsMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
-        val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
+        val windows =
+            maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId(), monitorFromRepo.category)
 
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(monitorId),
@@ -85,7 +87,7 @@ class DnsMonitorActions(
         sortedBy: SortField<*>? = null,
     ): List<DnsMonitorDetailsDto> {
         val monitors = monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.map { it.monitorId() })
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
 
         return monitors.map { detailsDto ->
             val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()

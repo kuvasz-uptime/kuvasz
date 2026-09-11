@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ReadOnlyMonitorNameException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
@@ -192,7 +193,7 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
             monitorNames = monitorNames,
             categories = categories,
         )
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.map { it.monitorId() })
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(enabledMonitors.monitorsWithCategory())
         val overviewsByMonitor = statCalculator.calculateUptimeOverviews(
             monitorType = monitorType,
             period = period,

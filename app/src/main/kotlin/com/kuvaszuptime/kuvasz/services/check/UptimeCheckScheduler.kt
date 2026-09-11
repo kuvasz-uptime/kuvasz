@@ -163,7 +163,7 @@ abstract class UptimeCheckScheduler<R : SchedulableMonitorRecord>(
 
         try {
             // Skip the check entirely while the monitor is under maintenance
-            if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId())) {
+            if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category)) {
                 logger.debug("Skipping $checkTypeLabel check for \"${monitor.name}\": it is under maintenance")
                 return
             }
